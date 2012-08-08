@@ -6,9 +6,9 @@ BIN_PERL = $(addprefix $(BIN_DIR)/,$(basename $(notdir $(SRC_PERL))))
 
 DEPLOY_PERL = $(addprefix $(TARGET)/bin/,$(basename $(notdir $(SRC_PERL))))
 
-SERVER_SPEC = ReconciliationAPI.spec
-SERVER_MODULE = ReconciliationAPI
-SERVICE = ReconciliationAPI
+SERVER_SPEC = fbaModelServices.spec
+SERVER_MODULE = fbaModelServices
+SERVICE = fbaModelServices
 SERVICE_PORT = 7036
 
 SERVICE_DIR = $(TARGET)/services/$(SERVICE)
@@ -69,5 +69,5 @@ deploy-monit:
 	$(TPAGE) $(TPAGE_ARGS) service/process.$(SERVICE).tt > $(TARGET)/services/$(SERVICE)/process.$(SERVICE)
 
 deploy-doc:
-	$(DEPLOY_RUNTIME)/bin/pod2html -t "ReconciliationAPI" lib/ReconciliationAPI.pm > doc/ReconciliationAPI.html
+	$(DEPLOY_RUNTIME)/bin/pod2html -t "ReconciliationAPI" lib/fbaModelServices.pm > doc/fbaModelServices.html
 	cp doc/*html $(SERVICE_DIR)/webroot/.

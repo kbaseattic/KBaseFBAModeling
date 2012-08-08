@@ -7,4 +7,4 @@ export KB_SERVICE_DIR=$KB_TOP/services/[% kb_service_name %]
 
 pid_file=$KB_SERVICE_DIR/service.pid
 
-exec $KB_RUNTIME/bin/starman --listen :[% kb_service_port %] --pid $pid_file $KB_TOP/lib/ReconciliationAPI.psgi
+exec $KB_RUNTIME/bin/starman --listen :[% kb_service_port %] --pid $pid_file $KB_TOP/lib/fbaModelServices.psgi
