@@ -1162,7 +1162,7 @@ sub fbamodel_to_exchangeFormat
     my($out_model);
     #BEGIN fbamodel_to_exchangeFormat
     my $model = $self->loadObject($in_model);
-    $out_model = join("\n",@{$model->createReadableStringArray()});
+    $out_model = join("\n",@{$model->toReadableString()});
     #END fbamodel_to_exchangeFormat
     my @_bad_returns;
     (!ref($out_model)) or push(@_bad_returns, "Invalid type for return variable \"out_model\" (value was \"$out_model\")");
