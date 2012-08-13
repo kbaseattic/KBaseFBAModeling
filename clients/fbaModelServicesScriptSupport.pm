@@ -82,4 +82,43 @@ sub initialize {
 	return ($options,$fbaModelServicesObj);
 }
 
+sub tableToText {
+	my($table) = @_;
+	my $delimiter = "\t";
+	my $text = join($delimiter,@{$table->{headings}})."\n";
+	foreach my $row (@{$table->{data}}) {
+		$text .= join($delimiter,@{$row})."\n";
+	}
+	return $text;
+}
+
+sub loadtable {
+	my ($filename,$delim,$headingLine) = @_;
+    if (!defined($headingLine)) {
+    	$headingLine = 0;
+    }
+    my $output = {
+    	headings => [],
+    	data => []
+    };
+    if ($delim eq "|") {
+    	$delim = "\\|";	
+    }
+    if ($delim eq "\t") {
+    	$delim = "\\t";	
+    }
+    my $in_fh;
+    open($in_fh, "<", $filename) or die "Cannot open ".$filename.": $!";
+    my @lines = <$in_fh>;
+    my $data = [@lines];
+    close($in_fh);
+    if (defined($data->[0])) {
+    	$output->{headings} = [split(/$delim/,$data->[$headingLine])];
+	    for (my $i=($headingLine+1); $i < @{$data}; $i++) {
+	    	push(@{$output->{data}},[split(/$delim/,$data->[$i])]);
+	    }
+    }
+    return $output;
+}
+
 1;
