@@ -27,12 +27,12 @@ my $opts = [
 	["url=s","URL of the kbase webservice to use",$defaultURL]
 ];
 
-my ($options,$clientObj) = initialize($opts,$name,$primin,$primout);
-my $inputArray = readPrimaryInput($options,$opts,$name,$primin,$primout);
+my ($options,$clientObj) = fbaModelServicesScriptSupport::initialize($opts,$name,$primin,$primout);
+my $inputArray = fbaModelServicesScriptSupport::readPrimaryInput($options,$opts,$name,$primin,$primout);
 if (!-e $options->{phenotypes}) {
 	die usage($opts,$name,$primin,$primout);
 }
-my $phenoData = loadtable($options->{phenotypes},"\\t");
+my $phenoData = fbaModelServicesScriptSupport::loadtable($options->{phenotypes},"\\t");
 $options->{fbaPhenotypeSimulations} = [];
 my $columns = {label => -1,geneKOs => -1,reactionKOs => -1,media => -1,additionalCpds => -1,temperature => -1,pH => -1,growth => -1};
 for (my $i=0; $i < @{$phenoData->{headings}}; $i++) {
@@ -62,7 +62,7 @@ for (my $i=0; $i < @{$phenoData->{data}}; $i++) {
 	push(@{$options->{fbaPhenotypeSimulations}},$newpheno);
 }
 my $json = JSON::XS->new;
-$input = $json->decode(join("\n",@{$inputArray}));
+my $input = $json->decode(join("\n",@{$inputArray}));
 my $output = $clientObj->runfba($input,$options,$options->{overwrite},$options->{save});
 my $newColumnStart = @{$phenoData->{headings}};
 $phenoData->{headings}->[$newColumnStart] = "Simulated growth fraction";
@@ -81,5 +81,5 @@ for (my $i=0; $i < @{$phenoresults}; $i++) {
     	$phenoData->{data}->[$label]->[$newColumnStart+2] = $phenoresults->[$i]->{class};
 	}
 }
-my $output = tableToText($phenoData);
-printPrimaryOutput($options,$output);
+my $output = fbaModelServicesScriptSupport::tableToText($phenoData);
+fbaModelServicesScriptSupport::printPrimaryOutput($options,$output);

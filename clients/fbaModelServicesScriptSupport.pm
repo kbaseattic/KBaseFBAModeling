@@ -77,7 +77,7 @@ sub initialize {
 	my($opts,$name,$primin,$primout) = @_;
 	my $options = {};
 	my $args = getOptionArgs($opts,$options);
-	GetOptions(@{$args}) || die usage($opts,$name,$primin,$primout);
+	Getopt::Long::GetOptions(@{$args}) || die usage($opts,$name,$primin,$primout);
 	my $fbaModelServicesObj = fbaModelServicesClient->new($options->{url});
 	return ($options,$fbaModelServicesObj);
 }

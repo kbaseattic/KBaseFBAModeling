@@ -38,9 +38,9 @@ my $opts = [
 	["url=s","URL of the kbase webservice to use",$defaultURL]
 ];
 
-my ($options,$clientObj) = initialize($opts,$name,$primin,$primout);
-my $inputArray = readPrimaryInput($options,$opts,$name,$primin,$primout);
+my ($options,$clientObj) = fbaModelServicesScriptSupport::initialize($opts,$name,$primin,$primout);
+my $inputArray = fbaModelServicesScriptSupport::readPrimaryInput($options,$opts,$name,$primin,$primout);
 my $json = JSON::XS->new;
-$input = $json->decode(join("\n",@{$inputArray}));
+my $input = $json->decode(join("\n",@{$inputArray}));
 my $output = $clientObj->runfba($input,$options,$options->{overwrite},$options->{save});
-printPrimaryOutput($options,$output);
+fbaModelServicesScriptSupport::printPrimaryOutput($options,$output);
