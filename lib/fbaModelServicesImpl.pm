@@ -182,15 +182,22 @@ sub new
     };
     bless $self, $class;
     #BEGIN_CONSTRUCTOR
-    #Connecting to mongodb database to save and retrieve all required typed objects
-    $self->{_db} =
-	  ModelSEED::Database::MongoDBSimple->new(
-				   { db_name => "modelObjectStore", host => "birch.mcs.anl.gov" } );
-	$self->{_auth} =
-	  ModelSEED::Auth::Basic->new( { username => "kbase", password => "kbase" } )
-	  ;
-	$self->{_store} =
-	  ModelSEED::Store->new( { auth => $self->{_auth}, database => $self->{_db} } );
+    if (defined($ENV{FILEDBDIRECTORY})) {
+    	$self->{_db} = ModelSEED::Database::FileDB->new({
+    		directory => $ENV{FILEDBDIRECTORY},
+            filename  => $ENV{FILEDBNAME}
+    	});
+    } else {
+	    #Connecting to mongodb database to save and retrieve all required typed objects 
+	    $self->{_db} =
+		  ModelSEED::Database::MongoDBSimple->new(
+					   { db_name => "modelObjectStore", host => "birch.mcs.anl.gov" } );
+		$self->{_auth} =
+		  ModelSEED::Auth::Basic->new( { username => "kbase", password => "kbase" } )
+		  ;
+		$self->{_store} =
+		  ModelSEED::Store->new( { auth => $self->{_auth}, database => $self->{_db} } );
+    }
     #END_CONSTRUCTOR
 
     if ($self->can('_init_instance'))
