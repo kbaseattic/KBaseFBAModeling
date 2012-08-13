@@ -1744,9 +1744,6 @@ sub gapgen_fbamodel
     my $model = $self->loadObject($in_model);
 	#Creating gapgen formulation
 	my $input = {model => $model};
-	if ($opts->{config}) {
-		$input->{filename} = $opts->{config};
-	}
 	my $fbaoverrides = {
 		media => "media",notes => "notes",objfraction => "objectiveConstraintFraction",
 		objective => "objectiveString",rxnko => "geneKO",geneko => "reactionKO",uptakelim => "uptakeLimits",
@@ -1759,18 +1756,18 @@ sub gapgen_fbamodel
 	foreach my $argument (keys(%{$overrideList})) {
 		if ($overrideList->{$argument} =~ m/^\!(.+)$/) {
 			$argument = $1;
-			if (defined($opts->{$argument})) {
+			if (defined($in_formulation->{$argument})) {
 				$input->{overrides}->{$overrideList->{$argument}} = 0;
 			} else {
 				$input->{overrides}->{$overrideList->{$argument}} = 1;
 			}
 		} else {
-			$input->{overrides}->{$overrideList->{$argument}} = $opts->{$argument};
+			$input->{overrides}->{$overrideList->{$argument}} = $in_formulation->{$argument};
 		}
 	}
 	foreach my $argument (keys(%{$fbaoverrides})) {
-		if (defined($opts->{$argument})) {
-			$input->{overrides}->{fbaFormulation}->{overrides}->{$fbaoverrides->{$argument}} = $opts->{$argument};
+		if (defined($in_formulation->{$argument})) {
+			$input->{overrides}->{fbaFormulation}->{overrides}->{$fbaoverrides->{$argument}} = $in_formulation->{$argument};
 		}
 	}
 	my $exchange_factory = ModelSEED::MS::Factories::ExchangeFormatFactory->new();
