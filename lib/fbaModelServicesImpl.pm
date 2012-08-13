@@ -267,8 +267,6 @@ FBAModel is a reference to a hash where the following keys are defined:
 	modelcompartments has a value which is a reference to a list where each element is a ModelCompartmentTO
 	modelcompounds has a value which is a reference to a list where each element is a ModelCompoundTO
 	modelreactions has a value which is a reference to a list where each element is a ModelReactionTO
-	fbaFormulations has a value which is a reference to a list where each element is an FBAFormulation
-	gapfillingFormulations has a value which is a reference to a list where each element is a GapfillingFormulation
 model_id is a string
 mapping_id is a string
 biochemistry_id is a string
@@ -316,108 +314,6 @@ bool is an int
 ModelReactionReagentTO is a reference to a hash where the following keys are defined:
 	modelcompound_id has a value which is a modelcompound_id
 	coefficient has a value which is a float
-FBAFormulation is a reference to a hash where the following keys are defined:
-	model has a value which is a string
-	regulatoryModel has a value which is a string
-	expressionData has a value which is a string
-	media has a value which is a string
-	rxnKO has a value which is a reference to a list where each element is a string
-	geneKO has a value which is a reference to a list where each element is a string
-	objective has a value which is a string
-	constraints has a value which is a reference to a list where each element is a string
-	bounds has a value which is a reference to a list where each element is a string
-	phenotypes has a value which is a reference to a list where each element is a string
-	uptakelimits has a value which is a string
-	fbaResults has a value which is a reference to a list where each element is an FBAResult
-	notes has a value which is a string
-	objectiveConstraintFraction has a value which is a float
-	allReversible has a value which is a bool
-	defaultMaxFlux has a value which is a float
-	defaultMaxDrainFlux has a value which is a float
-	defaultMinDrainFlux has a value which is a float
-	numberOfSolutions has a value which is an int
-	fva has a value which is a bool
-	comboDeletions has a value which is an int
-	fluxMinimization has a value which is a bool
-	findMinimalMedia has a value which is a bool
-	simpleThermoConstraints has a value which is a bool
-	thermodynamicConstraints has a value which is a bool
-	noErrorThermodynamicConstraints has a value which is a bool
-	minimizeErrorThermodynamicConstraints has a value which is a bool
-FBAResult is a reference to a hash where the following keys are defined:
-	notes has a value which is a string
-	objectiveValue has a value which is a float
-	variables has a value which is a reference to a list where each element is an FBAVariable
-	fbaPhenotypeSimultationResults has a value which is a reference to a list where each element is an FBAPhenotypeSimulationResult
-	fbaDeletionResults has a value which is a reference to a list where each element is an FBADeletionResult
-	minimalMediaResults has a value which is a reference to a list where each element is an FBAMinimalMediaResult
-	fbaMetaboliteProductionResults has a value which is a reference to a list where each element is an FBAMetaboliteProductionResult
-FBAVariable is a reference to a hash where the following keys are defined:
-	entityID has a value which is a string
-	variableType has a value which is a string
-	lowerBound has a value which is a float
-	upperBound has a value which is a float
-	min has a value which is a float
-	max has a value which is a float
-	value has a value which is a float
-FBAPhenotypeSimulationResult is a reference to a hash where the following keys are defined:
-	simultatedPhenotype has a value which is a string
-	simulatedGrowthFraction has a value which is a float
-	simulatedGrowth has a value which is a float
-	class has a value which is a string
-	noGrowthCompounds has a value which is a reference to a list where each element is a string
-	dependantReactions has a value which is a reference to a list where each element is a string
-	dependantGenes has a value which is a reference to a list where each element is a string
-	fluxes has a value which is a reference to a list where each element is a string
-FBADeletionResult is a reference to a hash where the following keys are defined:
-	geneKO has a value which is a reference to a list where each element is a string
-	simulatedGrowth has a value which is a float
-	simulatedGrowthFraction has a value which is a float
-FBAMinimalMediaResult is a reference to a hash where the following keys are defined:
-	optionalNutrients has a value which is a reference to a list where each element is a string
-	essentialNutrients has a value which is a reference to a list where each element is a string
-FBAMetaboliteProductionResult is a reference to a hash where the following keys are defined:
-	maximumProduction has a value which is a float
-	compound has a value which is a string
-GapfillingFormulation is a reference to a hash where the following keys are defined:
-	fbaFormulation has a value which is an FBAFormulation
-	blacklistedReactions has a value which is a reference to a list where each element is a string
-	allowableUnbalancedReactions has a value which is a reference to a list where each element is a string
-	allowableCompartments has a value which is a reference to a list where each element is a string
-	balancedReactionsOnly has a value which is a bool
-	reactionActivationBonus has a value which is a float
-	drainFluxMultiplier has a value which is a float
-	directionalityMultiplier has a value which is a float
-	deltaGMultiplier has a value which is a float
-	noStructureMultiplier has a value which is a float
-	noDeltaGMultiplier has a value which is a float
-	biomassTransporterMultiplier has a value which is a float
-	singleTransporterMultiplier has a value which is a float
-	transporterMultiplier has a value which is a float
-	geneCandidates has a value which is a reference to a list where each element is a GeneCandidate
-	reactionSetMultipliers has a value which is a reference to a list where each element is a ReactionSetMultiplier
-	gapfillingSolutions has a value which is a reference to a list where each element is a GapfillingSolution
-GeneCandidate is a reference to a hash where the following keys are defined:
-	role has a value which is a string
-	orthologGenome has a value which is a genome_id
-	ortholog has a value which is a feature_id
-	feature has a value which is a feature_id
-	similarityScore has a value which is a float
-	distanceScore has a value which is a float
-ReactionSetMultiplier is a reference to a hash where the following keys are defined:
-	reactionset has a value which is a reactionset_id
-	reactionsetType has a value which is a string
-	multiplierType has a value which is a string
-	description has a value which is a string
-	multiplier has a value which is a float
-reactionset_id is a string
-GapfillingSolution is a reference to a hash where the following keys are defined:
-	solutionCost has a value which is a float
-	gapfillingSolutionReactions has a value which is a reference to a list where each element is a GapfillingSolutionReaction
-GapfillingSolutionReaction is a reference to a hash where the following keys are defined:
-	reaction has a value which is a reaction_id
-	direction has a value which is a string
-	geneCandidates has a value which is a reference to a list where each element is a feature_id
 
 </pre>
 
@@ -477,8 +373,6 @@ FBAModel is a reference to a hash where the following keys are defined:
 	modelcompartments has a value which is a reference to a list where each element is a ModelCompartmentTO
 	modelcompounds has a value which is a reference to a list where each element is a ModelCompoundTO
 	modelreactions has a value which is a reference to a list where each element is a ModelReactionTO
-	fbaFormulations has a value which is a reference to a list where each element is an FBAFormulation
-	gapfillingFormulations has a value which is a reference to a list where each element is a GapfillingFormulation
 model_id is a string
 mapping_id is a string
 biochemistry_id is a string
@@ -526,108 +420,6 @@ bool is an int
 ModelReactionReagentTO is a reference to a hash where the following keys are defined:
 	modelcompound_id has a value which is a modelcompound_id
 	coefficient has a value which is a float
-FBAFormulation is a reference to a hash where the following keys are defined:
-	model has a value which is a string
-	regulatoryModel has a value which is a string
-	expressionData has a value which is a string
-	media has a value which is a string
-	rxnKO has a value which is a reference to a list where each element is a string
-	geneKO has a value which is a reference to a list where each element is a string
-	objective has a value which is a string
-	constraints has a value which is a reference to a list where each element is a string
-	bounds has a value which is a reference to a list where each element is a string
-	phenotypes has a value which is a reference to a list where each element is a string
-	uptakelimits has a value which is a string
-	fbaResults has a value which is a reference to a list where each element is an FBAResult
-	notes has a value which is a string
-	objectiveConstraintFraction has a value which is a float
-	allReversible has a value which is a bool
-	defaultMaxFlux has a value which is a float
-	defaultMaxDrainFlux has a value which is a float
-	defaultMinDrainFlux has a value which is a float
-	numberOfSolutions has a value which is an int
-	fva has a value which is a bool
-	comboDeletions has a value which is an int
-	fluxMinimization has a value which is a bool
-	findMinimalMedia has a value which is a bool
-	simpleThermoConstraints has a value which is a bool
-	thermodynamicConstraints has a value which is a bool
-	noErrorThermodynamicConstraints has a value which is a bool
-	minimizeErrorThermodynamicConstraints has a value which is a bool
-FBAResult is a reference to a hash where the following keys are defined:
-	notes has a value which is a string
-	objectiveValue has a value which is a float
-	variables has a value which is a reference to a list where each element is an FBAVariable
-	fbaPhenotypeSimultationResults has a value which is a reference to a list where each element is an FBAPhenotypeSimulationResult
-	fbaDeletionResults has a value which is a reference to a list where each element is an FBADeletionResult
-	minimalMediaResults has a value which is a reference to a list where each element is an FBAMinimalMediaResult
-	fbaMetaboliteProductionResults has a value which is a reference to a list where each element is an FBAMetaboliteProductionResult
-FBAVariable is a reference to a hash where the following keys are defined:
-	entityID has a value which is a string
-	variableType has a value which is a string
-	lowerBound has a value which is a float
-	upperBound has a value which is a float
-	min has a value which is a float
-	max has a value which is a float
-	value has a value which is a float
-FBAPhenotypeSimulationResult is a reference to a hash where the following keys are defined:
-	simultatedPhenotype has a value which is a string
-	simulatedGrowthFraction has a value which is a float
-	simulatedGrowth has a value which is a float
-	class has a value which is a string
-	noGrowthCompounds has a value which is a reference to a list where each element is a string
-	dependantReactions has a value which is a reference to a list where each element is a string
-	dependantGenes has a value which is a reference to a list where each element is a string
-	fluxes has a value which is a reference to a list where each element is a string
-FBADeletionResult is a reference to a hash where the following keys are defined:
-	geneKO has a value which is a reference to a list where each element is a string
-	simulatedGrowth has a value which is a float
-	simulatedGrowthFraction has a value which is a float
-FBAMinimalMediaResult is a reference to a hash where the following keys are defined:
-	optionalNutrients has a value which is a reference to a list where each element is a string
-	essentialNutrients has a value which is a reference to a list where each element is a string
-FBAMetaboliteProductionResult is a reference to a hash where the following keys are defined:
-	maximumProduction has a value which is a float
-	compound has a value which is a string
-GapfillingFormulation is a reference to a hash where the following keys are defined:
-	fbaFormulation has a value which is an FBAFormulation
-	blacklistedReactions has a value which is a reference to a list where each element is a string
-	allowableUnbalancedReactions has a value which is a reference to a list where each element is a string
-	allowableCompartments has a value which is a reference to a list where each element is a string
-	balancedReactionsOnly has a value which is a bool
-	reactionActivationBonus has a value which is a float
-	drainFluxMultiplier has a value which is a float
-	directionalityMultiplier has a value which is a float
-	deltaGMultiplier has a value which is a float
-	noStructureMultiplier has a value which is a float
-	noDeltaGMultiplier has a value which is a float
-	biomassTransporterMultiplier has a value which is a float
-	singleTransporterMultiplier has a value which is a float
-	transporterMultiplier has a value which is a float
-	geneCandidates has a value which is a reference to a list where each element is a GeneCandidate
-	reactionSetMultipliers has a value which is a reference to a list where each element is a ReactionSetMultiplier
-	gapfillingSolutions has a value which is a reference to a list where each element is a GapfillingSolution
-GeneCandidate is a reference to a hash where the following keys are defined:
-	role has a value which is a string
-	orthologGenome has a value which is a genome_id
-	ortholog has a value which is a feature_id
-	feature has a value which is a feature_id
-	similarityScore has a value which is a float
-	distanceScore has a value which is a float
-ReactionSetMultiplier is a reference to a hash where the following keys are defined:
-	reactionset has a value which is a reactionset_id
-	reactionsetType has a value which is a string
-	multiplierType has a value which is a string
-	description has a value which is a string
-	multiplier has a value which is a float
-reactionset_id is a string
-GapfillingSolution is a reference to a hash where the following keys are defined:
-	solutionCost has a value which is a float
-	gapfillingSolutionReactions has a value which is a reference to a list where each element is a GapfillingSolutionReaction
-GapfillingSolutionReaction is a reference to a hash where the following keys are defined:
-	reaction has a value which is a reaction_id
-	direction has a value which is a string
-	geneCandidates has a value which is a reference to a list where each element is a feature_id
 
 
 =end text
@@ -769,821 +561,6 @@ sub genome_to_fbamodel
 
 
 
-=head2 fbamodel_to_exchangeFormat
-
-  $out_model = $obj->fbamodel_to_exchangeFormat($in_model)
-
-=over 4
-
-=item Parameter and return types
-
-=begin html
-
-<pre>
-$in_model is an FBAModel
-$out_model is an FBAModelEX
-FBAModel is a reference to a hash where the following keys are defined:
-	ancestor has a value which is a model_id
-	id has a value which is a model_id
-	name has a value which is a string
-	version has a value which is an int
-	type has a value which is a string
-	status has a value which is a string
-	current has a value which is an int
-	growth has a value which is a float
-	genome has a value which is a genome_id
-	map has a value which is a mapping_id
-	biochemistry has a value which is a biochemistry_id
-	biomasses has a value which is a reference to a list where each element is a BiomassTO
-	modelcompartments has a value which is a reference to a list where each element is a ModelCompartmentTO
-	modelcompounds has a value which is a reference to a list where each element is a ModelCompoundTO
-	modelreactions has a value which is a reference to a list where each element is a ModelReactionTO
-	fbaFormulations has a value which is a reference to a list where each element is an FBAFormulation
-	gapfillingFormulations has a value which is a reference to a list where each element is a GapfillingFormulation
-model_id is a string
-genome_id is a string
-mapping_id is a string
-biochemistry_id is a string
-BiomassTO is a reference to a hash where the following keys are defined:
-	id has a value which is a biomass_id
-	name has a value which is a string
-	biomassCompounds has a value which is a reference to a list where each element is a BiomassCompoundTO
-biomass_id is a string
-BiomassCompoundTO is a reference to a hash where the following keys are defined:
-	modelcompound_id has a value which is a modelcompound_id
-	coefficient has a value which is a float
-modelcompound_id is a string
-ModelCompartmentTO is a reference to a hash where the following keys are defined:
-	id has a value which is a modelcompartment_id
-	compartment_id has a value which is a compartment_id
-	name has a value which is a string
-	pH has a value which is a float
-	potential has a value which is a float
-	index has a value which is an int
-modelcompartment_id is a string
-compartment_id is a string
-ModelCompoundTO is a reference to a hash where the following keys are defined:
-	id has a value which is a modelcompound_id
-	name has a value which is a string
-	compound_id has a value which is a compound_id
-	modelcompartment_id has a value which is a modelcompartment_id
-	charge has a value which is a float
-	formula has a value which is a string
-compound_id is a string
-ModelReactionTO is a reference to a hash where the following keys are defined:
-	id has a value which is a modelreaction_id
-	reaction_id has a value which is a reaction_id
-	modelcompartment_id has a value which is a modelcompartment_id
-	direction has a value which is a string
-	protons has a value which is a string
-	equation has a value which is a string
-	gpr has a value which is a reference to a list where each element is a ModelReactionRawGPRTO
-	modelReactionReagents has a value which is a reference to a list where each element is a ModelReactionReagentTO
-modelreaction_id is a string
-reaction_id is a string
-ModelReactionRawGPRTO is a reference to a hash where the following keys are defined:
-	isCustomGPR has a value which is a bool
-	rawGPR has a value which is a string
-bool is an int
-ModelReactionReagentTO is a reference to a hash where the following keys are defined:
-	modelcompound_id has a value which is a modelcompound_id
-	coefficient has a value which is a float
-FBAFormulation is a reference to a hash where the following keys are defined:
-	model has a value which is a string
-	regulatoryModel has a value which is a string
-	expressionData has a value which is a string
-	media has a value which is a string
-	rxnKO has a value which is a reference to a list where each element is a string
-	geneKO has a value which is a reference to a list where each element is a string
-	objective has a value which is a string
-	constraints has a value which is a reference to a list where each element is a string
-	bounds has a value which is a reference to a list where each element is a string
-	phenotypes has a value which is a reference to a list where each element is a string
-	uptakelimits has a value which is a string
-	fbaResults has a value which is a reference to a list where each element is an FBAResult
-	notes has a value which is a string
-	objectiveConstraintFraction has a value which is a float
-	allReversible has a value which is a bool
-	defaultMaxFlux has a value which is a float
-	defaultMaxDrainFlux has a value which is a float
-	defaultMinDrainFlux has a value which is a float
-	numberOfSolutions has a value which is an int
-	fva has a value which is a bool
-	comboDeletions has a value which is an int
-	fluxMinimization has a value which is a bool
-	findMinimalMedia has a value which is a bool
-	simpleThermoConstraints has a value which is a bool
-	thermodynamicConstraints has a value which is a bool
-	noErrorThermodynamicConstraints has a value which is a bool
-	minimizeErrorThermodynamicConstraints has a value which is a bool
-FBAResult is a reference to a hash where the following keys are defined:
-	notes has a value which is a string
-	objectiveValue has a value which is a float
-	variables has a value which is a reference to a list where each element is an FBAVariable
-	fbaPhenotypeSimultationResults has a value which is a reference to a list where each element is an FBAPhenotypeSimulationResult
-	fbaDeletionResults has a value which is a reference to a list where each element is an FBADeletionResult
-	minimalMediaResults has a value which is a reference to a list where each element is an FBAMinimalMediaResult
-	fbaMetaboliteProductionResults has a value which is a reference to a list where each element is an FBAMetaboliteProductionResult
-FBAVariable is a reference to a hash where the following keys are defined:
-	entityID has a value which is a string
-	variableType has a value which is a string
-	lowerBound has a value which is a float
-	upperBound has a value which is a float
-	min has a value which is a float
-	max has a value which is a float
-	value has a value which is a float
-FBAPhenotypeSimulationResult is a reference to a hash where the following keys are defined:
-	simultatedPhenotype has a value which is a string
-	simulatedGrowthFraction has a value which is a float
-	simulatedGrowth has a value which is a float
-	class has a value which is a string
-	noGrowthCompounds has a value which is a reference to a list where each element is a string
-	dependantReactions has a value which is a reference to a list where each element is a string
-	dependantGenes has a value which is a reference to a list where each element is a string
-	fluxes has a value which is a reference to a list where each element is a string
-FBADeletionResult is a reference to a hash where the following keys are defined:
-	geneKO has a value which is a reference to a list where each element is a string
-	simulatedGrowth has a value which is a float
-	simulatedGrowthFraction has a value which is a float
-FBAMinimalMediaResult is a reference to a hash where the following keys are defined:
-	optionalNutrients has a value which is a reference to a list where each element is a string
-	essentialNutrients has a value which is a reference to a list where each element is a string
-FBAMetaboliteProductionResult is a reference to a hash where the following keys are defined:
-	maximumProduction has a value which is a float
-	compound has a value which is a string
-GapfillingFormulation is a reference to a hash where the following keys are defined:
-	fbaFormulation has a value which is an FBAFormulation
-	blacklistedReactions has a value which is a reference to a list where each element is a string
-	allowableUnbalancedReactions has a value which is a reference to a list where each element is a string
-	allowableCompartments has a value which is a reference to a list where each element is a string
-	balancedReactionsOnly has a value which is a bool
-	reactionActivationBonus has a value which is a float
-	drainFluxMultiplier has a value which is a float
-	directionalityMultiplier has a value which is a float
-	deltaGMultiplier has a value which is a float
-	noStructureMultiplier has a value which is a float
-	noDeltaGMultiplier has a value which is a float
-	biomassTransporterMultiplier has a value which is a float
-	singleTransporterMultiplier has a value which is a float
-	transporterMultiplier has a value which is a float
-	geneCandidates has a value which is a reference to a list where each element is a GeneCandidate
-	reactionSetMultipliers has a value which is a reference to a list where each element is a ReactionSetMultiplier
-	gapfillingSolutions has a value which is a reference to a list where each element is a GapfillingSolution
-GeneCandidate is a reference to a hash where the following keys are defined:
-	role has a value which is a string
-	orthologGenome has a value which is a genome_id
-	ortholog has a value which is a feature_id
-	feature has a value which is a feature_id
-	similarityScore has a value which is a float
-	distanceScore has a value which is a float
-feature_id is a string
-ReactionSetMultiplier is a reference to a hash where the following keys are defined:
-	reactionset has a value which is a reactionset_id
-	reactionsetType has a value which is a string
-	multiplierType has a value which is a string
-	description has a value which is a string
-	multiplier has a value which is a float
-reactionset_id is a string
-GapfillingSolution is a reference to a hash where the following keys are defined:
-	solutionCost has a value which is a float
-	gapfillingSolutionReactions has a value which is a reference to a list where each element is a GapfillingSolutionReaction
-GapfillingSolutionReaction is a reference to a hash where the following keys are defined:
-	reaction has a value which is a reaction_id
-	direction has a value which is a string
-	geneCandidates has a value which is a reference to a list where each element is a feature_id
-FBAModelEX is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-$in_model is an FBAModel
-$out_model is an FBAModelEX
-FBAModel is a reference to a hash where the following keys are defined:
-	ancestor has a value which is a model_id
-	id has a value which is a model_id
-	name has a value which is a string
-	version has a value which is an int
-	type has a value which is a string
-	status has a value which is a string
-	current has a value which is an int
-	growth has a value which is a float
-	genome has a value which is a genome_id
-	map has a value which is a mapping_id
-	biochemistry has a value which is a biochemistry_id
-	biomasses has a value which is a reference to a list where each element is a BiomassTO
-	modelcompartments has a value which is a reference to a list where each element is a ModelCompartmentTO
-	modelcompounds has a value which is a reference to a list where each element is a ModelCompoundTO
-	modelreactions has a value which is a reference to a list where each element is a ModelReactionTO
-	fbaFormulations has a value which is a reference to a list where each element is an FBAFormulation
-	gapfillingFormulations has a value which is a reference to a list where each element is a GapfillingFormulation
-model_id is a string
-genome_id is a string
-mapping_id is a string
-biochemistry_id is a string
-BiomassTO is a reference to a hash where the following keys are defined:
-	id has a value which is a biomass_id
-	name has a value which is a string
-	biomassCompounds has a value which is a reference to a list where each element is a BiomassCompoundTO
-biomass_id is a string
-BiomassCompoundTO is a reference to a hash where the following keys are defined:
-	modelcompound_id has a value which is a modelcompound_id
-	coefficient has a value which is a float
-modelcompound_id is a string
-ModelCompartmentTO is a reference to a hash where the following keys are defined:
-	id has a value which is a modelcompartment_id
-	compartment_id has a value which is a compartment_id
-	name has a value which is a string
-	pH has a value which is a float
-	potential has a value which is a float
-	index has a value which is an int
-modelcompartment_id is a string
-compartment_id is a string
-ModelCompoundTO is a reference to a hash where the following keys are defined:
-	id has a value which is a modelcompound_id
-	name has a value which is a string
-	compound_id has a value which is a compound_id
-	modelcompartment_id has a value which is a modelcompartment_id
-	charge has a value which is a float
-	formula has a value which is a string
-compound_id is a string
-ModelReactionTO is a reference to a hash where the following keys are defined:
-	id has a value which is a modelreaction_id
-	reaction_id has a value which is a reaction_id
-	modelcompartment_id has a value which is a modelcompartment_id
-	direction has a value which is a string
-	protons has a value which is a string
-	equation has a value which is a string
-	gpr has a value which is a reference to a list where each element is a ModelReactionRawGPRTO
-	modelReactionReagents has a value which is a reference to a list where each element is a ModelReactionReagentTO
-modelreaction_id is a string
-reaction_id is a string
-ModelReactionRawGPRTO is a reference to a hash where the following keys are defined:
-	isCustomGPR has a value which is a bool
-	rawGPR has a value which is a string
-bool is an int
-ModelReactionReagentTO is a reference to a hash where the following keys are defined:
-	modelcompound_id has a value which is a modelcompound_id
-	coefficient has a value which is a float
-FBAFormulation is a reference to a hash where the following keys are defined:
-	model has a value which is a string
-	regulatoryModel has a value which is a string
-	expressionData has a value which is a string
-	media has a value which is a string
-	rxnKO has a value which is a reference to a list where each element is a string
-	geneKO has a value which is a reference to a list where each element is a string
-	objective has a value which is a string
-	constraints has a value which is a reference to a list where each element is a string
-	bounds has a value which is a reference to a list where each element is a string
-	phenotypes has a value which is a reference to a list where each element is a string
-	uptakelimits has a value which is a string
-	fbaResults has a value which is a reference to a list where each element is an FBAResult
-	notes has a value which is a string
-	objectiveConstraintFraction has a value which is a float
-	allReversible has a value which is a bool
-	defaultMaxFlux has a value which is a float
-	defaultMaxDrainFlux has a value which is a float
-	defaultMinDrainFlux has a value which is a float
-	numberOfSolutions has a value which is an int
-	fva has a value which is a bool
-	comboDeletions has a value which is an int
-	fluxMinimization has a value which is a bool
-	findMinimalMedia has a value which is a bool
-	simpleThermoConstraints has a value which is a bool
-	thermodynamicConstraints has a value which is a bool
-	noErrorThermodynamicConstraints has a value which is a bool
-	minimizeErrorThermodynamicConstraints has a value which is a bool
-FBAResult is a reference to a hash where the following keys are defined:
-	notes has a value which is a string
-	objectiveValue has a value which is a float
-	variables has a value which is a reference to a list where each element is an FBAVariable
-	fbaPhenotypeSimultationResults has a value which is a reference to a list where each element is an FBAPhenotypeSimulationResult
-	fbaDeletionResults has a value which is a reference to a list where each element is an FBADeletionResult
-	minimalMediaResults has a value which is a reference to a list where each element is an FBAMinimalMediaResult
-	fbaMetaboliteProductionResults has a value which is a reference to a list where each element is an FBAMetaboliteProductionResult
-FBAVariable is a reference to a hash where the following keys are defined:
-	entityID has a value which is a string
-	variableType has a value which is a string
-	lowerBound has a value which is a float
-	upperBound has a value which is a float
-	min has a value which is a float
-	max has a value which is a float
-	value has a value which is a float
-FBAPhenotypeSimulationResult is a reference to a hash where the following keys are defined:
-	simultatedPhenotype has a value which is a string
-	simulatedGrowthFraction has a value which is a float
-	simulatedGrowth has a value which is a float
-	class has a value which is a string
-	noGrowthCompounds has a value which is a reference to a list where each element is a string
-	dependantReactions has a value which is a reference to a list where each element is a string
-	dependantGenes has a value which is a reference to a list where each element is a string
-	fluxes has a value which is a reference to a list where each element is a string
-FBADeletionResult is a reference to a hash where the following keys are defined:
-	geneKO has a value which is a reference to a list where each element is a string
-	simulatedGrowth has a value which is a float
-	simulatedGrowthFraction has a value which is a float
-FBAMinimalMediaResult is a reference to a hash where the following keys are defined:
-	optionalNutrients has a value which is a reference to a list where each element is a string
-	essentialNutrients has a value which is a reference to a list where each element is a string
-FBAMetaboliteProductionResult is a reference to a hash where the following keys are defined:
-	maximumProduction has a value which is a float
-	compound has a value which is a string
-GapfillingFormulation is a reference to a hash where the following keys are defined:
-	fbaFormulation has a value which is an FBAFormulation
-	blacklistedReactions has a value which is a reference to a list where each element is a string
-	allowableUnbalancedReactions has a value which is a reference to a list where each element is a string
-	allowableCompartments has a value which is a reference to a list where each element is a string
-	balancedReactionsOnly has a value which is a bool
-	reactionActivationBonus has a value which is a float
-	drainFluxMultiplier has a value which is a float
-	directionalityMultiplier has a value which is a float
-	deltaGMultiplier has a value which is a float
-	noStructureMultiplier has a value which is a float
-	noDeltaGMultiplier has a value which is a float
-	biomassTransporterMultiplier has a value which is a float
-	singleTransporterMultiplier has a value which is a float
-	transporterMultiplier has a value which is a float
-	geneCandidates has a value which is a reference to a list where each element is a GeneCandidate
-	reactionSetMultipliers has a value which is a reference to a list where each element is a ReactionSetMultiplier
-	gapfillingSolutions has a value which is a reference to a list where each element is a GapfillingSolution
-GeneCandidate is a reference to a hash where the following keys are defined:
-	role has a value which is a string
-	orthologGenome has a value which is a genome_id
-	ortholog has a value which is a feature_id
-	feature has a value which is a feature_id
-	similarityScore has a value which is a float
-	distanceScore has a value which is a float
-feature_id is a string
-ReactionSetMultiplier is a reference to a hash where the following keys are defined:
-	reactionset has a value which is a reactionset_id
-	reactionsetType has a value which is a string
-	multiplierType has a value which is a string
-	description has a value which is a string
-	multiplier has a value which is a float
-reactionset_id is a string
-GapfillingSolution is a reference to a hash where the following keys are defined:
-	solutionCost has a value which is a float
-	gapfillingSolutionReactions has a value which is a reference to a list where each element is a GapfillingSolutionReaction
-GapfillingSolutionReaction is a reference to a hash where the following keys are defined:
-	reaction has a value which is a reaction_id
-	direction has a value which is a string
-	geneCandidates has a value which is a reference to a list where each element is a feature_id
-FBAModelEX is a string
-
-
-=end text
-
-
-
-=item Description
-
-
-
-=back
-
-=cut
-
-sub fbamodel_to_exchangeFormat
-{
-    my $self = shift;
-    my($in_model) = @_;
-
-    my @_bad_arguments;
-    (ref($in_model) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"in_model\" (value was \"$in_model\")");
-    if (@_bad_arguments) {
-	my $msg = "Invalid arguments passed to fbamodel_to_exchangeFormat:\n" . join("", map { "\t$_\n" } @_bad_arguments);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'fbamodel_to_exchangeFormat');
-    }
-
-    my $ctx = $fbaModelServicesServer::CallContext;
-    my($out_model);
-    #BEGIN fbamodel_to_exchangeFormat
-    my $model = $self->loadObject($in_model);
-    $out_model = join("\n",@{$model->createReadableStringArray()});
-    #END fbamodel_to_exchangeFormat
-    my @_bad_returns;
-    (!ref($out_model)) or push(@_bad_returns, "Invalid type for return variable \"out_model\" (value was \"$out_model\")");
-    if (@_bad_returns) {
-	my $msg = "Invalid returns passed to fbamodel_to_exchangeFormat:\n" . join("", map { "\t$_\n" } @_bad_returns);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'fbamodel_to_exchangeFormat');
-    }
-    return($out_model);
-}
-
-
-
-
-=head2 exchangeFormat_to_fbamodel
-
-  $out_model = $obj->exchangeFormat_to_fbamodel($in_model)
-
-=over 4
-
-=item Parameter and return types
-
-=begin html
-
-<pre>
-$in_model is an FBAModelEX
-$out_model is an FBAModel
-FBAModelEX is a string
-FBAModel is a reference to a hash where the following keys are defined:
-	ancestor has a value which is a model_id
-	id has a value which is a model_id
-	name has a value which is a string
-	version has a value which is an int
-	type has a value which is a string
-	status has a value which is a string
-	current has a value which is an int
-	growth has a value which is a float
-	genome has a value which is a genome_id
-	map has a value which is a mapping_id
-	biochemistry has a value which is a biochemistry_id
-	biomasses has a value which is a reference to a list where each element is a BiomassTO
-	modelcompartments has a value which is a reference to a list where each element is a ModelCompartmentTO
-	modelcompounds has a value which is a reference to a list where each element is a ModelCompoundTO
-	modelreactions has a value which is a reference to a list where each element is a ModelReactionTO
-	fbaFormulations has a value which is a reference to a list where each element is an FBAFormulation
-	gapfillingFormulations has a value which is a reference to a list where each element is a GapfillingFormulation
-model_id is a string
-genome_id is a string
-mapping_id is a string
-biochemistry_id is a string
-BiomassTO is a reference to a hash where the following keys are defined:
-	id has a value which is a biomass_id
-	name has a value which is a string
-	biomassCompounds has a value which is a reference to a list where each element is a BiomassCompoundTO
-biomass_id is a string
-BiomassCompoundTO is a reference to a hash where the following keys are defined:
-	modelcompound_id has a value which is a modelcompound_id
-	coefficient has a value which is a float
-modelcompound_id is a string
-ModelCompartmentTO is a reference to a hash where the following keys are defined:
-	id has a value which is a modelcompartment_id
-	compartment_id has a value which is a compartment_id
-	name has a value which is a string
-	pH has a value which is a float
-	potential has a value which is a float
-	index has a value which is an int
-modelcompartment_id is a string
-compartment_id is a string
-ModelCompoundTO is a reference to a hash where the following keys are defined:
-	id has a value which is a modelcompound_id
-	name has a value which is a string
-	compound_id has a value which is a compound_id
-	modelcompartment_id has a value which is a modelcompartment_id
-	charge has a value which is a float
-	formula has a value which is a string
-compound_id is a string
-ModelReactionTO is a reference to a hash where the following keys are defined:
-	id has a value which is a modelreaction_id
-	reaction_id has a value which is a reaction_id
-	modelcompartment_id has a value which is a modelcompartment_id
-	direction has a value which is a string
-	protons has a value which is a string
-	equation has a value which is a string
-	gpr has a value which is a reference to a list where each element is a ModelReactionRawGPRTO
-	modelReactionReagents has a value which is a reference to a list where each element is a ModelReactionReagentTO
-modelreaction_id is a string
-reaction_id is a string
-ModelReactionRawGPRTO is a reference to a hash where the following keys are defined:
-	isCustomGPR has a value which is a bool
-	rawGPR has a value which is a string
-bool is an int
-ModelReactionReagentTO is a reference to a hash where the following keys are defined:
-	modelcompound_id has a value which is a modelcompound_id
-	coefficient has a value which is a float
-FBAFormulation is a reference to a hash where the following keys are defined:
-	model has a value which is a string
-	regulatoryModel has a value which is a string
-	expressionData has a value which is a string
-	media has a value which is a string
-	rxnKO has a value which is a reference to a list where each element is a string
-	geneKO has a value which is a reference to a list where each element is a string
-	objective has a value which is a string
-	constraints has a value which is a reference to a list where each element is a string
-	bounds has a value which is a reference to a list where each element is a string
-	phenotypes has a value which is a reference to a list where each element is a string
-	uptakelimits has a value which is a string
-	fbaResults has a value which is a reference to a list where each element is an FBAResult
-	notes has a value which is a string
-	objectiveConstraintFraction has a value which is a float
-	allReversible has a value which is a bool
-	defaultMaxFlux has a value which is a float
-	defaultMaxDrainFlux has a value which is a float
-	defaultMinDrainFlux has a value which is a float
-	numberOfSolutions has a value which is an int
-	fva has a value which is a bool
-	comboDeletions has a value which is an int
-	fluxMinimization has a value which is a bool
-	findMinimalMedia has a value which is a bool
-	simpleThermoConstraints has a value which is a bool
-	thermodynamicConstraints has a value which is a bool
-	noErrorThermodynamicConstraints has a value which is a bool
-	minimizeErrorThermodynamicConstraints has a value which is a bool
-FBAResult is a reference to a hash where the following keys are defined:
-	notes has a value which is a string
-	objectiveValue has a value which is a float
-	variables has a value which is a reference to a list where each element is an FBAVariable
-	fbaPhenotypeSimultationResults has a value which is a reference to a list where each element is an FBAPhenotypeSimulationResult
-	fbaDeletionResults has a value which is a reference to a list where each element is an FBADeletionResult
-	minimalMediaResults has a value which is a reference to a list where each element is an FBAMinimalMediaResult
-	fbaMetaboliteProductionResults has a value which is a reference to a list where each element is an FBAMetaboliteProductionResult
-FBAVariable is a reference to a hash where the following keys are defined:
-	entityID has a value which is a string
-	variableType has a value which is a string
-	lowerBound has a value which is a float
-	upperBound has a value which is a float
-	min has a value which is a float
-	max has a value which is a float
-	value has a value which is a float
-FBAPhenotypeSimulationResult is a reference to a hash where the following keys are defined:
-	simultatedPhenotype has a value which is a string
-	simulatedGrowthFraction has a value which is a float
-	simulatedGrowth has a value which is a float
-	class has a value which is a string
-	noGrowthCompounds has a value which is a reference to a list where each element is a string
-	dependantReactions has a value which is a reference to a list where each element is a string
-	dependantGenes has a value which is a reference to a list where each element is a string
-	fluxes has a value which is a reference to a list where each element is a string
-FBADeletionResult is a reference to a hash where the following keys are defined:
-	geneKO has a value which is a reference to a list where each element is a string
-	simulatedGrowth has a value which is a float
-	simulatedGrowthFraction has a value which is a float
-FBAMinimalMediaResult is a reference to a hash where the following keys are defined:
-	optionalNutrients has a value which is a reference to a list where each element is a string
-	essentialNutrients has a value which is a reference to a list where each element is a string
-FBAMetaboliteProductionResult is a reference to a hash where the following keys are defined:
-	maximumProduction has a value which is a float
-	compound has a value which is a string
-GapfillingFormulation is a reference to a hash where the following keys are defined:
-	fbaFormulation has a value which is an FBAFormulation
-	blacklistedReactions has a value which is a reference to a list where each element is a string
-	allowableUnbalancedReactions has a value which is a reference to a list where each element is a string
-	allowableCompartments has a value which is a reference to a list where each element is a string
-	balancedReactionsOnly has a value which is a bool
-	reactionActivationBonus has a value which is a float
-	drainFluxMultiplier has a value which is a float
-	directionalityMultiplier has a value which is a float
-	deltaGMultiplier has a value which is a float
-	noStructureMultiplier has a value which is a float
-	noDeltaGMultiplier has a value which is a float
-	biomassTransporterMultiplier has a value which is a float
-	singleTransporterMultiplier has a value which is a float
-	transporterMultiplier has a value which is a float
-	geneCandidates has a value which is a reference to a list where each element is a GeneCandidate
-	reactionSetMultipliers has a value which is a reference to a list where each element is a ReactionSetMultiplier
-	gapfillingSolutions has a value which is a reference to a list where each element is a GapfillingSolution
-GeneCandidate is a reference to a hash where the following keys are defined:
-	role has a value which is a string
-	orthologGenome has a value which is a genome_id
-	ortholog has a value which is a feature_id
-	feature has a value which is a feature_id
-	similarityScore has a value which is a float
-	distanceScore has a value which is a float
-feature_id is a string
-ReactionSetMultiplier is a reference to a hash where the following keys are defined:
-	reactionset has a value which is a reactionset_id
-	reactionsetType has a value which is a string
-	multiplierType has a value which is a string
-	description has a value which is a string
-	multiplier has a value which is a float
-reactionset_id is a string
-GapfillingSolution is a reference to a hash where the following keys are defined:
-	solutionCost has a value which is a float
-	gapfillingSolutionReactions has a value which is a reference to a list where each element is a GapfillingSolutionReaction
-GapfillingSolutionReaction is a reference to a hash where the following keys are defined:
-	reaction has a value which is a reaction_id
-	direction has a value which is a string
-	geneCandidates has a value which is a reference to a list where each element is a feature_id
-
-</pre>
-
-=end html
-
-=begin text
-
-$in_model is an FBAModelEX
-$out_model is an FBAModel
-FBAModelEX is a string
-FBAModel is a reference to a hash where the following keys are defined:
-	ancestor has a value which is a model_id
-	id has a value which is a model_id
-	name has a value which is a string
-	version has a value which is an int
-	type has a value which is a string
-	status has a value which is a string
-	current has a value which is an int
-	growth has a value which is a float
-	genome has a value which is a genome_id
-	map has a value which is a mapping_id
-	biochemistry has a value which is a biochemistry_id
-	biomasses has a value which is a reference to a list where each element is a BiomassTO
-	modelcompartments has a value which is a reference to a list where each element is a ModelCompartmentTO
-	modelcompounds has a value which is a reference to a list where each element is a ModelCompoundTO
-	modelreactions has a value which is a reference to a list where each element is a ModelReactionTO
-	fbaFormulations has a value which is a reference to a list where each element is an FBAFormulation
-	gapfillingFormulations has a value which is a reference to a list where each element is a GapfillingFormulation
-model_id is a string
-genome_id is a string
-mapping_id is a string
-biochemistry_id is a string
-BiomassTO is a reference to a hash where the following keys are defined:
-	id has a value which is a biomass_id
-	name has a value which is a string
-	biomassCompounds has a value which is a reference to a list where each element is a BiomassCompoundTO
-biomass_id is a string
-BiomassCompoundTO is a reference to a hash where the following keys are defined:
-	modelcompound_id has a value which is a modelcompound_id
-	coefficient has a value which is a float
-modelcompound_id is a string
-ModelCompartmentTO is a reference to a hash where the following keys are defined:
-	id has a value which is a modelcompartment_id
-	compartment_id has a value which is a compartment_id
-	name has a value which is a string
-	pH has a value which is a float
-	potential has a value which is a float
-	index has a value which is an int
-modelcompartment_id is a string
-compartment_id is a string
-ModelCompoundTO is a reference to a hash where the following keys are defined:
-	id has a value which is a modelcompound_id
-	name has a value which is a string
-	compound_id has a value which is a compound_id
-	modelcompartment_id has a value which is a modelcompartment_id
-	charge has a value which is a float
-	formula has a value which is a string
-compound_id is a string
-ModelReactionTO is a reference to a hash where the following keys are defined:
-	id has a value which is a modelreaction_id
-	reaction_id has a value which is a reaction_id
-	modelcompartment_id has a value which is a modelcompartment_id
-	direction has a value which is a string
-	protons has a value which is a string
-	equation has a value which is a string
-	gpr has a value which is a reference to a list where each element is a ModelReactionRawGPRTO
-	modelReactionReagents has a value which is a reference to a list where each element is a ModelReactionReagentTO
-modelreaction_id is a string
-reaction_id is a string
-ModelReactionRawGPRTO is a reference to a hash where the following keys are defined:
-	isCustomGPR has a value which is a bool
-	rawGPR has a value which is a string
-bool is an int
-ModelReactionReagentTO is a reference to a hash where the following keys are defined:
-	modelcompound_id has a value which is a modelcompound_id
-	coefficient has a value which is a float
-FBAFormulation is a reference to a hash where the following keys are defined:
-	model has a value which is a string
-	regulatoryModel has a value which is a string
-	expressionData has a value which is a string
-	media has a value which is a string
-	rxnKO has a value which is a reference to a list where each element is a string
-	geneKO has a value which is a reference to a list where each element is a string
-	objective has a value which is a string
-	constraints has a value which is a reference to a list where each element is a string
-	bounds has a value which is a reference to a list where each element is a string
-	phenotypes has a value which is a reference to a list where each element is a string
-	uptakelimits has a value which is a string
-	fbaResults has a value which is a reference to a list where each element is an FBAResult
-	notes has a value which is a string
-	objectiveConstraintFraction has a value which is a float
-	allReversible has a value which is a bool
-	defaultMaxFlux has a value which is a float
-	defaultMaxDrainFlux has a value which is a float
-	defaultMinDrainFlux has a value which is a float
-	numberOfSolutions has a value which is an int
-	fva has a value which is a bool
-	comboDeletions has a value which is an int
-	fluxMinimization has a value which is a bool
-	findMinimalMedia has a value which is a bool
-	simpleThermoConstraints has a value which is a bool
-	thermodynamicConstraints has a value which is a bool
-	noErrorThermodynamicConstraints has a value which is a bool
-	minimizeErrorThermodynamicConstraints has a value which is a bool
-FBAResult is a reference to a hash where the following keys are defined:
-	notes has a value which is a string
-	objectiveValue has a value which is a float
-	variables has a value which is a reference to a list where each element is an FBAVariable
-	fbaPhenotypeSimultationResults has a value which is a reference to a list where each element is an FBAPhenotypeSimulationResult
-	fbaDeletionResults has a value which is a reference to a list where each element is an FBADeletionResult
-	minimalMediaResults has a value which is a reference to a list where each element is an FBAMinimalMediaResult
-	fbaMetaboliteProductionResults has a value which is a reference to a list where each element is an FBAMetaboliteProductionResult
-FBAVariable is a reference to a hash where the following keys are defined:
-	entityID has a value which is a string
-	variableType has a value which is a string
-	lowerBound has a value which is a float
-	upperBound has a value which is a float
-	min has a value which is a float
-	max has a value which is a float
-	value has a value which is a float
-FBAPhenotypeSimulationResult is a reference to a hash where the following keys are defined:
-	simultatedPhenotype has a value which is a string
-	simulatedGrowthFraction has a value which is a float
-	simulatedGrowth has a value which is a float
-	class has a value which is a string
-	noGrowthCompounds has a value which is a reference to a list where each element is a string
-	dependantReactions has a value which is a reference to a list where each element is a string
-	dependantGenes has a value which is a reference to a list where each element is a string
-	fluxes has a value which is a reference to a list where each element is a string
-FBADeletionResult is a reference to a hash where the following keys are defined:
-	geneKO has a value which is a reference to a list where each element is a string
-	simulatedGrowth has a value which is a float
-	simulatedGrowthFraction has a value which is a float
-FBAMinimalMediaResult is a reference to a hash where the following keys are defined:
-	optionalNutrients has a value which is a reference to a list where each element is a string
-	essentialNutrients has a value which is a reference to a list where each element is a string
-FBAMetaboliteProductionResult is a reference to a hash where the following keys are defined:
-	maximumProduction has a value which is a float
-	compound has a value which is a string
-GapfillingFormulation is a reference to a hash where the following keys are defined:
-	fbaFormulation has a value which is an FBAFormulation
-	blacklistedReactions has a value which is a reference to a list where each element is a string
-	allowableUnbalancedReactions has a value which is a reference to a list where each element is a string
-	allowableCompartments has a value which is a reference to a list where each element is a string
-	balancedReactionsOnly has a value which is a bool
-	reactionActivationBonus has a value which is a float
-	drainFluxMultiplier has a value which is a float
-	directionalityMultiplier has a value which is a float
-	deltaGMultiplier has a value which is a float
-	noStructureMultiplier has a value which is a float
-	noDeltaGMultiplier has a value which is a float
-	biomassTransporterMultiplier has a value which is a float
-	singleTransporterMultiplier has a value which is a float
-	transporterMultiplier has a value which is a float
-	geneCandidates has a value which is a reference to a list where each element is a GeneCandidate
-	reactionSetMultipliers has a value which is a reference to a list where each element is a ReactionSetMultiplier
-	gapfillingSolutions has a value which is a reference to a list where each element is a GapfillingSolution
-GeneCandidate is a reference to a hash where the following keys are defined:
-	role has a value which is a string
-	orthologGenome has a value which is a genome_id
-	ortholog has a value which is a feature_id
-	feature has a value which is a feature_id
-	similarityScore has a value which is a float
-	distanceScore has a value which is a float
-feature_id is a string
-ReactionSetMultiplier is a reference to a hash where the following keys are defined:
-	reactionset has a value which is a reactionset_id
-	reactionsetType has a value which is a string
-	multiplierType has a value which is a string
-	description has a value which is a string
-	multiplier has a value which is a float
-reactionset_id is a string
-GapfillingSolution is a reference to a hash where the following keys are defined:
-	solutionCost has a value which is a float
-	gapfillingSolutionReactions has a value which is a reference to a list where each element is a GapfillingSolutionReaction
-GapfillingSolutionReaction is a reference to a hash where the following keys are defined:
-	reaction has a value which is a reaction_id
-	direction has a value which is a string
-	geneCandidates has a value which is a reference to a list where each element is a feature_id
-
-
-=end text
-
-
-
-=item Description
-
-
-
-=back
-
-=cut
-
-sub exchangeFormat_to_fbamodel
-{
-    my $self = shift;
-    my($in_model) = @_;
-
-    my @_bad_arguments;
-    (!ref($in_model)) or push(@_bad_arguments, "Invalid type for argument \"in_model\" (value was \"$in_model\")");
-    if (@_bad_arguments) {
-	my $msg = "Invalid arguments passed to exchangeFormat_to_fbamodel:\n" . join("", map { "\t$_\n" } @_bad_arguments);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'exchangeFormat_to_fbamodel');
-    }
-
-    my $ctx = $fbaModelServicesServer::CallContext;
-    my($out_model);
-    #BEGIN exchangeFormat_to_fbamodel
-    $out_model = {status => "Not yet implemented!"};
-    #END exchangeFormat_to_fbamodel
-    my @_bad_returns;
-    (ref($out_model) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"out_model\" (value was \"$out_model\")");
-    if (@_bad_returns) {
-	my $msg = "Invalid returns passed to exchangeFormat_to_fbamodel:\n" . join("", map { "\t$_\n" } @_bad_returns);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'exchangeFormat_to_fbamodel');
-    }
-    return($out_model);
-}
-
-
-
-
 =head2 fbamodel_to_sbml
 
   $out_model = $obj->fbamodel_to_sbml($in_model)
@@ -1613,8 +590,6 @@ FBAModel is a reference to a hash where the following keys are defined:
 	modelcompartments has a value which is a reference to a list where each element is a ModelCompartmentTO
 	modelcompounds has a value which is a reference to a list where each element is a ModelCompoundTO
 	modelreactions has a value which is a reference to a list where each element is a ModelReactionTO
-	fbaFormulations has a value which is a reference to a list where each element is an FBAFormulation
-	gapfillingFormulations has a value which is a reference to a list where each element is a GapfillingFormulation
 model_id is a string
 genome_id is a string
 mapping_id is a string
@@ -1663,109 +638,6 @@ bool is an int
 ModelReactionReagentTO is a reference to a hash where the following keys are defined:
 	modelcompound_id has a value which is a modelcompound_id
 	coefficient has a value which is a float
-FBAFormulation is a reference to a hash where the following keys are defined:
-	model has a value which is a string
-	regulatoryModel has a value which is a string
-	expressionData has a value which is a string
-	media has a value which is a string
-	rxnKO has a value which is a reference to a list where each element is a string
-	geneKO has a value which is a reference to a list where each element is a string
-	objective has a value which is a string
-	constraints has a value which is a reference to a list where each element is a string
-	bounds has a value which is a reference to a list where each element is a string
-	phenotypes has a value which is a reference to a list where each element is a string
-	uptakelimits has a value which is a string
-	fbaResults has a value which is a reference to a list where each element is an FBAResult
-	notes has a value which is a string
-	objectiveConstraintFraction has a value which is a float
-	allReversible has a value which is a bool
-	defaultMaxFlux has a value which is a float
-	defaultMaxDrainFlux has a value which is a float
-	defaultMinDrainFlux has a value which is a float
-	numberOfSolutions has a value which is an int
-	fva has a value which is a bool
-	comboDeletions has a value which is an int
-	fluxMinimization has a value which is a bool
-	findMinimalMedia has a value which is a bool
-	simpleThermoConstraints has a value which is a bool
-	thermodynamicConstraints has a value which is a bool
-	noErrorThermodynamicConstraints has a value which is a bool
-	minimizeErrorThermodynamicConstraints has a value which is a bool
-FBAResult is a reference to a hash where the following keys are defined:
-	notes has a value which is a string
-	objectiveValue has a value which is a float
-	variables has a value which is a reference to a list where each element is an FBAVariable
-	fbaPhenotypeSimultationResults has a value which is a reference to a list where each element is an FBAPhenotypeSimulationResult
-	fbaDeletionResults has a value which is a reference to a list where each element is an FBADeletionResult
-	minimalMediaResults has a value which is a reference to a list where each element is an FBAMinimalMediaResult
-	fbaMetaboliteProductionResults has a value which is a reference to a list where each element is an FBAMetaboliteProductionResult
-FBAVariable is a reference to a hash where the following keys are defined:
-	entityID has a value which is a string
-	variableType has a value which is a string
-	lowerBound has a value which is a float
-	upperBound has a value which is a float
-	min has a value which is a float
-	max has a value which is a float
-	value has a value which is a float
-FBAPhenotypeSimulationResult is a reference to a hash where the following keys are defined:
-	simultatedPhenotype has a value which is a string
-	simulatedGrowthFraction has a value which is a float
-	simulatedGrowth has a value which is a float
-	class has a value which is a string
-	noGrowthCompounds has a value which is a reference to a list where each element is a string
-	dependantReactions has a value which is a reference to a list where each element is a string
-	dependantGenes has a value which is a reference to a list where each element is a string
-	fluxes has a value which is a reference to a list where each element is a string
-FBADeletionResult is a reference to a hash where the following keys are defined:
-	geneKO has a value which is a reference to a list where each element is a string
-	simulatedGrowth has a value which is a float
-	simulatedGrowthFraction has a value which is a float
-FBAMinimalMediaResult is a reference to a hash where the following keys are defined:
-	optionalNutrients has a value which is a reference to a list where each element is a string
-	essentialNutrients has a value which is a reference to a list where each element is a string
-FBAMetaboliteProductionResult is a reference to a hash where the following keys are defined:
-	maximumProduction has a value which is a float
-	compound has a value which is a string
-GapfillingFormulation is a reference to a hash where the following keys are defined:
-	fbaFormulation has a value which is an FBAFormulation
-	blacklistedReactions has a value which is a reference to a list where each element is a string
-	allowableUnbalancedReactions has a value which is a reference to a list where each element is a string
-	allowableCompartments has a value which is a reference to a list where each element is a string
-	balancedReactionsOnly has a value which is a bool
-	reactionActivationBonus has a value which is a float
-	drainFluxMultiplier has a value which is a float
-	directionalityMultiplier has a value which is a float
-	deltaGMultiplier has a value which is a float
-	noStructureMultiplier has a value which is a float
-	noDeltaGMultiplier has a value which is a float
-	biomassTransporterMultiplier has a value which is a float
-	singleTransporterMultiplier has a value which is a float
-	transporterMultiplier has a value which is a float
-	geneCandidates has a value which is a reference to a list where each element is a GeneCandidate
-	reactionSetMultipliers has a value which is a reference to a list where each element is a ReactionSetMultiplier
-	gapfillingSolutions has a value which is a reference to a list where each element is a GapfillingSolution
-GeneCandidate is a reference to a hash where the following keys are defined:
-	role has a value which is a string
-	orthologGenome has a value which is a genome_id
-	ortholog has a value which is a feature_id
-	feature has a value which is a feature_id
-	similarityScore has a value which is a float
-	distanceScore has a value which is a float
-feature_id is a string
-ReactionSetMultiplier is a reference to a hash where the following keys are defined:
-	reactionset has a value which is a reactionset_id
-	reactionsetType has a value which is a string
-	multiplierType has a value which is a string
-	description has a value which is a string
-	multiplier has a value which is a float
-reactionset_id is a string
-GapfillingSolution is a reference to a hash where the following keys are defined:
-	solutionCost has a value which is a float
-	gapfillingSolutionReactions has a value which is a reference to a list where each element is a GapfillingSolutionReaction
-GapfillingSolutionReaction is a reference to a hash where the following keys are defined:
-	reaction has a value which is a reaction_id
-	direction has a value which is a string
-	geneCandidates has a value which is a reference to a list where each element is a feature_id
 SBML is a string
 
 </pre>
@@ -1792,8 +664,6 @@ FBAModel is a reference to a hash where the following keys are defined:
 	modelcompartments has a value which is a reference to a list where each element is a ModelCompartmentTO
 	modelcompounds has a value which is a reference to a list where each element is a ModelCompoundTO
 	modelreactions has a value which is a reference to a list where each element is a ModelReactionTO
-	fbaFormulations has a value which is a reference to a list where each element is an FBAFormulation
-	gapfillingFormulations has a value which is a reference to a list where each element is a GapfillingFormulation
 model_id is a string
 genome_id is a string
 mapping_id is a string
@@ -1842,109 +712,6 @@ bool is an int
 ModelReactionReagentTO is a reference to a hash where the following keys are defined:
 	modelcompound_id has a value which is a modelcompound_id
 	coefficient has a value which is a float
-FBAFormulation is a reference to a hash where the following keys are defined:
-	model has a value which is a string
-	regulatoryModel has a value which is a string
-	expressionData has a value which is a string
-	media has a value which is a string
-	rxnKO has a value which is a reference to a list where each element is a string
-	geneKO has a value which is a reference to a list where each element is a string
-	objective has a value which is a string
-	constraints has a value which is a reference to a list where each element is a string
-	bounds has a value which is a reference to a list where each element is a string
-	phenotypes has a value which is a reference to a list where each element is a string
-	uptakelimits has a value which is a string
-	fbaResults has a value which is a reference to a list where each element is an FBAResult
-	notes has a value which is a string
-	objectiveConstraintFraction has a value which is a float
-	allReversible has a value which is a bool
-	defaultMaxFlux has a value which is a float
-	defaultMaxDrainFlux has a value which is a float
-	defaultMinDrainFlux has a value which is a float
-	numberOfSolutions has a value which is an int
-	fva has a value which is a bool
-	comboDeletions has a value which is an int
-	fluxMinimization has a value which is a bool
-	findMinimalMedia has a value which is a bool
-	simpleThermoConstraints has a value which is a bool
-	thermodynamicConstraints has a value which is a bool
-	noErrorThermodynamicConstraints has a value which is a bool
-	minimizeErrorThermodynamicConstraints has a value which is a bool
-FBAResult is a reference to a hash where the following keys are defined:
-	notes has a value which is a string
-	objectiveValue has a value which is a float
-	variables has a value which is a reference to a list where each element is an FBAVariable
-	fbaPhenotypeSimultationResults has a value which is a reference to a list where each element is an FBAPhenotypeSimulationResult
-	fbaDeletionResults has a value which is a reference to a list where each element is an FBADeletionResult
-	minimalMediaResults has a value which is a reference to a list where each element is an FBAMinimalMediaResult
-	fbaMetaboliteProductionResults has a value which is a reference to a list where each element is an FBAMetaboliteProductionResult
-FBAVariable is a reference to a hash where the following keys are defined:
-	entityID has a value which is a string
-	variableType has a value which is a string
-	lowerBound has a value which is a float
-	upperBound has a value which is a float
-	min has a value which is a float
-	max has a value which is a float
-	value has a value which is a float
-FBAPhenotypeSimulationResult is a reference to a hash where the following keys are defined:
-	simultatedPhenotype has a value which is a string
-	simulatedGrowthFraction has a value which is a float
-	simulatedGrowth has a value which is a float
-	class has a value which is a string
-	noGrowthCompounds has a value which is a reference to a list where each element is a string
-	dependantReactions has a value which is a reference to a list where each element is a string
-	dependantGenes has a value which is a reference to a list where each element is a string
-	fluxes has a value which is a reference to a list where each element is a string
-FBADeletionResult is a reference to a hash where the following keys are defined:
-	geneKO has a value which is a reference to a list where each element is a string
-	simulatedGrowth has a value which is a float
-	simulatedGrowthFraction has a value which is a float
-FBAMinimalMediaResult is a reference to a hash where the following keys are defined:
-	optionalNutrients has a value which is a reference to a list where each element is a string
-	essentialNutrients has a value which is a reference to a list where each element is a string
-FBAMetaboliteProductionResult is a reference to a hash where the following keys are defined:
-	maximumProduction has a value which is a float
-	compound has a value which is a string
-GapfillingFormulation is a reference to a hash where the following keys are defined:
-	fbaFormulation has a value which is an FBAFormulation
-	blacklistedReactions has a value which is a reference to a list where each element is a string
-	allowableUnbalancedReactions has a value which is a reference to a list where each element is a string
-	allowableCompartments has a value which is a reference to a list where each element is a string
-	balancedReactionsOnly has a value which is a bool
-	reactionActivationBonus has a value which is a float
-	drainFluxMultiplier has a value which is a float
-	directionalityMultiplier has a value which is a float
-	deltaGMultiplier has a value which is a float
-	noStructureMultiplier has a value which is a float
-	noDeltaGMultiplier has a value which is a float
-	biomassTransporterMultiplier has a value which is a float
-	singleTransporterMultiplier has a value which is a float
-	transporterMultiplier has a value which is a float
-	geneCandidates has a value which is a reference to a list where each element is a GeneCandidate
-	reactionSetMultipliers has a value which is a reference to a list where each element is a ReactionSetMultiplier
-	gapfillingSolutions has a value which is a reference to a list where each element is a GapfillingSolution
-GeneCandidate is a reference to a hash where the following keys are defined:
-	role has a value which is a string
-	orthologGenome has a value which is a genome_id
-	ortholog has a value which is a feature_id
-	feature has a value which is a feature_id
-	similarityScore has a value which is a float
-	distanceScore has a value which is a float
-feature_id is a string
-ReactionSetMultiplier is a reference to a hash where the following keys are defined:
-	reactionset has a value which is a reactionset_id
-	reactionsetType has a value which is a string
-	multiplierType has a value which is a string
-	description has a value which is a string
-	multiplier has a value which is a float
-reactionset_id is a string
-GapfillingSolution is a reference to a hash where the following keys are defined:
-	solutionCost has a value which is a float
-	gapfillingSolutionReactions has a value which is a reference to a list where each element is a GapfillingSolutionReaction
-GapfillingSolutionReaction is a reference to a hash where the following keys are defined:
-	reaction has a value which is a reaction_id
-	direction has a value which is a string
-	geneCandidates has a value which is a reference to a list where each element is a feature_id
 SBML is a string
 
 
@@ -1992,413 +759,6 @@ sub fbamodel_to_sbml
 
 
 
-=head2 sbml_to_fbamodel
-
-  $out_model = $obj->sbml_to_fbamodel($in_model)
-
-=over 4
-
-=item Parameter and return types
-
-=begin html
-
-<pre>
-$in_model is an SBML
-$out_model is an FBAModel
-SBML is a string
-FBAModel is a reference to a hash where the following keys are defined:
-	ancestor has a value which is a model_id
-	id has a value which is a model_id
-	name has a value which is a string
-	version has a value which is an int
-	type has a value which is a string
-	status has a value which is a string
-	current has a value which is an int
-	growth has a value which is a float
-	genome has a value which is a genome_id
-	map has a value which is a mapping_id
-	biochemistry has a value which is a biochemistry_id
-	biomasses has a value which is a reference to a list where each element is a BiomassTO
-	modelcompartments has a value which is a reference to a list where each element is a ModelCompartmentTO
-	modelcompounds has a value which is a reference to a list where each element is a ModelCompoundTO
-	modelreactions has a value which is a reference to a list where each element is a ModelReactionTO
-	fbaFormulations has a value which is a reference to a list where each element is an FBAFormulation
-	gapfillingFormulations has a value which is a reference to a list where each element is a GapfillingFormulation
-model_id is a string
-genome_id is a string
-mapping_id is a string
-biochemistry_id is a string
-BiomassTO is a reference to a hash where the following keys are defined:
-	id has a value which is a biomass_id
-	name has a value which is a string
-	biomassCompounds has a value which is a reference to a list where each element is a BiomassCompoundTO
-biomass_id is a string
-BiomassCompoundTO is a reference to a hash where the following keys are defined:
-	modelcompound_id has a value which is a modelcompound_id
-	coefficient has a value which is a float
-modelcompound_id is a string
-ModelCompartmentTO is a reference to a hash where the following keys are defined:
-	id has a value which is a modelcompartment_id
-	compartment_id has a value which is a compartment_id
-	name has a value which is a string
-	pH has a value which is a float
-	potential has a value which is a float
-	index has a value which is an int
-modelcompartment_id is a string
-compartment_id is a string
-ModelCompoundTO is a reference to a hash where the following keys are defined:
-	id has a value which is a modelcompound_id
-	name has a value which is a string
-	compound_id has a value which is a compound_id
-	modelcompartment_id has a value which is a modelcompartment_id
-	charge has a value which is a float
-	formula has a value which is a string
-compound_id is a string
-ModelReactionTO is a reference to a hash where the following keys are defined:
-	id has a value which is a modelreaction_id
-	reaction_id has a value which is a reaction_id
-	modelcompartment_id has a value which is a modelcompartment_id
-	direction has a value which is a string
-	protons has a value which is a string
-	equation has a value which is a string
-	gpr has a value which is a reference to a list where each element is a ModelReactionRawGPRTO
-	modelReactionReagents has a value which is a reference to a list where each element is a ModelReactionReagentTO
-modelreaction_id is a string
-reaction_id is a string
-ModelReactionRawGPRTO is a reference to a hash where the following keys are defined:
-	isCustomGPR has a value which is a bool
-	rawGPR has a value which is a string
-bool is an int
-ModelReactionReagentTO is a reference to a hash where the following keys are defined:
-	modelcompound_id has a value which is a modelcompound_id
-	coefficient has a value which is a float
-FBAFormulation is a reference to a hash where the following keys are defined:
-	model has a value which is a string
-	regulatoryModel has a value which is a string
-	expressionData has a value which is a string
-	media has a value which is a string
-	rxnKO has a value which is a reference to a list where each element is a string
-	geneKO has a value which is a reference to a list where each element is a string
-	objective has a value which is a string
-	constraints has a value which is a reference to a list where each element is a string
-	bounds has a value which is a reference to a list where each element is a string
-	phenotypes has a value which is a reference to a list where each element is a string
-	uptakelimits has a value which is a string
-	fbaResults has a value which is a reference to a list where each element is an FBAResult
-	notes has a value which is a string
-	objectiveConstraintFraction has a value which is a float
-	allReversible has a value which is a bool
-	defaultMaxFlux has a value which is a float
-	defaultMaxDrainFlux has a value which is a float
-	defaultMinDrainFlux has a value which is a float
-	numberOfSolutions has a value which is an int
-	fva has a value which is a bool
-	comboDeletions has a value which is an int
-	fluxMinimization has a value which is a bool
-	findMinimalMedia has a value which is a bool
-	simpleThermoConstraints has a value which is a bool
-	thermodynamicConstraints has a value which is a bool
-	noErrorThermodynamicConstraints has a value which is a bool
-	minimizeErrorThermodynamicConstraints has a value which is a bool
-FBAResult is a reference to a hash where the following keys are defined:
-	notes has a value which is a string
-	objectiveValue has a value which is a float
-	variables has a value which is a reference to a list where each element is an FBAVariable
-	fbaPhenotypeSimultationResults has a value which is a reference to a list where each element is an FBAPhenotypeSimulationResult
-	fbaDeletionResults has a value which is a reference to a list where each element is an FBADeletionResult
-	minimalMediaResults has a value which is a reference to a list where each element is an FBAMinimalMediaResult
-	fbaMetaboliteProductionResults has a value which is a reference to a list where each element is an FBAMetaboliteProductionResult
-FBAVariable is a reference to a hash where the following keys are defined:
-	entityID has a value which is a string
-	variableType has a value which is a string
-	lowerBound has a value which is a float
-	upperBound has a value which is a float
-	min has a value which is a float
-	max has a value which is a float
-	value has a value which is a float
-FBAPhenotypeSimulationResult is a reference to a hash where the following keys are defined:
-	simultatedPhenotype has a value which is a string
-	simulatedGrowthFraction has a value which is a float
-	simulatedGrowth has a value which is a float
-	class has a value which is a string
-	noGrowthCompounds has a value which is a reference to a list where each element is a string
-	dependantReactions has a value which is a reference to a list where each element is a string
-	dependantGenes has a value which is a reference to a list where each element is a string
-	fluxes has a value which is a reference to a list where each element is a string
-FBADeletionResult is a reference to a hash where the following keys are defined:
-	geneKO has a value which is a reference to a list where each element is a string
-	simulatedGrowth has a value which is a float
-	simulatedGrowthFraction has a value which is a float
-FBAMinimalMediaResult is a reference to a hash where the following keys are defined:
-	optionalNutrients has a value which is a reference to a list where each element is a string
-	essentialNutrients has a value which is a reference to a list where each element is a string
-FBAMetaboliteProductionResult is a reference to a hash where the following keys are defined:
-	maximumProduction has a value which is a float
-	compound has a value which is a string
-GapfillingFormulation is a reference to a hash where the following keys are defined:
-	fbaFormulation has a value which is an FBAFormulation
-	blacklistedReactions has a value which is a reference to a list where each element is a string
-	allowableUnbalancedReactions has a value which is a reference to a list where each element is a string
-	allowableCompartments has a value which is a reference to a list where each element is a string
-	balancedReactionsOnly has a value which is a bool
-	reactionActivationBonus has a value which is a float
-	drainFluxMultiplier has a value which is a float
-	directionalityMultiplier has a value which is a float
-	deltaGMultiplier has a value which is a float
-	noStructureMultiplier has a value which is a float
-	noDeltaGMultiplier has a value which is a float
-	biomassTransporterMultiplier has a value which is a float
-	singleTransporterMultiplier has a value which is a float
-	transporterMultiplier has a value which is a float
-	geneCandidates has a value which is a reference to a list where each element is a GeneCandidate
-	reactionSetMultipliers has a value which is a reference to a list where each element is a ReactionSetMultiplier
-	gapfillingSolutions has a value which is a reference to a list where each element is a GapfillingSolution
-GeneCandidate is a reference to a hash where the following keys are defined:
-	role has a value which is a string
-	orthologGenome has a value which is a genome_id
-	ortholog has a value which is a feature_id
-	feature has a value which is a feature_id
-	similarityScore has a value which is a float
-	distanceScore has a value which is a float
-feature_id is a string
-ReactionSetMultiplier is a reference to a hash where the following keys are defined:
-	reactionset has a value which is a reactionset_id
-	reactionsetType has a value which is a string
-	multiplierType has a value which is a string
-	description has a value which is a string
-	multiplier has a value which is a float
-reactionset_id is a string
-GapfillingSolution is a reference to a hash where the following keys are defined:
-	solutionCost has a value which is a float
-	gapfillingSolutionReactions has a value which is a reference to a list where each element is a GapfillingSolutionReaction
-GapfillingSolutionReaction is a reference to a hash where the following keys are defined:
-	reaction has a value which is a reaction_id
-	direction has a value which is a string
-	geneCandidates has a value which is a reference to a list where each element is a feature_id
-
-</pre>
-
-=end html
-
-=begin text
-
-$in_model is an SBML
-$out_model is an FBAModel
-SBML is a string
-FBAModel is a reference to a hash where the following keys are defined:
-	ancestor has a value which is a model_id
-	id has a value which is a model_id
-	name has a value which is a string
-	version has a value which is an int
-	type has a value which is a string
-	status has a value which is a string
-	current has a value which is an int
-	growth has a value which is a float
-	genome has a value which is a genome_id
-	map has a value which is a mapping_id
-	biochemistry has a value which is a biochemistry_id
-	biomasses has a value which is a reference to a list where each element is a BiomassTO
-	modelcompartments has a value which is a reference to a list where each element is a ModelCompartmentTO
-	modelcompounds has a value which is a reference to a list where each element is a ModelCompoundTO
-	modelreactions has a value which is a reference to a list where each element is a ModelReactionTO
-	fbaFormulations has a value which is a reference to a list where each element is an FBAFormulation
-	gapfillingFormulations has a value which is a reference to a list where each element is a GapfillingFormulation
-model_id is a string
-genome_id is a string
-mapping_id is a string
-biochemistry_id is a string
-BiomassTO is a reference to a hash where the following keys are defined:
-	id has a value which is a biomass_id
-	name has a value which is a string
-	biomassCompounds has a value which is a reference to a list where each element is a BiomassCompoundTO
-biomass_id is a string
-BiomassCompoundTO is a reference to a hash where the following keys are defined:
-	modelcompound_id has a value which is a modelcompound_id
-	coefficient has a value which is a float
-modelcompound_id is a string
-ModelCompartmentTO is a reference to a hash where the following keys are defined:
-	id has a value which is a modelcompartment_id
-	compartment_id has a value which is a compartment_id
-	name has a value which is a string
-	pH has a value which is a float
-	potential has a value which is a float
-	index has a value which is an int
-modelcompartment_id is a string
-compartment_id is a string
-ModelCompoundTO is a reference to a hash where the following keys are defined:
-	id has a value which is a modelcompound_id
-	name has a value which is a string
-	compound_id has a value which is a compound_id
-	modelcompartment_id has a value which is a modelcompartment_id
-	charge has a value which is a float
-	formula has a value which is a string
-compound_id is a string
-ModelReactionTO is a reference to a hash where the following keys are defined:
-	id has a value which is a modelreaction_id
-	reaction_id has a value which is a reaction_id
-	modelcompartment_id has a value which is a modelcompartment_id
-	direction has a value which is a string
-	protons has a value which is a string
-	equation has a value which is a string
-	gpr has a value which is a reference to a list where each element is a ModelReactionRawGPRTO
-	modelReactionReagents has a value which is a reference to a list where each element is a ModelReactionReagentTO
-modelreaction_id is a string
-reaction_id is a string
-ModelReactionRawGPRTO is a reference to a hash where the following keys are defined:
-	isCustomGPR has a value which is a bool
-	rawGPR has a value which is a string
-bool is an int
-ModelReactionReagentTO is a reference to a hash where the following keys are defined:
-	modelcompound_id has a value which is a modelcompound_id
-	coefficient has a value which is a float
-FBAFormulation is a reference to a hash where the following keys are defined:
-	model has a value which is a string
-	regulatoryModel has a value which is a string
-	expressionData has a value which is a string
-	media has a value which is a string
-	rxnKO has a value which is a reference to a list where each element is a string
-	geneKO has a value which is a reference to a list where each element is a string
-	objective has a value which is a string
-	constraints has a value which is a reference to a list where each element is a string
-	bounds has a value which is a reference to a list where each element is a string
-	phenotypes has a value which is a reference to a list where each element is a string
-	uptakelimits has a value which is a string
-	fbaResults has a value which is a reference to a list where each element is an FBAResult
-	notes has a value which is a string
-	objectiveConstraintFraction has a value which is a float
-	allReversible has a value which is a bool
-	defaultMaxFlux has a value which is a float
-	defaultMaxDrainFlux has a value which is a float
-	defaultMinDrainFlux has a value which is a float
-	numberOfSolutions has a value which is an int
-	fva has a value which is a bool
-	comboDeletions has a value which is an int
-	fluxMinimization has a value which is a bool
-	findMinimalMedia has a value which is a bool
-	simpleThermoConstraints has a value which is a bool
-	thermodynamicConstraints has a value which is a bool
-	noErrorThermodynamicConstraints has a value which is a bool
-	minimizeErrorThermodynamicConstraints has a value which is a bool
-FBAResult is a reference to a hash where the following keys are defined:
-	notes has a value which is a string
-	objectiveValue has a value which is a float
-	variables has a value which is a reference to a list where each element is an FBAVariable
-	fbaPhenotypeSimultationResults has a value which is a reference to a list where each element is an FBAPhenotypeSimulationResult
-	fbaDeletionResults has a value which is a reference to a list where each element is an FBADeletionResult
-	minimalMediaResults has a value which is a reference to a list where each element is an FBAMinimalMediaResult
-	fbaMetaboliteProductionResults has a value which is a reference to a list where each element is an FBAMetaboliteProductionResult
-FBAVariable is a reference to a hash where the following keys are defined:
-	entityID has a value which is a string
-	variableType has a value which is a string
-	lowerBound has a value which is a float
-	upperBound has a value which is a float
-	min has a value which is a float
-	max has a value which is a float
-	value has a value which is a float
-FBAPhenotypeSimulationResult is a reference to a hash where the following keys are defined:
-	simultatedPhenotype has a value which is a string
-	simulatedGrowthFraction has a value which is a float
-	simulatedGrowth has a value which is a float
-	class has a value which is a string
-	noGrowthCompounds has a value which is a reference to a list where each element is a string
-	dependantReactions has a value which is a reference to a list where each element is a string
-	dependantGenes has a value which is a reference to a list where each element is a string
-	fluxes has a value which is a reference to a list where each element is a string
-FBADeletionResult is a reference to a hash where the following keys are defined:
-	geneKO has a value which is a reference to a list where each element is a string
-	simulatedGrowth has a value which is a float
-	simulatedGrowthFraction has a value which is a float
-FBAMinimalMediaResult is a reference to a hash where the following keys are defined:
-	optionalNutrients has a value which is a reference to a list where each element is a string
-	essentialNutrients has a value which is a reference to a list where each element is a string
-FBAMetaboliteProductionResult is a reference to a hash where the following keys are defined:
-	maximumProduction has a value which is a float
-	compound has a value which is a string
-GapfillingFormulation is a reference to a hash where the following keys are defined:
-	fbaFormulation has a value which is an FBAFormulation
-	blacklistedReactions has a value which is a reference to a list where each element is a string
-	allowableUnbalancedReactions has a value which is a reference to a list where each element is a string
-	allowableCompartments has a value which is a reference to a list where each element is a string
-	balancedReactionsOnly has a value which is a bool
-	reactionActivationBonus has a value which is a float
-	drainFluxMultiplier has a value which is a float
-	directionalityMultiplier has a value which is a float
-	deltaGMultiplier has a value which is a float
-	noStructureMultiplier has a value which is a float
-	noDeltaGMultiplier has a value which is a float
-	biomassTransporterMultiplier has a value which is a float
-	singleTransporterMultiplier has a value which is a float
-	transporterMultiplier has a value which is a float
-	geneCandidates has a value which is a reference to a list where each element is a GeneCandidate
-	reactionSetMultipliers has a value which is a reference to a list where each element is a ReactionSetMultiplier
-	gapfillingSolutions has a value which is a reference to a list where each element is a GapfillingSolution
-GeneCandidate is a reference to a hash where the following keys are defined:
-	role has a value which is a string
-	orthologGenome has a value which is a genome_id
-	ortholog has a value which is a feature_id
-	feature has a value which is a feature_id
-	similarityScore has a value which is a float
-	distanceScore has a value which is a float
-feature_id is a string
-ReactionSetMultiplier is a reference to a hash where the following keys are defined:
-	reactionset has a value which is a reactionset_id
-	reactionsetType has a value which is a string
-	multiplierType has a value which is a string
-	description has a value which is a string
-	multiplier has a value which is a float
-reactionset_id is a string
-GapfillingSolution is a reference to a hash where the following keys are defined:
-	solutionCost has a value which is a float
-	gapfillingSolutionReactions has a value which is a reference to a list where each element is a GapfillingSolutionReaction
-GapfillingSolutionReaction is a reference to a hash where the following keys are defined:
-	reaction has a value which is a reaction_id
-	direction has a value which is a string
-	geneCandidates has a value which is a reference to a list where each element is a feature_id
-
-
-=end text
-
-
-
-=item Description
-
-
-
-=back
-
-=cut
-
-sub sbml_to_fbamodel
-{
-    my $self = shift;
-    my($in_model) = @_;
-
-    my @_bad_arguments;
-    (!ref($in_model)) or push(@_bad_arguments, "Invalid type for argument \"in_model\" (value was \"$in_model\")");
-    if (@_bad_arguments) {
-	my $msg = "Invalid arguments passed to sbml_to_fbamodel:\n" . join("", map { "\t$_\n" } @_bad_arguments);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'sbml_to_fbamodel');
-    }
-
-    my $ctx = $fbaModelServicesServer::CallContext;
-    my($out_model);
-    #BEGIN sbml_to_fbamodel
-    $out_model = {status => "Not yet implemented!"};
-    #END sbml_to_fbamodel
-    my @_bad_returns;
-    (ref($out_model) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"out_model\" (value was \"$out_model\")");
-    if (@_bad_returns) {
-	my $msg = "Invalid returns passed to sbml_to_fbamodel:\n" . join("", map { "\t$_\n" } @_bad_returns);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'sbml_to_fbamodel');
-    }
-    return($out_model);
-}
-
-
-
-
 =head2 gapfill_fbamodel
 
   $out_model = $obj->gapfill_fbamodel($in_model, $in_formulation, $overwrite, $save)
@@ -2431,8 +791,6 @@ FBAModel is a reference to a hash where the following keys are defined:
 	modelcompartments has a value which is a reference to a list where each element is a ModelCompartmentTO
 	modelcompounds has a value which is a reference to a list where each element is a ModelCompoundTO
 	modelreactions has a value which is a reference to a list where each element is a ModelReactionTO
-	fbaFormulations has a value which is a reference to a list where each element is an FBAFormulation
-	gapfillingFormulations has a value which is a reference to a list where each element is a GapfillingFormulation
 model_id is a string
 genome_id is a string
 mapping_id is a string
@@ -2481,109 +839,34 @@ bool is an int
 ModelReactionReagentTO is a reference to a hash where the following keys are defined:
 	modelcompound_id has a value which is a modelcompound_id
 	coefficient has a value which is a float
-FBAFormulation is a reference to a hash where the following keys are defined:
-	model has a value which is a string
-	regulatoryModel has a value which is a string
-	expressionData has a value which is a string
-	media has a value which is a string
-	rxnKO has a value which is a reference to a list where each element is a string
-	geneKO has a value which is a reference to a list where each element is a string
-	objective has a value which is a string
-	constraints has a value which is a reference to a list where each element is a string
-	bounds has a value which is a reference to a list where each element is a string
-	phenotypes has a value which is a reference to a list where each element is a string
-	uptakelimits has a value which is a string
-	fbaResults has a value which is a reference to a list where each element is an FBAResult
-	notes has a value which is a string
-	objectiveConstraintFraction has a value which is a float
-	allReversible has a value which is a bool
-	defaultMaxFlux has a value which is a float
-	defaultMaxDrainFlux has a value which is a float
-	defaultMinDrainFlux has a value which is a float
-	numberOfSolutions has a value which is an int
-	fva has a value which is a bool
-	comboDeletions has a value which is an int
-	fluxMinimization has a value which is a bool
-	findMinimalMedia has a value which is a bool
-	simpleThermoConstraints has a value which is a bool
-	thermodynamicConstraints has a value which is a bool
-	noErrorThermodynamicConstraints has a value which is a bool
-	minimizeErrorThermodynamicConstraints has a value which is a bool
-FBAResult is a reference to a hash where the following keys are defined:
-	notes has a value which is a string
-	objectiveValue has a value which is a float
-	variables has a value which is a reference to a list where each element is an FBAVariable
-	fbaPhenotypeSimultationResults has a value which is a reference to a list where each element is an FBAPhenotypeSimulationResult
-	fbaDeletionResults has a value which is a reference to a list where each element is an FBADeletionResult
-	minimalMediaResults has a value which is a reference to a list where each element is an FBAMinimalMediaResult
-	fbaMetaboliteProductionResults has a value which is a reference to a list where each element is an FBAMetaboliteProductionResult
-FBAVariable is a reference to a hash where the following keys are defined:
-	entityID has a value which is a string
-	variableType has a value which is a string
-	lowerBound has a value which is a float
-	upperBound has a value which is a float
-	min has a value which is a float
-	max has a value which is a float
-	value has a value which is a float
-FBAPhenotypeSimulationResult is a reference to a hash where the following keys are defined:
-	simultatedPhenotype has a value which is a string
-	simulatedGrowthFraction has a value which is a float
-	simulatedGrowth has a value which is a float
-	class has a value which is a string
-	noGrowthCompounds has a value which is a reference to a list where each element is a string
-	dependantReactions has a value which is a reference to a list where each element is a string
-	dependantGenes has a value which is a reference to a list where each element is a string
-	fluxes has a value which is a reference to a list where each element is a string
-FBADeletionResult is a reference to a hash where the following keys are defined:
-	geneKO has a value which is a reference to a list where each element is a string
-	simulatedGrowth has a value which is a float
-	simulatedGrowthFraction has a value which is a float
-FBAMinimalMediaResult is a reference to a hash where the following keys are defined:
-	optionalNutrients has a value which is a reference to a list where each element is a string
-	essentialNutrients has a value which is a reference to a list where each element is a string
-FBAMetaboliteProductionResult is a reference to a hash where the following keys are defined:
-	maximumProduction has a value which is a float
-	compound has a value which is a string
 GapfillingFormulation is a reference to a hash where the following keys are defined:
-	fbaFormulation has a value which is an FBAFormulation
-	blacklistedReactions has a value which is a reference to a list where each element is a string
-	allowableUnbalancedReactions has a value which is a reference to a list where each element is a string
-	allowableCompartments has a value which is a reference to a list where each element is a string
-	balancedReactionsOnly has a value which is a bool
-	reactionActivationBonus has a value which is a float
-	drainFluxMultiplier has a value which is a float
-	directionalityMultiplier has a value which is a float
-	deltaGMultiplier has a value which is a float
-	noStructureMultiplier has a value which is a float
-	noDeltaGMultiplier has a value which is a float
-	biomassTransporterMultiplier has a value which is a float
-	singleTransporterMultiplier has a value which is a float
-	transporterMultiplier has a value which is a float
-	geneCandidates has a value which is a reference to a list where each element is a GeneCandidate
-	reactionSetMultipliers has a value which is a reference to a list where each element is a ReactionSetMultiplier
-	gapfillingSolutions has a value which is a reference to a list where each element is a GapfillingSolution
-GeneCandidate is a reference to a hash where the following keys are defined:
-	role has a value which is a string
-	orthologGenome has a value which is a genome_id
-	ortholog has a value which is a feature_id
-	feature has a value which is a feature_id
-	similarityScore has a value which is a float
-	distanceScore has a value which is a float
-feature_id is a string
-ReactionSetMultiplier is a reference to a hash where the following keys are defined:
-	reactionset has a value which is a reactionset_id
-	reactionsetType has a value which is a string
-	multiplierType has a value which is a string
-	description has a value which is a string
-	multiplier has a value which is a float
-reactionset_id is a string
-GapfillingSolution is a reference to a hash where the following keys are defined:
-	solutionCost has a value which is a float
-	gapfillingSolutionReactions has a value which is a reference to a list where each element is a GapfillingSolutionReaction
-GapfillingSolutionReaction is a reference to a hash where the following keys are defined:
-	reaction has a value which is a reaction_id
-	direction has a value which is a string
-	geneCandidates has a value which is a reference to a list where each element is a feature_id
+	media has a value which is a string
+	notes has a value which is a string
+	objective has a value which is a string
+	objfraction has a value which is a float
+	rxnko has a value which is a string
+	geneko has a value which is a string
+	uptakelim has a value which is a string
+	defaultmaxflux has a value which is a float
+	defaultmaxuptake has a value which is a float
+	defaultminuptake has a value which is a float
+	nomediahyp has a value which is a bool
+	nobiomasshyp has a value which is a bool
+	nogprhyp has a value which is a bool
+	nopathwayhyp has a value which is a bool
+	allowunbalanced has a value which is a bool
+	activitybonus has a value which is a float
+	drainpen has a value which is a float
+	directionpen has a value which is a float
+	nostructpen has a value which is a float
+	unfavorablepen has a value which is a float
+	nodeltagpen has a value which is a float
+	biomasstranspen has a value which is a float
+	singletranspen has a value which is a float
+	transpen has a value which is a float
+	blacklistedrxns has a value which is a string
+	gauranteedrxns has a value which is a string
+	allowedcmps has a value which is a string
 
 </pre>
 
@@ -2612,8 +895,6 @@ FBAModel is a reference to a hash where the following keys are defined:
 	modelcompartments has a value which is a reference to a list where each element is a ModelCompartmentTO
 	modelcompounds has a value which is a reference to a list where each element is a ModelCompoundTO
 	modelreactions has a value which is a reference to a list where each element is a ModelReactionTO
-	fbaFormulations has a value which is a reference to a list where each element is an FBAFormulation
-	gapfillingFormulations has a value which is a reference to a list where each element is a GapfillingFormulation
 model_id is a string
 genome_id is a string
 mapping_id is a string
@@ -2662,109 +943,34 @@ bool is an int
 ModelReactionReagentTO is a reference to a hash where the following keys are defined:
 	modelcompound_id has a value which is a modelcompound_id
 	coefficient has a value which is a float
-FBAFormulation is a reference to a hash where the following keys are defined:
-	model has a value which is a string
-	regulatoryModel has a value which is a string
-	expressionData has a value which is a string
-	media has a value which is a string
-	rxnKO has a value which is a reference to a list where each element is a string
-	geneKO has a value which is a reference to a list where each element is a string
-	objective has a value which is a string
-	constraints has a value which is a reference to a list where each element is a string
-	bounds has a value which is a reference to a list where each element is a string
-	phenotypes has a value which is a reference to a list where each element is a string
-	uptakelimits has a value which is a string
-	fbaResults has a value which is a reference to a list where each element is an FBAResult
-	notes has a value which is a string
-	objectiveConstraintFraction has a value which is a float
-	allReversible has a value which is a bool
-	defaultMaxFlux has a value which is a float
-	defaultMaxDrainFlux has a value which is a float
-	defaultMinDrainFlux has a value which is a float
-	numberOfSolutions has a value which is an int
-	fva has a value which is a bool
-	comboDeletions has a value which is an int
-	fluxMinimization has a value which is a bool
-	findMinimalMedia has a value which is a bool
-	simpleThermoConstraints has a value which is a bool
-	thermodynamicConstraints has a value which is a bool
-	noErrorThermodynamicConstraints has a value which is a bool
-	minimizeErrorThermodynamicConstraints has a value which is a bool
-FBAResult is a reference to a hash where the following keys are defined:
-	notes has a value which is a string
-	objectiveValue has a value which is a float
-	variables has a value which is a reference to a list where each element is an FBAVariable
-	fbaPhenotypeSimultationResults has a value which is a reference to a list where each element is an FBAPhenotypeSimulationResult
-	fbaDeletionResults has a value which is a reference to a list where each element is an FBADeletionResult
-	minimalMediaResults has a value which is a reference to a list where each element is an FBAMinimalMediaResult
-	fbaMetaboliteProductionResults has a value which is a reference to a list where each element is an FBAMetaboliteProductionResult
-FBAVariable is a reference to a hash where the following keys are defined:
-	entityID has a value which is a string
-	variableType has a value which is a string
-	lowerBound has a value which is a float
-	upperBound has a value which is a float
-	min has a value which is a float
-	max has a value which is a float
-	value has a value which is a float
-FBAPhenotypeSimulationResult is a reference to a hash where the following keys are defined:
-	simultatedPhenotype has a value which is a string
-	simulatedGrowthFraction has a value which is a float
-	simulatedGrowth has a value which is a float
-	class has a value which is a string
-	noGrowthCompounds has a value which is a reference to a list where each element is a string
-	dependantReactions has a value which is a reference to a list where each element is a string
-	dependantGenes has a value which is a reference to a list where each element is a string
-	fluxes has a value which is a reference to a list where each element is a string
-FBADeletionResult is a reference to a hash where the following keys are defined:
-	geneKO has a value which is a reference to a list where each element is a string
-	simulatedGrowth has a value which is a float
-	simulatedGrowthFraction has a value which is a float
-FBAMinimalMediaResult is a reference to a hash where the following keys are defined:
-	optionalNutrients has a value which is a reference to a list where each element is a string
-	essentialNutrients has a value which is a reference to a list where each element is a string
-FBAMetaboliteProductionResult is a reference to a hash where the following keys are defined:
-	maximumProduction has a value which is a float
-	compound has a value which is a string
 GapfillingFormulation is a reference to a hash where the following keys are defined:
-	fbaFormulation has a value which is an FBAFormulation
-	blacklistedReactions has a value which is a reference to a list where each element is a string
-	allowableUnbalancedReactions has a value which is a reference to a list where each element is a string
-	allowableCompartments has a value which is a reference to a list where each element is a string
-	balancedReactionsOnly has a value which is a bool
-	reactionActivationBonus has a value which is a float
-	drainFluxMultiplier has a value which is a float
-	directionalityMultiplier has a value which is a float
-	deltaGMultiplier has a value which is a float
-	noStructureMultiplier has a value which is a float
-	noDeltaGMultiplier has a value which is a float
-	biomassTransporterMultiplier has a value which is a float
-	singleTransporterMultiplier has a value which is a float
-	transporterMultiplier has a value which is a float
-	geneCandidates has a value which is a reference to a list where each element is a GeneCandidate
-	reactionSetMultipliers has a value which is a reference to a list where each element is a ReactionSetMultiplier
-	gapfillingSolutions has a value which is a reference to a list where each element is a GapfillingSolution
-GeneCandidate is a reference to a hash where the following keys are defined:
-	role has a value which is a string
-	orthologGenome has a value which is a genome_id
-	ortholog has a value which is a feature_id
-	feature has a value which is a feature_id
-	similarityScore has a value which is a float
-	distanceScore has a value which is a float
-feature_id is a string
-ReactionSetMultiplier is a reference to a hash where the following keys are defined:
-	reactionset has a value which is a reactionset_id
-	reactionsetType has a value which is a string
-	multiplierType has a value which is a string
-	description has a value which is a string
-	multiplier has a value which is a float
-reactionset_id is a string
-GapfillingSolution is a reference to a hash where the following keys are defined:
-	solutionCost has a value which is a float
-	gapfillingSolutionReactions has a value which is a reference to a list where each element is a GapfillingSolutionReaction
-GapfillingSolutionReaction is a reference to a hash where the following keys are defined:
-	reaction has a value which is a reaction_id
-	direction has a value which is a string
-	geneCandidates has a value which is a reference to a list where each element is a feature_id
+	media has a value which is a string
+	notes has a value which is a string
+	objective has a value which is a string
+	objfraction has a value which is a float
+	rxnko has a value which is a string
+	geneko has a value which is a string
+	uptakelim has a value which is a string
+	defaultmaxflux has a value which is a float
+	defaultmaxuptake has a value which is a float
+	defaultminuptake has a value which is a float
+	nomediahyp has a value which is a bool
+	nobiomasshyp has a value which is a bool
+	nogprhyp has a value which is a bool
+	nopathwayhyp has a value which is a bool
+	allowunbalanced has a value which is a bool
+	activitybonus has a value which is a float
+	drainpen has a value which is a float
+	directionpen has a value which is a float
+	nostructpen has a value which is a float
+	unfavorablepen has a value which is a float
+	nodeltagpen has a value which is a float
+	biomasstranspen has a value which is a float
+	singletranspen has a value which is a float
+	transpen has a value which is a float
+	blacklistedrxns has a value which is a string
+	gauranteedrxns has a value which is a string
+	allowedcmps has a value which is a string
 
 
 =end text
@@ -2890,8 +1096,6 @@ FBAModel is a reference to a hash where the following keys are defined:
 	modelcompartments has a value which is a reference to a list where each element is a ModelCompartmentTO
 	modelcompounds has a value which is a reference to a list where each element is a ModelCompoundTO
 	modelreactions has a value which is a reference to a list where each element is a ModelReactionTO
-	fbaFormulations has a value which is a reference to a list where each element is an FBAFormulation
-	gapfillingFormulations has a value which is a reference to a list where each element is a GapfillingFormulation
 model_id is a string
 genome_id is a string
 mapping_id is a string
@@ -3003,46 +1207,6 @@ FBAMinimalMediaResult is a reference to a hash where the following keys are defi
 FBAMetaboliteProductionResult is a reference to a hash where the following keys are defined:
 	maximumProduction has a value which is a float
 	compound has a value which is a string
-GapfillingFormulation is a reference to a hash where the following keys are defined:
-	fbaFormulation has a value which is an FBAFormulation
-	blacklistedReactions has a value which is a reference to a list where each element is a string
-	allowableUnbalancedReactions has a value which is a reference to a list where each element is a string
-	allowableCompartments has a value which is a reference to a list where each element is a string
-	balancedReactionsOnly has a value which is a bool
-	reactionActivationBonus has a value which is a float
-	drainFluxMultiplier has a value which is a float
-	directionalityMultiplier has a value which is a float
-	deltaGMultiplier has a value which is a float
-	noStructureMultiplier has a value which is a float
-	noDeltaGMultiplier has a value which is a float
-	biomassTransporterMultiplier has a value which is a float
-	singleTransporterMultiplier has a value which is a float
-	transporterMultiplier has a value which is a float
-	geneCandidates has a value which is a reference to a list where each element is a GeneCandidate
-	reactionSetMultipliers has a value which is a reference to a list where each element is a ReactionSetMultiplier
-	gapfillingSolutions has a value which is a reference to a list where each element is a GapfillingSolution
-GeneCandidate is a reference to a hash where the following keys are defined:
-	role has a value which is a string
-	orthologGenome has a value which is a genome_id
-	ortholog has a value which is a feature_id
-	feature has a value which is a feature_id
-	similarityScore has a value which is a float
-	distanceScore has a value which is a float
-feature_id is a string
-ReactionSetMultiplier is a reference to a hash where the following keys are defined:
-	reactionset has a value which is a reactionset_id
-	reactionsetType has a value which is a string
-	multiplierType has a value which is a string
-	description has a value which is a string
-	multiplier has a value which is a float
-reactionset_id is a string
-GapfillingSolution is a reference to a hash where the following keys are defined:
-	solutionCost has a value which is a float
-	gapfillingSolutionReactions has a value which is a reference to a list where each element is a GapfillingSolutionReaction
-GapfillingSolutionReaction is a reference to a hash where the following keys are defined:
-	reaction has a value which is a reaction_id
-	direction has a value which is a string
-	geneCandidates has a value which is a reference to a list where each element is a feature_id
 HTMLFile is a string
 
 </pre>
@@ -3072,8 +1236,6 @@ FBAModel is a reference to a hash where the following keys are defined:
 	modelcompartments has a value which is a reference to a list where each element is a ModelCompartmentTO
 	modelcompounds has a value which is a reference to a list where each element is a ModelCompoundTO
 	modelreactions has a value which is a reference to a list where each element is a ModelReactionTO
-	fbaFormulations has a value which is a reference to a list where each element is an FBAFormulation
-	gapfillingFormulations has a value which is a reference to a list where each element is a GapfillingFormulation
 model_id is a string
 genome_id is a string
 mapping_id is a string
@@ -3185,46 +1347,6 @@ FBAMinimalMediaResult is a reference to a hash where the following keys are defi
 FBAMetaboliteProductionResult is a reference to a hash where the following keys are defined:
 	maximumProduction has a value which is a float
 	compound has a value which is a string
-GapfillingFormulation is a reference to a hash where the following keys are defined:
-	fbaFormulation has a value which is an FBAFormulation
-	blacklistedReactions has a value which is a reference to a list where each element is a string
-	allowableUnbalancedReactions has a value which is a reference to a list where each element is a string
-	allowableCompartments has a value which is a reference to a list where each element is a string
-	balancedReactionsOnly has a value which is a bool
-	reactionActivationBonus has a value which is a float
-	drainFluxMultiplier has a value which is a float
-	directionalityMultiplier has a value which is a float
-	deltaGMultiplier has a value which is a float
-	noStructureMultiplier has a value which is a float
-	noDeltaGMultiplier has a value which is a float
-	biomassTransporterMultiplier has a value which is a float
-	singleTransporterMultiplier has a value which is a float
-	transporterMultiplier has a value which is a float
-	geneCandidates has a value which is a reference to a list where each element is a GeneCandidate
-	reactionSetMultipliers has a value which is a reference to a list where each element is a ReactionSetMultiplier
-	gapfillingSolutions has a value which is a reference to a list where each element is a GapfillingSolution
-GeneCandidate is a reference to a hash where the following keys are defined:
-	role has a value which is a string
-	orthologGenome has a value which is a genome_id
-	ortholog has a value which is a feature_id
-	feature has a value which is a feature_id
-	similarityScore has a value which is a float
-	distanceScore has a value which is a float
-feature_id is a string
-ReactionSetMultiplier is a reference to a hash where the following keys are defined:
-	reactionset has a value which is a reactionset_id
-	reactionsetType has a value which is a string
-	multiplierType has a value which is a string
-	description has a value which is a string
-	multiplier has a value which is a float
-reactionset_id is a string
-GapfillingSolution is a reference to a hash where the following keys are defined:
-	solutionCost has a value which is a float
-	gapfillingSolutionReactions has a value which is a reference to a list where each element is a GapfillingSolutionReaction
-GapfillingSolutionReaction is a reference to a hash where the following keys are defined:
-	reaction has a value which is a reaction_id
-	direction has a value which is a string
-	geneCandidates has a value which is a reference to a list where each element is a feature_id
 HTMLFile is a string
 
 
@@ -3255,6 +1377,7 @@ sub runfba
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
 							       method_name => 'runfba');
     }
+
     my $ctx = $fbaModelServicesServer::CallContext;
     my($out_solution);
     #BEGIN runfba
@@ -3268,7 +1391,7 @@ sub runfba
 		allreversible => "allReversible",objective => "objectiveString",rxnko => "geneKO",geneko => "reactionKO",uptakelim => "uptakeLimits",
 		defaultmaxflux => "defaultMaxFlux",defaultminuptake => "defaultMinDrainFlux",defaultmaxuptake => "defaultMaxDrainFlux",
 		simplethermoconst => "simpleThermoConstraints",thermoconst => "thermodynamicConstraints",nothermoerror => "noErrorThermodynamicConstraints",
-		minthermoerror => "minimizeErrorThermodynamicConstraints"
+		minthermoerror => "minimizeErrorThermodynamicConstraints",fbaPhenotypeSimulations => "fbaPhenotypeSimulations",
 	};
 	foreach my $argument (keys(%{$overrideList})) {
 		if (defined($in_formulation->{$argument})) {
@@ -3292,17 +1415,24 @@ sub runfba
     	$model->id($save);
 		$store->save_object("model/kbase/".$save,$model);
     }
-    $out_solution = $fbaform->createHTML();
-    #END runfba
-    my @_bad_returns;
-    (!ref($out_solution)) or push(@_bad_returns, "Invalid type for return variable \"out_solution\" (value was \"$out_solution\")");
-    if (@_bad_returns) {
-	my $msg = "Invalid returns passed to runfba:\n" . join("", map { "\t$_\n" } @_bad_returns);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'runfba');
+    if (@{$fbaform->fbaPhenotypeSimultationResults()} > 0) {
+    	$out_solution = $self->objectToOutput($fbaform);
+    } else {
+    	$out_solution = $fbaform->createHTML();
     }
+    #END runfba
+    #my @_bad_returns;
+    #(!ref($out_solution)) or push(@_bad_returns, "Invalid type for return variable \"out_solution\" (value was \"$out_solution\")");
+    #if (@_bad_returns) {
+	#my $msg = "Invalid returns passed to runfba:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	#Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+	#						       method_name => 'runfba');
+    #}
     return($out_solution);
 }
+
+
+
 
 =head2 object_to_html
 
@@ -3377,6 +1507,293 @@ sub object_to_html
 							       method_name => 'object_to_html');
     }
     return($outHTML);
+}
+
+
+
+
+=head2 gapgen_fbamodel
+
+  $out_model = $obj->gapgen_fbamodel($in_model, $in_formulation, $overwrite, $save)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$in_model is an FBAModel
+$in_formulation is a GapgenFormulation
+$overwrite is a bool
+$save is a string
+$out_model is an FBAModel
+FBAModel is a reference to a hash where the following keys are defined:
+	ancestor has a value which is a model_id
+	id has a value which is a model_id
+	name has a value which is a string
+	version has a value which is an int
+	type has a value which is a string
+	status has a value which is a string
+	current has a value which is an int
+	growth has a value which is a float
+	genome has a value which is a genome_id
+	map has a value which is a mapping_id
+	biochemistry has a value which is a biochemistry_id
+	biomasses has a value which is a reference to a list where each element is a BiomassTO
+	modelcompartments has a value which is a reference to a list where each element is a ModelCompartmentTO
+	modelcompounds has a value which is a reference to a list where each element is a ModelCompoundTO
+	modelreactions has a value which is a reference to a list where each element is a ModelReactionTO
+model_id is a string
+genome_id is a string
+mapping_id is a string
+biochemistry_id is a string
+BiomassTO is a reference to a hash where the following keys are defined:
+	id has a value which is a biomass_id
+	name has a value which is a string
+	biomassCompounds has a value which is a reference to a list where each element is a BiomassCompoundTO
+biomass_id is a string
+BiomassCompoundTO is a reference to a hash where the following keys are defined:
+	modelcompound_id has a value which is a modelcompound_id
+	coefficient has a value which is a float
+modelcompound_id is a string
+ModelCompartmentTO is a reference to a hash where the following keys are defined:
+	id has a value which is a modelcompartment_id
+	compartment_id has a value which is a compartment_id
+	name has a value which is a string
+	pH has a value which is a float
+	potential has a value which is a float
+	index has a value which is an int
+modelcompartment_id is a string
+compartment_id is a string
+ModelCompoundTO is a reference to a hash where the following keys are defined:
+	id has a value which is a modelcompound_id
+	name has a value which is a string
+	compound_id has a value which is a compound_id
+	modelcompartment_id has a value which is a modelcompartment_id
+	charge has a value which is a float
+	formula has a value which is a string
+compound_id is a string
+ModelReactionTO is a reference to a hash where the following keys are defined:
+	id has a value which is a modelreaction_id
+	reaction_id has a value which is a reaction_id
+	modelcompartment_id has a value which is a modelcompartment_id
+	direction has a value which is a string
+	protons has a value which is a string
+	equation has a value which is a string
+	gpr has a value which is a reference to a list where each element is a ModelReactionRawGPRTO
+	modelReactionReagents has a value which is a reference to a list where each element is a ModelReactionReagentTO
+modelreaction_id is a string
+reaction_id is a string
+ModelReactionRawGPRTO is a reference to a hash where the following keys are defined:
+	isCustomGPR has a value which is a bool
+	rawGPR has a value which is a string
+bool is an int
+ModelReactionReagentTO is a reference to a hash where the following keys are defined:
+	modelcompound_id has a value which is a modelcompound_id
+	coefficient has a value which is a float
+GapgenFormulation is a reference to a hash where the following keys are defined:
+	media has a value which is a string
+	refmedia has a value which is a string
+	notes has a value which is a string
+	objective has a value which is a string
+	objfraction has a value which is a float
+	rxnko has a value which is a string
+	geneko has a value which is a string
+	uptakelim has a value which is a string
+	defaultmaxflux has a value which is a float
+	defaultmaxuptake has a value which is a float
+	defaultminuptake has a value which is a float
+	nomediahyp has a value which is a bool
+	nobiomasshyp has a value which is a bool
+	nogprhyp has a value which is a bool
+	nopathwayhyp has a value which is a bool
+
+</pre>
+
+=end html
+
+=begin text
+
+$in_model is an FBAModel
+$in_formulation is a GapgenFormulation
+$overwrite is a bool
+$save is a string
+$out_model is an FBAModel
+FBAModel is a reference to a hash where the following keys are defined:
+	ancestor has a value which is a model_id
+	id has a value which is a model_id
+	name has a value which is a string
+	version has a value which is an int
+	type has a value which is a string
+	status has a value which is a string
+	current has a value which is an int
+	growth has a value which is a float
+	genome has a value which is a genome_id
+	map has a value which is a mapping_id
+	biochemistry has a value which is a biochemistry_id
+	biomasses has a value which is a reference to a list where each element is a BiomassTO
+	modelcompartments has a value which is a reference to a list where each element is a ModelCompartmentTO
+	modelcompounds has a value which is a reference to a list where each element is a ModelCompoundTO
+	modelreactions has a value which is a reference to a list where each element is a ModelReactionTO
+model_id is a string
+genome_id is a string
+mapping_id is a string
+biochemistry_id is a string
+BiomassTO is a reference to a hash where the following keys are defined:
+	id has a value which is a biomass_id
+	name has a value which is a string
+	biomassCompounds has a value which is a reference to a list where each element is a BiomassCompoundTO
+biomass_id is a string
+BiomassCompoundTO is a reference to a hash where the following keys are defined:
+	modelcompound_id has a value which is a modelcompound_id
+	coefficient has a value which is a float
+modelcompound_id is a string
+ModelCompartmentTO is a reference to a hash where the following keys are defined:
+	id has a value which is a modelcompartment_id
+	compartment_id has a value which is a compartment_id
+	name has a value which is a string
+	pH has a value which is a float
+	potential has a value which is a float
+	index has a value which is an int
+modelcompartment_id is a string
+compartment_id is a string
+ModelCompoundTO is a reference to a hash where the following keys are defined:
+	id has a value which is a modelcompound_id
+	name has a value which is a string
+	compound_id has a value which is a compound_id
+	modelcompartment_id has a value which is a modelcompartment_id
+	charge has a value which is a float
+	formula has a value which is a string
+compound_id is a string
+ModelReactionTO is a reference to a hash where the following keys are defined:
+	id has a value which is a modelreaction_id
+	reaction_id has a value which is a reaction_id
+	modelcompartment_id has a value which is a modelcompartment_id
+	direction has a value which is a string
+	protons has a value which is a string
+	equation has a value which is a string
+	gpr has a value which is a reference to a list where each element is a ModelReactionRawGPRTO
+	modelReactionReagents has a value which is a reference to a list where each element is a ModelReactionReagentTO
+modelreaction_id is a string
+reaction_id is a string
+ModelReactionRawGPRTO is a reference to a hash where the following keys are defined:
+	isCustomGPR has a value which is a bool
+	rawGPR has a value which is a string
+bool is an int
+ModelReactionReagentTO is a reference to a hash where the following keys are defined:
+	modelcompound_id has a value which is a modelcompound_id
+	coefficient has a value which is a float
+GapgenFormulation is a reference to a hash where the following keys are defined:
+	media has a value which is a string
+	refmedia has a value which is a string
+	notes has a value which is a string
+	objective has a value which is a string
+	objfraction has a value which is a float
+	rxnko has a value which is a string
+	geneko has a value which is a string
+	uptakelim has a value which is a string
+	defaultmaxflux has a value which is a float
+	defaultmaxuptake has a value which is a float
+	defaultminuptake has a value which is a float
+	nomediahyp has a value which is a bool
+	nobiomasshyp has a value which is a bool
+	nogprhyp has a value which is a bool
+	nopathwayhyp has a value which is a bool
+
+
+=end text
+
+
+
+=item Description
+
+
+
+=back
+
+=cut
+
+sub gapgen_fbamodel
+{
+    my $self = shift;
+    my($in_model, $in_formulation, $overwrite, $save) = @_;
+
+    my @_bad_arguments;
+    (ref($in_model) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"in_model\" (value was \"$in_model\")");
+    (ref($in_formulation) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"in_formulation\" (value was \"$in_formulation\")");
+    (!ref($overwrite)) or push(@_bad_arguments, "Invalid type for argument \"overwrite\" (value was \"$overwrite\")");
+    (!ref($save)) or push(@_bad_arguments, "Invalid type for argument \"save\" (value was \"$save\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to gapgen_fbamodel:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'gapgen_fbamodel');
+    }
+
+    my $ctx = $fbaModelServicesServer::CallContext;
+    my($out_model);
+    #BEGIN gapgen_fbamodel
+    #Retreiving the model
+    my $model = $self->loadObject($in_model);
+	#Creating gapgen formulation
+	my $input = {model => $model};
+	if ($opts->{config}) {
+		$input->{filename} = $opts->{config};
+	}
+	my $fbaoverrides = {
+		media => "media",notes => "notes",objfraction => "objectiveConstraintFraction",
+		objective => "objectiveString",rxnko => "geneKO",geneko => "reactionKO",uptakelim => "uptakeLimits",
+		defaultmaxflux => "defaultMaxFlux",defaultmaxuptake => "defaultMaxDrainFlux",defaultminuptake => "defaultMinDrainFlux"
+	};
+	my $overrideList = {
+		refmedia => "referenceMedia",nomediahyp => "!mediaHypothesis",nobiomasshyp => "!biomassHypothesis",
+		nogprhyp => "!gprHypothesis",nopathwayhyp => "!reactionRemovalHypothesis"
+	};
+	foreach my $argument (keys(%{$overrideList})) {
+		if ($overrideList->{$argument} =~ m/^\!(.+)$/) {
+			$argument = $1;
+			if (defined($opts->{$argument})) {
+				$input->{overrides}->{$overrideList->{$argument}} = 0;
+			} else {
+				$input->{overrides}->{$overrideList->{$argument}} = 1;
+			}
+		} else {
+			$input->{overrides}->{$overrideList->{$argument}} = $opts->{$argument};
+		}
+	}
+	foreach my $argument (keys(%{$fbaoverrides})) {
+		if (defined($opts->{$argument})) {
+			$input->{overrides}->{fbaFormulation}->{overrides}->{$fbaoverrides->{$argument}} = $opts->{$argument};
+		}
+	}
+	my $exchange_factory = ModelSEED::MS::Factories::ExchangeFormatFactory->new();
+	my $gapgenFormulation = $exchange_factory->buildGapgenFormulation($input);
+    #Running gapgeneration
+    my $result = $model->gapgenModel({
+        gapgenFormulation => $gapgenFormulation,
+    }); 
+    my $store = $self->{_store};
+    if (!defined($result)) {
+    	my $msg = "Could not find knockouts to meet gapgen specifications!";
+    	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'gapgen_fbamodel');
+    } else {
+		if ($overwrite == 1) {
+		    $store->save_object("model/kbase/".$model->id(),$model);
+	    } elsif (length($save) > 0) {
+			$model->id($save);
+			$store->save_object("model/kbase/".$save,$model);
+	    }
+    }
+	$out_model = $self->objectToOutput($model);
+    #END gapgen_fbamodel
+    my @_bad_returns;
+    (ref($out_model) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"out_model\" (value was \"$out_model\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to gapgen_fbamodel:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'gapgen_fbamodel');
+    }
+    return($out_model);
 }
 
 
@@ -4916,72 +3333,6 @@ distanceScore has a value which is a float
 
 
 
-=head2 GapfillingSolutionReaction
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-reaction has a value which is a reaction_id
-direction has a value which is a string
-geneCandidates has a value which is a reference to a list where each element is a feature_id
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-reaction has a value which is a reaction_id
-direction has a value which is a string
-geneCandidates has a value which is a reference to a list where each element is a feature_id
-
-
-=end text
-
-=back
-
-
-
-=head2 GapfillingSolution
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-solutionCost has a value which is a float
-gapfillingSolutionReactions has a value which is a reference to a list where each element is a GapfillingSolutionReaction
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-solutionCost has a value which is a float
-gapfillingSolutionReactions has a value which is a reference to a list where each element is a GapfillingSolutionReaction
-
-
-=end text
-
-=back
-
-
-
 =head2 GapfillingFormulation
 
 =over 4
@@ -4994,23 +3345,33 @@ gapfillingSolutionReactions has a value which is a reference to a list where eac
 
 <pre>
 a reference to a hash where the following keys are defined:
-fbaFormulation has a value which is an FBAFormulation
-blacklistedReactions has a value which is a reference to a list where each element is a string
-allowableUnbalancedReactions has a value which is a reference to a list where each element is a string
-allowableCompartments has a value which is a reference to a list where each element is a string
-balancedReactionsOnly has a value which is a bool
-reactionActivationBonus has a value which is a float
-drainFluxMultiplier has a value which is a float
-directionalityMultiplier has a value which is a float
-deltaGMultiplier has a value which is a float
-noStructureMultiplier has a value which is a float
-noDeltaGMultiplier has a value which is a float
-biomassTransporterMultiplier has a value which is a float
-singleTransporterMultiplier has a value which is a float
-transporterMultiplier has a value which is a float
-geneCandidates has a value which is a reference to a list where each element is a GeneCandidate
-reactionSetMultipliers has a value which is a reference to a list where each element is a ReactionSetMultiplier
-gapfillingSolutions has a value which is a reference to a list where each element is a GapfillingSolution
+media has a value which is a string
+notes has a value which is a string
+objective has a value which is a string
+objfraction has a value which is a float
+rxnko has a value which is a string
+geneko has a value which is a string
+uptakelim has a value which is a string
+defaultmaxflux has a value which is a float
+defaultmaxuptake has a value which is a float
+defaultminuptake has a value which is a float
+nomediahyp has a value which is a bool
+nobiomasshyp has a value which is a bool
+nogprhyp has a value which is a bool
+nopathwayhyp has a value which is a bool
+allowunbalanced has a value which is a bool
+activitybonus has a value which is a float
+drainpen has a value which is a float
+directionpen has a value which is a float
+nostructpen has a value which is a float
+unfavorablepen has a value which is a float
+nodeltagpen has a value which is a float
+biomasstranspen has a value which is a float
+singletranspen has a value which is a float
+transpen has a value which is a float
+blacklistedrxns has a value which is a string
+gauranteedrxns has a value which is a string
+allowedcmps has a value which is a string
 
 </pre>
 
@@ -5019,23 +3380,91 @@ gapfillingSolutions has a value which is a reference to a list where each elemen
 =begin text
 
 a reference to a hash where the following keys are defined:
-fbaFormulation has a value which is an FBAFormulation
-blacklistedReactions has a value which is a reference to a list where each element is a string
-allowableUnbalancedReactions has a value which is a reference to a list where each element is a string
-allowableCompartments has a value which is a reference to a list where each element is a string
-balancedReactionsOnly has a value which is a bool
-reactionActivationBonus has a value which is a float
-drainFluxMultiplier has a value which is a float
-directionalityMultiplier has a value which is a float
-deltaGMultiplier has a value which is a float
-noStructureMultiplier has a value which is a float
-noDeltaGMultiplier has a value which is a float
-biomassTransporterMultiplier has a value which is a float
-singleTransporterMultiplier has a value which is a float
-transporterMultiplier has a value which is a float
-geneCandidates has a value which is a reference to a list where each element is a GeneCandidate
-reactionSetMultipliers has a value which is a reference to a list where each element is a ReactionSetMultiplier
-gapfillingSolutions has a value which is a reference to a list where each element is a GapfillingSolution
+media has a value which is a string
+notes has a value which is a string
+objective has a value which is a string
+objfraction has a value which is a float
+rxnko has a value which is a string
+geneko has a value which is a string
+uptakelim has a value which is a string
+defaultmaxflux has a value which is a float
+defaultmaxuptake has a value which is a float
+defaultminuptake has a value which is a float
+nomediahyp has a value which is a bool
+nobiomasshyp has a value which is a bool
+nogprhyp has a value which is a bool
+nopathwayhyp has a value which is a bool
+allowunbalanced has a value which is a bool
+activitybonus has a value which is a float
+drainpen has a value which is a float
+directionpen has a value which is a float
+nostructpen has a value which is a float
+unfavorablepen has a value which is a float
+nodeltagpen has a value which is a float
+biomasstranspen has a value which is a float
+singletranspen has a value which is a float
+transpen has a value which is a float
+blacklistedrxns has a value which is a string
+gauranteedrxns has a value which is a string
+allowedcmps has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 GapgenFormulation
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+media has a value which is a string
+refmedia has a value which is a string
+notes has a value which is a string
+objective has a value which is a string
+objfraction has a value which is a float
+rxnko has a value which is a string
+geneko has a value which is a string
+uptakelim has a value which is a string
+defaultmaxflux has a value which is a float
+defaultmaxuptake has a value which is a float
+defaultminuptake has a value which is a float
+nomediahyp has a value which is a bool
+nobiomasshyp has a value which is a bool
+nogprhyp has a value which is a bool
+nopathwayhyp has a value which is a bool
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+media has a value which is a string
+refmedia has a value which is a string
+notes has a value which is a string
+objective has a value which is a string
+objfraction has a value which is a float
+rxnko has a value which is a string
+geneko has a value which is a string
+uptakelim has a value which is a string
+defaultmaxflux has a value which is a float
+defaultmaxuptake has a value which is a float
+defaultminuptake has a value which is a float
+nomediahyp has a value which is a bool
+nobiomasshyp has a value which is a bool
+nogprhyp has a value which is a bool
+nopathwayhyp has a value which is a bool
 
 
 =end text
@@ -5071,8 +3500,6 @@ biomasses has a value which is a reference to a list where each element is a Bio
 modelcompartments has a value which is a reference to a list where each element is a ModelCompartmentTO
 modelcompounds has a value which is a reference to a list where each element is a ModelCompoundTO
 modelreactions has a value which is a reference to a list where each element is a ModelReactionTO
-fbaFormulations has a value which is a reference to a list where each element is an FBAFormulation
-gapfillingFormulations has a value which is a reference to a list where each element is a GapfillingFormulation
 
 </pre>
 
@@ -5096,8 +3523,6 @@ biomasses has a value which is a reference to a list where each element is a Bio
 modelcompartments has a value which is a reference to a list where each element is a ModelCompartmentTO
 modelcompounds has a value which is a reference to a list where each element is a ModelCompoundTO
 modelreactions has a value which is a reference to a list where each element is a ModelReactionTO
-fbaFormulations has a value which is a reference to a list where each element is an FBAFormulation
-gapfillingFormulations has a value which is a reference to a list where each element is a GapfillingFormulation
 
 
 =end text

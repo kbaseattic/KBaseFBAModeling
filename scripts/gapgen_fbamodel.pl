@@ -6,7 +6,7 @@
 use strict;
 use fbaModelServicesScriptSupport;
 
-my $name = "gapfill_fbamodel";
+my $name = "gapgen_fbamodel";
 my $primin = "model_in";
 my $primout = "model_out";
 my $defaultURL = "http://www.kbase.us/services/fba";
@@ -17,25 +17,13 @@ my $opts = [
 	["overwrite|o", "Overwrite existing model with gapfilled model",1],
 	["save|s:s", "Save gapfilled model to new model name",""],
 	["media:s","Media formulation to be used for the FBA simulation","Complete"],
+	["refmedia:s","Reference media formulation in which the objective must be nonzero"],
 	["notes:s","User notes to be affiliated with FBA simulation"],
-	["objective:s","String describing the objective of the FBA problem"],
 	["nomediahyp","Set this flag to turn off media hypothesis"],
 	["nobiomasshyp","Set this flag to turn off biomass hypothesis"],
 	["nogprhyp","Set this flag to turn off GPR hypothesis"],
 	["nopathwayhyp","Set this flag to turn off pathway hypothesis"],
-	["allowunbalanced","Allow any unbalanced reactions to be used in gapfilling"],
-	["activitybonus:s","Add terms to objective favoring activation of inactive reactions"],
-	["drainpen:s","Penalty for gapfilling drain fluxes"],
-	["directionpen:s","Penalty for making irreversible reactions reverisble"],
-	["nostructpen:s","Penalty for reactions involving a substrate with unknown structure"],
-	["unfavorablepen:s","Penalty for thermodynamically unfavorable reactions"],
-	["nodeltagpen:s","Penalty for reactions with unknown free energy change"],
-	["biomasstranspen:s","Penalty for transporters involving biomass compounds"],
-	["singletranspen:s","Penalty for transporters with only one reactant and product"],
-	["transpen:s","Penalty for gapfilling transport reactions"],
-	["blacklistedrxns:s","'|' delimited list of reactions not allowed to be gapfilled"],
-	["gauranteedrxns:s","'|' delimited list of reactions always allowed to be gapfilled"],
-	["allowedcmps:s","'|' delimited list of compartments allowed in gapfilled reactions"],
+	["objective:s","String describing the objective of the FBA problem"],
 	["objfraction:s","Fraction of the objective to enforce to ensure"],
 	["rxnko:s","Comma delimited list of reactions in model to be knocked out"],
 	["geneko:s","Comma delimited list of genes in model to be knocked out"],
@@ -50,7 +38,7 @@ my ($options,$clientObj) = initialize($opts,$name,$primin,$primout);
 my $inputArray = readPrimaryInput($options,$opts,$name,$primin,$primout);
 my $json = JSON::XS->new;
 $input = $json->decode(join("\n",@{$inputArray}));
-my $outputdata = $clientObj->gapfill_fbamodel($input,$options,$options->{overwrite},$options->{save});
+my $outputdata = $clientObj->gapgen_fbamodel($input,$options,$options->{overwrite},$options->{save});
 $json->pretty(1);
 my $output = $json->encode($outputdata);
 printPrimaryOutput($options,$output);

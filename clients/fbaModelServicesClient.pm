@@ -84,106 +84,6 @@ sub genome_to_fbamodel
 
 
 
-=head2 $result = fbamodel_to_exchangeFormat(in_model)
-
-
-
-=cut
-
-sub fbamodel_to_exchangeFormat
-{
-    my($self, @args) = @_;
-
-    if ((my $n = @args) != 1)
-    {
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
-							       "Invalid argument count for function fbamodel_to_exchangeFormat (received $n, expecting 1)");
-    }
-    {
-	my($in_model) = @args;
-
-	my @_bad_arguments;
-        (ref($in_model) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"in_model\" (value was \"$in_model\")");
-        if (@_bad_arguments) {
-	    my $msg = "Invalid arguments passed to fbamodel_to_exchangeFormat:\n" . join("", map { "\t$_\n" } @_bad_arguments);
-	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-								   method_name => 'fbamodel_to_exchangeFormat');
-	}
-    }
-
-    my $result = $self->{client}->call($self->{url}, {
-	method => "fbaModelServices.fbamodel_to_exchangeFormat",
-	params => \@args,
-    });
-    if ($result) {
-	if ($result->is_error) {
-	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
-					       method_name => 'fbamodel_to_exchangeFormat',
-					      );
-	} else {
-	    return wantarray ? @{$result->result} : $result->result->[0];
-	}
-    } else {
-        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method fbamodel_to_exchangeFormat",
-					    status_line => $self->{client}->status_line,
-					    method_name => 'fbamodel_to_exchangeFormat',
-				       );
-    }
-}
-
-
-
-=head2 $result = exchangeFormat_to_fbamodel(in_model)
-
-
-
-=cut
-
-sub exchangeFormat_to_fbamodel
-{
-    my($self, @args) = @_;
-
-    if ((my $n = @args) != 1)
-    {
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
-							       "Invalid argument count for function exchangeFormat_to_fbamodel (received $n, expecting 1)");
-    }
-    {
-	my($in_model) = @args;
-
-	my @_bad_arguments;
-        (!ref($in_model)) or push(@_bad_arguments, "Invalid type for argument 1 \"in_model\" (value was \"$in_model\")");
-        if (@_bad_arguments) {
-	    my $msg = "Invalid arguments passed to exchangeFormat_to_fbamodel:\n" . join("", map { "\t$_\n" } @_bad_arguments);
-	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-								   method_name => 'exchangeFormat_to_fbamodel');
-	}
-    }
-
-    my $result = $self->{client}->call($self->{url}, {
-	method => "fbaModelServices.exchangeFormat_to_fbamodel",
-	params => \@args,
-    });
-    if ($result) {
-	if ($result->is_error) {
-	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
-					       method_name => 'exchangeFormat_to_fbamodel',
-					      );
-	} else {
-	    return wantarray ? @{$result->result} : $result->result->[0];
-	}
-    } else {
-        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method exchangeFormat_to_fbamodel",
-					    status_line => $self->{client}->status_line,
-					    method_name => 'exchangeFormat_to_fbamodel',
-				       );
-    }
-}
-
-
-
 =head2 $result = fbamodel_to_sbml(in_model)
 
 
@@ -228,56 +128,6 @@ sub fbamodel_to_sbml
         Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method fbamodel_to_sbml",
 					    status_line => $self->{client}->status_line,
 					    method_name => 'fbamodel_to_sbml',
-				       );
-    }
-}
-
-
-
-=head2 $result = sbml_to_fbamodel(in_model)
-
-
-
-=cut
-
-sub sbml_to_fbamodel
-{
-    my($self, @args) = @_;
-
-    if ((my $n = @args) != 1)
-    {
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
-							       "Invalid argument count for function sbml_to_fbamodel (received $n, expecting 1)");
-    }
-    {
-	my($in_model) = @args;
-
-	my @_bad_arguments;
-        (!ref($in_model)) or push(@_bad_arguments, "Invalid type for argument 1 \"in_model\" (value was \"$in_model\")");
-        if (@_bad_arguments) {
-	    my $msg = "Invalid arguments passed to sbml_to_fbamodel:\n" . join("", map { "\t$_\n" } @_bad_arguments);
-	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-								   method_name => 'sbml_to_fbamodel');
-	}
-    }
-
-    my $result = $self->{client}->call($self->{url}, {
-	method => "fbaModelServices.sbml_to_fbamodel",
-	params => \@args,
-    });
-    if ($result) {
-	if ($result->is_error) {
-	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
-					       method_name => 'sbml_to_fbamodel',
-					      );
-	} else {
-	    return wantarray ? @{$result->result} : $result->result->[0];
-	}
-    } else {
-        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method sbml_to_fbamodel",
-					    status_line => $self->{client}->status_line,
-					    method_name => 'sbml_to_fbamodel',
 				       );
     }
 }
@@ -434,6 +284,59 @@ sub object_to_html
         Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method object_to_html",
 					    status_line => $self->{client}->status_line,
 					    method_name => 'object_to_html',
+				       );
+    }
+}
+
+
+
+=head2 $result = gapgen_fbamodel(in_model, in_formulation, overwrite, save)
+
+
+
+=cut
+
+sub gapgen_fbamodel
+{
+    my($self, @args) = @_;
+
+    if ((my $n = @args) != 4)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function gapgen_fbamodel (received $n, expecting 4)");
+    }
+    {
+	my($in_model, $in_formulation, $overwrite, $save) = @args;
+
+	my @_bad_arguments;
+        (ref($in_model) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"in_model\" (value was \"$in_model\")");
+        (ref($in_formulation) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 2 \"in_formulation\" (value was \"$in_formulation\")");
+        (!ref($overwrite)) or push(@_bad_arguments, "Invalid type for argument 3 \"overwrite\" (value was \"$overwrite\")");
+        (!ref($save)) or push(@_bad_arguments, "Invalid type for argument 4 \"save\" (value was \"$save\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to gapgen_fbamodel:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'gapgen_fbamodel');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.gapgen_fbamodel",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{code},
+					       method_name => 'gapgen_fbamodel',
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method gapgen_fbamodel",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'gapgen_fbamodel',
 				       );
     }
 }

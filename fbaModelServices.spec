@@ -207,35 +207,52 @@ module fbaModelServices {
 	} GeneCandidate;
 	
 	typedef structure {
-		reaction_id reaction;
-		string direction;
-		list<feature_id> geneCandidates;
-	} GapfillingSolutionReaction;
-	
-	typedef structure {
-		float solutionCost;
-		list<GapfillingSolutionReaction> gapfillingSolutionReactions;
-	} GapfillingSolution;
-	
-	typedef structure {
-		FBAFormulation fbaFormulation;
-		list<string> blacklistedReactions;
-		list<string> allowableUnbalancedReactions;
-		list<string> allowableCompartments;
-		bool balancedReactionsOnly;
-		float reactionActivationBonus;
-		float drainFluxMultiplier;
-		float directionalityMultiplier;
-		float deltaGMultiplier;
-		float noStructureMultiplier;
-		float noDeltaGMultiplier;
-		float biomassTransporterMultiplier;
-		float singleTransporterMultiplier;
-		float transporterMultiplier;
-		list<GeneCandidate> geneCandidates;
-		list<ReactionSetMultiplier> reactionSetMultipliers;
-		list<GapfillingSolution> gapfillingSolutions;
+		string media;
+		string notes;
+		string objective;
+		float objfraction;
+		string rxnko;
+		string geneko;
+		string uptakelim;
+		float defaultmaxflux;
+		float defaultmaxuptake;
+		float defaultminuptake;
+		bool nomediahyp;
+		bool nobiomasshyp;
+		bool nogprhyp;
+		bool nopathwayhyp;
+		bool allowunbalanced;
+		float activitybonus;
+		float drainpen;
+		float directionpen;
+		float nostructpen;
+		float unfavorablepen;
+		float nodeltagpen;
+		float biomasstranspen;
+		float singletranspen;
+		float transpen;
+		string blacklistedrxns;
+		string gauranteedrxns;
+		string allowedcmps;
 	} GapfillingFormulation;
+	
+	typedef structure {
+		string media;
+		string refmedia;
+		string notes;
+		string objective;
+		float objfraction;
+		string rxnko;
+		string geneko;
+		string uptakelim;
+		float defaultmaxflux;
+		float defaultmaxuptake;
+		float defaultminuptake;
+		bool nomediahyp;
+		bool nobiomasshyp;
+		bool nogprhyp;
+		bool nopathwayhyp;
+	} GapgenFormulation;
 	
 	typedef structure {
         model_id ancestor;
@@ -253,8 +270,6 @@ module fbaModelServices {
 		list<ModelCompartmentTO> modelcompartments;
 		list<ModelCompoundTO> modelcompounds;
 		list<ModelReactionTO> modelreactions;
-		list<FBAFormulation> fbaFormulations;
-		list<GapfillingFormulation> gapfillingFormulations;
     } FBAModel;
     
     typedef structure {
@@ -267,11 +282,9 @@ module fbaModelServices {
 		This function creates a metabolic model object from the annotated genome object.
 	*/
 	funcdef genome_to_fbamodel(GenomeTO in_genome) returns (FBAModel out_model);
-	funcdef fbamodel_to_exchangeFormat(FBAModel in_model) returns (FBAModelEX out_model);
-	funcdef exchangeFormat_to_fbamodel(FBAModelEX in_model) returns (FBAModel out_model);
 	funcdef fbamodel_to_sbml(FBAModel in_model) returns (SBML out_model);
-	funcdef sbml_to_fbamodel(SBML in_model) returns (FBAModel out_model);
 	funcdef gapfill_fbamodel(FBAModel in_model,GapfillingFormulation in_formulation,bool overwrite,string save) returns (FBAModel out_model);
 	funcdef runfba(FBAModel in_model,FBAFormulation in_formulation,bool overwrite,string save) returns (HTMLFile out_solution);
 	funcdef object_to_html(ObjectSpec inObject) returns (HTMLFile outHTML);
+	funcdef gapgen_fbamodel(FBAModel in_model,GapgenFormulation in_formulation,bool overwrite,string save) returns (FBAModel out_model);
 };

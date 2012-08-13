@@ -14,13 +14,11 @@ our $CallContext;
 
 our %return_counts = (
         'genome_to_fbamodel' => 1,
-        'fbamodel_to_exchangeFormat' => 1,
-        'exchangeFormat_to_fbamodel' => 1,
         'fbamodel_to_sbml' => 1,
-        'sbml_to_fbamodel' => 1,
         'gapfill_fbamodel' => 1,
         'runfba' => 1,
         'object_to_html' => 1,
+        'gapgen_fbamodel' => 1,
 );
 
 sub _build_valid_methods
@@ -28,13 +26,11 @@ sub _build_valid_methods
     my($self) = @_;
     my $methods = {
         'genome_to_fbamodel' => 1,
-        'fbamodel_to_exchangeFormat' => 1,
-        'exchangeFormat_to_fbamodel' => 1,
         'fbamodel_to_sbml' => 1,
-        'sbml_to_fbamodel' => 1,
         'gapfill_fbamodel' => 1,
         'runfba' => 1,
         'object_to_html' => 1,
+        'gapgen_fbamodel' => 1,
     };
     return $methods;
 }

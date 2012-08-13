@@ -1,63 +1,25 @@
 ########################################################################
-# fbamodel_to_html.pl - This is a KBase command script automatically built from server specifications
 # Authors: Christopher Henry, Scott Devoid, Paul Frybarger
 # Contact email: chenry@mcs.anl.gov
 # Development location: Mathematics and Computer Science Division, Argonne National Lab
 ########################################################################
 use strict;
-use lib "/home/chenry/kbase/models_api/clients/";
-use fbaModelServicesClient;
-use JSON::XS;
+use fbaModelServicesScriptSupport;
 
-use Getopt::Long;
+my $name = "fbamodel_to_html";
+my $primin = "model_in";
+my $primout = "html_out";
+my $defaultURL = "http://www.kbase.us/services/fba";
 
-my $input_file;
-my $output_file;
-my $url = "http://bio-data-1.mcs.anl.gov/services/fba";
+my $opts = [
+	["inputfile|i:s", "Filename that input should be read from instead of STDIN",undef],
+	["outputfile|f:s", "Filename that output should be printed to instead of STDOUT",undef],
+	["url=s","URL of the kbase webservice to use",$defaultURL]
+];
 
-my $rc = GetOptions(
-			'url=s'     => \$url,
-		    'input=s'   => \$input_file,
-		    'output=s'  => \$output_file,
-		    );
-
-my $usage = "fbamodel_to_html [--input model-file] [--output html-file] [--url service-url] [< model-file] [> html-file]";
-
-@ARGV == 0 or die "Usage: $usage\n";
-
-my $fbaModelServicesObj = fbaModelServicesClient->new($url);
-
-my $in_fh;
-if ($input_file)
-{
-    open($in_fh, "<", $input_file) or die "Cannot open $input_file: $!";
-}
-else
-{
-    $in_fh = \*STDIN;
-}
-
-my $out_fh;
-if ($output_file)
-{
-    open($out_fh, ">", $output_file) or die "Cannot open $output_file: $!";
-}
-else
-{
-    $out_fh = \*STDOUT;
-}
+my ($options,$clientObj) = initialize($opts,$name,$primin,$primout);
+my $inputArray = readPrimaryInput($options,$opts,$name,$primin,$primout);
 my $json = JSON::XS->new;
-
-my $input;
-{
-    local $/;
-    undef $/;
-    my $input_txt = <$in_fh>;
-    $input = $json->decode($input_txt)
-}
-
-
+$input = $json->decode(join("\n",@{$inputArray}));
 my $output = $fbaModelServicesObj->object_to_html($input);
-
-print $out_fh $output;
-close($out_fh);
+printPrimaryOutput($options,$output);

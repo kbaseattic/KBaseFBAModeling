@@ -17,30 +17,6 @@ function fbaModelServices(url) {
 	json_call_ajax_async("fbaModelServices.genome_to_fbamodel", [in_genome], 1, _callback, _error_callback)
     }
 
-    this.fbamodel_to_exchangeFormat = function(in_model)
-    {
-	var resp = json_call_ajax_sync("fbaModelServices.fbamodel_to_exchangeFormat", [in_model]);
-//	var resp = json_call_sync("fbaModelServices.fbamodel_to_exchangeFormat", [in_model]);
-        return resp[0];
-    }
-
-    this.fbamodel_to_exchangeFormat_async = function(in_model, _callback, _error_callback)
-    {
-	json_call_ajax_async("fbaModelServices.fbamodel_to_exchangeFormat", [in_model], 1, _callback, _error_callback)
-    }
-
-    this.exchangeFormat_to_fbamodel = function(in_model)
-    {
-	var resp = json_call_ajax_sync("fbaModelServices.exchangeFormat_to_fbamodel", [in_model]);
-//	var resp = json_call_sync("fbaModelServices.exchangeFormat_to_fbamodel", [in_model]);
-        return resp[0];
-    }
-
-    this.exchangeFormat_to_fbamodel_async = function(in_model, _callback, _error_callback)
-    {
-	json_call_ajax_async("fbaModelServices.exchangeFormat_to_fbamodel", [in_model], 1, _callback, _error_callback)
-    }
-
     this.fbamodel_to_sbml = function(in_model)
     {
 	var resp = json_call_ajax_sync("fbaModelServices.fbamodel_to_sbml", [in_model]);
@@ -51,18 +27,6 @@ function fbaModelServices(url) {
     this.fbamodel_to_sbml_async = function(in_model, _callback, _error_callback)
     {
 	json_call_ajax_async("fbaModelServices.fbamodel_to_sbml", [in_model], 1, _callback, _error_callback)
-    }
-
-    this.sbml_to_fbamodel = function(in_model)
-    {
-	var resp = json_call_ajax_sync("fbaModelServices.sbml_to_fbamodel", [in_model]);
-//	var resp = json_call_sync("fbaModelServices.sbml_to_fbamodel", [in_model]);
-        return resp[0];
-    }
-
-    this.sbml_to_fbamodel_async = function(in_model, _callback, _error_callback)
-    {
-	json_call_ajax_async("fbaModelServices.sbml_to_fbamodel", [in_model], 1, _callback, _error_callback)
     }
 
     this.gapfill_fbamodel = function(in_model, in_formulation, overwrite, save)
@@ -99,6 +63,18 @@ function fbaModelServices(url) {
     this.object_to_html_async = function(inObject, _callback, _error_callback)
     {
 	json_call_ajax_async("fbaModelServices.object_to_html", [inObject], 1, _callback, _error_callback)
+    }
+
+    this.gapgen_fbamodel = function(in_model, in_formulation, overwrite, save)
+    {
+	var resp = json_call_ajax_sync("fbaModelServices.gapgen_fbamodel", [in_model, in_formulation, overwrite, save]);
+//	var resp = json_call_sync("fbaModelServices.gapgen_fbamodel", [in_model, in_formulation, overwrite, save]);
+        return resp[0];
+    }
+
+    this.gapgen_fbamodel_async = function(in_model, in_formulation, overwrite, save, _callback, _error_callback)
+    {
+	json_call_ajax_async("fbaModelServices.gapgen_fbamodel", [in_model, in_formulation, overwrite, save], 1, _callback, _error_callback)
     }
 
     function _json_call_prepare(url, method, params, async_flag)
