@@ -29,6 +29,9 @@ use ModelSEED::MS::GapfillingFormulation;
 use ModelSEED::MS::FBAFormulation;
 use ModelSEED::MS::FBAProblem;
 use ModelSEED::MS::Metadata::Definitions;
+use Config::Simple;
+
+use Data::Dumper;
 
 =head2 loadObject
 
@@ -182,22 +185,6 @@ sub new
     };
     bless $self, $class;
     #BEGIN_CONSTRUCTOR
-    if (defined($ENV{FILEDBDIRECTORY})) {
-    	$self->{_db} = ModelSEED::Database::FileDB->new({
-    		directory => $ENV{FILEDBDIRECTORY},
-            filename  => $ENV{FILEDBNAME}
-    	});
-    } else {
-	    #Connecting to mongodb database to save and retrieve all required typed objects 
-	    $self->{_db} =
-		  ModelSEED::Database::MongoDBSimple->new(
-					   { db_name => "modelObjectStore", host => "birch.mcs.anl.gov" } );
-		$self->{_auth} =
-		  ModelSEED::Auth::Basic->new( { username => "kbase", password => "kbase" } )
-		  ;
-		$self->{_store} =
-		  ModelSEED::Store->new( { auth => $self->{_auth}, database => $self->{_db} } );
-    }
     #END_CONSTRUCTOR
 
     if ($self->can('_init_instance'))
@@ -205,6 +192,45 @@ sub new
 	$self->_init_instance();
     }
     return $self;
+}
+
+
+sub _init_instance {
+    my ($self) = @_;
+
+    # if we want to use FileDB, put it in configuration
+    # simple configuration file can look like this:
+    #
+    # fbaModelServices.mongodb-host  mongodb.kbase.us
+    #
+    # make sure you export KB_DEPLOYMENT_CONFIG to point to config file
+
+    my $host;
+    if (my $e = $ENV{KB_DEPLOYMENT_CONFIG}) {
+	my $service = $ENV{KB_SERVICE_NAME};
+	my $c = new Config::Simple($e);
+	$host = $c->param("$service.mongodb-host");
+    }
+
+    if (!$host) {
+	$host = "birch.mcs.anl.gov";
+	warn "No deployment configuration found; falling back to $host";
+    }
+
+    $self->{_db} = ModelSEED::Database::MongoDBSimple->new({
+	db_name => "modelObjectStore",
+	host => $host
+    });
+
+    $self->{_auth} = ModelSEED::Auth::Basic->new({
+	username => "kbase",
+	password => "kbase"
+    });
+
+    $self->{_store} = ModelSEED::Store->new({
+	auth => $self->{_auth},
+	database => $self->{_db}
+    });
 }
 
 =head1 METHODS
