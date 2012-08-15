@@ -27,7 +27,7 @@ install an updated version if this is not the case.
     cp -r mongodb-linux-x86_64-2.0.7/bin /kb/runtime/bin
     mkdir /data
     mkdir /mnt/db
-    ln -s /mnt/db data/db
+    ln -s /mnt/db /data/db
     mongod
     mongod 1>/dev/null 2>&1 &
 
