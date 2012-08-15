@@ -37,7 +37,7 @@ To deploy a test version (with test data):
 
     git clone kbase@git.kbase.us:dev_container.git
     cd dev_container/modules
-    git clone kbase@git.kbase.us:MFAToolkit.git
+    git clone git://github.com/ModelSEED/MFAToolkit.git 
     git clone kbase@git.kbase.us:kb_model_seed.git
     git clone kbase@git.kbase.us:idserver.git
     cd ..
