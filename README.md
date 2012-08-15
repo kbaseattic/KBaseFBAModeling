@@ -23,7 +23,8 @@ And the following services:
 Version of mongodb must be 1.9 or greater. Download and
 install an updated version if this is not the case.
 
-    curl http://fastdl.mongodb.org/linux/mongodb-linux-x86_64-2.0.7.tgz | tar -xf
+    wget http://fastdl.mongodb.org/linux/mongodb-linux-x86_64-2.0.7.tgz
+    tar -xzf mongodb-linux-x86_64-2.0.7.tgz
     cp -r mongodb-linux-x86_64-2.0.7/bin /kb/runtime/bin
     mkdir /data
     mkdir /mnt/db
