@@ -13,7 +13,7 @@ SERVICE_PORT = 7036
 
 SERVICE_DIR = $(TARGET)/services/$(SERVICE)
 
-TPAGE = $(DEPLOY_RUNTIME)/bin/tpage
+TPAGE = $(DEPLOY_RUNTIME)/bin/perl $(DEPLOY_RUNTIME)/bin/tpage
 TPAGE_ARGS = --define kb_top=$(TARGET) --define kb_runtime=$(DEPLOY_RUNTIME) --define kb_service_name=$(SERVICE) \
 	--define kb_service_port=$(SERVICE_PORT)
 
@@ -60,14 +60,17 @@ deploy-libs:
 	rsync -arv lib/. $(TARGET)/lib/.
 
 deploy-services:
-	$(TPAGE) $(TPAGE_ARGS) service/start_service.tt > $(TARGET)/services/$(SERVICE)/start_service
-	chmod +x $(TARGET)/services/$(SERVICE)/start_service
-	$(TPAGE) $(TPAGE_ARGS) service/stop_service.tt > $(TARGET)/services/$(SERVICE)/stop_service
-	chmod +x $(TARGET)/services/$(SERVICE)/stop_service
+	$(TPAGE) $(TPAGE_ARGS) service/start_service.tt > $(TARGET)/services/$(SERVICE)/start_service; \
+	chmod +x $(TARGET)/services/$(SERVICE)/start_service; \
+	$(TPAGE) $(TPAGE_ARGS) service/stop_service.tt > $(TARGET)/services/$(SERVICE)/stop_service; \
+	chmod +x $(TARGET)/services/$(SERVICE)/stop_service; \
+	$(TPAGE) $(TPAGE_ARGS) service/process.$(SERVICE).tt > $(TARGET)/services/$(SERVICE)/process.$(SERVICE); \
+	chmod +x $(TARGET)/services/$(SERVICE)/process.$(SERVICE); \
 
 deploy-monit:
 	$(TPAGE) $(TPAGE_ARGS) service/process.$(SERVICE).tt > $(TARGET)/services/$(SERVICE)/process.$(SERVICE)
 
 deploy-doc:
-	$(DEPLOY_RUNTIME)/bin/pod2html -t "ReconciliationAPI" lib/fbaModelServices.pm > doc/fbaModelServices.html
+	if [ ! -d doc ] ; then mkdir doc ; fi
+	$(DEPLOY_RUNTIME)/bin/pod2html -t "fbaModelServices" lib/fbaModelServices.pm > doc/fbaModelServices.html
 	cp doc/*html $(SERVICE_DIR)/webroot/.
