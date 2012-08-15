@@ -15,8 +15,7 @@ This module depends upon the following KBase modules:
 
 And the following services:
 
-* Running IDServer
-* Running instnace of mongodb (version >= 1.9)
+* Running instance of mongodb (version >= 1.9)
 
 ### Setup MongoDB ###
 
@@ -49,8 +48,8 @@ To deploy a test version (with test data):
 
 ### Setup Test-Data ###
 
-    ms createuser kbase
-    ms login kbase
+    ms createuser kbase   # password kbase
+    ms login kbase        # password kbase
     ms stores add mongo --type mongo --host localhost
     ms import biochemistry default
     ms import mapping default -b default
