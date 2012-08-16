@@ -24,11 +24,11 @@ install an updated version if this is not the case.
 
     wget http://fastdl.mongodb.org/linux/mongodb-linux-x86_64-2.0.7.tgz
     tar -xzf mongodb-linux-x86_64-2.0.7.tgz
-    cp -r mongodb-linux-x86_64-2.0.7/bin /kb/runtime/bin
+    cp -r mongodb-linux-x86_64-2.0.7/bin/* /kb/runtime/bin
     mkdir /data
     mkdir /mnt/db
     ln -s /mnt/db /data/db
-    mongod
+    mongod   # wait for it to initialize journel files, then Ctrl-C
     mongod 1>/dev/null 2>&1 &
 
 ### Setup Services ### 
@@ -48,6 +48,7 @@ To deploy a test version (with test data):
 
 ### Setup Test-Data ###
 
+    # add /kb/deployment/bin to PATH and /kb/deployment/lib/perl5 to PERL5LIB
     ms createuser kbase   # password kbase
     ms login kbase        # password kbase
     ms stores add mongo --type mongo --host localhost
