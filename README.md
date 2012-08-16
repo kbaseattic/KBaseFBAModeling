@@ -15,8 +15,7 @@ This module depends upon the following KBase modules:
 
 And the following services:
 
-* Running IDServer
-* Running instnace of mongodb (version >= 1.9)
+* Running instance of mongodb (version >= 1.9)
 
 ### Setup Environment ###
 
@@ -43,8 +42,8 @@ install an updated version if this is not the case.
     cp -r mongodb-linux-x86_64-2.0.7/bin /kb/runtime/bin
     mkdir /data
     mkdir /mnt/db
-    ln -s /mnt/db data/db
-    mongod
+    ln -s /mnt/db /data/db
+    mongod   # wait for it to initialize journel files, then Ctrl-C
     mongod 1>/dev/null 2>&1 &
 
 ### Setup Services ### 
@@ -63,8 +62,9 @@ To deploy a test version (with test data):
 
 ### Setup Test-Data ###
 
-    ms createuser kbase
-    ms login kbase
+    # add /kb/deployment/bin to PATH and /kb/deployment/lib/perl5 to PERL5LIB
+    ms createuser kbase   # password kbase
+    ms login kbase        # password kbase
     ms stores add mongo --type mongo --host localhost
     ms import biochemistry default
     ms import mapping default -b default
