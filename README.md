@@ -18,11 +18,26 @@ And the following services:
 * Running IDServer
 * Running instnace of mongodb (version >= 1.9)
 
+### Setup Environment ###
+
+Checkout a dev_container and run the bootstrap script in the container.
+Source the resulting user-env.sh script. Checkout this repository into
+the modules directory. 
+
+    cd ~
+    git clone kbase@git.kbase.us:dev_container.git
+    cd ~/dev_container
+    ./bootstrap /kb/runtime
+    source user-env.sh
+    cd modules
+    git clone kbase@git.kbase.us:KBaseFBAModeling.git 
+
 ### Setup MongoDB ###
 
 Version of mongodb must be 1.9 or greater. Download and
 install an updated version if this is not the case.
 
+    cd ~
     wget http://fastdl.mongodb.org/linux/mongodb-linux-x86_64-2.0.7.tgz
     tar -xzf mongodb-linux-x86_64-2.0.7.tgz
     cp -r mongodb-linux-x86_64-2.0.7/bin /kb/runtime/bin
@@ -36,8 +51,7 @@ install an updated version if this is not the case.
 
 To deploy a test version (with test data):
 
-    git clone kbase@git.kbase.us:dev_container.git
-    cd dev_container/modules
+    cd ~/dev_container/modules
     git clone git://github.com/ModelSEED/MFAToolkit.git 
     git clone kbase@git.kbase.us:kb_model_seed.git
     git clone kbase@git.kbase.us:idserver.git
@@ -54,6 +68,12 @@ To deploy a test version (with test data):
     ms stores add mongo --type mongo --host localhost
     ms import biochemistry default
     ms import mapping default -b default
+
+### Service Configuration ###
+
+    cp ~/dev_container/modules/KBaseFBAModeling/config/sample.ini ~/config.ini
+    export KB_DEPLOYMENT_CONFIG=$HOME/config.ini
+    export KB_SERVICE_NAME=fbaModelingServices
 
 ### Start Service ###
 
