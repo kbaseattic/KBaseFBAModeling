@@ -1,7 +1,8 @@
 KBaseFBAModeling
 ================
 
-This is the repository for the KBase module containing the web services for FBA modeling in KBase.
+This is the repository for the KBase module containing the web
+services for FBA modeling in KBase.
 
 
 Development Deployment
@@ -13,15 +14,15 @@ This module depends upon the following KBase modules:
 * kb_model_seed
 * idserver
 
-And the following services:
+And the following services / software:
 
 * Running instance of mongodb (version >= 1.9)
+* Running IDServer
+* GLPK ( run `which glpsol` to see if you have it)
 
-### Setup Environment ###
-
-Checkout a dev_container and run the bootstrap script in the container.
-Source the resulting user-env.sh script. Checkout this repository into
-the modules directory. 
+Checkout a dev_container and run the bootstrap script in the
+container. Source the resulting user-env.sh script. Checkout this
+repository into the modules directory.
 
     cd ~
     git clone kbase@git.kbase.us:dev_container.git
@@ -60,11 +61,16 @@ To deploy a test version (with test data):
     make
     make deploy
 
+The make and make deploy scripts may complain about missing modules.
+However the deploy will automatically download and install those
+missing modules.
+
 ### Setup Test-Data ###
 
-    # add /kb/deployment/bin to PATH and /kb/deployment/lib/perl5 to PERL5LIB
-    ms createuser kbase   # password kbase
-    ms login kbase        # password kbase
+    export PATH=$PATH:/kb/deployment/bin
+    export PERL5LIB=$PERL5LIB:/kb/deployment/lib/perl5
+    ms createuser kbase   # use the password 'kbase' when prompted
+    ms login kbase        # use the password 'kbase' when prompted
     ms stores add mongo --type mongo --host localhost
     ms import biochemistry default
     ms import mapping default -b default
