@@ -9,7 +9,7 @@ use fbaModelServicesScriptSupport;
 my $name = "fbamodel_to_html";
 my $primin = "model_in";
 my $primout = "html_out";
-my $defaultURL = "http://www.kbase.us/services/fba";
+my $defaultURL = "http://bio-data-1.mcs.anl.gov/services/fba";
 
 my $opts = [
 	["inputfile|i:s", "Filename that input should be read from instead of STDIN",undef],
