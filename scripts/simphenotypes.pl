@@ -9,7 +9,7 @@ use fbaModelServicesScriptSupport;
 my $name = "simphenotypes";
 my $primin = "model_in";
 my $primout = "phenoptypes_out";
-my $defaultURL = "http://www.kbase.us/services/fba";
+my $defaultURL = "http://bio-data-1.mcs.anl.gov/services/fba";
 
 my $opts = [
 	["phenotypes|p=s", "Filename with phenotype table",undef],

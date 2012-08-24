@@ -9,7 +9,7 @@ use fbaModelServicesScriptSupport;
 my $name = "genome_to_fbamodel";
 my $primin = "genome_in";
 my $primout = "model_out";
-my $defaultURL = "http://www.kbase.us/services/fba";
+my $defaultURL = "http://bio-data-1.mcs.anl.gov/services/fba";
 
 my $opts = [
 	["inputfile|i:s", "Filename that input should be read from instead of STDIN",undef],

@@ -1448,7 +1448,7 @@ sub runfba
     	$model->id($save);
 		$store->save_object("model/kbase/".$save,$model);
     }
-    if (@{$fbaform->fbaPhenotypeSimultationResults()} > 0) {
+    if (@{$fbaform->fbaResults()->[0]->fbaPhenotypeSimultationResults()} > 0) {
     	$out_solution = $self->objectToOutput($fbaform);
     } else {
     	$out_solution = $fbaform->createHTML();
