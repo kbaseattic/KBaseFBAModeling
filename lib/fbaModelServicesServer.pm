@@ -19,6 +19,7 @@ our %return_counts = (
         'runfba' => 1,
         'object_to_html' => 1,
         'gapgen_fbamodel' => 1,
+        'version' => 1,
 );
 
 sub _build_valid_methods
@@ -31,6 +32,7 @@ sub _build_valid_methods
         'runfba' => 1,
         'object_to_html' => 1,
         'gapgen_fbamodel' => 1,
+        'version' => 1,
     };
     return $methods;
 }

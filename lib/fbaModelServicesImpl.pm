@@ -1,6 +1,9 @@
 package fbaModelServicesImpl;
 use strict;
 use Bio::KBase::Exceptions;
+# Use Semantic Versioning (2.0.0-rc.1)
+# http://semver.org 
+our $VERSION = "0.1.0";
 
 =head1 NAME
 
@@ -1454,13 +1457,13 @@ sub runfba
     	$out_solution = $fbaform->createHTML();
     }
     #END runfba
-    #my @_bad_returns;
-    #(!ref($out_solution)) or push(@_bad_returns, "Invalid type for return variable \"out_solution\" (value was \"$out_solution\")");
-    #if (@_bad_returns) {
-	#my $msg = "Invalid returns passed to runfba:\n" . join("", map { "\t$_\n" } @_bad_returns);
-	#Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-	#						       method_name => 'runfba');
-    #}
+    my @_bad_returns;
+    (!ref($out_solution)) or push(@_bad_returns, "Invalid type for return variable \"out_solution\" (value was \"$out_solution\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to runfba:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'runfba');
+    }
     return($out_solution);
 }
 
@@ -1828,6 +1831,40 @@ sub gapgen_fbamodel
 
 
 
+
+=head2 version 
+
+  $return = $obj->version()
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$return is a string
+</pre>
+
+=end html
+
+=begin text
+
+$return is a string
+
+=end text
+
+=item Description
+
+Return the module version. This is a Semantic Versioning number.
+
+=back
+
+=cut
+
+sub version {
+    return $VERSION;
+}
 
 =head1 TYPES
 
