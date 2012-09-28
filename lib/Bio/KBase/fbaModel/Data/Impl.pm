@@ -43,8 +43,8 @@ sub new
     if (my $e = $ENV{KB_DEPLOYMENT_CONFIG}) {
         my $service = $ENV{KB_SERVICE_NAME};
         my $c = new Config::Simple($e);
-        $host = $c->param("$service.mongodb-host");
-        $db   = $c->param("$service.mongodb-collection");
+        $host = $c->param("$service.mongodb-hostname");
+        $db   = $c->param("$service.mongodb-database");
     } else {
         warn "No deployment configuration found;\n";
     }

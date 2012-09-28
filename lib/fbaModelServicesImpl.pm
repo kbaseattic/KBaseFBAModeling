@@ -207,33 +207,36 @@ sub _init_instance {
     # fbaModelServices.mongodb-host  mongodb.kbase.us
     #
     # make sure you export KB_DEPLOYMENT_CONFIG to point to config file
-
-    my $host;
+    my ($host, $db);
     if (my $e = $ENV{KB_DEPLOYMENT_CONFIG}) {
-	my $service = $ENV{KB_SERVICE_NAME};
-	my $c = new Config::Simple($e);
-	$host = $c->param("$service.mongodb-host");
+        my $service = $ENV{KB_SERVICE_NAME};
+        my $c = new Config::Simple($e);
+        $host = $c->param("$service.mongodb-hostname");
+        $db   = $c->param("$service.mongodb-database");
+    } else {
+        warn "No deployment configuration found;\n";
     }
-
     if (!$host) {
-	$host = "birch.mcs.anl.gov";
-	warn "No deployment configuration found; falling back to $host";
+        $host = "mongodb.kbase.us";
+        warn "\tfalling back to $host for database!\n";
     }
-
-    $self->{_db} = ModelSEED::Database::MongoDBSimple->new({
-	db_name => "modelObjectStore",
-	host => $host
-    });
-
-    $self->{_auth} = ModelSEED::Auth::Basic->new({
-	username => "kbase",
-	password => "kbase"
-    });
-
-    $self->{_store} = ModelSEED::Store->new({
-	auth => $self->{_auth},
-	database => $self->{_db}
-    });
+    if (!$db) {
+        $db = "modelObjectStore";
+        warn "\tfalling back to $db for collection\n";
+    }
+    $self->{_db} = ModelSEED::Database::MongoDBSimple->new(
+        db_name => $db,
+        host    => $host,
+    );
+    # TODO : Replace this with per rpc-call authorization
+    $self->{_auth} = ModelSEED::Auth::Basic->new(
+        username => "kbase",
+        password => "kbase",
+    );
+    $self->{_store} = ModelSEED::Store->new(
+        auth => $self->{_auth},
+        database => $self->{_db},
+    );
 }
 
 =head1 METHODS
