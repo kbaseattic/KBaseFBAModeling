@@ -54,12 +54,11 @@ module fbaModelData {
     funcdef alias_owner         ( Ref ref ) returns (Username owner);
     funcdef alias_public        ( Ref ref ) returns (Bool public);
     funcdef alias_viewers       ( Ref ref ) returns (Usernames viewers);
-
     funcdef ancestors           ( Ref ref ) returns (UUIDs ancestors);
     funcdef ancestor_graph      ( Ref ref ) returns (AncestorGraph graph);
     funcdef descendants         ( Ref ref ) returns (UUIDs descendants);
     funcdef descendant_graph    ( Ref ref ) returns (DescendantGraph graph);
 
-    funcdef init_database       () returns Bool success;
+    funcdef init_database       () returns (Bool success);
     funcdef delete_database     (DeleteConf config) returns (Bool success);
 };

@@ -1,18 +1,18 @@
-use fbaModelServicesImpl;
+use Bio::KBase::fbaModel::Data::Impl;
 
-use fbaModelServicesServer;
+use Bio::KBase::fbaModel::Data::Service;
 
 
 
 my @dispatch;
 
 {
-    my $obj = fbaModelServicesImpl->new;
-    push(@dispatch, 'fbaModelServices' => $obj);
+    my $obj = Bio::KBase::fbaModel::Data::Impl->new;
+    push(@dispatch, 'fbaModelData' => $obj);
 }
 
 
-my $server = fbaModelServicesServer->new(instance_dispatch => { @dispatch },
+my $server = Bio::KBase::fbaModel::Data::Service->new(instance_dispatch => { @dispatch },
 				allow_get => 0,
 			       );
 
