@@ -25,6 +25,7 @@ use ModelSEED::App::bio;
 use ModelSEED::App::mapping;
 use ModelSEED::App::genome;
 use ModelSEED::App::model;
+use Exception::Class;
 use Data::Dumper;
 use Try::Tiny;
 
@@ -159,7 +160,12 @@ sub execute_command
             $app->execute_command($cmd, $opt, @args);
         } catch {
             $status = 1;
-            warn $_;
+            local $@ = $_;
+            if ( my $e = Exception::Class->caught('ModelSEED::Exception::CLI') ) {
+                warn $e->cli_error_text();
+            } else {
+                warn $@;
+            }
         };
         close(STDIN);
         close(STDOUT);
