@@ -25,6 +25,7 @@ use ModelSEED::App::bio;
 use ModelSEED::App::mapping;
 use ModelSEED::App::genome;
 use ModelSEED::App::model;
+use Getopt::Long::Descriptive;
 use Exception::Class;
 use Data::Dumper;
 use Try::Tiny;
@@ -37,6 +38,85 @@ sub app {
     # die with an error
 }
 
+sub realAppName {
+    my ($self, $app_name) = @_;
+    if
+
+}
+
+sub commandInWhitelist {
+    my ( $self, $app_name, $command_name ) = @_;
+    my $whitelist = {
+        ms => {
+            commands => 1,
+            help     => 1,
+            bio      => 1,
+            genome   => 1,
+            import   => 1,
+            get      => 1,
+            history  => 1,
+            list     => 1,
+            mapping  => 1,
+            model    => 1,
+            save     => 1,
+        },
+        bio => {
+            commands      => 1,
+            help          => 1,
+            addcpd        => 1,
+            addcpdtable   => 1,
+            addmedia      => 1,
+            addrxn        => 1,
+            addrxntable   => 1,
+            aliasset      => 1,
+            calcdistances => 1,
+            create        => 1,
+            findcpd       => 1,
+            readable      => 1,
+            validate      => 1,
+        },
+        genome => {
+            commands   => 1,
+            help       => 1,
+            buildmodel => 1,
+            mapping    => 1,
+            readable   => 1,
+            roles      => 1,
+            subsystems => 1,
+        },
+        import => {
+            commands     => 1,
+            help         => 1,
+            annotation   => 1,
+            biochemistry => 1,
+            mapping      => 1,
+            model        => 1,
+        },
+        mapping => {
+            commands => 1,
+            help     => 1,
+            bio      => 1,
+            readable => 1,
+        },
+        model => {
+            commands         => 1,
+            help             => 1,
+            calcdistances    => 1,
+            gapfill          => 1,
+            gapgen           => 1,
+            genome           => 1,
+            readable         => 1,
+            runfba           => 1,
+            sbml             => 1,
+            simphenotypes    => 1,
+            tohtml           => 1,
+            updateprovenance => 1,
+        },
+    };
+    return 1 if defined $whitelist->{$app_name}->{$cmd_name};
+    return 0;
+}
+
 #END_HEADER
 
 sub new
@@ -47,6 +127,13 @@ sub new
     bless $self, $class;
     #BEGIN_CONSTRUCTOR
     my @apps = qw( mseed import bio mapping genome model );
+    my $apps_to_app_names = { qw(
+          mseed     ms
+          bio       bio
+          mapping   mapping
+          genome    genome
+          model     model
+    )};
     my $allowed_apps = { 
         map { my $pkg = "ModelSEED::App::$_"; $_ => $pkg->new }
         @apps
@@ -147,6 +234,7 @@ sub execute_command
     } else {
         $app = $self->app($app_name); 
     }
+    Getopt::Long::Descriptive::prog_name($app_name);
     unless ($error) {
         # Redirect STDOUT, STDERR, construct STDIN
         local *STDIN;
