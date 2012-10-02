@@ -40,12 +40,12 @@ sub app {
 
 sub realAppName {
     my ($self, $app_name) = @_;
-    if
-
+    return "ms" if $app_name eq "mseed";
+    return $app_name;
 }
 
 sub commandInWhitelist {
-    my ( $self, $app_name, $command_name ) = @_;
+    my ( $self, $app_name, $cmd_name ) = @_;
     my $whitelist = {
         ms => {
             commands => 1,
@@ -234,6 +234,8 @@ sub execute_command
     } else {
         $app = $self->app($app_name); 
     }
+    # Convert app name to expected format
+    $app_name = $self->realAppName($app_name);
     Getopt::Long::Descriptive::prog_name($app_name);
     unless ($error) {
         # Redirect STDOUT, STDERR, construct STDIN
@@ -245,6 +247,12 @@ sub execute_command
         open(STDERR, ">", \$stderr);
         try {
             my ($cmd, $opt, @args) = $app->prepare_command(@$args);
+            my @names = $cmd->command_names;
+            my $cmd_name = shift @names;
+            # Return error if unknown or non-whitelist function called
+            unless($self->commandInWhitelist($app_name, $cmd_name)) {
+                die "Cannot execute that command in this environment!\n";
+            }
             $app->execute_command($cmd, $opt, @args);
         } catch {
             $status = 1;
