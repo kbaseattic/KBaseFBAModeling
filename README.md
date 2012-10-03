@@ -20,6 +20,8 @@ And the following services / software:
 * Running IDServer
 * GLPK ( run `which glpsol` to see if you have it)
 
+Test
+
 Checkout a dev_container and run the bootstrap script in the
 container. Source the resulting user-env.sh script. Checkout this
 repository into the modules directory.
