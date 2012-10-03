@@ -20,7 +20,8 @@ And the following services / software:
 * Running IDServer
 * GLPK ( run `which glpsol` to see if you have it)
 
-Test
+The setup commands should be run as root to allow for creation and
+editing of base level directories.
 
 Checkout a dev_container and run the bootstrap script in the
 container. Source the resulting user-env.sh script. Checkout this
@@ -85,7 +86,7 @@ missing modules.
 
 ### Start Service ###
 
-    cd /kb/deployment/services/fbaModelingService
+    cd /kb/deployment/services/fbaModelServices
     ./start_service
 
 ### Run Commands ###
