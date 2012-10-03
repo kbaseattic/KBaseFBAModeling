@@ -8,4 +8,4 @@ export KB_SERVICE_DIR=$KB_TOP/services/[% kb_service_name %]
 kb_service_psgi=[% kb_service_psgi %]
 pid_file=$KB_SERVICE_DIR/service.pid
 
-exec $KB_RUNTIME/bin/starman --listen :[% kb_service_port %] --pid $pid_file $KB_TOP/$kb_service_psgi
+exec $KB_RUNTIME/bin/starman -D --listen :[% kb_service_port %] --pid $pid_file $KB_TOP/$kb_service_psgi

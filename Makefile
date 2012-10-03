@@ -4,7 +4,7 @@ include $(TOP_DIR)/tools/Makefile.common
 SRC_PERL = $(wildcard scripts/*.pl)
 BIN_PERL = $(addprefix $(BIN_DIR)/,$(basename $(notdir $(SRC_PERL))))
 
-DEPLOY_PERL = $(addprefix $(TARGET)/bin/,$(basename $(notdir $(SRC_PERL))))
+KB_PERL = $(addprefix $(TARGET)/bin/,$(basename $(notdir $(SRC_PERL))))
 
 # SERVER_SPEC :  fbaModelServices.spec fbaModelCLI.spec fbaModelData.spec
 # SERVER_MODULE : fbaModelServices fbaModelCLI fbaModelData
@@ -19,8 +19,8 @@ SERV_SERVICE = fbaModelServices
 SERV_PSGI_PATH = lib/fbaModelServices.psgi
 SERV_SERVICE_PORT = 7036
 SERV_SERVICE_DIR = $(TARGET)/services/$(SERV_SERVICE)
-SERV_TPAGE = $(DEPLOY_RUNTIME)/bin/perl $(DEPLOY_RUNTIME)/bin/tpage
-SERV_TPAGE_ARGS = --define kb_top=$(TARGET) --define kb_runtime=$(DEPLOY_RUNTIME) --define kb_service_name=$(SERV_SERVICE) \
+SERV_TPAGE = $(KB_RUNTIME)/bin/perl $(KB_RUNTIME)/bin/tpage
+SERV_TPAGE_ARGS = --define kb_top=$(TARGET) --define kb_runtime=$(KB_RUNTIME) --define kb_service_name=$(SERV_SERVICE) \
 	--define kb_service_port=$(SERV_SERVICE_PORT) --define kb_service_psgi=$(SERV_PSGI_PATH)
 
 # fbaModelData
@@ -30,8 +30,8 @@ DATA_SERVICE = fbaModelData
 DATA_PSGI_PATH = lib/fbaModelData.psgi
 DATA_SERVICE_PORT = 7053
 DATA_SERVICE_DIR = $(TARGET)/services/$(DATA_SERVICE)
-DATA_TPAGE = $(DEPLOY_RUNTIME)/bin/perl $(DEPLOY_RUNTIME)/bin/tpage
-DATA_TPAGE_ARGS = --define kb_top=$(TARGET) --define kb_runtime=$(DEPLOY_RUNTIME) --define kb_service_name=$(DATA_SERVICE) \
+DATA_TPAGE = $(KB_RUNTIME)/bin/perl $(KB_RUNTIME)/bin/tpage
+DATA_TPAGE_ARGS = --define kb_top=$(TARGET) --define kb_runtime=$(KB_RUNTIME) --define kb_service_name=$(DATA_SERVICE) \
 	--define kb_service_port=$(DATA_SERVICE_PORT) --define kb_service_psgi=$(DATA_PSGI_PATH)
 
 # fbaModelData
@@ -41,7 +41,7 @@ CLI_SERVICE = fbaModelCLI
 CLI_PSGI_PATH = lib/fbaModelCLI.psgi
 CLI_SERVICE_PORT = 7054
 CLI_SERVICE_DIR = $(TARGET)/services/$(CLI_SERVICE)
-CLI_TPAGE_ARGS = --define kb_top=$(TARGET) --define kb_runtime=$(DEPLOY_RUNTIME) --define kb_service_name=$(CLI_SERVICE) \
+CLI_TPAGE_ARGS = --define kb_top=$(TARGET) --define kb_runtime=$(KB_RUNTIME) --define kb_service_name=$(CLI_SERVICE) \
 	--define kb_service_port=$(CLI_SERVICE_PORT) --define kb_service_psgi=$(CLI_PSGI_PATH)
 
 all: bin server
@@ -53,7 +53,7 @@ $(BIN_DIR)/%: scripts/%.pl
 
 deploy: deploy-service
 
-deploy-service: deploy-dir deploy-scripts deploy-libs deploy-services deploy-monit deploy-doc
+deploy-service: deploy-dir deploy-scripts deploy-libs deploy-services
 deploy-client: deploy-dir deploy-scripts deploy-libs  deploy-doc
 
 deploy-dir:
@@ -66,7 +66,7 @@ deploy-dir:
 
 deploy-scripts:
 	export KB_TOP=$(TARGET); \
-	export KB_RUNTIME=$(DEPLOY_RUNTIME); \
+	export KB_RUNTIME=$(KB_RUNTIME); \
 	export KB_PERL_PATH=$(TARGET)/lib bash ; \
 	for src in $(SRC_PERL) ; do \
 		basefile=`basename $$src`; \
@@ -82,30 +82,30 @@ deploy-libs:
 deploy-services: deploy-basic-service deploy-data-service deploy-cli-service
 
 deploy-basic-service:
-	$(TPAGE) $(SERV_TPAGE_ARGS) service/start_service.tt > $(TARGET)/services/$(SERV_SERVICE)/start_service; \
+	tpage $(SERV_TPAGE_ARGS) service/start_service.tt > $(TARGET)/services/$(SERV_SERVICE)/start_service; \
 	chmod +x $(TARGET)/services/$(SERV_SERVICE)/start_service; \
-	$(TPAGE) $(SERV_TPAGE_ARGS) service/stop_service.tt > $(TARGET)/services/$(SERV_SERVICE)/stop_service; \
+	tpage $(SERV_TPAGE_ARGS) service/stop_service.tt > $(TARGET)/services/$(SERV_SERVICE)/stop_service; \
 	chmod +x $(TARGET)/services/$(SERV_SERVICE)/stop_service; \
-	$(TPAGE) $(SERV_TPAGE_ARGS) service/process.tt > $(TARGET)/services/$(SERV_SERVICE)/process.$(SERV_SERVICE); \
+	tpage $(SERV_TPAGE_ARGS) service/process.tt > $(TARGET)/services/$(SERV_SERVICE)/process.$(SERV_SERVICE); \
 	chmod +x $(TARGET)/services/$(SERV_SERVICE)/process.$(SERV_SERVICE); 
 
 deploy-data-service:
-	$(TPAGE) $(DATA_TPAGE_ARGS) service/start_service.tt > $(TARGET)/services/$(DATA_SERVICE)/start_service; \
+	tpage $(DATA_TPAGE_ARGS) service/start_service.tt > $(TARGET)/services/$(DATA_SERVICE)/start_service; \
 	chmod +x $(TARGET)/services/$(DATA_SERVICE)/start_service; \
-	$(TPAGE) $(DATA_TPAGE_ARGS) service/stop_service.tt > $(TARGET)/services/$(DATA_SERVICE)/stop_service; \
+	tpage $(DATA_TPAGE_ARGS) service/stop_service.tt > $(TARGET)/services/$(DATA_SERVICE)/stop_service; \
 	chmod +x $(TARGET)/services/$(DATA_SERVICE)/stop_service; \
-	$(TPAGE) $(DATA_TPAGE_ARGS) service/process.tt > $(TARGET)/services/$(DATA_SERVICE)/process.$(DATA_SERVICE); \
+	tpage $(DATA_TPAGE_ARGS) service/process.tt > $(TARGET)/services/$(DATA_SERVICE)/process.$(DATA_SERVICE); \
 	chmod +x $(TARGET)/services/$(DATA_SERVICE)/process.$(DATA_SERVICE); 
 
 deploy-cli-service:
-	$(TPAGE) $(CLI_TPAGE_ARGS) service/start_service.tt > $(TARGET)/services/$(CLI_SERVICE)/start_service; \
+	tpage $(CLI_TPAGE_ARGS) service/start_service.tt > $(TARGET)/services/$(CLI_SERVICE)/start_service; \
 	chmod +x $(TARGET)/services/$(CLI_SERVICE)/start_service; \
-	$(TPAGE) $(CLI_TPAGE_ARGS) service/stop_service.tt > $(TARGET)/services/$(CLI_SERVICE)/stop_service; \
+	tpage $(CLI_TPAGE_ARGS) service/stop_service.tt > $(TARGET)/services/$(CLI_SERVICE)/stop_service; \
 	chmod +x $(TARGET)/services/$(CLI_SERVICE)/stop_service; \
-	$(TPAGE) $(CLI_TPAGE_ARGS) service/process.tt > $(TARGET)/services/$(CLI_SERVICE)/process.$(CLI_SERVICE); \
+	tpage $(CLI_TPAGE_ARGS) service/process.tt > $(TARGET)/services/$(CLI_SERVICE)/process.$(CLI_SERVICE); \
 	chmod +x $(TARGET)/services/$(CLI_SERVICE)/process.$(CLI_SERVICE);
 
 deploy-doc:
 	if [ ! -d doc ] ; then mkdir doc ; fi
-	$(DEPLOY_RUNTIME)/bin/pod2html -t "fbaModelServices" lib/fbaModelServices.pm > doc/fbaModelServices.html
+	$(KB_RUNTIME)/bin/pod2html -t "fbaModelServices" lib/fbaModelServices.pm > doc/fbaModelServices.html
 	cp doc/*html $(SERV_SERVICE_DIR)/webroot/.
