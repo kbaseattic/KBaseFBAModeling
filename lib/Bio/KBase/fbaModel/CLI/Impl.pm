@@ -25,6 +25,7 @@ use ModelSEED::App::bio;
 use ModelSEED::App::mapping;
 use ModelSEED::App::genome;
 use ModelSEED::App::model;
+use ModelSEED::Configuration;
 use Getopt::Long::Descriptive;
 use Exception::Class;
 use Data::Dumper;
@@ -143,6 +144,37 @@ sub new
         map { $_ => [ $allowed_apps->{$_}->command_names ] }
         @apps
     };
+    # Make sure ModelSEED::Configuration is set up correctly
+    my ($host, $db);
+    if (my $e = $ENV{KB_DEPLOYMENT_CONFIG}) {
+        my $service = $ENV{KB_SERVICE_NAME};
+        my $c = new Config::Simple($e);
+        $host = $c->param("$service.mongodb-hostname");
+        $db   = $c->param("$service.mongodb-database");
+    } else {
+        warn "No deployment configuration found;\n";
+    }
+    if (!$host) {
+        $host = "mongodb.kbase.us";
+        warn "\tfalling back to $host for database!\n";
+    }
+    if (!$db) {
+        $db = "modelObjectStore";
+        warn "\tfalling back to $db for collection\n";
+    }
+    my $config = ModelSEED::Configuration->new;
+    $config->config->{stores} = [];
+    push(@{$config->config->{stores}},
+        {
+            class   => "ModelSEED::Database::MongoDBSimple",
+            type    => "mongo",
+            name    => "kbase",
+            db_name => $db,
+            host    => $host,
+        }
+    );
+    $config->config->{login} = { username => "kbase", password => "kbase" };
+    $config->save();
     #END_CONSTRUCTOR
 
     if ($self->can('_init_instance'))
