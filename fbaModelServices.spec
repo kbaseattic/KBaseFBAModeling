@@ -281,10 +281,33 @@ module fbaModelServices {
 	/*
 		This function creates a metabolic model object from the annotated genome object.
 	*/
-	funcdef genome_to_fbamodel(GenomeTO in_genome) returns (FBAModel out_model);
-	funcdef fbamodel_to_sbml(FBAModel in_model) returns (SBML out_model);
-	funcdef gapfill_fbamodel(FBAModel in_model,GapfillingFormulation in_formulation,bool overwrite,string save) returns (FBAModel out_model);
-	funcdef runfba(FBAModel in_model,FBAFormulation in_formulation,bool overwrite,string save) returns (HTMLFile out_solution);
-	funcdef object_to_html(ObjectSpec inObject) returns (HTMLFile outHTML);
-	funcdef gapgen_fbamodel(FBAModel in_model,GapgenFormulation in_formulation,bool overwrite,string save) returns (FBAModel out_model);
+    funcdef genome_snapshot (GenomeId id) returns (GenomeSnapshotId snapshot_id);
+    funcdef genome_get_snapshot (GenomeSnapshotId id) returns (Genome genome);
+
+    funcdef model_build (GenomeSnapshotId id) returns (ModelId model_id);
+    funcdef model_get (ModelId id) returns (Model model);
+    funcdef model_to_sbml (ModelId id) returns (SBML sbml_string);
+    funcdef model_to_html (ModelId id) returns (HTML html_string);
+
+    funcdef fba_default_formulation (ModelId id) returns (FBAFormulation formulation);
+    funcdef fba_run (ModelId id, FBAFormulation formulation) returns (FbaResultsId results_id);
+    funcdef fba_check_results (FbaResultsId id) returns (Bool is_done);
+    funcdef fba_get_results (FbaResultsId id) returns (FBAResults fba_results);
+    funcdef fba_results_to_html (FbaResultsId id) returns (HTML html_string);
+
+    funcdef gapfill_default_formulation (ModelId id) returns (GapfillFormulation formulation);
+    funcdef gapfill_model (ModelId id, GapfillFormulation formulation) returns (GapfillResultsId results_id);
+    funcdef gapfill_check_results (GapfillResultsId id) returns (Bool is_done);
+    funcdef gapfill_get_results (GapfillResultsId id) returns (GapfillResults results);
+    funcdef gapfill_results_to_html (GapfillResultsId id) returns (HTML html_string);
+
+    funcdef gapfill_integrate_results (GapfillResultsId id, ModelId id) returns (ModelId new_model_id);
+
+    funcdef gapgen_default_formulation (ModelId id) returns (GapgenFormulation formulation);
+    funcdef gapgen_model (ModelId id, GapgenFormulation formulation) returns (GapgenResultsId results_id);
+    funcdef gapgen_check_results (GapgenResultsId id) returns (Bool is_done);
+    funcdef gapgen_get_results (GapgenResultsId id) returns (GapgenResults results);
+    funcdef gapgen_results_to_html (GapgenResultsId id) returns (HTML html_string);
+
+    funcdef gapgen_integrate_results (GapgenResultsId id, ModelId id) returns (ModelId new_model_id);
 };
