@@ -1,4 +1,7 @@
 TOP_DIR = ../..
+DEPLOY_RUNTIME ?= /kb/runtime
+TARGET ?= /kb/deployment
+ 
 include $(TOP_DIR)/tools/Makefile.common
 
 SRC_PERL = $(wildcard scripts/*.pl)
@@ -44,12 +47,27 @@ CLI_SERVICE_DIR = $(TARGET)/services/$(CLI_SERVICE)
 CLI_TPAGE_ARGS = --define kb_top=$(TARGET) --define kb_runtime=$(KB_RUNTIME) --define kb_service_name=$(CLI_SERVICE) \
 	--define kb_service_port=$(CLI_SERVICE_PORT) --define kb_service_psgi=$(CLI_PSGI_PATH)
 
+CLIENT_TESTS = $(wildcard t/*.t)
+
+
+
 all: bin server
 
 bin: $(BIN_PERL)
 
 $(BIN_DIR)/%: scripts/%.pl 
 	$(TOOLS_DIR)/wrap_perl '$$KB_TOP/modules/$(CURRENT_DIR)/$<' $@
+
+test: test-client
+
+test-client:
+	for t in $(CLIENT_TESTS) ; do \
+		echo $$t ; \
+		$(DEPLOY_RUNTIME)/bin/perl $$t ; \
+		if [ $$? -ne 0 ] ; then \
+			exit 1 ; \
+		fi \
+	done
 
 deploy: deploy-service
 
