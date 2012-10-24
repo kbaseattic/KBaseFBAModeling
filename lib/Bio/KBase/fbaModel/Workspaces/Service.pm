@@ -1,4 +1,4 @@
-package fbaModelServicesServer;
+package Bio::KBase::fbaModel::Workspaces::Service;
 
 use Data::Dumper;
 use Moose;
@@ -13,29 +13,19 @@ has 'valid_methods' => (is => 'ro', isa => 'HashRef', lazy => 1,
 our $CallContext;
 
 our %return_counts = (
-        'get_genomeobject' => 1,
-        'genome_to_fbamodel' => 1,
-        'fbamodel_to_sbml' => 1,
-        'fbamodel_to_html' => 1,
-        'runfba' => 1,
-        'fba_check_results' => 1,
-        'fba_results_to_html' => 1,
-        'gapfill_model' => 1,
-        'gapfill_check_results' => 1,
-        'gapfill_to_html' => 1,
-        'gapfill_integrate' => 0,
-        'gapgen_model' => 1,
-        'gapgen_check_results' => 1,
-        'gapgen_to_html' => 1,
-        'gapgen_integrate' => 0,
-        'get_models' => 1,
-        'get_fbas' => 1,
-        'get_gapfills' => 1,
-        'get_gapgens' => 1,
-        'get_reactions' => 1,
-        'get_compounds' => 1,
-        'get_media' => 1,
-        'get_biochemistry' => 1,
+        'save_object' => 1,
+        'delete_object' => 1,
+        'get_object' => 1,
+        'revert_object' => 1,
+        'copy_object' => 1,
+        'move_object' => 1,
+        'has_object' => 1,
+        'create_workspace' => 1,
+        'clone_workspace' => 1,
+        'list_workspaces' => 1,
+        'list_workspace_objects' => 1,
+        'set_global_workspace_permissions' => 1,
+        'set_workspace_permissions' => 1,
         'version' => 1,
 );
 
@@ -43,29 +33,19 @@ sub _build_valid_methods
 {
     my($self) = @_;
     my $methods = {
-        'get_genomeobject' => 1,
-        'genome_to_fbamodel' => 1,
-        'fbamodel_to_sbml' => 1,
-        'fbamodel_to_html' => 1,
-        'runfba' => 1,
-        'fba_check_results' => 1,
-        'fba_results_to_html' => 1,
-        'gapfill_model' => 1,
-        'gapfill_check_results' => 1,
-        'gapfill_to_html' => 1,
-        'gapfill_integrate' => 1,
-        'gapgen_model' => 1,
-        'gapgen_check_results' => 1,
-        'gapgen_to_html' => 1,
-        'gapgen_integrate' => 1,
-        'get_models' => 1,
-        'get_fbas' => 1,
-        'get_gapfills' => 1,
-        'get_gapgens' => 1,
-        'get_reactions' => 1,
-        'get_compounds' => 1,
-        'get_media' => 1,
-        'get_biochemistry' => 1,
+        'save_object' => 1,
+        'delete_object' => 1,
+        'get_object' => 1,
+        'revert_object' => 1,
+        'copy_object' => 1,
+        'move_object' => 1,
+        'has_object' => 1,
+        'create_workspace' => 1,
+        'clone_workspace' => 1,
+        'list_workspaces' => 1,
+        'list_workspace_objects' => 1,
+        'set_global_workspace_permissions' => 1,
+        'set_workspace_permissions' => 1,
         'version' => 1,
     };
     return $methods;
@@ -75,11 +55,11 @@ sub call_method {
     my ($self, $data, $method_info) = @_;
     my ($module, $method) = @$method_info{qw(module method)};
     
-    my $ctx = fbaModelServicesServerContext->new(client_ip => $self->_plack_req->address);
+    my $ctx = Bio::KBase::fbaModel::Workspaces::ServiceContext->new(client_ip => $self->_plack_req->address);
     
     my $args = $data->{arguments};
 
-        # Service fbaModelServices does not require authentication.
+        # Service workspaceDocumentDB does not require authentication.
         
     my $new_isa = $self->get_package_isa($module);
     no strict 'refs';
@@ -136,7 +116,7 @@ sub get_method
     if (!$self->valid_methods->{$method})
     {
 	$self->exception('NoSuchMethod',
-			 "'$method' is not a valid method in service fbaModelServices.");
+			 "'$method' is not a valid method in service workspaceDocumentDB.");
     }
 	
     my $inst = $self->instance_dispatch->{$package};
@@ -165,13 +145,13 @@ sub get_method
     return { module => $module, method => $method };
 }
 
-package fbaModelServicesServerContext;
+package Bio::KBase::fbaModel::Workspaces::ServiceContext;
 
 use strict;
 
 =head1 NAME
 
-fbaModelServicesServerContext
+Bio::KBase::fbaModel::Workspaces::ServiceContext
 
 head1 DESCRIPTION
 
