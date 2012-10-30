@@ -37,18 +37,20 @@ repository into the modules directory.
 
 ### Setup MongoDB ###
 
-Version of mongodb must be 1.9 or greater. Download and
-install an updated version if this is not the case.
+If the `/data/` directory does not exist on your instance,
+create it and have it point to the local disk:
 
-    cd ~
-    wget http://fastdl.mongodb.org/linux/mongodb-linux-x86_64-2.0.7.tgz
-    tar -xzf mongodb-linux-x86_64-2.0.7.tgz
-    cp -r mongodb-linux-x86_64-2.0.7/bin /kb/runtime/bin
     mkdir /data
     mkdir /mnt/db
     ln -s /mnt/db /data/db
-    mongod   # wait for it to initialize journel files, then Ctrl-C
-    mongod 1>/dev/null 2>&1 &
+
+Now start up the MongoDB service:
+
+    mongod 1>/var/log/mongod.log 2>&1 &
+
+Note that you will have to wait until MongoDB initializes to proceed
+to the next step. `less /var/log/mongod.log` to see when the
+setup process is done.
 
 ### Setup Services ### 
 
