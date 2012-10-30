@@ -9,7 +9,8 @@ use Data::Dumper;
 my $test_count = 7;
 
 my $obj = fbaModelServicesImpl->new();
-open(GENOMEFILE, "<", $Bin."/../data/myGenome.annotated");
+open(GENOMEFILE, "<", $Bin."/../data/myGenome.annotated")
+  or die "could not open $Bin/../data/myGenome.annotated";
 my @input_txt = <GENOMEFILE>;
 close(GENOMEFILE);
 my $json = JSON::XS->new;
