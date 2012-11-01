@@ -15,6 +15,22 @@ class fbaModelServices:
         if url != None:
             self.url = url
 
+    def get_genomeobject(self, id, options):
+
+        arg_hash = { 'method': 'fbaModelServices.get_genomeobject',
+                     'params': [id, options],
+                     'version': '1.1'
+                     }
+
+        body = json.dumps(arg_hash)
+        resp_str = urllib.urlopen(self.url, body).read()
+        resp = json.loads(resp_str)
+
+        if 'result' in resp:
+            return resp['result'][0]
+        else:
+            return None
+
     def genome_to_fbamodel(self, in_genome):
 
         arg_hash = { 'method': 'fbaModelServices.genome_to_fbamodel',
@@ -47,10 +63,10 @@ class fbaModelServices:
         else:
             return None
 
-    def gapfill_fbamodel(self, in_model, in_formulation, overwrite, save):
+    def fbamodel_to_html(self, in_model):
 
-        arg_hash = { 'method': 'fbaModelServices.gapfill_fbamodel',
-                     'params': [in_model, in_formulation, overwrite, save],
+        arg_hash = { 'method': 'fbaModelServices.fbamodel_to_html',
+                     'params': [in_model],
                      'version': '1.1'
                      }
 
@@ -63,10 +79,10 @@ class fbaModelServices:
         else:
             return None
 
-    def runfba(self, in_model, in_formulation, overwrite, save):
+    def runfba(self, in_model, formulation):
 
         arg_hash = { 'method': 'fbaModelServices.runfba',
-                     'params': [in_model, in_formulation, overwrite, save],
+                     'params': [in_model, formulation],
                      'version': '1.1'
                      }
 
@@ -79,10 +95,10 @@ class fbaModelServices:
         else:
             return None
 
-    def object_to_html(self, inObject):
+    def fba_check_results(self, in_fba):
 
-        arg_hash = { 'method': 'fbaModelServices.object_to_html',
-                     'params': [inObject],
+        arg_hash = { 'method': 'fbaModelServices.fba_check_results',
+                     'params': [in_fba],
                      'version': '1.1'
                      }
 
@@ -95,10 +111,266 @@ class fbaModelServices:
         else:
             return None
 
-    def gapgen_fbamodel(self, in_model, in_formulation, overwrite, save):
+    def fba_results_to_html(self, in_fba):
 
-        arg_hash = { 'method': 'fbaModelServices.gapgen_fbamodel',
-                     'params': [in_model, in_formulation, overwrite, save],
+        arg_hash = { 'method': 'fbaModelServices.fba_results_to_html',
+                     'params': [in_fba],
+                     'version': '1.1'
+                     }
+
+        body = json.dumps(arg_hash)
+        resp_str = urllib.urlopen(self.url, body).read()
+        resp = json.loads(resp_str)
+
+        if 'result' in resp:
+            return resp['result'][0]
+        else:
+            return None
+
+    def gapfill_model(self, in_model, formulation):
+
+        arg_hash = { 'method': 'fbaModelServices.gapfill_model',
+                     'params': [in_model, formulation],
+                     'version': '1.1'
+                     }
+
+        body = json.dumps(arg_hash)
+        resp_str = urllib.urlopen(self.url, body).read()
+        resp = json.loads(resp_str)
+
+        if 'result' in resp:
+            return resp['result'][0]
+        else:
+            return None
+
+    def gapfill_check_results(self, in_gapfill):
+
+        arg_hash = { 'method': 'fbaModelServices.gapfill_check_results',
+                     'params': [in_gapfill],
+                     'version': '1.1'
+                     }
+
+        body = json.dumps(arg_hash)
+        resp_str = urllib.urlopen(self.url, body).read()
+        resp = json.loads(resp_str)
+
+        if 'result' in resp:
+            return resp['result'][0]
+        else:
+            return None
+
+    def gapfill_to_html(self, in_gapfill):
+
+        arg_hash = { 'method': 'fbaModelServices.gapfill_to_html',
+                     'params': [in_gapfill],
+                     'version': '1.1'
+                     }
+
+        body = json.dumps(arg_hash)
+        resp_str = urllib.urlopen(self.url, body).read()
+        resp = json.loads(resp_str)
+
+        if 'result' in resp:
+            return resp['result'][0]
+        else:
+            return None
+
+    def gapfill_integrate(self, in_gapfill, in_model):
+
+        arg_hash = { 'method': 'fbaModelServices.gapfill_integrate',
+                     'params': [in_gapfill, in_model],
+                     'version': '1.1'
+                     }
+
+        body = json.dumps(arg_hash)
+        resp_str = urllib.urlopen(self.url, body).read()
+        resp = json.loads(resp_str)
+
+        if 'result' in resp:
+            return resp['result']
+        else:
+            return None
+
+    def gapgen_model(self, in_model, formulation):
+
+        arg_hash = { 'method': 'fbaModelServices.gapgen_model',
+                     'params': [in_model, formulation],
+                     'version': '1.1'
+                     }
+
+        body = json.dumps(arg_hash)
+        resp_str = urllib.urlopen(self.url, body).read()
+        resp = json.loads(resp_str)
+
+        if 'result' in resp:
+            return resp['result'][0]
+        else:
+            return None
+
+    def gapgen_check_results(self, in_gapgen):
+
+        arg_hash = { 'method': 'fbaModelServices.gapgen_check_results',
+                     'params': [in_gapgen],
+                     'version': '1.1'
+                     }
+
+        body = json.dumps(arg_hash)
+        resp_str = urllib.urlopen(self.url, body).read()
+        resp = json.loads(resp_str)
+
+        if 'result' in resp:
+            return resp['result'][0]
+        else:
+            return None
+
+    def gapgen_to_html(self, in_gapgen):
+
+        arg_hash = { 'method': 'fbaModelServices.gapgen_to_html',
+                     'params': [in_gapgen],
+                     'version': '1.1'
+                     }
+
+        body = json.dumps(arg_hash)
+        resp_str = urllib.urlopen(self.url, body).read()
+        resp = json.loads(resp_str)
+
+        if 'result' in resp:
+            return resp['result'][0]
+        else:
+            return None
+
+    def gapgen_integrate(self, in_gapgen, in_model):
+
+        arg_hash = { 'method': 'fbaModelServices.gapgen_integrate',
+                     'params': [in_gapgen, in_model],
+                     'version': '1.1'
+                     }
+
+        body = json.dumps(arg_hash)
+        resp_str = urllib.urlopen(self.url, body).read()
+        resp = json.loads(resp_str)
+
+        if 'result' in resp:
+            return resp['result']
+        else:
+            return None
+
+    def get_models(self, in_model_ids):
+
+        arg_hash = { 'method': 'fbaModelServices.get_models',
+                     'params': [in_model_ids],
+                     'version': '1.1'
+                     }
+
+        body = json.dumps(arg_hash)
+        resp_str = urllib.urlopen(self.url, body).read()
+        resp = json.loads(resp_str)
+
+        if 'result' in resp:
+            return resp['result'][0]
+        else:
+            return None
+
+    def get_fbas(self, in_fba_ids):
+
+        arg_hash = { 'method': 'fbaModelServices.get_fbas',
+                     'params': [in_fba_ids],
+                     'version': '1.1'
+                     }
+
+        body = json.dumps(arg_hash)
+        resp_str = urllib.urlopen(self.url, body).read()
+        resp = json.loads(resp_str)
+
+        if 'result' in resp:
+            return resp['result'][0]
+        else:
+            return None
+
+    def get_gapfills(self, in_gapfill_ids):
+
+        arg_hash = { 'method': 'fbaModelServices.get_gapfills',
+                     'params': [in_gapfill_ids],
+                     'version': '1.1'
+                     }
+
+        body = json.dumps(arg_hash)
+        resp_str = urllib.urlopen(self.url, body).read()
+        resp = json.loads(resp_str)
+
+        if 'result' in resp:
+            return resp['result'][0]
+        else:
+            return None
+
+    def get_gapgens(self, in_gapgen_ids):
+
+        arg_hash = { 'method': 'fbaModelServices.get_gapgens',
+                     'params': [in_gapgen_ids],
+                     'version': '1.1'
+                     }
+
+        body = json.dumps(arg_hash)
+        resp_str = urllib.urlopen(self.url, body).read()
+        resp = json.loads(resp_str)
+
+        if 'result' in resp:
+            return resp['result'][0]
+        else:
+            return None
+
+    def get_reactions(self, in_reaction_ids, biochemistry):
+
+        arg_hash = { 'method': 'fbaModelServices.get_reactions',
+                     'params': [in_reaction_ids, biochemistry],
+                     'version': '1.1'
+                     }
+
+        body = json.dumps(arg_hash)
+        resp_str = urllib.urlopen(self.url, body).read()
+        resp = json.loads(resp_str)
+
+        if 'result' in resp:
+            return resp['result'][0]
+        else:
+            return None
+
+    def get_compounds(self, in_compound_ids, biochemistry):
+
+        arg_hash = { 'method': 'fbaModelServices.get_compounds',
+                     'params': [in_compound_ids, biochemistry],
+                     'version': '1.1'
+                     }
+
+        body = json.dumps(arg_hash)
+        resp_str = urllib.urlopen(self.url, body).read()
+        resp = json.loads(resp_str)
+
+        if 'result' in resp:
+            return resp['result'][0]
+        else:
+            return None
+
+    def get_media(self, in_media_ids, biochemistry):
+
+        arg_hash = { 'method': 'fbaModelServices.get_media',
+                     'params': [in_media_ids, biochemistry],
+                     'version': '1.1'
+                     }
+
+        body = json.dumps(arg_hash)
+        resp_str = urllib.urlopen(self.url, body).read()
+        resp = json.loads(resp_str)
+
+        if 'result' in resp:
+            return resp['result'][0]
+        else:
+            return None
+
+    def get_biochemistry(self, biochemistry):
+
+        arg_hash = { 'method': 'fbaModelServices.get_biochemistry',
+                     'params': [biochemistry],
                      'version': '1.1'
                      }
 
