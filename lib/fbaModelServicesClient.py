@@ -15,10 +15,10 @@ class fbaModelServices:
         if url != None:
             self.url = url
 
-    def get_genomeobject(self, id, options):
+    def get_models(self, in_model_ids):
 
-        arg_hash = { 'method': 'fbaModelServices.get_genomeobject',
-                     'params': [id, options],
+        arg_hash = { 'method': 'fbaModelServices.get_models',
+                     'params': [in_model_ids],
                      'version': '1.1'
                      }
 
@@ -31,10 +31,138 @@ class fbaModelServices:
         else:
             return None
 
-    def genome_to_fbamodel(self, in_genome):
+    def get_fbas(self, in_fba_ids):
+
+        arg_hash = { 'method': 'fbaModelServices.get_fbas',
+                     'params': [in_fba_ids],
+                     'version': '1.1'
+                     }
+
+        body = json.dumps(arg_hash)
+        resp_str = urllib.urlopen(self.url, body).read()
+        resp = json.loads(resp_str)
+
+        if 'result' in resp:
+            return resp['result'][0]
+        else:
+            return None
+
+    def get_gapfills(self, in_gapfill_ids):
+
+        arg_hash = { 'method': 'fbaModelServices.get_gapfills',
+                     'params': [in_gapfill_ids],
+                     'version': '1.1'
+                     }
+
+        body = json.dumps(arg_hash)
+        resp_str = urllib.urlopen(self.url, body).read()
+        resp = json.loads(resp_str)
+
+        if 'result' in resp:
+            return resp['result'][0]
+        else:
+            return None
+
+    def get_gapgens(self, in_gapgen_ids):
+
+        arg_hash = { 'method': 'fbaModelServices.get_gapgens',
+                     'params': [in_gapgen_ids],
+                     'version': '1.1'
+                     }
+
+        body = json.dumps(arg_hash)
+        resp_str = urllib.urlopen(self.url, body).read()
+        resp = json.loads(resp_str)
+
+        if 'result' in resp:
+            return resp['result'][0]
+        else:
+            return None
+
+    def get_reactions(self, in_reaction_ids, biochemistry):
+
+        arg_hash = { 'method': 'fbaModelServices.get_reactions',
+                     'params': [in_reaction_ids, biochemistry],
+                     'version': '1.1'
+                     }
+
+        body = json.dumps(arg_hash)
+        resp_str = urllib.urlopen(self.url, body).read()
+        resp = json.loads(resp_str)
+
+        if 'result' in resp:
+            return resp['result'][0]
+        else:
+            return None
+
+    def get_compounds(self, in_compound_ids, biochemistry):
+
+        arg_hash = { 'method': 'fbaModelServices.get_compounds',
+                     'params': [in_compound_ids, biochemistry],
+                     'version': '1.1'
+                     }
+
+        body = json.dumps(arg_hash)
+        resp_str = urllib.urlopen(self.url, body).read()
+        resp = json.loads(resp_str)
+
+        if 'result' in resp:
+            return resp['result'][0]
+        else:
+            return None
+
+    def get_media(self, in_media_ids, biochemistry):
+
+        arg_hash = { 'method': 'fbaModelServices.get_media',
+                     'params': [in_media_ids, biochemistry],
+                     'version': '1.1'
+                     }
+
+        body = json.dumps(arg_hash)
+        resp_str = urllib.urlopen(self.url, body).read()
+        resp = json.loads(resp_str)
+
+        if 'result' in resp:
+            return resp['result'][0]
+        else:
+            return None
+
+    def get_biochemistry(self, biochemistry):
+
+        arg_hash = { 'method': 'fbaModelServices.get_biochemistry',
+                     'params': [biochemistry],
+                     'version': '1.1'
+                     }
+
+        body = json.dumps(arg_hash)
+        resp_str = urllib.urlopen(self.url, body).read()
+        resp = json.loads(resp_str)
+
+        if 'result' in resp:
+            return resp['result'][0]
+        else:
+            return None
+
+    def genome_to_workspace(self, input):
+
+        arg_hash = { 'method': 'fbaModelServices.genome_to_workspace',
+                     'params': [input],
+                     'version': '1.1'
+                     }
+
+        body = json.dumps(arg_hash)
+        resp_str = urllib.urlopen(self.url, body).read()
+        resp = json.loads(resp_str)
+
+        if 'result' in resp:
+            return resp['result'][0]
+        else:
+            return None
+
+    def genome_to_fbamodel(self, input):
 
         arg_hash = { 'method': 'fbaModelServices.genome_to_fbamodel',
-                     'params': [in_genome],
+                     'params': [input],
                      'version': '1.1'
                      }
 
@@ -47,10 +175,10 @@ class fbaModelServices:
         else:
             return None
 
-    def fbamodel_to_sbml(self, in_model):
+    def export_fbamodel(self, input):
 
-        arg_hash = { 'method': 'fbaModelServices.fbamodel_to_sbml',
-                     'params': [in_model],
+        arg_hash = { 'method': 'fbaModelServices.export_fbamodel',
+                     'params': [input],
                      'version': '1.1'
                      }
 
@@ -63,26 +191,10 @@ class fbaModelServices:
         else:
             return None
 
-    def fbamodel_to_html(self, in_model):
-
-        arg_hash = { 'method': 'fbaModelServices.fbamodel_to_html',
-                     'params': [in_model],
-                     'version': '1.1'
-                     }
-
-        body = json.dumps(arg_hash)
-        resp_str = urllib.urlopen(self.url, body).read()
-        resp = json.loads(resp_str)
-
-        if 'result' in resp:
-            return resp['result'][0]
-        else:
-            return None
-
-    def runfba(self, in_model, formulation):
+    def runfba(self, input):
 
         arg_hash = { 'method': 'fbaModelServices.runfba',
-                     'params': [in_model, formulation],
+                     'params': [input],
                      'version': '1.1'
                      }
 
@@ -95,10 +207,10 @@ class fbaModelServices:
         else:
             return None
 
-    def fba_check_results(self, in_fba):
+    def checkfba(self, input):
 
-        arg_hash = { 'method': 'fbaModelServices.fba_check_results',
-                     'params': [in_fba],
+        arg_hash = { 'method': 'fbaModelServices.checkfba',
+                     'params': [input],
                      'version': '1.1'
                      }
 
@@ -111,10 +223,10 @@ class fbaModelServices:
         else:
             return None
 
-    def fba_results_to_html(self, in_fba):
+    def export_fba(self, input):
 
-        arg_hash = { 'method': 'fbaModelServices.fba_results_to_html',
-                     'params': [in_fba],
+        arg_hash = { 'method': 'fbaModelServices.export_fba',
+                     'params': [input],
                      'version': '1.1'
                      }
 
@@ -252,134 +364,6 @@ class fbaModelServices:
 
         if 'result' in resp:
             return resp['result']
-        else:
-            return None
-
-    def get_models(self, in_model_ids):
-
-        arg_hash = { 'method': 'fbaModelServices.get_models',
-                     'params': [in_model_ids],
-                     'version': '1.1'
-                     }
-
-        body = json.dumps(arg_hash)
-        resp_str = urllib.urlopen(self.url, body).read()
-        resp = json.loads(resp_str)
-
-        if 'result' in resp:
-            return resp['result'][0]
-        else:
-            return None
-
-    def get_fbas(self, in_fba_ids):
-
-        arg_hash = { 'method': 'fbaModelServices.get_fbas',
-                     'params': [in_fba_ids],
-                     'version': '1.1'
-                     }
-
-        body = json.dumps(arg_hash)
-        resp_str = urllib.urlopen(self.url, body).read()
-        resp = json.loads(resp_str)
-
-        if 'result' in resp:
-            return resp['result'][0]
-        else:
-            return None
-
-    def get_gapfills(self, in_gapfill_ids):
-
-        arg_hash = { 'method': 'fbaModelServices.get_gapfills',
-                     'params': [in_gapfill_ids],
-                     'version': '1.1'
-                     }
-
-        body = json.dumps(arg_hash)
-        resp_str = urllib.urlopen(self.url, body).read()
-        resp = json.loads(resp_str)
-
-        if 'result' in resp:
-            return resp['result'][0]
-        else:
-            return None
-
-    def get_gapgens(self, in_gapgen_ids):
-
-        arg_hash = { 'method': 'fbaModelServices.get_gapgens',
-                     'params': [in_gapgen_ids],
-                     'version': '1.1'
-                     }
-
-        body = json.dumps(arg_hash)
-        resp_str = urllib.urlopen(self.url, body).read()
-        resp = json.loads(resp_str)
-
-        if 'result' in resp:
-            return resp['result'][0]
-        else:
-            return None
-
-    def get_reactions(self, in_reaction_ids, biochemistry):
-
-        arg_hash = { 'method': 'fbaModelServices.get_reactions',
-                     'params': [in_reaction_ids, biochemistry],
-                     'version': '1.1'
-                     }
-
-        body = json.dumps(arg_hash)
-        resp_str = urllib.urlopen(self.url, body).read()
-        resp = json.loads(resp_str)
-
-        if 'result' in resp:
-            return resp['result'][0]
-        else:
-            return None
-
-    def get_compounds(self, in_compound_ids, biochemistry):
-
-        arg_hash = { 'method': 'fbaModelServices.get_compounds',
-                     'params': [in_compound_ids, biochemistry],
-                     'version': '1.1'
-                     }
-
-        body = json.dumps(arg_hash)
-        resp_str = urllib.urlopen(self.url, body).read()
-        resp = json.loads(resp_str)
-
-        if 'result' in resp:
-            return resp['result'][0]
-        else:
-            return None
-
-    def get_media(self, in_media_ids, biochemistry):
-
-        arg_hash = { 'method': 'fbaModelServices.get_media',
-                     'params': [in_media_ids, biochemistry],
-                     'version': '1.1'
-                     }
-
-        body = json.dumps(arg_hash)
-        resp_str = urllib.urlopen(self.url, body).read()
-        resp = json.loads(resp_str)
-
-        if 'result' in resp:
-            return resp['result'][0]
-        else:
-            return None
-
-    def get_biochemistry(self, biochemistry):
-
-        arg_hash = { 'method': 'fbaModelServices.get_biochemistry',
-                     'params': [biochemistry],
-                     'version': '1.1'
-                     }
-
-        body = json.dumps(arg_hash)
-        resp_str = urllib.urlopen(self.url, body).read()
-        resp = json.loads(resp_str)
-
-        if 'result' in resp:
-            return resp['result'][0]
         else:
             return None
 

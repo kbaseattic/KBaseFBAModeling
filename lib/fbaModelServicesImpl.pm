@@ -179,328 +179,14 @@ sub objectToOutput {
 	return $output_data;
 }
 
-#END_HEADER
-
-sub new
-{
-    my($class, @args) = @_;
-    my $self = {
-    };
-    bless $self, $class;
-    #BEGIN_CONSTRUCTOR
-    #END_CONSTRUCTOR
-
-    if ($self->can('_init_instance'))
-    {
-	$self->_init_instance();
-    }
-    return $self;
-}
-
-=head1 METHODS
-
-
-
-=head2 get_genomeobject
-
-  $genome = $obj->get_genomeobject($id, $options)
-
-=over 4
-
-=item Parameter and return types
-
-=begin html
-
-<pre>
-$id is a genome_id
-$options is a Get_GenomeObject_Opts
-$genome is a GenomeObject
-genome_id is a string
-Get_GenomeObject_Opts is a reference to a hash where the following keys are defined:
-	as_new_genome has a value which is a bool
-bool is an int
-GenomeObject is a reference to a hash where the following keys are defined:
-	id has a value which is a genome_id
-	scientific_name has a value which is a string
-	domain has a value which is a string
-	genetic_code has a value which is an int
-	source has a value which is a string
-	source_id has a value which is a string
-	contigs has a value which is a reference to a list where each element is a contig
-	features has a value which is a reference to a list where each element is a feature
-contig is a reference to a hash where the following keys are defined:
-	id has a value which is a contig_id
-	dna has a value which is a string
-contig_id is a string
-feature is a reference to a hash where the following keys are defined:
-	id has a value which is a feature_id
-	location has a value which is a location
-	type has a value which is a feature_type
-	function has a value which is a string
-	alternative_functions has a value which is a reference to a list where each element is an alt_func
-	protein_translation has a value which is a string
-	aliases has a value which is a reference to a list where each element is a string
-	annotations has a value which is a reference to a list where each element is an annotation
-feature_id is a string
-location is a reference to a list where each element is a region_of_dna
-region_of_dna is a reference to a list containing 4 items:
-	0: a contig_id
-	1: an int
-	2: a string
-	3: an int
-feature_type is a string
-alt_func is a reference to a list containing 3 items:
-	0: a string
-	1: a float
-	2: a reference to a list where each element is a gene_hit
-gene_hit is a reference to a list containing 2 items:
-	0: a feature_id
-	1: a float
-annotation is a reference to a list containing 3 items:
-	0: a string
-	1: a string
-	2: an int
-
-</pre>
-
-=end html
-
-=begin text
-
-$id is a genome_id
-$options is a Get_GenomeObject_Opts
-$genome is a GenomeObject
-genome_id is a string
-Get_GenomeObject_Opts is a reference to a hash where the following keys are defined:
-	as_new_genome has a value which is a bool
-bool is an int
-GenomeObject is a reference to a hash where the following keys are defined:
-	id has a value which is a genome_id
-	scientific_name has a value which is a string
-	domain has a value which is a string
-	genetic_code has a value which is an int
-	source has a value which is a string
-	source_id has a value which is a string
-	contigs has a value which is a reference to a list where each element is a contig
-	features has a value which is a reference to a list where each element is a feature
-contig is a reference to a hash where the following keys are defined:
-	id has a value which is a contig_id
-	dna has a value which is a string
-contig_id is a string
-feature is a reference to a hash where the following keys are defined:
-	id has a value which is a feature_id
-	location has a value which is a location
-	type has a value which is a feature_type
-	function has a value which is a string
-	alternative_functions has a value which is a reference to a list where each element is an alt_func
-	protein_translation has a value which is a string
-	aliases has a value which is a reference to a list where each element is a string
-	annotations has a value which is a reference to a list where each element is an annotation
-feature_id is a string
-location is a reference to a list where each element is a region_of_dna
-region_of_dna is a reference to a list containing 4 items:
-	0: a contig_id
-	1: an int
-	2: a string
-	3: an int
-feature_type is a string
-alt_func is a reference to a list containing 3 items:
-	0: a string
-	1: a float
-	2: a reference to a list where each element is a gene_hit
-gene_hit is a reference to a list containing 2 items:
-	0: a feature_id
-	1: a float
-annotation is a reference to a list containing 3 items:
-	0: a string
-	1: a string
-	2: an int
-
-
-=end text
-
-
-
-=item Description
-
-
-
-=back
-
-=cut
-
-sub get_genomeobject
-{
-    my $self = shift;
-    my($id, $options) = @_;
-
-    my @_bad_arguments;
-    (!ref($id)) or push(@_bad_arguments, "Invalid type for argument \"id\" (value was \"$id\")");
-    (ref($options) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"options\" (value was \"$options\")");
-    if (@_bad_arguments) {
-	my $msg = "Invalid arguments passed to get_genomeobject:\n" . join("", map { "\t$_\n" } @_bad_arguments);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'get_genomeobject');
-    }
-
-    my $ctx = $fbaModelServicesServer::CallContext;
-    my($genome);
-    #BEGIN get_genomeobject
-    my $loadObject = $objAPI->
-    
-    
-    
-    my $data = $cdmi->genomes_to_genome_data([$id]);
-    if (!defined($data->{$genome})) {
-    	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => "Genome ".$genome." not found!",
-							       method_name => 'get_genomeobject');
-    }
-    $data = $data->{$genome};
-    my $genome = {
-		id => $genome,
-		scientific_name => $data->{scientific_name},
-		genetic_code => $data->{genetic_code},
-		domain => undef,
-		source => undef,
-		source_id => undef,
-		contigs => [],
-		features => []
-    };
-    $data = $obj->get_relationship_IsComposedOf([$genome],["domain","source_id"], [], ["id"]);
-    if (defined($data->[0])) {
-    	if (defined($data->[0]->[0]->{domain})) {
-    		$genome->{domain} = $data->[0]->[0]->{domain};
-    	}
-    	if (defined($data->[0]->[0]->{source_id})) {
-    		$genome->{source_id} = $data->[0]->[0]->{source_id};
-    	}
-    }
-   	for (my $i=0; $i < @{$data}; $i++) {
-    	if (defined($data->[$i]->[2]->{id})) {
-	    	my $contig = {
-	    		id => $data->[$i]->[2]->{id},
-	    		dna => undef
-	    	};
-	    	my $seqData = $cdmapi->contigs_to_sequences([$data->[$i]->[2]->{id}]);
-	    	if (defined($seqData->{$data->[$i]->[2]->{id}})) {
-	    		$contig->{dna} = $seqData->{$data->[$i]->[2]->{id}};
-	    	}
-	    	push(@{$genome->{contigs}},$contig);
-    	}
-   	}
-   	$data = $obj->get_relationship_WasSubmittedBy([$genome],[], ["id"], ["id"]);
-    if (defined($data->[0])) {
-    	if (defined($data->[0]->[2]->{id})) {
-    		$genome->{source} = $data->[0]->[2]->{id};
-    	}
-    }
-  	my $genomeFtrs = $obj->genomes_to_fids([$genome],[]);
-	my $features = $genomeFtrs->{$genome};
-  	my $fidAnnotationHash = $obj->fids_to_annotations($features);
-  	my $fidProteinSequences = $obj->fids_to_protein_sequences($features);
-  	my $fidDataHash = $obj->fids_to_feature_data($features);
-  	for (my $i=0; $i < @{$features};$i++) {
-  		my $ftr = $features->[$i];
-  		my $ftrdata = $fidDataHash->{$ftr};
-  		my $feature = {
-  			id => $ftr,
-  			location => $ftrdata->{feature_location},
-  			function => $ftrdata->{feature_function},
-  			aliases => [],
-  			annotations => []
-  		};
-  		if (defined($fidAnnotationHash->{$ftr})) {
-  			$feature->{annotations} = $fidAnnotationHash->{$ftr};
-  		}
-  		if (defined($fidProteinSequences->{$ftr})) {
-  			$feature->{protein_translation} = $fidProteinSequences->{$ftr};
-  		}
-  		
-  		push(@{$genome->{features}},$feature);
-  	}
-  	
-    #END get_genomeobject
-    my @_bad_returns;
-    (ref($genome) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"genome\" (value was \"$genome\")");
-    if (@_bad_returns) {
-	my $msg = "Invalid returns passed to get_genomeobject:\n" . join("", map { "\t$_\n" } @_bad_returns);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'get_genomeobject');
-    }
-    return($genome);
-}
-
-
-
-
-=head2 genome_to_fbamodel
-
-  $out_model = $obj->genome_to_fbamodel($in_genome)
-
-=over 4
-
-=item Parameter and return types
-
-=begin html
-
-<pre>
-$in_genome is a genome_id
-$out_model is a fbamodel_id
-genome_id is a string
-fbamodel_id is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-$in_genome is a genome_id
-$out_model is a fbamodel_id
-genome_id is a string
-fbamodel_id is a string
-
-
-=end text
-
-
-
-=item Description
-
-This function creates a new metabolic model given an input genome id
-
-=back
-
-=cut
-
-sub genome_to_fbamodel
-{
-    my $self = shift;
-    my($in_genome) = @_;
-
-    my @_bad_arguments;
-    (!ref($in_genome)) or push(@_bad_arguments, "Invalid type for argument \"in_genome\" (value was \"$in_genome\")");
-    if (@_bad_arguments) {
-	my $msg = "Invalid arguments passed to genome_to_fbamodel:\n" . join("", map { "\t$_\n" } @_bad_arguments);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'genome_to_fbamodel');
-    }
-
-    my $ctx = $fbaModelServicesServer::CallContext;
-    my($out_model);
-    #BEGIN genome_to_fbamodel
-    my $biochem = $self->{_store}->get_object("biochemistry/kbase/default");
-	my $mapping = $self->{_store}->get_object("mapping/kbase/default");
-	$mapping->biochemistry($biochem);
-	
-	#Issuing the mapping a new uuid because it will be altered during this function
-	$mapping->uuid( Data::UUID->new()->create_str() );
-	
-	#Creating the annotation from the input genome object
+sub _translate_genome_to_annotation {
+	my $self = shift;
+    my($genome,$mapping) = @_;
+    #Creating the annotation from the input genome object
 	my $size = 0;
 	my $gc   = 0;
-	for ( my $i = 0 ; $i < @{ $in_genome->{contigs} } ; $i++ ) {
-		my $dna = $in_genome->{contigs}->[$i]->{dna};
+	for ( my $i = 0 ; $i < @{ $genome->{contigs} } ; $i++ ) {
+		my $dna = $genome->{contigs}->[$i]->{dna};
 		$size += length($dna);
 		for ( my $j = 0 ; $j < length($dna) ; $j++ ) {
 			if ( substr( $dna, $j, 1 ) =~ m/[gcGC]/ ) {
@@ -511,17 +197,17 @@ sub genome_to_fbamodel
 	$gc = $gc / $size;
 	my $annotation = ModelSEED::MS::Annotation->new(
 									{
-									  name         => $in_genome->{scientific_name},
+									  name         => $genome->{scientific_name},
 									  mapping_uuid => $mapping->uuid(),
 									  mapping      => $mapping,
 									  genomes      => [
 										   {
-											 name => $in_genome->{scientific_name},
+											 name => $genome->{scientific_name},
 											 source   => "KBase",
-											 id       => $in_genome->{id},
+											 id       => $genome->{id},
 											 cksum    => "unknown",
 											 class    => "unknown",
-											 taxonomy => $in_genome->{domain},
+											 taxonomy => $genome->{domain},
 											 etcType  => "unknown",
 											 size     => $size,
 											 gc       => $gc
@@ -529,8 +215,8 @@ sub genome_to_fbamodel
 									  ]
 									}
 	);
-	for ( my $i = 0 ; $i < @{ $in_genome->{features} } ; $i++ ) {
-		my $ftr = $in_genome->{features}->[$i];
+	for ( my $i = 0 ; $i < @{ $genome->{features} } ; $i++ ) {
+		my $ftr = $genome->{features}->[$i];
 		my $newftr = $annotation->add(
 				   "features",
 				   {
@@ -570,1147 +256,36 @@ sub genome_to_fbamodel
 			}
 		}
 	}
-	#Running the reconstruction algorithm
-	my $mdl = $annotation->createStandardFBAModel( { prefix => "Kbase", } );
-	#Getting KBase ID
-	my $id_server = Bio::KBase::IDServer::Client->new('http://bio-data-1.mcs.anl.gov/services/idserver');
-	my $kbid = $id_server->allocate_id_range( "fbamod", 1 ) + 0;
-	$kbid = "kb|fm.".$kbid;
-	$mdl->id($kbid);
-	$mdl->defaultNameSpace("KBase");
-	#Saving the model to the mongodb document store
-	my $store = $self->{_store};
-	$store->save_object("model/kbase/".$mdl->id(),$mdl);
-	$out_model = $self->objectToOutput($mdl);
-	#Saving the annotation to the mongodb document store
-	$store->save_object("annotation/kbase/".$in_genome->{id},$annotation);
-	#Saving the mapping to the mongodb document store
-	$store->save_object("mapping/kbase/".$in_genome->{id},$annotation);
-    #END genome_to_fbamodel
-    my @_bad_returns;
-    (!ref($out_model)) or push(@_bad_returns, "Invalid type for return variable \"out_model\" (value was \"$out_model\")");
-    if (@_bad_returns) {
-	my $msg = "Invalid returns passed to genome_to_fbamodel:\n" . join("", map { "\t$_\n" } @_bad_returns);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'genome_to_fbamodel');
-    }
-    return($out_model);
+	return $annotation;
 }
 
-
-
-
-=head2 fbamodel_to_sbml
-
-  $sbml_string = $obj->fbamodel_to_sbml($in_model)
-
-=over 4
-
-=item Parameter and return types
-
-=begin html
-
-<pre>
-$in_model is a fbamodel_id
-$sbml_string is an SBML
-fbamodel_id is a string
-SBML is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-$in_model is a fbamodel_id
-$sbml_string is an SBML
-fbamodel_id is a string
-SBML is a string
-
-
-=end text
-
-
-
-=item Description
-
-
-
-=back
-
-=cut
-
-sub fbamodel_to_sbml
-{
-    my $self = shift;
-    my($in_model) = @_;
-
-    my @_bad_arguments;
-    (!ref($in_model)) or push(@_bad_arguments, "Invalid type for argument \"in_model\" (value was \"$in_model\")");
-    if (@_bad_arguments) {
-	my $msg = "Invalid arguments passed to fbamodel_to_sbml:\n" . join("", map { "\t$_\n" } @_bad_arguments);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'fbamodel_to_sbml');
-    }
-
-    my $ctx = $fbaModelServicesServer::CallContext;
-    my($sbml_string);
-    #BEGIN fbamodel_to_sbml
-    my $model = $self->loadObject($in_model);
-    $out_model = join("\n",@{$model->printSBML()});
-    #END fbamodel_to_sbml
-    my @_bad_returns;
-    (!ref($sbml_string)) or push(@_bad_returns, "Invalid type for return variable \"sbml_string\" (value was \"$sbml_string\")");
-    if (@_bad_returns) {
-	my $msg = "Invalid returns passed to fbamodel_to_sbml:\n" . join("", map { "\t$_\n" } @_bad_returns);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'fbamodel_to_sbml');
-    }
-    return($sbml_string);
-}
-
-
-
-
-=head2 fbamodel_to_html
-
-  $html_string = $obj->fbamodel_to_html($in_model)
-
-=over 4
-
-=item Parameter and return types
-
-=begin html
-
-<pre>
-$in_model is a fbamodel_id
-$html_string is an HTML
-fbamodel_id is a string
-HTML is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-$in_model is a fbamodel_id
-$html_string is an HTML
-fbamodel_id is a string
-HTML is a string
-
-
-=end text
-
-
-
-=item Description
-
-
-
-=back
-
-=cut
-
-sub fbamodel_to_html
-{
-    my $self = shift;
-    my($in_model) = @_;
-
-    my @_bad_arguments;
-    (!ref($in_model)) or push(@_bad_arguments, "Invalid type for argument \"in_model\" (value was \"$in_model\")");
-    if (@_bad_arguments) {
-	my $msg = "Invalid arguments passed to fbamodel_to_html:\n" . join("", map { "\t$_\n" } @_bad_arguments);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'fbamodel_to_html');
-    }
-
-    my $ctx = $fbaModelServicesServer::CallContext;
-    my($html_string);
-    #BEGIN fbamodel_to_html
-    #END fbamodel_to_html
-    my @_bad_returns;
-    (!ref($html_string)) or push(@_bad_returns, "Invalid type for return variable \"html_string\" (value was \"$html_string\")");
-    if (@_bad_returns) {
-	my $msg = "Invalid returns passed to fbamodel_to_html:\n" . join("", map { "\t$_\n" } @_bad_returns);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'fbamodel_to_html');
-    }
-    return($html_string);
-}
-
-
-
-
-=head2 runfba
-
-  $out_fba = $obj->runfba($in_model, $formulation)
-
-=over 4
-
-=item Parameter and return types
-
-=begin html
-
-<pre>
-$in_model is a fbamodel_id
-$formulation is an FBAFormulation
-$out_fba is a fba_id
-fbamodel_id is a string
-FBAFormulation is a reference to a hash where the following keys are defined:
-	media has a value which is a media_id
-	model has a value which is a fbamodel_id
-	regmodel has a value which is a regmodel_id
-	expressionData has a value which is an expression_id
-	objective has a value which is a string
-	objective has a value which is a float
-	description has a value which is a string
-	type has a value which is a string
-	uptakelimits has a value which is a string
-	objectiveConstraintFraction has a value which is a float
-	allReversible has a value which is a bool
-	defaultMaxFlux has a value which is a float
-	defaultMaxDrainFlux has a value which is a float
-	defaultMinDrainFlux has a value which is a float
-	numberOfSolutions has a value which is an int
-	fva has a value which is a bool
-	comboDeletions has a value which is an int
-	fluxMinimization has a value which is a bool
-	findMinimalMedia has a value which is a bool
-	simpleThermoConstraints has a value which is a bool
-	thermodynamicConstraints has a value which is a bool
-	noErrorThermodynamicConstraints has a value which is a bool
-	minimizeErrorThermodynamicConstraints has a value which is a bool
-	featureKO has a value which is a reference to a list where each element is a feature_id
-	reactionKO has a value which is a reference to a list where each element is a modelreaction_id
-	constraints has a value which is a reference to a list where each element is a string
-	bounds has a value which is a reference to a list where each element is a string
-media_id is a string
-regmodel_id is a string
-expression_id is a string
-bool is an int
-feature_id is a string
-modelreaction_id is a string
-fba_id is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-$in_model is a fbamodel_id
-$formulation is an FBAFormulation
-$out_fba is a fba_id
-fbamodel_id is a string
-FBAFormulation is a reference to a hash where the following keys are defined:
-	media has a value which is a media_id
-	model has a value which is a fbamodel_id
-	regmodel has a value which is a regmodel_id
-	expressionData has a value which is an expression_id
-	objective has a value which is a string
-	objective has a value which is a float
-	description has a value which is a string
-	type has a value which is a string
-	uptakelimits has a value which is a string
-	objectiveConstraintFraction has a value which is a float
-	allReversible has a value which is a bool
-	defaultMaxFlux has a value which is a float
-	defaultMaxDrainFlux has a value which is a float
-	defaultMinDrainFlux has a value which is a float
-	numberOfSolutions has a value which is an int
-	fva has a value which is a bool
-	comboDeletions has a value which is an int
-	fluxMinimization has a value which is a bool
-	findMinimalMedia has a value which is a bool
-	simpleThermoConstraints has a value which is a bool
-	thermodynamicConstraints has a value which is a bool
-	noErrorThermodynamicConstraints has a value which is a bool
-	minimizeErrorThermodynamicConstraints has a value which is a bool
-	featureKO has a value which is a reference to a list where each element is a feature_id
-	reactionKO has a value which is a reference to a list where each element is a modelreaction_id
-	constraints has a value which is a reference to a list where each element is a string
-	bounds has a value which is a reference to a list where each element is a string
-media_id is a string
-regmodel_id is a string
-expression_id is a string
-bool is an int
-feature_id is a string
-modelreaction_id is a string
-fba_id is a string
-
-
-=end text
-
-
-
-=item Description
-
-This function runs flux balance analysis on the input FBAModel and produces HTML as output
-
-=back
-
-=cut
-
-sub runfba
-{
-    my $self = shift;
-    my($in_model, $formulation) = @_;
-
-    my @_bad_arguments;
-    (!ref($in_model)) or push(@_bad_arguments, "Invalid type for argument \"in_model\" (value was \"$in_model\")");
-    (ref($formulation) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"formulation\" (value was \"$formulation\")");
-    if (@_bad_arguments) {
-	my $msg = "Invalid arguments passed to runfba:\n" . join("", map { "\t$_\n" } @_bad_arguments);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'runfba');
-    }
-
-    my $ctx = $fbaModelServicesServer::CallContext;
-    my($out_fba);
-    #BEGIN runfba
-    #Retreiving the model
-    my $model = $self->loadObject($in_model);
-	#Creating FBA formulation
-	my $input = {model => $model};
-	my $overrideList = {
-		media => "media",notes => "notes",fva => "fva",simulateko => "comboDeletions",
-		minimizeflux => "fluxMinimization",findminmedia => "findMinimalMedia",objfraction => "objectiveConstraintFraction",
-		allreversible => "allReversible",objective => "objectiveString",rxnko => "geneKO",geneko => "reactionKO",uptakelim => "uptakeLimits",
-		defaultmaxflux => "defaultMaxFlux",defaultminuptake => "defaultMinDrainFlux",defaultmaxuptake => "defaultMaxDrainFlux",
-		simplethermoconst => "simpleThermoConstraints",thermoconst => "thermodynamicConstraints",nothermoerror => "noErrorThermodynamicConstraints",
-		minthermoerror => "minimizeErrorThermodynamicConstraints",fbaPhenotypeSimulations => "fbaPhenotypeSimulations",
-	};
-	foreach my $argument (keys(%{$overrideList})) {
-		if (defined($in_formulation->{$argument})) {
-			$input->{overrides}->{$overrideList->{$argument}} = $in_formulation->{$argument};
-		}
+sub _idServer {
+	my $self = shift;
+	if (!defined($self->{_idserver})) {
+		$self->{_idserver} = Bio::KBase::IDServer::Client->new('http://bio-data-1.mcs.anl.gov/services/idserver');
 	}
-	my $exchange_factory = ModelSEED::MS::Factories::ExchangeFormatFactory->new();
-	my $fbaform = $exchange_factory->buildFBAFormulation($input);
-    #Running FBA
-    my $fbaResult = $fbaform->runFBA();
-    if (!defined($fbaResult)) {
-    	my $msg = "FBA failed with no solution returned!";
-    	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'runfba');
-    }
-    my $store = $self->{_store};
-    if ($overwrite == 1) {
-    	$model->add("fbaFormulations",$fbaform);
-	    $store->save_object("model/kbase/".$model->id(),$model);
-    } elsif (length($save) > 0) {
-    	$model->add("fbaFormulations",$fbaform);
-    	$model->id($save);
-		$store->save_object("model/kbase/".$save,$model);
-    }
-    if (@{$fbaform->fbaResults()->[0]->fbaPhenotypeSimultationResults()} > 0) {
-    	$out_solution = $self->objectToOutput($fbaform);
-    } else {
-    	$out_solution = $fbaform->createHTML();
-    }
-    #END runfba
-    my @_bad_returns;
-    (!ref($out_fba)) or push(@_bad_returns, "Invalid type for return variable \"out_fba\" (value was \"$out_fba\")");
-    if (@_bad_returns) {
-	my $msg = "Invalid returns passed to runfba:\n" . join("", map { "\t$_\n" } @_bad_returns);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'runfba');
-    }
-    return($out_fba);
+    return $self->{_idserver};
 }
 
+#END_HEADER
 
-
-
-=head2 fba_check_results
-
-  $is_done = $obj->fba_check_results($in_fba)
-
-=over 4
-
-=item Parameter and return types
-
-=begin html
-
-<pre>
-$in_fba is a fba_id
-$is_done is a bool
-fba_id is a string
-bool is an int
-
-</pre>
-
-=end html
-
-=begin text
-
-$in_fba is a fba_id
-$is_done is a bool
-fba_id is a string
-bool is an int
-
-
-=end text
-
-
-
-=item Description
-
-
-
-=back
-
-=cut
-
-sub fba_check_results
+sub new
 {
-    my $self = shift;
-    my($in_fba) = @_;
+    my($class, @args) = @_;
+    my $self = {
+    };
+    bless $self, $class;
+    #BEGIN_CONSTRUCTOR
+    #END_CONSTRUCTOR
 
-    my @_bad_arguments;
-    (!ref($in_fba)) or push(@_bad_arguments, "Invalid type for argument \"in_fba\" (value was \"$in_fba\")");
-    if (@_bad_arguments) {
-	my $msg = "Invalid arguments passed to fba_check_results:\n" . join("", map { "\t$_\n" } @_bad_arguments);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'fba_check_results');
+    if ($self->can('_init_instance'))
+    {
+	$self->_init_instance();
     }
-
-    my $ctx = $fbaModelServicesServer::CallContext;
-    my($is_done);
-    #BEGIN fba_check_results
-    #END fba_check_results
-    my @_bad_returns;
-    (!ref($is_done)) or push(@_bad_returns, "Invalid type for return variable \"is_done\" (value was \"$is_done\")");
-    if (@_bad_returns) {
-	my $msg = "Invalid returns passed to fba_check_results:\n" . join("", map { "\t$_\n" } @_bad_returns);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'fba_check_results');
-    }
-    return($is_done);
+    return $self;
 }
 
-
-
-
-=head2 fba_results_to_html
-
-  $html_string = $obj->fba_results_to_html($in_fba)
-
-=over 4
-
-=item Parameter and return types
-
-=begin html
-
-<pre>
-$in_fba is a fba_id
-$html_string is an HTML
-fba_id is a string
-HTML is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-$in_fba is a fba_id
-$html_string is an HTML
-fba_id is a string
-HTML is a string
-
-
-=end text
-
-
-
-=item Description
-
-
-
-=back
-
-=cut
-
-sub fba_results_to_html
-{
-    my $self = shift;
-    my($in_fba) = @_;
-
-    my @_bad_arguments;
-    (!ref($in_fba)) or push(@_bad_arguments, "Invalid type for argument \"in_fba\" (value was \"$in_fba\")");
-    if (@_bad_arguments) {
-	my $msg = "Invalid arguments passed to fba_results_to_html:\n" . join("", map { "\t$_\n" } @_bad_arguments);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'fba_results_to_html');
-    }
-
-    my $ctx = $fbaModelServicesServer::CallContext;
-    my($html_string);
-    #BEGIN fba_results_to_html
-    #END fba_results_to_html
-    my @_bad_returns;
-    (!ref($html_string)) or push(@_bad_returns, "Invalid type for return variable \"html_string\" (value was \"$html_string\")");
-    if (@_bad_returns) {
-	my $msg = "Invalid returns passed to fba_results_to_html:\n" . join("", map { "\t$_\n" } @_bad_returns);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'fba_results_to_html');
-    }
-    return($html_string);
-}
-
-
-
-
-=head2 gapfill_model
-
-  $out_gapfill = $obj->gapfill_model($in_model, $formulation)
-
-=over 4
-
-=item Parameter and return types
-
-=begin html
-
-<pre>
-$in_model is a fbamodel_id
-$formulation is a GapfillingFormulation
-$out_gapfill is a gapfill_id
-fbamodel_id is a string
-GapfillingFormulation is a reference to a hash where the following keys are defined:
-	media has a value which is a media_id
-	notes has a value which is a string
-	objective has a value which is a string
-	objfraction has a value which is a float
-	rxnko has a value which is a string
-	geneko has a value which is a string
-	uptakelim has a value which is a string
-	defaultmaxflux has a value which is a float
-	defaultmaxuptake has a value which is a float
-	defaultminuptake has a value which is a float
-	nomediahyp has a value which is a bool
-	nobiomasshyp has a value which is a bool
-	nogprhyp has a value which is a bool
-	nopathwayhyp has a value which is a bool
-	allowunbalanced has a value which is a bool
-	activitybonus has a value which is a float
-	drainpen has a value which is a float
-	directionpen has a value which is a float
-	nostructpen has a value which is a float
-	unfavorablepen has a value which is a float
-	nodeltagpen has a value which is a float
-	biomasstranspen has a value which is a float
-	singletranspen has a value which is a float
-	transpen has a value which is a float
-	blacklistedrxns has a value which is a string
-	gauranteedrxns has a value which is a string
-	allowedcmps has a value which is a string
-	probabilistic_annotation has a value which is a probabilistic_annotation_id
-media_id is a string
-bool is an int
-probabilistic_annotation_id is a string
-gapfill_id is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-$in_model is a fbamodel_id
-$formulation is a GapfillingFormulation
-$out_gapfill is a gapfill_id
-fbamodel_id is a string
-GapfillingFormulation is a reference to a hash where the following keys are defined:
-	media has a value which is a media_id
-	notes has a value which is a string
-	objective has a value which is a string
-	objfraction has a value which is a float
-	rxnko has a value which is a string
-	geneko has a value which is a string
-	uptakelim has a value which is a string
-	defaultmaxflux has a value which is a float
-	defaultmaxuptake has a value which is a float
-	defaultminuptake has a value which is a float
-	nomediahyp has a value which is a bool
-	nobiomasshyp has a value which is a bool
-	nogprhyp has a value which is a bool
-	nopathwayhyp has a value which is a bool
-	allowunbalanced has a value which is a bool
-	activitybonus has a value which is a float
-	drainpen has a value which is a float
-	directionpen has a value which is a float
-	nostructpen has a value which is a float
-	unfavorablepen has a value which is a float
-	nodeltagpen has a value which is a float
-	biomasstranspen has a value which is a float
-	singletranspen has a value which is a float
-	transpen has a value which is a float
-	blacklistedrxns has a value which is a string
-	gauranteedrxns has a value which is a string
-	allowedcmps has a value which is a string
-	probabilistic_annotation has a value which is a probabilistic_annotation_id
-media_id is a string
-bool is an int
-probabilistic_annotation_id is a string
-gapfill_id is a string
-
-
-=end text
-
-
-
-=item Description
-
-These functions run gapfilling on the input FBAModel and produce gapfill objects as output
-
-=back
-
-=cut
-
-sub gapfill_model
-{
-    my $self = shift;
-    my($in_model, $formulation) = @_;
-
-    my @_bad_arguments;
-    (!ref($in_model)) or push(@_bad_arguments, "Invalid type for argument \"in_model\" (value was \"$in_model\")");
-    (ref($formulation) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"formulation\" (value was \"$formulation\")");
-    if (@_bad_arguments) {
-	my $msg = "Invalid arguments passed to gapfill_model:\n" . join("", map { "\t$_\n" } @_bad_arguments);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'gapfill_model');
-    }
-
-    my $ctx = $fbaModelServicesServer::CallContext;
-    my($out_gapfill);
-    #BEGIN gapfill_model
-    #END gapfill_model
-    my @_bad_returns;
-    (!ref($out_gapfill)) or push(@_bad_returns, "Invalid type for return variable \"out_gapfill\" (value was \"$out_gapfill\")");
-    if (@_bad_returns) {
-	my $msg = "Invalid returns passed to gapfill_model:\n" . join("", map { "\t$_\n" } @_bad_returns);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'gapfill_model');
-    }
-    return($out_gapfill);
-}
-
-
-
-
-=head2 gapfill_check_results
-
-  $is_done = $obj->gapfill_check_results($in_gapfill)
-
-=over 4
-
-=item Parameter and return types
-
-=begin html
-
-<pre>
-$in_gapfill is a gapfill_id
-$is_done is a bool
-gapfill_id is a string
-bool is an int
-
-</pre>
-
-=end html
-
-=begin text
-
-$in_gapfill is a gapfill_id
-$is_done is a bool
-gapfill_id is a string
-bool is an int
-
-
-=end text
-
-
-
-=item Description
-
-
-
-=back
-
-=cut
-
-sub gapfill_check_results
-{
-    my $self = shift;
-    my($in_gapfill) = @_;
-
-    my @_bad_arguments;
-    (!ref($in_gapfill)) or push(@_bad_arguments, "Invalid type for argument \"in_gapfill\" (value was \"$in_gapfill\")");
-    if (@_bad_arguments) {
-	my $msg = "Invalid arguments passed to gapfill_check_results:\n" . join("", map { "\t$_\n" } @_bad_arguments);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'gapfill_check_results');
-    }
-
-    my $ctx = $fbaModelServicesServer::CallContext;
-    my($is_done);
-    #BEGIN gapfill_check_results
-    #END gapfill_check_results
-    my @_bad_returns;
-    (!ref($is_done)) or push(@_bad_returns, "Invalid type for return variable \"is_done\" (value was \"$is_done\")");
-    if (@_bad_returns) {
-	my $msg = "Invalid returns passed to gapfill_check_results:\n" . join("", map { "\t$_\n" } @_bad_returns);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'gapfill_check_results');
-    }
-    return($is_done);
-}
-
-
-
-
-=head2 gapfill_to_html
-
-  $html_string = $obj->gapfill_to_html($in_gapfill)
-
-=over 4
-
-=item Parameter and return types
-
-=begin html
-
-<pre>
-$in_gapfill is a gapfill_id
-$html_string is an HTML
-gapfill_id is a string
-HTML is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-$in_gapfill is a gapfill_id
-$html_string is an HTML
-gapfill_id is a string
-HTML is a string
-
-
-=end text
-
-
-
-=item Description
-
-
-
-=back
-
-=cut
-
-sub gapfill_to_html
-{
-    my $self = shift;
-    my($in_gapfill) = @_;
-
-    my @_bad_arguments;
-    (!ref($in_gapfill)) or push(@_bad_arguments, "Invalid type for argument \"in_gapfill\" (value was \"$in_gapfill\")");
-    if (@_bad_arguments) {
-	my $msg = "Invalid arguments passed to gapfill_to_html:\n" . join("", map { "\t$_\n" } @_bad_arguments);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'gapfill_to_html');
-    }
-
-    my $ctx = $fbaModelServicesServer::CallContext;
-    my($html_string);
-    #BEGIN gapfill_to_html
-    #END gapfill_to_html
-    my @_bad_returns;
-    (!ref($html_string)) or push(@_bad_returns, "Invalid type for return variable \"html_string\" (value was \"$html_string\")");
-    if (@_bad_returns) {
-	my $msg = "Invalid returns passed to gapfill_to_html:\n" . join("", map { "\t$_\n" } @_bad_returns);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'gapfill_to_html');
-    }
-    return($html_string);
-}
-
-
-
-
-=head2 gapfill_integrate
-
-  $obj->gapfill_integrate($in_gapfill, $in_model)
-
-=over 4
-
-=item Parameter and return types
-
-=begin html
-
-<pre>
-$in_gapfill is a gapfill_id
-$in_model is a fbamodel_id
-gapfill_id is a string
-fbamodel_id is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-$in_gapfill is a gapfill_id
-$in_model is a fbamodel_id
-gapfill_id is a string
-fbamodel_id is a string
-
-
-=end text
-
-
-
-=item Description
-
-
-
-=back
-
-=cut
-
-sub gapfill_integrate
-{
-    my $self = shift;
-    my($in_gapfill, $in_model) = @_;
-
-    my @_bad_arguments;
-    (!ref($in_gapfill)) or push(@_bad_arguments, "Invalid type for argument \"in_gapfill\" (value was \"$in_gapfill\")");
-    (!ref($in_model)) or push(@_bad_arguments, "Invalid type for argument \"in_model\" (value was \"$in_model\")");
-    if (@_bad_arguments) {
-	my $msg = "Invalid arguments passed to gapfill_integrate:\n" . join("", map { "\t$_\n" } @_bad_arguments);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'gapfill_integrate');
-    }
-
-    my $ctx = $fbaModelServicesServer::CallContext;
-    #BEGIN gapfill_integrate
-    #END gapfill_integrate
-    return();
-}
-
-
-
-
-=head2 gapgen_model
-
-  $out_gapgen = $obj->gapgen_model($in_model, $formulation)
-
-=over 4
-
-=item Parameter and return types
-
-=begin html
-
-<pre>
-$in_model is a fbamodel_id
-$formulation is a GapgenFormulation
-$out_gapgen is a gapgen_id
-fbamodel_id is a string
-GapgenFormulation is a reference to a hash where the following keys are defined:
-	media has a value which is a media_id
-	refmedia has a value which is a media_id
-	notes has a value which is a string
-	objective has a value which is a string
-	objfraction has a value which is a float
-	rxnko has a value which is a string
-	geneko has a value which is a string
-	uptakelim has a value which is a string
-	defaultmaxflux has a value which is a float
-	defaultmaxuptake has a value which is a float
-	defaultminuptake has a value which is a float
-	nomediahyp has a value which is a bool
-	nobiomasshyp has a value which is a bool
-	nogprhyp has a value which is a bool
-	nopathwayhyp has a value which is a bool
-media_id is a string
-bool is an int
-gapgen_id is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-$in_model is a fbamodel_id
-$formulation is a GapgenFormulation
-$out_gapgen is a gapgen_id
-fbamodel_id is a string
-GapgenFormulation is a reference to a hash where the following keys are defined:
-	media has a value which is a media_id
-	refmedia has a value which is a media_id
-	notes has a value which is a string
-	objective has a value which is a string
-	objfraction has a value which is a float
-	rxnko has a value which is a string
-	geneko has a value which is a string
-	uptakelim has a value which is a string
-	defaultmaxflux has a value which is a float
-	defaultmaxuptake has a value which is a float
-	defaultminuptake has a value which is a float
-	nomediahyp has a value which is a bool
-	nobiomasshyp has a value which is a bool
-	nogprhyp has a value which is a bool
-	nopathwayhyp has a value which is a bool
-media_id is a string
-bool is an int
-gapgen_id is a string
-
-
-=end text
-
-
-
-=item Description
-
-These functions run gapgeneration on the input FBAModel and produce gapgen objects as output
-
-=back
-
-=cut
-
-sub gapgen_model
-{
-    my $self = shift;
-    my($in_model, $formulation) = @_;
-
-    my @_bad_arguments;
-    (!ref($in_model)) or push(@_bad_arguments, "Invalid type for argument \"in_model\" (value was \"$in_model\")");
-    (ref($formulation) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"formulation\" (value was \"$formulation\")");
-    if (@_bad_arguments) {
-	my $msg = "Invalid arguments passed to gapgen_model:\n" . join("", map { "\t$_\n" } @_bad_arguments);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'gapgen_model');
-    }
-
-    my $ctx = $fbaModelServicesServer::CallContext;
-    my($out_gapgen);
-    #BEGIN gapgen_model
-    #END gapgen_model
-    my @_bad_returns;
-    (!ref($out_gapgen)) or push(@_bad_returns, "Invalid type for return variable \"out_gapgen\" (value was \"$out_gapgen\")");
-    if (@_bad_returns) {
-	my $msg = "Invalid returns passed to gapgen_model:\n" . join("", map { "\t$_\n" } @_bad_returns);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'gapgen_model');
-    }
-    return($out_gapgen);
-}
-
-
-
-
-=head2 gapgen_check_results
-
-  $is_done = $obj->gapgen_check_results($in_gapgen)
-
-=over 4
-
-=item Parameter and return types
-
-=begin html
-
-<pre>
-$in_gapgen is a gapgen_id
-$is_done is a bool
-gapgen_id is a string
-bool is an int
-
-</pre>
-
-=end html
-
-=begin text
-
-$in_gapgen is a gapgen_id
-$is_done is a bool
-gapgen_id is a string
-bool is an int
-
-
-=end text
-
-
-
-=item Description
-
-
-
-=back
-
-=cut
-
-sub gapgen_check_results
-{
-    my $self = shift;
-    my($in_gapgen) = @_;
-
-    my @_bad_arguments;
-    (!ref($in_gapgen)) or push(@_bad_arguments, "Invalid type for argument \"in_gapgen\" (value was \"$in_gapgen\")");
-    if (@_bad_arguments) {
-	my $msg = "Invalid arguments passed to gapgen_check_results:\n" . join("", map { "\t$_\n" } @_bad_arguments);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'gapgen_check_results');
-    }
-
-    my $ctx = $fbaModelServicesServer::CallContext;
-    my($is_done);
-    #BEGIN gapgen_check_results
-    #END gapgen_check_results
-    my @_bad_returns;
-    (!ref($is_done)) or push(@_bad_returns, "Invalid type for return variable \"is_done\" (value was \"$is_done\")");
-    if (@_bad_returns) {
-	my $msg = "Invalid returns passed to gapgen_check_results:\n" . join("", map { "\t$_\n" } @_bad_returns);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'gapgen_check_results');
-    }
-    return($is_done);
-}
-
-
-
-
-=head2 gapgen_to_html
-
-  $html_string = $obj->gapgen_to_html($in_gapgen)
-
-=over 4
-
-=item Parameter and return types
-
-=begin html
-
-<pre>
-$in_gapgen is a gapgen_id
-$html_string is an HTML
-gapgen_id is a string
-HTML is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-$in_gapgen is a gapgen_id
-$html_string is an HTML
-gapgen_id is a string
-HTML is a string
-
-
-=end text
-
-
-
-=item Description
-
-
-
-=back
-
-=cut
-
-sub gapgen_to_html
-{
-    my $self = shift;
-    my($in_gapgen) = @_;
-
-    my @_bad_arguments;
-    (!ref($in_gapgen)) or push(@_bad_arguments, "Invalid type for argument \"in_gapgen\" (value was \"$in_gapgen\")");
-    if (@_bad_arguments) {
-	my $msg = "Invalid arguments passed to gapgen_to_html:\n" . join("", map { "\t$_\n" } @_bad_arguments);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'gapgen_to_html');
-    }
-
-    my $ctx = $fbaModelServicesServer::CallContext;
-    my($html_string);
-    #BEGIN gapgen_to_html
-    #END gapgen_to_html
-    my @_bad_returns;
-    (!ref($html_string)) or push(@_bad_returns, "Invalid type for return variable \"html_string\" (value was \"$html_string\")");
-    if (@_bad_returns) {
-	my $msg = "Invalid returns passed to gapgen_to_html:\n" . join("", map { "\t$_\n" } @_bad_returns);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'gapgen_to_html');
-    }
-    return($html_string);
-}
-
-
-
-
-=head2 gapgen_integrate
-
-  $obj->gapgen_integrate($in_gapgen, $in_model)
-
-=over 4
-
-=item Parameter and return types
-
-=begin html
-
-<pre>
-$in_gapgen is a gapgen_id
-$in_model is a fbamodel_id
-gapgen_id is a string
-fbamodel_id is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-$in_gapgen is a gapgen_id
-$in_model is a fbamodel_id
-gapgen_id is a string
-fbamodel_id is a string
-
-
-=end text
-
-
-
-=item Description
-
-
-
-=back
-
-=cut
-
-sub gapgen_integrate
-{
-    my $self = shift;
-    my($in_gapgen, $in_model) = @_;
-
-    my @_bad_arguments;
-    (!ref($in_gapgen)) or push(@_bad_arguments, "Invalid type for argument \"in_gapgen\" (value was \"$in_gapgen\")");
-    (!ref($in_model)) or push(@_bad_arguments, "Invalid type for argument \"in_model\" (value was \"$in_model\")");
-    if (@_bad_arguments) {
-	my $msg = "Invalid arguments passed to gapgen_integrate:\n" . join("", map { "\t$_\n" } @_bad_arguments);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'gapgen_integrate');
-    }
-
-    my $ctx = $fbaModelServicesServer::CallContext;
-    #BEGIN gapgen_integrate
-    #END gapgen_integrate
-    return();
-}
-
+=head1 METHODS
 
 
 
@@ -2756,6 +1331,1237 @@ sub get_biochemistry
 							       method_name => 'get_biochemistry');
     }
     return($out_biochemistry);
+}
+
+
+
+
+=head2 genome_to_workspace
+
+  $output = $obj->genome_to_workspace($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a genome_to_workspace_params
+$output is a genome_to_workspace_params
+genome_to_workspace_params is a reference to a hash where the following keys are defined:
+	in_genomeobj has a value which is a genomeTO
+	in_genome has a value which is a genome_id
+	out_genome has a value which is a genome_id
+	out_workspace has a value which is a workspace_id
+	as_new_genome has a value which is a bool
+genomeTO is a reference to a hash where the following keys are defined:
+	id has a value which is a genome_id
+genome_id is a string
+workspace_id is a string
+bool is an int
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a genome_to_workspace_params
+$output is a genome_to_workspace_params
+genome_to_workspace_params is a reference to a hash where the following keys are defined:
+	in_genomeobj has a value which is a genomeTO
+	in_genome has a value which is a genome_id
+	out_genome has a value which is a genome_id
+	out_workspace has a value which is a workspace_id
+	as_new_genome has a value which is a bool
+genomeTO is a reference to a hash where the following keys are defined:
+	id has a value which is a genome_id
+genome_id is a string
+workspace_id is a string
+bool is an int
+
+
+=end text
+
+
+
+=item Description
+
+This function either retrieves a genome from the CDM by a specified genome ID, or it loads an input genome object.
+The loaded or retrieved genome is placed in the specified workspace with the specified ID.
+
+=back
+
+=cut
+
+sub genome_to_workspace
+{
+    my $self = shift;
+    my($input) = @_;
+
+    my @_bad_arguments;
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to genome_to_workspace:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'genome_to_workspace');
+    }
+
+    my $ctx = $fbaModelServicesServer::CallContext;
+    my($output);
+    #BEGIN genome_to_workspace
+    #END genome_to_workspace
+    my @_bad_returns;
+    (ref($output) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to genome_to_workspace:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'genome_to_workspace');
+    }
+    return($output);
+}
+
+
+
+
+=head2 genome_to_fbamodel
+
+  $output = $obj->genome_to_fbamodel($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a genome_to_fbamodel_params
+$output is a genome_to_fbamodel_params
+genome_to_fbamodel_params is a reference to a hash where the following keys are defined:
+	in_genome has a value which is a genome_id
+	in_workspace has a value which is a workspace_id
+	out_model has a value which is a fbamodel_id
+	out_workspace has a value which is a workspace_id
+genome_id is a string
+workspace_id is a string
+fbamodel_id is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a genome_to_fbamodel_params
+$output is a genome_to_fbamodel_params
+genome_to_fbamodel_params is a reference to a hash where the following keys are defined:
+	in_genome has a value which is a genome_id
+	in_workspace has a value which is a workspace_id
+	out_model has a value which is a fbamodel_id
+	out_workspace has a value which is a workspace_id
+genome_id is a string
+workspace_id is a string
+fbamodel_id is a string
+
+
+=end text
+
+
+
+=item Description
+
+This function accepts a genome_to_fbamodel_params as input, building a new FBAModel for the genome specified by genome_id.
+The function returns a genome_to_fbamodel_params as output, specifying the ID of the model generated in the model_id parameter.
+
+=back
+
+=cut
+
+sub genome_to_fbamodel
+{
+    my $self = shift;
+    my($input) = @_;
+
+    my @_bad_arguments;
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to genome_to_fbamodel:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'genome_to_fbamodel');
+    }
+
+    my $ctx = $fbaModelServicesServer::CallContext;
+    my($output);
+    #BEGIN genome_to_fbamodel
+    $self->_setContext($ctx);
+    #Checking arguments
+    if (!defined($input->{in_genome})) {
+    	my $msg = "in_genome must be specified for genome_to_fbamodel to run";
+    	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'genome_to_fbamodel');
+    }
+    if (!defined($input->{in_workspace})) {
+    	my $msg = "in_workspace must be specified for genome_to_fbamodel to run";
+    	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'genome_to_fbamodel');
+    }
+    if (!defined($input->{out_workspace})) {
+    	$input->{out_workspace} = $input->{in_workspace};
+    }
+    #Retrieving workspace
+    my $wss = $self->_workspaceServices();
+    my $wsmeta = $wss->get_workspacemeta($input->{in_workspace});
+    if ($wsmeta->[4] eq "n") {
+    	my $msg = "User does not have permission to access specified workspace: ".$input->{in_workspace};
+    	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'genome_to_fbamodel');
+    }
+    my $outwsmeta = $wsmeta
+    if ($input->{out_workspace} ne $input->{in_workspace}) {
+    	$outwsmeta = $wss->get_workspacemeta($input->{out_workspace});
+    }
+    if ($outwsmeta->[4] ne "w" && $outwsmeta->[4] ne "a") {
+    	my $msg = "User does not have permission to write to output workspace: ".$input->{out_workspace};
+    	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'genome_to_fbamodel');
+    }
+    #Retrieving genome object
+    my $genomeObj = $wss->get_object($input->{in_genome},"Genome",$input->{in_workspace});
+    if (!defined($genomeObj)) {
+    	my $msg = "Workspace does not contain the genome object: ".$input->{in_genome};
+    	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'genome_to_fbamodel');
+    }
+    #Translating genome to model seed annotation
+    my $biochem = $self->{_store}->get_object("biochemistry/kbase/default");
+	my $mapping = $self->{_store}->get_object("mapping/kbase/default");
+	$mapping->biochemistry($biochem);
+	my $annotation = $self->_translate_genome_to_annotation($genomeObj,$mapping);
+    my $mdl = $annotation->createStandardFBAModel( { prefix => "Kbase", } );
+    #If no output model ID is provided, one is retreived from KBase
+    if (!defined($input->{out_model})) {
+    	my $ids = $self->_idServer();
+    	$input->{out_model} = "kb|fm.".$ids->allocate_id_range( "fbamod", 1 ) + 0;
+    }
+	$mdl->id($input->{out_model});
+	$mdl->defaultNameSpace("KBase");
+	$self->_save_msobject($mdl,$input->{out_workspace});
+	$self->_save_msobject($annotation,$input->{out_workspace});
+	$self->_save_msobject($mapping,$input->{out_workspace});
+	$output = $input;
+    $self->_clearContext();
+    #END genome_to_fbamodel
+    my @_bad_returns;
+    (ref($output) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to genome_to_fbamodel:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'genome_to_fbamodel');
+    }
+    return($output);
+}
+
+
+
+
+=head2 export_fbamodel
+
+  $output = $obj->export_fbamodel($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is an export_fbamodel_params
+$output is a string
+export_fbamodel_params is a reference to a hash where the following keys are defined:
+	in_model has a value which is a fbamodel_id
+	in_workspace has a value which is a workspace_id
+	format has a value which is a string
+fbamodel_id is a string
+workspace_id is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is an export_fbamodel_params
+$output is a string
+export_fbamodel_params is a reference to a hash where the following keys are defined:
+	in_model has a value which is a fbamodel_id
+	in_workspace has a value which is a workspace_id
+	format has a value which is a string
+fbamodel_id is a string
+workspace_id is a string
+
+
+=end text
+
+
+
+=item Description
+
+This function exports the specified FBAModel to a specified format (sbml,html)
+
+=back
+
+=cut
+
+sub export_fbamodel
+{
+    my $self = shift;
+    my($input) = @_;
+
+    my @_bad_arguments;
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to export_fbamodel:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'export_fbamodel');
+    }
+
+    my $ctx = $fbaModelServicesServer::CallContext;
+    my($output);
+    #BEGIN export_fbamodel
+    #END export_fbamodel
+    my @_bad_returns;
+    (!ref($output)) or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to export_fbamodel:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'export_fbamodel');
+    }
+    return($output);
+}
+
+
+
+
+=head2 runfba
+
+  $output = $obj->runfba($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a runfba_params
+$output is a runfba_params
+runfba_params is a reference to a hash where the following keys are defined:
+	in_model has a value which is a fbamodel_id
+	in_workspace has a value which is a workspace_id
+	out_fba has a value which is a fba_id
+	out_workspace has a value which is a workspace_id
+fbamodel_id is a string
+workspace_id is a string
+fba_id is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a runfba_params
+$output is a runfba_params
+runfba_params is a reference to a hash where the following keys are defined:
+	in_model has a value which is a fbamodel_id
+	in_workspace has a value which is a workspace_id
+	out_fba has a value which is a fba_id
+	out_workspace has a value which is a workspace_id
+fbamodel_id is a string
+workspace_id is a string
+fba_id is a string
+
+
+=end text
+
+
+
+=item Description
+
+This function runs flux balance analysis on the input FBAModel and produces HTML as output
+
+=back
+
+=cut
+
+sub runfba
+{
+    my $self = shift;
+    my($input) = @_;
+
+    my @_bad_arguments;
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to runfba:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'runfba');
+    }
+
+    my $ctx = $fbaModelServicesServer::CallContext;
+    my($output);
+    #BEGIN runfba
+    #Retreiving the model
+    my $model = $self->loadObject($in_model);
+	#Creating FBA formulation
+	my $input = {model => $model};
+	my $overrideList = {
+		media => "media",notes => "notes",fva => "fva",simulateko => "comboDeletions",
+		minimizeflux => "fluxMinimization",findminmedia => "findMinimalMedia",objfraction => "objectiveConstraintFraction",
+		allreversible => "allReversible",objective => "objectiveString",rxnko => "geneKO",geneko => "reactionKO",uptakelim => "uptakeLimits",
+		defaultmaxflux => "defaultMaxFlux",defaultminuptake => "defaultMinDrainFlux",defaultmaxuptake => "defaultMaxDrainFlux",
+		simplethermoconst => "simpleThermoConstraints",thermoconst => "thermodynamicConstraints",nothermoerror => "noErrorThermodynamicConstraints",
+		minthermoerror => "minimizeErrorThermodynamicConstraints",fbaPhenotypeSimulations => "fbaPhenotypeSimulations",
+	};
+	foreach my $argument (keys(%{$overrideList})) {
+		if (defined($in_formulation->{$argument})) {
+			$input->{overrides}->{$overrideList->{$argument}} = $in_formulation->{$argument};
+		}
+	}
+	my $exchange_factory = ModelSEED::MS::Factories::ExchangeFormatFactory->new();
+	my $fbaform = $exchange_factory->buildFBAFormulation($input);
+    #Running FBA
+    my $fbaResult = $fbaform->runFBA();
+    if (!defined($fbaResult)) {
+    	my $msg = "FBA failed with no solution returned!";
+    	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'runfba');
+    }
+    my $store = $self->{_store};
+    if ($overwrite == 1) {
+    	$model->add("fbaFormulations",$fbaform);
+	    $store->save_object("model/kbase/".$model->id(),$model);
+    } elsif (length($save) > 0) {
+    	$model->add("fbaFormulations",$fbaform);
+    	$model->id($save);
+		$store->save_object("model/kbase/".$save,$model);
+    }
+    if (@{$fbaform->fbaResults()->[0]->fbaPhenotypeSimultationResults()} > 0) {
+    	$out_solution = $self->objectToOutput($fbaform);
+    } else {
+    	$out_solution = $fbaform->createHTML();
+    }
+    #END runfba
+    my @_bad_returns;
+    (ref($output) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to runfba:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'runfba');
+    }
+    return($output);
+}
+
+
+
+
+=head2 checkfba
+
+  $is_done = $obj->checkfba($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a checkfba_params
+$is_done is a bool
+checkfba_params is a reference to a hash where the following keys are defined:
+	in_fba has a value which is a fba_id
+	in_workspace has a value which is a workspace_id
+fba_id is a string
+workspace_id is a string
+bool is an int
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a checkfba_params
+$is_done is a bool
+checkfba_params is a reference to a hash where the following keys are defined:
+	in_fba has a value which is a fba_id
+	in_workspace has a value which is a workspace_id
+fba_id is a string
+workspace_id is a string
+bool is an int
+
+
+=end text
+
+
+
+=item Description
+
+This function checks if the specified FBA study is complete.
+
+=back
+
+=cut
+
+sub checkfba
+{
+    my $self = shift;
+    my($input) = @_;
+
+    my @_bad_arguments;
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to checkfba:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'checkfba');
+    }
+
+    my $ctx = $fbaModelServicesServer::CallContext;
+    my($is_done);
+    #BEGIN checkfba
+    #END checkfba
+    my @_bad_returns;
+    (!ref($is_done)) or push(@_bad_returns, "Invalid type for return variable \"is_done\" (value was \"$is_done\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to checkfba:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'checkfba');
+    }
+    return($is_done);
+}
+
+
+
+
+=head2 export_fba
+
+  $output = $obj->export_fba($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is an export_fba_params
+$output is a string
+export_fba_params is a reference to a hash where the following keys are defined:
+	in_fba has a value which is a fba_id
+	in_workspace has a value which is a workspace_id
+	format has a value which is a string
+fba_id is a string
+workspace_id is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is an export_fba_params
+$output is a string
+export_fba_params is a reference to a hash where the following keys are defined:
+	in_fba has a value which is a fba_id
+	in_workspace has a value which is a workspace_id
+	format has a value which is a string
+fba_id is a string
+workspace_id is a string
+
+
+=end text
+
+
+
+=item Description
+
+This function exports the specified FBA object to the specified format (e.g. html)
+
+=back
+
+=cut
+
+sub export_fba
+{
+    my $self = shift;
+    my($input) = @_;
+
+    my @_bad_arguments;
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to export_fba:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'export_fba');
+    }
+
+    my $ctx = $fbaModelServicesServer::CallContext;
+    my($output);
+    #BEGIN export_fba
+    #END export_fba
+    my @_bad_returns;
+    (!ref($output)) or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to export_fba:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'export_fba');
+    }
+    return($output);
+}
+
+
+
+
+=head2 gapfill_model
+
+  $out_gapfill = $obj->gapfill_model($in_model, $formulation)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$in_model is a fbamodel_id
+$formulation is a GapfillingFormulation
+$out_gapfill is a gapfill_id
+fbamodel_id is a string
+GapfillingFormulation is a reference to a hash where the following keys are defined:
+	media has a value which is a media_id
+	notes has a value which is a string
+	objective has a value which is a string
+	objfraction has a value which is a float
+	rxnko has a value which is a string
+	geneko has a value which is a string
+	uptakelim has a value which is a string
+	defaultmaxflux has a value which is a float
+	defaultmaxuptake has a value which is a float
+	defaultminuptake has a value which is a float
+	nomediahyp has a value which is a bool
+	nobiomasshyp has a value which is a bool
+	nogprhyp has a value which is a bool
+	nopathwayhyp has a value which is a bool
+	allowunbalanced has a value which is a bool
+	activitybonus has a value which is a float
+	drainpen has a value which is a float
+	directionpen has a value which is a float
+	nostructpen has a value which is a float
+	unfavorablepen has a value which is a float
+	nodeltagpen has a value which is a float
+	biomasstranspen has a value which is a float
+	singletranspen has a value which is a float
+	transpen has a value which is a float
+	blacklistedrxns has a value which is a string
+	gauranteedrxns has a value which is a string
+	allowedcmps has a value which is a string
+	probabilistic_annotation has a value which is a probabilistic_annotation_id
+media_id is a string
+bool is an int
+probabilistic_annotation_id is a string
+gapfill_id is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$in_model is a fbamodel_id
+$formulation is a GapfillingFormulation
+$out_gapfill is a gapfill_id
+fbamodel_id is a string
+GapfillingFormulation is a reference to a hash where the following keys are defined:
+	media has a value which is a media_id
+	notes has a value which is a string
+	objective has a value which is a string
+	objfraction has a value which is a float
+	rxnko has a value which is a string
+	geneko has a value which is a string
+	uptakelim has a value which is a string
+	defaultmaxflux has a value which is a float
+	defaultmaxuptake has a value which is a float
+	defaultminuptake has a value which is a float
+	nomediahyp has a value which is a bool
+	nobiomasshyp has a value which is a bool
+	nogprhyp has a value which is a bool
+	nopathwayhyp has a value which is a bool
+	allowunbalanced has a value which is a bool
+	activitybonus has a value which is a float
+	drainpen has a value which is a float
+	directionpen has a value which is a float
+	nostructpen has a value which is a float
+	unfavorablepen has a value which is a float
+	nodeltagpen has a value which is a float
+	biomasstranspen has a value which is a float
+	singletranspen has a value which is a float
+	transpen has a value which is a float
+	blacklistedrxns has a value which is a string
+	gauranteedrxns has a value which is a string
+	allowedcmps has a value which is a string
+	probabilistic_annotation has a value which is a probabilistic_annotation_id
+media_id is a string
+bool is an int
+probabilistic_annotation_id is a string
+gapfill_id is a string
+
+
+=end text
+
+
+
+=item Description
+
+
+
+=back
+
+=cut
+
+sub gapfill_model
+{
+    my $self = shift;
+    my($in_model, $formulation) = @_;
+
+    my @_bad_arguments;
+    (!ref($in_model)) or push(@_bad_arguments, "Invalid type for argument \"in_model\" (value was \"$in_model\")");
+    (ref($formulation) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"formulation\" (value was \"$formulation\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to gapfill_model:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'gapfill_model');
+    }
+
+    my $ctx = $fbaModelServicesServer::CallContext;
+    my($out_gapfill);
+    #BEGIN gapfill_model
+    #END gapfill_model
+    my @_bad_returns;
+    (!ref($out_gapfill)) or push(@_bad_returns, "Invalid type for return variable \"out_gapfill\" (value was \"$out_gapfill\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to gapfill_model:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'gapfill_model');
+    }
+    return($out_gapfill);
+}
+
+
+
+
+=head2 gapfill_check_results
+
+  $is_done = $obj->gapfill_check_results($in_gapfill)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$in_gapfill is a gapfill_id
+$is_done is a bool
+gapfill_id is a string
+bool is an int
+
+</pre>
+
+=end html
+
+=begin text
+
+$in_gapfill is a gapfill_id
+$is_done is a bool
+gapfill_id is a string
+bool is an int
+
+
+=end text
+
+
+
+=item Description
+
+
+
+=back
+
+=cut
+
+sub gapfill_check_results
+{
+    my $self = shift;
+    my($in_gapfill) = @_;
+
+    my @_bad_arguments;
+    (!ref($in_gapfill)) or push(@_bad_arguments, "Invalid type for argument \"in_gapfill\" (value was \"$in_gapfill\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to gapfill_check_results:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'gapfill_check_results');
+    }
+
+    my $ctx = $fbaModelServicesServer::CallContext;
+    my($is_done);
+    #BEGIN gapfill_check_results
+    #END gapfill_check_results
+    my @_bad_returns;
+    (!ref($is_done)) or push(@_bad_returns, "Invalid type for return variable \"is_done\" (value was \"$is_done\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to gapfill_check_results:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'gapfill_check_results');
+    }
+    return($is_done);
+}
+
+
+
+
+=head2 gapfill_to_html
+
+  $html_string = $obj->gapfill_to_html($in_gapfill)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$in_gapfill is a gapfill_id
+$html_string is an HTML
+gapfill_id is a string
+HTML is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$in_gapfill is a gapfill_id
+$html_string is an HTML
+gapfill_id is a string
+HTML is a string
+
+
+=end text
+
+
+
+=item Description
+
+
+
+=back
+
+=cut
+
+sub gapfill_to_html
+{
+    my $self = shift;
+    my($in_gapfill) = @_;
+
+    my @_bad_arguments;
+    (!ref($in_gapfill)) or push(@_bad_arguments, "Invalid type for argument \"in_gapfill\" (value was \"$in_gapfill\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to gapfill_to_html:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'gapfill_to_html');
+    }
+
+    my $ctx = $fbaModelServicesServer::CallContext;
+    my($html_string);
+    #BEGIN gapfill_to_html
+    #END gapfill_to_html
+    my @_bad_returns;
+    (!ref($html_string)) or push(@_bad_returns, "Invalid type for return variable \"html_string\" (value was \"$html_string\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to gapfill_to_html:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'gapfill_to_html');
+    }
+    return($html_string);
+}
+
+
+
+
+=head2 gapfill_integrate
+
+  $obj->gapfill_integrate($in_gapfill, $in_model)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$in_gapfill is a gapfill_id
+$in_model is a fbamodel_id
+gapfill_id is a string
+fbamodel_id is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$in_gapfill is a gapfill_id
+$in_model is a fbamodel_id
+gapfill_id is a string
+fbamodel_id is a string
+
+
+=end text
+
+
+
+=item Description
+
+
+
+=back
+
+=cut
+
+sub gapfill_integrate
+{
+    my $self = shift;
+    my($in_gapfill, $in_model) = @_;
+
+    my @_bad_arguments;
+    (!ref($in_gapfill)) or push(@_bad_arguments, "Invalid type for argument \"in_gapfill\" (value was \"$in_gapfill\")");
+    (!ref($in_model)) or push(@_bad_arguments, "Invalid type for argument \"in_model\" (value was \"$in_model\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to gapfill_integrate:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'gapfill_integrate');
+    }
+
+    my $ctx = $fbaModelServicesServer::CallContext;
+    #BEGIN gapfill_integrate
+    #END gapfill_integrate
+    return();
+}
+
+
+
+
+=head2 gapgen_model
+
+  $out_gapgen = $obj->gapgen_model($in_model, $formulation)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$in_model is a fbamodel_id
+$formulation is a GapgenFormulation
+$out_gapgen is a gapgen_id
+fbamodel_id is a string
+GapgenFormulation is a reference to a hash where the following keys are defined:
+	media has a value which is a media_id
+	refmedia has a value which is a media_id
+	notes has a value which is a string
+	objective has a value which is a string
+	objfraction has a value which is a float
+	rxnko has a value which is a string
+	geneko has a value which is a string
+	uptakelim has a value which is a string
+	defaultmaxflux has a value which is a float
+	defaultmaxuptake has a value which is a float
+	defaultminuptake has a value which is a float
+	nomediahyp has a value which is a bool
+	nobiomasshyp has a value which is a bool
+	nogprhyp has a value which is a bool
+	nopathwayhyp has a value which is a bool
+media_id is a string
+bool is an int
+gapgen_id is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$in_model is a fbamodel_id
+$formulation is a GapgenFormulation
+$out_gapgen is a gapgen_id
+fbamodel_id is a string
+GapgenFormulation is a reference to a hash where the following keys are defined:
+	media has a value which is a media_id
+	refmedia has a value which is a media_id
+	notes has a value which is a string
+	objective has a value which is a string
+	objfraction has a value which is a float
+	rxnko has a value which is a string
+	geneko has a value which is a string
+	uptakelim has a value which is a string
+	defaultmaxflux has a value which is a float
+	defaultmaxuptake has a value which is a float
+	defaultminuptake has a value which is a float
+	nomediahyp has a value which is a bool
+	nobiomasshyp has a value which is a bool
+	nogprhyp has a value which is a bool
+	nopathwayhyp has a value which is a bool
+media_id is a string
+bool is an int
+gapgen_id is a string
+
+
+=end text
+
+
+
+=item Description
+
+These functions run gapgeneration on the input FBAModel and produce gapgen objects as output
+
+=back
+
+=cut
+
+sub gapgen_model
+{
+    my $self = shift;
+    my($in_model, $formulation) = @_;
+
+    my @_bad_arguments;
+    (!ref($in_model)) or push(@_bad_arguments, "Invalid type for argument \"in_model\" (value was \"$in_model\")");
+    (ref($formulation) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"formulation\" (value was \"$formulation\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to gapgen_model:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'gapgen_model');
+    }
+
+    my $ctx = $fbaModelServicesServer::CallContext;
+    my($out_gapgen);
+    #BEGIN gapgen_model
+    #END gapgen_model
+    my @_bad_returns;
+    (!ref($out_gapgen)) or push(@_bad_returns, "Invalid type for return variable \"out_gapgen\" (value was \"$out_gapgen\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to gapgen_model:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'gapgen_model');
+    }
+    return($out_gapgen);
+}
+
+
+
+
+=head2 gapgen_check_results
+
+  $is_done = $obj->gapgen_check_results($in_gapgen)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$in_gapgen is a gapgen_id
+$is_done is a bool
+gapgen_id is a string
+bool is an int
+
+</pre>
+
+=end html
+
+=begin text
+
+$in_gapgen is a gapgen_id
+$is_done is a bool
+gapgen_id is a string
+bool is an int
+
+
+=end text
+
+
+
+=item Description
+
+
+
+=back
+
+=cut
+
+sub gapgen_check_results
+{
+    my $self = shift;
+    my($in_gapgen) = @_;
+
+    my @_bad_arguments;
+    (!ref($in_gapgen)) or push(@_bad_arguments, "Invalid type for argument \"in_gapgen\" (value was \"$in_gapgen\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to gapgen_check_results:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'gapgen_check_results');
+    }
+
+    my $ctx = $fbaModelServicesServer::CallContext;
+    my($is_done);
+    #BEGIN gapgen_check_results
+    #END gapgen_check_results
+    my @_bad_returns;
+    (!ref($is_done)) or push(@_bad_returns, "Invalid type for return variable \"is_done\" (value was \"$is_done\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to gapgen_check_results:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'gapgen_check_results');
+    }
+    return($is_done);
+}
+
+
+
+
+=head2 gapgen_to_html
+
+  $html_string = $obj->gapgen_to_html($in_gapgen)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$in_gapgen is a gapgen_id
+$html_string is an HTML
+gapgen_id is a string
+HTML is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$in_gapgen is a gapgen_id
+$html_string is an HTML
+gapgen_id is a string
+HTML is a string
+
+
+=end text
+
+
+
+=item Description
+
+
+
+=back
+
+=cut
+
+sub gapgen_to_html
+{
+    my $self = shift;
+    my($in_gapgen) = @_;
+
+    my @_bad_arguments;
+    (!ref($in_gapgen)) or push(@_bad_arguments, "Invalid type for argument \"in_gapgen\" (value was \"$in_gapgen\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to gapgen_to_html:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'gapgen_to_html');
+    }
+
+    my $ctx = $fbaModelServicesServer::CallContext;
+    my($html_string);
+    #BEGIN gapgen_to_html
+    #END gapgen_to_html
+    my @_bad_returns;
+    (!ref($html_string)) or push(@_bad_returns, "Invalid type for return variable \"html_string\" (value was \"$html_string\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to gapgen_to_html:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'gapgen_to_html');
+    }
+    return($html_string);
+}
+
+
+
+
+=head2 gapgen_integrate
+
+  $obj->gapgen_integrate($in_gapgen, $in_model)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$in_gapgen is a gapgen_id
+$in_model is a fbamodel_id
+gapgen_id is a string
+fbamodel_id is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$in_gapgen is a gapgen_id
+$in_model is a fbamodel_id
+gapgen_id is a string
+fbamodel_id is a string
+
+
+=end text
+
+
+
+=item Description
+
+
+
+=back
+
+=cut
+
+sub gapgen_integrate
+{
+    my $self = shift;
+    my($in_gapgen, $in_model) = @_;
+
+    my @_bad_arguments;
+    (!ref($in_gapgen)) or push(@_bad_arguments, "Invalid type for argument \"in_gapgen\" (value was \"$in_gapgen\")");
+    (!ref($in_model)) or push(@_bad_arguments, "Invalid type for argument \"in_model\" (value was \"$in_model\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to gapgen_integrate:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'gapgen_integrate');
+    }
+
+    my $ctx = $fbaModelServicesServer::CallContext;
+    #BEGIN gapgen_integrate
+    #END gapgen_integrate
+    return();
 }
 
 
@@ -5181,15 +4987,36 @@ geneAssertions has a value which is a reference to a list where each element is 
 
 
 
-=head2 Get_GenomeObject_Opts
+=head2 workspace_id
 
 =over 4
 
 
 
-=item Description
+=item Definition
 
-This command accepts a KBase genome ID and returns the requested genome typed object
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 genomeTO
+
+=over 4
+
 
 
 =item Definition
@@ -5198,6 +5025,40 @@ This command accepts a KBase genome ID and returns the requested genome typed ob
 
 <pre>
 a reference to a hash where the following keys are defined:
+id has a value which is a genome_id
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+id has a value which is a genome_id
+
+
+=end text
+
+=back
+
+
+
+=head2 genome_to_workspace_params
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+in_genomeobj has a value which is a genomeTO
+in_genome has a value which is a genome_id
+out_genome has a value which is a genome_id
+out_workspace has a value which is a workspace_id
 as_new_genome has a value which is a bool
 
 </pre>
@@ -5207,6 +5068,10 @@ as_new_genome has a value which is a bool
 =begin text
 
 a reference to a hash where the following keys are defined:
+in_genomeobj has a value which is a genomeTO
+in_genome has a value which is a genome_id
+out_genome has a value which is a genome_id
+out_workspace has a value which is a workspace_id
 as_new_genome has a value which is a bool
 
 
@@ -5216,7 +5081,7 @@ as_new_genome has a value which is a bool
 
 
 
-=head2 SBML
+=head2 genome_to_fbamodel_params
 
 =over 4
 
@@ -5224,7 +5089,23 @@ as_new_genome has a value which is a bool
 
 =item Description
 
-This function converts a metabolic model into an SBML file.
+A set of paramters for the genome_to_fbamodel method. This is a mapping
+where the keys in the map are named 'in_genome', 'in_workspace', 'out_model',
+and 'out_workspace'. Values for each are described below.
+
+genome_id in_genome
+This parameter specifies the ID of the genome for which a model is to be built. This parameter is required.
+
+workspace_id in_workspace
+This parameter specifies the ID of the workspace containing the specified genome object. This parameter is also required.
+
+model_id out_model
+This parameter specifies the ID to which the generated model should be save. This is optional.
+If unspecified, a new KBase model ID will be checked out for the model.
+
+workspace_id out_workspace
+This parameter specifies the ID of the workspace where the model should be save. This is optional.
+If unspecified, this parameter will be set to the value of "in_workspace".
 
 
 =item Definition
@@ -5232,14 +5113,180 @@ This function converts a metabolic model into an SBML file.
 =begin html
 
 <pre>
-a string
+a reference to a hash where the following keys are defined:
+in_genome has a value which is a genome_id
+in_workspace has a value which is a workspace_id
+out_model has a value which is a fbamodel_id
+out_workspace has a value which is a workspace_id
+
 </pre>
 
 =end html
 
 =begin text
 
-a string
+a reference to a hash where the following keys are defined:
+in_genome has a value which is a genome_id
+in_workspace has a value which is a workspace_id
+out_model has a value which is a fbamodel_id
+out_workspace has a value which is a workspace_id
+
+
+=end text
+
+=back
+
+
+
+=head2 export_fbamodel_params
+
+=over 4
+
+
+
+=item Description
+
+NEED DOCUMENTATION
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+in_model has a value which is a fbamodel_id
+in_workspace has a value which is a workspace_id
+format has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+in_model has a value which is a fbamodel_id
+in_workspace has a value which is a workspace_id
+format has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 runfba_params
+
+=over 4
+
+
+
+=item Description
+
+NEED DOCUMENTATION
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+in_model has a value which is a fbamodel_id
+in_workspace has a value which is a workspace_id
+out_fba has a value which is a fba_id
+out_workspace has a value which is a workspace_id
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+in_model has a value which is a fbamodel_id
+in_workspace has a value which is a workspace_id
+out_fba has a value which is a fba_id
+out_workspace has a value which is a workspace_id
+
+
+=end text
+
+=back
+
+
+
+=head2 checkfba_params
+
+=over 4
+
+
+
+=item Description
+
+NEED DOCUMENTATION
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+in_fba has a value which is a fba_id
+in_workspace has a value which is a workspace_id
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+in_fba has a value which is a fba_id
+in_workspace has a value which is a workspace_id
+
+
+=end text
+
+=back
+
+
+
+=head2 export_fba_params
+
+=over 4
+
+
+
+=item Description
+
+NEED DOCUMENTATION
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+in_fba has a value which is a fba_id
+in_workspace has a value which is a workspace_id
+format has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+in_fba has a value which is a fba_id
+in_workspace has a value which is a workspace_id
+format has a value which is a string
+
 
 =end text
 
@@ -5255,7 +5302,7 @@ a string
 
 =item Description
 
-This function converts an input object into HTML format.
+These functions run gapfilling on the input FBAModel and produce gapfill objects as output
 
 
 =item Definition

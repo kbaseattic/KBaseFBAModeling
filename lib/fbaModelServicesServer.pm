@@ -13,13 +13,20 @@ has 'valid_methods' => (is => 'ro', isa => 'HashRef', lazy => 1,
 our $CallContext;
 
 our %return_counts = (
-        'get_genomeobject' => 1,
+        'get_models' => 1,
+        'get_fbas' => 1,
+        'get_gapfills' => 1,
+        'get_gapgens' => 1,
+        'get_reactions' => 1,
+        'get_compounds' => 1,
+        'get_media' => 1,
+        'get_biochemistry' => 1,
+        'genome_to_workspace' => 1,
         'genome_to_fbamodel' => 1,
-        'fbamodel_to_sbml' => 1,
-        'fbamodel_to_html' => 1,
+        'export_fbamodel' => 1,
         'runfba' => 1,
-        'fba_check_results' => 1,
-        'fba_results_to_html' => 1,
+        'checkfba' => 1,
+        'export_fba' => 1,
         'gapfill_model' => 1,
         'gapfill_check_results' => 1,
         'gapfill_to_html' => 1,
@@ -28,6 +35,13 @@ our %return_counts = (
         'gapgen_check_results' => 1,
         'gapgen_to_html' => 1,
         'gapgen_integrate' => 0,
+        'version' => 1,
+);
+
+sub _build_valid_methods
+{
+    my($self) = @_;
+    my $methods = {
         'get_models' => 1,
         'get_fbas' => 1,
         'get_gapfills' => 1,
@@ -36,20 +50,12 @@ our %return_counts = (
         'get_compounds' => 1,
         'get_media' => 1,
         'get_biochemistry' => 1,
-        'version' => 1,
-);
-
-sub _build_valid_methods
-{
-    my($self) = @_;
-    my $methods = {
-        'get_genomeobject' => 1,
+        'genome_to_workspace' => 1,
         'genome_to_fbamodel' => 1,
-        'fbamodel_to_sbml' => 1,
-        'fbamodel_to_html' => 1,
+        'export_fbamodel' => 1,
         'runfba' => 1,
-        'fba_check_results' => 1,
-        'fba_results_to_html' => 1,
+        'checkfba' => 1,
+        'export_fba' => 1,
         'gapfill_model' => 1,
         'gapfill_check_results' => 1,
         'gapfill_to_html' => 1,
@@ -58,14 +64,6 @@ sub _build_valid_methods
         'gapgen_check_results' => 1,
         'gapgen_to_html' => 1,
         'gapgen_integrate' => 1,
-        'get_models' => 1,
-        'get_fbas' => 1,
-        'get_gapfills' => 1,
-        'get_gapgens' => 1,
-        'get_reactions' => 1,
-        'get_compounds' => 1,
-        'get_media' => 1,
-        'get_biochemistry' => 1,
         'version' => 1,
     };
     return $methods;

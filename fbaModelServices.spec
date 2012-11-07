@@ -311,39 +311,6 @@ module fbaModelServices {
 		list<GeneAssertion> geneAssertions;
 	} FBA;
 	/*END FBA FORMULATION SPEC*/
-	
-	/*This command accepts a KBase genome ID and returns the requested genome typed object*/
-	typedef structure {
-        bool as_new_genome;
-    } Get_GenomeObject_Opts;
-    funcdef get_genomeobject (genome_id id,Get_GenomeObject_Opts options) returns (GenomeObject genome);
-	
-	/*This function creates a new metabolic model given an input genome id*/
-	funcdef genome_to_fbamodel (genome_id in_genome) returns (fbamodel_id out_model);
-	
-	/*This function converts a metabolic model into an SBML file.*/
-	typedef string SBML;
-	funcdef fbamodel_to_sbml(fbamodel_id in_model) returns (SBML sbml_string);
-	/*This function converts an input object into HTML format.*/
-	typedef string HTML;
-	funcdef fbamodel_to_html(fbamodel_id in_model) returns (HTML html_string);
-	
-    /*This function runs flux balance analysis on the input FBAModel and produces HTML as output*/
-    funcdef runfba (fbamodel_id in_model,FBAFormulation formulation) returns (fba_id out_fba);
-    funcdef fba_check_results (fba_id in_fba) returns (bool is_done);
-    funcdef fba_results_to_html (fba_id in_fba) returns (HTML html_string);
-
-	/*These functions run gapfilling on the input FBAModel and produce gapfill objects as output*/
-    funcdef gapfill_model (fbamodel_id in_model, GapfillingFormulation formulation) returns (gapfill_id out_gapfill);
-    funcdef gapfill_check_results (gapfill_id in_gapfill) returns (bool is_done);
-    funcdef gapfill_to_html (gapfill_id in_gapfill) returns (HTML html_string);
-    funcdef gapfill_integrate (gapfill_id in_gapfill,fbamodel_id in_model) returns ();
-
-	/*These functions run gapgeneration on the input FBAModel and produce gapgen objects as output*/
-    funcdef gapgen_model (fbamodel_id in_model, GapgenFormulation formulation) returns (gapgen_id out_gapgen);
-    funcdef gapgen_check_results (gapgen_id in_gapgen) returns (bool is_done);
-    funcdef gapgen_to_html (gapgen_id in_gapgen) returns (HTML html_string);
-    funcdef gapgen_integrate (gapgen_id in_gapgen,fbamodel_id in_model) returns ();
 		
 	/*This function returns model data for input ids*/
 	funcdef get_models(list<fbamodel_id> in_model_ids) returns (list<FBAModel> out_models);
@@ -361,4 +328,125 @@ module fbaModelServices {
 	funcdef get_media(list<media_id> in_media_ids,biochemistry_id biochemistry) returns (list<Media> out_media);
 	/*This function returns biochemistry object */
 	funcdef get_biochemistry(biochemistry_id biochemistry) returns (Biochemistry out_biochemistry);
+
+
+	typedef string workspace_id;
+	typedef structure {
+		genome_id id;
+	} genomeTO;
+	
+	typedef structure {
+		genomeTO in_genomeobj;
+		genome_id in_genome;
+		genome_id out_genome;
+		workspace_id out_workspace;
+		bool as_new_genome;
+	} genome_to_workspace_params;
+	
+	/*
+		This function either retrieves a genome from the CDM by a specified genome ID, or it loads an input genome object.
+		The loaded or retrieved genome is placed in the specified workspace with the specified ID.
+	*/
+	funcdef genome_to_workspace(genome_to_workspace_params input) returns (genome_to_workspace_params output);
+	
+	/*
+		A set of paramters for the genome_to_fbamodel method. This is a mapping
+		where the keys in the map are named 'in_genome', 'in_workspace', 'out_model',
+		and 'out_workspace'. Values for each are described below.
+		
+		genome_id in_genome
+		This parameter specifies the ID of the genome for which a model is to be built. This parameter is required.
+		
+		workspace_id in_workspace
+		This parameter specifies the ID of the workspace containing the specified genome object. This parameter is also required.
+		
+		model_id out_model
+		This parameter specifies the ID to which the generated model should be save. This is optional.
+		If unspecified, a new KBase model ID will be checked out for the model.
+		
+		workspace_id out_workspace
+		This parameter specifies the ID of the workspace where the model should be save. This is optional.
+		If unspecified, this parameter will be set to the value of "in_workspace".
+	*/
+	typedef structure {
+		genome_id in_genome;
+		workspace_id in_workspace;
+		fbamodel_id out_model;
+		workspace_id out_workspace;
+	} genome_to_fbamodel_params;
+
+	/*
+		This function accepts a genome_to_fbamodel_params as input, building a new FBAModel for the genome specified by genome_id.
+		The function returns a genome_to_fbamodel_params as output, specifying the ID of the model generated in the model_id parameter.
+	*/
+	funcdef genome_to_fbamodel (genome_to_fbamodel_params input) returns (genome_to_fbamodel_params output);
+	
+	/*
+		NEED DOCUMENTATION
+	*/
+	typedef structure {
+		fbamodel_id in_model;
+		workspace_id in_workspace;
+		string format;
+	} export_fbamodel_params;
+	
+	/*
+		This function exports the specified FBAModel to a specified format (sbml,html)
+	*/
+	funcdef export_fbamodel(export_fbamodel_params input) returns (string output);
+	
+	/*
+		NEED DOCUMENTATION
+	*/
+	typedef structure {
+		fbamodel_id in_model;
+		workspace_id in_workspace;
+		fba_id out_fba;
+		workspace_id out_workspace;
+	} runfba_params;
+	
+	/*
+		This function runs flux balance analysis on the input FBAModel and produces HTML as output
+	*/
+    funcdef runfba (runfba_params input) returns (runfba_params output);
+    
+    /*
+		NEED DOCUMENTATION
+	*/
+    typedef structure {
+		fba_id in_fba;
+		workspace_id in_workspace;
+	} checkfba_params;
+    
+    /*
+		This function checks if the specified FBA study is complete.
+	*/
+    funcdef checkfba (checkfba_params input) returns (bool is_done);
+    
+    /*
+		NEED DOCUMENTATION
+	*/
+    typedef structure {
+		fba_id in_fba;
+		workspace_id in_workspace;
+		string format;
+	} export_fba_params;
+	
+	/*
+		This function exports the specified FBA object to the specified format (e.g. html)
+	*/
+	funcdef export_fba(export_fba_params input) returns (string output);
+	
+	/*These functions run gapfilling on the input FBAModel and produce gapfill objects as output*/
+    typedef string HTML;
+    funcdef gapfill_model (fbamodel_id in_model, GapfillingFormulation formulation) returns (gapfill_id out_gapfill);
+    funcdef gapfill_check_results (gapfill_id in_gapfill) returns (bool is_done);
+    funcdef gapfill_to_html (gapfill_id in_gapfill) returns (HTML html_string);
+    funcdef gapfill_integrate (gapfill_id in_gapfill,fbamodel_id in_model) returns ();
+
+	/*These functions run gapgeneration on the input FBAModel and produce gapgen objects as output*/
+    funcdef gapgen_model (fbamodel_id in_model, GapgenFormulation formulation) returns (gapgen_id out_gapgen);
+    funcdef gapgen_check_results (gapgen_id in_gapgen) returns (bool is_done);
+    funcdef gapgen_to_html (gapgen_id in_gapgen) returns (HTML html_string);
+    funcdef gapgen_integrate (gapgen_id in_gapgen,fbamodel_id in_model) returns ();
 };
