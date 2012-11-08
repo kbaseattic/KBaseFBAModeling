@@ -195,64 +195,54 @@ sub _translate_genome_to_annotation {
 		}
 	}
 	$gc = $gc / $size;
-	my $annotation = ModelSEED::MS::Annotation->new(
-									{
-									  name         => $genome->{scientific_name},
-									  mapping_uuid => $mapping->uuid(),
-									  mapping      => $mapping,
-									  genomes      => [
-										   {
-											 name => $genome->{scientific_name},
-											 source   => "KBase",
-											 id       => $genome->{id},
-											 cksum    => "unknown",
-											 class    => "unknown",
-											 taxonomy => $genome->{domain},
-											 etcType  => "unknown",
-											 size     => $size,
-											 gc       => $gc
-										   }
-									  ]
-									}
-	);
+	my $annotation = ModelSEED::MS::Annotation->new({
+	  name         => $genome->{scientific_name},
+	  mapping_uuid => $mapping->uuid(),
+	  mapping      => $mapping,
+	  genomes      => [{
+		 name => $genome->{scientific_name},
+		 source   => "KBase",
+		 id       => $genome->{id},
+		 cksum    => "unknown",
+		 class    => "unknown",
+		 taxonomy => $genome->{domain},
+		 etcType  => "unknown",
+		 size     => $size,
+		 gc       => $gc
+	  }]
+	});
 	for ( my $i = 0 ; $i < @{ $genome->{features} } ; $i++ ) {
 		my $ftr = $genome->{features}->[$i];
-		my $newftr = $annotation->add(
-				   "features",
-				   {
-					 id          => $ftr->{id},
-					 type        => $ftr->{type},
-					 sequence    => $ftr->{protein_translation},
-					 genome_uuid => $annotation->genomes()->[0]->uuid(),
-					 start       => $ftr->{location}->[0]->[1],
-					 stop        =>
-					   ( $ftr->{location}->[0]->[1] + $ftr->{location}->[0]->[3] ),
-					 contig    => $ftr->{location}->[0]->[0],
-					 direction => $ftr->{location}->[0]->[2],
-				   }
+		my $newftr = $annotation->add("features",{
+			 id          => $ftr->{id},
+			 type        => $ftr->{type},
+			 sequence    => $ftr->{protein_translation},
+			 genome_uuid => $annotation->genomes()->[0]->uuid(),
+			 start       => $ftr->{location}->[0]->[1],
+			 stop        =>
+			   ( $ftr->{location}->[0]->[1] + $ftr->{location}->[0]->[3] ),
+			 contig    => $ftr->{location}->[0]->[0],
+			 direction => $ftr->{location}->[0]->[2],
+		});
+		my $output = ModelSEED::MS::Utilities::GlobalFunctions::functionToRoles(
+			$ftr->{function}
 		);
-		my $output =
-		  ModelSEED::MS::Utilities::GlobalFunctions::functionToRoles(
-																 $ftr->{function} );
 		if ( defined( $output->{roles} ) ) {
 			for ( my $j = 0 ; $j < @{ $output->{roles} } ; $j++ ) {
-				my $role =
-				  $mapping->queryObject( "roles",
-										{ name => $output->{roles}->[$j] } );
+				my $role = $mapping->queryObject( "roles",{
+					name => $output->{roles}->[$j]
+				});
 				if ( !defined($role) ) {
-					$role =
-					  $mapping->add( "roles",
-										{ name => $output->{roles}->[$j] } );
+					$role = $mapping->add( "roles",{
+						name => $output->{roles}->[$j]
+					});
 				}
-				$newftr->add(
-							  "featureroles",
-							  {
-								 role_uuid   => $role->uuid(),
-								 compartment => $output->{compartments}->[0],
-								 delimiter   => $output->{delimiter},
-								 comment     => $output->{comment}
-							  }
-				);
+				$newftr->add("featureroles",{
+					 role_uuid   => $role->uuid(),
+					 compartment => $output->{compartments}->[0],
+					 delimiter   => $output->{delimiter},
+					 comment     => $output->{comment}
+				});
 			}
 		}
 	}
@@ -265,6 +255,51 @@ sub _idServer {
 		$self->{_idserver} = Bio::KBase::IDServer::Client->new('http://bio-data-1.mcs.anl.gov/services/idserver');
 	}
     return $self->{_idserver};
+}
+
+sub _workspaceServices {
+	my $self = shift;
+	if (!defined($self->{_workspaceServices})) {
+		$self->{_workspaceServices} = Bio::KBase::workspaceService->new();
+	}
+    return $self->{_workspaceServices};
+}
+
+sub _save_msobject {
+	my($self,$obj,$type,$ws,$id) = @_;
+	my $data = $obj->serializeToDB();
+	my $objmeta = $self->_workspaceServices()->save_object($id,$type,$data,$ws,{});
+	if (!defined($objmeta)) {
+		my $msg = "Unable to save object:".$type."/".$ws."/".$id;
+		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => '_get_msobject');
+	}
+}
+
+sub _get_msobject {
+	my($self,$type,$ws,$id) = @_;
+	my $data = $self->_workspaceServices()->get_object($id,$type,$ws);
+	if (!defined($data)) {
+		my $msg = "Unable to retrieve object:".$type."/".$ws."/".$id;
+		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => '_get_msobject');
+	}
+	my $msProvTypes = {
+		Biochemistry => 1,
+		Model => 1,
+		Annotation => 1,
+		Mapping => 1
+	};
+	if (defined($msProvTypes->{$type})) {
+		my $class = "ModelSEED::MS::".$type;
+		my $obj = $class->new($data);
+		$obj->parent($self->_store());
+		return $obj;
+	}
+	return undef;
+}
+
+sub _store {
+	my($self) = @_;
+	return $self->{_store};
 }
 
 #END_HEADER
@@ -1528,11 +1563,12 @@ sub genome_to_fbamodel
     	my $msg = "Workspace does not contain the genome object: ".$input->{in_genome};
     	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'genome_to_fbamodel');
     }
+    #Retreiving mapping and biochemistry
+    my $biochem = $self->_get_msobject("Biochemistry","kbase","default");
+    my $mapping = $self->_get_msobject("Mapping","kbase","default");
+    $mapping->biochemistry($biochem);
     #Translating genome to model seed annotation
-    my $biochem = $self->{_store}->get_object("biochemistry/kbase/default");
-	my $mapping = $self->{_store}->get_object("mapping/kbase/default");
-	$mapping->biochemistry($biochem);
-	my $annotation = $self->_translate_genome_to_annotation($genomeObj,$mapping);
+    my $annotation = $self->_translate_genome_to_annotation($genomeObj,$mapping);
     my $mdl = $annotation->createStandardFBAModel( { prefix => "Kbase", } );
     #If no output model ID is provided, one is retreived from KBase
     if (!defined($input->{out_model})) {
@@ -1540,10 +1576,18 @@ sub genome_to_fbamodel
     	$input->{out_model} = "kb|fm.".$ids->allocate_id_range( "fbamod", 1 ) + 0;
     }
 	$mdl->id($input->{out_model});
+	$mdl->mapping_uuid($input->{out_workspace}."/".$input->{out_model}.".map");
+	$mdl->mapping($mapping);
+	$mdl->biochemistry_uuid("kbase/default");
+	$mdl->biochemistry($biochem);
+	$mdl->annotation_uuid($input->{out_workspace}."/".$input->{out_model}.".anno");
+	$mdl->annotation($annotation);
 	$mdl->defaultNameSpace("KBase");
-	$self->_save_msobject($mdl,$input->{out_workspace});
-	$self->_save_msobject($annotation,$input->{out_workspace});
-	$self->_save_msobject($mapping,$input->{out_workspace});
+	$annotation->mapping_uuid($input->{out_workspace}."/".$input->{out_model}.".map");
+	$annotation->mapping($mapping);
+	$self->_save_msobject($mdl,"Model",$input->{out_workspace},$input->{out_model});
+	$self->_save_msobject($annotation,"Annotation",$input->{out_workspace},$input->{out_model}.".anno");
+	$self->_save_msobject($mapping,"Mapping",$input->{out_workspace},$input->{out_model}.".map");
 	$output = $input;
     $self->_clearContext();
     #END genome_to_fbamodel
