@@ -249,6 +249,14 @@ sub _translate_genome_to_annotation {
 	return $annotation;
 }
 
+sub _cdmi {
+	my $self = shift;
+	if (!defined($self->{_cdmi})) {
+		$self->{_cdmi} = Bio::KBase::CDMI::CDMIClient->new();
+	}
+    return $self->{_cdmi};
+}
+
 sub _idServer {
 	my $self = shift;
 	if (!defined($self->{_idserver})) {
@@ -260,7 +268,8 @@ sub _idServer {
 sub _workspaceServices {
 	my $self = shift;
 	if (!defined($self->{_workspaceServices})) {
-		$self->{_workspaceServices} = Bio::KBase::workspaceService->new();
+		$self->{_workspaceServices} = Bio::KBase::workspaceService::Impl->new();
+		#$self->{_workspaceServices} = Bio::KBase::workspaceService->new();
 	}
     return $self->{_workspaceServices};
 }
@@ -295,6 +304,81 @@ sub _get_msobject {
 		return $obj;
 	}
 	return undef;
+}
+
+sub _get_genomeObj_from_CDM {
+	my($self,$id,$asNew) = @_;
+    my $data = $cdmi->genomes_to_genome_data([$id]);
+    if (!defined($data->{$id})) {
+    	Bio::KBase::Exceptions::ArgumentValidationError->throw(
+    		error => "Genome ".$id." not found!",
+			method_name => 'get_genomeobject'
+		);
+    }
+    $data = $data->{$id};
+    my $genomeObj = {
+		id => $id,
+		scientific_name => $data->{scientific_name},
+		genetic_code => $data->{genetic_code},
+		domain => undef,
+		source => undef,
+		source_id => undef,
+		contigs => [],
+		features => []
+    };
+    $data = $self->_cdmi()->get_relationship_IsComposedOf([$id],["domain","source_id"], [], ["id"]);
+    if (defined($data->[0])) {
+    	if (defined($data->[0]->[0]->{domain})) {
+    		$genomeObj->{domain} = $data->[0]->[0]->{domain};
+    	}
+    	if (defined($data->[0]->[0]->{source_id})) {
+    		$genomeObj->{source_id} = $data->[0]->[0]->{source_id};
+    	}
+    }
+   	for (my $i=0; $i < @{$data}; $i++) {
+    	if (defined($data->[$i]->[2]->{id})) {
+	    	my $contig = {
+	    		id => $data->[$i]->[2]->{id},
+	    		dna => undef
+	    	};
+	    	my $seqData = $self->_cdmi()->contigs_to_sequences([$data->[$i]->[2]->{id}]);
+	    	if (defined($seqData->{$data->[$i]->[2]->{id}})) {
+	    		$contig->{dna} = $seqData->{$data->[$i]->[2]->{id}};
+	    	}
+	    	push(@{$genomeObj->{contigs}},$contig);
+    	}
+   	}
+   	$data = $self->_cdmi()->get_relationship_WasSubmittedBy([$id],[], ["id"], ["id"]);
+    if (defined($data->[0])) {
+    	if (defined($data->[0]->[2]->{id})) {
+    		$genomeObj->{source} = $data->[0]->[2]->{id};
+    	}
+    }
+  	my $genomeFtrs = $self->_cdmi()->genomes_to_fids([$id],[]);
+	my $features = $genomeFtrs->{$id};
+  	my $fidAnnotationHash = $self->_cdmi()->fids_to_annotations($features);
+  	my $fidProteinSequences = $self->_cdmi()->fids_to_protein_sequences($features);
+  	my $fidDataHash = $self->_cdmi()->fids_to_feature_data($features);
+  	for (my $i=0; $i < @{$features};$i++) {
+  		my $ftr = $features->[$i];
+  		my $ftrdata = $fidDataHash->{$ftr};
+  		my $feature = {
+  			id => $ftr,
+  			location => $ftrdata->{feature_location},
+  			function => $ftrdata->{feature_function},
+  			aliases => [],
+  			annotations => []
+  		};
+  		if (defined($fidAnnotationHash->{$ftr})) {
+  			$feature->{annotations} = $fidAnnotationHash->{$ftr};
+  		}
+  		if (defined($fidProteinSequences->{$ftr})) {
+  			$feature->{protein_translation} = $fidProteinSequences->{$ftr};
+  		}
+  		
+  		push(@{$genomeObj->{features}},$feature);
+  	}
+	return $genomeObj;
 }
 
 sub _store {
@@ -1446,6 +1530,40 @@ sub genome_to_workspace
     my $ctx = $fbaModelServicesServer::CallContext;
     my($output);
     #BEGIN genome_to_workspace
+    #Checking workspace specified for loading of genome
+    if (!defined($input->{out_workspace})) {
+    	my $msg = "User must provide workspace for import of genome.";
+    	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'genome_to_workspace');
+    }
+    my $outwsmeta = $self->_workspaceServices()->get_workspacemeta($input->{out_workspace});
+    if ($outwsmeta->[4] ne "w" && $outwsmeta->[4] ne "a") {
+    	my $msg = "User does not have permission to write to output workspace: ".$input->{out_workspace};
+    	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'genome_to_workspace');
+    }
+    #Retrieving genome object
+    my $genomeObj;
+    if (defined($input->{in_genomeobj})) {
+    	$genomeObj = $input->{in_genomeobj};
+    } elsif (defined($input->{in_genome})) {
+    	$genomeObj = $self->_get_genomeObj_from_CDM($input->{in_genome},$input->{as_new_genome});
+    } else {
+    	my $msg = "User must specify genome to be imported to workspace";
+    	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'genome_to_fbamodel');
+    }
+    if (!defined($input->{out_genome})) {
+    	$input->{out_genome} = $genomeObj->{id};
+    }
+    #Saving genome object
+    $self->_save_msobject($genomeObj,"Genome",$input->{out_workspace},$input->{out_genome});
+	$output = $input;
+    
+
+    
+    
+    
+    
+    
+    
     #END genome_to_workspace
     my @_bad_returns;
     (ref($output) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
