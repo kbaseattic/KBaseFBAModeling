@@ -341,6 +341,7 @@ module fbaModelServices {
 		genome_id out_genome;
 		workspace_id out_workspace;
 		bool as_new_genome;
+		string authentication;
 	} genome_to_workspace_params;
 	
 	/*
@@ -373,6 +374,7 @@ module fbaModelServices {
 		workspace_id in_workspace;
 		fbamodel_id out_model;
 		workspace_id out_workspace;
+		string authentication;
 	} genome_to_fbamodel_params;
 
 	/*
@@ -388,6 +390,7 @@ module fbaModelServices {
 		fbamodel_id in_model;
 		workspace_id in_workspace;
 		string format;
+		string authentication;
 	} export_fbamodel_params;
 	
 	/*
@@ -403,6 +406,7 @@ module fbaModelServices {
 		workspace_id in_workspace;
 		fba_id out_fba;
 		workspace_id out_workspace;
+		string authentication;
 	} runfba_params;
 	
 	/*
@@ -416,6 +420,7 @@ module fbaModelServices {
     typedef structure {
 		fba_id in_fba;
 		workspace_id in_workspace;
+		string authentication;
 	} checkfba_params;
     
     /*
@@ -430,6 +435,7 @@ module fbaModelServices {
 		fba_id in_fba;
 		workspace_id in_workspace;
 		string format;
+		string authentication;
 	} export_fba_params;
 	
 	/*

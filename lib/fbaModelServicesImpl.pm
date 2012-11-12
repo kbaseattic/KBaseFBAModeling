@@ -19,6 +19,7 @@ fbaModelServices
 use URI;
 use ModelSEED::Database::MongoDBSimple;
 use Bio::KBase::IDServer::Client;
+use Bio::KBase::CDMI::CDMIClient;
 use ModelSEED::Auth::Basic;
 use ModelSEED::Store;
 use Data::UUID;
@@ -33,7 +34,7 @@ use ModelSEED::MS::FBAFormulation;
 use ModelSEED::MS::FBAProblem;
 use ModelSEED::MS::Metadata::Definitions;
 use Config::Simple;
-
+use Try::Tiny;
 use Data::Dumper;
 
 =head2 loadObject
@@ -179,6 +180,22 @@ sub objectToOutput {
 	return $output_data;
 }
 
+sub _setContext {
+	my ($self,$context,$params) = @_;
+	$self->{_authentication} = $params->{authentication};
+	$self->{_context} = $context;
+}
+
+sub _getContext {
+	my ($self) = @_;
+	return $self->{_context};
+}
+
+sub _clearContext {
+	my ($self) = @_;
+	delete $self->{_context};
+}
+
 sub _translate_genome_to_annotation {
 	my $self = shift;
     my($genome,$mapping) = @_;
@@ -197,7 +214,7 @@ sub _translate_genome_to_annotation {
 	$gc = $gc / $size;
 	my $annotation = ModelSEED::MS::Annotation->new({
 	  name         => $genome->{scientific_name},
-	  mapping_uuid => $mapping->uuid(),
+	  mapping_uuid => "kbase/default",
 	  mapping      => $mapping,
 	  genomes      => [{
 		 name => $genome->{scientific_name},
@@ -252,7 +269,7 @@ sub _translate_genome_to_annotation {
 sub _cdmi {
 	my $self = shift;
 	if (!defined($self->{_cdmi})) {
-		$self->{_cdmi} = Bio::KBase::CDMI::CDMIClient->new();
+		$self->{_cdmi} = Bio::KBase::CDMI::CDMIClient->new_for_script();
 	}
     return $self->{_cdmi};
 }
@@ -268,16 +285,27 @@ sub _idServer {
 sub _workspaceServices {
 	my $self = shift;
 	if (!defined($self->{_workspaceServices})) {
-		$self->{_workspaceServices} = Bio::KBase::workspaceService::Impl->new();
-		#$self->{_workspaceServices} = Bio::KBase::workspaceService->new();
+		$self->{_workspaceServices} = Bio::KBase::workspaceService->new();
 	}
     return $self->{_workspaceServices};
 }
 
 sub _save_msobject {
-	my($self,$obj,$type,$ws,$id) = @_;
-	my $data = $obj->serializeToDB();
-	my $objmeta = $self->_workspaceServices()->save_object($id,$type,$data,$ws,{});
+	my($self,$obj,$type,$ws,$id,$command) = @_;
+	my $data;
+	if (ref($obj) eq "HASH") {
+		$data = $obj;
+	} else {
+		$data = $obj->serializeToDB();
+	}
+	my $objmeta = $self->_workspaceServices()->save_object({
+		id => $id,
+		type => $type,
+		data => $data,
+		workspace => $ws,
+		command => $command,
+		authentication => $self->_authentication()
+	});
 	if (!defined($objmeta)) {
 		my $msg = "Unable to save object:".$type."/".$ws."/".$id;
 		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => '_get_msobject');
@@ -286,7 +314,12 @@ sub _save_msobject {
 
 sub _get_msobject {
 	my($self,$type,$ws,$id) = @_;
-	my $data = $self->_workspaceServices()->get_object($id,$type,$ws);
+	(my $data,my $metadata) = $self->_workspaceServices()->get_object({
+		id => $id,
+		type => $type,
+		workspace => $ws,
+		authentication => $self->_authentication()
+	});
 	if (!defined($data)) {
 		my $msg = "Unable to retrieve object:".$type."/".$ws."/".$id;
 		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => '_get_msobject');
@@ -300,7 +333,21 @@ sub _get_msobject {
 	if (defined($msProvTypes->{$type})) {
 		my $class = "ModelSEED::MS::".$type;
 		my $obj = $class->new($data);
-		$obj->parent($self->_store());
+		if ($type eq "Model") {
+			my $linkid = $obj->annotation_uuid();
+			my $array = [split(/\//,$linkid)];
+			$obj->annotation($self->_get_msobject("Annotation",$array->[0],$array->[1]));
+			$obj->mapping($obj->annotation()->mapping());
+			$obj->biochemistry($obj->mapping()->biochemistry());
+		} elsif ($type eq "Annotation") {
+			my $linkid = $obj->mapping_uuid();
+			my $array = [split(/\//,$linkid)];
+			$obj->mapping($self->_get_msobject("Mapping",$array->[0],$array->[1]));
+		} elsif ($type eq "Mapping") {
+			my $linkid = $obj->biochemistry_uuid();
+			my $array = [split(/\//,$linkid)];
+			$obj->biochemistry($self->_get_msobject("Biochemistry",$array->[0],$array->[1]));
+		}
 		return $obj;
 	}
 	return undef;
@@ -308,6 +355,7 @@ sub _get_msobject {
 
 sub _get_genomeObj_from_CDM {
 	my($self,$id,$asNew) = @_;
+	my $cdmi = $self->_cdmi();
     my $data = $cdmi->genomes_to_genome_data([$id]);
     if (!defined($data->{$id})) {
     	Bio::KBase::Exceptions::ArgumentValidationError->throw(
@@ -348,12 +396,12 @@ sub _get_genomeObj_from_CDM {
 	    	push(@{$genomeObj->{contigs}},$contig);
     	}
    	}
-   	$data = $self->_cdmi()->get_relationship_WasSubmittedBy([$id],[], ["id"], ["id"]);
-    if (defined($data->[0])) {
-    	if (defined($data->[0]->[2]->{id})) {
-    		$genomeObj->{source} = $data->[0]->[2]->{id};
-    	}
-    }
+   	#$data = $self->_cdmi()->get_relationship_WasSubmittedBy([$id],[], ["id"], ["id"]);
+    #if (defined($data->[0])) {
+    #	if (defined($data->[0]->[2]->{id})) {
+    #		$genomeObj->{source} = $data->[0]->[2]->{id};
+    #	}
+    #}
   	my $genomeFtrs = $self->_cdmi()->genomes_to_fids([$id],[]);
 	my $features = $genomeFtrs->{$id};
   	my $fidAnnotationHash = $self->_cdmi()->fids_to_annotations($features);
@@ -386,6 +434,16 @@ sub _store {
 	return $self->{_store};
 }
 
+sub _authentication {
+	my($self) = @_;
+	return $self->{_authentication};
+}
+
+sub _set_authentication {
+	my($self,$authentication) = @_;
+	$self->{_authentication} = $authentication;
+}
+
 #END_HEADER
 
 sub new
@@ -395,6 +453,10 @@ sub new
     };
     bless $self, $class;
     #BEGIN_CONSTRUCTOR
+    my $options = $args[0];
+    if (defined($options->{workspace})) {
+    	$self->{_workspaceServices} = $options->{workspace};
+    }
     #END_CONSTRUCTOR
 
     if ($self->can('_init_instance'))
@@ -1474,6 +1536,7 @@ genome_to_workspace_params is a reference to a hash where the following keys are
 	out_genome has a value which is a genome_id
 	out_workspace has a value which is a workspace_id
 	as_new_genome has a value which is a bool
+	authentication has a value which is a string
 genomeTO is a reference to a hash where the following keys are defined:
 	id has a value which is a genome_id
 genome_id is a string
@@ -1494,6 +1557,7 @@ genome_to_workspace_params is a reference to a hash where the following keys are
 	out_genome has a value which is a genome_id
 	out_workspace has a value which is a workspace_id
 	as_new_genome has a value which is a bool
+	authentication has a value which is a string
 genomeTO is a reference to a hash where the following keys are defined:
 	id has a value which is a genome_id
 genome_id is a string
@@ -1530,12 +1594,18 @@ sub genome_to_workspace
     my $ctx = $fbaModelServicesServer::CallContext;
     my($output);
     #BEGIN genome_to_workspace
+    $self->_setContext($ctx,$input);
     #Checking workspace specified for loading of genome
     if (!defined($input->{out_workspace})) {
     	my $msg = "User must provide workspace for import of genome.";
     	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'genome_to_workspace');
     }
-    my $outwsmeta = $self->_workspaceServices()->get_workspacemeta($input->{out_workspace});
+    my $outwsmeta;
+    try {
+    	$outwsmeta = $self->_workspaceServices()->get_workspacemeta({workspace => $input->{out_workspace}});
+    } catch {
+    	$outwsmeta = $self->_workspaceServices()->create_workspace({workspace => $input->{out_workspace}});
+    };
     if ($outwsmeta->[4] ne "w" && $outwsmeta->[4] ne "a") {
     	my $msg = "User does not have permission to write to output workspace: ".$input->{out_workspace};
     	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'genome_to_workspace');
@@ -1556,14 +1626,7 @@ sub genome_to_workspace
     #Saving genome object
     $self->_save_msobject($genomeObj,"Genome",$input->{out_workspace},$input->{out_genome});
 	$output = $input;
-    
-
-    
-    
-    
-    
-    
-    
+	$self->_clearContext();
     #END genome_to_workspace
     my @_bad_returns;
     (ref($output) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
@@ -1596,6 +1659,7 @@ genome_to_fbamodel_params is a reference to a hash where the following keys are 
 	in_workspace has a value which is a workspace_id
 	out_model has a value which is a fbamodel_id
 	out_workspace has a value which is a workspace_id
+	authentication has a value which is a string
 genome_id is a string
 workspace_id is a string
 fbamodel_id is a string
@@ -1613,6 +1677,7 @@ genome_to_fbamodel_params is a reference to a hash where the following keys are 
 	in_workspace has a value which is a workspace_id
 	out_model has a value which is a fbamodel_id
 	out_workspace has a value which is a workspace_id
+	authentication has a value which is a string
 genome_id is a string
 workspace_id is a string
 fbamodel_id is a string
@@ -1647,7 +1712,7 @@ sub genome_to_fbamodel
     my $ctx = $fbaModelServicesServer::CallContext;
     my($output);
     #BEGIN genome_to_fbamodel
-    $self->_setContext($ctx);
+    $self->_setContext($ctx,$input);
     #Checking arguments
     if (!defined($input->{in_genome})) {
     	my $msg = "in_genome must be specified for genome_to_fbamodel to run";
@@ -1662,29 +1727,36 @@ sub genome_to_fbamodel
     }
     #Retrieving workspace
     my $wss = $self->_workspaceServices();
-    my $wsmeta = $wss->get_workspacemeta($input->{in_workspace});
+    my $wsmeta = $wss->get_workspacemeta({workspace => $input->{in_workspace}});
     if ($wsmeta->[4] eq "n") {
     	my $msg = "User does not have permission to access specified workspace: ".$input->{in_workspace};
     	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'genome_to_fbamodel');
     }
-    my $outwsmeta = $wsmeta
+    my $outwsmeta = $wsmeta;
     if ($input->{out_workspace} ne $input->{in_workspace}) {
-    	$outwsmeta = $wss->get_workspacemeta($input->{out_workspace});
+    	try {
+    		$outwsmeta = $wss->get_workspacemeta({workspace => $input->{out_workspace}});
+	    } catch {
+	    	$outwsmeta = $wss->create_workspace({workspace => $input->{out_workspace}});
+	    };
     }
     if ($outwsmeta->[4] ne "w" && $outwsmeta->[4] ne "a") {
     	my $msg = "User does not have permission to write to output workspace: ".$input->{out_workspace};
     	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'genome_to_fbamodel');
     }
     #Retrieving genome object
-    my $genomeObj = $wss->get_object($input->{in_genome},"Genome",$input->{in_workspace});
+    (my $genomeObj,my $genomeMeta) = $wss->get_object({
+    	id => $input->{in_genome},
+    	type => "Genome",
+    	workspace => $input->{in_workspace}
+    });
     if (!defined($genomeObj)) {
     	my $msg = "Workspace does not contain the genome object: ".$input->{in_genome};
     	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'genome_to_fbamodel');
     }
     #Retreiving mapping and biochemistry
-    my $biochem = $self->_get_msobject("Biochemistry","kbase","default");
     my $mapping = $self->_get_msobject("Mapping","kbase","default");
-    $mapping->biochemistry($biochem);
+    my $biochem = $mapping->biochemistry();    
     #Translating genome to model seed annotation
     my $annotation = $self->_translate_genome_to_annotation($genomeObj,$mapping);
     my $mdl = $annotation->createStandardFBAModel( { prefix => "Kbase", } );
@@ -1739,6 +1811,7 @@ export_fbamodel_params is a reference to a hash where the following keys are def
 	in_model has a value which is a fbamodel_id
 	in_workspace has a value which is a workspace_id
 	format has a value which is a string
+	authentication has a value which is a string
 fbamodel_id is a string
 workspace_id is a string
 
@@ -1754,6 +1827,7 @@ export_fbamodel_params is a reference to a hash where the following keys are def
 	in_model has a value which is a fbamodel_id
 	in_workspace has a value which is a workspace_id
 	format has a value which is a string
+	authentication has a value which is a string
 fbamodel_id is a string
 workspace_id is a string
 
@@ -1818,6 +1892,7 @@ runfba_params is a reference to a hash where the following keys are defined:
 	in_workspace has a value which is a workspace_id
 	out_fba has a value which is a fba_id
 	out_workspace has a value which is a workspace_id
+	authentication has a value which is a string
 fbamodel_id is a string
 workspace_id is a string
 fba_id is a string
@@ -1835,6 +1910,7 @@ runfba_params is a reference to a hash where the following keys are defined:
 	in_workspace has a value which is a workspace_id
 	out_fba has a value which is a fba_id
 	out_workspace has a value which is a workspace_id
+	authentication has a value which is a string
 fbamodel_id is a string
 workspace_id is a string
 fba_id is a string
@@ -1869,44 +1945,45 @@ sub runfba
     my($output);
     #BEGIN runfba
     #Retreiving the model
-    my $model = $self->loadObject($in_model);
-	#Creating FBA formulation
-	my $input = {model => $model};
-	my $overrideList = {
-		media => "media",notes => "notes",fva => "fva",simulateko => "comboDeletions",
-		minimizeflux => "fluxMinimization",findminmedia => "findMinimalMedia",objfraction => "objectiveConstraintFraction",
-		allreversible => "allReversible",objective => "objectiveString",rxnko => "geneKO",geneko => "reactionKO",uptakelim => "uptakeLimits",
-		defaultmaxflux => "defaultMaxFlux",defaultminuptake => "defaultMinDrainFlux",defaultmaxuptake => "defaultMaxDrainFlux",
-		simplethermoconst => "simpleThermoConstraints",thermoconst => "thermodynamicConstraints",nothermoerror => "noErrorThermodynamicConstraints",
-		minthermoerror => "minimizeErrorThermodynamicConstraints",fbaPhenotypeSimulations => "fbaPhenotypeSimulations",
-	};
-	foreach my $argument (keys(%{$overrideList})) {
-		if (defined($in_formulation->{$argument})) {
-			$input->{overrides}->{$overrideList->{$argument}} = $in_formulation->{$argument};
-		}
-	}
-	my $exchange_factory = ModelSEED::MS::Factories::ExchangeFormatFactory->new();
-	my $fbaform = $exchange_factory->buildFBAFormulation($input);
-    #Running FBA
-    my $fbaResult = $fbaform->runFBA();
-    if (!defined($fbaResult)) {
-    	my $msg = "FBA failed with no solution returned!";
-    	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'runfba');
-    }
-    my $store = $self->{_store};
-    if ($overwrite == 1) {
-    	$model->add("fbaFormulations",$fbaform);
-	    $store->save_object("model/kbase/".$model->id(),$model);
-    } elsif (length($save) > 0) {
-    	$model->add("fbaFormulations",$fbaform);
-    	$model->id($save);
-		$store->save_object("model/kbase/".$save,$model);
-    }
-    if (@{$fbaform->fbaResults()->[0]->fbaPhenotypeSimultationResults()} > 0) {
-    	$out_solution = $self->objectToOutput($fbaform);
-    } else {
-    	$out_solution = $fbaform->createHTML();
-    }
+#    my $in_model = $input;
+#    my $model = $self->loadObject($in_model);
+#	#Creating FBA formulation
+#	my $input = {model => $model};
+#	my $overrideList = {
+#		media => "media",notes => "notes",fva => "fva",simulateko => "comboDeletions",
+#		minimizeflux => "fluxMinimization",findminmedia => "findMinimalMedia",objfraction => "objectiveConstraintFraction",
+#		allreversible => "allReversible",objective => "objectiveString",rxnko => "geneKO",geneko => "reactionKO",uptakelim => "uptakeLimits",
+#		defaultmaxflux => "defaultMaxFlux",defaultminuptake => "defaultMinDrainFlux",defaultmaxuptake => "defaultMaxDrainFlux",
+#		simplethermoconst => "simpleThermoConstraints",thermoconst => "thermodynamicConstraints",nothermoerror => "noErrorThermodynamicConstraints",
+#		minthermoerror => "minimizeErrorThermodynamicConstraints",fbaPhenotypeSimulations => "fbaPhenotypeSimulations",
+#	};
+#	foreach my $argument (keys(%{$overrideList})) {
+#		if (defined($in_formulation->{$argument})) {
+#			$input->{overrides}->{$overrideList->{$argument}} = $in_formulation->{$argument};
+#		}
+#	}
+#	my $exchange_factory = ModelSEED::MS::Factories::ExchangeFormatFactory->new();
+#	my $fbaform = $exchange_factory->buildFBAFormulation($input);
+#    #Running FBA
+#    my $fbaResult = $fbaform->runFBA();
+#    if (!defined($fbaResult)) {
+#    	my $msg = "FBA failed with no solution returned!";
+#    	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'runfba');
+#    }
+#    my $store = $self->{_store};
+#    if ($overwrite == 1) {
+#    	$model->add("fbaFormulations",$fbaform);
+#	    $store->save_object("model/kbase/".$model->id(),$model);
+#    } elsif (length($save) > 0) {
+#    	$model->add("fbaFormulations",$fbaform);
+#    	$model->id($save);
+#		$store->save_object("model/kbase/".$save,$model);
+#    }
+#    if (@{$fbaform->fbaResults()->[0]->fbaPhenotypeSimultationResults()} > 0) {
+#    	$out_solution = $self->objectToOutput($fbaform);
+#    } else {
+#    	$out_solution = $fbaform->createHTML();
+#    }
     #END runfba
     my @_bad_returns;
     (ref($output) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
@@ -1937,6 +2014,7 @@ $is_done is a bool
 checkfba_params is a reference to a hash where the following keys are defined:
 	in_fba has a value which is a fba_id
 	in_workspace has a value which is a workspace_id
+	authentication has a value which is a string
 fba_id is a string
 workspace_id is a string
 bool is an int
@@ -1952,6 +2030,7 @@ $is_done is a bool
 checkfba_params is a reference to a hash where the following keys are defined:
 	in_fba has a value which is a fba_id
 	in_workspace has a value which is a workspace_id
+	authentication has a value which is a string
 fba_id is a string
 workspace_id is a string
 bool is an int
@@ -2016,6 +2095,7 @@ export_fba_params is a reference to a hash where the following keys are defined:
 	in_fba has a value which is a fba_id
 	in_workspace has a value which is a workspace_id
 	format has a value which is a string
+	authentication has a value which is a string
 fba_id is a string
 workspace_id is a string
 
@@ -2031,6 +2111,7 @@ export_fba_params is a reference to a hash where the following keys are defined:
 	in_fba has a value which is a fba_id
 	in_workspace has a value which is a workspace_id
 	format has a value which is a string
+	authentication has a value which is a string
 fba_id is a string
 workspace_id is a string
 
@@ -5222,6 +5303,7 @@ in_genome has a value which is a genome_id
 out_genome has a value which is a genome_id
 out_workspace has a value which is a workspace_id
 as_new_genome has a value which is a bool
+authentication has a value which is a string
 
 </pre>
 
@@ -5235,6 +5317,7 @@ in_genome has a value which is a genome_id
 out_genome has a value which is a genome_id
 out_workspace has a value which is a workspace_id
 as_new_genome has a value which is a bool
+authentication has a value which is a string
 
 
 =end text
@@ -5280,6 +5363,7 @@ in_genome has a value which is a genome_id
 in_workspace has a value which is a workspace_id
 out_model has a value which is a fbamodel_id
 out_workspace has a value which is a workspace_id
+authentication has a value which is a string
 
 </pre>
 
@@ -5292,6 +5376,7 @@ in_genome has a value which is a genome_id
 in_workspace has a value which is a workspace_id
 out_model has a value which is a fbamodel_id
 out_workspace has a value which is a workspace_id
+authentication has a value which is a string
 
 
 =end text
@@ -5320,6 +5405,7 @@ a reference to a hash where the following keys are defined:
 in_model has a value which is a fbamodel_id
 in_workspace has a value which is a workspace_id
 format has a value which is a string
+authentication has a value which is a string
 
 </pre>
 
@@ -5331,6 +5417,7 @@ a reference to a hash where the following keys are defined:
 in_model has a value which is a fbamodel_id
 in_workspace has a value which is a workspace_id
 format has a value which is a string
+authentication has a value which is a string
 
 
 =end text
@@ -5360,6 +5447,7 @@ in_model has a value which is a fbamodel_id
 in_workspace has a value which is a workspace_id
 out_fba has a value which is a fba_id
 out_workspace has a value which is a workspace_id
+authentication has a value which is a string
 
 </pre>
 
@@ -5372,6 +5460,7 @@ in_model has a value which is a fbamodel_id
 in_workspace has a value which is a workspace_id
 out_fba has a value which is a fba_id
 out_workspace has a value which is a workspace_id
+authentication has a value which is a string
 
 
 =end text
@@ -5399,6 +5488,7 @@ NEED DOCUMENTATION
 a reference to a hash where the following keys are defined:
 in_fba has a value which is a fba_id
 in_workspace has a value which is a workspace_id
+authentication has a value which is a string
 
 </pre>
 
@@ -5409,6 +5499,7 @@ in_workspace has a value which is a workspace_id
 a reference to a hash where the following keys are defined:
 in_fba has a value which is a fba_id
 in_workspace has a value which is a workspace_id
+authentication has a value which is a string
 
 
 =end text
@@ -5437,6 +5528,7 @@ a reference to a hash where the following keys are defined:
 in_fba has a value which is a fba_id
 in_workspace has a value which is a workspace_id
 format has a value which is a string
+authentication has a value which is a string
 
 </pre>
 
@@ -5448,6 +5540,7 @@ a reference to a hash where the following keys are defined:
 in_fba has a value which is a fba_id
 in_workspace has a value which is a workspace_id
 format has a value which is a string
+authentication has a value which is a string
 
 
 =end text
