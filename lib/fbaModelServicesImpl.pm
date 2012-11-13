@@ -472,7 +472,7 @@ sub new
 
 =head2 get_models
 
-  $out_models = $obj->get_models($in_model_ids)
+  $out_models = $obj->get_models($input)
 
 =over 4
 
@@ -481,9 +481,15 @@ sub new
 =begin html
 
 <pre>
-$in_model_ids is a reference to a list where each element is a fbamodel_id
+$input is a get_models_params
 $out_models is a reference to a list where each element is an FBAModel
+get_models_params is a reference to a hash where the following keys are defined:
+	in_model_ids has a value which is a reference to a list where each element is a fbamodel_id
+	workspace has a value which is a workspace_id
+	authentication has a value which is a string
+	id_type has a value which is a string
 fbamodel_id is a string
+workspace_id is a string
 FBAModel is a reference to a hash where the following keys are defined:
 	id has a value which is a fbamodel_id
 	genome has a value which is a genome_id
@@ -561,9 +567,15 @@ gapgen_id is a string
 
 =begin text
 
-$in_model_ids is a reference to a list where each element is a fbamodel_id
+$input is a get_models_params
 $out_models is a reference to a list where each element is an FBAModel
+get_models_params is a reference to a hash where the following keys are defined:
+	in_model_ids has a value which is a reference to a list where each element is a fbamodel_id
+	workspace has a value which is a workspace_id
+	authentication has a value which is a string
+	id_type has a value which is a string
 fbamodel_id is a string
+workspace_id is a string
 FBAModel is a reference to a hash where the following keys are defined:
 	id has a value which is a fbamodel_id
 	genome has a value which is a genome_id
@@ -642,7 +654,7 @@ gapgen_id is a string
 
 =item Description
 
-This function returns model data for input ids
+
 
 =back
 
@@ -651,10 +663,10 @@ This function returns model data for input ids
 sub get_models
 {
     my $self = shift;
-    my($in_model_ids) = @_;
+    my($input) = @_;
 
     my @_bad_arguments;
-    (ref($in_model_ids) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"in_model_ids\" (value was \"$in_model_ids\")");
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
     if (@_bad_arguments) {
 	my $msg = "Invalid arguments passed to get_models:\n" . join("", map { "\t$_\n" } @_bad_arguments);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
@@ -680,7 +692,7 @@ sub get_models
 
 =head2 get_fbas
 
-  $out_fbas = $obj->get_fbas($in_fba_ids)
+  $out_fbas = $obj->get_fbas($input)
 
 =over 4
 
@@ -689,26 +701,33 @@ sub get_models
 =begin html
 
 <pre>
-$in_fba_ids is a reference to a list where each element is a fba_id
+$input is a get_fbas_params
 $out_fbas is a reference to a list where each element is an FBA
+get_fbas_params is a reference to a hash where the following keys are defined:
+	in_fba_ids has a value which is a reference to a list where each element is a fba_id
+	workspace has a value which is a workspace_id
+	authentication has a value which is a string
+	id_type has a value which is a string
 fba_id is a string
+workspace_id is a string
 FBA is a reference to a hash where the following keys are defined:
 	id has a value which is a fba_id
+	isComplete has a value which is a bool
 	formulation has a value which is an FBAFormulation
-	minimalMediaPrediction has a value which is a reference to a list where each element is a MinimalMediaPrediction
+	minimalMediaPredictions has a value which is a reference to a list where each element is a MinimalMediaPrediction
 	metaboliteProductions has a value which is a reference to a list where each element is a MetaboliteProduction
 	reactionFluxes has a value which is a reference to a list where each element is a ReactionFlux
 	compoundFluxes has a value which is a reference to a list where each element is a CompoundFlux
 	geneAssertions has a value which is a reference to a list where each element is a GeneAssertion
+bool is an int
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	model has a value which is a fbamodel_id
 	regmodel has a value which is a regmodel_id
 	expressionData has a value which is an expression_id
-	objective has a value which is a string
+	objectiveString has a value which is a string
 	objective has a value which is a float
 	description has a value which is a string
-	type has a value which is a string
 	uptakelimits has a value which is a string
 	objectiveConstraintFraction has a value which is a float
 	allReversible has a value which is a bool
@@ -732,7 +751,6 @@ media_id is a string
 fbamodel_id is a string
 regmodel_id is a string
 expression_id is a string
-bool is an int
 feature_id is a string
 modelreaction_id is a string
 MinimalMediaPrediction is a reference to a hash where the following keys are defined:
@@ -771,26 +789,33 @@ GeneAssertion is a reference to a list containing 4 items:
 
 =begin text
 
-$in_fba_ids is a reference to a list where each element is a fba_id
+$input is a get_fbas_params
 $out_fbas is a reference to a list where each element is an FBA
+get_fbas_params is a reference to a hash where the following keys are defined:
+	in_fba_ids has a value which is a reference to a list where each element is a fba_id
+	workspace has a value which is a workspace_id
+	authentication has a value which is a string
+	id_type has a value which is a string
 fba_id is a string
+workspace_id is a string
 FBA is a reference to a hash where the following keys are defined:
 	id has a value which is a fba_id
+	isComplete has a value which is a bool
 	formulation has a value which is an FBAFormulation
-	minimalMediaPrediction has a value which is a reference to a list where each element is a MinimalMediaPrediction
+	minimalMediaPredictions has a value which is a reference to a list where each element is a MinimalMediaPrediction
 	metaboliteProductions has a value which is a reference to a list where each element is a MetaboliteProduction
 	reactionFluxes has a value which is a reference to a list where each element is a ReactionFlux
 	compoundFluxes has a value which is a reference to a list where each element is a CompoundFlux
 	geneAssertions has a value which is a reference to a list where each element is a GeneAssertion
+bool is an int
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	model has a value which is a fbamodel_id
 	regmodel has a value which is a regmodel_id
 	expressionData has a value which is an expression_id
-	objective has a value which is a string
+	objectiveString has a value which is a string
 	objective has a value which is a float
 	description has a value which is a string
-	type has a value which is a string
 	uptakelimits has a value which is a string
 	objectiveConstraintFraction has a value which is a float
 	allReversible has a value which is a bool
@@ -814,7 +839,6 @@ media_id is a string
 fbamodel_id is a string
 regmodel_id is a string
 expression_id is a string
-bool is an int
 feature_id is a string
 modelreaction_id is a string
 MinimalMediaPrediction is a reference to a hash where the following keys are defined:
@@ -854,7 +878,7 @@ GeneAssertion is a reference to a list containing 4 items:
 
 =item Description
 
-This function returns fba data for input ids
+
 
 =back
 
@@ -863,10 +887,10 @@ This function returns fba data for input ids
 sub get_fbas
 {
     my $self = shift;
-    my($in_fba_ids) = @_;
+    my($input) = @_;
 
     my @_bad_arguments;
-    (ref($in_fba_ids) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"in_fba_ids\" (value was \"$in_fba_ids\")");
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
     if (@_bad_arguments) {
 	my $msg = "Invalid arguments passed to get_fbas:\n" . join("", map { "\t$_\n" } @_bad_arguments);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
@@ -892,7 +916,7 @@ sub get_fbas
 
 =head2 get_gapfills
 
-  $out_gapfills = $obj->get_gapfills($in_gapfill_ids)
+  $out_gapfills = $obj->get_gapfills($input)
 
 =over 4
 
@@ -901,9 +925,15 @@ sub get_fbas
 =begin html
 
 <pre>
-$in_gapfill_ids is a reference to a list where each element is a gapfill_id
+$input is a get_gapfills_params
 $out_gapfills is a reference to a list where each element is a GapFill
+get_gapfills_params is a reference to a hash where the following keys are defined:
+	in_gapfill_ids has a value which is a reference to a list where each element is a gapfill_id
+	workspace has a value which is a workspace_id
+	authentication has a value which is a string
+	id_type has a value which is a string
 gapfill_id is a string
+workspace_id is a string
 GapFill is a reference to a hash where the following keys are defined:
 	id has a value which is a gapfill_id
 	formulation has a value which is a GapfillingFormulation
@@ -955,9 +985,15 @@ reaction_id is a string
 
 =begin text
 
-$in_gapfill_ids is a reference to a list where each element is a gapfill_id
+$input is a get_gapfills_params
 $out_gapfills is a reference to a list where each element is a GapFill
+get_gapfills_params is a reference to a hash where the following keys are defined:
+	in_gapfill_ids has a value which is a reference to a list where each element is a gapfill_id
+	workspace has a value which is a workspace_id
+	authentication has a value which is a string
+	id_type has a value which is a string
 gapfill_id is a string
+workspace_id is a string
 GapFill is a reference to a hash where the following keys are defined:
 	id has a value which is a gapfill_id
 	formulation has a value which is a GapfillingFormulation
@@ -1010,7 +1046,7 @@ reaction_id is a string
 
 =item Description
 
-This function returns gapfill data for input ids
+
 
 =back
 
@@ -1019,10 +1055,10 @@ This function returns gapfill data for input ids
 sub get_gapfills
 {
     my $self = shift;
-    my($in_gapfill_ids) = @_;
+    my($input) = @_;
 
     my @_bad_arguments;
-    (ref($in_gapfill_ids) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"in_gapfill_ids\" (value was \"$in_gapfill_ids\")");
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
     if (@_bad_arguments) {
 	my $msg = "Invalid arguments passed to get_gapfills:\n" . join("", map { "\t$_\n" } @_bad_arguments);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
@@ -1048,7 +1084,7 @@ sub get_gapfills
 
 =head2 get_gapgens
 
-  $out_gapgens = $obj->get_gapgens($in_gapgen_ids)
+  $out_gapgens = $obj->get_gapgens($input)
 
 =over 4
 
@@ -1057,9 +1093,15 @@ sub get_gapfills
 =begin html
 
 <pre>
-$in_gapgen_ids is a reference to a list where each element is a gapgen_id
+$input is a get_gapgens_params
 $out_gapgens is a reference to a list where each element is a GapGen
+get_gapgens_params is a reference to a hash where the following keys are defined:
+	in_gapgen_ids has a value which is a reference to a list where each element is a gapgen_id
+	workspace has a value which is a workspace_id
+	authentication has a value which is a string
+	id_type has a value which is a string
 gapgen_id is a string
+workspace_id is a string
 GapGen is a reference to a hash where the following keys are defined:
 	id has a value which is a gapgen_id
 	formulation has a value which is a GapgenFormulation
@@ -1096,9 +1138,15 @@ modelreaction_id is a string
 
 =begin text
 
-$in_gapgen_ids is a reference to a list where each element is a gapgen_id
+$input is a get_gapgens_params
 $out_gapgens is a reference to a list where each element is a GapGen
+get_gapgens_params is a reference to a hash where the following keys are defined:
+	in_gapgen_ids has a value which is a reference to a list where each element is a gapgen_id
+	workspace has a value which is a workspace_id
+	authentication has a value which is a string
+	id_type has a value which is a string
 gapgen_id is a string
+workspace_id is a string
 GapGen is a reference to a hash where the following keys are defined:
 	id has a value which is a gapgen_id
 	formulation has a value which is a GapgenFormulation
@@ -1136,7 +1184,7 @@ modelreaction_id is a string
 
 =item Description
 
-This function returns gapgen data for input ids
+
 
 =back
 
@@ -1145,10 +1193,10 @@ This function returns gapgen data for input ids
 sub get_gapgens
 {
     my $self = shift;
-    my($in_gapgen_ids) = @_;
+    my($input) = @_;
 
     my @_bad_arguments;
-    (ref($in_gapgen_ids) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"in_gapgen_ids\" (value was \"$in_gapgen_ids\")");
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
     if (@_bad_arguments) {
 	my $msg = "Invalid arguments passed to get_gapgens:\n" . join("", map { "\t$_\n" } @_bad_arguments);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
@@ -1174,7 +1222,7 @@ sub get_gapgens
 
 =head2 get_reactions
 
-  $out_reactions = $obj->get_reactions($in_reaction_ids, $biochemistry)
+  $out_reactions = $obj->get_reactions($input)
 
 =over 4
 
@@ -1183,11 +1231,13 @@ sub get_gapgens
 =begin html
 
 <pre>
-$in_reaction_ids is a reference to a list where each element is a reaction_id
-$biochemistry is a biochemistry_id
+$input is a get_reactions_params
 $out_reactions is a reference to a list where each element is a Reaction
+get_reactions_params is a reference to a hash where the following keys are defined:
+	in_reaction_ids has a value which is a reference to a list where each element is a reaction_id
+	authentication has a value which is a string
+	id_type has a value which is a string
 reaction_id is a string
-biochemistry_id is a string
 Reaction is a reference to a hash where the following keys are defined:
 	id has a value which is a reaction_id
 	reversibility has a value which is a string
@@ -1201,11 +1251,13 @@ Reaction is a reference to a hash where the following keys are defined:
 
 =begin text
 
-$in_reaction_ids is a reference to a list where each element is a reaction_id
-$biochemistry is a biochemistry_id
+$input is a get_reactions_params
 $out_reactions is a reference to a list where each element is a Reaction
+get_reactions_params is a reference to a hash where the following keys are defined:
+	in_reaction_ids has a value which is a reference to a list where each element is a reaction_id
+	authentication has a value which is a string
+	id_type has a value which is a string
 reaction_id is a string
-biochemistry_id is a string
 Reaction is a reference to a hash where the following keys are defined:
 	id has a value which is a reaction_id
 	reversibility has a value which is a string
@@ -1220,7 +1272,7 @@ Reaction is a reference to a hash where the following keys are defined:
 
 =item Description
 
-This function returns reaction data for input ids
+
 
 =back
 
@@ -1229,11 +1281,10 @@ This function returns reaction data for input ids
 sub get_reactions
 {
     my $self = shift;
-    my($in_reaction_ids, $biochemistry) = @_;
+    my($input) = @_;
 
     my @_bad_arguments;
-    (ref($in_reaction_ids) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"in_reaction_ids\" (value was \"$in_reaction_ids\")");
-    (!ref($biochemistry)) or push(@_bad_arguments, "Invalid type for argument \"biochemistry\" (value was \"$biochemistry\")");
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
     if (@_bad_arguments) {
 	my $msg = "Invalid arguments passed to get_reactions:\n" . join("", map { "\t$_\n" } @_bad_arguments);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
@@ -1259,7 +1310,7 @@ sub get_reactions
 
 =head2 get_compounds
 
-  $out_compounds = $obj->get_compounds($in_compound_ids, $biochemistry)
+  $out_compounds = $obj->get_compounds($input)
 
 =over 4
 
@@ -1268,11 +1319,13 @@ sub get_reactions
 =begin html
 
 <pre>
-$in_compound_ids is a reference to a list where each element is a compound_id
-$biochemistry is a biochemistry_id
+$input is a get_compounds_params
 $out_compounds is a reference to a list where each element is a Compound
+get_compounds_params is a reference to a hash where the following keys are defined:
+	in_compound_ids has a value which is a reference to a list where each element is a compound_id
+	authentication has a value which is a string
+	id_type has a value which is a string
 compound_id is a string
-biochemistry_id is a string
 Compound is a reference to a hash where the following keys are defined:
 	id has a value which is a compound_id
 	name has a value which is a string
@@ -1286,11 +1339,13 @@ Compound is a reference to a hash where the following keys are defined:
 
 =begin text
 
-$in_compound_ids is a reference to a list where each element is a compound_id
-$biochemistry is a biochemistry_id
+$input is a get_compounds_params
 $out_compounds is a reference to a list where each element is a Compound
+get_compounds_params is a reference to a hash where the following keys are defined:
+	in_compound_ids has a value which is a reference to a list where each element is a compound_id
+	authentication has a value which is a string
+	id_type has a value which is a string
 compound_id is a string
-biochemistry_id is a string
 Compound is a reference to a hash where the following keys are defined:
 	id has a value which is a compound_id
 	name has a value which is a string
@@ -1305,7 +1360,7 @@ Compound is a reference to a hash where the following keys are defined:
 
 =item Description
 
-This function returns compound data for input ids
+
 
 =back
 
@@ -1314,11 +1369,10 @@ This function returns compound data for input ids
 sub get_compounds
 {
     my $self = shift;
-    my($in_compound_ids, $biochemistry) = @_;
+    my($input) = @_;
 
     my @_bad_arguments;
-    (ref($in_compound_ids) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"in_compound_ids\" (value was \"$in_compound_ids\")");
-    (!ref($biochemistry)) or push(@_bad_arguments, "Invalid type for argument \"biochemistry\" (value was \"$biochemistry\")");
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
     if (@_bad_arguments) {
 	my $msg = "Invalid arguments passed to get_compounds:\n" . join("", map { "\t$_\n" } @_bad_arguments);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
@@ -1344,7 +1398,7 @@ sub get_compounds
 
 =head2 get_media
 
-  $out_media = $obj->get_media($in_media_ids, $biochemistry)
+  $out_media = $obj->get_media($input)
 
 =over 4
 
@@ -1353,11 +1407,13 @@ sub get_compounds
 =begin html
 
 <pre>
-$in_media_ids is a reference to a list where each element is a media_id
-$biochemistry is a biochemistry_id
+$input is a get_media_params
 $out_media is a reference to a list where each element is a Media
+get_media_params is a reference to a hash where the following keys are defined:
+	in_media_ids has a value which is a reference to a list where each element is a media_id
+	authentication has a value which is a string
+	id_type has a value which is a string
 media_id is a string
-biochemistry_id is a string
 Media is a reference to a hash where the following keys are defined:
 	id has a value which is a media_id
 	name has a value which is a string
@@ -1373,11 +1429,13 @@ compound_id is a string
 
 =begin text
 
-$in_media_ids is a reference to a list where each element is a media_id
-$biochemistry is a biochemistry_id
+$input is a get_media_params
 $out_media is a reference to a list where each element is a Media
+get_media_params is a reference to a hash where the following keys are defined:
+	in_media_ids has a value which is a reference to a list where each element is a media_id
+	authentication has a value which is a string
+	id_type has a value which is a string
 media_id is a string
-biochemistry_id is a string
 Media is a reference to a hash where the following keys are defined:
 	id has a value which is a media_id
 	name has a value which is a string
@@ -1394,7 +1452,7 @@ compound_id is a string
 
 =item Description
 
-This function returns media data for input ids
+
 
 =back
 
@@ -1403,11 +1461,10 @@ This function returns media data for input ids
 sub get_media
 {
     my $self = shift;
-    my($in_media_ids, $biochemistry) = @_;
+    my($input) = @_;
 
     my @_bad_arguments;
-    (ref($in_media_ids) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"in_media_ids\" (value was \"$in_media_ids\")");
-    (!ref($biochemistry)) or push(@_bad_arguments, "Invalid type for argument \"biochemistry\" (value was \"$biochemistry\")");
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
     if (@_bad_arguments) {
 	my $msg = "Invalid arguments passed to get_media:\n" . join("", map { "\t$_\n" } @_bad_arguments);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
@@ -1433,7 +1490,7 @@ sub get_media
 
 =head2 get_biochemistry
 
-  $out_biochemistry = $obj->get_biochemistry($biochemistry)
+  $out_biochemistry = $obj->get_biochemistry($input)
 
 =over 4
 
@@ -1442,8 +1499,12 @@ sub get_media
 =begin html
 
 <pre>
-$biochemistry is a biochemistry_id
+$input is a get_biochemistry_params
 $out_biochemistry is a Biochemistry
+get_biochemistry_params is a reference to a hash where the following keys are defined:
+	in_biochemistry has a value which is a biochemistry_id
+	authentication has a value which is a string
+	id_type has a value which is a string
 biochemistry_id is a string
 Biochemistry is a reference to a hash where the following keys are defined:
 	id has a value which is a biochemistry_id
@@ -1461,8 +1522,12 @@ media_id is a string
 
 =begin text
 
-$biochemistry is a biochemistry_id
+$input is a get_biochemistry_params
 $out_biochemistry is a Biochemistry
+get_biochemistry_params is a reference to a hash where the following keys are defined:
+	in_biochemistry has a value which is a biochemistry_id
+	authentication has a value which is a string
+	id_type has a value which is a string
 biochemistry_id is a string
 Biochemistry is a reference to a hash where the following keys are defined:
 	id has a value which is a biochemistry_id
@@ -1481,7 +1546,7 @@ media_id is a string
 
 =item Description
 
-This function returns biochemistry object
+
 
 =back
 
@@ -1490,10 +1555,10 @@ This function returns biochemistry object
 sub get_biochemistry
 {
     my $self = shift;
-    my($biochemistry) = @_;
+    my($input) = @_;
 
     my @_bad_arguments;
-    (!ref($biochemistry)) or push(@_bad_arguments, "Invalid type for argument \"biochemistry\" (value was \"$biochemistry\")");
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
     if (@_bad_arguments) {
 	my $msg = "Invalid arguments passed to get_biochemistry:\n" . join("", map { "\t$_\n" } @_bad_arguments);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
@@ -3045,13 +3110,13 @@ a string
 
 A region of DNA is maintained as a tuple of four components:
 
-                the contig
-                the beginning position (from 1)
-                the strand
-                the length
+        the contig
+        the beginning position (from 1)
+        the strand
+        the length
 
-           We often speak of "a region".  By "location", we mean a sequence
-           of regions from the same genome (perhaps from distinct contigs).
+        We often speak of "a region".  By "location", we mean a sequence
+        of regions from the same genome (perhaps from distinct contigs).
 
 
 =item Definition
@@ -5122,10 +5187,9 @@ media has a value which is a media_id
 model has a value which is a fbamodel_id
 regmodel has a value which is a regmodel_id
 expressionData has a value which is an expression_id
-objective has a value which is a string
+objectiveString has a value which is a string
 objective has a value which is a float
 description has a value which is a string
-type has a value which is a string
 uptakelimits has a value which is a string
 objectiveConstraintFraction has a value which is a float
 allReversible has a value which is a bool
@@ -5157,10 +5221,9 @@ media has a value which is a media_id
 model has a value which is a fbamodel_id
 regmodel has a value which is a regmodel_id
 expressionData has a value which is an expression_id
-objective has a value which is a string
+objectiveString has a value which is a string
 objective has a value which is a float
 description has a value which is a string
-type has a value which is a string
 uptakelimits has a value which is a string
 objectiveConstraintFraction has a value which is a float
 allReversible has a value which is a bool
@@ -5201,8 +5264,9 @@ bounds has a value which is a reference to a list where each element is a string
 <pre>
 a reference to a hash where the following keys are defined:
 id has a value which is a fba_id
+isComplete has a value which is a bool
 formulation has a value which is an FBAFormulation
-minimalMediaPrediction has a value which is a reference to a list where each element is a MinimalMediaPrediction
+minimalMediaPredictions has a value which is a reference to a list where each element is a MinimalMediaPrediction
 metaboliteProductions has a value which is a reference to a list where each element is a MetaboliteProduction
 reactionFluxes has a value which is a reference to a list where each element is a ReactionFlux
 compoundFluxes has a value which is a reference to a list where each element is a CompoundFlux
@@ -5216,12 +5280,364 @@ geneAssertions has a value which is a reference to a list where each element is 
 
 a reference to a hash where the following keys are defined:
 id has a value which is a fba_id
+isComplete has a value which is a bool
 formulation has a value which is an FBAFormulation
-minimalMediaPrediction has a value which is a reference to a list where each element is a MinimalMediaPrediction
+minimalMediaPredictions has a value which is a reference to a list where each element is a MinimalMediaPrediction
 metaboliteProductions has a value which is a reference to a list where each element is a MetaboliteProduction
 reactionFluxes has a value which is a reference to a list where each element is a ReactionFlux
 compoundFluxes has a value which is a reference to a list where each element is a CompoundFlux
 geneAssertions has a value which is a reference to a list where each element is a GeneAssertion
+
+
+=end text
+
+=back
+
+
+
+=head2 workspace_id
+
+=over 4
+
+
+
+=item Description
+
+END FBA FORMULATION SPEC
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 get_models_params
+
+=over 4
+
+
+
+=item Description
+
+This function returns model data for input ids
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+in_model_ids has a value which is a reference to a list where each element is a fbamodel_id
+workspace has a value which is a workspace_id
+authentication has a value which is a string
+id_type has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+in_model_ids has a value which is a reference to a list where each element is a fbamodel_id
+workspace has a value which is a workspace_id
+authentication has a value which is a string
+id_type has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 get_fbas_params
+
+=over 4
+
+
+
+=item Description
+
+This function returns fba data for input ids
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+in_fba_ids has a value which is a reference to a list where each element is a fba_id
+workspace has a value which is a workspace_id
+authentication has a value which is a string
+id_type has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+in_fba_ids has a value which is a reference to a list where each element is a fba_id
+workspace has a value which is a workspace_id
+authentication has a value which is a string
+id_type has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 get_gapfills_params
+
+=over 4
+
+
+
+=item Description
+
+This function returns gapfill data for input ids
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+in_gapfill_ids has a value which is a reference to a list where each element is a gapfill_id
+workspace has a value which is a workspace_id
+authentication has a value which is a string
+id_type has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+in_gapfill_ids has a value which is a reference to a list where each element is a gapfill_id
+workspace has a value which is a workspace_id
+authentication has a value which is a string
+id_type has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 get_gapgens_params
+
+=over 4
+
+
+
+=item Description
+
+This function returns gapgen data for input ids
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+in_gapgen_ids has a value which is a reference to a list where each element is a gapgen_id
+workspace has a value which is a workspace_id
+authentication has a value which is a string
+id_type has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+in_gapgen_ids has a value which is a reference to a list where each element is a gapgen_id
+workspace has a value which is a workspace_id
+authentication has a value which is a string
+id_type has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 get_reactions_params
+
+=over 4
+
+
+
+=item Description
+
+This function returns reaction data for input ids
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+in_reaction_ids has a value which is a reference to a list where each element is a reaction_id
+authentication has a value which is a string
+id_type has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+in_reaction_ids has a value which is a reference to a list where each element is a reaction_id
+authentication has a value which is a string
+id_type has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 get_compounds_params
+
+=over 4
+
+
+
+=item Description
+
+This function returns compound data for input ids
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+in_compound_ids has a value which is a reference to a list where each element is a compound_id
+authentication has a value which is a string
+id_type has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+in_compound_ids has a value which is a reference to a list where each element is a compound_id
+authentication has a value which is a string
+id_type has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 get_media_params
+
+=over 4
+
+
+
+=item Description
+
+This function returns media data for input ids
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+in_media_ids has a value which is a reference to a list where each element is a media_id
+authentication has a value which is a string
+id_type has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+in_media_ids has a value which is a reference to a list where each element is a media_id
+authentication has a value which is a string
+id_type has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 get_biochemistry_params
+
+=over 4
+
+
+
+=item Description
+
+This function returns biochemistry object
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+in_biochemistry has a value which is a biochemistry_id
+authentication has a value which is a string
+id_type has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+in_biochemistry has a value which is a biochemistry_id
+authentication has a value which is a string
+id_type has a value which is a string
 
 
 =end text
@@ -5337,17 +5753,17 @@ authentication has a value which is a string
 A set of paramters for the genome_to_fbamodel method. This is a mapping
 where the keys in the map are named 'in_genome', 'in_workspace', 'out_model',
 and 'out_workspace'. Values for each are described below.
-
+    
 genome_id in_genome
 This parameter specifies the ID of the genome for which a model is to be built. This parameter is required.
-
+    
 workspace_id in_workspace
 This parameter specifies the ID of the workspace containing the specified genome object. This parameter is also required.
-
+    
 model_id out_model
 This parameter specifies the ID to which the generated model should be save. This is optional.
 If unspecified, a new KBase model ID will be checked out for the model.
-
+    
 workspace_id out_workspace
 This parameter specifies the ID of the workspace where the model should be save. This is optional.
 If unspecified, this parameter will be set to the value of "in_workspace".

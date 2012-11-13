@@ -40,9 +40,9 @@ sub new
 
 
 
-=head2 $result = get_models(in_model_ids)
+=head2 $result = get_models(input)
 
-This function returns model data for input ids
+
 
 =cut
 
@@ -56,10 +56,10 @@ sub get_models
 							       "Invalid argument count for function get_models (received $n, expecting 1)");
     }
     {
-	my($in_model_ids) = @args;
+	my($input) = @args;
 
 	my @_bad_arguments;
-        (ref($in_model_ids) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument 1 \"in_model_ids\" (value was \"$in_model_ids\")");
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
         if (@_bad_arguments) {
 	    my $msg = "Invalid arguments passed to get_models:\n" . join("", map { "\t$_\n" } @_bad_arguments);
 	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
@@ -90,9 +90,9 @@ sub get_models
 
 
 
-=head2 $result = get_fbas(in_fba_ids)
+=head2 $result = get_fbas(input)
 
-This function returns fba data for input ids
+
 
 =cut
 
@@ -106,10 +106,10 @@ sub get_fbas
 							       "Invalid argument count for function get_fbas (received $n, expecting 1)");
     }
     {
-	my($in_fba_ids) = @args;
+	my($input) = @args;
 
 	my @_bad_arguments;
-        (ref($in_fba_ids) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument 1 \"in_fba_ids\" (value was \"$in_fba_ids\")");
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
         if (@_bad_arguments) {
 	    my $msg = "Invalid arguments passed to get_fbas:\n" . join("", map { "\t$_\n" } @_bad_arguments);
 	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
@@ -140,9 +140,9 @@ sub get_fbas
 
 
 
-=head2 $result = get_gapfills(in_gapfill_ids)
+=head2 $result = get_gapfills(input)
 
-This function returns gapfill data for input ids
+
 
 =cut
 
@@ -156,10 +156,10 @@ sub get_gapfills
 							       "Invalid argument count for function get_gapfills (received $n, expecting 1)");
     }
     {
-	my($in_gapfill_ids) = @args;
+	my($input) = @args;
 
 	my @_bad_arguments;
-        (ref($in_gapfill_ids) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument 1 \"in_gapfill_ids\" (value was \"$in_gapfill_ids\")");
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
         if (@_bad_arguments) {
 	    my $msg = "Invalid arguments passed to get_gapfills:\n" . join("", map { "\t$_\n" } @_bad_arguments);
 	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
@@ -190,9 +190,9 @@ sub get_gapfills
 
 
 
-=head2 $result = get_gapgens(in_gapgen_ids)
+=head2 $result = get_gapgens(input)
 
-This function returns gapgen data for input ids
+
 
 =cut
 
@@ -206,10 +206,10 @@ sub get_gapgens
 							       "Invalid argument count for function get_gapgens (received $n, expecting 1)");
     }
     {
-	my($in_gapgen_ids) = @args;
+	my($input) = @args;
 
 	my @_bad_arguments;
-        (ref($in_gapgen_ids) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument 1 \"in_gapgen_ids\" (value was \"$in_gapgen_ids\")");
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
         if (@_bad_arguments) {
 	    my $msg = "Invalid arguments passed to get_gapgens:\n" . join("", map { "\t$_\n" } @_bad_arguments);
 	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
@@ -240,9 +240,9 @@ sub get_gapgens
 
 
 
-=head2 $result = get_reactions(in_reaction_ids, biochemistry)
+=head2 $result = get_reactions(input)
 
-This function returns reaction data for input ids
+
 
 =cut
 
@@ -250,17 +250,16 @@ sub get_reactions
 {
     my($self, @args) = @_;
 
-    if ((my $n = @args) != 2)
+    if ((my $n = @args) != 1)
     {
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
-							       "Invalid argument count for function get_reactions (received $n, expecting 2)");
+							       "Invalid argument count for function get_reactions (received $n, expecting 1)");
     }
     {
-	my($in_reaction_ids, $biochemistry) = @args;
+	my($input) = @args;
 
 	my @_bad_arguments;
-        (ref($in_reaction_ids) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument 1 \"in_reaction_ids\" (value was \"$in_reaction_ids\")");
-        (!ref($biochemistry)) or push(@_bad_arguments, "Invalid type for argument 2 \"biochemistry\" (value was \"$biochemistry\")");
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
         if (@_bad_arguments) {
 	    my $msg = "Invalid arguments passed to get_reactions:\n" . join("", map { "\t$_\n" } @_bad_arguments);
 	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
@@ -291,9 +290,9 @@ sub get_reactions
 
 
 
-=head2 $result = get_compounds(in_compound_ids, biochemistry)
+=head2 $result = get_compounds(input)
 
-This function returns compound data for input ids
+
 
 =cut
 
@@ -301,17 +300,16 @@ sub get_compounds
 {
     my($self, @args) = @_;
 
-    if ((my $n = @args) != 2)
+    if ((my $n = @args) != 1)
     {
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
-							       "Invalid argument count for function get_compounds (received $n, expecting 2)");
+							       "Invalid argument count for function get_compounds (received $n, expecting 1)");
     }
     {
-	my($in_compound_ids, $biochemistry) = @args;
+	my($input) = @args;
 
 	my @_bad_arguments;
-        (ref($in_compound_ids) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument 1 \"in_compound_ids\" (value was \"$in_compound_ids\")");
-        (!ref($biochemistry)) or push(@_bad_arguments, "Invalid type for argument 2 \"biochemistry\" (value was \"$biochemistry\")");
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
         if (@_bad_arguments) {
 	    my $msg = "Invalid arguments passed to get_compounds:\n" . join("", map { "\t$_\n" } @_bad_arguments);
 	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
@@ -342,9 +340,9 @@ sub get_compounds
 
 
 
-=head2 $result = get_media(in_media_ids, biochemistry)
+=head2 $result = get_media(input)
 
-This function returns media data for input ids
+
 
 =cut
 
@@ -352,17 +350,16 @@ sub get_media
 {
     my($self, @args) = @_;
 
-    if ((my $n = @args) != 2)
+    if ((my $n = @args) != 1)
     {
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
-							       "Invalid argument count for function get_media (received $n, expecting 2)");
+							       "Invalid argument count for function get_media (received $n, expecting 1)");
     }
     {
-	my($in_media_ids, $biochemistry) = @args;
+	my($input) = @args;
 
 	my @_bad_arguments;
-        (ref($in_media_ids) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument 1 \"in_media_ids\" (value was \"$in_media_ids\")");
-        (!ref($biochemistry)) or push(@_bad_arguments, "Invalid type for argument 2 \"biochemistry\" (value was \"$biochemistry\")");
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
         if (@_bad_arguments) {
 	    my $msg = "Invalid arguments passed to get_media:\n" . join("", map { "\t$_\n" } @_bad_arguments);
 	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
@@ -393,9 +390,9 @@ sub get_media
 
 
 
-=head2 $result = get_biochemistry(biochemistry)
+=head2 $result = get_biochemistry(input)
 
-This function returns biochemistry object
+
 
 =cut
 
@@ -409,10 +406,10 @@ sub get_biochemistry
 							       "Invalid argument count for function get_biochemistry (received $n, expecting 1)");
     }
     {
-	my($biochemistry) = @args;
+	my($input) = @args;
 
 	my @_bad_arguments;
-        (!ref($biochemistry)) or push(@_bad_arguments, "Invalid type for argument 1 \"biochemistry\" (value was \"$biochemistry\")");
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
         if (@_bad_arguments) {
 	    my $msg = "Invalid arguments passed to get_biochemistry:\n" . join("", map { "\t$_\n" } @_bad_arguments);
 	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,

@@ -15,10 +15,10 @@ class fbaModelServices:
         if url != None:
             self.url = url
 
-    def get_models(self, in_model_ids):
+    def get_models(self, input):
 
         arg_hash = { 'method': 'fbaModelServices.get_models',
-                     'params': [in_model_ids],
+                     'params': [input],
                      'version': '1.1'
                      }
 
@@ -31,10 +31,10 @@ class fbaModelServices:
         else:
             return None
 
-    def get_fbas(self, in_fba_ids):
+    def get_fbas(self, input):
 
         arg_hash = { 'method': 'fbaModelServices.get_fbas',
-                     'params': [in_fba_ids],
+                     'params': [input],
                      'version': '1.1'
                      }
 
@@ -47,10 +47,10 @@ class fbaModelServices:
         else:
             return None
 
-    def get_gapfills(self, in_gapfill_ids):
+    def get_gapfills(self, input):
 
         arg_hash = { 'method': 'fbaModelServices.get_gapfills',
-                     'params': [in_gapfill_ids],
+                     'params': [input],
                      'version': '1.1'
                      }
 
@@ -63,10 +63,10 @@ class fbaModelServices:
         else:
             return None
 
-    def get_gapgens(self, in_gapgen_ids):
+    def get_gapgens(self, input):
 
         arg_hash = { 'method': 'fbaModelServices.get_gapgens',
-                     'params': [in_gapgen_ids],
+                     'params': [input],
                      'version': '1.1'
                      }
 
@@ -79,10 +79,10 @@ class fbaModelServices:
         else:
             return None
 
-    def get_reactions(self, in_reaction_ids, biochemistry):
+    def get_reactions(self, input):
 
         arg_hash = { 'method': 'fbaModelServices.get_reactions',
-                     'params': [in_reaction_ids, biochemistry],
+                     'params': [input],
                      'version': '1.1'
                      }
 
@@ -95,10 +95,10 @@ class fbaModelServices:
         else:
             return None
 
-    def get_compounds(self, in_compound_ids, biochemistry):
+    def get_compounds(self, input):
 
         arg_hash = { 'method': 'fbaModelServices.get_compounds',
-                     'params': [in_compound_ids, biochemistry],
+                     'params': [input],
                      'version': '1.1'
                      }
 
@@ -111,10 +111,10 @@ class fbaModelServices:
         else:
             return None
 
-    def get_media(self, in_media_ids, biochemistry):
+    def get_media(self, input):
 
         arg_hash = { 'method': 'fbaModelServices.get_media',
-                     'params': [in_media_ids, biochemistry],
+                     'params': [input],
                      'version': '1.1'
                      }
 
@@ -127,10 +127,10 @@ class fbaModelServices:
         else:
             return None
 
-    def get_biochemistry(self, biochemistry):
+    def get_biochemistry(self, input):
 
         arg_hash = { 'method': 'fbaModelServices.get_biochemistry',
-                     'params': [biochemistry],
+                     'params': [input],
                      'version': '1.1'
                      }
 
