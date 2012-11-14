@@ -541,7 +541,6 @@ ModelCompound is a reference to a hash where the following keys are defined:
 	compound has a value which is a compound_id
 	name has a value which is a string
 	compartment has a value which is a modelcompartment_id
-	coefficient has a value which is a float
 compound_id is a string
 FBAMeta is a reference to a list containing 4 items:
 	0: a fba_id
@@ -627,7 +626,6 @@ ModelCompound is a reference to a hash where the following keys are defined:
 	compound has a value which is a compound_id
 	name has a value which is a string
 	compartment has a value which is a modelcompartment_id
-	coefficient has a value which is a float
 compound_id is a string
 FBAMeta is a reference to a list containing 4 items:
 	0: a fba_id
@@ -936,10 +934,12 @@ gapfill_id is a string
 workspace_id is a string
 GapFill is a reference to a hash where the following keys are defined:
 	id has a value which is a gapfill_id
+	isComplete has a value which is a bool
 	formulation has a value which is a GapfillingFormulation
 	biomassRemovals has a value which is a reference to a list where each element is a modelcompound_id
 	mediaAdditions has a value which is a reference to a list where each element is a compound_id
 	reactionAdditions has a value which is a reference to a list where each element is a reactionAddition
+bool is an int
 GapfillingFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	notes has a value which is a string
@@ -970,7 +970,6 @@ GapfillingFormulation is a reference to a hash where the following keys are defi
 	allowedcmps has a value which is a string
 	probabilistic_annotation has a value which is a probabilistic_annotation_id
 media_id is a string
-bool is an int
 probabilistic_annotation_id is a string
 modelcompound_id is a string
 compound_id is a string
@@ -996,10 +995,12 @@ gapfill_id is a string
 workspace_id is a string
 GapFill is a reference to a hash where the following keys are defined:
 	id has a value which is a gapfill_id
+	isComplete has a value which is a bool
 	formulation has a value which is a GapfillingFormulation
 	biomassRemovals has a value which is a reference to a list where each element is a modelcompound_id
 	mediaAdditions has a value which is a reference to a list where each element is a compound_id
 	reactionAdditions has a value which is a reference to a list where each element is a reactionAddition
+bool is an int
 GapfillingFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	notes has a value which is a string
@@ -1030,7 +1031,6 @@ GapfillingFormulation is a reference to a hash where the following keys are defi
 	allowedcmps has a value which is a string
 	probabilistic_annotation has a value which is a probabilistic_annotation_id
 media_id is a string
-bool is an int
 probabilistic_annotation_id is a string
 modelcompound_id is a string
 compound_id is a string
@@ -1104,10 +1104,12 @@ gapgen_id is a string
 workspace_id is a string
 GapGen is a reference to a hash where the following keys are defined:
 	id has a value which is a gapgen_id
+	isComplete has a value which is a bool
 	formulation has a value which is a GapgenFormulation
 	biomassAdditions has a value which is a reference to a list where each element is a compound_id
 	mediaRemovals has a value which is a reference to a list where each element is a compound_id
 	reactionRemovals has a value which is a reference to a list where each element is a reactionRemoval
+bool is an int
 GapgenFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	refmedia has a value which is a media_id
@@ -1125,7 +1127,6 @@ GapgenFormulation is a reference to a hash where the following keys are defined:
 	nogprhyp has a value which is a bool
 	nopathwayhyp has a value which is a bool
 media_id is a string
-bool is an int
 compound_id is a string
 reactionRemoval is a reference to a list containing 2 items:
 	0: a modelreaction_id
@@ -1149,10 +1150,12 @@ gapgen_id is a string
 workspace_id is a string
 GapGen is a reference to a hash where the following keys are defined:
 	id has a value which is a gapgen_id
+	isComplete has a value which is a bool
 	formulation has a value which is a GapgenFormulation
 	biomassAdditions has a value which is a reference to a list where each element is a compound_id
 	mediaRemovals has a value which is a reference to a list where each element is a compound_id
 	reactionRemovals has a value which is a reference to a list where each element is a reactionRemoval
+bool is an int
 GapgenFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	refmedia has a value which is a media_id
@@ -1170,7 +1173,6 @@ GapgenFormulation is a reference to a hash where the following keys are defined:
 	nogprhyp has a value which is a bool
 	nopathwayhyp has a value which is a bool
 media_id is a string
-bool is an int
 compound_id is a string
 reactionRemoval is a reference to a list containing 2 items:
 	0: a modelreaction_id
@@ -3800,7 +3802,6 @@ id has a value which is a modelcompound_id
 compound has a value which is a compound_id
 name has a value which is a string
 compartment has a value which is a modelcompartment_id
-coefficient has a value which is a float
 
 </pre>
 
@@ -3813,7 +3814,6 @@ id has a value which is a modelcompound_id
 compound has a value which is a compound_id
 name has a value which is a string
 compartment has a value which is a modelcompartment_id
-coefficient has a value which is a float
 
 
 =end text
@@ -4590,6 +4590,7 @@ a reference to a list containing 2 items:
 <pre>
 a reference to a hash where the following keys are defined:
 id has a value which is a gapfill_id
+isComplete has a value which is a bool
 formulation has a value which is a GapfillingFormulation
 biomassRemovals has a value which is a reference to a list where each element is a modelcompound_id
 mediaAdditions has a value which is a reference to a list where each element is a compound_id
@@ -4603,6 +4604,7 @@ reactionAdditions has a value which is a reference to a list where each element 
 
 a reference to a hash where the following keys are defined:
 id has a value which is a gapfill_id
+isComplete has a value which is a bool
 formulation has a value which is a GapfillingFormulation
 biomassRemovals has a value which is a reference to a list where each element is a modelcompound_id
 mediaAdditions has a value which is a reference to a list where each element is a compound_id
@@ -4723,6 +4725,7 @@ a reference to a list containing 2 items:
 <pre>
 a reference to a hash where the following keys are defined:
 id has a value which is a gapgen_id
+isComplete has a value which is a bool
 formulation has a value which is a GapgenFormulation
 biomassAdditions has a value which is a reference to a list where each element is a compound_id
 mediaRemovals has a value which is a reference to a list where each element is a compound_id
@@ -4736,6 +4739,7 @@ reactionRemovals has a value which is a reference to a list where each element i
 
 a reference to a hash where the following keys are defined:
 id has a value which is a gapgen_id
+isComplete has a value which is a bool
 formulation has a value which is a GapgenFormulation
 biomassAdditions has a value which is a reference to a list where each element is a compound_id
 mediaRemovals has a value which is a reference to a list where each element is a compound_id
