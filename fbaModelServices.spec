@@ -114,7 +114,6 @@ module fbaModelServices {
 	compound_id compound;
 	string name;
 	modelcompartment_id compartment;
-	float coefficient;
     } ModelCompound;
     
     typedef string feature_id;
@@ -211,6 +210,7 @@ module fbaModelServices {
     typedef tuple<reaction_id reaction,string direction> reactionAddition;
     typedef structure {
 	gapfill_id id;
+        bool isComplete;
 	GapfillingFormulation formulation;
 	list<modelcompound_id> biomassRemovals;
 	list<compound_id> mediaAdditions;
@@ -240,6 +240,7 @@ module fbaModelServices {
     typedef tuple<modelreaction_id reaction,string direction> reactionRemoval;
     typedef structure {
 	gapgen_id id;
+        bool isComplete;
 	GapgenFormulation formulation;
 	list<compound_id> biomassAdditions;
 	list<compound_id> mediaRemovals;
