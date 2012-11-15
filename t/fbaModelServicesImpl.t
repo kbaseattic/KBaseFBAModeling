@@ -79,8 +79,7 @@ sub _loadBiochemToDB {
 sub _initializeTestWorkspace {
 	$ENV{MONGODBHOST} = "127.0.0.1";
 	$ENV{MONGODBDB} = "testWorkspace";
-	$ENV{CURRENTUSER} = "kbaseadmin";
-	my $ws = Bio::KBase::workspaceService::Impl->new();
+	my $ws = Bio::KBase::workspaceService::Impl->new({testuser => "kbaseadmin"});
 	$ws->_clearAllWorkspaces();
 	$ws->_clearAllWorkspaceObjects();
 	$ws->_clearAllWorkspaceUsers();
@@ -90,7 +89,6 @@ sub _initializeTestWorkspace {
 		default_permission => "r"
 	});
 	&_loadBiochemToDB($ws);
-	$ENV{CURRENTUSER} = "testuser";
-	$ws = Bio::KBase::workspaceService::Impl->new();
+	$ws = Bio::KBase::workspaceService::Impl->new({testuser => "testuser"});
 	return $ws;
 }

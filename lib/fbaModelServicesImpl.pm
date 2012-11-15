@@ -314,13 +314,13 @@ sub _save_msobject {
 
 sub _get_msobject {
 	my($self,$type,$ws,$id) = @_;
-	(my $data,my $metadata) = $self->_workspaceServices()->get_object({
+	my $output = $self->_workspaceServices()->get_object({
 		id => $id,
 		type => $type,
 		workspace => $ws,
 		authentication => $self->_authentication()
 	});
-	if (!defined($data)) {
+	if (!defined($output->{data})) {
 		my $msg = "Unable to retrieve object:".$type."/".$ws."/".$id;
 		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => '_get_msobject');
 	}
@@ -332,7 +332,7 @@ sub _get_msobject {
 	};
 	if (defined($msProvTypes->{$type})) {
 		my $class = "ModelSEED::MS::".$type;
-		my $obj = $class->new($data);
+		my $obj = $class->new($output->{data});
 		if ($type eq "Model") {
 			my $linkid = $obj->annotation_uuid();
 			my $array = [split(/\//,$linkid)];
@@ -1812,11 +1812,13 @@ sub genome_to_fbamodel
     	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'genome_to_fbamodel');
     }
     #Retrieving genome object
-    (my $genomeObj,my $genomeMeta) = $wss->get_object({
+    my $output = $wss->get_object({
     	id => $input->{in_genome},
     	type => "Genome",
     	workspace => $input->{in_workspace}
     });
+    my $genomeObj = $output->{data};
+    my $genomeMeta = $output->{metadata};
     if (!defined($genomeObj)) {
     	my $msg = "Workspace does not contain the genome object: ".$input->{in_genome};
     	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'genome_to_fbamodel');
