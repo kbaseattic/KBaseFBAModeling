@@ -387,6 +387,8 @@ sub _get_msobject {
 			$obj->biochemistry($self->_get_msobject("Biochemistry",$array->[0],$array->[1]));
 		}
 		return $obj;
+	} else {
+		return $output->{data};
 	}
 	return undef;
 }
