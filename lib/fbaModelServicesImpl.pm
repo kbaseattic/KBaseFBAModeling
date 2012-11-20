@@ -2012,7 +2012,7 @@ sub genome_to_fbamodel
     my $mapping = $self->_get_msobject("Mapping","kbase","default");
     my $biochem = $mapping->biochemistry();    
     #Translating genome to model seed annotation
-    my $annotation = $self->_translate_genome_to_annotation($genomeObj,$mapping);
+    my $annotation = $self->_translate_genome_to_annotation($genome,$mapping);
     my $mdl = $annotation->createStandardFBAModel( { prefix => "Kbase", } );
     #If no output model ID is provided, one is retreived from KBase
 	$mdl->id($input->{model});
@@ -2260,7 +2260,7 @@ sub addmedia
     my $missing = [];
     for (my $i=0; $i < @{$input->{compounds}}; $i++) {
     	my $name = $input->{compounds}->[$i];
-    	$cpdobj = $bio->searchForCompound($name);
+    	my $cpdobj = $bio->searchForCompound($name);
     	if (defined($cpdobj)) {
 	    	my $data = {
 	    		compound_uuid => $cpdobj->uuid(),
@@ -3449,10 +3449,10 @@ sub queue_runfba
 	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
 	my $fba = $self->_buildFBAObject($input->{formulation});
 	#Saving FBAFormulation to database
-	$self->_save_msobject($fba,"FBA",$input->{fba},$input->{fba},"queue_runfba")
+	$self->_save_msobject($fba,"FBA",$input->{fba},$input->{fba},"queue_runfba");
 	my $job = {
 		id => Data::UUID->new()->create_str(),
-		queuetime => DateTime->now()->datetime();
+		queuetime => DateTime->now()->datetime(),
 		complete => 0,
 		type => "FBA",
 		arguments => {
@@ -3460,10 +3460,10 @@ sub queue_runfba
 			fba_workspace => $input->{fba_workspace},
 		},
 		owner => $self->_getUsername(),
-		queuing_command => "queue_runfba";
-		queuing_service => "fbaModelServicesClient";
-		postprocess_command => "";
-		postprocess_args => [];
+		queuing_command => "queue_runfba",
+		queuing_service => "fbaModelServicesClient",
+		postprocess_command => "",
+		postprocess_args => [],
 	};
 	$self->_save_msobject($job,"JobObject",$input->{fba_workspace},$job->{id},"queue_runfba");
 	$output = $job;

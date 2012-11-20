@@ -22,17 +22,15 @@ my $obj = fbaModelServicesImpl->new({workspace => $ws});
 
 #Now test ability to retrieve annotated genome object from database
 my $genome = $obj->genome_to_workspace({
-	in_genome => "kb|g.0",
-	out_workspace => "testworkspace",
-	as_new_genome => 0
+	genome => "kb|g.0",
+	workspace => "testworkspace"
 });
 ok defined($genome), "Genome successfully imported to workspace from CDM!"; 
 
 #Now test ability to produce a metabolic model
 my $model = $obj->genome_to_fbamodel({
-	in_genome => "kb|g.0",
-	in_workspace => "testworkspace",
-	out_workspace => "testworkspace"
+	genome => "kb|g.0",
+	genome_workspace => "testworkspace",
 });
 ok defined($genome), "Model successfully constructed from input genome!";
 
@@ -90,5 +88,9 @@ sub _initializeTestWorkspace {
 	});
 	&_loadBiochemToDB($ws);
 	$ws = Bio::KBase::workspaceService::Impl->new({testuser => "testuser"});
+	$ws->create_workspace({
+		workspace => "testworkspace",
+		default_permission => "r"
+	});
 	return $ws;
 }
