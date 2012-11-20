@@ -327,7 +327,7 @@ sub _workspaceServices {
 }
 
 sub _save_msobject {
-	my($self,$obj,$type,$ws,$id,$command) = @_;
+	my($self,$obj,$type,$ws,$id,$command,$overwrite) = @_;
 	my $data;
 	if (ref($obj) eq "HASH") {
 		$data = $obj;
@@ -340,12 +340,14 @@ sub _save_msobject {
 		data => $data,
 		workspace => $ws,
 		command => $command,
-		authentication => $self->_authentication()
+		authentication => $self->_authentication(),
+		overwrite => $overwrite
 	});
 	if (!defined($objmeta)) {
 		my $msg = "Unable to save object:".$type."/".$ws."/".$id;
 		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => '_get_msobject');
 	}
+	return $objmeta;
 }
 
 sub _get_msobject {
@@ -540,6 +542,12 @@ sub _setDefaultFBAFormulation {
 		minthermoerror => 0
 	});
 	return $fbaFormulation;
+}
+
+sub _buildFBAObject {
+	my ($self,$fbaFormulation,$model) = @_;
+	my $fba;
+	return $fba;
 }
 
 #END_HEADER
@@ -1666,7 +1674,7 @@ sub get_biochemistry
 
 =head2 genome_object_to_workspace
 
-  $metadata = $obj->genome_object_to_workspace($input)
+  $genomeMeta = $obj->genome_object_to_workspace($input)
 
 =over 4
 
@@ -1676,15 +1684,17 @@ sub get_biochemistry
 
 <pre>
 $input is a genome_object_to_workspace_params
-$metadata is an object_metadata
+$genomeMeta is an object_metadata
 genome_object_to_workspace_params is a reference to a hash where the following keys are defined:
-	in_genomeobj has a value which is a genomeTO
+	genomeobj has a value which is a genomeTO
 	workspace has a value which is a workspace_id
 	authentication has a value which is a string
+	overwrite has a value which is a bool
 genomeTO is a reference to a hash where the following keys are defined:
 	id has a value which is a genome_id
 genome_id is a string
 workspace_id is a string
+bool is an int
 object_metadata is a reference to a list containing 7 items:
 	0: an object_id
 	1: an object_type
@@ -1705,15 +1715,17 @@ username is a string
 =begin text
 
 $input is a genome_object_to_workspace_params
-$metadata is an object_metadata
+$genomeMeta is an object_metadata
 genome_object_to_workspace_params is a reference to a hash where the following keys are defined:
-	in_genomeobj has a value which is a genomeTO
+	genomeobj has a value which is a genomeTO
 	workspace has a value which is a workspace_id
 	authentication has a value which is a string
+	overwrite has a value which is a bool
 genomeTO is a reference to a hash where the following keys are defined:
 	id has a value which is a genome_id
 genome_id is a string
 workspace_id is a string
+bool is an int
 object_metadata is a reference to a list containing 7 items:
 	0: an object_id
 	1: an object_type
@@ -1754,22 +1766,23 @@ sub genome_object_to_workspace
     }
 
     my $ctx = $fbaModelServicesServer::CallContext;
-    my($metadata);
+    my($genomeMeta);
     #BEGIN genome_object_to_workspace
     $self->_setContext($ctx,$input);
-    $input = $self->_validateargs($input,["genomeobj","workspace"],{});
-    $self->_save_msobject($input->{genomeobj},"Genome",$input->{workspace},$input->{genomeobj}->{id});
-	$output = $input;
+    $input = $self->_validateargs($input,["genomeobj","workspace"],{
+    	overwrite => 0
+    });
+    $genomeMeta = $self->_save_msobject($input->{genomeobj},"Genome",$input->{workspace},$input->{genomeobj}->{id},$input->{overwrite});
 	$self->_clearContext();
     #END genome_object_to_workspace
     my @_bad_returns;
-    (ref($metadata) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"metadata\" (value was \"$metadata\")");
+    (ref($genomeMeta) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"genomeMeta\" (value was \"$genomeMeta\")");
     if (@_bad_returns) {
 	my $msg = "Invalid returns passed to genome_object_to_workspace:\n" . join("", map { "\t$_\n" } @_bad_returns);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
 							       method_name => 'genome_object_to_workspace');
     }
-    return($metadata);
+    return($genomeMeta);
 }
 
 
@@ -1777,7 +1790,7 @@ sub genome_object_to_workspace
 
 =head2 genome_to_workspace
 
-  $metadata = $obj->genome_to_workspace($input)
+  $genomeMeta = $obj->genome_to_workspace($input)
 
 =over 4
 
@@ -1787,13 +1800,15 @@ sub genome_object_to_workspace
 
 <pre>
 $input is a genome_to_workspace_params
-$metadata is an object_metadata
+$genomeMeta is an object_metadata
 genome_to_workspace_params is a reference to a hash where the following keys are defined:
 	genome has a value which is a genome_id
 	workspace has a value which is a workspace_id
 	authentication has a value which is a string
+	overwrite has a value which is a bool
 genome_id is a string
 workspace_id is a string
+bool is an int
 object_metadata is a reference to a list containing 7 items:
 	0: an object_id
 	1: an object_type
@@ -1814,13 +1829,15 @@ username is a string
 =begin text
 
 $input is a genome_to_workspace_params
-$metadata is an object_metadata
+$genomeMeta is an object_metadata
 genome_to_workspace_params is a reference to a hash where the following keys are defined:
 	genome has a value which is a genome_id
 	workspace has a value which is a workspace_id
 	authentication has a value which is a string
+	overwrite has a value which is a bool
 genome_id is a string
 workspace_id is a string
+bool is an int
 object_metadata is a reference to a list containing 7 items:
 	0: an object_id
 	1: an object_type
@@ -1861,23 +1878,24 @@ sub genome_to_workspace
     }
 
     my $ctx = $fbaModelServicesServer::CallContext;
-    my($metadata);
+    my($genomeMeta);
     #BEGIN genome_to_workspace
     $self->_setContext($ctx,$input);
-    $input = $self->_validateargs($input,["genome","workspace"],{});
+    $input = $self->_validateargs($input,["genome","workspace"],{
+    	overwrite => 0
+    });
     my $genomeObj = $self->_get_genomeObj_from_CDM($input->{genome});
-    $self->_save_msobject($genomeObj,"Genome",$input->{workspace},$genomeObj->{id});
-	$output = $input;
+    $genomeMeta = $self->_save_msobject($genomeObj,"Genome",$input->{workspace},$genomeObj->{id},$input->{overwrite});
 	$self->_clearContext();
     #END genome_to_workspace
     my @_bad_returns;
-    (ref($metadata) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"metadata\" (value was \"$metadata\")");
+    (ref($genomeMeta) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"genomeMeta\" (value was \"$genomeMeta\")");
     if (@_bad_returns) {
 	my $msg = "Invalid returns passed to genome_to_workspace:\n" . join("", map { "\t$_\n" } @_bad_returns);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
 							       method_name => 'genome_to_workspace');
     }
-    return($metadata);
+    return($genomeMeta);
 }
 
 
@@ -1885,7 +1903,7 @@ sub genome_to_workspace
 
 =head2 genome_to_fbamodel
 
-  $output = $obj->genome_to_fbamodel($input)
+  $modelMeta = $obj->genome_to_fbamodel($input)
 
 =over 4
 
@@ -1895,16 +1913,30 @@ sub genome_to_workspace
 
 <pre>
 $input is a genome_to_fbamodel_params
-$output is a genome_to_fbamodel_params
+$modelMeta is an object_metadata
 genome_to_fbamodel_params is a reference to a hash where the following keys are defined:
-	in_genome has a value which is a genome_id
-	in_workspace has a value which is a workspace_id
-	out_model has a value which is a fbamodel_id
-	out_workspace has a value which is a workspace_id
+	genome has a value which is a genome_id
+	genome_workspace has a value which is a workspace_id
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
 	authentication has a value which is a string
+	overwrite has a value which is a bool
 genome_id is a string
 workspace_id is a string
 fbamodel_id is a string
+bool is an int
+object_metadata is a reference to a list containing 7 items:
+	0: an object_id
+	1: an object_type
+	2: a timestamp
+	3: an int
+	4: a string
+	5: a username
+	6: a username
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
 
 </pre>
 
@@ -1913,16 +1945,30 @@ fbamodel_id is a string
 =begin text
 
 $input is a genome_to_fbamodel_params
-$output is a genome_to_fbamodel_params
+$modelMeta is an object_metadata
 genome_to_fbamodel_params is a reference to a hash where the following keys are defined:
-	in_genome has a value which is a genome_id
-	in_workspace has a value which is a workspace_id
-	out_model has a value which is a fbamodel_id
-	out_workspace has a value which is a workspace_id
+	genome has a value which is a genome_id
+	genome_workspace has a value which is a workspace_id
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
 	authentication has a value which is a string
+	overwrite has a value which is a bool
 genome_id is a string
 workspace_id is a string
 fbamodel_id is a string
+bool is an int
+object_metadata is a reference to a list containing 7 items:
+	0: an object_id
+	1: an object_type
+	2: a timestamp
+	3: an int
+	4: a string
+	5: a username
+	6: a username
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
 
 
 =end text
@@ -1952,52 +1998,16 @@ sub genome_to_fbamodel
     }
 
     my $ctx = $fbaModelServicesServer::CallContext;
-    my($output);
+    my($modelMeta);
     #BEGIN genome_to_fbamodel
     $self->_setContext($ctx,$input);
-    #Checking arguments
-    if (!defined($input->{in_genome})) {
-    	my $msg = "in_genome must be specified for genome_to_fbamodel to run";
-    	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'genome_to_fbamodel');
-    }
-    if (!defined($input->{in_workspace})) {
-    	my $msg = "in_workspace must be specified for genome_to_fbamodel to run";
-    	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'genome_to_fbamodel');
-    }
-    if (!defined($input->{out_workspace})) {
-    	$input->{out_workspace} = $input->{in_workspace};
-    }
-    #Retrieving workspace
-    my $wss = $self->_workspaceServices();
-    my $wsmeta = $wss->get_workspacemeta({workspace => $input->{in_workspace}});
-    if ($wsmeta->[4] eq "n") {
-    	my $msg = "User does not have permission to access specified workspace: ".$input->{in_workspace};
-    	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'genome_to_fbamodel');
-    }
-    my $outwsmeta = $wsmeta;
-    if ($input->{out_workspace} ne $input->{in_workspace}) {
-    	try {
-    		$outwsmeta = $wss->get_workspacemeta({workspace => $input->{out_workspace}});
-	    } catch {
-	    	$outwsmeta = $wss->create_workspace({workspace => $input->{out_workspace}});
-	    };
-    }
-    if ($outwsmeta->[4] ne "w" && $outwsmeta->[4] ne "a") {
-    	my $msg = "User does not have permission to write to output workspace: ".$input->{out_workspace};
-    	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'genome_to_fbamodel');
-    }
-    #Retrieving genome object
-    my $output = $wss->get_object({
-    	id => $input->{in_genome},
-    	type => "Genome",
-    	workspace => $input->{in_workspace}
+    $input = $self->_validateargs($input,["genome","genome_workspace"],{
+    	model_workspace => $input->{genome_workspace},
+    	model => $input->{genome}.".model",
+    	overwrite => 0
     });
-    my $genomeObj = $output->{data};
-    my $genomeMeta = $output->{metadata};
-    if (!defined($genomeObj)) {
-    	my $msg = "Workspace does not contain the genome object: ".$input->{in_genome};
-    	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'genome_to_fbamodel');
-    }
+    #Retreiving genome object from workspace
+    my $genome = $self->_get_msobject("Genome",$input->{genome_workspace},$input->{genome});
     #Retreiving mapping and biochemistry
     my $mapping = $self->_get_msobject("Mapping","kbase","default");
     my $biochem = $mapping->biochemistry();    
@@ -2005,34 +2015,29 @@ sub genome_to_fbamodel
     my $annotation = $self->_translate_genome_to_annotation($genomeObj,$mapping);
     my $mdl = $annotation->createStandardFBAModel( { prefix => "Kbase", } );
     #If no output model ID is provided, one is retreived from KBase
-    if (!defined($input->{out_model})) {
-    	my $ids = $self->_idServer();
-    	$input->{out_model} = "kb|fm.".$ids->allocate_id_range( "fbamod", 1 ) + 0;
-    }
-	$mdl->id($input->{out_model});
-	$mdl->mapping_uuid($input->{out_workspace}."/".$input->{out_model}.".map");
+	$mdl->id($input->{model});
+	$mdl->mapping_uuid($input->{model_workspace}."/".$input->{model}.".map");
 	$mdl->mapping($mapping);
 	$mdl->biochemistry_uuid("kbase/default");
 	$mdl->biochemistry($biochem);
-	$mdl->annotation_uuid($input->{out_workspace}."/".$input->{out_model}.".anno");
+	$mdl->annotation_uuid($input->{model_workspace}."/".$input->{model}.".anno");
 	$mdl->annotation($annotation);
 	$mdl->defaultNameSpace("KBase");
-	$annotation->mapping_uuid($input->{out_workspace}."/".$input->{out_model}.".map");
+	$annotation->mapping_uuid($input->{model_workspace}."/".$input->{model}.".map");
 	$annotation->mapping($mapping);
-	$self->_save_msobject($mdl,"Model",$input->{out_workspace},$input->{out_model});
-	$self->_save_msobject($annotation,"Annotation",$input->{out_workspace},$input->{out_model}.".anno");
-	$self->_save_msobject($mapping,"Mapping",$input->{out_workspace},$input->{out_model}.".map");
-	$output = $input;
+	$modelMeta= $self->_save_msobject($mdl,"Model",$input->{model_workspace},$input->{model},$input->{overwrite});
+	$self->_save_msobject($annotation,"Annotation",$input->{model_workspace},$input->{model}.".anno",$input->{overwrite});
+	$self->_save_msobject($mapping,"Mapping",$input->{model_workspace},$input->{model}.".map",$input->{overwrite});
     $self->_clearContext();
     #END genome_to_fbamodel
     my @_bad_returns;
-    (ref($output) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    (ref($modelMeta) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"modelMeta\" (value was \"$modelMeta\")");
     if (@_bad_returns) {
 	my $msg = "Invalid returns passed to genome_to_fbamodel:\n" . join("", map { "\t$_\n" } @_bad_returns);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
 							       method_name => 'genome_to_fbamodel');
     }
-    return($output);
+    return($modelMeta);
 }
 
 
@@ -2052,8 +2057,8 @@ sub genome_to_fbamodel
 $input is an export_fbamodel_params
 $output is a string
 export_fbamodel_params is a reference to a hash where the following keys are defined:
-	in_model has a value which is a fbamodel_id
-	in_workspace has a value which is a workspace_id
+	model has a value which is a fbamodel_id
+	workspace has a value which is a workspace_id
 	format has a value which is a string
 	authentication has a value which is a string
 fbamodel_id is a string
@@ -2068,8 +2073,8 @@ workspace_id is a string
 $input is an export_fbamodel_params
 $output is a string
 export_fbamodel_params is a reference to a hash where the following keys are defined:
-	in_model has a value which is a fbamodel_id
-	in_workspace has a value which is a workspace_id
+	model has a value which is a fbamodel_id
+	workspace has a value which is a workspace_id
 	format has a value which is a string
 	authentication has a value which is a string
 fbamodel_id is a string
@@ -2105,7 +2110,7 @@ sub export_fbamodel
     my($output);
     #BEGIN export_fbamodel
     $self->_setContext($ctx,$input);
-    $input = $self->_validateargs($input,["in_model","in_workspace","format"],{
+    $input = $self->_validateargs($input,["model","workspace","format"],{
     	authentication => undef
     });
     my $model = $self->_get_msobject("Model",$input->{in_workspace},$input->{in_model});
@@ -2127,7 +2132,7 @@ sub export_fbamodel
 
 =head2 addmedia
 
-  $out_media = $obj->addmedia($input)
+  $mediaMeta = $obj->addmedia($input)
 
 =over 4
 
@@ -2137,10 +2142,10 @@ sub export_fbamodel
 
 <pre>
 $input is an addmedia_params
-$out_media is a media_id
+$mediaMeta is an object_metadata
 addmedia_params is a reference to a hash where the following keys are defined:
-	in_media has a value which is a media_id
-	in_workspace has a value which is a workspace_id
+	media has a value which is a media_id
+	workspace has a value which is a workspace_id
 	name has a value which is a string
 	isDefined has a value which is a bool
 	isMinimal has a value which is a bool
@@ -2154,6 +2159,18 @@ addmedia_params is a reference to a hash where the following keys are defined:
 media_id is a string
 workspace_id is a string
 bool is an int
+object_metadata is a reference to a list containing 7 items:
+	0: an object_id
+	1: an object_type
+	2: a timestamp
+	3: an int
+	4: a string
+	5: a username
+	6: a username
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
 
 </pre>
 
@@ -2162,10 +2179,10 @@ bool is an int
 =begin text
 
 $input is an addmedia_params
-$out_media is a media_id
+$mediaMeta is an object_metadata
 addmedia_params is a reference to a hash where the following keys are defined:
-	in_media has a value which is a media_id
-	in_workspace has a value which is a workspace_id
+	media has a value which is a media_id
+	workspace has a value which is a workspace_id
 	name has a value which is a string
 	isDefined has a value which is a bool
 	isMinimal has a value which is a bool
@@ -2179,6 +2196,18 @@ addmedia_params is a reference to a hash where the following keys are defined:
 media_id is a string
 workspace_id is a string
 bool is an int
+object_metadata is a reference to a list containing 7 items:
+	0: an object_id
+	1: an object_type
+	2: a timestamp
+	3: an int
+	4: a string
+	5: a username
+	6: a username
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
 
 
 =end text
@@ -2207,11 +2236,11 @@ sub addmedia
     }
 
     my $ctx = $fbaModelServicesServer::CallContext;
-    my($out_media);
+    my($mediaMeta);
     #BEGIN addmedia
 	$self->_setContext($ctx,$input);
-	$input = $self->_validateargs($input,["in_media","in_workspace","compounds"],{
-    	name => $input->{in_media},
+	$input = $self->_validateargs($input,["media","workspace","compounds"],{
+    	name => $input->{media},
     	isDefined => 0,
     	isMinimal => 0,
     	type => "custom",
@@ -2220,28 +2249,6 @@ sub addmedia
     	minflux => [],
     	overwrite => 0
     });
-	my $wss = $self->_workspaceServices(); 
-	my $wsmeta = $wss->get_workspacemeta({workspace => $input->{in_workspace}});
-	if ($wsmeta->[4] !~ m/[aw]/) {
-    	my $msg = "User does not have write access specified workspace: ".$input->{in_workspace};
-    	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'addmedia');
-    }
-    #Checking that the media either does not already exist, or that the user allowed for overwriting
-    if ($input->{overwrite} == 0) {
-    	my $obj;
-    	try {
-    		$obj = $wss->get_object({
-				id => $input->{in_media},
-				type => "Media",
-				workspace => $input->{in_workspace},
-				authentication => $self->_authentication()
-			}
-	    } catch {};
-	    if (defined($obj)) {
-	    	my $msg = "Specified media already exists, and user did not set 'overwrite' flag!";
-    		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'addmedia');
-	    }
-    }
     #Creating the media object from the specifications
     my $bio = $self->_get_msobject("Biochemistry","kbase","default");
     my $media = ModelSEED::MS::Media->new({
@@ -2282,18 +2289,17 @@ sub addmedia
     	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'addmedia');
 	}
     #Saving media in database
-    $self->_save_msobject($media,"Media",$input->{in_workspace},$input->{in_media},"addmedia");
-    $out_media = $input->{in_media};
+    $mediaMeta = $self->_save_msobject($media,"Media",$input->{in_workspace},$input->{in_media},"addmedia",$input->{overwrite});
 	$self->_clearContext();
     #END addmedia
     my @_bad_returns;
-    (!ref($out_media)) or push(@_bad_returns, "Invalid type for return variable \"out_media\" (value was \"$out_media\")");
+    (ref($mediaMeta) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"mediaMeta\" (value was \"$mediaMeta\")");
     if (@_bad_returns) {
 	my $msg = "Invalid returns passed to addmedia:\n" . join("", map { "\t$_\n" } @_bad_returns);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
 							       method_name => 'addmedia');
     }
-    return($out_media);
+    return($mediaMeta);
 }
 
 
@@ -2313,8 +2319,8 @@ sub addmedia
 $input is an export_media_params
 $output is a string
 export_media_params is a reference to a hash where the following keys are defined:
-	in_media has a value which is a media_id
-	in_workspace has a value which is a workspace_id
+	media has a value which is a media_id
+	workspace has a value which is a workspace_id
 	format has a value which is a string
 	authentication has a value which is a string
 media_id is a string
@@ -2329,8 +2335,8 @@ workspace_id is a string
 $input is an export_media_params
 $output is a string
 export_media_params is a reference to a hash where the following keys are defined:
-	in_media has a value which is a media_id
-	in_workspace has a value which is a workspace_id
+	media has a value which is a media_id
+	workspace has a value which is a workspace_id
 	format has a value which is a string
 	authentication has a value which is a string
 media_id is a string
@@ -2366,7 +2372,7 @@ sub export_media
     my($output);
     #BEGIN export_media
     $self->_setContext($ctx,$input);
-	$input = $self->_validateargs($input,["in_media","in_workspace","format"],{});
+	$input = $self->_validateargs($input,["media","workspace","format"],{});
     my $med;
     if ($input->{in_workspace} eq "kbasecdm") {
     	 my $bio = $self->_get_msobject("Biochemistry","kbase","default");
@@ -2398,7 +2404,7 @@ sub export_media
 
 =head2 runfba
 
-  $output = $obj->runfba($input)
+  $fbaMeta = $obj->runfba($input)
 
 =over 4
 
@@ -2408,7 +2414,7 @@ sub export_media
 
 <pre>
 $input is a runfba_params
-$output is a runfba_params
+$fbaMeta is an object_metadata
 runfba_params is a reference to a hash where the following keys are defined:
 	model has a value which is a fbamodel_id
 	model_workspace has a value which is a workspace_id
@@ -2447,6 +2453,18 @@ bool is an int
 feature_id is a string
 reaction_id is a string
 fba_id is a string
+object_metadata is a reference to a list containing 7 items:
+	0: an object_id
+	1: an object_type
+	2: a timestamp
+	3: an int
+	4: a string
+	5: a username
+	6: a username
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
 
 </pre>
 
@@ -2455,7 +2473,7 @@ fba_id is a string
 =begin text
 
 $input is a runfba_params
-$output is a runfba_params
+$fbaMeta is an object_metadata
 runfba_params is a reference to a hash where the following keys are defined:
 	model has a value which is a fbamodel_id
 	model_workspace has a value which is a workspace_id
@@ -2494,6 +2512,18 @@ bool is an int
 feature_id is a string
 reaction_id is a string
 fba_id is a string
+object_metadata is a reference to a list containing 7 items:
+	0: an object_id
+	1: an object_type
+	2: a timestamp
+	3: an int
+	4: a string
+	5: a username
+	6: a username
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
 
 
 =end text
@@ -2522,7 +2552,7 @@ sub runfba
     }
 
     my $ctx = $fbaModelServicesServer::CallContext;
-    my($output);
+    my($fbaMeta);
     #BEGIN runfba
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["model","model_workspace"],{
@@ -2533,34 +2563,36 @@ sub runfba
 		findminmedia => 0,
 		notes => "",
 		fba_workspace => $input->{model_workspace},
-		fba => undef
+		fba => undef,
+		overwrite => 0
 	});
-	#Creating FBAFormulation Object
-	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
-	my $fba = $self->_buildFBAObject($input->{formulation});
-	if (!defined($input->{out_fba})) {
+	if (!defined($input->{fba})) {
 		my $ids = $self->_idServer();
-    	$input->{out_fba} = $input->{model}.".fba.".$ids->allocate_id_range( $input->{model}.".fba.", 1 ) + 0;
+    	$input->{fba} = $input->{model}.".fba.".$ids->allocate_id_range( $input->{model}.".fba.", 1 ) + 0;
 	}
-    my $model = $self->_get_msobject("Model",$input->{in_workspace},$input->{in_model});
+	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
+	#Creating FBAFormulation Object
+	my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
+	my $fba = $self->_buildFBAObject($input->{formulation},$model);
+	$fba->uuid($input->{fba_workspace}."/".$input->{fba});
     #Running FBA
     my $fbaResult = $fba->runFBA();
     if (!defined($fbaResult)) {
     	my $msg = "FBA failed with no solution returned!";
     	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'runfba');
     }
-    $self->_save_msobject($fba,"FBA",$input->{out_workspace},$input->{out_fba},"runfba");
-    $output = $input;
+    print join("/",@{$model->fbaFormulation_uuids()})."\n";
+	$fbaMeta = $self->_save_msobject($fba,"FBA",$input->{fba_workspace},$input->{fba},"runfba",$input->{overwrite});
     $self->_clearContext();
     #END runfba
     my @_bad_returns;
-    (ref($output) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    (ref($fbaMeta) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"fbaMeta\" (value was \"$fbaMeta\")");
     if (@_bad_returns) {
 	my $msg = "Invalid returns passed to runfba:\n" . join("", map { "\t$_\n" } @_bad_returns);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
 							       method_name => 'runfba');
     }
-    return($output);
+    return($fbaMeta);
 }
 
 
@@ -7338,9 +7370,10 @@ id has a value which is a genome_id
 
 <pre>
 a reference to a hash where the following keys are defined:
-in_genomeobj has a value which is a genomeTO
+genomeobj has a value which is a genomeTO
 workspace has a value which is a workspace_id
 authentication has a value which is a string
+overwrite has a value which is a bool
 
 </pre>
 
@@ -7349,9 +7382,10 @@ authentication has a value which is a string
 =begin text
 
 a reference to a hash where the following keys are defined:
-in_genomeobj has a value which is a genomeTO
+genomeobj has a value which is a genomeTO
 workspace has a value which is a workspace_id
 authentication has a value which is a string
+overwrite has a value which is a bool
 
 
 =end text
@@ -7375,6 +7409,7 @@ a reference to a hash where the following keys are defined:
 genome has a value which is a genome_id
 workspace has a value which is a workspace_id
 authentication has a value which is a string
+overwrite has a value which is a bool
 
 </pre>
 
@@ -7386,6 +7421,7 @@ a reference to a hash where the following keys are defined:
 genome has a value which is a genome_id
 workspace has a value which is a workspace_id
 authentication has a value which is a string
+overwrite has a value which is a bool
 
 
 =end text
@@ -7427,11 +7463,12 @@ If unspecified, this parameter will be set to the value of "in_workspace".
 
 <pre>
 a reference to a hash where the following keys are defined:
-in_genome has a value which is a genome_id
-in_workspace has a value which is a workspace_id
-out_model has a value which is a fbamodel_id
-out_workspace has a value which is a workspace_id
+genome has a value which is a genome_id
+genome_workspace has a value which is a workspace_id
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
 authentication has a value which is a string
+overwrite has a value which is a bool
 
 </pre>
 
@@ -7440,11 +7477,12 @@ authentication has a value which is a string
 =begin text
 
 a reference to a hash where the following keys are defined:
-in_genome has a value which is a genome_id
-in_workspace has a value which is a workspace_id
-out_model has a value which is a fbamodel_id
-out_workspace has a value which is a workspace_id
+genome has a value which is a genome_id
+genome_workspace has a value which is a workspace_id
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
 authentication has a value which is a string
+overwrite has a value which is a bool
 
 
 =end text
@@ -7470,8 +7508,8 @@ NEED DOCUMENTATION
 
 <pre>
 a reference to a hash where the following keys are defined:
-in_model has a value which is a fbamodel_id
-in_workspace has a value which is a workspace_id
+model has a value which is a fbamodel_id
+workspace has a value which is a workspace_id
 format has a value which is a string
 authentication has a value which is a string
 
@@ -7482,8 +7520,8 @@ authentication has a value which is a string
 =begin text
 
 a reference to a hash where the following keys are defined:
-in_model has a value which is a fbamodel_id
-in_workspace has a value which is a workspace_id
+model has a value which is a fbamodel_id
+workspace has a value which is a workspace_id
 format has a value which is a string
 authentication has a value which is a string
 
@@ -7513,8 +7551,8 @@ authentication has a value which is a string
 
 <pre>
 a reference to a hash where the following keys are defined:
-in_media has a value which is a media_id
-in_workspace has a value which is a workspace_id
+media has a value which is a media_id
+workspace has a value which is a workspace_id
 name has a value which is a string
 isDefined has a value which is a bool
 isMinimal has a value which is a bool
@@ -7533,8 +7571,8 @@ authentication has a value which is a string
 =begin text
 
 a reference to a hash where the following keys are defined:
-in_media has a value which is a media_id
-in_workspace has a value which is a workspace_id
+media has a value which is a media_id
+workspace has a value which is a workspace_id
 name has a value which is a string
 isDefined has a value which is a bool
 isMinimal has a value which is a bool
@@ -7565,8 +7603,8 @@ authentication has a value which is a string
 
 <pre>
 a reference to a hash where the following keys are defined:
-in_media has a value which is a media_id
-in_workspace has a value which is a workspace_id
+media has a value which is a media_id
+workspace has a value which is a workspace_id
 format has a value which is a string
 authentication has a value which is a string
 
@@ -7577,8 +7615,8 @@ authentication has a value which is a string
 =begin text
 
 a reference to a hash where the following keys are defined:
-in_media has a value which is a media_id
-in_workspace has a value which is a workspace_id
+media has a value which is a media_id
+workspace has a value which is a workspace_id
 format has a value which is a string
 authentication has a value which is a string
 

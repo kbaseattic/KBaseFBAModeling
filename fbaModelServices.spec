@@ -400,21 +400,23 @@ module fbaModelServices {
 		genomeTO genomeobj;
 		workspace_id workspace;
 		string authentication;
+		bool overwrite;
     } genome_object_to_workspace_params;
     /*
         Loads an input genome object into the workspace.
     */
-    funcdef genome_object_to_workspace(genome_object_to_workspace_params input) returns (object_metadata metadata);
+    funcdef genome_object_to_workspace(genome_object_to_workspace_params input) returns (object_metadata genomeMeta);
     
     typedef structure {
 		genome_id genome;
 		workspace_id workspace;
 		string authentication;
+		bool overwrite;
     } genome_to_workspace_params;
     /*
         Retrieves a genome from the CDM and saves it as a genome object in the workspace.
     */
-    funcdef genome_to_workspace(genome_to_workspace_params input) returns (object_metadata metadata);
+    funcdef genome_to_workspace(genome_to_workspace_params input) returns (object_metadata genomeMeta);
     
     /*
         A set of paramters for the genome_to_fbamodel method. This is a mapping
@@ -436,24 +438,25 @@ module fbaModelServices {
         If unspecified, this parameter will be set to the value of "in_workspace".
     */
     typedef structure {
-		genome_id in_genome;
-		workspace_id in_workspace;
-		fbamodel_id out_model;
-		workspace_id out_workspace;
+		genome_id genome;
+		workspace_id genome_workspace;
+		fbamodel_id model;
+		workspace_id model_workspace;
 		string authentication;
+		bool overwrite;
     } genome_to_fbamodel_params;
     /*
         This function accepts a genome_to_fbamodel_params as input, building a new FBAModel for the genome specified by genome_id.
         The function returns a genome_to_fbamodel_params as output, specifying the ID of the model generated in the model_id parameter.
     */
-    funcdef genome_to_fbamodel (genome_to_fbamodel_params input) returns (genome_to_fbamodel_params output);
+    funcdef genome_to_fbamodel (genome_to_fbamodel_params input) returns (object_metadata modelMeta);
     
     /*
         NEED DOCUMENTATION
     */
     typedef structure {
-		fbamodel_id in_model;
-		workspace_id in_workspace;
+		fbamodel_id model;
+		workspace_id workspace;
 		string format;
 		string authentication;
     } export_fbamodel_params;
@@ -468,8 +471,8 @@ module fbaModelServices {
    	*********************************************************************************/
     
     typedef structure {
-		media_id in_media;
-		workspace_id in_workspace;
+		media_id media;
+		workspace_id workspace;
 		string name;
 		bool isDefined;
 		bool isMinimal;
@@ -484,11 +487,11 @@ module fbaModelServices {
     /*
         Add media condition to workspace
     */
-    funcdef addmedia(addmedia_params input) returns (media_id out_media);
+    funcdef addmedia(addmedia_params input) returns (object_metadata mediaMeta);
     
     typedef structure {
-		media_id in_media;
-		workspace_id in_workspace;
+		media_id media;
+		workspace_id workspace;
 		string format;
 		string authentication;
     } export_media_params;
@@ -536,7 +539,7 @@ module fbaModelServices {
     /*
         Run flux balance analysis and return ID of FBA object with results 
     */
-    funcdef runfba(runfba_params input) returns (runfba_params output);
+    funcdef runfba(runfba_params input) returns (object_metadata fbaMeta);
     
     typedef structure {
 		fba_id in_fba;
