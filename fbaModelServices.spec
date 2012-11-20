@@ -110,31 +110,31 @@ module fbaModelServices {
     typedef string compound_id;
     typedef string modelcompound_id;
     typedef structure {
-	modelcompound_id id;
-	compound_id compound;
-	string name;
-	modelcompartment_id compartment;
+		modelcompound_id id;
+		compound_id compound;
+		string name;
+		modelcompartment_id compartment;
     } ModelCompound;
     
     typedef string feature_id;
     typedef string reaction_id;
     typedef string modelreaction_id;
     typedef structure {
-	modelreaction_id id;
-	reaction_id reaction;
-	string name;
-	string direction;
-	list<feature_id> features;
-	modelcompartment_id compartment;
+		modelreaction_id id;
+		reaction_id reaction;
+		string name;
+		string direction;
+		list<feature_id> features;
+		modelcompartment_id compartment;
     } ModelReaction;
     
     typedef tuple<modelcompound_id modelcompound,float coefficient> BiomassCompound;
     
     typedef string biomass_id;
     typedef structure {
-	biomass_id id;
-	string name;
-	list<BiomassCompound> biomass_compounds;
+		biomass_id id;
+		string name;
+		list<BiomassCompound> biomass_compounds;
     } ModelBiomass;
     
     typedef string media_id;
@@ -151,25 +151,26 @@ module fbaModelServices {
     typedef string genome_id;
     typedef string biochemistry_id;
     typedef string mapping_id;
+    
     typedef structure {
-	fbamodel_id id;
-	genome_id genome;
-	mapping_id map;
-	biochemistry_id biochemistry;
-	string name;
-	string type;
-	string status;
-	
-	list<ModelBiomass> biomasses;
-	list<ModelCompartment> compartments;
-	list<ModelReaction> reactions;
-	list<ModelCompound> compounds;
-	
-	list<FBAMeta> fbas;
-	list<GapFillMeta> integrated_gapfillings;
-	list<GapFillMeta> unintegrated_gapfillings;
-	list<GapGenMeta> integrated_gapgenerations;
-	list<GapGenMeta> unintegrated_gapgenerations;
+		fbamodel_id id;
+		genome_id genome;
+		mapping_id map;
+		biochemistry_id biochemistry;
+		string name;
+		string type;
+		string status;
+		
+		list<ModelBiomass> biomasses;
+		list<ModelCompartment> compartments;
+		list<ModelReaction> reactions;
+		list<ModelCompound> compounds;
+		
+		list<FBAMeta> fbas;
+		list<GapFillMeta> integrated_gapfillings;
+		list<GapFillMeta> unintegrated_gapfillings;
+		list<GapGenMeta> integrated_gapgenerations;
+		list<GapGenMeta> unintegrated_gapgenerations;
     } FBAModel;
     /*END FBAMODEL SPEC*/
     
@@ -313,6 +314,12 @@ module fbaModelServices {
     } FBA;
     /*END FBA FORMULATION SPEC*/
     typedef string workspace_id;
+	typedef string object_type;
+	typedef string object_id;
+	typedef string username;
+	typedef string timestamp;
+    typedef tuple<object_id id,object_type type,timestamp moddate,int instance,string command,username lastmodifier,username owner> object_metadata;
+    
     /*This function returns model data for input ids*/
     typedef structure {
 	list<fbamodel_id> in_model_ids;
@@ -382,25 +389,32 @@ module fbaModelServices {
     funcdef get_biochemistry(get_biochemistry_params input) returns (Biochemistry out_biochemistry);
 
 
+	/*********************************************************************************
+    Code relating to reconstruction of metabolic models
+   	*********************************************************************************/
     typedef string workspace_id;
     typedef structure {
-	genome_id id;
+		genome_id id;
     } genomeTO;
+    typedef structure {
+		genomeTO genomeobj;
+		workspace_id workspace;
+		string authentication;
+    } genome_object_to_workspace_params;
+    /*
+        Loads an input genome object into the workspace.
+    */
+    funcdef genome_object_to_workspace(genome_object_to_workspace_params input) returns (object_metadata metadata);
     
     typedef structure {
-	genomeTO in_genomeobj;
-	genome_id in_genome;
-	genome_id out_genome;
-	workspace_id out_workspace;
-	bool as_new_genome;
-	string authentication;
+		genome_id genome;
+		workspace_id workspace;
+		string authentication;
     } genome_to_workspace_params;
-    
     /*
-        This function either retrieves a genome from the CDM by a specified genome ID, or it loads an input genome object.
-        The loaded or retrieved genome is placed in the specified workspace with the specified ID.
+        Retrieves a genome from the CDM and saves it as a genome object in the workspace.
     */
-    funcdef genome_to_workspace(genome_to_workspace_params input) returns (genome_to_workspace_params output);
+    funcdef genome_to_workspace(genome_to_workspace_params input) returns (object_metadata metadata);
     
     /*
         A set of paramters for the genome_to_fbamodel method. This is a mapping
@@ -422,13 +436,12 @@ module fbaModelServices {
         If unspecified, this parameter will be set to the value of "in_workspace".
     */
     typedef structure {
-	genome_id in_genome;
-	workspace_id in_workspace;
-	fbamodel_id out_model;
-	workspace_id out_workspace;
-	string authentication;
+		genome_id in_genome;
+		workspace_id in_workspace;
+		fbamodel_id out_model;
+		workspace_id out_workspace;
+		string authentication;
     } genome_to_fbamodel_params;
-
     /*
         This function accepts a genome_to_fbamodel_params as input, building a new FBAModel for the genome specified by genome_id.
         The function returns a genome_to_fbamodel_params as output, specifying the ID of the model generated in the model_id parameter.
@@ -439,10 +452,10 @@ module fbaModelServices {
         NEED DOCUMENTATION
     */
     typedef structure {
-	fbamodel_id in_model;
-	workspace_id in_workspace;
-	string format;
-	string authentication;
+		fbamodel_id in_model;
+		workspace_id in_workspace;
+		string format;
+		string authentication;
     } export_fbamodel_params;
     
     /*
@@ -450,61 +463,309 @@ module fbaModelServices {
     */
     funcdef export_fbamodel(export_fbamodel_params input) returns (string output);
     
+    /*********************************************************************************
+    Code relating to flux balance analysis
+   	*********************************************************************************/
+    
+    typedef structure {
+		media_id in_media;
+		workspace_id in_workspace;
+		string name;
+		bool isDefined;
+		bool isMinimal;
+		string type;
+		list<string> compounds;
+		list<float> concentrations;
+		list<float> maxflux;
+		list<float> minflux;
+		bool overwrite;
+		string authentication;
+    } addmedia_params;
+    /*
+        Add media condition to workspace
+    */
+    funcdef addmedia(addmedia_params input) returns (media_id out_media);
+    
+    typedef structure {
+		media_id in_media;
+		workspace_id in_workspace;
+		string format;
+		string authentication;
+    } export_media_params;
+    /*
+        Exports media in specified format (html,readable)
+    */
+    funcdef export_media(export_media_params input) returns (string output);
+    
     /*
         NEED DOCUMENTATION
     */
     typedef structure {
-	fbamodel_id in_model;
-	workspace_id in_workspace;
-	fba_id out_fba;
-	workspace_id out_workspace;
-	string authentication;
+		media_id media;
+		workspace_id workspace;
+		float objfraction;
+		bool allreversible;
+		string objective;
+		list<feature_id> geneko;
+		list<reaction_id> rxnko;
+		list<string> bounds;
+		list<string> constraints;
+		mapping<string,float> uptakelim;
+		float defaultmaxflux;
+		float defaultminuptake;
+		float defaultmaxuptake;
+		bool simplethermoconst;
+		bool thermoconst;
+		bool nothermoerror;
+		bool minthermoerror;
+    } FBAFormulation;
+    typedef structure {
+    	fbamodel_id model;
+		workspace_id model_workspace;
+		FBAFormulation formulation;
+		bool fva;
+		bool simulateko;
+		bool minimizeflux;
+		bool findminmedia;
+		string notes;
+		fba_id fba;
+		workspace_id fba_workspace;
+		string authentication;
+		bool overwrite;
     } runfba_params;
-    
     /*
-        This function runs flux balance analysis on the input FBAModel and produces HTML as output
+        Run flux balance analysis and return ID of FBA object with results 
     */
-    funcdef runfba (runfba_params input) returns (runfba_params output);
+    funcdef runfba(runfba_params input) returns (runfba_params output);
     
-    /*
-        NEED DOCUMENTATION
-    */
     typedef structure {
-	fba_id in_fba;
-	workspace_id in_workspace;
-	string authentication;
-    } checkfba_params;
-    
-    /*
-        This function checks if the specified FBA study is complete.
-    */
-    funcdef checkfba (checkfba_params input) returns (bool is_done);
-    
-    /*
-        NEED DOCUMENTATION
-    */
-    typedef structure {
-	fba_id in_fba;
-	workspace_id in_workspace;
-	string format;
-	string authentication;
+		fba_id in_fba;
+		workspace_id in_workspace;
+		string format;
+		string authentication;
     } export_fba_params;
-    
     /*
-        This function exports the specified FBA object to the specified format (e.g. html)
+        Export an FBA solution for viewing
     */
     funcdef export_fba(export_fba_params input) returns (string output);
     
-    /*These functions run gapfilling on the input FBAModel and produce gapfill objects as output*/
-    typedef string HTML;
-    funcdef gapfill_model (fbamodel_id in_model, GapfillingFormulation formulation) returns (gapfill_id out_gapfill);
-    funcdef gapfill_check_results (gapfill_id in_gapfill) returns (bool is_done);
-    funcdef gapfill_to_html (gapfill_id in_gapfill) returns (HTML html_string);
-    funcdef gapfill_integrate (gapfill_id in_gapfill,fbamodel_id in_model) returns ();
-
-    /*These functions run gapgeneration on the input FBAModel and produce gapgen objects as output*/
-    funcdef gapgen_model (fbamodel_id in_model, GapgenFormulation formulation) returns (gapgen_id out_gapgen);
-    funcdef gapgen_check_results (gapgen_id in_gapgen) returns (bool is_done);
-    funcdef gapgen_to_html (gapgen_id in_gapgen) returns (HTML html_string);
-    funcdef gapgen_integrate (gapgen_id in_gapgen,fbamodel_id in_model) returns ();
+    /*********************************************************************************
+    Code relating to phenotype simulation and reconciliation
+   	*********************************************************************************/
+    typedef string phenotypeSet_id;
+    typedef tuple< list<feature_id> geneKO,media_id baseMedia,workspace_id media_workspace,list<compound_id> additionalCpd,float normalizedGrowth> Phenotype;
+    typedef structure {
+		phenotypeSet_id id;
+		genome_id genome;
+		workspace_id genomeWorkspace;
+		list<Phenotype> phenotypes;
+		string importErrors;
+    } PhenotypeSet;
+    
+    typedef string phenotypeSimulationSet_id;
+    typedef tuple< Phenotype,float simulatedGrowth,float simulatedGrowthFraction,string class> PhenotypeSimulation;
+    typedef structure {
+    	phenotypeSimulationSet_id id;
+		fbamodel_id model;
+		workspace_id modelWorkspace;
+		phenotypeSet_id phenotypeSet;
+		list<PhenotypeSimulation> phenotypeSimulations;
+    } PhenotypeSimulationSet;
+    
+    typedef structure {
+		phenotypeSet_id id;
+		workspace_id workspace;
+		genome_id genome;
+		workspace_id genome_workspace;
+		list<Phenotype> phenotypes;
+		bool ignore_errors;
+		string authentication;
+    } import_phenotypes_params;
+    /*
+        Loads the specified phenotypes into the workspace
+    */
+    funcdef import_phenotypes (import_phenotypes_params input) returns (object_metadata output);
+    
+    typedef structure {
+		fbamodel_id model;
+		workspace_id model_workspace;
+		phenotypeSet_id phenotype_set;
+		workspace_id phenotype_workspace;
+		FBAFormulation formulation;
+		string notes;
+		phenotypeSimulationSet_id phenotype_simultation_set;
+		workspace_id out_workspace;
+		bool overwrite;
+		string authentication;
+    } simulate_phenotypes_params;
+    /*
+        Simulates the specified phenotype set
+    */
+    funcdef simulate_phenotypes (simulate_phenotypes_params input) returns (object_metadata output);
+    
+    typedef structure {
+		phenotypeSimulationSet_id phenotypeSimulationSet;
+		workspace_id workspace;
+		string format;
+		string authentication;
+    } export_phenotypeSimulationSet_params;
+    /*
+        Export a PhenotypeSimulationSet for viewing
+    */
+    funcdef export_phenotypeSimulationSet (export_phenotypeSimulationSet_params input) returns (string output);
+    
+    /*********************************************************************************
+    Code relating to queuing long running jobs
+   	*********************************************************************************/ 
+    typedef string job_id;
+    typedef structure {
+		string authentication;
+    } CommandArguments;
+    typedef structure {
+		job_id id;
+		string queuetime;
+		string completetime;
+		bool complete;
+		string object;
+		string workspace;
+		string type;
+		string owner;
+		string queuing_command;
+		string queuing_service;
+		string postprocess_command;
+		list<CommandArguments> postprocess_args;
+    } JobObject;
+	/*
+        Queues an FBA job in a single media condition
+    */
+	funcdef queue_runfba(runfba_params input) returns (JobObject output);
+   
+    typedef structure {
+		phenotypeSet_id id;
+		fbamodel_id in_model;
+		workspace_id in_workspace;
+		FBAFormulation in_formulation;
+		int num_solutions;
+		bool no_media_hypothesis;
+		bool no_biomass_hypothesis;
+		bool no_gpr_hypothesis;
+		bool no_pathway_hypothesis;
+		bool allow_unbalanced;
+		float activity_bonus;
+		float drain_penalty;
+		float direction_penalty;
+		float no_structure_penalty;
+		float unfavorable_penalty;
+		float no_deltag_penalty;
+		float biomass_transport_penalty;
+		float single_transport_penalty;
+		float transport_penalty;
+		list<reaction_id> blacklistedrxns;
+		list<reaction_id> gauranteedrxns;
+		list<string> allowed_compartments;
+		bool integrate_solution;
+		string notes;
+		genome_id prob_anno;
+		workspace_id prob_anno_workspace;
+		fbamodel_id out_model;
+		workspace_id out_workspace;
+		string authentication;
+		bool overwrite;
+		int gapfilling_index;
+		job_id job;
+    } gapfill_model_params;
+    /*
+        Queues an FBAModel gapfilling job in single media condition
+    */
+    funcdef queue_gapfill_model(gapfill_model_params input) returns (JobObject output);
+    
+    typedef structure {
+		phenotypeSet_id id;
+		fbamodel_id in_model;
+		workspace_id in_workspace;
+		FBAFormulation in_formulation;
+		int num_solutions;
+		bool no_media_hypothesis;
+		bool no_biomass_hypothesis;
+		bool no_gpr_hypothesis;
+		bool no_pathway_hypothesis;
+		bool integrate_solution;
+		string notes;
+		fbamodel_id out_model;
+		workspace_id out_workspace;
+		string authentication;
+		bool overwrite;
+		int gapgen_index;
+    } gapgen_model_params;
+    /*
+        Queues an FBAModel gapfilling job in single media condition
+    */
+    funcdef queue_gapgen_model(gapgen_model_params input) returns (JobObject output);
+    
+    typedef structure {
+		phenotypeSet_id id;
+		fbamodel_id in_model;
+		workspace_id in_workspace;
+		FBAFormulation in_formulation;
+		int num_solutions;
+		bool no_media_hypothesis;
+		bool no_biomass_hypothesis;
+		bool no_gpr_hypothesis;
+		bool no_pathway_hypothesis;
+		bool allow_unbalanced;
+		float activity_bonus;
+		float drain_penalty;
+		float direction_penalty;
+		float no_structure_penalty;
+		float unfavorable_penalty;
+		float no_deltag_penalty;
+		float biomass_transport_penalty;
+		float single_transport_penalty;
+		float transport_penalty;
+		list<reaction_id> blacklistedrxns;
+		list<reaction_id> gauranteedrxns;
+		list<string> allowed_compartments;
+		string notes;
+		genome_id prob_anno;
+		workspace_id prob_anno_workspace;
+		fbamodel_id out_model;
+		workspace_id out_workspace;
+		string authentication;
+		bool overwrite;
+		list<int> all_gapgen_indecies;
+		list<int> all_gapfill_indecies;
+		int gapgen_index;
+		int gapfill_index;
+    } wildtype_phenotype_reconciliation_params;
+    /*
+        Queues an FBAModel reconciliation job
+    */
+    funcdef queue_wildtype_phenotype_reconciliation(wildtype_phenotype_reconciliation_params input) returns (JobObject output);
+    
+    typedef structure {
+		fbamodel_id in_model;
+		workspace_id in_workspace;
+		FBAFormulation in_formulation;
+		int num_solutions;
+		bool integrate_solution;
+		string notes;
+		fbamodel_id out_model;
+		workspace_id out_workspace;
+		string authentication;
+		bool overwrite;
+    } combine_wildtype_phenotype_reconciliation_params;
+    /*
+        Queues an FBAModel reconciliation job
+    */
+    funcdef queue_combine_wildtype_phenotype_reconciliation_params(combine_wildtype_phenotype_reconciliation_params input) returns (JobObject output);
+    
+    typedef structure {
+		job_id job;
+		workspace_id workspace;
+		string authentication;
+    } check_job_params;
+    /*
+        Retreives job data given a job ID
+    */
+    funcdef check_job(check_job_params input) returns (JobObject output);       
 };

@@ -20,6 +20,7 @@ use URI;
 use ModelSEED::Database::MongoDBSimple;
 use Bio::KBase::IDServer::Client;
 use Bio::KBase::CDMI::CDMIClient;
+use KBase::ClusterService;
 use ModelSEED::Auth::Basic;
 use ModelSEED::Store;
 use Data::UUID;
@@ -180,8 +181,32 @@ sub objectToOutput {
 	return $output_data;
 }
 
+sub _getUsername {
+	my ($self) = @_;
+	if (!defined($self->{_currentUser})) {
+		if (defined($self->{_testuser})) {
+			$self->{_currentUser} = $self->{_testuser};
+		} else {
+			$self->{_currentUser} = "public";
+		}
+		
+	}
+	return $self->{_currentUser};
+}
+
 sub _setContext {
 	my ($self,$context,$params) = @_;
+    if ( defined $params->{authentication} ) {
+        my $token = Bio::KBase::AuthToken->new(
+            token => $params->{authentication},
+        );
+        if ($token->validate()) {
+            $self->{_currentUser} = $token->user_id;
+        } else {
+            Bio::KBase::Exceptions::KBaseException->throw(error => "Invalid authorization token!",
+                method_name => 'workspaceDocument::_setContext');
+        }
+    }
 	$self->{_authentication} = $params->{authentication};
 	$self->{_context} = $context;
 }
@@ -193,6 +218,9 @@ sub _getContext {
 
 sub _clearContext {
 	my ($self) = @_;
+    delete $self->{_currentUserObj};
+    delete $self->{_currentUser};
+    delete $self->{_authentication};
 	delete $self->{_context};
 }
 
@@ -272,6 +300,14 @@ sub _cdmi {
 		$self->{_cdmi} = Bio::KBase::CDMI::CDMIClient->new_for_script();
 	}
     return $self->{_cdmi};
+}
+
+sub _clusterService {
+	my $self = shift;
+	if (!defined($self->{_clusterservice})) {
+		$self->{_clusterservice} = KBase::ClusterService->new();
+	}
+    return $self->{_clusterservice};
 }
 
 sub _idServer {
@@ -442,6 +478,68 @@ sub _authentication {
 sub _set_authentication {
 	my($self,$authentication) = @_;
 	$self->{_authentication} = $authentication;
+}
+
+sub _validateargs {
+	my ($self,$args,$mandatoryArguments,$optionalArguments,$substitutions) = @_;
+	if (!defined($args)) {
+	    $args = {};
+	}
+	if (ref($args) ne "HASH") {
+		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => "Arguments not hash",
+		method_name => '_validateargs');	
+	}
+	if (defined($substitutions) && ref($substitutions) eq "HASH") {
+		foreach my $original (keys(%{$substitutions})) {
+			$args->{$original} = $args->{$substitutions->{$original}};
+		}
+	}
+	if (defined($mandatoryArguments)) {
+		for (my $i=0; $i < @{$mandatoryArguments}; $i++) {
+			if (!defined($args->{$mandatoryArguments->[$i]})) {
+				push(@{$args->{_error}},$mandatoryArguments->[$i]);
+			}
+		}
+	}
+	if (defined($args->{_error})) {
+		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => "Mandatory arguments ".join("; ",@{$args->{_error}})." missing.",
+		method_name => '_validateargs');
+	}
+	if (defined($optionalArguments)) {
+		foreach my $argument (keys(%{$optionalArguments})) {
+			if (!defined($args->{$argument})) {
+				$args->{$argument} = $optionalArguments->{$argument};
+			}
+		}	
+	}
+	return $args;
+}
+
+sub _setDefaultFBAFormulation {
+	my ($self,$fbaFormulation) = @_;
+	if (!defined($fbaFormulation)) {
+		$fbaFormulation = {};
+	}
+	$fbaFormulation = $self->_validateargs($fbaFormulation,[],{
+		media => "Complete",
+		media_workspace => "kbasecdm",
+		objfraction => 0.1,
+		allreversible => 0,
+		objective => "Max{(1)bio00001.biomassflux}",
+		geneko => [],
+		rxnko => [],
+		bounds => [],
+		constraints => [],
+		uptakelim => {},
+		defaultmaxflux => 100,
+		defaultminuptake => -100,
+		defaultmaxuptake => 0,
+		simplethermoconst => 0,
+		thermoconst => 0,
+		nothermoerror => 0,
+		minthermoerror => 0
+	});
+	return $fbaFormulation;
 }
 
 #END_HEADER
@@ -720,31 +818,22 @@ FBA is a reference to a hash where the following keys are defined:
 bool is an int
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
-	model has a value which is a fbamodel_id
-	regmodel has a value which is a regmodel_id
-	expressionData has a value which is an expression_id
-	objectiveString has a value which is a string
-	objective has a value which is a float
-	description has a value which is a string
-	uptakelimits has a value which is a string
-	objectiveConstraintFraction has a value which is a float
-	allReversible has a value which is a bool
-	defaultMaxFlux has a value which is a float
-	defaultMaxDrainFlux has a value which is a float
-	defaultMinDrainFlux has a value which is a float
-	numberOfSolutions has a value which is an int
-	fva has a value which is a bool
-	comboDeletions has a value which is an int
-	fluxMinimization has a value which is a bool
-	findMinimalMedia has a value which is a bool
-	simpleThermoConstraints has a value which is a bool
-	thermodynamicConstraints has a value which is a bool
-	noErrorThermodynamicConstraints has a value which is a bool
-	minimizeErrorThermodynamicConstraints has a value which is a bool
-	featureKO has a value which is a reference to a list where each element is a feature_id
-	reactionKO has a value which is a reference to a list where each element is a modelreaction_id
-	constraints has a value which is a reference to a list where each element is a string
+	workspace has a value which is a workspace_id
+	objfraction has a value which is a float
+	allreversible has a value which is a bool
+	objective has a value which is a string
+	geneko has a value which is a reference to a list where each element is a feature_id
+	rxnko has a value which is a reference to a list where each element is a reaction_id
 	bounds has a value which is a reference to a list where each element is a string
+	constraints has a value which is a reference to a list where each element is a string
+	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
+	defaultmaxflux has a value which is a float
+	defaultminuptake has a value which is a float
+	defaultmaxuptake has a value which is a float
+	simplethermoconst has a value which is a bool
+	thermoconst has a value which is a bool
+	nothermoerror has a value which is a bool
+	minthermoerror has a value which is a bool
 media_id is a string
 fbamodel_id is a string
 regmodel_id is a string
@@ -808,31 +897,22 @@ FBA is a reference to a hash where the following keys are defined:
 bool is an int
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
-	model has a value which is a fbamodel_id
-	regmodel has a value which is a regmodel_id
-	expressionData has a value which is an expression_id
-	objectiveString has a value which is a string
-	objective has a value which is a float
-	description has a value which is a string
-	uptakelimits has a value which is a string
-	objectiveConstraintFraction has a value which is a float
-	allReversible has a value which is a bool
-	defaultMaxFlux has a value which is a float
-	defaultMaxDrainFlux has a value which is a float
-	defaultMinDrainFlux has a value which is a float
-	numberOfSolutions has a value which is an int
-	fva has a value which is a bool
-	comboDeletions has a value which is an int
-	fluxMinimization has a value which is a bool
-	findMinimalMedia has a value which is a bool
-	simpleThermoConstraints has a value which is a bool
-	thermodynamicConstraints has a value which is a bool
-	noErrorThermodynamicConstraints has a value which is a bool
-	minimizeErrorThermodynamicConstraints has a value which is a bool
-	featureKO has a value which is a reference to a list where each element is a feature_id
-	reactionKO has a value which is a reference to a list where each element is a modelreaction_id
-	constraints has a value which is a reference to a list where each element is a string
+	workspace has a value which is a workspace_id
+	objfraction has a value which is a float
+	allreversible has a value which is a bool
+	objective has a value which is a string
+	geneko has a value which is a reference to a list where each element is a feature_id
+	rxnko has a value which is a reference to a list where each element is a reaction_id
 	bounds has a value which is a reference to a list where each element is a string
+	constraints has a value which is a reference to a list where each element is a string
+	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
+	defaultmaxflux has a value which is a float
+	defaultminuptake has a value which is a float
+	defaultmaxuptake has a value which is a float
+	simplethermoconst has a value which is a bool
+	thermoconst has a value which is a bool
+	nothermoerror has a value which is a bool
+	minthermoerror has a value which is a bool
 media_id is a string
 fbamodel_id is a string
 regmodel_id is a string
@@ -1584,9 +1664,120 @@ sub get_biochemistry
 
 
 
+=head2 genome_object_to_workspace
+
+  $metadata = $obj->genome_object_to_workspace($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a genome_object_to_workspace_params
+$metadata is an object_metadata
+genome_object_to_workspace_params is a reference to a hash where the following keys are defined:
+	in_genomeobj has a value which is a genomeTO
+	workspace has a value which is a workspace_id
+	authentication has a value which is a string
+genomeTO is a reference to a hash where the following keys are defined:
+	id has a value which is a genome_id
+genome_id is a string
+workspace_id is a string
+object_metadata is a reference to a list containing 7 items:
+	0: an object_id
+	1: an object_type
+	2: a timestamp
+	3: an int
+	4: a string
+	5: a username
+	6: a username
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a genome_object_to_workspace_params
+$metadata is an object_metadata
+genome_object_to_workspace_params is a reference to a hash where the following keys are defined:
+	in_genomeobj has a value which is a genomeTO
+	workspace has a value which is a workspace_id
+	authentication has a value which is a string
+genomeTO is a reference to a hash where the following keys are defined:
+	id has a value which is a genome_id
+genome_id is a string
+workspace_id is a string
+object_metadata is a reference to a list containing 7 items:
+	0: an object_id
+	1: an object_type
+	2: a timestamp
+	3: an int
+	4: a string
+	5: a username
+	6: a username
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+
+
+=end text
+
+
+
+=item Description
+
+Loads an input genome object into the workspace.
+
+=back
+
+=cut
+
+sub genome_object_to_workspace
+{
+    my $self = shift;
+    my($input) = @_;
+
+    my @_bad_arguments;
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to genome_object_to_workspace:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'genome_object_to_workspace');
+    }
+
+    my $ctx = $fbaModelServicesServer::CallContext;
+    my($metadata);
+    #BEGIN genome_object_to_workspace
+    $self->_setContext($ctx,$input);
+    $input = $self->_validateargs($input,["genomeobj","workspace"],{});
+    $self->_save_msobject($input->{genomeobj},"Genome",$input->{workspace},$input->{genomeobj}->{id});
+	$output = $input;
+	$self->_clearContext();
+    #END genome_object_to_workspace
+    my @_bad_returns;
+    (ref($metadata) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"metadata\" (value was \"$metadata\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to genome_object_to_workspace:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'genome_object_to_workspace');
+    }
+    return($metadata);
+}
+
+
+
+
 =head2 genome_to_workspace
 
-  $output = $obj->genome_to_workspace($input)
+  $metadata = $obj->genome_to_workspace($input)
 
 =over 4
 
@@ -1596,19 +1787,25 @@ sub get_biochemistry
 
 <pre>
 $input is a genome_to_workspace_params
-$output is a genome_to_workspace_params
+$metadata is an object_metadata
 genome_to_workspace_params is a reference to a hash where the following keys are defined:
-	in_genomeobj has a value which is a genomeTO
-	in_genome has a value which is a genome_id
-	out_genome has a value which is a genome_id
-	out_workspace has a value which is a workspace_id
-	as_new_genome has a value which is a bool
+	genome has a value which is a genome_id
+	workspace has a value which is a workspace_id
 	authentication has a value which is a string
-genomeTO is a reference to a hash where the following keys are defined:
-	id has a value which is a genome_id
 genome_id is a string
 workspace_id is a string
-bool is an int
+object_metadata is a reference to a list containing 7 items:
+	0: an object_id
+	1: an object_type
+	2: a timestamp
+	3: an int
+	4: a string
+	5: a username
+	6: a username
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
 
 </pre>
 
@@ -1617,19 +1814,25 @@ bool is an int
 =begin text
 
 $input is a genome_to_workspace_params
-$output is a genome_to_workspace_params
+$metadata is an object_metadata
 genome_to_workspace_params is a reference to a hash where the following keys are defined:
-	in_genomeobj has a value which is a genomeTO
-	in_genome has a value which is a genome_id
-	out_genome has a value which is a genome_id
-	out_workspace has a value which is a workspace_id
-	as_new_genome has a value which is a bool
+	genome has a value which is a genome_id
+	workspace has a value which is a workspace_id
 	authentication has a value which is a string
-genomeTO is a reference to a hash where the following keys are defined:
-	id has a value which is a genome_id
 genome_id is a string
 workspace_id is a string
-bool is an int
+object_metadata is a reference to a list containing 7 items:
+	0: an object_id
+	1: an object_type
+	2: a timestamp
+	3: an int
+	4: a string
+	5: a username
+	6: a username
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
 
 
 =end text
@@ -1638,8 +1841,7 @@ bool is an int
 
 =item Description
 
-This function either retrieves a genome from the CDM by a specified genome ID, or it loads an input genome object.
-The loaded or retrieved genome is placed in the specified workspace with the specified ID.
+Retrieves a genome from the CDM and saves it as a genome object in the workspace.
 
 =back
 
@@ -1659,50 +1861,23 @@ sub genome_to_workspace
     }
 
     my $ctx = $fbaModelServicesServer::CallContext;
-    my($output);
+    my($metadata);
     #BEGIN genome_to_workspace
     $self->_setContext($ctx,$input);
-    #Checking workspace specified for loading of genome
-    if (!defined($input->{out_workspace})) {
-    	my $msg = "User must provide workspace for import of genome.";
-    	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'genome_to_workspace');
-    }
-    my $outwsmeta;
-    try {
-    	$outwsmeta = $self->_workspaceServices()->get_workspacemeta({workspace => $input->{out_workspace}});
-    } catch {
-    	$outwsmeta = $self->_workspaceServices()->create_workspace({workspace => $input->{out_workspace}});
-    };
-    if ($outwsmeta->[4] ne "w" && $outwsmeta->[4] ne "a") {
-    	my $msg = "User does not have permission to write to output workspace: ".$input->{out_workspace};
-    	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'genome_to_workspace');
-    }
-    #Retrieving genome object
-    my $genomeObj;
-    if (defined($input->{in_genomeobj})) {
-    	$genomeObj = $input->{in_genomeobj};
-    } elsif (defined($input->{in_genome})) {
-    	$genomeObj = $self->_get_genomeObj_from_CDM($input->{in_genome},$input->{as_new_genome});
-    } else {
-    	my $msg = "User must specify genome to be imported to workspace";
-    	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'genome_to_fbamodel');
-    }
-    if (!defined($input->{out_genome})) {
-    	$input->{out_genome} = $genomeObj->{id};
-    }
-    #Saving genome object
-    $self->_save_msobject($genomeObj,"Genome",$input->{out_workspace},$input->{out_genome});
+    $input = $self->_validateargs($input,["genome","workspace"],{});
+    my $genomeObj = $self->_get_genomeObj_from_CDM($input->{genome});
+    $self->_save_msobject($genomeObj,"Genome",$input->{workspace},$genomeObj->{id});
 	$output = $input;
 	$self->_clearContext();
     #END genome_to_workspace
     my @_bad_returns;
-    (ref($output) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    (ref($metadata) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"metadata\" (value was \"$metadata\")");
     if (@_bad_returns) {
 	my $msg = "Invalid returns passed to genome_to_workspace:\n" . join("", map { "\t$_\n" } @_bad_returns);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
 							       method_name => 'genome_to_workspace');
     }
-    return($output);
+    return($metadata);
 }
 
 
@@ -1929,6 +2104,13 @@ sub export_fbamodel
     my $ctx = $fbaModelServicesServer::CallContext;
     my($output);
     #BEGIN export_fbamodel
+    $self->_setContext($ctx,$input);
+    $input = $self->_validateargs($input,["in_model","in_workspace","format"],{
+    	authentication => undef
+    });
+    my $model = $self->_get_msobject("Model",$input->{in_workspace},$input->{in_model});
+    $output = $model->export({format => $input->{format}});
+    $self->_clearContext();
     #END export_fbamodel
     my @_bad_returns;
     (!ref($output)) or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
@@ -1936,6 +2118,277 @@ sub export_fbamodel
 	my $msg = "Invalid returns passed to export_fbamodel:\n" . join("", map { "\t$_\n" } @_bad_returns);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
 							       method_name => 'export_fbamodel');
+    }
+    return($output);
+}
+
+
+
+
+=head2 addmedia
+
+  $out_media = $obj->addmedia($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is an addmedia_params
+$out_media is a media_id
+addmedia_params is a reference to a hash where the following keys are defined:
+	in_media has a value which is a media_id
+	in_workspace has a value which is a workspace_id
+	name has a value which is a string
+	isDefined has a value which is a bool
+	isMinimal has a value which is a bool
+	type has a value which is a string
+	compounds has a value which is a reference to a list where each element is a string
+	concentrations has a value which is a reference to a list where each element is a float
+	maxflux has a value which is a reference to a list where each element is a float
+	minflux has a value which is a reference to a list where each element is a float
+	overwrite has a value which is a bool
+	authentication has a value which is a string
+media_id is a string
+workspace_id is a string
+bool is an int
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is an addmedia_params
+$out_media is a media_id
+addmedia_params is a reference to a hash where the following keys are defined:
+	in_media has a value which is a media_id
+	in_workspace has a value which is a workspace_id
+	name has a value which is a string
+	isDefined has a value which is a bool
+	isMinimal has a value which is a bool
+	type has a value which is a string
+	compounds has a value which is a reference to a list where each element is a string
+	concentrations has a value which is a reference to a list where each element is a float
+	maxflux has a value which is a reference to a list where each element is a float
+	minflux has a value which is a reference to a list where each element is a float
+	overwrite has a value which is a bool
+	authentication has a value which is a string
+media_id is a string
+workspace_id is a string
+bool is an int
+
+
+=end text
+
+
+
+=item Description
+
+Add media condition to workspace
+
+=back
+
+=cut
+
+sub addmedia
+{
+    my $self = shift;
+    my($input) = @_;
+
+    my @_bad_arguments;
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to addmedia:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'addmedia');
+    }
+
+    my $ctx = $fbaModelServicesServer::CallContext;
+    my($out_media);
+    #BEGIN addmedia
+	$self->_setContext($ctx,$input);
+	$input = $self->_validateargs($input,["in_media","in_workspace","compounds"],{
+    	name => $input->{in_media},
+    	isDefined => 0,
+    	isMinimal => 0,
+    	type => "custom",
+    	concentrations => [],
+    	maxflux => [],
+    	minflux => [],
+    	overwrite => 0
+    });
+	my $wss = $self->_workspaceServices(); 
+	my $wsmeta = $wss->get_workspacemeta({workspace => $input->{in_workspace}});
+	if ($wsmeta->[4] !~ m/[aw]/) {
+    	my $msg = "User does not have write access specified workspace: ".$input->{in_workspace};
+    	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'addmedia');
+    }
+    #Checking that the media either does not already exist, or that the user allowed for overwriting
+    if ($input->{overwrite} == 0) {
+    	my $obj;
+    	try {
+    		$obj = $wss->get_object({
+				id => $input->{in_media},
+				type => "Media",
+				workspace => $input->{in_workspace},
+				authentication => $self->_authentication()
+			}
+	    } catch {};
+	    if (defined($obj)) {
+	    	my $msg = "Specified media already exists, and user did not set 'overwrite' flag!";
+    		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'addmedia');
+	    }
+    }
+    #Creating the media object from the specifications
+    my $bio = $self->_get_msobject("Biochemistry","kbase","default");
+    my $media = ModelSEED::MS::Media->new({
+    	name => $input->{name},
+    	isDefined => $input->{isDefined},
+    	isMinimal => $input->{isMinimal},
+    	type => $input->{type},
+    });
+    my $missing = [];
+    for (my $i=0; $i < @{$input->{compounds}}; $i++) {
+    	my $name = $input->{compounds}->[$i];
+    	$cpdobj = $bio->searchForCompound($name);
+    	if (defined($cpdobj)) {
+	    	my $data = {
+	    		compound_uuid => $cpdobj->uuid(),
+	    		concentration => 0.001,
+	    		maxFlux => 100,
+	    		minFlux => -100
+	    	};
+	    	if (defined($input->{concentrations}->[$i])) {
+	    		$data->{concentration} = $input->{concentrations}->[$i];
+	    	}
+	    	if (defined($input->{maxflux}->[$i])) {
+	    		$data->{maxFlux} = $input->{maxflux}->[$i];
+	    	}
+	    	if (defined($input->{minflux}->[$i])) {
+	    		$data->{minFlux} = $input->{minFlux}->[$i];
+	    	}
+	    	$media->add("mediacompounds",$data);
+    	} else {
+    		push(@{$missing},$input->{compounds}->[$i]);
+    	}
+    	
+    }
+    #Checking that all compounds specified for media were found
+	if (defined($missing->[0])) {
+		my $msg = "Compounds specified for media not found: ".join(";",@{$missing});
+    	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'addmedia');
+	}
+    #Saving media in database
+    $self->_save_msobject($media,"Media",$input->{in_workspace},$input->{in_media},"addmedia");
+    $out_media = $input->{in_media};
+	$self->_clearContext();
+    #END addmedia
+    my @_bad_returns;
+    (!ref($out_media)) or push(@_bad_returns, "Invalid type for return variable \"out_media\" (value was \"$out_media\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to addmedia:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'addmedia');
+    }
+    return($out_media);
+}
+
+
+
+
+=head2 export_media
+
+  $output = $obj->export_media($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is an export_media_params
+$output is a string
+export_media_params is a reference to a hash where the following keys are defined:
+	in_media has a value which is a media_id
+	in_workspace has a value which is a workspace_id
+	format has a value which is a string
+	authentication has a value which is a string
+media_id is a string
+workspace_id is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is an export_media_params
+$output is a string
+export_media_params is a reference to a hash where the following keys are defined:
+	in_media has a value which is a media_id
+	in_workspace has a value which is a workspace_id
+	format has a value which is a string
+	authentication has a value which is a string
+media_id is a string
+workspace_id is a string
+
+
+=end text
+
+
+
+=item Description
+
+Exports media in specified format (html,readable)
+
+=back
+
+=cut
+
+sub export_media
+{
+    my $self = shift;
+    my($input) = @_;
+
+    my @_bad_arguments;
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to export_media:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'export_media');
+    }
+
+    my $ctx = $fbaModelServicesServer::CallContext;
+    my($output);
+    #BEGIN export_media
+    $self->_setContext($ctx,$input);
+	$input = $self->_validateargs($input,["in_media","in_workspace","format"],{});
+    my $med;
+    if ($input->{in_workspace} eq "kbasecdm") {
+    	 my $bio = $self->_get_msobject("Biochemistry","kbase","default");
+    	 $med = $bio->queryObject("media",{id => $input->{in_media}});
+    	 if (!defined($med)) {
+    	 	my $msg = "Media ".$input->{in_media}." not found in base biochemistry!";
+			Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'export_media');
+    	 }
+    } else {
+    	$med = $self->_get_msobject("Media",$input->{in_media},$input->{in_workspace});
+    }
+    $output = $med->export({
+	    format => $input->{format}
+	});
+	$self->_clearContext();
+    #END export_media
+    my @_bad_returns;
+    (!ref($output)) or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to export_media:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'export_media');
     }
     return($output);
 }
@@ -1957,13 +2410,42 @@ sub export_fbamodel
 $input is a runfba_params
 $output is a runfba_params
 runfba_params is a reference to a hash where the following keys are defined:
-	in_model has a value which is a fbamodel_id
-	in_workspace has a value which is a workspace_id
-	out_fba has a value which is a fba_id
-	out_workspace has a value which is a workspace_id
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
+	formulation has a value which is an FBAFormulation
+	fva has a value which is a bool
+	simulateko has a value which is a bool
+	minimizeflux has a value which is a bool
+	findminmedia has a value which is a bool
+	notes has a value which is a string
+	fba has a value which is a fba_id
+	fba_workspace has a value which is a workspace_id
 	authentication has a value which is a string
+	overwrite has a value which is a bool
 fbamodel_id is a string
 workspace_id is a string
+FBAFormulation is a reference to a hash where the following keys are defined:
+	media has a value which is a media_id
+	workspace has a value which is a workspace_id
+	objfraction has a value which is a float
+	allreversible has a value which is a bool
+	objective has a value which is a string
+	geneko has a value which is a reference to a list where each element is a feature_id
+	rxnko has a value which is a reference to a list where each element is a reaction_id
+	bounds has a value which is a reference to a list where each element is a string
+	constraints has a value which is a reference to a list where each element is a string
+	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
+	defaultmaxflux has a value which is a float
+	defaultminuptake has a value which is a float
+	defaultmaxuptake has a value which is a float
+	simplethermoconst has a value which is a bool
+	thermoconst has a value which is a bool
+	nothermoerror has a value which is a bool
+	minthermoerror has a value which is a bool
+media_id is a string
+bool is an int
+feature_id is a string
+reaction_id is a string
 fba_id is a string
 
 </pre>
@@ -1975,13 +2457,42 @@ fba_id is a string
 $input is a runfba_params
 $output is a runfba_params
 runfba_params is a reference to a hash where the following keys are defined:
-	in_model has a value which is a fbamodel_id
-	in_workspace has a value which is a workspace_id
-	out_fba has a value which is a fba_id
-	out_workspace has a value which is a workspace_id
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
+	formulation has a value which is an FBAFormulation
+	fva has a value which is a bool
+	simulateko has a value which is a bool
+	minimizeflux has a value which is a bool
+	findminmedia has a value which is a bool
+	notes has a value which is a string
+	fba has a value which is a fba_id
+	fba_workspace has a value which is a workspace_id
 	authentication has a value which is a string
+	overwrite has a value which is a bool
 fbamodel_id is a string
 workspace_id is a string
+FBAFormulation is a reference to a hash where the following keys are defined:
+	media has a value which is a media_id
+	workspace has a value which is a workspace_id
+	objfraction has a value which is a float
+	allreversible has a value which is a bool
+	objective has a value which is a string
+	geneko has a value which is a reference to a list where each element is a feature_id
+	rxnko has a value which is a reference to a list where each element is a reaction_id
+	bounds has a value which is a reference to a list where each element is a string
+	constraints has a value which is a reference to a list where each element is a string
+	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
+	defaultmaxflux has a value which is a float
+	defaultminuptake has a value which is a float
+	defaultmaxuptake has a value which is a float
+	simplethermoconst has a value which is a bool
+	thermoconst has a value which is a bool
+	nothermoerror has a value which is a bool
+	minthermoerror has a value which is a bool
+media_id is a string
+bool is an int
+feature_id is a string
+reaction_id is a string
 fba_id is a string
 
 
@@ -1991,7 +2502,7 @@ fba_id is a string
 
 =item Description
 
-This function runs flux balance analysis on the input FBAModel and produces HTML as output
+Run flux balance analysis and return ID of FBA object with results
 
 =back
 
@@ -2013,46 +2524,34 @@ sub runfba
     my $ctx = $fbaModelServicesServer::CallContext;
     my($output);
     #BEGIN runfba
-    #Retreiving the model
-#    my $in_model = $input;
-#    my $model = $self->loadObject($in_model);
-#	#Creating FBA formulation
-#	my $input = {model => $model};
-#	my $overrideList = {
-#		media => "media",notes => "notes",fva => "fva",simulateko => "comboDeletions",
-#		minimizeflux => "fluxMinimization",findminmedia => "findMinimalMedia",objfraction => "objectiveConstraintFraction",
-#		allreversible => "allReversible",objective => "objectiveString",rxnko => "geneKO",geneko => "reactionKO",uptakelim => "uptakeLimits",
-#		defaultmaxflux => "defaultMaxFlux",defaultminuptake => "defaultMinDrainFlux",defaultmaxuptake => "defaultMaxDrainFlux",
-#		simplethermoconst => "simpleThermoConstraints",thermoconst => "thermodynamicConstraints",nothermoerror => "noErrorThermodynamicConstraints",
-#		minthermoerror => "minimizeErrorThermodynamicConstraints",fbaPhenotypeSimulations => "fbaPhenotypeSimulations",
-#	};
-#	foreach my $argument (keys(%{$overrideList})) {
-#		if (defined($in_formulation->{$argument})) {
-#			$input->{overrides}->{$overrideList->{$argument}} = $in_formulation->{$argument};
-#		}
-#	}
-#	my $exchange_factory = ModelSEED::MS::Factories::ExchangeFormatFactory->new();
-#	my $fbaform = $exchange_factory->buildFBAFormulation($input);
-#    #Running FBA
-#    my $fbaResult = $fbaform->runFBA();
-#    if (!defined($fbaResult)) {
-#    	my $msg = "FBA failed with no solution returned!";
-#    	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'runfba');
-#    }
-#    my $store = $self->{_store};
-#    if ($overwrite == 1) {
-#    	$model->add("fbaFormulations",$fbaform);
-#	    $store->save_object("model/kbase/".$model->id(),$model);
-#    } elsif (length($save) > 0) {
-#    	$model->add("fbaFormulations",$fbaform);
-#    	$model->id($save);
-#		$store->save_object("model/kbase/".$save,$model);
-#    }
-#    if (@{$fbaform->fbaResults()->[0]->fbaPhenotypeSimultationResults()} > 0) {
-#    	$out_solution = $self->objectToOutput($fbaform);
-#    } else {
-#    	$out_solution = $fbaform->createHTML();
-#    }
+    $self->_setContext($ctx,$input);
+    $input = $self->_validateargs($input,["model","model_workspace"],{
+		formulation => undef,
+		fva => 0,
+		simulateko => 0,
+		minimizeflux => 0,
+		findminmedia => 0,
+		notes => "",
+		fba_workspace => $input->{model_workspace},
+		fba => undef
+	});
+	#Creating FBAFormulation Object
+	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
+	my $fba = $self->_buildFBAObject($input->{formulation});
+	if (!defined($input->{out_fba})) {
+		my $ids = $self->_idServer();
+    	$input->{out_fba} = $input->{model}.".fba.".$ids->allocate_id_range( $input->{model}.".fba.", 1 ) + 0;
+	}
+    my $model = $self->_get_msobject("Model",$input->{in_workspace},$input->{in_model});
+    #Running FBA
+    my $fbaResult = $fba->runFBA();
+    if (!defined($fbaResult)) {
+    	my $msg = "FBA failed with no solution returned!";
+    	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'runfba');
+    }
+    $self->_save_msobject($fba,"FBA",$input->{out_workspace},$input->{out_fba},"runfba");
+    $output = $input;
+    $self->_clearContext();
     #END runfba
     my @_bad_returns;
     (ref($output) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
@@ -2062,86 +2561,6 @@ sub runfba
 							       method_name => 'runfba');
     }
     return($output);
-}
-
-
-
-
-=head2 checkfba
-
-  $is_done = $obj->checkfba($input)
-
-=over 4
-
-=item Parameter and return types
-
-=begin html
-
-<pre>
-$input is a checkfba_params
-$is_done is a bool
-checkfba_params is a reference to a hash where the following keys are defined:
-	in_fba has a value which is a fba_id
-	in_workspace has a value which is a workspace_id
-	authentication has a value which is a string
-fba_id is a string
-workspace_id is a string
-bool is an int
-
-</pre>
-
-=end html
-
-=begin text
-
-$input is a checkfba_params
-$is_done is a bool
-checkfba_params is a reference to a hash where the following keys are defined:
-	in_fba has a value which is a fba_id
-	in_workspace has a value which is a workspace_id
-	authentication has a value which is a string
-fba_id is a string
-workspace_id is a string
-bool is an int
-
-
-=end text
-
-
-
-=item Description
-
-This function checks if the specified FBA study is complete.
-
-=back
-
-=cut
-
-sub checkfba
-{
-    my $self = shift;
-    my($input) = @_;
-
-    my @_bad_arguments;
-    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
-    if (@_bad_arguments) {
-	my $msg = "Invalid arguments passed to checkfba:\n" . join("", map { "\t$_\n" } @_bad_arguments);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'checkfba');
-    }
-
-    my $ctx = $fbaModelServicesServer::CallContext;
-    my($is_done);
-    #BEGIN checkfba
-    #END checkfba
-    my @_bad_returns;
-    (!ref($is_done)) or push(@_bad_returns, "Invalid type for return variable \"is_done\" (value was \"$is_done\")");
-    if (@_bad_returns) {
-	my $msg = "Invalid returns passed to checkfba:\n" . join("", map { "\t$_\n" } @_bad_returns);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'checkfba');
-    }
-    return($is_done);
 }
 
 
@@ -2191,7 +2610,7 @@ workspace_id is a string
 
 =item Description
 
-This function exports the specified FBA object to the specified format (e.g. html)
+Export an FBA solution for viewing
 
 =back
 
@@ -2213,6 +2632,13 @@ sub export_fba
     my $ctx = $fbaModelServicesServer::CallContext;
     my($output);
     #BEGIN export_fba
+    $self->_setContext($ctx,$input);
+	$input = $self->_validateargs($input,["in_fba","in_workspace","format"],{});
+    my $fba = $self->_get_msobject("FBA",$input->{in_fba},$input->{in_workspace});
+    $output = $fba->export({
+	    format => $input->{format}
+	});
+	$self->_clearContext();
     #END export_fba
     my @_bad_returns;
     (!ref($output)) or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
@@ -2227,9 +2653,9 @@ sub export_fba
 
 
 
-=head2 gapfill_model
+=head2 import_phenotypes
 
-  $out_gapfill = $obj->gapfill_model($in_model, $formulation)
+  $output = $obj->import_phenotypes($input)
 
 =over 4
 
@@ -2238,43 +2664,307 @@ sub export_fba
 =begin html
 
 <pre>
-$in_model is a fbamodel_id
-$formulation is a GapfillingFormulation
-$out_gapfill is a gapfill_id
-fbamodel_id is a string
-GapfillingFormulation is a reference to a hash where the following keys are defined:
-	media has a value which is a media_id
+$input is an import_phenotypes_params
+$output is an object_metadata
+import_phenotypes_params is a reference to a hash where the following keys are defined:
+	id has a value which is a phenotypeSet_id
+	workspace has a value which is a workspace_id
+	genome has a value which is a genome_id
+	genome_workspace has a value which is a workspace_id
+	phenotypes has a value which is a reference to a list where each element is a Phenotype
+	ignore_errors has a value which is a bool
+	authentication has a value which is a string
+phenotypeSet_id is a string
+workspace_id is a string
+genome_id is a string
+Phenotype is a reference to a list containing 5 items:
+	0: a reference to a list where each element is a feature_id
+	1: a media_id
+	2: a workspace_id
+	3: a reference to a list where each element is a compound_id
+	4: a float
+feature_id is a string
+media_id is a string
+compound_id is a string
+bool is an int
+object_metadata is a reference to a list containing 7 items:
+	0: an object_id
+	1: an object_type
+	2: a timestamp
+	3: an int
+	4: a string
+	5: a username
+	6: a username
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is an import_phenotypes_params
+$output is an object_metadata
+import_phenotypes_params is a reference to a hash where the following keys are defined:
+	id has a value which is a phenotypeSet_id
+	workspace has a value which is a workspace_id
+	genome has a value which is a genome_id
+	genome_workspace has a value which is a workspace_id
+	phenotypes has a value which is a reference to a list where each element is a Phenotype
+	ignore_errors has a value which is a bool
+	authentication has a value which is a string
+phenotypeSet_id is a string
+workspace_id is a string
+genome_id is a string
+Phenotype is a reference to a list containing 5 items:
+	0: a reference to a list where each element is a feature_id
+	1: a media_id
+	2: a workspace_id
+	3: a reference to a list where each element is a compound_id
+	4: a float
+feature_id is a string
+media_id is a string
+compound_id is a string
+bool is an int
+object_metadata is a reference to a list containing 7 items:
+	0: an object_id
+	1: an object_type
+	2: a timestamp
+	3: an int
+	4: a string
+	5: a username
+	6: a username
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+
+
+=end text
+
+
+
+=item Description
+
+Loads the specified phenotypes into the workspace
+
+=back
+
+=cut
+
+sub import_phenotypes
+{
+    my $self = shift;
+    my($input) = @_;
+
+    my @_bad_arguments;
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to import_phenotypes:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'import_phenotypes');
+    }
+
+    my $ctx = $fbaModelServicesServer::CallContext;
+    my($output);
+    #BEGIN import_phenotypes
+    $self->_setContext($ctx,$input);
+	$input = $self->_validateargs($input,["id","workspace","genome","genome_workspace","phenotypes"],{
+		ignore_errors => 0
+	});
+    
+    #Retrieving biochemistry
+    my $bio = $self->_get_msobject("Biochemistry","kbase","default");
+    #Retrieving specified genome
+    my $genomeObj;
+    if ($input->{genome_workspace} eq "kbasecdm") {
+    	$genomeObj = $self->_get_genomeObj_from_CDM($input->{genome},0);
+    } else {
+    	$genomeObj = $self->_get_msobject("Genome",$input->{workspace},$input->{genome});
+    }
+    if (!defined($genomeObj)) {
+    	my $msg = "Failed to retrieve genome ".$input->{genome_workspace}."/".$input->{genome};
+    	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'import_phenotypes');
+    }
+    my $genehash = {};
+    for (my $i=0; $i < @{$genomeObj->{features}}; $i++) {
+    	my $ftr = $genomeObj->{features}->[$i];
+    	$genehash->{$ftr->{id}} = $ftr->{id};
+    	if (defined($ftr->{aliases})) {
+    		for (my $j=0; $j < @{$ftr->{aliases}}; $j++) {
+    			$genehash->{$ftr->{aliases}->[$j]} = $ftr->{id};
+    		}
+    	}
+    }
+    #Instantiating imported phenotype object
+    my $object = {
+    	id => $input->{id},
+    	genome => $input->{genome},
+    	genomeWorkspace => $input->{genome_workspace},
+    	phenotypes => [],
+    };
+    #Validating media, genes, and compounds
+    my $missingMedia = [];
+    my $missingGenes = [];
+    my $missingCompounds = [];
+    for (my $i=0; $i < @{$input->{phenotypes}}; $i++) {
+    	my $phenotype = $input->{phenotypes}->[$i];
+    	#Validating gene IDs
+    	my $allfound = 1;
+    	for (my $j=0;$j < @{$phenotype->[0]};$j++) {
+    		if (!defined($genehash->{$phenotype->[0]->[$j]})) {
+    			push(@{$missingGenes},$phenotype->[0]->[$j]);
+    			$allfound = 0;
+    		} else {
+    			$phenotype->[0]->[$j] = $genehash->{$phenotype->[0]->[$j]};
+    		}
+    	}
+    	if ($allfound == 0) {
+    		next;
+    	}
+    	#Validating media
+    	if ($phenotype->[2] eq "kbasecdm") {
+    		my $media = $bio->queryObject("media",{id => $phenotype->[1]});
+    		if (!defined($media)) {
+    			push(@{$missingMedia},$phenotype->[1]);
+    			next;
+    		}
+    	} else {
+    		try {
+    			my $media = $self->_get_msobject("Media",$phenotype->[1],$phenotype->[2]);
+	    	} catch {
+	    		push(@{$missingMedia},$phenotype->[1]);
+	    		next;
+	    	};
+    	}
+    	#Validating compounds
+    	$allfound = 1;
+    	for (my $j=0;$j < @{$phenotype->[3]};$j++) {
+    		my $cpd = $bio->searchForCompound($phenotype->[3]->[$j]);
+    		if (!defined($cpd)) {
+    			push(@{$missingCompounds},$phenotype->[3]->[$j]);
+    			$allfound = 0;
+    		} else {
+    			$phenotype->[3]->[$j] = $cpd->id();
+    		}
+    	}
+    	if ($allfound == 0) {
+    		next;
+    	}
+    	#Adding phenotype to object
+    	push(@{$object->{phenotypes}},$phenotype);
+    }
+    #Printing error if any entities could not be validated
+    my $msg = "";
+    if (@{$missingCompounds} > 0) {
+    	$msg = "Could not find compounds:".join(";",@{$missingCompounds})."\n";
+    }
+    if (@{$missingGenes} > 0) {
+    	$msg = "Could not find genes:".join(";",@{$missingGenes})."\n";
+    }
+    if (@{$missingMedia} > 0) {
+    	$msg = "Could not find media:".join(";",@{$missingMedia})."\n";
+    }
+    my $meta = {};
+	if (length($msg) > 0 && $input->{ignore_errors} == 0) {
+		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'import_phenotypes');
+	} elsif (length($msg) > 0) {
+		$object->{importErrors} => $msg;
+	}
+    #Saving object to database
+    my $objmeta = $self->_workspaceServices()->save_object({
+		id => $input->{id},
+		type => "PhenotypeSet",
+		data => $object,
+		workspace => $input->{workspace},
+		command => "import_phenotypes",
+		authentication => $self->_authentication()
+	});
+	if (!defined($objmeta)) {
+		my $msg = "Unable to save object:PhenotypeSet/".$input->{workspace}."/".$input->{id};
+		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'import_phenotypes');
+	}
+	$output = $objmeta;
+	$self->_clearContext();
+    #END import_phenotypes
+    my @_bad_returns;
+    (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to import_phenotypes:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'import_phenotypes');
+    }
+    return($output);
+}
+
+
+
+
+=head2 simulate_phenotypes
+
+  $output = $obj->simulate_phenotypes($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a simulate_phenotypes_params
+$output is an object_metadata
+simulate_phenotypes_params is a reference to a hash where the following keys are defined:
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
+	phenotype_set has a value which is a phenotypeSet_id
+	phenotype_workspace has a value which is a workspace_id
+	formulation has a value which is an FBAFormulation
 	notes has a value which is a string
-	objective has a value which is a string
+	phenotype_simultation_set has a value which is a phenotypeSimulationSet_id
+	out_workspace has a value which is a workspace_id
+	overwrite has a value which is a bool
+	authentication has a value which is a string
+fbamodel_id is a string
+workspace_id is a string
+phenotypeSet_id is a string
+FBAFormulation is a reference to a hash where the following keys are defined:
+	media has a value which is a media_id
+	workspace has a value which is a workspace_id
 	objfraction has a value which is a float
-	rxnko has a value which is a string
-	geneko has a value which is a string
-	uptakelim has a value which is a string
+	allreversible has a value which is a bool
+	objective has a value which is a string
+	geneko has a value which is a reference to a list where each element is a feature_id
+	rxnko has a value which is a reference to a list where each element is a reaction_id
+	bounds has a value which is a reference to a list where each element is a string
+	constraints has a value which is a reference to a list where each element is a string
+	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
 	defaultmaxflux has a value which is a float
-	defaultmaxuptake has a value which is a float
 	defaultminuptake has a value which is a float
-	nomediahyp has a value which is a bool
-	nobiomasshyp has a value which is a bool
-	nogprhyp has a value which is a bool
-	nopathwayhyp has a value which is a bool
-	allowunbalanced has a value which is a bool
-	activitybonus has a value which is a float
-	drainpen has a value which is a float
-	directionpen has a value which is a float
-	nostructpen has a value which is a float
-	unfavorablepen has a value which is a float
-	nodeltagpen has a value which is a float
-	biomasstranspen has a value which is a float
-	singletranspen has a value which is a float
-	transpen has a value which is a float
-	blacklistedrxns has a value which is a string
-	gauranteedrxns has a value which is a string
-	allowedcmps has a value which is a string
-	probabilistic_annotation has a value which is a probabilistic_annotation_id
+	defaultmaxuptake has a value which is a float
+	simplethermoconst has a value which is a bool
+	thermoconst has a value which is a bool
+	nothermoerror has a value which is a bool
+	minthermoerror has a value which is a bool
 media_id is a string
 bool is an int
-probabilistic_annotation_id is a string
-gapfill_id is a string
+feature_id is a string
+reaction_id is a string
+phenotypeSimulationSet_id is a string
+object_metadata is a reference to a list containing 7 items:
+	0: an object_id
+	1: an object_type
+	2: a timestamp
+	3: an int
+	4: a string
+	5: a username
+	6: a username
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
 
 </pre>
 
@@ -2282,43 +2972,57 @@ gapfill_id is a string
 
 =begin text
 
-$in_model is a fbamodel_id
-$formulation is a GapfillingFormulation
-$out_gapfill is a gapfill_id
-fbamodel_id is a string
-GapfillingFormulation is a reference to a hash where the following keys are defined:
-	media has a value which is a media_id
+$input is a simulate_phenotypes_params
+$output is an object_metadata
+simulate_phenotypes_params is a reference to a hash where the following keys are defined:
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
+	phenotype_set has a value which is a phenotypeSet_id
+	phenotype_workspace has a value which is a workspace_id
+	formulation has a value which is an FBAFormulation
 	notes has a value which is a string
-	objective has a value which is a string
+	phenotype_simultation_set has a value which is a phenotypeSimulationSet_id
+	out_workspace has a value which is a workspace_id
+	overwrite has a value which is a bool
+	authentication has a value which is a string
+fbamodel_id is a string
+workspace_id is a string
+phenotypeSet_id is a string
+FBAFormulation is a reference to a hash where the following keys are defined:
+	media has a value which is a media_id
+	workspace has a value which is a workspace_id
 	objfraction has a value which is a float
-	rxnko has a value which is a string
-	geneko has a value which is a string
-	uptakelim has a value which is a string
+	allreversible has a value which is a bool
+	objective has a value which is a string
+	geneko has a value which is a reference to a list where each element is a feature_id
+	rxnko has a value which is a reference to a list where each element is a reaction_id
+	bounds has a value which is a reference to a list where each element is a string
+	constraints has a value which is a reference to a list where each element is a string
+	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
 	defaultmaxflux has a value which is a float
-	defaultmaxuptake has a value which is a float
 	defaultminuptake has a value which is a float
-	nomediahyp has a value which is a bool
-	nobiomasshyp has a value which is a bool
-	nogprhyp has a value which is a bool
-	nopathwayhyp has a value which is a bool
-	allowunbalanced has a value which is a bool
-	activitybonus has a value which is a float
-	drainpen has a value which is a float
-	directionpen has a value which is a float
-	nostructpen has a value which is a float
-	unfavorablepen has a value which is a float
-	nodeltagpen has a value which is a float
-	biomasstranspen has a value which is a float
-	singletranspen has a value which is a float
-	transpen has a value which is a float
-	blacklistedrxns has a value which is a string
-	gauranteedrxns has a value which is a string
-	allowedcmps has a value which is a string
-	probabilistic_annotation has a value which is a probabilistic_annotation_id
+	defaultmaxuptake has a value which is a float
+	simplethermoconst has a value which is a bool
+	thermoconst has a value which is a bool
+	nothermoerror has a value which is a bool
+	minthermoerror has a value which is a bool
 media_id is a string
 bool is an int
-probabilistic_annotation_id is a string
-gapfill_id is a string
+feature_id is a string
+reaction_id is a string
+phenotypeSimulationSet_id is a string
+object_metadata is a reference to a list containing 7 items:
+	0: an object_id
+	1: an object_type
+	2: a timestamp
+	3: an int
+	4: a string
+	5: a username
+	6: a username
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
 
 
 =end text
@@ -2327,46 +3031,119 @@ gapfill_id is a string
 
 =item Description
 
-
+Simulates the specified phenotype set
 
 =back
 
 =cut
 
-sub gapfill_model
+sub simulate_phenotypes
 {
     my $self = shift;
-    my($in_model, $formulation) = @_;
+    my($input) = @_;
 
     my @_bad_arguments;
-    (!ref($in_model)) or push(@_bad_arguments, "Invalid type for argument \"in_model\" (value was \"$in_model\")");
-    (ref($formulation) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"formulation\" (value was \"$formulation\")");
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
     if (@_bad_arguments) {
-	my $msg = "Invalid arguments passed to gapfill_model:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	my $msg = "Invalid arguments passed to simulate_phenotypes:\n" . join("", map { "\t$_\n" } @_bad_arguments);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'gapfill_model');
+							       method_name => 'simulate_phenotypes');
     }
 
     my $ctx = $fbaModelServicesServer::CallContext;
-    my($out_gapfill);
-    #BEGIN gapfill_model
-    #END gapfill_model
-    my @_bad_returns;
-    (!ref($out_gapfill)) or push(@_bad_returns, "Invalid type for return variable \"out_gapfill\" (value was \"$out_gapfill\")");
-    if (@_bad_returns) {
-	my $msg = "Invalid returns passed to gapfill_model:\n" . join("", map { "\t$_\n" } @_bad_returns);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'gapfill_model');
+    my($output);
+    #BEGIN simulate_phenotypes
+    $self->_setContext($ctx,$input);
+	$input = $self->_validateargs($input,["phenotypeSet","phenotype_workspace","model"],{
+		model_workspace => $input->{phenotype_workspace},
+		formulation => undef,
+		notes => "",
+		phenotype_simultation_set => $input->{phenotype_set}.".simulation",
+		out_workspace => $input->{phenotype_workspace},
+		overwrite => 0
+	});
+	#Retrieving phenotypes
+	my $pheno = $self->_get_msobject("PhenotypeSet",$input->{phenotype_workspace},$input->{phenotype_set});
+	#Retrieving model
+	my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
+	#Creating FBAFormulation Object
+	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
+	my $fba = $self->_buildFBAObject($input->{formulation});
+	#Translating phenotypes to fbaformulation
+	my $bio = $self->_get_msobject("Biochemistry","kbase","default");
+	for (my $i=0; $i < @{$pheno->{phenotypes}};$i++) {
+		my $media = $pheno->{phenotypes}->[$i]->[2]."/".$pheno->{phenotypes}->[$i]->[1]; 
+		if ($pheno->{phenotypes}->[$i]->[2] eq "kbasecdm") {
+			$media = $pheno->{phenotypes}->[$i]->[1];
+		} else {
+			my $mediaobj = $self->_get_msobject("Media",$pheno->{phenotypes}->[$i]->[2],$pheno->{phenotypes}->[$i]->[1]);
+			$bio->add("media",$mediaobj);
+		}
+		my $newpheno = {
+			label => $i,
+			media => $media,
+			geneKOs => $pheno->{phenotypes}->[$i]->[0],
+			reactionKOs => [],
+			additionalCpds => $pheno->{phenotypes}->[$i]->[3],
+			pH => 7,
+			temperature => 303,
+			growth => $pheno->{phenotypes}->[$i]->[4]
+		};
+		$fba->add("fbaPhenotypeSimulations",$newpheno);
+	}
+	#Running FBA
+	my $fbaResult = $fba->runFBA();
+	if (!defined($fbaResult) || @{$fbaResult->fbaPhenotypeSimultationResults()} == 0) {
+    	my $msg = "Simulation of phenotypes failed to return results from FBA!";
+    	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'simulate_phenotypes');
     }
-    return($out_gapfill);
+	#Converting FBA results into simulated phenotype
+    my $object = {
+    	id => $input->{phenotypeSimultationSet},
+    	model => $input->{model},
+    	modelWorkspace => $input->{model_workspace},
+    	phenotypeSimulations => []
+    };
+    my $phenoresults = $fbaResult->fbaPhenotypeSimultationResults();
+    for (my $i=0; $i < @{$pheno->{phenotypes}};$i++) {
+    	my $phenoResult = $phenoresults->[$i];
+    	my $phenosim = [
+    		$pheno->{phenotypes}->[$i],
+    		$phenoResult->simulatedGrowth(),
+    		$phenoResult->simulatedGrowthFraction(),
+    		$phenoResult->class()
+    	];
+    	push(@{$object->{phenotypeSimulations}},$phenosim);
+    }
+    #Saving object to database
+    my $objmeta = $self->_workspaceServices()->save_object({
+		id => $input->{phenotypeSimultationSet},
+		type => "PhenotypeSimulationSet",
+		data => $object,
+		workspace => $input->{out_workspace},
+		command => "simulate_phenotypes",
+		authentication => $self->_authentication(),
+		overwrite => $input->{overwrite}
+	});
+	$output = $objmeta;
+	$self->_clearContext();
+    #END simulate_phenotypes
+    my @_bad_returns;
+    (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to simulate_phenotypes:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'simulate_phenotypes');
+    }
+    return($output);
 }
 
 
 
 
-=head2 gapfill_check_results
+=head2 export_phenotypeSimulationSet
 
-  $is_done = $obj->gapfill_check_results($in_gapfill)
+  $output = $obj->export_phenotypeSimulationSet($input)
 
 =over 4
 
@@ -2375,10 +3152,15 @@ sub gapfill_model
 =begin html
 
 <pre>
-$in_gapfill is a gapfill_id
-$is_done is a bool
-gapfill_id is a string
-bool is an int
+$input is an export_phenotypeSimulationSet_params
+$output is a string
+export_phenotypeSimulationSet_params is a reference to a hash where the following keys are defined:
+	phenotypeSimulationSet has a value which is a phenotypeSimulationSet_id
+	workspace has a value which is a workspace_id
+	format has a value which is a string
+	authentication has a value which is a string
+phenotypeSimulationSet_id is a string
+workspace_id is a string
 
 </pre>
 
@@ -2386,10 +3168,15 @@ bool is an int
 
 =begin text
 
-$in_gapfill is a gapfill_id
-$is_done is a bool
-gapfill_id is a string
-bool is an int
+$input is an export_phenotypeSimulationSet_params
+$output is a string
+export_phenotypeSimulationSet_params is a reference to a hash where the following keys are defined:
+	phenotypeSimulationSet has a value which is a phenotypeSimulationSet_id
+	workspace has a value which is a workspace_id
+	format has a value which is a string
+	authentication has a value which is a string
+phenotypeSimulationSet_id is a string
+workspace_id is a string
 
 
 =end text
@@ -2398,45 +3185,66 @@ bool is an int
 
 =item Description
 
-
+Export a PhenotypeSimulationSet for viewing
 
 =back
 
 =cut
 
-sub gapfill_check_results
+sub export_phenotypeSimulationSet
 {
     my $self = shift;
-    my($in_gapfill) = @_;
+    my($input) = @_;
 
     my @_bad_arguments;
-    (!ref($in_gapfill)) or push(@_bad_arguments, "Invalid type for argument \"in_gapfill\" (value was \"$in_gapfill\")");
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
     if (@_bad_arguments) {
-	my $msg = "Invalid arguments passed to gapfill_check_results:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	my $msg = "Invalid arguments passed to export_phenotypeSimulationSet:\n" . join("", map { "\t$_\n" } @_bad_arguments);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'gapfill_check_results');
+							       method_name => 'export_phenotypeSimulationSet');
     }
 
     my $ctx = $fbaModelServicesServer::CallContext;
-    my($is_done);
-    #BEGIN gapfill_check_results
-    #END gapfill_check_results
+    my($output);
+    #BEGIN export_phenotypeSimulationSet
+    $self->_setContext($ctx,$input);
+	$input = $self->_validateargs($input,["phenotypeSimulationSet","workspace","format"],{});
+	my $obj = $self->_get_msobject("PhenotypeSimulationSet",$input->{workspace},$input->{phenotypeSimulationSet});
+	my $output;
+	if ($input->{format} eq "text") {
+		$output = "Base media\tAdditional compounds\tGene KO\tGrowth\tSimulated growth\tSimulated growth fraction\tClass\n";
+		for (my $i=0; $i < @{$obj->{phenotypeSimulations}}; $i++) {
+			my $phenosim = $obj->{phenotypeSimulations}->[$i];
+			$output .= 	$phenosim->[0]->[1]."\t".
+						join(";",@{$phenosim->[0]->[3]})."\t".
+						join(";",@{$phenosim->[0]->[0]})."\t".
+						$phenosim->[0]->[4]."\t".
+						$phenosim->[1]."\t".
+						$phenosim->[2]."\t".
+						$phenosim->[3]."\n";
+		}
+	} else {
+		my $msg = "Specified format ".$input->{format}." not recognized!\n";
+		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'export_phenotypeSimulationSet');
+	}
+	$self->_clearContext();
+    #END export_phenotypeSimulationSet
     my @_bad_returns;
-    (!ref($is_done)) or push(@_bad_returns, "Invalid type for return variable \"is_done\" (value was \"$is_done\")");
+    (!ref($output)) or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
     if (@_bad_returns) {
-	my $msg = "Invalid returns passed to gapfill_check_results:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	my $msg = "Invalid returns passed to export_phenotypeSimulationSet:\n" . join("", map { "\t$_\n" } @_bad_returns);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'gapfill_check_results');
+							       method_name => 'export_phenotypeSimulationSet');
     }
-    return($is_done);
+    return($output);
 }
 
 
 
 
-=head2 gapfill_to_html
+=head2 queue_runfba
 
-  $html_string = $obj->gapfill_to_html($in_gapfill)
+  $output = $obj->queue_runfba($input)
 
 =over 4
 
@@ -2445,162 +3253,62 @@ sub gapfill_check_results
 =begin html
 
 <pre>
-$in_gapfill is a gapfill_id
-$html_string is an HTML
-gapfill_id is a string
-HTML is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-$in_gapfill is a gapfill_id
-$html_string is an HTML
-gapfill_id is a string
-HTML is a string
-
-
-=end text
-
-
-
-=item Description
-
-
-
-=back
-
-=cut
-
-sub gapfill_to_html
-{
-    my $self = shift;
-    my($in_gapfill) = @_;
-
-    my @_bad_arguments;
-    (!ref($in_gapfill)) or push(@_bad_arguments, "Invalid type for argument \"in_gapfill\" (value was \"$in_gapfill\")");
-    if (@_bad_arguments) {
-	my $msg = "Invalid arguments passed to gapfill_to_html:\n" . join("", map { "\t$_\n" } @_bad_arguments);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'gapfill_to_html');
-    }
-
-    my $ctx = $fbaModelServicesServer::CallContext;
-    my($html_string);
-    #BEGIN gapfill_to_html
-    #END gapfill_to_html
-    my @_bad_returns;
-    (!ref($html_string)) or push(@_bad_returns, "Invalid type for return variable \"html_string\" (value was \"$html_string\")");
-    if (@_bad_returns) {
-	my $msg = "Invalid returns passed to gapfill_to_html:\n" . join("", map { "\t$_\n" } @_bad_returns);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'gapfill_to_html');
-    }
-    return($html_string);
-}
-
-
-
-
-=head2 gapfill_integrate
-
-  $obj->gapfill_integrate($in_gapfill, $in_model)
-
-=over 4
-
-=item Parameter and return types
-
-=begin html
-
-<pre>
-$in_gapfill is a gapfill_id
-$in_model is a fbamodel_id
-gapfill_id is a string
-fbamodel_id is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-$in_gapfill is a gapfill_id
-$in_model is a fbamodel_id
-gapfill_id is a string
-fbamodel_id is a string
-
-
-=end text
-
-
-
-=item Description
-
-
-
-=back
-
-=cut
-
-sub gapfill_integrate
-{
-    my $self = shift;
-    my($in_gapfill, $in_model) = @_;
-
-    my @_bad_arguments;
-    (!ref($in_gapfill)) or push(@_bad_arguments, "Invalid type for argument \"in_gapfill\" (value was \"$in_gapfill\")");
-    (!ref($in_model)) or push(@_bad_arguments, "Invalid type for argument \"in_model\" (value was \"$in_model\")");
-    if (@_bad_arguments) {
-	my $msg = "Invalid arguments passed to gapfill_integrate:\n" . join("", map { "\t$_\n" } @_bad_arguments);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'gapfill_integrate');
-    }
-
-    my $ctx = $fbaModelServicesServer::CallContext;
-    #BEGIN gapfill_integrate
-    #END gapfill_integrate
-    return();
-}
-
-
-
-
-=head2 gapgen_model
-
-  $out_gapgen = $obj->gapgen_model($in_model, $formulation)
-
-=over 4
-
-=item Parameter and return types
-
-=begin html
-
-<pre>
-$in_model is a fbamodel_id
-$formulation is a GapgenFormulation
-$out_gapgen is a gapgen_id
-fbamodel_id is a string
-GapgenFormulation is a reference to a hash where the following keys are defined:
-	media has a value which is a media_id
-	refmedia has a value which is a media_id
+$input is a runfba_params
+$output is a JobObject
+runfba_params is a reference to a hash where the following keys are defined:
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
+	formulation has a value which is an FBAFormulation
+	fva has a value which is a bool
+	simulateko has a value which is a bool
+	minimizeflux has a value which is a bool
+	findminmedia has a value which is a bool
 	notes has a value which is a string
-	objective has a value which is a string
+	fba has a value which is a fba_id
+	fba_workspace has a value which is a workspace_id
+	authentication has a value which is a string
+	overwrite has a value which is a bool
+fbamodel_id is a string
+workspace_id is a string
+FBAFormulation is a reference to a hash where the following keys are defined:
+	media has a value which is a media_id
+	workspace has a value which is a workspace_id
 	objfraction has a value which is a float
-	rxnko has a value which is a string
-	geneko has a value which is a string
-	uptakelim has a value which is a string
+	allreversible has a value which is a bool
+	objective has a value which is a string
+	geneko has a value which is a reference to a list where each element is a feature_id
+	rxnko has a value which is a reference to a list where each element is a reaction_id
+	bounds has a value which is a reference to a list where each element is a string
+	constraints has a value which is a reference to a list where each element is a string
+	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
 	defaultmaxflux has a value which is a float
-	defaultmaxuptake has a value which is a float
 	defaultminuptake has a value which is a float
-	nomediahyp has a value which is a bool
-	nobiomasshyp has a value which is a bool
-	nogprhyp has a value which is a bool
-	nopathwayhyp has a value which is a bool
+	defaultmaxuptake has a value which is a float
+	simplethermoconst has a value which is a bool
+	thermoconst has a value which is a bool
+	nothermoerror has a value which is a bool
+	minthermoerror has a value which is a bool
 media_id is a string
 bool is an int
-gapgen_id is a string
+feature_id is a string
+reaction_id is a string
+fba_id is a string
+JobObject is a reference to a hash where the following keys are defined:
+	id has a value which is a job_id
+	queuetime has a value which is a string
+	completetime has a value which is a string
+	complete has a value which is a bool
+	object has a value which is a string
+	workspace has a value which is a string
+	type has a value which is a string
+	owner has a value which is a string
+	queuing_command has a value which is a string
+	queuing_service has a value which is a string
+	postprocess_command has a value which is a string
+	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
+job_id is a string
+CommandArguments is a reference to a hash where the following keys are defined:
+	authentication has a value which is a string
 
 </pre>
 
@@ -2608,29 +3316,62 @@ gapgen_id is a string
 
 =begin text
 
-$in_model is a fbamodel_id
-$formulation is a GapgenFormulation
-$out_gapgen is a gapgen_id
-fbamodel_id is a string
-GapgenFormulation is a reference to a hash where the following keys are defined:
-	media has a value which is a media_id
-	refmedia has a value which is a media_id
+$input is a runfba_params
+$output is a JobObject
+runfba_params is a reference to a hash where the following keys are defined:
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
+	formulation has a value which is an FBAFormulation
+	fva has a value which is a bool
+	simulateko has a value which is a bool
+	minimizeflux has a value which is a bool
+	findminmedia has a value which is a bool
 	notes has a value which is a string
-	objective has a value which is a string
+	fba has a value which is a fba_id
+	fba_workspace has a value which is a workspace_id
+	authentication has a value which is a string
+	overwrite has a value which is a bool
+fbamodel_id is a string
+workspace_id is a string
+FBAFormulation is a reference to a hash where the following keys are defined:
+	media has a value which is a media_id
+	workspace has a value which is a workspace_id
 	objfraction has a value which is a float
-	rxnko has a value which is a string
-	geneko has a value which is a string
-	uptakelim has a value which is a string
+	allreversible has a value which is a bool
+	objective has a value which is a string
+	geneko has a value which is a reference to a list where each element is a feature_id
+	rxnko has a value which is a reference to a list where each element is a reaction_id
+	bounds has a value which is a reference to a list where each element is a string
+	constraints has a value which is a reference to a list where each element is a string
+	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
 	defaultmaxflux has a value which is a float
-	defaultmaxuptake has a value which is a float
 	defaultminuptake has a value which is a float
-	nomediahyp has a value which is a bool
-	nobiomasshyp has a value which is a bool
-	nogprhyp has a value which is a bool
-	nopathwayhyp has a value which is a bool
+	defaultmaxuptake has a value which is a float
+	simplethermoconst has a value which is a bool
+	thermoconst has a value which is a bool
+	nothermoerror has a value which is a bool
+	minthermoerror has a value which is a bool
 media_id is a string
 bool is an int
-gapgen_id is a string
+feature_id is a string
+reaction_id is a string
+fba_id is a string
+JobObject is a reference to a hash where the following keys are defined:
+	id has a value which is a job_id
+	queuetime has a value which is a string
+	completetime has a value which is a string
+	complete has a value which is a bool
+	object has a value which is a string
+	workspace has a value which is a string
+	type has a value which is a string
+	owner has a value which is a string
+	queuing_command has a value which is a string
+	queuing_service has a value which is a string
+	postprocess_command has a value which is a string
+	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
+job_id is a string
+CommandArguments is a reference to a hash where the following keys are defined:
+	authentication has a value which is a string
 
 
 =end text
@@ -2639,46 +3380,79 @@ gapgen_id is a string
 
 =item Description
 
-These functions run gapgeneration on the input FBAModel and produce gapgen objects as output
+Queues an FBA job in a single media condition
 
 =back
 
 =cut
 
-sub gapgen_model
+sub queue_runfba
 {
     my $self = shift;
-    my($in_model, $formulation) = @_;
+    my($input) = @_;
 
     my @_bad_arguments;
-    (!ref($in_model)) or push(@_bad_arguments, "Invalid type for argument \"in_model\" (value was \"$in_model\")");
-    (ref($formulation) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"formulation\" (value was \"$formulation\")");
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
     if (@_bad_arguments) {
-	my $msg = "Invalid arguments passed to gapgen_model:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	my $msg = "Invalid arguments passed to queue_runfba:\n" . join("", map { "\t$_\n" } @_bad_arguments);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'gapgen_model');
+							       method_name => 'queue_runfba');
     }
 
     my $ctx = $fbaModelServicesServer::CallContext;
-    my($out_gapgen);
-    #BEGIN gapgen_model
-    #END gapgen_model
+    my($output);
+    #BEGIN queue_runfba
+    $self->_setContext($ctx,$input);
+	$input = $self->_validateargs($input,["model","model_workspace"],{
+		formulation => undef,
+		fva => 0,
+		simulateko => 0,
+		minimizeflux => 0,
+		findminmedia => 0,
+		notes => "",
+		fba_workspace => $input->{model_workspace},
+		fba => undef
+	});
+	#Creating FBAFormulation Object
+	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
+	my $fba = $self->_buildFBAObject($input->{formulation});
+	#Saving FBAFormulation to database
+	$self->_save_msobject($fba,"FBA",$input->{fba},$input->{fba},"queue_runfba")
+	my $job = {
+		id => Data::UUID->new()->create_str(),
+		queuetime => DateTime->now()->datetime();
+		complete => 0,
+		type => "FBA",
+		arguments => {
+			fba_id => $input->{fba},
+			fba_workspace => $input->{fba_workspace},
+		},
+		owner => $self->_getUsername(),
+		queuing_command => "queue_runfba";
+		queuing_service => "fbaModelServicesClient";
+		postprocess_command => "";
+		postprocess_args => [];
+	};
+	$self->_save_msobject($job,"JobObject",$input->{fba_workspace},$job->{id},"queue_runfba");
+	$output = $job;
+	$self->_clearContext();
+    #END queue_runfba
     my @_bad_returns;
-    (!ref($out_gapgen)) or push(@_bad_returns, "Invalid type for return variable \"out_gapgen\" (value was \"$out_gapgen\")");
+    (ref($output) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
     if (@_bad_returns) {
-	my $msg = "Invalid returns passed to gapgen_model:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	my $msg = "Invalid returns passed to queue_runfba:\n" . join("", map { "\t$_\n" } @_bad_returns);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'gapgen_model');
+							       method_name => 'queue_runfba');
     }
-    return($out_gapgen);
+    return($output);
 }
 
 
 
 
-=head2 gapgen_check_results
+=head2 queue_gapfill_model
 
-  $is_done = $obj->gapgen_check_results($in_gapgen)
+  $output = $obj->queue_gapfill_model($input)
 
 =over 4
 
@@ -2687,150 +3461,83 @@ sub gapgen_model
 =begin html
 
 <pre>
-$in_gapgen is a gapgen_id
-$is_done is a bool
-gapgen_id is a string
-bool is an int
-
-</pre>
-
-=end html
-
-=begin text
-
-$in_gapgen is a gapgen_id
-$is_done is a bool
-gapgen_id is a string
-bool is an int
-
-
-=end text
-
-
-
-=item Description
-
-
-
-=back
-
-=cut
-
-sub gapgen_check_results
-{
-    my $self = shift;
-    my($in_gapgen) = @_;
-
-    my @_bad_arguments;
-    (!ref($in_gapgen)) or push(@_bad_arguments, "Invalid type for argument \"in_gapgen\" (value was \"$in_gapgen\")");
-    if (@_bad_arguments) {
-	my $msg = "Invalid arguments passed to gapgen_check_results:\n" . join("", map { "\t$_\n" } @_bad_arguments);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'gapgen_check_results');
-    }
-
-    my $ctx = $fbaModelServicesServer::CallContext;
-    my($is_done);
-    #BEGIN gapgen_check_results
-    #END gapgen_check_results
-    my @_bad_returns;
-    (!ref($is_done)) or push(@_bad_returns, "Invalid type for return variable \"is_done\" (value was \"$is_done\")");
-    if (@_bad_returns) {
-	my $msg = "Invalid returns passed to gapgen_check_results:\n" . join("", map { "\t$_\n" } @_bad_returns);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'gapgen_check_results');
-    }
-    return($is_done);
-}
-
-
-
-
-=head2 gapgen_to_html
-
-  $html_string = $obj->gapgen_to_html($in_gapgen)
-
-=over 4
-
-=item Parameter and return types
-
-=begin html
-
-<pre>
-$in_gapgen is a gapgen_id
-$html_string is an HTML
-gapgen_id is a string
-HTML is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-$in_gapgen is a gapgen_id
-$html_string is an HTML
-gapgen_id is a string
-HTML is a string
-
-
-=end text
-
-
-
-=item Description
-
-
-
-=back
-
-=cut
-
-sub gapgen_to_html
-{
-    my $self = shift;
-    my($in_gapgen) = @_;
-
-    my @_bad_arguments;
-    (!ref($in_gapgen)) or push(@_bad_arguments, "Invalid type for argument \"in_gapgen\" (value was \"$in_gapgen\")");
-    if (@_bad_arguments) {
-	my $msg = "Invalid arguments passed to gapgen_to_html:\n" . join("", map { "\t$_\n" } @_bad_arguments);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'gapgen_to_html');
-    }
-
-    my $ctx = $fbaModelServicesServer::CallContext;
-    my($html_string);
-    #BEGIN gapgen_to_html
-    #END gapgen_to_html
-    my @_bad_returns;
-    (!ref($html_string)) or push(@_bad_returns, "Invalid type for return variable \"html_string\" (value was \"$html_string\")");
-    if (@_bad_returns) {
-	my $msg = "Invalid returns passed to gapgen_to_html:\n" . join("", map { "\t$_\n" } @_bad_returns);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'gapgen_to_html');
-    }
-    return($html_string);
-}
-
-
-
-
-=head2 gapgen_integrate
-
-  $obj->gapgen_integrate($in_gapgen, $in_model)
-
-=over 4
-
-=item Parameter and return types
-
-=begin html
-
-<pre>
-$in_gapgen is a gapgen_id
-$in_model is a fbamodel_id
-gapgen_id is a string
+$input is a gapfill_model_params
+$output is a JobObject
+gapfill_model_params is a reference to a hash where the following keys are defined:
+	id has a value which is a phenotypeSet_id
+	in_model has a value which is a fbamodel_id
+	in_workspace has a value which is a workspace_id
+	in_formulation has a value which is an FBAFormulation
+	num_solutions has a value which is an int
+	no_media_hypothesis has a value which is a bool
+	no_biomass_hypothesis has a value which is a bool
+	no_gpr_hypothesis has a value which is a bool
+	no_pathway_hypothesis has a value which is a bool
+	allow_unbalanced has a value which is a bool
+	activity_bonus has a value which is a float
+	drain_penalty has a value which is a float
+	direction_penalty has a value which is a float
+	no_structure_penalty has a value which is a float
+	unfavorable_penalty has a value which is a float
+	no_deltag_penalty has a value which is a float
+	biomass_transport_penalty has a value which is a float
+	single_transport_penalty has a value which is a float
+	transport_penalty has a value which is a float
+	blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
+	gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
+	allowed_compartments has a value which is a reference to a list where each element is a string
+	integrate_solution has a value which is a bool
+	notes has a value which is a string
+	prob_anno has a value which is a genome_id
+	prob_anno_workspace has a value which is a workspace_id
+	out_model has a value which is a fbamodel_id
+	out_workspace has a value which is a workspace_id
+	authentication has a value which is a string
+	overwrite has a value which is a bool
+	gapfilling_index has a value which is an int
+	job has a value which is a job_id
+phenotypeSet_id is a string
 fbamodel_id is a string
+workspace_id is a string
+FBAFormulation is a reference to a hash where the following keys are defined:
+	media has a value which is a media_id
+	workspace has a value which is a workspace_id
+	objfraction has a value which is a float
+	allreversible has a value which is a bool
+	objective has a value which is a string
+	geneko has a value which is a reference to a list where each element is a feature_id
+	rxnko has a value which is a reference to a list where each element is a reaction_id
+	bounds has a value which is a reference to a list where each element is a string
+	constraints has a value which is a reference to a list where each element is a string
+	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
+	defaultmaxflux has a value which is a float
+	defaultminuptake has a value which is a float
+	defaultmaxuptake has a value which is a float
+	simplethermoconst has a value which is a bool
+	thermoconst has a value which is a bool
+	nothermoerror has a value which is a bool
+	minthermoerror has a value which is a bool
+media_id is a string
+bool is an int
+feature_id is a string
+reaction_id is a string
+genome_id is a string
+job_id is a string
+JobObject is a reference to a hash where the following keys are defined:
+	id has a value which is a job_id
+	queuetime has a value which is a string
+	completetime has a value which is a string
+	complete has a value which is a bool
+	object has a value which is a string
+	workspace has a value which is a string
+	type has a value which is a string
+	owner has a value which is a string
+	queuing_command has a value which is a string
+	queuing_service has a value which is a string
+	postprocess_command has a value which is a string
+	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
+CommandArguments is a reference to a hash where the following keys are defined:
+	authentication has a value which is a string
 
 </pre>
 
@@ -2838,10 +3545,83 @@ fbamodel_id is a string
 
 =begin text
 
-$in_gapgen is a gapgen_id
-$in_model is a fbamodel_id
-gapgen_id is a string
+$input is a gapfill_model_params
+$output is a JobObject
+gapfill_model_params is a reference to a hash where the following keys are defined:
+	id has a value which is a phenotypeSet_id
+	in_model has a value which is a fbamodel_id
+	in_workspace has a value which is a workspace_id
+	in_formulation has a value which is an FBAFormulation
+	num_solutions has a value which is an int
+	no_media_hypothesis has a value which is a bool
+	no_biomass_hypothesis has a value which is a bool
+	no_gpr_hypothesis has a value which is a bool
+	no_pathway_hypothesis has a value which is a bool
+	allow_unbalanced has a value which is a bool
+	activity_bonus has a value which is a float
+	drain_penalty has a value which is a float
+	direction_penalty has a value which is a float
+	no_structure_penalty has a value which is a float
+	unfavorable_penalty has a value which is a float
+	no_deltag_penalty has a value which is a float
+	biomass_transport_penalty has a value which is a float
+	single_transport_penalty has a value which is a float
+	transport_penalty has a value which is a float
+	blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
+	gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
+	allowed_compartments has a value which is a reference to a list where each element is a string
+	integrate_solution has a value which is a bool
+	notes has a value which is a string
+	prob_anno has a value which is a genome_id
+	prob_anno_workspace has a value which is a workspace_id
+	out_model has a value which is a fbamodel_id
+	out_workspace has a value which is a workspace_id
+	authentication has a value which is a string
+	overwrite has a value which is a bool
+	gapfilling_index has a value which is an int
+	job has a value which is a job_id
+phenotypeSet_id is a string
 fbamodel_id is a string
+workspace_id is a string
+FBAFormulation is a reference to a hash where the following keys are defined:
+	media has a value which is a media_id
+	workspace has a value which is a workspace_id
+	objfraction has a value which is a float
+	allreversible has a value which is a bool
+	objective has a value which is a string
+	geneko has a value which is a reference to a list where each element is a feature_id
+	rxnko has a value which is a reference to a list where each element is a reaction_id
+	bounds has a value which is a reference to a list where each element is a string
+	constraints has a value which is a reference to a list where each element is a string
+	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
+	defaultmaxflux has a value which is a float
+	defaultminuptake has a value which is a float
+	defaultmaxuptake has a value which is a float
+	simplethermoconst has a value which is a bool
+	thermoconst has a value which is a bool
+	nothermoerror has a value which is a bool
+	minthermoerror has a value which is a bool
+media_id is a string
+bool is an int
+feature_id is a string
+reaction_id is a string
+genome_id is a string
+job_id is a string
+JobObject is a reference to a hash where the following keys are defined:
+	id has a value which is a job_id
+	queuetime has a value which is a string
+	completetime has a value which is a string
+	complete has a value which is a bool
+	object has a value which is a string
+	workspace has a value which is a string
+	type has a value which is a string
+	owner has a value which is a string
+	queuing_command has a value which is a string
+	queuing_service has a value which is a string
+	postprocess_command has a value which is a string
+	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
+CommandArguments is a reference to a hash where the following keys are defined:
+	authentication has a value which is a string
 
 
 =end text
@@ -2850,30 +3630,715 @@ fbamodel_id is a string
 
 =item Description
 
-
+Queues an FBAModel gapfilling job in single media condition
 
 =back
 
 =cut
 
-sub gapgen_integrate
+sub queue_gapfill_model
 {
     my $self = shift;
-    my($in_gapgen, $in_model) = @_;
+    my($input) = @_;
 
     my @_bad_arguments;
-    (!ref($in_gapgen)) or push(@_bad_arguments, "Invalid type for argument \"in_gapgen\" (value was \"$in_gapgen\")");
-    (!ref($in_model)) or push(@_bad_arguments, "Invalid type for argument \"in_model\" (value was \"$in_model\")");
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
     if (@_bad_arguments) {
-	my $msg = "Invalid arguments passed to gapgen_integrate:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	my $msg = "Invalid arguments passed to queue_gapfill_model:\n" . join("", map { "\t$_\n" } @_bad_arguments);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'gapgen_integrate');
+							       method_name => 'queue_gapfill_model');
     }
 
     my $ctx = $fbaModelServicesServer::CallContext;
-    #BEGIN gapgen_integrate
-    #END gapgen_integrate
-    return();
+    my($output);
+    #BEGIN queue_gapfill_model
+    #END queue_gapfill_model
+    my @_bad_returns;
+    (ref($output) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to queue_gapfill_model:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'queue_gapfill_model');
+    }
+    return($output);
+}
+
+
+
+
+=head2 queue_gapgen_model
+
+  $output = $obj->queue_gapgen_model($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a gapgen_model_params
+$output is a JobObject
+gapgen_model_params is a reference to a hash where the following keys are defined:
+	id has a value which is a phenotypeSet_id
+	in_model has a value which is a fbamodel_id
+	in_workspace has a value which is a workspace_id
+	in_formulation has a value which is an FBAFormulation
+	num_solutions has a value which is an int
+	no_media_hypothesis has a value which is a bool
+	no_biomass_hypothesis has a value which is a bool
+	no_gpr_hypothesis has a value which is a bool
+	no_pathway_hypothesis has a value which is a bool
+	integrate_solution has a value which is a bool
+	notes has a value which is a string
+	out_model has a value which is a fbamodel_id
+	out_workspace has a value which is a workspace_id
+	authentication has a value which is a string
+	overwrite has a value which is a bool
+	gapgen_index has a value which is an int
+phenotypeSet_id is a string
+fbamodel_id is a string
+workspace_id is a string
+FBAFormulation is a reference to a hash where the following keys are defined:
+	media has a value which is a media_id
+	workspace has a value which is a workspace_id
+	objfraction has a value which is a float
+	allreversible has a value which is a bool
+	objective has a value which is a string
+	geneko has a value which is a reference to a list where each element is a feature_id
+	rxnko has a value which is a reference to a list where each element is a reaction_id
+	bounds has a value which is a reference to a list where each element is a string
+	constraints has a value which is a reference to a list where each element is a string
+	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
+	defaultmaxflux has a value which is a float
+	defaultminuptake has a value which is a float
+	defaultmaxuptake has a value which is a float
+	simplethermoconst has a value which is a bool
+	thermoconst has a value which is a bool
+	nothermoerror has a value which is a bool
+	minthermoerror has a value which is a bool
+media_id is a string
+bool is an int
+feature_id is a string
+reaction_id is a string
+JobObject is a reference to a hash where the following keys are defined:
+	id has a value which is a job_id
+	queuetime has a value which is a string
+	completetime has a value which is a string
+	complete has a value which is a bool
+	object has a value which is a string
+	workspace has a value which is a string
+	type has a value which is a string
+	owner has a value which is a string
+	queuing_command has a value which is a string
+	queuing_service has a value which is a string
+	postprocess_command has a value which is a string
+	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
+job_id is a string
+CommandArguments is a reference to a hash where the following keys are defined:
+	authentication has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a gapgen_model_params
+$output is a JobObject
+gapgen_model_params is a reference to a hash where the following keys are defined:
+	id has a value which is a phenotypeSet_id
+	in_model has a value which is a fbamodel_id
+	in_workspace has a value which is a workspace_id
+	in_formulation has a value which is an FBAFormulation
+	num_solutions has a value which is an int
+	no_media_hypothesis has a value which is a bool
+	no_biomass_hypothesis has a value which is a bool
+	no_gpr_hypothesis has a value which is a bool
+	no_pathway_hypothesis has a value which is a bool
+	integrate_solution has a value which is a bool
+	notes has a value which is a string
+	out_model has a value which is a fbamodel_id
+	out_workspace has a value which is a workspace_id
+	authentication has a value which is a string
+	overwrite has a value which is a bool
+	gapgen_index has a value which is an int
+phenotypeSet_id is a string
+fbamodel_id is a string
+workspace_id is a string
+FBAFormulation is a reference to a hash where the following keys are defined:
+	media has a value which is a media_id
+	workspace has a value which is a workspace_id
+	objfraction has a value which is a float
+	allreversible has a value which is a bool
+	objective has a value which is a string
+	geneko has a value which is a reference to a list where each element is a feature_id
+	rxnko has a value which is a reference to a list where each element is a reaction_id
+	bounds has a value which is a reference to a list where each element is a string
+	constraints has a value which is a reference to a list where each element is a string
+	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
+	defaultmaxflux has a value which is a float
+	defaultminuptake has a value which is a float
+	defaultmaxuptake has a value which is a float
+	simplethermoconst has a value which is a bool
+	thermoconst has a value which is a bool
+	nothermoerror has a value which is a bool
+	minthermoerror has a value which is a bool
+media_id is a string
+bool is an int
+feature_id is a string
+reaction_id is a string
+JobObject is a reference to a hash where the following keys are defined:
+	id has a value which is a job_id
+	queuetime has a value which is a string
+	completetime has a value which is a string
+	complete has a value which is a bool
+	object has a value which is a string
+	workspace has a value which is a string
+	type has a value which is a string
+	owner has a value which is a string
+	queuing_command has a value which is a string
+	queuing_service has a value which is a string
+	postprocess_command has a value which is a string
+	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
+job_id is a string
+CommandArguments is a reference to a hash where the following keys are defined:
+	authentication has a value which is a string
+
+
+=end text
+
+
+
+=item Description
+
+Queues an FBAModel gapfilling job in single media condition
+
+=back
+
+=cut
+
+sub queue_gapgen_model
+{
+    my $self = shift;
+    my($input) = @_;
+
+    my @_bad_arguments;
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to queue_gapgen_model:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'queue_gapgen_model');
+    }
+
+    my $ctx = $fbaModelServicesServer::CallContext;
+    my($output);
+    #BEGIN queue_gapgen_model
+    #END queue_gapgen_model
+    my @_bad_returns;
+    (ref($output) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to queue_gapgen_model:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'queue_gapgen_model');
+    }
+    return($output);
+}
+
+
+
+
+=head2 queue_wildtype_phenotype_reconciliation
+
+  $output = $obj->queue_wildtype_phenotype_reconciliation($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a wildtype_phenotype_reconciliation_params
+$output is a JobObject
+wildtype_phenotype_reconciliation_params is a reference to a hash where the following keys are defined:
+	id has a value which is a phenotypeSet_id
+	in_model has a value which is a fbamodel_id
+	in_workspace has a value which is a workspace_id
+	in_formulation has a value which is an FBAFormulation
+	num_solutions has a value which is an int
+	no_media_hypothesis has a value which is a bool
+	no_biomass_hypothesis has a value which is a bool
+	no_gpr_hypothesis has a value which is a bool
+	no_pathway_hypothesis has a value which is a bool
+	allow_unbalanced has a value which is a bool
+	activity_bonus has a value which is a float
+	drain_penalty has a value which is a float
+	direction_penalty has a value which is a float
+	no_structure_penalty has a value which is a float
+	unfavorable_penalty has a value which is a float
+	no_deltag_penalty has a value which is a float
+	biomass_transport_penalty has a value which is a float
+	single_transport_penalty has a value which is a float
+	transport_penalty has a value which is a float
+	blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
+	gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
+	allowed_compartments has a value which is a reference to a list where each element is a string
+	notes has a value which is a string
+	prob_anno has a value which is a genome_id
+	prob_anno_workspace has a value which is a workspace_id
+	out_model has a value which is a fbamodel_id
+	out_workspace has a value which is a workspace_id
+	authentication has a value which is a string
+	overwrite has a value which is a bool
+	all_gapgen_indecies has a value which is a reference to a list where each element is an int
+	all_gapfill_indecies has a value which is a reference to a list where each element is an int
+	gapgen_index has a value which is an int
+	gapfill_index has a value which is an int
+phenotypeSet_id is a string
+fbamodel_id is a string
+workspace_id is a string
+FBAFormulation is a reference to a hash where the following keys are defined:
+	media has a value which is a media_id
+	workspace has a value which is a workspace_id
+	objfraction has a value which is a float
+	allreversible has a value which is a bool
+	objective has a value which is a string
+	geneko has a value which is a reference to a list where each element is a feature_id
+	rxnko has a value which is a reference to a list where each element is a reaction_id
+	bounds has a value which is a reference to a list where each element is a string
+	constraints has a value which is a reference to a list where each element is a string
+	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
+	defaultmaxflux has a value which is a float
+	defaultminuptake has a value which is a float
+	defaultmaxuptake has a value which is a float
+	simplethermoconst has a value which is a bool
+	thermoconst has a value which is a bool
+	nothermoerror has a value which is a bool
+	minthermoerror has a value which is a bool
+media_id is a string
+bool is an int
+feature_id is a string
+reaction_id is a string
+genome_id is a string
+JobObject is a reference to a hash where the following keys are defined:
+	id has a value which is a job_id
+	queuetime has a value which is a string
+	completetime has a value which is a string
+	complete has a value which is a bool
+	object has a value which is a string
+	workspace has a value which is a string
+	type has a value which is a string
+	owner has a value which is a string
+	queuing_command has a value which is a string
+	queuing_service has a value which is a string
+	postprocess_command has a value which is a string
+	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
+job_id is a string
+CommandArguments is a reference to a hash where the following keys are defined:
+	authentication has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a wildtype_phenotype_reconciliation_params
+$output is a JobObject
+wildtype_phenotype_reconciliation_params is a reference to a hash where the following keys are defined:
+	id has a value which is a phenotypeSet_id
+	in_model has a value which is a fbamodel_id
+	in_workspace has a value which is a workspace_id
+	in_formulation has a value which is an FBAFormulation
+	num_solutions has a value which is an int
+	no_media_hypothesis has a value which is a bool
+	no_biomass_hypothesis has a value which is a bool
+	no_gpr_hypothesis has a value which is a bool
+	no_pathway_hypothesis has a value which is a bool
+	allow_unbalanced has a value which is a bool
+	activity_bonus has a value which is a float
+	drain_penalty has a value which is a float
+	direction_penalty has a value which is a float
+	no_structure_penalty has a value which is a float
+	unfavorable_penalty has a value which is a float
+	no_deltag_penalty has a value which is a float
+	biomass_transport_penalty has a value which is a float
+	single_transport_penalty has a value which is a float
+	transport_penalty has a value which is a float
+	blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
+	gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
+	allowed_compartments has a value which is a reference to a list where each element is a string
+	notes has a value which is a string
+	prob_anno has a value which is a genome_id
+	prob_anno_workspace has a value which is a workspace_id
+	out_model has a value which is a fbamodel_id
+	out_workspace has a value which is a workspace_id
+	authentication has a value which is a string
+	overwrite has a value which is a bool
+	all_gapgen_indecies has a value which is a reference to a list where each element is an int
+	all_gapfill_indecies has a value which is a reference to a list where each element is an int
+	gapgen_index has a value which is an int
+	gapfill_index has a value which is an int
+phenotypeSet_id is a string
+fbamodel_id is a string
+workspace_id is a string
+FBAFormulation is a reference to a hash where the following keys are defined:
+	media has a value which is a media_id
+	workspace has a value which is a workspace_id
+	objfraction has a value which is a float
+	allreversible has a value which is a bool
+	objective has a value which is a string
+	geneko has a value which is a reference to a list where each element is a feature_id
+	rxnko has a value which is a reference to a list where each element is a reaction_id
+	bounds has a value which is a reference to a list where each element is a string
+	constraints has a value which is a reference to a list where each element is a string
+	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
+	defaultmaxflux has a value which is a float
+	defaultminuptake has a value which is a float
+	defaultmaxuptake has a value which is a float
+	simplethermoconst has a value which is a bool
+	thermoconst has a value which is a bool
+	nothermoerror has a value which is a bool
+	minthermoerror has a value which is a bool
+media_id is a string
+bool is an int
+feature_id is a string
+reaction_id is a string
+genome_id is a string
+JobObject is a reference to a hash where the following keys are defined:
+	id has a value which is a job_id
+	queuetime has a value which is a string
+	completetime has a value which is a string
+	complete has a value which is a bool
+	object has a value which is a string
+	workspace has a value which is a string
+	type has a value which is a string
+	owner has a value which is a string
+	queuing_command has a value which is a string
+	queuing_service has a value which is a string
+	postprocess_command has a value which is a string
+	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
+job_id is a string
+CommandArguments is a reference to a hash where the following keys are defined:
+	authentication has a value which is a string
+
+
+=end text
+
+
+
+=item Description
+
+Queues an FBAModel reconciliation job
+
+=back
+
+=cut
+
+sub queue_wildtype_phenotype_reconciliation
+{
+    my $self = shift;
+    my($input) = @_;
+
+    my @_bad_arguments;
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to queue_wildtype_phenotype_reconciliation:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'queue_wildtype_phenotype_reconciliation');
+    }
+
+    my $ctx = $fbaModelServicesServer::CallContext;
+    my($output);
+    #BEGIN queue_wildtype_phenotype_reconciliation
+    #END queue_wildtype_phenotype_reconciliation
+    my @_bad_returns;
+    (ref($output) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to queue_wildtype_phenotype_reconciliation:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'queue_wildtype_phenotype_reconciliation');
+    }
+    return($output);
+}
+
+
+
+
+=head2 queue_combine_wildtype_phenotype_reconciliation_params
+
+  $output = $obj->queue_combine_wildtype_phenotype_reconciliation_params($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a combine_wildtype_phenotype_reconciliation_params
+$output is a JobObject
+combine_wildtype_phenotype_reconciliation_params is a reference to a hash where the following keys are defined:
+	in_model has a value which is a fbamodel_id
+	in_workspace has a value which is a workspace_id
+	in_formulation has a value which is an FBAFormulation
+	num_solutions has a value which is an int
+	integrate_solution has a value which is a bool
+	notes has a value which is a string
+	out_model has a value which is a fbamodel_id
+	out_workspace has a value which is a workspace_id
+	authentication has a value which is a string
+	overwrite has a value which is a bool
+fbamodel_id is a string
+workspace_id is a string
+FBAFormulation is a reference to a hash where the following keys are defined:
+	media has a value which is a media_id
+	workspace has a value which is a workspace_id
+	objfraction has a value which is a float
+	allreversible has a value which is a bool
+	objective has a value which is a string
+	geneko has a value which is a reference to a list where each element is a feature_id
+	rxnko has a value which is a reference to a list where each element is a reaction_id
+	bounds has a value which is a reference to a list where each element is a string
+	constraints has a value which is a reference to a list where each element is a string
+	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
+	defaultmaxflux has a value which is a float
+	defaultminuptake has a value which is a float
+	defaultmaxuptake has a value which is a float
+	simplethermoconst has a value which is a bool
+	thermoconst has a value which is a bool
+	nothermoerror has a value which is a bool
+	minthermoerror has a value which is a bool
+media_id is a string
+bool is an int
+feature_id is a string
+reaction_id is a string
+JobObject is a reference to a hash where the following keys are defined:
+	id has a value which is a job_id
+	queuetime has a value which is a string
+	completetime has a value which is a string
+	complete has a value which is a bool
+	object has a value which is a string
+	workspace has a value which is a string
+	type has a value which is a string
+	owner has a value which is a string
+	queuing_command has a value which is a string
+	queuing_service has a value which is a string
+	postprocess_command has a value which is a string
+	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
+job_id is a string
+CommandArguments is a reference to a hash where the following keys are defined:
+	authentication has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a combine_wildtype_phenotype_reconciliation_params
+$output is a JobObject
+combine_wildtype_phenotype_reconciliation_params is a reference to a hash where the following keys are defined:
+	in_model has a value which is a fbamodel_id
+	in_workspace has a value which is a workspace_id
+	in_formulation has a value which is an FBAFormulation
+	num_solutions has a value which is an int
+	integrate_solution has a value which is a bool
+	notes has a value which is a string
+	out_model has a value which is a fbamodel_id
+	out_workspace has a value which is a workspace_id
+	authentication has a value which is a string
+	overwrite has a value which is a bool
+fbamodel_id is a string
+workspace_id is a string
+FBAFormulation is a reference to a hash where the following keys are defined:
+	media has a value which is a media_id
+	workspace has a value which is a workspace_id
+	objfraction has a value which is a float
+	allreversible has a value which is a bool
+	objective has a value which is a string
+	geneko has a value which is a reference to a list where each element is a feature_id
+	rxnko has a value which is a reference to a list where each element is a reaction_id
+	bounds has a value which is a reference to a list where each element is a string
+	constraints has a value which is a reference to a list where each element is a string
+	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
+	defaultmaxflux has a value which is a float
+	defaultminuptake has a value which is a float
+	defaultmaxuptake has a value which is a float
+	simplethermoconst has a value which is a bool
+	thermoconst has a value which is a bool
+	nothermoerror has a value which is a bool
+	minthermoerror has a value which is a bool
+media_id is a string
+bool is an int
+feature_id is a string
+reaction_id is a string
+JobObject is a reference to a hash where the following keys are defined:
+	id has a value which is a job_id
+	queuetime has a value which is a string
+	completetime has a value which is a string
+	complete has a value which is a bool
+	object has a value which is a string
+	workspace has a value which is a string
+	type has a value which is a string
+	owner has a value which is a string
+	queuing_command has a value which is a string
+	queuing_service has a value which is a string
+	postprocess_command has a value which is a string
+	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
+job_id is a string
+CommandArguments is a reference to a hash where the following keys are defined:
+	authentication has a value which is a string
+
+
+=end text
+
+
+
+=item Description
+
+Queues an FBAModel reconciliation job
+
+=back
+
+=cut
+
+sub queue_combine_wildtype_phenotype_reconciliation_params
+{
+    my $self = shift;
+    my($input) = @_;
+
+    my @_bad_arguments;
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to queue_combine_wildtype_phenotype_reconciliation_params:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'queue_combine_wildtype_phenotype_reconciliation_params');
+    }
+
+    my $ctx = $fbaModelServicesServer::CallContext;
+    my($output);
+    #BEGIN queue_combine_wildtype_phenotype_reconciliation_params
+    #END queue_combine_wildtype_phenotype_reconciliation_params
+    my @_bad_returns;
+    (ref($output) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to queue_combine_wildtype_phenotype_reconciliation_params:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'queue_combine_wildtype_phenotype_reconciliation_params');
+    }
+    return($output);
+}
+
+
+
+
+=head2 check_job
+
+  $output = $obj->check_job($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a check_job_params
+$output is a JobObject
+check_job_params is a reference to a hash where the following keys are defined:
+	job has a value which is a job_id
+	workspace has a value which is a workspace_id
+	authentication has a value which is a string
+job_id is a string
+workspace_id is a string
+JobObject is a reference to a hash where the following keys are defined:
+	id has a value which is a job_id
+	queuetime has a value which is a string
+	completetime has a value which is a string
+	complete has a value which is a bool
+	object has a value which is a string
+	workspace has a value which is a string
+	type has a value which is a string
+	owner has a value which is a string
+	queuing_command has a value which is a string
+	queuing_service has a value which is a string
+	postprocess_command has a value which is a string
+	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
+bool is an int
+CommandArguments is a reference to a hash where the following keys are defined:
+	authentication has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a check_job_params
+$output is a JobObject
+check_job_params is a reference to a hash where the following keys are defined:
+	job has a value which is a job_id
+	workspace has a value which is a workspace_id
+	authentication has a value which is a string
+job_id is a string
+workspace_id is a string
+JobObject is a reference to a hash where the following keys are defined:
+	id has a value which is a job_id
+	queuetime has a value which is a string
+	completetime has a value which is a string
+	complete has a value which is a bool
+	object has a value which is a string
+	workspace has a value which is a string
+	type has a value which is a string
+	owner has a value which is a string
+	queuing_command has a value which is a string
+	queuing_service has a value which is a string
+	postprocess_command has a value which is a string
+	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
+bool is an int
+CommandArguments is a reference to a hash where the following keys are defined:
+	authentication has a value which is a string
+
+
+=end text
+
+
+
+=item Description
+
+Retreives job data given a job ID
+
+=back
+
+=cut
+
+sub check_job
+{
+    my $self = shift;
+    my($input) = @_;
+
+    my @_bad_arguments;
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to check_job:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'check_job');
+    }
+
+    my $ctx = $fbaModelServicesServer::CallContext;
+    my($output);
+    #BEGIN check_job
+    #END check_job
+    my @_bad_returns;
+    (ref($output) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to check_job:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'check_job');
+    }
+    return($output);
 }
 
 
@@ -5332,6 +6797,152 @@ a string
 
 
 
+=head2 object_type
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 object_id
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 username
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 timestamp
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 object_metadata
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a list containing 7 items:
+0: an object_id
+1: an object_type
+2: a timestamp
+3: an int
+4: a string
+5: a username
+6: a username
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a list containing 7 items:
+0: an object_id
+1: an object_type
+2: a timestamp
+3: an int
+4: a string
+5: a username
+6: a username
+
+
+=end text
+
+=back
+
+
+
 =head2 get_models_params
 
 =over 4
@@ -5658,6 +7269,13 @@ id_type has a value which is a string
 
 
 
+=item Description
+
+********************************************************************************
+    Code relating to reconstruction of metabolic models
+   	********************************************************************************
+
+
 =item Definition
 
 =begin html
@@ -5708,7 +7326,7 @@ id has a value which is a genome_id
 
 
 
-=head2 genome_to_workspace_params
+=head2 genome_object_to_workspace_params
 
 =over 4
 
@@ -5721,10 +7339,7 @@ id has a value which is a genome_id
 <pre>
 a reference to a hash where the following keys are defined:
 in_genomeobj has a value which is a genomeTO
-in_genome has a value which is a genome_id
-out_genome has a value which is a genome_id
-out_workspace has a value which is a workspace_id
-as_new_genome has a value which is a bool
+workspace has a value which is a workspace_id
 authentication has a value which is a string
 
 </pre>
@@ -5735,10 +7350,41 @@ authentication has a value which is a string
 
 a reference to a hash where the following keys are defined:
 in_genomeobj has a value which is a genomeTO
-in_genome has a value which is a genome_id
-out_genome has a value which is a genome_id
-out_workspace has a value which is a workspace_id
-as_new_genome has a value which is a bool
+workspace has a value which is a workspace_id
+authentication has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 genome_to_workspace_params
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+genome has a value which is a genome_id
+workspace has a value which is a workspace_id
+authentication has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+genome has a value which is a genome_id
+workspace has a value which is a workspace_id
 authentication has a value which is a string
 
 
@@ -5848,7 +7494,7 @@ authentication has a value which is a string
 
 
 
-=head2 runfba_params
+=head2 addmedia_params
 
 =over 4
 
@@ -5856,7 +7502,9 @@ authentication has a value which is a string
 
 =item Description
 
-NEED DOCUMENTATION
+********************************************************************************
+    Code relating to flux balance analysis
+   	********************************************************************************
 
 
 =item Definition
@@ -5865,10 +7513,17 @@ NEED DOCUMENTATION
 
 <pre>
 a reference to a hash where the following keys are defined:
-in_model has a value which is a fbamodel_id
+in_media has a value which is a media_id
 in_workspace has a value which is a workspace_id
-out_fba has a value which is a fba_id
-out_workspace has a value which is a workspace_id
+name has a value which is a string
+isDefined has a value which is a bool
+isMinimal has a value which is a bool
+type has a value which is a string
+compounds has a value which is a reference to a list where each element is a string
+concentrations has a value which is a reference to a list where each element is a float
+maxflux has a value which is a reference to a list where each element is a float
+minflux has a value which is a reference to a list where each element is a float
+overwrite has a value which is a bool
 authentication has a value which is a string
 
 </pre>
@@ -5878,10 +7533,17 @@ authentication has a value which is a string
 =begin text
 
 a reference to a hash where the following keys are defined:
-in_model has a value which is a fbamodel_id
+in_media has a value which is a media_id
 in_workspace has a value which is a workspace_id
-out_fba has a value which is a fba_id
-out_workspace has a value which is a workspace_id
+name has a value which is a string
+isDefined has a value which is a bool
+isMinimal has a value which is a bool
+type has a value which is a string
+compounds has a value which is a reference to a list where each element is a string
+concentrations has a value which is a reference to a list where each element is a float
+maxflux has a value which is a reference to a list where each element is a float
+minflux has a value which is a reference to a list where each element is a float
+overwrite has a value which is a bool
 authentication has a value which is a string
 
 
@@ -5891,7 +7553,43 @@ authentication has a value which is a string
 
 
 
-=head2 checkfba_params
+=head2 export_media_params
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+in_media has a value which is a media_id
+in_workspace has a value which is a workspace_id
+format has a value which is a string
+authentication has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+in_media has a value which is a media_id
+in_workspace has a value which is a workspace_id
+format has a value which is a string
+authentication has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 FBAFormulation
 
 =over 4
 
@@ -5908,9 +7606,23 @@ NEED DOCUMENTATION
 
 <pre>
 a reference to a hash where the following keys are defined:
-in_fba has a value which is a fba_id
-in_workspace has a value which is a workspace_id
-authentication has a value which is a string
+media has a value which is a media_id
+workspace has a value which is a workspace_id
+objfraction has a value which is a float
+allreversible has a value which is a bool
+objective has a value which is a string
+geneko has a value which is a reference to a list where each element is a feature_id
+rxnko has a value which is a reference to a list where each element is a reaction_id
+bounds has a value which is a reference to a list where each element is a string
+constraints has a value which is a reference to a list where each element is a string
+uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
+defaultmaxflux has a value which is a float
+defaultminuptake has a value which is a float
+defaultmaxuptake has a value which is a float
+simplethermoconst has a value which is a bool
+thermoconst has a value which is a bool
+nothermoerror has a value which is a bool
+minthermoerror has a value which is a bool
 
 </pre>
 
@@ -5919,9 +7631,75 @@ authentication has a value which is a string
 =begin text
 
 a reference to a hash where the following keys are defined:
-in_fba has a value which is a fba_id
-in_workspace has a value which is a workspace_id
+media has a value which is a media_id
+workspace has a value which is a workspace_id
+objfraction has a value which is a float
+allreversible has a value which is a bool
+objective has a value which is a string
+geneko has a value which is a reference to a list where each element is a feature_id
+rxnko has a value which is a reference to a list where each element is a reaction_id
+bounds has a value which is a reference to a list where each element is a string
+constraints has a value which is a reference to a list where each element is a string
+uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
+defaultmaxflux has a value which is a float
+defaultminuptake has a value which is a float
+defaultmaxuptake has a value which is a float
+simplethermoconst has a value which is a bool
+thermoconst has a value which is a bool
+nothermoerror has a value which is a bool
+minthermoerror has a value which is a bool
+
+
+=end text
+
+=back
+
+
+
+=head2 runfba_params
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+formulation has a value which is an FBAFormulation
+fva has a value which is a bool
+simulateko has a value which is a bool
+minimizeflux has a value which is a bool
+findminmedia has a value which is a bool
+notes has a value which is a string
+fba has a value which is a fba_id
+fba_workspace has a value which is a workspace_id
 authentication has a value which is a string
+overwrite has a value which is a bool
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+formulation has a value which is an FBAFormulation
+fva has a value which is a bool
+simulateko has a value which is a bool
+minimizeflux has a value which is a bool
+findminmedia has a value which is a bool
+notes has a value which is a string
+fba has a value which is a fba_id
+fba_workspace has a value which is a workspace_id
+authentication has a value which is a string
+overwrite has a value which is a bool
 
 
 =end text
@@ -5936,11 +7714,6 @@ authentication has a value which is a string
 
 
 
-=item Description
-
-NEED DOCUMENTATION
-
-
 =item Definition
 
 =begin html
@@ -5971,7 +7744,7 @@ authentication has a value which is a string
 
 
 
-=head2 HTML
+=head2 phenotypeSet_id
 
 =over 4
 
@@ -5979,7 +7752,9 @@ authentication has a value which is a string
 
 =item Description
 
-These functions run gapfilling on the input FBAModel and produce gapfill objects as output
+********************************************************************************
+    Code relating to phenotype simulation and reconciliation
+   	********************************************************************************
 
 
 =item Definition
@@ -5995,6 +7770,751 @@ a string
 =begin text
 
 a string
+
+=end text
+
+=back
+
+
+
+=head2 Phenotype
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a list containing 5 items:
+0: a reference to a list where each element is a feature_id
+1: a media_id
+2: a workspace_id
+3: a reference to a list where each element is a compound_id
+4: a float
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a list containing 5 items:
+0: a reference to a list where each element is a feature_id
+1: a media_id
+2: a workspace_id
+3: a reference to a list where each element is a compound_id
+4: a float
+
+
+=end text
+
+=back
+
+
+
+=head2 PhenotypeSet
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+id has a value which is a phenotypeSet_id
+genome has a value which is a genome_id
+genomeWorkspace has a value which is a workspace_id
+phenotypes has a value which is a reference to a list where each element is a Phenotype
+importErrors has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+id has a value which is a phenotypeSet_id
+genome has a value which is a genome_id
+genomeWorkspace has a value which is a workspace_id
+phenotypes has a value which is a reference to a list where each element is a Phenotype
+importErrors has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 phenotypeSimulationSet_id
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 PhenotypeSimulation
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a list containing 4 items:
+0: a Phenotype
+1: a float
+2: a float
+3: a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a list containing 4 items:
+0: a Phenotype
+1: a float
+2: a float
+3: a string
+
+
+=end text
+
+=back
+
+
+
+=head2 PhenotypeSimulationSet
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+id has a value which is a phenotypeSimulationSet_id
+model has a value which is a fbamodel_id
+modelWorkspace has a value which is a workspace_id
+phenotypeSet has a value which is a phenotypeSet_id
+phenotypeSimulations has a value which is a reference to a list where each element is a PhenotypeSimulation
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+id has a value which is a phenotypeSimulationSet_id
+model has a value which is a fbamodel_id
+modelWorkspace has a value which is a workspace_id
+phenotypeSet has a value which is a phenotypeSet_id
+phenotypeSimulations has a value which is a reference to a list where each element is a PhenotypeSimulation
+
+
+=end text
+
+=back
+
+
+
+=head2 import_phenotypes_params
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+id has a value which is a phenotypeSet_id
+workspace has a value which is a workspace_id
+genome has a value which is a genome_id
+genome_workspace has a value which is a workspace_id
+phenotypes has a value which is a reference to a list where each element is a Phenotype
+ignore_errors has a value which is a bool
+authentication has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+id has a value which is a phenotypeSet_id
+workspace has a value which is a workspace_id
+genome has a value which is a genome_id
+genome_workspace has a value which is a workspace_id
+phenotypes has a value which is a reference to a list where each element is a Phenotype
+ignore_errors has a value which is a bool
+authentication has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 simulate_phenotypes_params
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+phenotype_set has a value which is a phenotypeSet_id
+phenotype_workspace has a value which is a workspace_id
+formulation has a value which is an FBAFormulation
+notes has a value which is a string
+phenotype_simultation_set has a value which is a phenotypeSimulationSet_id
+out_workspace has a value which is a workspace_id
+overwrite has a value which is a bool
+authentication has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+phenotype_set has a value which is a phenotypeSet_id
+phenotype_workspace has a value which is a workspace_id
+formulation has a value which is an FBAFormulation
+notes has a value which is a string
+phenotype_simultation_set has a value which is a phenotypeSimulationSet_id
+out_workspace has a value which is a workspace_id
+overwrite has a value which is a bool
+authentication has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 export_phenotypeSimulationSet_params
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+phenotypeSimulationSet has a value which is a phenotypeSimulationSet_id
+workspace has a value which is a workspace_id
+format has a value which is a string
+authentication has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+phenotypeSimulationSet has a value which is a phenotypeSimulationSet_id
+workspace has a value which is a workspace_id
+format has a value which is a string
+authentication has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 job_id
+
+=over 4
+
+
+
+=item Description
+
+********************************************************************************
+    Code relating to queuing long running jobs
+   	********************************************************************************
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 CommandArguments
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+authentication has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+authentication has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 JobObject
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+id has a value which is a job_id
+queuetime has a value which is a string
+completetime has a value which is a string
+complete has a value which is a bool
+object has a value which is a string
+workspace has a value which is a string
+type has a value which is a string
+owner has a value which is a string
+queuing_command has a value which is a string
+queuing_service has a value which is a string
+postprocess_command has a value which is a string
+postprocess_args has a value which is a reference to a list where each element is a CommandArguments
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+id has a value which is a job_id
+queuetime has a value which is a string
+completetime has a value which is a string
+complete has a value which is a bool
+object has a value which is a string
+workspace has a value which is a string
+type has a value which is a string
+owner has a value which is a string
+queuing_command has a value which is a string
+queuing_service has a value which is a string
+postprocess_command has a value which is a string
+postprocess_args has a value which is a reference to a list where each element is a CommandArguments
+
+
+=end text
+
+=back
+
+
+
+=head2 gapfill_model_params
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+id has a value which is a phenotypeSet_id
+in_model has a value which is a fbamodel_id
+in_workspace has a value which is a workspace_id
+in_formulation has a value which is an FBAFormulation
+num_solutions has a value which is an int
+no_media_hypothesis has a value which is a bool
+no_biomass_hypothesis has a value which is a bool
+no_gpr_hypothesis has a value which is a bool
+no_pathway_hypothesis has a value which is a bool
+allow_unbalanced has a value which is a bool
+activity_bonus has a value which is a float
+drain_penalty has a value which is a float
+direction_penalty has a value which is a float
+no_structure_penalty has a value which is a float
+unfavorable_penalty has a value which is a float
+no_deltag_penalty has a value which is a float
+biomass_transport_penalty has a value which is a float
+single_transport_penalty has a value which is a float
+transport_penalty has a value which is a float
+blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
+gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
+allowed_compartments has a value which is a reference to a list where each element is a string
+integrate_solution has a value which is a bool
+notes has a value which is a string
+prob_anno has a value which is a genome_id
+prob_anno_workspace has a value which is a workspace_id
+out_model has a value which is a fbamodel_id
+out_workspace has a value which is a workspace_id
+authentication has a value which is a string
+overwrite has a value which is a bool
+gapfilling_index has a value which is an int
+job has a value which is a job_id
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+id has a value which is a phenotypeSet_id
+in_model has a value which is a fbamodel_id
+in_workspace has a value which is a workspace_id
+in_formulation has a value which is an FBAFormulation
+num_solutions has a value which is an int
+no_media_hypothesis has a value which is a bool
+no_biomass_hypothesis has a value which is a bool
+no_gpr_hypothesis has a value which is a bool
+no_pathway_hypothesis has a value which is a bool
+allow_unbalanced has a value which is a bool
+activity_bonus has a value which is a float
+drain_penalty has a value which is a float
+direction_penalty has a value which is a float
+no_structure_penalty has a value which is a float
+unfavorable_penalty has a value which is a float
+no_deltag_penalty has a value which is a float
+biomass_transport_penalty has a value which is a float
+single_transport_penalty has a value which is a float
+transport_penalty has a value which is a float
+blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
+gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
+allowed_compartments has a value which is a reference to a list where each element is a string
+integrate_solution has a value which is a bool
+notes has a value which is a string
+prob_anno has a value which is a genome_id
+prob_anno_workspace has a value which is a workspace_id
+out_model has a value which is a fbamodel_id
+out_workspace has a value which is a workspace_id
+authentication has a value which is a string
+overwrite has a value which is a bool
+gapfilling_index has a value which is an int
+job has a value which is a job_id
+
+
+=end text
+
+=back
+
+
+
+=head2 gapgen_model_params
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+id has a value which is a phenotypeSet_id
+in_model has a value which is a fbamodel_id
+in_workspace has a value which is a workspace_id
+in_formulation has a value which is an FBAFormulation
+num_solutions has a value which is an int
+no_media_hypothesis has a value which is a bool
+no_biomass_hypothesis has a value which is a bool
+no_gpr_hypothesis has a value which is a bool
+no_pathway_hypothesis has a value which is a bool
+integrate_solution has a value which is a bool
+notes has a value which is a string
+out_model has a value which is a fbamodel_id
+out_workspace has a value which is a workspace_id
+authentication has a value which is a string
+overwrite has a value which is a bool
+gapgen_index has a value which is an int
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+id has a value which is a phenotypeSet_id
+in_model has a value which is a fbamodel_id
+in_workspace has a value which is a workspace_id
+in_formulation has a value which is an FBAFormulation
+num_solutions has a value which is an int
+no_media_hypothesis has a value which is a bool
+no_biomass_hypothesis has a value which is a bool
+no_gpr_hypothesis has a value which is a bool
+no_pathway_hypothesis has a value which is a bool
+integrate_solution has a value which is a bool
+notes has a value which is a string
+out_model has a value which is a fbamodel_id
+out_workspace has a value which is a workspace_id
+authentication has a value which is a string
+overwrite has a value which is a bool
+gapgen_index has a value which is an int
+
+
+=end text
+
+=back
+
+
+
+=head2 wildtype_phenotype_reconciliation_params
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+id has a value which is a phenotypeSet_id
+in_model has a value which is a fbamodel_id
+in_workspace has a value which is a workspace_id
+in_formulation has a value which is an FBAFormulation
+num_solutions has a value which is an int
+no_media_hypothesis has a value which is a bool
+no_biomass_hypothesis has a value which is a bool
+no_gpr_hypothesis has a value which is a bool
+no_pathway_hypothesis has a value which is a bool
+allow_unbalanced has a value which is a bool
+activity_bonus has a value which is a float
+drain_penalty has a value which is a float
+direction_penalty has a value which is a float
+no_structure_penalty has a value which is a float
+unfavorable_penalty has a value which is a float
+no_deltag_penalty has a value which is a float
+biomass_transport_penalty has a value which is a float
+single_transport_penalty has a value which is a float
+transport_penalty has a value which is a float
+blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
+gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
+allowed_compartments has a value which is a reference to a list where each element is a string
+notes has a value which is a string
+prob_anno has a value which is a genome_id
+prob_anno_workspace has a value which is a workspace_id
+out_model has a value which is a fbamodel_id
+out_workspace has a value which is a workspace_id
+authentication has a value which is a string
+overwrite has a value which is a bool
+all_gapgen_indecies has a value which is a reference to a list where each element is an int
+all_gapfill_indecies has a value which is a reference to a list where each element is an int
+gapgen_index has a value which is an int
+gapfill_index has a value which is an int
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+id has a value which is a phenotypeSet_id
+in_model has a value which is a fbamodel_id
+in_workspace has a value which is a workspace_id
+in_formulation has a value which is an FBAFormulation
+num_solutions has a value which is an int
+no_media_hypothesis has a value which is a bool
+no_biomass_hypothesis has a value which is a bool
+no_gpr_hypothesis has a value which is a bool
+no_pathway_hypothesis has a value which is a bool
+allow_unbalanced has a value which is a bool
+activity_bonus has a value which is a float
+drain_penalty has a value which is a float
+direction_penalty has a value which is a float
+no_structure_penalty has a value which is a float
+unfavorable_penalty has a value which is a float
+no_deltag_penalty has a value which is a float
+biomass_transport_penalty has a value which is a float
+single_transport_penalty has a value which is a float
+transport_penalty has a value which is a float
+blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
+gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
+allowed_compartments has a value which is a reference to a list where each element is a string
+notes has a value which is a string
+prob_anno has a value which is a genome_id
+prob_anno_workspace has a value which is a workspace_id
+out_model has a value which is a fbamodel_id
+out_workspace has a value which is a workspace_id
+authentication has a value which is a string
+overwrite has a value which is a bool
+all_gapgen_indecies has a value which is a reference to a list where each element is an int
+all_gapfill_indecies has a value which is a reference to a list where each element is an int
+gapgen_index has a value which is an int
+gapfill_index has a value which is an int
+
+
+=end text
+
+=back
+
+
+
+=head2 combine_wildtype_phenotype_reconciliation_params
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+in_model has a value which is a fbamodel_id
+in_workspace has a value which is a workspace_id
+in_formulation has a value which is an FBAFormulation
+num_solutions has a value which is an int
+integrate_solution has a value which is a bool
+notes has a value which is a string
+out_model has a value which is a fbamodel_id
+out_workspace has a value which is a workspace_id
+authentication has a value which is a string
+overwrite has a value which is a bool
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+in_model has a value which is a fbamodel_id
+in_workspace has a value which is a workspace_id
+in_formulation has a value which is an FBAFormulation
+num_solutions has a value which is an int
+integrate_solution has a value which is a bool
+notes has a value which is a string
+out_model has a value which is a fbamodel_id
+out_workspace has a value which is a workspace_id
+authentication has a value which is a string
+overwrite has a value which is a bool
+
+
+=end text
+
+=back
+
+
+
+=head2 check_job_params
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+job has a value which is a job_id
+workspace has a value which is a workspace_id
+authentication has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+job has a value which is a job_id
+workspace has a value which is a workspace_id
+authentication has a value which is a string
+
 
 =end text
 

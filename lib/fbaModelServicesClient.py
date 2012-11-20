@@ -143,6 +143,22 @@ class fbaModelServices:
         else:
             return None
 
+    def genome_object_to_workspace(self, input):
+
+        arg_hash = { 'method': 'fbaModelServices.genome_object_to_workspace',
+                     'params': [input],
+                     'version': '1.1'
+                     }
+
+        body = json.dumps(arg_hash)
+        resp_str = urllib.urlopen(self.url, body).read()
+        resp = json.loads(resp_str)
+
+        if 'result' in resp:
+            return resp['result'][0]
+        else:
+            return None
+
     def genome_to_workspace(self, input):
 
         arg_hash = { 'method': 'fbaModelServices.genome_to_workspace',
@@ -191,9 +207,9 @@ class fbaModelServices:
         else:
             return None
 
-    def runfba(self, input):
+    def addmedia(self, input):
 
-        arg_hash = { 'method': 'fbaModelServices.runfba',
+        arg_hash = { 'method': 'fbaModelServices.addmedia',
                      'params': [input],
                      'version': '1.1'
                      }
@@ -207,9 +223,25 @@ class fbaModelServices:
         else:
             return None
 
-    def checkfba(self, input):
+    def export_media(self, input):
 
-        arg_hash = { 'method': 'fbaModelServices.checkfba',
+        arg_hash = { 'method': 'fbaModelServices.export_media',
+                     'params': [input],
+                     'version': '1.1'
+                     }
+
+        body = json.dumps(arg_hash)
+        resp_str = urllib.urlopen(self.url, body).read()
+        resp = json.loads(resp_str)
+
+        if 'result' in resp:
+            return resp['result'][0]
+        else:
+            return None
+
+    def runfba(self, input):
+
+        arg_hash = { 'method': 'fbaModelServices.runfba',
                      'params': [input],
                      'version': '1.1'
                      }
@@ -239,10 +271,10 @@ class fbaModelServices:
         else:
             return None
 
-    def gapfill_model(self, in_model, formulation):
+    def import_phenotypes(self, input):
 
-        arg_hash = { 'method': 'fbaModelServices.gapfill_model',
-                     'params': [in_model, formulation],
+        arg_hash = { 'method': 'fbaModelServices.import_phenotypes',
+                     'params': [input],
                      'version': '1.1'
                      }
 
@@ -255,10 +287,10 @@ class fbaModelServices:
         else:
             return None
 
-    def gapfill_check_results(self, in_gapfill):
+    def simulate_phenotypes(self, input):
 
-        arg_hash = { 'method': 'fbaModelServices.gapfill_check_results',
-                     'params': [in_gapfill],
+        arg_hash = { 'method': 'fbaModelServices.simulate_phenotypes',
+                     'params': [input],
                      'version': '1.1'
                      }
 
@@ -271,10 +303,10 @@ class fbaModelServices:
         else:
             return None
 
-    def gapfill_to_html(self, in_gapfill):
+    def export_phenotypeSimulationSet(self, input):
 
-        arg_hash = { 'method': 'fbaModelServices.gapfill_to_html',
-                     'params': [in_gapfill],
+        arg_hash = { 'method': 'fbaModelServices.export_phenotypeSimulationSet',
+                     'params': [input],
                      'version': '1.1'
                      }
 
@@ -287,26 +319,10 @@ class fbaModelServices:
         else:
             return None
 
-    def gapfill_integrate(self, in_gapfill, in_model):
+    def queue_runfba(self, input):
 
-        arg_hash = { 'method': 'fbaModelServices.gapfill_integrate',
-                     'params': [in_gapfill, in_model],
-                     'version': '1.1'
-                     }
-
-        body = json.dumps(arg_hash)
-        resp_str = urllib.urlopen(self.url, body).read()
-        resp = json.loads(resp_str)
-
-        if 'result' in resp:
-            return resp['result']
-        else:
-            return None
-
-    def gapgen_model(self, in_model, formulation):
-
-        arg_hash = { 'method': 'fbaModelServices.gapgen_model',
-                     'params': [in_model, formulation],
+        arg_hash = { 'method': 'fbaModelServices.queue_runfba',
+                     'params': [input],
                      'version': '1.1'
                      }
 
@@ -319,10 +335,10 @@ class fbaModelServices:
         else:
             return None
 
-    def gapgen_check_results(self, in_gapgen):
+    def queue_gapfill_model(self, input):
 
-        arg_hash = { 'method': 'fbaModelServices.gapgen_check_results',
-                     'params': [in_gapgen],
+        arg_hash = { 'method': 'fbaModelServices.queue_gapfill_model',
+                     'params': [input],
                      'version': '1.1'
                      }
 
@@ -335,10 +351,10 @@ class fbaModelServices:
         else:
             return None
 
-    def gapgen_to_html(self, in_gapgen):
+    def queue_gapgen_model(self, input):
 
-        arg_hash = { 'method': 'fbaModelServices.gapgen_to_html',
-                     'params': [in_gapgen],
+        arg_hash = { 'method': 'fbaModelServices.queue_gapgen_model',
+                     'params': [input],
                      'version': '1.1'
                      }
 
@@ -351,10 +367,10 @@ class fbaModelServices:
         else:
             return None
 
-    def gapgen_integrate(self, in_gapgen, in_model):
+    def queue_wildtype_phenotype_reconciliation(self, input):
 
-        arg_hash = { 'method': 'fbaModelServices.gapgen_integrate',
-                     'params': [in_gapgen, in_model],
+        arg_hash = { 'method': 'fbaModelServices.queue_wildtype_phenotype_reconciliation',
+                     'params': [input],
                      'version': '1.1'
                      }
 
@@ -363,7 +379,39 @@ class fbaModelServices:
         resp = json.loads(resp_str)
 
         if 'result' in resp:
-            return resp['result']
+            return resp['result'][0]
+        else:
+            return None
+
+    def queue_combine_wildtype_phenotype_reconciliation_params(self, input):
+
+        arg_hash = { 'method': 'fbaModelServices.queue_combine_wildtype_phenotype_reconciliation_params',
+                     'params': [input],
+                     'version': '1.1'
+                     }
+
+        body = json.dumps(arg_hash)
+        resp_str = urllib.urlopen(self.url, body).read()
+        resp = json.loads(resp_str)
+
+        if 'result' in resp:
+            return resp['result'][0]
+        else:
+            return None
+
+    def check_job(self, input):
+
+        arg_hash = { 'method': 'fbaModelServices.check_job',
+                     'params': [input],
+                     'version': '1.1'
+                     }
+
+        body = json.dumps(arg_hash)
+        resp_str = urllib.urlopen(self.url, body).read()
+        resp = json.loads(resp_str)
+
+        if 'result' in resp:
+            return resp['result'][0]
         else:
             return None
 

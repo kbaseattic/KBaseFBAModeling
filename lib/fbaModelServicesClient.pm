@@ -440,10 +440,59 @@ sub get_biochemistry
 
 
 
+=head2 $result = genome_object_to_workspace(input)
+
+Loads an input genome object into the workspace.
+
+=cut
+
+sub genome_object_to_workspace
+{
+    my($self, @args) = @_;
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function genome_object_to_workspace (received $n, expecting 1)");
+    }
+    {
+	my($input) = @args;
+
+	my @_bad_arguments;
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to genome_object_to_workspace:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'genome_object_to_workspace');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.genome_object_to_workspace",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{code},
+					       method_name => 'genome_object_to_workspace',
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method genome_object_to_workspace",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'genome_object_to_workspace',
+				       );
+    }
+}
+
+
+
 =head2 $result = genome_to_workspace(input)
 
-This function either retrieves a genome from the CDM by a specified genome ID, or it loads an input genome object.
-The loaded or retrieved genome is placed in the specified workspace with the specified ID.
+Retrieves a genome from the CDM and saves it as a genome object in the workspace.
 
 =cut
 
@@ -592,9 +641,109 @@ sub export_fbamodel
 
 
 
+=head2 $result = addmedia(input)
+
+Add media condition to workspace
+
+=cut
+
+sub addmedia
+{
+    my($self, @args) = @_;
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function addmedia (received $n, expecting 1)");
+    }
+    {
+	my($input) = @args;
+
+	my @_bad_arguments;
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to addmedia:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'addmedia');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.addmedia",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{code},
+					       method_name => 'addmedia',
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method addmedia",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'addmedia',
+				       );
+    }
+}
+
+
+
+=head2 $result = export_media(input)
+
+Exports media in specified format (html,readable)
+
+=cut
+
+sub export_media
+{
+    my($self, @args) = @_;
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function export_media (received $n, expecting 1)");
+    }
+    {
+	my($input) = @args;
+
+	my @_bad_arguments;
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to export_media:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'export_media');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.export_media",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{code},
+					       method_name => 'export_media',
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method export_media",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'export_media',
+				       );
+    }
+}
+
+
+
 =head2 $result = runfba(input)
 
-This function runs flux balance analysis on the input FBAModel and produces HTML as output
+Run flux balance analysis and return ID of FBA object with results
 
 =cut
 
@@ -642,59 +791,9 @@ sub runfba
 
 
 
-=head2 $result = checkfba(input)
-
-This function checks if the specified FBA study is complete.
-
-=cut
-
-sub checkfba
-{
-    my($self, @args) = @_;
-
-    if ((my $n = @args) != 1)
-    {
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
-							       "Invalid argument count for function checkfba (received $n, expecting 1)");
-    }
-    {
-	my($input) = @args;
-
-	my @_bad_arguments;
-        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
-        if (@_bad_arguments) {
-	    my $msg = "Invalid arguments passed to checkfba:\n" . join("", map { "\t$_\n" } @_bad_arguments);
-	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-								   method_name => 'checkfba');
-	}
-    }
-
-    my $result = $self->{client}->call($self->{url}, {
-	method => "fbaModelServices.checkfba",
-	params => \@args,
-    });
-    if ($result) {
-	if ($result->is_error) {
-	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
-					       method_name => 'checkfba',
-					      );
-	} else {
-	    return wantarray ? @{$result->result} : $result->result->[0];
-	}
-    } else {
-        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method checkfba",
-					    status_line => $self->{client}->status_line,
-					    method_name => 'checkfba',
-				       );
-    }
-}
-
-
-
 =head2 $result = export_fba(input)
 
-This function exports the specified FBA object to the specified format (e.g. html)
+Export an FBA solution for viewing
 
 =cut
 
@@ -742,404 +841,450 @@ sub export_fba
 
 
 
-=head2 $result = gapfill_model(in_model, formulation)
+=head2 $result = import_phenotypes(input)
 
-
-
-=cut
-
-sub gapfill_model
-{
-    my($self, @args) = @_;
-
-    if ((my $n = @args) != 2)
-    {
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
-							       "Invalid argument count for function gapfill_model (received $n, expecting 2)");
-    }
-    {
-	my($in_model, $formulation) = @args;
-
-	my @_bad_arguments;
-        (!ref($in_model)) or push(@_bad_arguments, "Invalid type for argument 1 \"in_model\" (value was \"$in_model\")");
-        (ref($formulation) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 2 \"formulation\" (value was \"$formulation\")");
-        if (@_bad_arguments) {
-	    my $msg = "Invalid arguments passed to gapfill_model:\n" . join("", map { "\t$_\n" } @_bad_arguments);
-	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-								   method_name => 'gapfill_model');
-	}
-    }
-
-    my $result = $self->{client}->call($self->{url}, {
-	method => "fbaModelServices.gapfill_model",
-	params => \@args,
-    });
-    if ($result) {
-	if ($result->is_error) {
-	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
-					       method_name => 'gapfill_model',
-					      );
-	} else {
-	    return wantarray ? @{$result->result} : $result->result->[0];
-	}
-    } else {
-        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method gapfill_model",
-					    status_line => $self->{client}->status_line,
-					    method_name => 'gapfill_model',
-				       );
-    }
-}
-
-
-
-=head2 $result = gapfill_check_results(in_gapfill)
-
-
+Loads the specified phenotypes into the workspace
 
 =cut
 
-sub gapfill_check_results
+sub import_phenotypes
 {
     my($self, @args) = @_;
 
     if ((my $n = @args) != 1)
     {
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
-							       "Invalid argument count for function gapfill_check_results (received $n, expecting 1)");
+							       "Invalid argument count for function import_phenotypes (received $n, expecting 1)");
     }
     {
-	my($in_gapfill) = @args;
+	my($input) = @args;
 
 	my @_bad_arguments;
-        (!ref($in_gapfill)) or push(@_bad_arguments, "Invalid type for argument 1 \"in_gapfill\" (value was \"$in_gapfill\")");
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
         if (@_bad_arguments) {
-	    my $msg = "Invalid arguments passed to gapfill_check_results:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    my $msg = "Invalid arguments passed to import_phenotypes:\n" . join("", map { "\t$_\n" } @_bad_arguments);
 	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-								   method_name => 'gapfill_check_results');
+								   method_name => 'import_phenotypes');
 	}
     }
 
     my $result = $self->{client}->call($self->{url}, {
-	method => "fbaModelServices.gapfill_check_results",
+	method => "fbaModelServices.import_phenotypes",
 	params => \@args,
     });
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
 					       code => $result->content->{code},
-					       method_name => 'gapfill_check_results',
+					       method_name => 'import_phenotypes',
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
 	}
     } else {
-        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method gapfill_check_results",
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method import_phenotypes",
 					    status_line => $self->{client}->status_line,
-					    method_name => 'gapfill_check_results',
+					    method_name => 'import_phenotypes',
 				       );
     }
 }
 
 
 
-=head2 $result = gapfill_to_html(in_gapfill)
+=head2 $result = simulate_phenotypes(input)
 
-
+Simulates the specified phenotype set
 
 =cut
 
-sub gapfill_to_html
+sub simulate_phenotypes
 {
     my($self, @args) = @_;
 
     if ((my $n = @args) != 1)
     {
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
-							       "Invalid argument count for function gapfill_to_html (received $n, expecting 1)");
+							       "Invalid argument count for function simulate_phenotypes (received $n, expecting 1)");
     }
     {
-	my($in_gapfill) = @args;
+	my($input) = @args;
 
 	my @_bad_arguments;
-        (!ref($in_gapfill)) or push(@_bad_arguments, "Invalid type for argument 1 \"in_gapfill\" (value was \"$in_gapfill\")");
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
         if (@_bad_arguments) {
-	    my $msg = "Invalid arguments passed to gapfill_to_html:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    my $msg = "Invalid arguments passed to simulate_phenotypes:\n" . join("", map { "\t$_\n" } @_bad_arguments);
 	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-								   method_name => 'gapfill_to_html');
+								   method_name => 'simulate_phenotypes');
 	}
     }
 
     my $result = $self->{client}->call($self->{url}, {
-	method => "fbaModelServices.gapfill_to_html",
+	method => "fbaModelServices.simulate_phenotypes",
 	params => \@args,
     });
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
 					       code => $result->content->{code},
-					       method_name => 'gapfill_to_html',
+					       method_name => 'simulate_phenotypes',
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
 	}
     } else {
-        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method gapfill_to_html",
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method simulate_phenotypes",
 					    status_line => $self->{client}->status_line,
-					    method_name => 'gapfill_to_html',
+					    method_name => 'simulate_phenotypes',
 				       );
     }
 }
 
 
 
-=head2 $result = gapfill_integrate(in_gapfill, in_model)
+=head2 $result = export_phenotypeSimulationSet(input)
 
-
-
-=cut
-
-sub gapfill_integrate
-{
-    my($self, @args) = @_;
-
-    if ((my $n = @args) != 2)
-    {
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
-							       "Invalid argument count for function gapfill_integrate (received $n, expecting 2)");
-    }
-    {
-	my($in_gapfill, $in_model) = @args;
-
-	my @_bad_arguments;
-        (!ref($in_gapfill)) or push(@_bad_arguments, "Invalid type for argument 1 \"in_gapfill\" (value was \"$in_gapfill\")");
-        (!ref($in_model)) or push(@_bad_arguments, "Invalid type for argument 2 \"in_model\" (value was \"$in_model\")");
-        if (@_bad_arguments) {
-	    my $msg = "Invalid arguments passed to gapfill_integrate:\n" . join("", map { "\t$_\n" } @_bad_arguments);
-	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-								   method_name => 'gapfill_integrate');
-	}
-    }
-
-    my $result = $self->{client}->call($self->{url}, {
-	method => "fbaModelServices.gapfill_integrate",
-	params => \@args,
-    });
-    if ($result) {
-	if ($result->is_error) {
-	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
-					       method_name => 'gapfill_integrate',
-					      );
-	} else {
-	    return;
-	}
-    } else {
-        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method gapfill_integrate",
-					    status_line => $self->{client}->status_line,
-					    method_name => 'gapfill_integrate',
-				       );
-    }
-}
-
-
-
-=head2 $result = gapgen_model(in_model, formulation)
-
-These functions run gapgeneration on the input FBAModel and produce gapgen objects as output
+Export a PhenotypeSimulationSet for viewing
 
 =cut
 
-sub gapgen_model
-{
-    my($self, @args) = @_;
-
-    if ((my $n = @args) != 2)
-    {
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
-							       "Invalid argument count for function gapgen_model (received $n, expecting 2)");
-    }
-    {
-	my($in_model, $formulation) = @args;
-
-	my @_bad_arguments;
-        (!ref($in_model)) or push(@_bad_arguments, "Invalid type for argument 1 \"in_model\" (value was \"$in_model\")");
-        (ref($formulation) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 2 \"formulation\" (value was \"$formulation\")");
-        if (@_bad_arguments) {
-	    my $msg = "Invalid arguments passed to gapgen_model:\n" . join("", map { "\t$_\n" } @_bad_arguments);
-	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-								   method_name => 'gapgen_model');
-	}
-    }
-
-    my $result = $self->{client}->call($self->{url}, {
-	method => "fbaModelServices.gapgen_model",
-	params => \@args,
-    });
-    if ($result) {
-	if ($result->is_error) {
-	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
-					       method_name => 'gapgen_model',
-					      );
-	} else {
-	    return wantarray ? @{$result->result} : $result->result->[0];
-	}
-    } else {
-        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method gapgen_model",
-					    status_line => $self->{client}->status_line,
-					    method_name => 'gapgen_model',
-				       );
-    }
-}
-
-
-
-=head2 $result = gapgen_check_results(in_gapgen)
-
-
-
-=cut
-
-sub gapgen_check_results
+sub export_phenotypeSimulationSet
 {
     my($self, @args) = @_;
 
     if ((my $n = @args) != 1)
     {
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
-							       "Invalid argument count for function gapgen_check_results (received $n, expecting 1)");
+							       "Invalid argument count for function export_phenotypeSimulationSet (received $n, expecting 1)");
     }
     {
-	my($in_gapgen) = @args;
+	my($input) = @args;
 
 	my @_bad_arguments;
-        (!ref($in_gapgen)) or push(@_bad_arguments, "Invalid type for argument 1 \"in_gapgen\" (value was \"$in_gapgen\")");
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
         if (@_bad_arguments) {
-	    my $msg = "Invalid arguments passed to gapgen_check_results:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    my $msg = "Invalid arguments passed to export_phenotypeSimulationSet:\n" . join("", map { "\t$_\n" } @_bad_arguments);
 	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-								   method_name => 'gapgen_check_results');
+								   method_name => 'export_phenotypeSimulationSet');
 	}
     }
 
     my $result = $self->{client}->call($self->{url}, {
-	method => "fbaModelServices.gapgen_check_results",
+	method => "fbaModelServices.export_phenotypeSimulationSet",
 	params => \@args,
     });
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
 					       code => $result->content->{code},
-					       method_name => 'gapgen_check_results',
+					       method_name => 'export_phenotypeSimulationSet',
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
 	}
     } else {
-        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method gapgen_check_results",
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method export_phenotypeSimulationSet",
 					    status_line => $self->{client}->status_line,
-					    method_name => 'gapgen_check_results',
+					    method_name => 'export_phenotypeSimulationSet',
 				       );
     }
 }
 
 
 
-=head2 $result = gapgen_to_html(in_gapgen)
+=head2 $result = queue_runfba(input)
 
-
+Queues an FBA job in a single media condition
 
 =cut
 
-sub gapgen_to_html
+sub queue_runfba
 {
     my($self, @args) = @_;
 
     if ((my $n = @args) != 1)
     {
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
-							       "Invalid argument count for function gapgen_to_html (received $n, expecting 1)");
+							       "Invalid argument count for function queue_runfba (received $n, expecting 1)");
     }
     {
-	my($in_gapgen) = @args;
+	my($input) = @args;
 
 	my @_bad_arguments;
-        (!ref($in_gapgen)) or push(@_bad_arguments, "Invalid type for argument 1 \"in_gapgen\" (value was \"$in_gapgen\")");
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
         if (@_bad_arguments) {
-	    my $msg = "Invalid arguments passed to gapgen_to_html:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    my $msg = "Invalid arguments passed to queue_runfba:\n" . join("", map { "\t$_\n" } @_bad_arguments);
 	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-								   method_name => 'gapgen_to_html');
+								   method_name => 'queue_runfba');
 	}
     }
 
     my $result = $self->{client}->call($self->{url}, {
-	method => "fbaModelServices.gapgen_to_html",
+	method => "fbaModelServices.queue_runfba",
 	params => \@args,
     });
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
 					       code => $result->content->{code},
-					       method_name => 'gapgen_to_html',
+					       method_name => 'queue_runfba',
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
 	}
     } else {
-        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method gapgen_to_html",
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method queue_runfba",
 					    status_line => $self->{client}->status_line,
-					    method_name => 'gapgen_to_html',
+					    method_name => 'queue_runfba',
 				       );
     }
 }
 
 
 
-=head2 $result = gapgen_integrate(in_gapgen, in_model)
+=head2 $result = queue_gapfill_model(input)
 
-
+Queues an FBAModel gapfilling job in single media condition
 
 =cut
 
-sub gapgen_integrate
+sub queue_gapfill_model
 {
     my($self, @args) = @_;
 
-    if ((my $n = @args) != 2)
+    if ((my $n = @args) != 1)
     {
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
-							       "Invalid argument count for function gapgen_integrate (received $n, expecting 2)");
+							       "Invalid argument count for function queue_gapfill_model (received $n, expecting 1)");
     }
     {
-	my($in_gapgen, $in_model) = @args;
+	my($input) = @args;
 
 	my @_bad_arguments;
-        (!ref($in_gapgen)) or push(@_bad_arguments, "Invalid type for argument 1 \"in_gapgen\" (value was \"$in_gapgen\")");
-        (!ref($in_model)) or push(@_bad_arguments, "Invalid type for argument 2 \"in_model\" (value was \"$in_model\")");
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
         if (@_bad_arguments) {
-	    my $msg = "Invalid arguments passed to gapgen_integrate:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    my $msg = "Invalid arguments passed to queue_gapfill_model:\n" . join("", map { "\t$_\n" } @_bad_arguments);
 	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-								   method_name => 'gapgen_integrate');
+								   method_name => 'queue_gapfill_model');
 	}
     }
 
     my $result = $self->{client}->call($self->{url}, {
-	method => "fbaModelServices.gapgen_integrate",
+	method => "fbaModelServices.queue_gapfill_model",
 	params => \@args,
     });
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
 					       code => $result->content->{code},
-					       method_name => 'gapgen_integrate',
+					       method_name => 'queue_gapfill_model',
 					      );
 	} else {
-	    return;
+	    return wantarray ? @{$result->result} : $result->result->[0];
 	}
     } else {
-        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method gapgen_integrate",
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method queue_gapfill_model",
 					    status_line => $self->{client}->status_line,
-					    method_name => 'gapgen_integrate',
+					    method_name => 'queue_gapfill_model',
+				       );
+    }
+}
+
+
+
+=head2 $result = queue_gapgen_model(input)
+
+Queues an FBAModel gapfilling job in single media condition
+
+=cut
+
+sub queue_gapgen_model
+{
+    my($self, @args) = @_;
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function queue_gapgen_model (received $n, expecting 1)");
+    }
+    {
+	my($input) = @args;
+
+	my @_bad_arguments;
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to queue_gapgen_model:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'queue_gapgen_model');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.queue_gapgen_model",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{code},
+					       method_name => 'queue_gapgen_model',
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method queue_gapgen_model",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'queue_gapgen_model',
+				       );
+    }
+}
+
+
+
+=head2 $result = queue_wildtype_phenotype_reconciliation(input)
+
+Queues an FBAModel reconciliation job
+
+=cut
+
+sub queue_wildtype_phenotype_reconciliation
+{
+    my($self, @args) = @_;
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function queue_wildtype_phenotype_reconciliation (received $n, expecting 1)");
+    }
+    {
+	my($input) = @args;
+
+	my @_bad_arguments;
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to queue_wildtype_phenotype_reconciliation:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'queue_wildtype_phenotype_reconciliation');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.queue_wildtype_phenotype_reconciliation",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{code},
+					       method_name => 'queue_wildtype_phenotype_reconciliation',
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method queue_wildtype_phenotype_reconciliation",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'queue_wildtype_phenotype_reconciliation',
+				       );
+    }
+}
+
+
+
+=head2 $result = queue_combine_wildtype_phenotype_reconciliation_params(input)
+
+Queues an FBAModel reconciliation job
+
+=cut
+
+sub queue_combine_wildtype_phenotype_reconciliation_params
+{
+    my($self, @args) = @_;
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function queue_combine_wildtype_phenotype_reconciliation_params (received $n, expecting 1)");
+    }
+    {
+	my($input) = @args;
+
+	my @_bad_arguments;
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to queue_combine_wildtype_phenotype_reconciliation_params:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'queue_combine_wildtype_phenotype_reconciliation_params');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.queue_combine_wildtype_phenotype_reconciliation_params",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{code},
+					       method_name => 'queue_combine_wildtype_phenotype_reconciliation_params',
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method queue_combine_wildtype_phenotype_reconciliation_params",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'queue_combine_wildtype_phenotype_reconciliation_params',
+				       );
+    }
+}
+
+
+
+=head2 $result = check_job(input)
+
+Retreives job data given a job ID
+
+=cut
+
+sub check_job
+{
+    my($self, @args) = @_;
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function check_job (received $n, expecting 1)");
+    }
+    {
+	my($input) = @args;
+
+	my @_bad_arguments;
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to check_job:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'check_job');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.check_job",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{code},
+					       method_name => 'check_job',
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method check_job",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'check_job',
 				       );
     }
 }
@@ -1157,16 +1302,16 @@ sub version {
             Bio::KBase::Exceptions::JSONRPC->throw(
                 error => $result->error_message,
                 code => $result->content->{code},
-                method_name => 'gapgen_integrate',
+                method_name => 'check_job',
             );
         } else {
             return wantarray ? @{$result->result} : $result->result->[0];
         }
     } else {
         Bio::KBase::Exceptions::HTTP->throw(
-            error => "Error invoking method gapgen_integrate",
+            error => "Error invoking method check_job",
             status_line => $self->{client}->status_line,
-            method_name => 'gapgen_integrate',
+            method_name => 'check_job',
         );
     }
 }
