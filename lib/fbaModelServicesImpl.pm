@@ -1759,7 +1759,7 @@ sub genome_object_to_workspace
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["genomeobj","workspace"],{});
     $self->_save_msobject($input->{genomeobj},"Genome",$input->{workspace},$input->{genomeobj}->{id});
-	$output = $input;
+	my $output = $input;
 	$self->_clearContext();
     #END genome_object_to_workspace
     my @_bad_returns;
@@ -1867,7 +1867,7 @@ sub genome_to_workspace
     $input = $self->_validateargs($input,["genome","workspace"],{});
     my $genomeObj = $self->_get_genomeObj_from_CDM($input->{genome});
     $self->_save_msobject($genomeObj,"Genome",$input->{workspace},$genomeObj->{id});
-	$output = $input;
+	my $output = $input;
 	$self->_clearContext();
     #END genome_to_workspace
     my @_bad_returns;
@@ -2235,8 +2235,8 @@ sub addmedia
 				type => "Media",
 				workspace => $input->{in_workspace},
 				authentication => $self->_authentication()
-			}
-	    } catch {};
+			});
+	    };
 	    if (defined($obj)) {
 	    	my $msg = "Specified media already exists, and user did not set 'overwrite' flag!";
     		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'addmedia');
@@ -2253,7 +2253,7 @@ sub addmedia
     my $missing = [];
     for (my $i=0; $i < @{$input->{compounds}}; $i++) {
     	my $name = $input->{compounds}->[$i];
-    	$cpdobj = $bio->searchForCompound($name);
+    	my $cpdobj = $bio->searchForCompound($name);
     	if (defined($cpdobj)) {
 	    	my $data = {
 	    		compound_uuid => $cpdobj->uuid(),
@@ -3417,10 +3417,10 @@ sub queue_runfba
 	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
 	my $fba = $self->_buildFBAObject($input->{formulation});
 	#Saving FBAFormulation to database
-	$self->_save_msobject($fba,"FBA",$input->{fba},$input->{fba},"queue_runfba")
+	$self->_save_msobject($fba,"FBA",$input->{fba},$input->{fba},"queue_runfba");
 	my $job = {
 		id => Data::UUID->new()->create_str(),
-		queuetime => DateTime->now()->datetime();
+		queuetime => DateTime->now()->datetime(),
 		complete => 0,
 		type => "FBA",
 		arguments => {
@@ -3428,10 +3428,10 @@ sub queue_runfba
 			fba_workspace => $input->{fba_workspace},
 		},
 		owner => $self->_getUsername(),
-		queuing_command => "queue_runfba";
-		queuing_service => "fbaModelServicesClient";
-		postprocess_command => "";
-		postprocess_args => [];
+		queuing_command => "queue_runfba",
+		queuing_service => "fbaModelServicesClient",
+		postprocess_command => "",
+		postprocess_args => [],
 	};
 	$self->_save_msobject($job,"JobObject",$input->{fba_workspace},$job->{id},"queue_runfba");
 	$output = $job;
