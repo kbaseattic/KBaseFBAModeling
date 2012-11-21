@@ -17,10 +17,10 @@ fbaModelServices
 
 #BEGIN_HEADER
 use URI;
-use ModelSEED::Database::MongoDBSimple;
 use Bio::KBase::IDServer::Client;
 use Bio::KBase::CDMI::CDMIClient;
 use KBase::ClusterService;
+use Bio::KBase::workspaceService;
 use ModelSEED::Auth::Basic;
 use ModelSEED::Store;
 use Data::UUID;
@@ -34,7 +34,6 @@ use ModelSEED::MS::GapfillingFormulation;
 use ModelSEED::MS::FBAFormulation;
 use ModelSEED::MS::FBAProblem;
 use ModelSEED::MS::Metadata::Definitions;
-use Config::Simple;
 use Try::Tiny;
 use Data::Dumper;
 
@@ -1478,6 +1477,29 @@ sub get_reactions
     my $ctx = $fbaModelServicesServer::CallContext;
     my($out_reactions);
     #BEGIN get_reactions
+
+    # should also be able to pass in uuid
+
+    $self->_setContext($ctx,$input);
+    my $biochem = $self->_get_msobject("Biochemistry","kbase","default");
+
+    $out_reactions = [];
+    foreach my $in_rxn (@{$input->{in_reaction_ids}}) {
+        my $reaction = $biochem->getObjectByAlias("reactions", $in_rxn, $input->{id_type});
+        my $new;
+        if (defined($reaction)) {
+            # transform reaction
+            $new = {
+                id => $reaction->uuid, # Q: should we use uuid or the alias?
+                reversibility => $reaction->thermoReversibility,
+                deltaG => $reaction->deltaG,
+                deltaGErr => $reaction->deltaGErr,
+                equation => $reaction->equation # Q: what equation type should we use? This uses MS ids
+            }
+        }
+        push(@$out_reactions, $new);
+    }
+
     #END get_reactions
     my @_bad_returns;
     (ref($out_reactions) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"out_reactions\" (value was \"$out_reactions\")");
@@ -1566,6 +1588,29 @@ sub get_compounds
     my $ctx = $fbaModelServicesServer::CallContext;
     my($out_compounds);
     #BEGIN get_compounds
+
+    # should also be able to pass in uuid
+
+    $self->_setContext($ctx,$input);
+    my $biochem = $self->_get_msobject("Biochemistry","kbase","default");
+
+    $out_compounds = [];
+    foreach my $in_cpd (@{$input->{in_compound_ids}}) {
+        my $compound = $biochem->getObjectByAlias("compounds", $in_cpd, $input->{id_type});
+        my $new;
+        if (defined($compound)) {
+            # transform compound
+            $new = {
+                id => $compound->uuid, # Q: should we use uuid or the alias?
+                name => $compound->name,
+                aliases => $compound->getAliases("name"),
+                charge => $compound->defaultCharge,
+                formula => $compound->formula
+            };
+        }
+        push(@$out_compounds, $new);
+    }
+
     #END get_compounds
     my @_bad_returns;
     (ref($out_compounds) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"out_compounds\" (value was \"$out_compounds\")");
@@ -1658,6 +1703,37 @@ sub get_media
     my $ctx = $fbaModelServicesServer::CallContext;
     my($out_media);
     #BEGIN get_media
+
+    $self->_setContext($ctx,$input);
+    my $biochem = $self->_get_msobject("Biochemistry","kbase","default");
+
+    # what are possible id_type values? uuid and name?
+
+    $out_media = [];
+    foreach my $in_media (@{$input->{in_media_ids}}) {
+        my $media = undef; # $biochem->getObjectByAlias("media", $in_media, $input->{id_type});
+        my $new;
+        if (defined($media)) {
+            # transform media
+            $new = {
+                id => $media->uuid, # Q: should we use uuid or the alias?
+                name => $media->name,
+                pH => 7,
+                temperature => 298
+            };
+
+            my $compounds = [];
+            my $concentrations = [];
+            foreach my $mediaCompound (@{$media->mediacompounds}) {
+                push(@$compounds, $mediaCompound->compound_uuid);
+                push(@$concentrations, $mediaCompound->concentration);
+            }
+            $new->{compounds} = $compounds;
+            $new->{concentrations} = $concentrations;
+        }
+        push(@$out_media, $new);
+    }
+
     #END get_media
     my @_bad_returns;
     (ref($out_media) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"out_media\" (value was \"$out_media\")");
