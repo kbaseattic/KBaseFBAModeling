@@ -1,4 +1,17 @@
 #!/bin/env perl
+#===============================================================================
+#
+#         FILE: cluster_complete.pl
+#
+#        USAGE: ./cluster_complete.pl --jobfile <filename>
+#                   [ --job 1 ] ||
+#                   [ --complete ]
+#
+#       AUTHOR: Scott Devoid (), devoid@ci.uchicago.edu
+#      COMPANY: University of Chicago / Argonne Nat. Lab.
+#      VERSION: 1.0
+#      CREATED: 11/01/2012
+#===============================================================================
 use strict;
 use warnings;
 use Getopt::Long;
@@ -18,17 +31,13 @@ our $WORKSPACE_SERVICE_URL = "http://140.221.92.150:8080";
 our $FBA_SERVICE_URL = "http://kbase.us/services/fbaModelService";
 
 # Process arguments
-my ($job_filename, $job_id);
-my $usage = "app.pl --jobfile <filename> --job 32\n";
+my ($job_filename, $job_id, $complete);
+my $usage = "app.pl --jobfile <filename> [ --job 32 ] || --complete \n";
 die $usage unless GetOptions(
     "jobfile=s" => \$job_filename,
-    "job=i" => \$job_id,
+    "job:i" => \$job_id,
+    "complete" => \$complete,
 );
-die $usage unless $job_filename && defined $job_id;
-
-# Parse basic jobfile, get job
-my ($jobid, $mem, $wall, $auth, $job) = parse_jobfile($job_filename, $job_id);
-
 # Initialize workspace and fbaModelServices clients
 my $serv = Bio::KBase::workspaceService->new(
     $WORKSPACE_SERVICE_URL
@@ -36,17 +45,27 @@ my $serv = Bio::KBase::workspaceService->new(
 my $fba_serv = fbaModelServicesClient->new(
     $FBA_SERVICE_URL
 );
+die $usage unless defined $job_filename && -f $job_filename;
+my ($jobid, $mem, $wall, $auth, $job) = parse_jobfile($job_filename, $job_id);
+if ($complete) {
+    # If we got the complete flag,
+    # notify the fba service and exit
+    $fba_serv->jobs_done({
+            jobid => $jobid,
+            authentication => $auth
+    });
+    exit;
+} 
+# Die unless we have a job object
+die $usage unless defined($job);
 # Fetch objects based on the job
 my ($bio, $map, $anno, $model, $fba) = build_objects($job, $auth, $serv);
 # Run the fba
 my $result = $fba->runFBA();
 # Save the results
 save_fba_result($job, $result, $auth, $serv);
-# Try to notify fba server
-try {
-    $fba_serv->jobs_done({ jobid => $jobid, authentication => $auth });
-};
 exit;
+################################################################################
 
 # HELPER FUNCTIONS
 # Walltime may either be 00:00:00
@@ -73,7 +92,9 @@ sub parse_jobfile {
         $json = decode_json $str;
         close($fh);
     } 
-    return ($json->{jobid}, $json->{mem}, $json->{time}, $json->{auth}, $json->{jobs}->[$i]);
+    my @rtv = ($json->{jobid}, $json->{mem}, $json->{time}, $json->{auth});
+    push(@rtv, $json->{jobs}->[$i]) if defined $i;
+    return @rtv;
 }
 
 # Build objects given a job and a workspace server 
@@ -136,7 +157,11 @@ sub build_objects {
             },
         }
     ];
-    my $objs = { bio => undef, 'map' => undef, 'anno' => undef, 'model' => undef, fba => undef };
+    my $objs = {
+        bio  => undef, 'map' => undef,
+        anno => undef, model => undef,
+        fba  => undef
+    };
     foreach my $rule (@$rules) {
         my $prefix  = $rule->{prefix};
         if ($prefix eq 'media') {
@@ -158,7 +183,10 @@ sub build_objects {
             $objs->{$prefix} = $class->new($object_json);
         }
     }
-    return ( $objs->{bio}, $objs->{map}, $objs->{anno}, $objs->{model}, $objs->{fba}, $objs->{postprocess} );
+    return (
+        $objs->{bio}, $objs->{map}, $objs->{anno},
+        $objs->{model}, $objs->{fba}, $objs->{postprocess}
+    );
 }
 
 sub apply_media_to_biochemistry {
