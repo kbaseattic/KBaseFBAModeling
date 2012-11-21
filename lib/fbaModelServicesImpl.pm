@@ -548,9 +548,101 @@ sub _setDefaultFBAFormulation {
 
 sub _buildFBAObject {
 	my ($self,$fbaFormulation,$model) = @_;
-	my $fba;
-	return $fba;
+#	my $media;
+#	if ($fbaFormulation->{workspace} ne "kbasecdm") {
+#		$media = $fbaFormulation->{workspace}."/".$fbaFormulation->{media};
+#	} else {
+#		
+#	}
+#	my $form = ModelSEED::MS::FBAFormulation->new({
+#		model_uuid => $model->uuid(),
+#		model => $model,
+#		media_uuid => $media,
+#		type => "singlefba",
+#		notes => "",
+#		growthConstraint => $fbaFormulation->{objfraction},
+#		simpleThermoConstraints => $fbaFormulation->{simplethermoconst},
+#		thermodynamicConstraints => $fbaFormulation->{thermoconst},
+#		noErrorThermodynamicConstraints => $fbaFormulation->{nothermoerror},
+#		minimizeErrorThermodynamicConstraints => $fbaFormulation->{minthermoerror},
+#		fva => $data->{fva},
+#		comboDeletions => $data->{comboDeletions},
+#		fluxMinimization => $data->{fluxMinimization},
+#		findMinimalMedia => $data->{findMinimalMedia},
+#		objectiveConstraintFraction => $data->{objectiveConstraintFraction},
+#		allReversible => $data->{allReversible},
+#		uptakeLimits => $self->stringToHash($data->{uptakeLimits}),
+#		defaultMaxFlux => $data->{defaultMaxFlux},
+#		defaultMaxDrainFlux => $data->{defaultMaxDrainFlux},
+#		defaultMinDrainFlux => $data->{defaultMinDrainFlux},
+#		maximizeObjective => $data->{maximizeObjective},
+#		decomposeReversibleFlux => $data->{decomposeReversibleFlux},
+#		decomposeReversibleDrainFlux => $data->{decomposeReversibleDrainFlux},
+#		fluxUseVariables => $data->{fluxUseVariables},
+#		drainfluxUseVariables => $data->{drainfluxUseVariables},
+#		parameters => $self->stringToHash($data->{parameters}),
+#		numberOfSolutions => $data->{numberOfSolutions},
+#	});
+#	$form->parsePhenotypeSimulations({fbaPhenotypeSimulations => $data->{fbaPhenotypeSimulations}});
+#	$form->parseObjectiveTerms({objTerms => $data->{fbaObjectiveTerms}});
+#	$form->parseGeneKOList({string => $data->{geneKO}});
+#	$form->parseReactionKOList({string => $data->{reactionKO}});
+#	$form->parseConstraints({constraints => $data->{fbaConstraints}});
+#	
+#	return $fba;
 }
+
+sub _create_job {
+	my ($self,$args) = @_;
+	$args = $self->_validateargs($args,["queuing_command","clusterjobs","workspace"],{
+		clustermem => 2000,
+		clustertime => 14400,
+		postprocess_command => undef,
+		postprocess_args => undef
+	});
+	my $jobid = Data::UUID->new()->create_str();
+	return {
+		kbase_workspace => $args->{workspace},
+		clustermem => $args->{clustermem},
+		clustertime => $args->{clustertime},
+		id => $jobid,
+		queuetime => DateTime->now()->datetime(),
+		complete => 0,
+		clusterjobs => $args->{clusterjobs},
+		clustertoken => undef,
+		postprocess_command => $args->{postprocess_command},
+		postprocess_args => $args->{postprocess_args},
+		owner => $self->_getUsername(),
+		queuing_command => $args->{queuing_command},
+	};
+}
+
+sub _submit_job {
+	my ($self,$job) = @_;
+	my $clusterJob = $self->_clusterService()->Submit({
+		mem => $job->{clustermem},
+		"time" => $job->{clustertime},
+		jobid => $job->{id},
+		auth => $self->_authentication(),
+		application => "fba",
+		jobs => $job->{clusterjobs}
+	});
+	$job->{clustertoken} = $clusterJob->{ID};
+	$self->_save_msobject($job,"ClusterJob",$job->{kbase_workspace},$job->{kbase_id},"queue_runfba");
+	return $job;
+};
+
+sub _cancel_job {
+	my ($self,$job) = @_;
+	my $clusterjob = $self->_clusterService()->Job($job->{clustertoken},$self->_clusterService());
+	return $self->_clusterService()->Cancel($clusterjob);
+};
+
+sub _check_job {
+	my ($self,$job) = @_;
+	my $clusterjob = $self->_clusterService()->Job($job->{clustertoken},$self->_clusterService());
+	return $self->_clusterService()->Done($clusterjob);
+};
 
 #END_HEADER
 
@@ -3449,26 +3541,37 @@ sub queue_runfba
 	});
 	#Creating FBAFormulation Object
 	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
-	my $fba = $self->_buildFBAObject($input->{formulation});
+	my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
+	my $fba = $self->_buildFBAObject($input->{formulation},$model);
 	#Saving FBAFormulation to database
-	$self->_save_msobject($fba,"FBA",$input->{fba},$input->{fba},"queue_runfba");
-	my $job = {
-		id => Data::UUID->new()->create_str(),
-		queuetime => DateTime->now()->datetime(),
-		complete => 0,
-		type => "FBA",
-		arguments => {
-			fba_id => $input->{fba},
-			fba_workspace => $input->{fba_workspace},
-		},
-		owner => $self->_getUsername(),
+	my $fbameta = $self->_save_msobject($fba,"FBA",$input->{fba_workspace},$input->{fba},"queue_runfba");
+	my $job = $self->_create_job({
+		clusterjobs => [{
+			mediaids => [],
+			mediawss => [],
+			mediainsts => [],
+			bioid => "kbase",
+			biows => "default",
+			bioinst => 0,
+			mapid => "kbase",
+			mapws => "default",
+			mapinst => 0,
+			annoid => $model->annotation()->{kbase}->{wsid},
+			annows => $model->annotation()->{kbase}->{ws},
+			annoinst => $model->annotation()->{kbase}->{wsinst},
+			modelid => $model->{kbase}->{wsid},
+			modelws => $model->{kbase}->{ws},
+			modelinst => $model->{kbase}->{wsinst},
+			fbaid => $fba->{kbase}->{wsid},
+			fbaws => $fba->{kbase}->{ws},
+			fbainst => $fba->{kbase}->{wsinst},
+		}],
+		postprocess_command => undef,
+		postprocess_args => undef,
 		queuing_command => "queue_runfba",
-		queuing_service => "fbaModelServicesClient",
-		postprocess_command => "",
-		postprocess_args => [],
-	};
-	$self->_save_msobject($job,"JobObject",$input->{fba_workspace},$job->{id},"queue_runfba");
-	$output = $job;
+		workspace => $input->{fba_workspace}
+	});
+	$output = $self->_submit_job($job);
 	$self->_clearContext();
     #END queue_runfba
     my @_bad_returns;
@@ -4371,6 +4474,106 @@ sub check_job
 	my $msg = "Invalid returns passed to check_job:\n" . join("", map { "\t$_\n" } @_bad_returns);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
 							       method_name => 'check_job');
+    }
+    return($output);
+}
+
+
+
+
+=head2 jobs_done
+
+  $output = $obj->jobs_done($job)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$job is a job_id
+$output is a JobObject
+job_id is a string
+JobObject is a reference to a hash where the following keys are defined:
+	id has a value which is a job_id
+	queuetime has a value which is a string
+	completetime has a value which is a string
+	complete has a value which is a bool
+	object has a value which is a string
+	workspace has a value which is a string
+	type has a value which is a string
+	owner has a value which is a string
+	queuing_command has a value which is a string
+	queuing_service has a value which is a string
+	postprocess_command has a value which is a string
+	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
+bool is an int
+CommandArguments is a reference to a hash where the following keys are defined:
+	authentication has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$job is a job_id
+$output is a JobObject
+job_id is a string
+JobObject is a reference to a hash where the following keys are defined:
+	id has a value which is a job_id
+	queuetime has a value which is a string
+	completetime has a value which is a string
+	complete has a value which is a bool
+	object has a value which is a string
+	workspace has a value which is a string
+	type has a value which is a string
+	owner has a value which is a string
+	queuing_command has a value which is a string
+	queuing_service has a value which is a string
+	postprocess_command has a value which is a string
+	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
+bool is an int
+CommandArguments is a reference to a hash where the following keys are defined:
+	authentication has a value which is a string
+
+
+=end text
+
+
+
+=item Description
+
+
+
+=back
+
+=cut
+
+sub jobs_done
+{
+    my $self = shift;
+    my($job) = @_;
+
+    my @_bad_arguments;
+    (!ref($job)) or push(@_bad_arguments, "Invalid type for argument \"job\" (value was \"$job\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to jobs_done:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'jobs_done');
+    }
+
+    my $ctx = $fbaModelServicesServer::CallContext;
+    my($output);
+    #BEGIN jobs_done
+    #END jobs_done
+    my @_bad_returns;
+    (ref($output) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to jobs_done:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'jobs_done');
     }
     return($output);
 }
@@ -8555,6 +8758,32 @@ job has a value which is a job_id
 workspace has a value which is a workspace_id
 authentication has a value which is a string
 
+
+=end text
+
+=back
+
+
+
+=head2 job_id
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
 
 =end text
 

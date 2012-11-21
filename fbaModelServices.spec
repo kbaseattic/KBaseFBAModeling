@@ -771,4 +771,10 @@ module fbaModelServices {
         Retreives job data given a job ID
     */
     funcdef check_job(check_job_params input) returns (JobObject output);       
+	typedef string job_id;
+	typedef structure {
+		job_id jobid;
+		string authentication;
+    } jobs_done_params;
+	funcdef jobs_done(jobs_done_params input) returns (JobObject output);
 };

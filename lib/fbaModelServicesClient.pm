@@ -1291,6 +1291,56 @@ sub check_job
 
 
 
+=head2 $result = jobs_done(job)
+
+
+
+=cut
+
+sub jobs_done
+{
+    my($self, @args) = @_;
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function jobs_done (received $n, expecting 1)");
+    }
+    {
+	my($job) = @args;
+
+	my @_bad_arguments;
+        (!ref($job)) or push(@_bad_arguments, "Invalid type for argument 1 \"job\" (value was \"$job\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to jobs_done:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'jobs_done');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.jobs_done",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{code},
+					       method_name => 'jobs_done',
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method jobs_done",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'jobs_done',
+				       );
+    }
+}
+
+
+
 sub version {
     my ($self) = @_;
     my $result = $self->{client}->call($self->{url}, {
@@ -1302,16 +1352,16 @@ sub version {
             Bio::KBase::Exceptions::JSONRPC->throw(
                 error => $result->error_message,
                 code => $result->content->{code},
-                method_name => 'check_job',
+                method_name => 'jobs_done',
             );
         } else {
             return wantarray ? @{$result->result} : $result->result->[0];
         }
     } else {
         Bio::KBase::Exceptions::HTTP->throw(
-            error => "Error invoking method check_job",
+            error => "Error invoking method jobs_done",
             status_line => $self->{client}->status_line,
-            method_name => 'check_job',
+            method_name => 'jobs_done',
         );
     }
 }

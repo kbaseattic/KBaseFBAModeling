@@ -38,6 +38,7 @@ our %return_counts = (
         'queue_wildtype_phenotype_reconciliation' => 1,
         'queue_combine_wildtype_phenotype_reconciliation_params' => 1,
         'check_job' => 1,
+        'jobs_done' => 1,
         'version' => 1,
 );
 
@@ -70,6 +71,7 @@ sub _build_valid_methods
         'queue_wildtype_phenotype_reconciliation' => 1,
         'queue_combine_wildtype_phenotype_reconciliation_params' => 1,
         'check_job' => 1,
+        'jobs_done' => 1,
         'version' => 1,
     };
     return $methods;
