@@ -1950,10 +1950,20 @@ sub get_media
     my $biochem = $self->_get_msobject("Biochemistry","kbase","default");
 
     # what are possible id_type values? uuid and name?
+    my $media_map = { uuid => {}, name => {} };
+    unless (exists($media_map->{$input->{id_type}})) {
+        die "Unknown type: " . $input->{id_type};
+    }
+
+    my $all_media = $biochem->media;
+    foreach my $media (@$all_media) {
+        $media_map->{uuid}->{$media->uuid} = $media;
+        $media_map->{name}->{$media->name} = $media;
+    }
 
     $out_media = [];
     foreach my $in_media (@{$input->{in_media_ids}}) {
-        my $media = undef; # $biochem->getObjectByAlias("media", $in_media, $input->{id_type});
+        my $media = $media_map->{$input->{id_type}}->{$in_media};
         my $new;
         if (defined($media)) {
             # transform media
@@ -2070,6 +2080,51 @@ sub get_biochemistry
     my $ctx = $fbaModelServicesServer::CallContext;
     my($out_biochemistry);
     #BEGIN get_biochemistry
+
+    # for now just return default biochem
+
+    $self->_setContext($ctx,$input);
+    my $biochem = $self->_get_msobject("Biochemistry","kbase","default");
+
+    my $compounds = [];
+    my $reactions = [];
+    my $media = [];
+
+    $out_biochemistry = {
+        id => $biochem->uuid, # Q: should we use uuid?
+        name => $biochem->name,
+        compounds => $compounds,
+        reactions => $reactions,
+        media => $media
+    };
+
+    # the following is very dependent upon the internal data representation
+    # of the MS subobjects, and needs to be changed if this representation changes
+
+    foreach my $cpd_info (@{$biochem->_compounds}) {
+        if ($cpd_info->{created} == 1) {
+            push(@$compounds, $cpd_info->{object}->uuid);
+        } else {
+            push(@$compounds, $cpd_info->{data}->{uuid});
+        }
+    }
+
+    foreach my $rxn_info (@{$biochem->_reactions}) {
+        if ($rxn_info->{created} == 1) {
+            push(@$reactions, $rxn_info->{object}->uuid);
+        } else {
+            push(@$reactions, $rxn_info->{data}->{uuid});
+        }
+    }
+
+    foreach my $media_info (@{$biochem->_media}) {
+        if ($media_info->{created} == 1) {
+            push(@$media, $media_info->{object}->uuid);
+        } else {
+            push(@$media, $media_info->{data}->{uuid});
+        }
+    }
+
     #END get_biochemistry
     my @_bad_returns;
     (ref($out_biochemistry) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"out_biochemistry\" (value was \"$out_biochemistry\")");
