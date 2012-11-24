@@ -14,7 +14,7 @@ use warnings;
 use Test::More;
 use Data::Dumper;
 use File::Temp qw(tempfile);
-my $test_count = 2;
+my $test_count = 10;
 
 #Initializing test workspace
 my $ws = &_initializeTestWorkspace();
@@ -27,12 +27,125 @@ my $genome = $obj->genome_to_workspace({
 });
 ok defined($genome), "Genome successfully imported to workspace from CDM!"; 
 
+#Now adding media formulation to workspace
+my $media = $obj->addmedia({
+	media => "Glucose minimal media",
+	workspace => "testworkspace",
+	name => "Glucose minimal media",
+	isDefined => 1,
+	isMinimal => 1,
+	type => "Minimal media",
+	compounds => [qw(
+		Oxaloacetate Co2+ Cl- H+ Ca2+ Cu2+ Sulfate Zn2+ Mn2+ NH3
+		Phosphate H2O O2 K+ Mg Na+ Fe2+ fe3 Molybdate Ni2+ D-Glucose
+	)],
+	concentrations => [
+		0.001,0.001,0.001,0.001,0.001,0.001,0.001,0.001,0.001,0.001,
+		0.001,0.001,0.001,0.001,0.001,0.001,0.001,0.001,0.001,0.001
+	],
+	maxflux => [
+		1000,1000,1000,1000,1000,1000,1000,1000,1000,1000,
+		1000,1000,1000,1000,1000,1000,1000,1000,1000,1000
+	],
+	minflux => [
+		-1000,-1000,-1000,-1000,-1000,-1000,-1000,-1000,-1000,-1000,
+		-1000,-1000,-1000,-1000,-1000,-1000,-1000,-1000,-1000,-1000
+	]
+});
+ok defined($media), "Media successfully added to workspace!";
+
+#Now test phenotype import
+my $phenos = $obj->import_phenotypes({
+	phenotypeSet_workspace => "testworkspace",
+	genome => $genome->[0],
+	genome_workspace => "testworkspace",
+	phenotypes => [
+		[[],"Glucose minimal media","testworkspace",["CoA"],1],
+		[[],"Carbon-D-Glucose","kbasecdm",["Folate"],1],
+		[["kb|g.0.peg.3078","kb|g.0.peg.1052"],"ArgonneLBMedia","kbasecdm",[],1]
+	],
+	notes => "",
+});
+ok defined($phenos), "Successfully imported phenotypes!";
+
 #Now test ability to produce a metabolic model
 my $model = $obj->genome_to_fbamodel({
-	genome => "kb|g.0",
+	genome => $genome->[0],
 	genome_workspace => "testworkspace",
 });
-ok defined($genome), "Model successfully constructed from input genome!";
+ok defined($model), "Model successfully constructed from input genome!";
+
+#Now test phenotype simulation
+my $phenosim = $obj->simulate_phenotypes({
+	model => $model->[0],
+	model_workspace => "testworkspace",
+	phenotypeSet => $phenos->[0],
+	phenotypeSet_workspace => "testworkspace",
+	formulation => {},
+	notes => "",
+});
+ok defined($phenosim), "Successfully simulated phenotypes!";
+
+#Now test phenotype simulation export
+my $html = $obj->export_phenotypeSimulationSet({
+	phenotypeSimulationSet => $phenosim->[0],
+	workspace => "testworkspace",
+	format => "html"
+});
+ok defined($html), "Successfully exported phenotype simulations to html format!";
+open ( my $fh, ">", "PhenotypeSim.html");
+print $fh $html."\n";
+close($fh);
+
+#Testing model export to html
+$html = $obj->export_fbamodel({
+	model => $model->[0],
+	workspace => "testworkspace",
+	format => "html"
+});
+ok defined($html), "Successfully exported model to html format!";
+open ( $fh, ">", "model.html");
+print $fh $html."\n";
+close($fh);
+
+#Now exporting media formulation
+$html = $obj->export_media({
+	media => $media->[0],
+	workspace => "testworkspace",
+	format => "html"
+});
+ok defined($html), "Successfully exported media to html format!";
+open ( $fh, ">", "media.html");
+print $fh $html."\n";
+close($fh);
+
+#Now test flux balance analysis
+my $fba = $obj->runfba({
+	model => $model->[0],
+	model_workspace => "testworkspace",
+	formulation => {
+		media => "Glucose minimal media",
+		media_workspace => "testworkspace"
+	},
+	fva => 0,
+	simulateko => 0,
+	minimizeflux => 0,
+	findminmedia => 0,
+	notes => "",
+	fba_workspace => "testworkspace"
+});
+ok defined($fba), "FBA successfully run on input model!";
+
+#Now test flux balance analysis export
+$html = $obj->export_fba({
+	fba => $fba->[0],
+	workspace => "testworkspace",
+	format => "html"
+});
+ok defined($html), "Successfully exported FBA to html format!";
+open ( $fh, ">", "fba.html");
+print $fh $html."\n";
+close($fh);
 
 done_testing($test_count);
 
@@ -50,6 +163,7 @@ sub _loadBiochemToDB {
 	open(my $fh, "<", $uncompressed_filename) || die "$!: $@";
 	my $string = <$fh>;
 	my $data = JSON::XS->new->utf8->decode($string);
+	$data->{uuid} = "kbase/default";
 	$ws->save_object({
 		id => "default",
 		type => "Biochemistry",
@@ -65,6 +179,7 @@ sub _loadBiochemToDB {
 	$string = <$fh>;
 	$data = JSON::XS->new->utf8->decode($string);
 	$data->{biochemistry_uuid} = "kbase/default";
+	$data->{uuid} = "kbase/default";
 	$ws->save_object({
 		id => "default",
 		type => "Mapping",

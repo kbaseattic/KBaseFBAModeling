@@ -362,13 +362,15 @@ sub _get_msobject {
 		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => '_get_msobject');
 	}
 	my $msProvTypes = {
-		Biochemistry => 1,
-		Model => 1,
-		Annotation => 1,
-		Mapping => 1
+		Biochemistry => "Biochemistry",
+		Model => "Model",
+		Annotation => "Annotation",
+		Mapping => "Mapping",
+		FBA => "FBAFormulation",
+		Media => "Media"
 	};
 	if (defined($msProvTypes->{$type})) {
-		my $class = "ModelSEED::MS::".$type;
+		my $class = "ModelSEED::MS::".$msProvTypes->{$type};
 		my $obj = $class->new($output->{data});
 		if ($type eq "Model") {
 			my $linkid = $obj->annotation_uuid();
@@ -384,6 +386,17 @@ sub _get_msobject {
 			my $linkid = $obj->biochemistry_uuid();
 			my $array = [split(/\//,$linkid)];
 			$obj->biochemistry($self->_get_msobject("Biochemistry",$array->[0],$array->[1]));
+		} elsif ($type eq "FBA") {
+			my $linkid = $obj->model_uuid();
+			my $array = [split(/\//,$linkid)];
+			$obj->model($self->_get_msobject("Model",$array->[0],$array->[1]));
+			my $mediauuids = $obj->mediaUUIDs();
+			foreach my $media (@{$mediauuids}) {
+				if ($obj->media_uuid() =~ m/(.+)\/(.+)/) {
+					my $mediaobj = $self->_get_msobject("Media",$1,$2);
+					$obj->model()->biochemistry()->add("media",$mediaobj);
+				}
+			}
 		}
 		return $obj;
 	} else {
@@ -528,7 +541,10 @@ sub _setDefaultFBAFormulation {
 		media_workspace => "kbasecdm",
 		objfraction => 0.1,
 		allreversible => 0,
-		objective => "Max{(1)bio00001.biomassflux}",
+		maximizeObjective => 1,
+		objectiveTerms => [
+			[1,"biomassflux","bio1"]
+		],
 		geneko => [],
 		rxnko => [],
 		bounds => [],
@@ -547,48 +563,166 @@ sub _setDefaultFBAFormulation {
 
 sub _buildFBAObject {
 	my ($self,$fbaFormulation,$model) = @_;
-#	my $media;
-#	if ($fbaFormulation->{workspace} ne "kbasecdm") {
-#		$media = $fbaFormulation->{workspace}."/".$fbaFormulation->{media};
-#	} else {
-#		
-#	}
-#	my $form = ModelSEED::MS::FBAFormulation->new({
-#		model_uuid => $model->uuid(),
-#		model => $model,
-#		media_uuid => $media,
-#		type => "singlefba",
-#		notes => "",
-#		growthConstraint => $fbaFormulation->{objfraction},
-#		simpleThermoConstraints => $fbaFormulation->{simplethermoconst},
-#		thermodynamicConstraints => $fbaFormulation->{thermoconst},
-#		noErrorThermodynamicConstraints => $fbaFormulation->{nothermoerror},
-#		minimizeErrorThermodynamicConstraints => $fbaFormulation->{minthermoerror},
-#		fva => $data->{fva},
-#		comboDeletions => $data->{comboDeletions},
-#		fluxMinimization => $data->{fluxMinimization},
-#		findMinimalMedia => $data->{findMinimalMedia},
-#		objectiveConstraintFraction => $data->{objectiveConstraintFraction},
-#		allReversible => $data->{allReversible},
-#		uptakeLimits => $self->stringToHash($data->{uptakeLimits}),
-#		defaultMaxFlux => $data->{defaultMaxFlux},
-#		defaultMaxDrainFlux => $data->{defaultMaxDrainFlux},
-#		defaultMinDrainFlux => $data->{defaultMinDrainFlux},
-#		maximizeObjective => $data->{maximizeObjective},
-#		decomposeReversibleFlux => $data->{decomposeReversibleFlux},
-#		decomposeReversibleDrainFlux => $data->{decomposeReversibleDrainFlux},
-#		fluxUseVariables => $data->{fluxUseVariables},
-#		drainfluxUseVariables => $data->{drainfluxUseVariables},
-#		parameters => $self->stringToHash($data->{parameters}),
-#		numberOfSolutions => $data->{numberOfSolutions},
-#	});
-#	$form->parsePhenotypeSimulations({fbaPhenotypeSimulations => $data->{fbaPhenotypeSimulations}});
-#	$form->parseObjectiveTerms({objTerms => $data->{fbaObjectiveTerms}});
-#	$form->parseGeneKOList({string => $data->{geneKO}});
-#	$form->parseReactionKOList({string => $data->{reactionKO}});
-#	$form->parseConstraints({constraints => $data->{fbaConstraints}});
-#	
-#	return $fba;
+	#Parsing media
+	my $media;
+	if ($fbaFormulation->{media_workspace} ne "kbasecdm") {
+		my $mediaobj = $self->_get_msobject("Media",$fbaFormulation->{media_workspace},$fbaFormulation->{media});
+		$model->biochemistry()->add("media",$mediaobj);
+		$media = $fbaFormulation->{media_workspace}."/".$fbaFormulation->{media};
+	} else {
+		my $mediaObj = $model->biochemistry()->queryObject("media",{
+			id => $fbaFormulation->{media}
+		});
+		if (!defined($mediaObj)) {
+			my $msg = "Media object ".$fbaFormulation->{media}." not found in biochemistry!";
+			Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => '_buildFBAObject');
+		}
+		$media = $mediaObj->uuid();
+	}
+	#Building FBAFormulation object
+	my $form = ModelSEED::MS::FBAFormulation->new({
+		model_uuid => $model->uuid(),
+		model => $model,
+		media_uuid => $media,
+		type => "singlegrowth",
+		notes => "",
+		simpleThermoConstraints => $fbaFormulation->{simplethermoconst},
+		thermodynamicConstraints => $fbaFormulation->{thermoconst},
+		noErrorThermodynamicConstraints => $fbaFormulation->{nothermoerror},
+		minimizeErrorThermodynamicConstraints => $fbaFormulation->{minthermoerror},
+		fva => 0,
+		comboDeletions => 0,
+		fluxMinimization => 0,
+		findMinimalMedia => 0,
+		objectiveConstraintFraction => $fbaFormulation->{objfraction},
+		allReversible => $fbaFormulation->{allreversible},
+		uptakeLimits => $fbaFormulation->{uptakelim},
+		defaultMaxFlux => $fbaFormulation->{defaultmaxflux},
+		defaultMaxDrainFlux => $fbaFormulation->{defaultmaxuptake},
+		defaultMinDrainFlux => $fbaFormulation->{defaultminuptake},
+		maximizeObjective => $fbaFormulation->{maximizeObjective},
+		decomposeReversibleFlux => 0,
+		decomposeReversibleDrainFlux => 0,
+		fluxUseVariables => 0,
+		drainfluxUseVariables => 0,
+		parameters => {},
+		numberOfSolutions => 1,
+	});
+	#Parse objective equation
+	foreach my $term (@{$fbaFormulation->{objectiveTerms}}) {
+		my $output = $self->_parseTerm($term,$model);
+		$form->add("fbaObjectiveTerms",{
+			coefficient => $output->{coef},
+			variableType => $output->{vartype},
+			entityType => $output->{enttype},
+			entity_uuid => $output->{uuid},
+		});
+	}
+	#Parse constraints
+	foreach my $constraint (@{$fbaFormulation->{constraints}}) {
+		my $const = $form->add("fbaConstraints",{
+			name => $constraint->[3],
+			rhs => $constraint->[0],
+			sign => $constraint->[1],
+		});
+		foreach my $term (@{$const->[2]}) {
+			my $output = $self->_parseTerm($term,$model);
+			$const->add("fbaConstraintVariables",{
+				coefficient => $output->{coef},
+				variableType => $output->{vartype},
+				entityType => $output->{enttype},
+				entity_uuid => $output->{uuid},
+			});
+		}
+	}
+	#Parse bounds
+	foreach my $bound (@{$fbaFormulation->{bounds}}) {
+		my $bound = $self->_parseBound($bound);
+		$form->add($bound->{boundtype},{
+			modelreaction_uuid => $bound->{uuid},
+			variableType => $bound->{vartype},
+			upperBound => $bound->{upperbound},
+			lowerBound => $bound->{lowerbound}
+		});
+	}
+	#Parsing gene KO
+	my $anno = $model->annotation();
+	foreach my $gene (@{$fbaFormulation->{geneko}}) {
+		my $geneObj = $anno->queryObject("features",{id => $gene});
+		if (defined($geneObj)) {
+			$form->addLinkArrayItem("geneKOs",$geneObj);
+		}
+	}
+	#Parsing reaction KO
+	foreach my $reaction (@{$fbaFormulation->{reactionKO}}) {
+		my $rxnObj = $model->searchForReaction($reaction);
+		if (defined($rxnObj)) {
+			$form->addLinkArrayItem("reactionKOs",$rxnObj);
+		}
+	}
+	return $form;
+}
+
+sub _parseTerm {
+	my ($self,$term,$model) = @_;	
+	my $output = {
+		coef => $term->[0],
+		vartype => $term->[1],
+		enttype => undef,
+		uuid => undef
+	};
+	my $obj;
+	if ($term->[1] eq "flux") {
+		$output->{vartype} = "flux";
+		$output->{enttype} = "Reaction";
+		$obj = $model->searchForReaction("reactions",{id => $term->[2]});
+	} elsif ($term->[1] eq "biomassflux") {
+		$output->{vartype} = "flux";
+		$output->{enttype} = "Biomass";
+		$obj = $model->searchForBiomass("biomasses",{id => $term->[2]});
+		if (!defined($obj)) {
+			$obj = $model->biomasses()->[0];
+		}
+	} elsif ($term->[1] eq "drainflux") {
+		$output->{vartype} = "drainflux";
+		$output->{enttype} = "Compound";
+		$obj = $model->searchForCompound("compounds",{id => $term->[2]});
+	} else {
+		my $msg = "Variable type ".$term->[1]." not recognized!";
+		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => '_buildFBAObject');
+	}
+	if (!defined($obj)) {
+		my $msg = "Variable ".$term->[2]." not found!";
+		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => '_buildFBAObject');
+	}
+	$output->{uuid} = $obj->uuid(); 
+	return $output;
+}
+
+sub _parseBound {
+	my ($self,$bound,$model) = @_;
+	my $output = {
+		lowerbound => $bound->[0],
+		upperbound => $bound->[1],
+		vartype => $bound->[2]
+	};
+	my $obj;
+	if ($bound->[2] eq "flux") {
+		$output->{boundtype} = "fbaReactionBounds";
+		$obj = $model->searchForReaction($bound->[3]);
+	} elsif ($bound->[2] eq "drainflux") {
+		$output->{boundtype} = "fbaCompoundBounds";
+		$obj = $model->searchForCompound($bound->[3]);
+	} else {
+		my $msg = "Variable type ".$bound->[2]." not recognized!";
+		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => '_buildFBAObject');
+	}
+	if (!defined($obj)) {
+		my $msg = "Bound variable ".$bound->[3]." not found!";
+		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => '_buildFBAObject');
+	}
+	$output->{uuid} = $obj->uuid(); 
+	return $output;
 }
 
 sub _create_job {
@@ -641,6 +775,112 @@ sub _check_job {
 	my ($self,$job) = @_;
 	my $clusterjob = $self->_clusterService()->Job($job->{clustertoken},$self->_clusterService());
 	return $self->_clusterService()->Done($clusterjob);
+};
+
+sub _get_new_id {
+	my ($self,$prefix) = @_;
+	my $id = $self->_idServer()->allocate_id_range( $prefix, 1 );
+	if (!defined($id) || $id eq "") {
+    	$id = "0";
+    }
+    $id = $prefix.$id;
+	return $id;
+};
+
+sub _phenotypeSimulationSet_to_html {
+	my ($self,$obj) = @_;
+	my $htmlArray = [
+		'<!doctype HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">',
+		'<html><head>',
+		'<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>',
+		'    <script type="text/javascript">',
+		'        function UpdateTableHeaders() {',
+		'            $("div.divTableWithFloatingHeader").each(function() {',
+		'                var originalHeaderRow = $(".tableFloatingHeaderOriginal", this);',
+		'                var floatingHeaderRow = $(".tableFloatingHeader", this);',
+		'                var offset = $(this).offset();',
+		'                var scrollTop = $(window).scrollTop();',
+		'                if ((scrollTop > offset.top) && (scrollTop < offset.top + $(this).height())) {',
+		'                    floatingHeaderRow.css("visibility", "visible");',
+		'                    floatingHeaderRow.css("top", Math.min(scrollTop - offset.top, $(this).height() - floatingHeaderRow.height()) + "px");',
+		'                    // Copy row width from whole table',
+		'                    floatingHeaderRow.css(\'width\', "1200px");',
+		'                    // Copy cell widths from original header',
+		'                    $("th", floatingHeaderRow).each(function(index) {',
+		'                        var cellWidth = $("th", originalHeaderRow).eq(index).css(\'width\');',
+		'                        $(this).css(\'width\', cellWidth);',
+		'                    });',
+		'                }',
+		'                else {',
+		'                    floatingHeaderRow.css("visibility", "hidden");',
+		'                    floatingHeaderRow.css("top", "0px");',
+		'                }',
+		'            });',
+		'        }',
+		'        $(document).ready(function() {',
+		'            $("table.tableWithFloatingHeader").each(function() {',
+		'                $(this).wrap("<div class=\"divTableWithFloatingHeader\" style=\"position:relative\"></div>");',
+		'                var originalHeaderRow = $("tr:first", this)',
+		'                originalHeaderRow.before(originalHeaderRow.clone());',
+		'                var clonedHeaderRow = $("tr:first", this)',
+		'                clonedHeaderRow.addClass("tableFloatingHeader");',
+		'                clonedHeaderRow.css("position", "absolute");',
+		'                clonedHeaderRow.css("top", "0px");',
+		'                clonedHeaderRow.css("left", $(this).css("margin-left"));',
+		'                clonedHeaderRow.css("visibility", "hidden");',
+		'                originalHeaderRow.addClass("tableFloatingHeaderOriginal");',
+		'            });',
+		'            UpdateTableHeaders();',
+		'            $(window).scroll(UpdateTableHeaders);',
+		'            $(window).resize(UpdateTableHeaders);',
+		'        });',
+		'    </script>',
+		'<style type="text/css">',
+		'h1 {',
+		'    font-size: 16px;',
+		'}',
+		'table.tableWithFloatingHeader {',
+		'    font-size: 12px;',
+		'    text-align: left;',
+		'	 border: 0;',
+		'	 width: 1200px;',
+		'}',
+		'th {',
+		'    font-size: 14px;',
+		'    background: #ddd;',
+		'	 border: 1px solid black;',
+		'    vertical-align: top;',
+		'    padding: 5px 5px 5px 5px;',
+		'}',
+		'td {',
+		'   font-size: 16px;',
+		'	vertical-align: top;',
+		'	border: 1px solid black;',
+		'}',
+		'</style></head>',
+		'<h2>Phenotype simulation set attributes</h2>',
+		'<table>',
+		"<tr><th>ID</th><td style='font-size:16px;border: 1px solid black;'>".$obj->{id}."</td></tr>",
+		"<tr><th>Model</th><td style='font-size:16px;border: 1px solid black;'>".$obj->{model_workspace}."/".$obj->{model}."</td></tr>",		
+		'</table>',
+		'<h2>Simulated phenotypes</h2>',
+		'<table class="tableWithFloatingHeader">',
+		'<tr><th>Base media</th><th>Additional compounds</th><th>Gene KO</th><th>Growth</th><th>Simulated growth</th><th>Simulated growth fraction</th><th>Class</th></tr>',
+	];
+	foreach my $phenotype (@{$obj->{phenotypeSimulations}}) {
+		push(@{$htmlArray},
+			'<tr><td>'.$phenotype->[0]->[2]."/".$phenotype->[0]->[1].'</td>'.
+			'<td>'.join(", ",@{$phenotype->[0]->[3]}).'</td>'.
+			'<td>'.join(", ",@{$phenotype->[0]->[0]}).'</td>'.
+			'<td>'.$phenotype->[0]->[4].'</td>'.
+			'<td>'.$phenotype->[1].'</td>'.
+			'<td>'.$phenotype->[2].'</td>'.
+			'<td>'.$phenotype->[3].'</td></tr>'
+		);
+	}
+	push(@{$htmlArray},'</table>');
+	push(@{$htmlArray},'</html>');
+	return join("\n",@{$htmlArray});
 };
 
 #END_HEADER
@@ -919,14 +1159,15 @@ FBA is a reference to a hash where the following keys are defined:
 bool is an int
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
-	workspace has a value which is a workspace_id
+	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
-	objective has a value which is a string
+	maximizeObjective has a value which is a bool
+	objectiveTerms has a value which is a reference to a list where each element is a term
 	geneko has a value which is a reference to a list where each element is a feature_id
 	rxnko has a value which is a reference to a list where each element is a reaction_id
-	bounds has a value which is a reference to a list where each element is a string
-	constraints has a value which is a reference to a list where each element is a string
+	bounds has a value which is a reference to a list where each element is a bound
+	constraints has a value which is a reference to a list where each element is a constraint
 	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
 	defaultmaxflux has a value which is a float
 	defaultminuptake has a value which is a float
@@ -998,14 +1239,15 @@ FBA is a reference to a hash where the following keys are defined:
 bool is an int
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
-	workspace has a value which is a workspace_id
+	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
-	objective has a value which is a string
+	maximizeObjective has a value which is a bool
+	objectiveTerms has a value which is a reference to a list where each element is a term
 	geneko has a value which is a reference to a list where each element is a feature_id
 	rxnko has a value which is a reference to a list where each element is a reaction_id
-	bounds has a value which is a reference to a list where each element is a string
-	constraints has a value which is a reference to a list where each element is a string
+	bounds has a value which is a reference to a list where each element is a bound
+	constraints has a value which is a reference to a list where each element is a constraint
 	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
 	defaultmaxflux has a value which is a float
 	defaultminuptake has a value which is a float
@@ -2173,9 +2415,14 @@ sub genome_to_fbamodel
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["genome","genome_workspace"],{
     	model_workspace => $input->{genome_workspace},
-    	model => $input->{genome}.".model",
+    	model => undef,
     	overwrite => 0
     });
+    #Determining model ID
+    my $genome = $input->{genome};
+    if (!defined($input->{model})) {
+    	$input->{model} = $self->_get_new_id($input->{genome}.".fbamdl.")
+    }
     #Retreiving genome object from workspace
     my $genome = $self->_get_msobject("Genome",$input->{genome_workspace},$input->{genome});
     #Retreiving mapping and biochemistry
@@ -2185,6 +2432,7 @@ sub genome_to_fbamodel
     my $annotation = $self->_translate_genome_to_annotation($genome,$mapping);
     my $mdl = $annotation->createStandardFBAModel( { prefix => "Kbase", } );
     #If no output model ID is provided, one is retreived from KBase
+	$mdl->uuid($input->{model_workspace}."/".$input->{model});
 	$mdl->id($input->{model});
 	$mdl->mapping_uuid($input->{model_workspace}."/".$input->{model}.".map");
 	$mdl->mapping($mapping);
@@ -2283,7 +2531,7 @@ sub export_fbamodel
     $input = $self->_validateargs($input,["model","workspace","format"],{
     	authentication => undef
     });
-    my $model = $self->_get_msobject("Model",$input->{in_workspace},$input->{in_model});
+    my $model = $self->_get_msobject("Model",$input->{workspace},$input->{model});
     $output = $model->export({format => $input->{format}});
     $self->_clearContext();
     #END export_fbamodel
@@ -2422,6 +2670,8 @@ sub addmedia
     #Creating the media object from the specifications
     my $bio = $self->_get_msobject("Biochemistry","kbase","default");
     my $media = ModelSEED::MS::Media->new({
+    	uuid => $input->{workspace}."/".$input->{media},
+    	id => $input->{media},
     	name => $input->{name},
     	isDefined => $input->{isDefined},
     	isMinimal => $input->{isMinimal},
@@ -2445,7 +2695,7 @@ sub addmedia
 	    		$data->{maxFlux} = $input->{maxflux}->[$i];
 	    	}
 	    	if (defined($input->{minflux}->[$i])) {
-	    		$data->{minFlux} = $input->{minFlux}->[$i];
+	    		$data->{minFlux} = $input->{minflux}->[$i];
 	    	}
 	    	$media->add("mediacompounds",$data);
     	} else {
@@ -2459,7 +2709,7 @@ sub addmedia
     	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'addmedia');
 	}
     #Saving media in database
-    $mediaMeta = $self->_save_msobject($media,"Media",$input->{in_workspace},$input->{in_media},"addmedia",$input->{overwrite});
+    $mediaMeta = $self->_save_msobject($media,"Media",$input->{workspace},$input->{media},"addmedia",$input->{overwrite});
 	$self->_clearContext();
     #END addmedia
     my @_bad_returns;
@@ -2544,15 +2794,16 @@ sub export_media
     $self->_setContext($ctx,$input);
 	$input = $self->_validateargs($input,["media","workspace","format"],{});
     my $med;
-    if ($input->{in_workspace} eq "kbasecdm") {
-    	 my $bio = $self->_get_msobject("Biochemistry","kbase","default");
-    	 $med = $bio->queryObject("media",{id => $input->{in_media}});
+    my $bio = $self->_get_msobject("Biochemistry","kbase","default");
+    if ($input->{workspace} eq "kbasecdm") {
+    	 $med = $bio->queryObject("media",{id => $input->{media}});
     	 if (!defined($med)) {
-    	 	my $msg = "Media ".$input->{in_media}." not found in base biochemistry!";
+    	 	my $msg = "Media ".$input->{media}." not found in base biochemistry!";
 			Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'export_media');
     	 }
     } else {
-    	$med = $self->_get_msobject("Media",$input->{in_media},$input->{in_workspace});
+    	$med = $self->_get_msobject("Media",$input->{workspace},$input->{media});
+    	$med->parent($bio);
     }
     $output = $med->export({
 	    format => $input->{format}
@@ -2598,18 +2849,20 @@ runfba_params is a reference to a hash where the following keys are defined:
 	fba_workspace has a value which is a workspace_id
 	authentication has a value which is a string
 	overwrite has a value which is a bool
+	add_to_model has a value which is a bool
 fbamodel_id is a string
 workspace_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
-	workspace has a value which is a workspace_id
+	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
-	objective has a value which is a string
+	maximizeObjective has a value which is a bool
+	objectiveTerms has a value which is a reference to a list where each element is a term
 	geneko has a value which is a reference to a list where each element is a feature_id
 	rxnko has a value which is a reference to a list where each element is a reaction_id
-	bounds has a value which is a reference to a list where each element is a string
-	constraints has a value which is a reference to a list where each element is a string
+	bounds has a value which is a reference to a list where each element is a bound
+	constraints has a value which is a reference to a list where each element is a constraint
 	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
 	defaultmaxflux has a value which is a float
 	defaultminuptake has a value which is a float
@@ -2620,8 +2873,22 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	minthermoerror has a value which is a bool
 media_id is a string
 bool is an int
+term is a reference to a list containing 3 items:
+	0: a float
+	1: a string
+	2: a string
 feature_id is a string
 reaction_id is a string
+bound is a reference to a list containing 4 items:
+	0: a float
+	1: a float
+	2: a string
+	3: a string
+constraint is a reference to a list containing 4 items:
+	0: a float
+	1: a string
+	2: a reference to a list where each element is a term
+	3: a string
 fba_id is a string
 object_metadata is a reference to a list containing 7 items:
 	0: an object_id
@@ -2657,18 +2924,20 @@ runfba_params is a reference to a hash where the following keys are defined:
 	fba_workspace has a value which is a workspace_id
 	authentication has a value which is a string
 	overwrite has a value which is a bool
+	add_to_model has a value which is a bool
 fbamodel_id is a string
 workspace_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
-	workspace has a value which is a workspace_id
+	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
-	objective has a value which is a string
+	maximizeObjective has a value which is a bool
+	objectiveTerms has a value which is a reference to a list where each element is a term
 	geneko has a value which is a reference to a list where each element is a feature_id
 	rxnko has a value which is a reference to a list where each element is a reaction_id
-	bounds has a value which is a reference to a list where each element is a string
-	constraints has a value which is a reference to a list where each element is a string
+	bounds has a value which is a reference to a list where each element is a bound
+	constraints has a value which is a reference to a list where each element is a constraint
 	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
 	defaultmaxflux has a value which is a float
 	defaultminuptake has a value which is a float
@@ -2679,8 +2948,22 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	minthermoerror has a value which is a bool
 media_id is a string
 bool is an int
+term is a reference to a list containing 3 items:
+	0: a float
+	1: a string
+	2: a string
 feature_id is a string
 reaction_id is a string
+bound is a reference to a list containing 4 items:
+	0: a float
+	1: a float
+	2: a string
+	3: a string
+constraint is a reference to a list containing 4 items:
+	0: a float
+	1: a string
+	2: a reference to a list where each element is a term
+	3: a string
 fba_id is a string
 object_metadata is a reference to a list containing 7 items:
 	0: an object_id
@@ -2734,16 +3017,20 @@ sub runfba
 		notes => "",
 		fba_workspace => $input->{model_workspace},
 		fba => undef,
+		add_to_model => 0,
 		overwrite => 0
 	});
 	if (!defined($input->{fba})) {
-		my $ids = $self->_idServer();
-    	$input->{fba} = $input->{model}.".fba.".$ids->allocate_id_range( $input->{model}.".fba.", 1 ) + 0;
+		$input->{fba} = $self->_get_new_id($input->{model}.".fba.");
 	}
 	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
 	#Creating FBAFormulation Object
 	my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
 	my $fba = $self->_buildFBAObject($input->{formulation},$model);
+	$fba->fva($input->{fva});
+	$fba->comboDeletions($input->{simulateko});
+	$fba->fluxMinimization($input->{minimizeflux});
+	$fba->findMinimalMedia($input->{findminmedia});
 	$fba->uuid($input->{fba_workspace}."/".$input->{fba});
     #Running FBA
     my $fbaResult = $fba->runFBA();
@@ -2751,7 +3038,10 @@ sub runfba
     	my $msg = "FBA failed with no solution returned!";
     	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'runfba');
     }
-    print join("/",@{$model->fbaFormulation_uuids()})."\n";
+    if ($input->{add_to_model} == 1) {
+    	$model->addLinkArrayItem("fbaFormulations",$fba);
+    	$self->_save_msobject($model,"Model",$input->{model_workspace},$input->{model},"runfba");
+    }
 	$fbaMeta = $self->_save_msobject($fba,"FBA",$input->{fba_workspace},$input->{fba},"runfba",$input->{overwrite});
     $self->_clearContext();
     #END runfba
@@ -2782,8 +3072,8 @@ sub runfba
 $input is an export_fba_params
 $output is a string
 export_fba_params is a reference to a hash where the following keys are defined:
-	in_fba has a value which is a fba_id
-	in_workspace has a value which is a workspace_id
+	fba has a value which is a fba_id
+	workspace has a value which is a workspace_id
 	format has a value which is a string
 	authentication has a value which is a string
 fba_id is a string
@@ -2798,8 +3088,8 @@ workspace_id is a string
 $input is an export_fba_params
 $output is a string
 export_fba_params is a reference to a hash where the following keys are defined:
-	in_fba has a value which is a fba_id
-	in_workspace has a value which is a workspace_id
+	fba has a value which is a fba_id
+	workspace has a value which is a workspace_id
 	format has a value which is a string
 	authentication has a value which is a string
 fba_id is a string
@@ -2835,8 +3125,8 @@ sub export_fba
     my($output);
     #BEGIN export_fba
     $self->_setContext($ctx,$input);
-	$input = $self->_validateargs($input,["in_fba","in_workspace","format"],{});
-    my $fba = $self->_get_msobject("FBA",$input->{in_fba},$input->{in_workspace});
+	$input = $self->_validateargs($input,["fba","workspace","format"],{});
+    my $fba = $self->_get_msobject("FBA",$input->{workspace},$input->{fba});
     $output = $fba->export({
 	    format => $input->{format}
 	});
@@ -2869,8 +3159,8 @@ sub export_fba
 $input is an import_phenotypes_params
 $output is an object_metadata
 import_phenotypes_params is a reference to a hash where the following keys are defined:
-	id has a value which is a phenotypeSet_id
-	workspace has a value which is a workspace_id
+	phenotypeSet has a value which is a phenotypeSet_id
+	phenotypeSet_workspace has a value which is a workspace_id
 	genome has a value which is a genome_id
 	genome_workspace has a value which is a workspace_id
 	phenotypes has a value which is a reference to a list where each element is a Phenotype
@@ -2911,8 +3201,8 @@ username is a string
 $input is an import_phenotypes_params
 $output is an object_metadata
 import_phenotypes_params is a reference to a hash where the following keys are defined:
-	id has a value which is a phenotypeSet_id
-	workspace has a value which is a workspace_id
+	phenotypeSet has a value which is a phenotypeSet_id
+	phenotypeSet_workspace has a value which is a workspace_id
 	genome has a value which is a genome_id
 	genome_workspace has a value which is a workspace_id
 	phenotypes has a value which is a reference to a list where each element is a Phenotype
@@ -2974,9 +3264,14 @@ sub import_phenotypes
     my($output);
     #BEGIN import_phenotypes
     $self->_setContext($ctx,$input);
-	$input = $self->_validateargs($input,["id","workspace","genome","genome_workspace","phenotypes"],{
+	$input = $self->_validateargs($input,["phenotypeSet_workspace","genome","phenotypes"],{
+		phenotypeSet => undef,
+		genome_workspace => $input->{phenotypeSet_workspace},
 		ignore_errors => 0
 	});
+    if (!defined($input->{phenotypeSet})) {
+    	$input->{phenotypeSet} = $self->_get_new_id($input->{genome}.".phenos.");
+    }
     
     #Retrieving biochemistry
     my $bio = $self->_get_msobject("Biochemistry","kbase","default");
@@ -2985,7 +3280,7 @@ sub import_phenotypes
     if ($input->{genome_workspace} eq "kbasecdm") {
     	$genomeObj = $self->_get_genomeObj_from_CDM($input->{genome},0);
     } else {
-    	$genomeObj = $self->_get_msobject("Genome",$input->{workspace},$input->{genome});
+    	$genomeObj = $self->_get_msobject("Genome",$input->{genome_workspace},$input->{genome});
     }
     if (!defined($genomeObj)) {
     	my $msg = "Failed to retrieve genome ".$input->{genome_workspace}."/".$input->{genome};
@@ -3003,9 +3298,9 @@ sub import_phenotypes
     }
     #Instantiating imported phenotype object
     my $object = {
-    	id => $input->{id},
+    	id => $input->{phenotypeSet},
     	genome => $input->{genome},
-    	genomeWorkspace => $input->{genome_workspace},
+    	genome_workspace => $input->{genome_workspace},
     	phenotypes => [],
     };
     #Validating media, genes, and compounds
@@ -3036,7 +3331,7 @@ sub import_phenotypes
     		}
     	} else {
     		try {
-    			my $media = $self->_get_msobject("Media",$phenotype->[1],$phenotype->[2]);
+    			my $media = $self->_get_msobject("Media",$phenotype->[2],$phenotype->[1]);
 	    	} catch {
 	    		push(@{$missingMedia},$phenotype->[1]);
 	    		next;
@@ -3078,15 +3373,15 @@ sub import_phenotypes
 	}
     #Saving object to database
     my $objmeta = $self->_workspaceServices()->save_object({
-		id => $input->{id},
+		id => $input->{phenotypeSet},
 		type => "PhenotypeSet",
 		data => $object,
-		workspace => $input->{workspace},
+		workspace => $input->{phenotypeSet_workspace},
 		command => "import_phenotypes",
 		authentication => $self->_authentication()
 	});
 	if (!defined($objmeta)) {
-		my $msg = "Unable to save object:PhenotypeSet/".$input->{workspace}."/".$input->{id};
+		my $msg = "Unable to save object:PhenotypeSet/".$input->{phenotypeSet_workspace}."/".$input->{id};
 		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'import_phenotypes');
 	}
 	$output = $objmeta;
@@ -3121,12 +3416,12 @@ $output is an object_metadata
 simulate_phenotypes_params is a reference to a hash where the following keys are defined:
 	model has a value which is a fbamodel_id
 	model_workspace has a value which is a workspace_id
-	phenotype_set has a value which is a phenotypeSet_id
-	phenotype_workspace has a value which is a workspace_id
+	phenotypeSet has a value which is a phenotypeSet_id
+	phenotypeSet_workspace has a value which is a workspace_id
 	formulation has a value which is an FBAFormulation
 	notes has a value which is a string
-	phenotype_simultation_set has a value which is a phenotypeSimulationSet_id
-	out_workspace has a value which is a workspace_id
+	phenotypeSimultationSet has a value which is a phenotypeSimulationSet_id
+	phenotypeSimultationSet_workspace has a value which is a workspace_id
 	overwrite has a value which is a bool
 	authentication has a value which is a string
 fbamodel_id is a string
@@ -3134,14 +3429,15 @@ workspace_id is a string
 phenotypeSet_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
-	workspace has a value which is a workspace_id
+	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
-	objective has a value which is a string
+	maximizeObjective has a value which is a bool
+	objectiveTerms has a value which is a reference to a list where each element is a term
 	geneko has a value which is a reference to a list where each element is a feature_id
 	rxnko has a value which is a reference to a list where each element is a reaction_id
-	bounds has a value which is a reference to a list where each element is a string
-	constraints has a value which is a reference to a list where each element is a string
+	bounds has a value which is a reference to a list where each element is a bound
+	constraints has a value which is a reference to a list where each element is a constraint
 	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
 	defaultmaxflux has a value which is a float
 	defaultminuptake has a value which is a float
@@ -3152,8 +3448,22 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	minthermoerror has a value which is a bool
 media_id is a string
 bool is an int
+term is a reference to a list containing 3 items:
+	0: a float
+	1: a string
+	2: a string
 feature_id is a string
 reaction_id is a string
+bound is a reference to a list containing 4 items:
+	0: a float
+	1: a float
+	2: a string
+	3: a string
+constraint is a reference to a list containing 4 items:
+	0: a float
+	1: a string
+	2: a reference to a list where each element is a term
+	3: a string
 phenotypeSimulationSet_id is a string
 object_metadata is a reference to a list containing 7 items:
 	0: an object_id
@@ -3179,12 +3489,12 @@ $output is an object_metadata
 simulate_phenotypes_params is a reference to a hash where the following keys are defined:
 	model has a value which is a fbamodel_id
 	model_workspace has a value which is a workspace_id
-	phenotype_set has a value which is a phenotypeSet_id
-	phenotype_workspace has a value which is a workspace_id
+	phenotypeSet has a value which is a phenotypeSet_id
+	phenotypeSet_workspace has a value which is a workspace_id
 	formulation has a value which is an FBAFormulation
 	notes has a value which is a string
-	phenotype_simultation_set has a value which is a phenotypeSimulationSet_id
-	out_workspace has a value which is a workspace_id
+	phenotypeSimultationSet has a value which is a phenotypeSimulationSet_id
+	phenotypeSimultationSet_workspace has a value which is a workspace_id
 	overwrite has a value which is a bool
 	authentication has a value which is a string
 fbamodel_id is a string
@@ -3192,14 +3502,15 @@ workspace_id is a string
 phenotypeSet_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
-	workspace has a value which is a workspace_id
+	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
-	objective has a value which is a string
+	maximizeObjective has a value which is a bool
+	objectiveTerms has a value which is a reference to a list where each element is a term
 	geneko has a value which is a reference to a list where each element is a feature_id
 	rxnko has a value which is a reference to a list where each element is a reaction_id
-	bounds has a value which is a reference to a list where each element is a string
-	constraints has a value which is a reference to a list where each element is a string
+	bounds has a value which is a reference to a list where each element is a bound
+	constraints has a value which is a reference to a list where each element is a constraint
 	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
 	defaultmaxflux has a value which is a float
 	defaultminuptake has a value which is a float
@@ -3210,8 +3521,22 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	minthermoerror has a value which is a bool
 media_id is a string
 bool is an int
+term is a reference to a list containing 3 items:
+	0: a float
+	1: a string
+	2: a string
 feature_id is a string
 reaction_id is a string
+bound is a reference to a list containing 4 items:
+	0: a float
+	1: a float
+	2: a string
+	3: a string
+constraint is a reference to a list containing 4 items:
+	0: a float
+	1: a string
+	2: a reference to a list where each element is a term
+	3: a string
 phenotypeSimulationSet_id is a string
 object_metadata is a reference to a list containing 7 items:
 	0: an object_id
@@ -3256,40 +3581,51 @@ sub simulate_phenotypes
     my($output);
     #BEGIN simulate_phenotypes
     $self->_setContext($ctx,$input);
-	$input = $self->_validateargs($input,["phenotypeSet","phenotype_workspace","model"],{
-		model_workspace => $input->{phenotype_workspace},
+	$input = $self->_validateargs($input,["phenotypeSet","phenotypeSet_workspace","model"],{
+		model_workspace => $input->{phenotypeSet_workspace},
 		formulation => undef,
 		notes => "",
-		phenotype_simultation_set => $input->{phenotype_set}.".simulation",
-		out_workspace => $input->{phenotype_workspace},
+		phenotypeSimultationSet => $input->{phenotypeSet}.".simulation",
+		phenotypeSimultationSet_workspace => $input->{phenotypeSet_workspace},
 		overwrite => 0
 	});
 	#Retrieving phenotypes
-	my $pheno = $self->_get_msobject("PhenotypeSet",$input->{phenotype_workspace},$input->{phenotype_set});
+	my $pheno = $self->_get_msobject("PhenotypeSet",$input->{phenotypeSet_workspace},$input->{phenotypeSet});
 	#Retrieving model
 	my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
 	#Creating FBAFormulation Object
 	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
-	my $fba = $self->_buildFBAObject($input->{formulation});
+	my $fba = $self->_buildFBAObject($input->{formulation},$model);
 	#Translating phenotypes to fbaformulation
-	my $bio = $self->_get_msobject("Biochemistry","kbase","default");
+	my $bio = $model->biochemistry();
 	for (my $i=0; $i < @{$pheno->{phenotypes}};$i++) {
 		my $media = $pheno->{phenotypes}->[$i]->[2]."/".$pheno->{phenotypes}->[$i]->[1]; 
 		if ($pheno->{phenotypes}->[$i]->[2] eq "kbasecdm") {
-			$media = $pheno->{phenotypes}->[$i]->[1];
+			my $mediaobj = $bio->queryObject("media",{id => $pheno->{phenotypes}->[$i]->[1]});
+			$media = $mediaobj->uuid();
 		} else {
 			my $mediaobj = $self->_get_msobject("Media",$pheno->{phenotypes}->[$i]->[2],$pheno->{phenotypes}->[$i]->[1]);
 			$bio->add("media",$mediaobj);
 		}
+		my $genekos = [];
+		foreach my $gene (@{$pheno->{phenotypes}->[$i]->[0]}) {
+			my $geneObj = $model->annotation()->queryObject("features",{id => $gene});
+			push(@{$genekos},$geneObj->uuid());
+		}
+		my $addnlcpds = [];
+		foreach my $addnlcpd (@{$pheno->{phenotypes}->[$i]->[3]}) {
+			my $cpdObj = $model->biochemistry()->searchForCompound($addnlcpd);
+			push(@{$addnlcpds},$cpdObj->uuid());
+		}
 		my $newpheno = {
 			label => $i,
-			media => $media,
-			geneKOs => $pheno->{phenotypes}->[$i]->[0],
-			reactionKOs => [],
-			additionalCpds => $pheno->{phenotypes}->[$i]->[3],
+			media_uuid => $media,
+			geneKO_uuids => $genekos,
+			reactionKO_uuids => [],
+			additionalCpd_uuids => $addnlcpds,
 			pH => 7,
 			temperature => 303,
-			growth => $pheno->{phenotypes}->[$i]->[4]
+			observedGrowthFraction => $pheno->{phenotypes}->[$i]->[4]
 		};
 		$fba->add("fbaPhenotypeSimulations",$newpheno);
 	}
@@ -3303,7 +3639,7 @@ sub simulate_phenotypes
     my $object = {
     	id => $input->{phenotypeSimultationSet},
     	model => $input->{model},
-    	modelWorkspace => $input->{model_workspace},
+    	model_workspace => $input->{model_workspace},
     	phenotypeSimulations => []
     };
     my $phenoresults = $fbaResult->fbaPhenotypeSimultationResults();
@@ -3322,7 +3658,7 @@ sub simulate_phenotypes
 		id => $input->{phenotypeSimultationSet},
 		type => "PhenotypeSimulationSet",
 		data => $object,
-		workspace => $input->{out_workspace},
+		workspace => $input->{phenotypeSimultationSet_workspace},
 		command => "simulate_phenotypes",
 		authentication => $self->_authentication(),
 		overwrite => $input->{overwrite}
@@ -3413,7 +3749,7 @@ sub export_phenotypeSimulationSet
 	$input = $self->_validateargs($input,["phenotypeSimulationSet","workspace","format"],{});
 	my $obj = $self->_get_msobject("PhenotypeSimulationSet",$input->{workspace},$input->{phenotypeSimulationSet});
 	my $output;
-	if ($input->{format} eq "text") {
+	if ($input->{format} eq "readable") {
 		$output = "Base media\tAdditional compounds\tGene KO\tGrowth\tSimulated growth\tSimulated growth fraction\tClass\n";
 		for (my $i=0; $i < @{$obj->{phenotypeSimulations}}; $i++) {
 			my $phenosim = $obj->{phenotypeSimulations}->[$i];
@@ -3425,6 +3761,8 @@ sub export_phenotypeSimulationSet
 						$phenosim->[2]."\t".
 						$phenosim->[3]."\n";
 		}
+	} elsif ($input->{format} eq "html") {
+		$output = $self->_phenotypeSimulationSet_to_html($obj);
 	} else {
 		my $msg = "Specified format ".$input->{format}." not recognized!\n";
 		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'export_phenotypeSimulationSet');
@@ -3470,18 +3808,20 @@ runfba_params is a reference to a hash where the following keys are defined:
 	fba_workspace has a value which is a workspace_id
 	authentication has a value which is a string
 	overwrite has a value which is a bool
+	add_to_model has a value which is a bool
 fbamodel_id is a string
 workspace_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
-	workspace has a value which is a workspace_id
+	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
-	objective has a value which is a string
+	maximizeObjective has a value which is a bool
+	objectiveTerms has a value which is a reference to a list where each element is a term
 	geneko has a value which is a reference to a list where each element is a feature_id
 	rxnko has a value which is a reference to a list where each element is a reaction_id
-	bounds has a value which is a reference to a list where each element is a string
-	constraints has a value which is a reference to a list where each element is a string
+	bounds has a value which is a reference to a list where each element is a bound
+	constraints has a value which is a reference to a list where each element is a constraint
 	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
 	defaultmaxflux has a value which is a float
 	defaultminuptake has a value which is a float
@@ -3492,23 +3832,40 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	minthermoerror has a value which is a bool
 media_id is a string
 bool is an int
+term is a reference to a list containing 3 items:
+	0: a float
+	1: a string
+	2: a string
 feature_id is a string
 reaction_id is a string
+bound is a reference to a list containing 4 items:
+	0: a float
+	1: a float
+	2: a string
+	3: a string
+constraint is a reference to a list containing 4 items:
+	0: a float
+	1: a string
+	2: a reference to a list where each element is a term
+	3: a string
 fba_id is a string
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
+	kbase_workspace has a value which is a workspace_id
+	clusterjobs has a value which is a reference to a list where each element is a clusterjob
+	postprocess_command has a value which is a string
+	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
+	queuing_command has a value which is a string
+	clustermem has a value which is a float
+	clustertime has a value which is an int
+	clustertoken has a value which is a string
 	queuetime has a value which is a string
 	completetime has a value which is a string
 	complete has a value which is a bool
-	object has a value which is a string
-	workspace has a value which is a string
-	type has a value which is a string
 	owner has a value which is a string
-	queuing_command has a value which is a string
-	queuing_service has a value which is a string
-	postprocess_command has a value which is a string
-	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
 job_id is a string
+clusterjob is a reference to a hash where the following keys are defined:
+	authentication has a value which is a string
 CommandArguments is a reference to a hash where the following keys are defined:
 	authentication has a value which is a string
 
@@ -3533,18 +3890,20 @@ runfba_params is a reference to a hash where the following keys are defined:
 	fba_workspace has a value which is a workspace_id
 	authentication has a value which is a string
 	overwrite has a value which is a bool
+	add_to_model has a value which is a bool
 fbamodel_id is a string
 workspace_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
-	workspace has a value which is a workspace_id
+	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
-	objective has a value which is a string
+	maximizeObjective has a value which is a bool
+	objectiveTerms has a value which is a reference to a list where each element is a term
 	geneko has a value which is a reference to a list where each element is a feature_id
 	rxnko has a value which is a reference to a list where each element is a reaction_id
-	bounds has a value which is a reference to a list where each element is a string
-	constraints has a value which is a reference to a list where each element is a string
+	bounds has a value which is a reference to a list where each element is a bound
+	constraints has a value which is a reference to a list where each element is a constraint
 	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
 	defaultmaxflux has a value which is a float
 	defaultminuptake has a value which is a float
@@ -3555,23 +3914,40 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	minthermoerror has a value which is a bool
 media_id is a string
 bool is an int
+term is a reference to a list containing 3 items:
+	0: a float
+	1: a string
+	2: a string
 feature_id is a string
 reaction_id is a string
+bound is a reference to a list containing 4 items:
+	0: a float
+	1: a float
+	2: a string
+	3: a string
+constraint is a reference to a list containing 4 items:
+	0: a float
+	1: a string
+	2: a reference to a list where each element is a term
+	3: a string
 fba_id is a string
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
+	kbase_workspace has a value which is a workspace_id
+	clusterjobs has a value which is a reference to a list where each element is a clusterjob
+	postprocess_command has a value which is a string
+	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
+	queuing_command has a value which is a string
+	clustermem has a value which is a float
+	clustertime has a value which is an int
+	clustertoken has a value which is a string
 	queuetime has a value which is a string
 	completetime has a value which is a string
 	complete has a value which is a bool
-	object has a value which is a string
-	workspace has a value which is a string
-	type has a value which is a string
 	owner has a value which is a string
-	queuing_command has a value which is a string
-	queuing_service has a value which is a string
-	postprocess_command has a value which is a string
-	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
 job_id is a string
+clusterjob is a reference to a hash where the following keys are defined:
+	authentication has a value which is a string
 CommandArguments is a reference to a hash where the following keys are defined:
 	authentication has a value which is a string
 
@@ -3707,6 +4083,7 @@ gapfill_model_params is a reference to a hash where the following keys are defin
 	out_workspace has a value which is a workspace_id
 	authentication has a value which is a string
 	overwrite has a value which is a bool
+	donot_submit_job has a value which is a bool
 	gapfilling_index has a value which is an int
 	job has a value which is a job_id
 phenotypeSet_id is a string
@@ -3714,14 +4091,15 @@ fbamodel_id is a string
 workspace_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
-	workspace has a value which is a workspace_id
+	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
-	objective has a value which is a string
+	maximizeObjective has a value which is a bool
+	objectiveTerms has a value which is a reference to a list where each element is a term
 	geneko has a value which is a reference to a list where each element is a feature_id
 	rxnko has a value which is a reference to a list where each element is a reaction_id
-	bounds has a value which is a reference to a list where each element is a string
-	constraints has a value which is a reference to a list where each element is a string
+	bounds has a value which is a reference to a list where each element is a bound
+	constraints has a value which is a reference to a list where each element is a constraint
 	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
 	defaultmaxflux has a value which is a float
 	defaultminuptake has a value which is a float
@@ -3732,23 +4110,40 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	minthermoerror has a value which is a bool
 media_id is a string
 bool is an int
+term is a reference to a list containing 3 items:
+	0: a float
+	1: a string
+	2: a string
 feature_id is a string
 reaction_id is a string
+bound is a reference to a list containing 4 items:
+	0: a float
+	1: a float
+	2: a string
+	3: a string
+constraint is a reference to a list containing 4 items:
+	0: a float
+	1: a string
+	2: a reference to a list where each element is a term
+	3: a string
 genome_id is a string
 job_id is a string
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
+	kbase_workspace has a value which is a workspace_id
+	clusterjobs has a value which is a reference to a list where each element is a clusterjob
+	postprocess_command has a value which is a string
+	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
+	queuing_command has a value which is a string
+	clustermem has a value which is a float
+	clustertime has a value which is an int
+	clustertoken has a value which is a string
 	queuetime has a value which is a string
 	completetime has a value which is a string
 	complete has a value which is a bool
-	object has a value which is a string
-	workspace has a value which is a string
-	type has a value which is a string
 	owner has a value which is a string
-	queuing_command has a value which is a string
-	queuing_service has a value which is a string
-	postprocess_command has a value which is a string
-	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
+clusterjob is a reference to a hash where the following keys are defined:
+	authentication has a value which is a string
 CommandArguments is a reference to a hash where the following keys are defined:
 	authentication has a value which is a string
 
@@ -3791,6 +4186,7 @@ gapfill_model_params is a reference to a hash where the following keys are defin
 	out_workspace has a value which is a workspace_id
 	authentication has a value which is a string
 	overwrite has a value which is a bool
+	donot_submit_job has a value which is a bool
 	gapfilling_index has a value which is an int
 	job has a value which is a job_id
 phenotypeSet_id is a string
@@ -3798,14 +4194,15 @@ fbamodel_id is a string
 workspace_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
-	workspace has a value which is a workspace_id
+	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
-	objective has a value which is a string
+	maximizeObjective has a value which is a bool
+	objectiveTerms has a value which is a reference to a list where each element is a term
 	geneko has a value which is a reference to a list where each element is a feature_id
 	rxnko has a value which is a reference to a list where each element is a reaction_id
-	bounds has a value which is a reference to a list where each element is a string
-	constraints has a value which is a reference to a list where each element is a string
+	bounds has a value which is a reference to a list where each element is a bound
+	constraints has a value which is a reference to a list where each element is a constraint
 	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
 	defaultmaxflux has a value which is a float
 	defaultminuptake has a value which is a float
@@ -3816,23 +4213,40 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	minthermoerror has a value which is a bool
 media_id is a string
 bool is an int
+term is a reference to a list containing 3 items:
+	0: a float
+	1: a string
+	2: a string
 feature_id is a string
 reaction_id is a string
+bound is a reference to a list containing 4 items:
+	0: a float
+	1: a float
+	2: a string
+	3: a string
+constraint is a reference to a list containing 4 items:
+	0: a float
+	1: a string
+	2: a reference to a list where each element is a term
+	3: a string
 genome_id is a string
 job_id is a string
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
+	kbase_workspace has a value which is a workspace_id
+	clusterjobs has a value which is a reference to a list where each element is a clusterjob
+	postprocess_command has a value which is a string
+	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
+	queuing_command has a value which is a string
+	clustermem has a value which is a float
+	clustertime has a value which is an int
+	clustertoken has a value which is a string
 	queuetime has a value which is a string
 	completetime has a value which is a string
 	complete has a value which is a bool
-	object has a value which is a string
-	workspace has a value which is a string
-	type has a value which is a string
 	owner has a value which is a string
-	queuing_command has a value which is a string
-	queuing_service has a value which is a string
-	postprocess_command has a value which is a string
-	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
+clusterjob is a reference to a hash where the following keys are defined:
+	authentication has a value which is a string
 CommandArguments is a reference to a hash where the following keys are defined:
 	authentication has a value which is a string
 
@@ -3908,20 +4322,22 @@ gapgen_model_params is a reference to a hash where the following keys are define
 	out_workspace has a value which is a workspace_id
 	authentication has a value which is a string
 	overwrite has a value which is a bool
+	donot_submit_job has a value which is a bool
 	gapgen_index has a value which is an int
 phenotypeSet_id is a string
 fbamodel_id is a string
 workspace_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
-	workspace has a value which is a workspace_id
+	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
-	objective has a value which is a string
+	maximizeObjective has a value which is a bool
+	objectiveTerms has a value which is a reference to a list where each element is a term
 	geneko has a value which is a reference to a list where each element is a feature_id
 	rxnko has a value which is a reference to a list where each element is a reaction_id
-	bounds has a value which is a reference to a list where each element is a string
-	constraints has a value which is a reference to a list where each element is a string
+	bounds has a value which is a reference to a list where each element is a bound
+	constraints has a value which is a reference to a list where each element is a constraint
 	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
 	defaultmaxflux has a value which is a float
 	defaultminuptake has a value which is a float
@@ -3932,22 +4348,39 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	minthermoerror has a value which is a bool
 media_id is a string
 bool is an int
+term is a reference to a list containing 3 items:
+	0: a float
+	1: a string
+	2: a string
 feature_id is a string
 reaction_id is a string
+bound is a reference to a list containing 4 items:
+	0: a float
+	1: a float
+	2: a string
+	3: a string
+constraint is a reference to a list containing 4 items:
+	0: a float
+	1: a string
+	2: a reference to a list where each element is a term
+	3: a string
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
+	kbase_workspace has a value which is a workspace_id
+	clusterjobs has a value which is a reference to a list where each element is a clusterjob
+	postprocess_command has a value which is a string
+	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
+	queuing_command has a value which is a string
+	clustermem has a value which is a float
+	clustertime has a value which is an int
+	clustertoken has a value which is a string
 	queuetime has a value which is a string
 	completetime has a value which is a string
 	complete has a value which is a bool
-	object has a value which is a string
-	workspace has a value which is a string
-	type has a value which is a string
 	owner has a value which is a string
-	queuing_command has a value which is a string
-	queuing_service has a value which is a string
-	postprocess_command has a value which is a string
-	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
 job_id is a string
+clusterjob is a reference to a hash where the following keys are defined:
+	authentication has a value which is a string
 CommandArguments is a reference to a hash where the following keys are defined:
 	authentication has a value which is a string
 
@@ -3975,20 +4408,22 @@ gapgen_model_params is a reference to a hash where the following keys are define
 	out_workspace has a value which is a workspace_id
 	authentication has a value which is a string
 	overwrite has a value which is a bool
+	donot_submit_job has a value which is a bool
 	gapgen_index has a value which is an int
 phenotypeSet_id is a string
 fbamodel_id is a string
 workspace_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
-	workspace has a value which is a workspace_id
+	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
-	objective has a value which is a string
+	maximizeObjective has a value which is a bool
+	objectiveTerms has a value which is a reference to a list where each element is a term
 	geneko has a value which is a reference to a list where each element is a feature_id
 	rxnko has a value which is a reference to a list where each element is a reaction_id
-	bounds has a value which is a reference to a list where each element is a string
-	constraints has a value which is a reference to a list where each element is a string
+	bounds has a value which is a reference to a list where each element is a bound
+	constraints has a value which is a reference to a list where each element is a constraint
 	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
 	defaultmaxflux has a value which is a float
 	defaultminuptake has a value which is a float
@@ -3999,22 +4434,39 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	minthermoerror has a value which is a bool
 media_id is a string
 bool is an int
+term is a reference to a list containing 3 items:
+	0: a float
+	1: a string
+	2: a string
 feature_id is a string
 reaction_id is a string
+bound is a reference to a list containing 4 items:
+	0: a float
+	1: a float
+	2: a string
+	3: a string
+constraint is a reference to a list containing 4 items:
+	0: a float
+	1: a string
+	2: a reference to a list where each element is a term
+	3: a string
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
+	kbase_workspace has a value which is a workspace_id
+	clusterjobs has a value which is a reference to a list where each element is a clusterjob
+	postprocess_command has a value which is a string
+	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
+	queuing_command has a value which is a string
+	clustermem has a value which is a float
+	clustertime has a value which is an int
+	clustertoken has a value which is a string
 	queuetime has a value which is a string
 	completetime has a value which is a string
 	complete has a value which is a bool
-	object has a value which is a string
-	workspace has a value which is a string
-	type has a value which is a string
 	owner has a value which is a string
-	queuing_command has a value which is a string
-	queuing_service has a value which is a string
-	postprocess_command has a value which is a string
-	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
 job_id is a string
+clusterjob is a reference to a hash where the following keys are defined:
+	authentication has a value which is a string
 CommandArguments is a reference to a hash where the following keys are defined:
 	authentication has a value which is a string
 
@@ -4104,6 +4556,7 @@ wildtype_phenotype_reconciliation_params is a reference to a hash where the foll
 	out_workspace has a value which is a workspace_id
 	authentication has a value which is a string
 	overwrite has a value which is a bool
+	donot_submit_job has a value which is a bool
 	all_gapgen_indecies has a value which is a reference to a list where each element is an int
 	all_gapfill_indecies has a value which is a reference to a list where each element is an int
 	gapgen_index has a value which is an int
@@ -4113,14 +4566,15 @@ fbamodel_id is a string
 workspace_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
-	workspace has a value which is a workspace_id
+	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
-	objective has a value which is a string
+	maximizeObjective has a value which is a bool
+	objectiveTerms has a value which is a reference to a list where each element is a term
 	geneko has a value which is a reference to a list where each element is a feature_id
 	rxnko has a value which is a reference to a list where each element is a reaction_id
-	bounds has a value which is a reference to a list where each element is a string
-	constraints has a value which is a reference to a list where each element is a string
+	bounds has a value which is a reference to a list where each element is a bound
+	constraints has a value which is a reference to a list where each element is a constraint
 	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
 	defaultmaxflux has a value which is a float
 	defaultminuptake has a value which is a float
@@ -4131,23 +4585,40 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	minthermoerror has a value which is a bool
 media_id is a string
 bool is an int
+term is a reference to a list containing 3 items:
+	0: a float
+	1: a string
+	2: a string
 feature_id is a string
 reaction_id is a string
+bound is a reference to a list containing 4 items:
+	0: a float
+	1: a float
+	2: a string
+	3: a string
+constraint is a reference to a list containing 4 items:
+	0: a float
+	1: a string
+	2: a reference to a list where each element is a term
+	3: a string
 genome_id is a string
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
+	kbase_workspace has a value which is a workspace_id
+	clusterjobs has a value which is a reference to a list where each element is a clusterjob
+	postprocess_command has a value which is a string
+	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
+	queuing_command has a value which is a string
+	clustermem has a value which is a float
+	clustertime has a value which is an int
+	clustertoken has a value which is a string
 	queuetime has a value which is a string
 	completetime has a value which is a string
 	complete has a value which is a bool
-	object has a value which is a string
-	workspace has a value which is a string
-	type has a value which is a string
 	owner has a value which is a string
-	queuing_command has a value which is a string
-	queuing_service has a value which is a string
-	postprocess_command has a value which is a string
-	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
 job_id is a string
+clusterjob is a reference to a hash where the following keys are defined:
+	authentication has a value which is a string
 CommandArguments is a reference to a hash where the following keys are defined:
 	authentication has a value which is a string
 
@@ -4189,6 +4660,7 @@ wildtype_phenotype_reconciliation_params is a reference to a hash where the foll
 	out_workspace has a value which is a workspace_id
 	authentication has a value which is a string
 	overwrite has a value which is a bool
+	donot_submit_job has a value which is a bool
 	all_gapgen_indecies has a value which is a reference to a list where each element is an int
 	all_gapfill_indecies has a value which is a reference to a list where each element is an int
 	gapgen_index has a value which is an int
@@ -4198,14 +4670,15 @@ fbamodel_id is a string
 workspace_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
-	workspace has a value which is a workspace_id
+	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
-	objective has a value which is a string
+	maximizeObjective has a value which is a bool
+	objectiveTerms has a value which is a reference to a list where each element is a term
 	geneko has a value which is a reference to a list where each element is a feature_id
 	rxnko has a value which is a reference to a list where each element is a reaction_id
-	bounds has a value which is a reference to a list where each element is a string
-	constraints has a value which is a reference to a list where each element is a string
+	bounds has a value which is a reference to a list where each element is a bound
+	constraints has a value which is a reference to a list where each element is a constraint
 	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
 	defaultmaxflux has a value which is a float
 	defaultminuptake has a value which is a float
@@ -4216,23 +4689,40 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	minthermoerror has a value which is a bool
 media_id is a string
 bool is an int
+term is a reference to a list containing 3 items:
+	0: a float
+	1: a string
+	2: a string
 feature_id is a string
 reaction_id is a string
+bound is a reference to a list containing 4 items:
+	0: a float
+	1: a float
+	2: a string
+	3: a string
+constraint is a reference to a list containing 4 items:
+	0: a float
+	1: a string
+	2: a reference to a list where each element is a term
+	3: a string
 genome_id is a string
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
+	kbase_workspace has a value which is a workspace_id
+	clusterjobs has a value which is a reference to a list where each element is a clusterjob
+	postprocess_command has a value which is a string
+	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
+	queuing_command has a value which is a string
+	clustermem has a value which is a float
+	clustertime has a value which is an int
+	clustertoken has a value which is a string
 	queuetime has a value which is a string
 	completetime has a value which is a string
 	complete has a value which is a bool
-	object has a value which is a string
-	workspace has a value which is a string
-	type has a value which is a string
 	owner has a value which is a string
-	queuing_command has a value which is a string
-	queuing_service has a value which is a string
-	postprocess_command has a value which is a string
-	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
 job_id is a string
+clusterjob is a reference to a hash where the following keys are defined:
+	authentication has a value which is a string
 CommandArguments is a reference to a hash where the following keys are defined:
 	authentication has a value which is a string
 
@@ -4302,19 +4792,21 @@ combine_wildtype_phenotype_reconciliation_params is a reference to a hash where 
 	out_model has a value which is a fbamodel_id
 	out_workspace has a value which is a workspace_id
 	authentication has a value which is a string
+	donot_submit_job has a value which is a bool
 	overwrite has a value which is a bool
 fbamodel_id is a string
 workspace_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
-	workspace has a value which is a workspace_id
+	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
-	objective has a value which is a string
+	maximizeObjective has a value which is a bool
+	objectiveTerms has a value which is a reference to a list where each element is a term
 	geneko has a value which is a reference to a list where each element is a feature_id
 	rxnko has a value which is a reference to a list where each element is a reaction_id
-	bounds has a value which is a reference to a list where each element is a string
-	constraints has a value which is a reference to a list where each element is a string
+	bounds has a value which is a reference to a list where each element is a bound
+	constraints has a value which is a reference to a list where each element is a constraint
 	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
 	defaultmaxflux has a value which is a float
 	defaultminuptake has a value which is a float
@@ -4325,22 +4817,39 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	minthermoerror has a value which is a bool
 media_id is a string
 bool is an int
+term is a reference to a list containing 3 items:
+	0: a float
+	1: a string
+	2: a string
 feature_id is a string
 reaction_id is a string
+bound is a reference to a list containing 4 items:
+	0: a float
+	1: a float
+	2: a string
+	3: a string
+constraint is a reference to a list containing 4 items:
+	0: a float
+	1: a string
+	2: a reference to a list where each element is a term
+	3: a string
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
+	kbase_workspace has a value which is a workspace_id
+	clusterjobs has a value which is a reference to a list where each element is a clusterjob
+	postprocess_command has a value which is a string
+	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
+	queuing_command has a value which is a string
+	clustermem has a value which is a float
+	clustertime has a value which is an int
+	clustertoken has a value which is a string
 	queuetime has a value which is a string
 	completetime has a value which is a string
 	complete has a value which is a bool
-	object has a value which is a string
-	workspace has a value which is a string
-	type has a value which is a string
 	owner has a value which is a string
-	queuing_command has a value which is a string
-	queuing_service has a value which is a string
-	postprocess_command has a value which is a string
-	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
 job_id is a string
+clusterjob is a reference to a hash where the following keys are defined:
+	authentication has a value which is a string
 CommandArguments is a reference to a hash where the following keys are defined:
 	authentication has a value which is a string
 
@@ -4362,19 +4871,21 @@ combine_wildtype_phenotype_reconciliation_params is a reference to a hash where 
 	out_model has a value which is a fbamodel_id
 	out_workspace has a value which is a workspace_id
 	authentication has a value which is a string
+	donot_submit_job has a value which is a bool
 	overwrite has a value which is a bool
 fbamodel_id is a string
 workspace_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
-	workspace has a value which is a workspace_id
+	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
-	objective has a value which is a string
+	maximizeObjective has a value which is a bool
+	objectiveTerms has a value which is a reference to a list where each element is a term
 	geneko has a value which is a reference to a list where each element is a feature_id
 	rxnko has a value which is a reference to a list where each element is a reaction_id
-	bounds has a value which is a reference to a list where each element is a string
-	constraints has a value which is a reference to a list where each element is a string
+	bounds has a value which is a reference to a list where each element is a bound
+	constraints has a value which is a reference to a list where each element is a constraint
 	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
 	defaultmaxflux has a value which is a float
 	defaultminuptake has a value which is a float
@@ -4385,22 +4896,39 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	minthermoerror has a value which is a bool
 media_id is a string
 bool is an int
+term is a reference to a list containing 3 items:
+	0: a float
+	1: a string
+	2: a string
 feature_id is a string
 reaction_id is a string
+bound is a reference to a list containing 4 items:
+	0: a float
+	1: a float
+	2: a string
+	3: a string
+constraint is a reference to a list containing 4 items:
+	0: a float
+	1: a string
+	2: a reference to a list where each element is a term
+	3: a string
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
+	kbase_workspace has a value which is a workspace_id
+	clusterjobs has a value which is a reference to a list where each element is a clusterjob
+	postprocess_command has a value which is a string
+	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
+	queuing_command has a value which is a string
+	clustermem has a value which is a float
+	clustertime has a value which is an int
+	clustertoken has a value which is a string
 	queuetime has a value which is a string
 	completetime has a value which is a string
 	complete has a value which is a bool
-	object has a value which is a string
-	workspace has a value which is a string
-	type has a value which is a string
 	owner has a value which is a string
-	queuing_command has a value which is a string
-	queuing_service has a value which is a string
-	postprocess_command has a value which is a string
-	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
 job_id is a string
+clusterjob is a reference to a hash where the following keys are defined:
+	authentication has a value which is a string
 CommandArguments is a reference to a hash where the following keys are defined:
 	authentication has a value which is a string
 
@@ -4447,6 +4975,132 @@ sub queue_combine_wildtype_phenotype_reconciliation_params
 
 
 
+=head2 jobs_done
+
+  $output = $obj->jobs_done($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a jobs_done_params
+$output is a JobObject
+jobs_done_params is a reference to a hash where the following keys are defined:
+	jobid has a value which is a job_id
+	workspace has a value which is a workspace_id
+	authentication has a value which is a string
+job_id is a string
+workspace_id is a string
+JobObject is a reference to a hash where the following keys are defined:
+	id has a value which is a job_id
+	kbase_workspace has a value which is a workspace_id
+	clusterjobs has a value which is a reference to a list where each element is a clusterjob
+	postprocess_command has a value which is a string
+	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
+	queuing_command has a value which is a string
+	clustermem has a value which is a float
+	clustertime has a value which is an int
+	clustertoken has a value which is a string
+	queuetime has a value which is a string
+	completetime has a value which is a string
+	complete has a value which is a bool
+	owner has a value which is a string
+clusterjob is a reference to a hash where the following keys are defined:
+	authentication has a value which is a string
+CommandArguments is a reference to a hash where the following keys are defined:
+	authentication has a value which is a string
+bool is an int
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a jobs_done_params
+$output is a JobObject
+jobs_done_params is a reference to a hash where the following keys are defined:
+	jobid has a value which is a job_id
+	workspace has a value which is a workspace_id
+	authentication has a value which is a string
+job_id is a string
+workspace_id is a string
+JobObject is a reference to a hash where the following keys are defined:
+	id has a value which is a job_id
+	kbase_workspace has a value which is a workspace_id
+	clusterjobs has a value which is a reference to a list where each element is a clusterjob
+	postprocess_command has a value which is a string
+	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
+	queuing_command has a value which is a string
+	clustermem has a value which is a float
+	clustertime has a value which is an int
+	clustertoken has a value which is a string
+	queuetime has a value which is a string
+	completetime has a value which is a string
+	complete has a value which is a bool
+	owner has a value which is a string
+clusterjob is a reference to a hash where the following keys are defined:
+	authentication has a value which is a string
+CommandArguments is a reference to a hash where the following keys are defined:
+	authentication has a value which is a string
+bool is an int
+
+
+=end text
+
+
+
+=item Description
+
+Mark specified job as complete and run postprocessing
+
+=back
+
+=cut
+
+sub jobs_done
+{
+    my $self = shift;
+    my($input) = @_;
+
+    my @_bad_arguments;
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to jobs_done:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'jobs_done');
+    }
+
+    my $ctx = $fbaModelServicesServer::CallContext;
+    my($output);
+    #BEGIN jobs_done
+    $self->_setContext($ctx,$input);
+    $input = $self->_validateargs($input,["jobid","workspace"],{});
+    my $job = $self->_get_msobject("FBAJob",$input->{workspace},$input->{jobid});
+    $job->{complete} = 1;
+    $job->{completetime} = Data::UUID->new()->create_str();
+    my $function = $job->{postprocess_command};
+    $self->$function(@{$job->{postprocess_args}});
+    $self->_save_msobject($job,"FBAJob",$input->{workspace},$input->{jobid},"run_job",1);
+    $output = $job;
+    $self->_clearContext();
+    #END jobs_done
+    my @_bad_returns;
+    (ref($output) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to jobs_done:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'jobs_done');
+    }
+    return($output);
+}
+
+
+
+
 =head2 check_job
 
   $output = $obj->check_job($input)
@@ -4461,27 +5115,30 @@ sub queue_combine_wildtype_phenotype_reconciliation_params
 $input is a check_job_params
 $output is a JobObject
 check_job_params is a reference to a hash where the following keys are defined:
-	job has a value which is a job_id
+	jobid has a value which is a job_id
 	workspace has a value which is a workspace_id
 	authentication has a value which is a string
 job_id is a string
 workspace_id is a string
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
+	kbase_workspace has a value which is a workspace_id
+	clusterjobs has a value which is a reference to a list where each element is a clusterjob
+	postprocess_command has a value which is a string
+	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
+	queuing_command has a value which is a string
+	clustermem has a value which is a float
+	clustertime has a value which is an int
+	clustertoken has a value which is a string
 	queuetime has a value which is a string
 	completetime has a value which is a string
 	complete has a value which is a bool
-	object has a value which is a string
-	workspace has a value which is a string
-	type has a value which is a string
 	owner has a value which is a string
-	queuing_command has a value which is a string
-	queuing_service has a value which is a string
-	postprocess_command has a value which is a string
-	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
-bool is an int
+clusterjob is a reference to a hash where the following keys are defined:
+	authentication has a value which is a string
 CommandArguments is a reference to a hash where the following keys are defined:
 	authentication has a value which is a string
+bool is an int
 
 </pre>
 
@@ -4492,27 +5149,30 @@ CommandArguments is a reference to a hash where the following keys are defined:
 $input is a check_job_params
 $output is a JobObject
 check_job_params is a reference to a hash where the following keys are defined:
-	job has a value which is a job_id
+	jobid has a value which is a job_id
 	workspace has a value which is a workspace_id
 	authentication has a value which is a string
 job_id is a string
 workspace_id is a string
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
+	kbase_workspace has a value which is a workspace_id
+	clusterjobs has a value which is a reference to a list where each element is a clusterjob
+	postprocess_command has a value which is a string
+	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
+	queuing_command has a value which is a string
+	clustermem has a value which is a float
+	clustertime has a value which is an int
+	clustertoken has a value which is a string
 	queuetime has a value which is a string
 	completetime has a value which is a string
 	complete has a value which is a bool
-	object has a value which is a string
-	workspace has a value which is a string
-	type has a value which is a string
 	owner has a value which is a string
-	queuing_command has a value which is a string
-	queuing_service has a value which is a string
-	postprocess_command has a value which is a string
-	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
-bool is an int
+clusterjob is a reference to a hash where the following keys are defined:
+	authentication has a value which is a string
 CommandArguments is a reference to a hash where the following keys are defined:
 	authentication has a value which is a string
+bool is an int
 
 
 =end text
@@ -4543,6 +5203,10 @@ sub check_job
     my $ctx = $fbaModelServicesServer::CallContext;
     my($output);
     #BEGIN check_job
+    $self->_setContext($ctx,$input);
+    $input = $self->_validateargs($input,["jobid","workspace"],{});
+    $output = $self->_get_msobject("FBAJob",$input->{workspace},$input->{jobid});
+    $self->_clearContext();
     #END check_job
     my @_bad_returns;
     (ref($output) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
@@ -4557,9 +5221,9 @@ sub check_job
 
 
 
-=head2 jobs_done
+=head2 run_job
 
-  $output = $obj->jobs_done($job)
+  $output = $obj->run_job($input)
 
 =over 4
 
@@ -4568,25 +5232,34 @@ sub check_job
 =begin html
 
 <pre>
-$job is a job_id
+$input is a run_job_params
 $output is a JobObject
+run_job_params is a reference to a hash where the following keys are defined:
+	jobid has a value which is a job_id
+	workspace has a value which is a workspace_id
+	index has a value which is an int
+	authentication has a value which is a string
 job_id is a string
+workspace_id is a string
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
+	kbase_workspace has a value which is a workspace_id
+	clusterjobs has a value which is a reference to a list where each element is a clusterjob
+	postprocess_command has a value which is a string
+	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
+	queuing_command has a value which is a string
+	clustermem has a value which is a float
+	clustertime has a value which is an int
+	clustertoken has a value which is a string
 	queuetime has a value which is a string
 	completetime has a value which is a string
 	complete has a value which is a bool
-	object has a value which is a string
-	workspace has a value which is a string
-	type has a value which is a string
 	owner has a value which is a string
-	queuing_command has a value which is a string
-	queuing_service has a value which is a string
-	postprocess_command has a value which is a string
-	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
-bool is an int
+clusterjob is a reference to a hash where the following keys are defined:
+	authentication has a value which is a string
 CommandArguments is a reference to a hash where the following keys are defined:
 	authentication has a value which is a string
+bool is an int
 
 </pre>
 
@@ -4594,25 +5267,34 @@ CommandArguments is a reference to a hash where the following keys are defined:
 
 =begin text
 
-$job is a job_id
+$input is a run_job_params
 $output is a JobObject
+run_job_params is a reference to a hash where the following keys are defined:
+	jobid has a value which is a job_id
+	workspace has a value which is a workspace_id
+	index has a value which is an int
+	authentication has a value which is a string
 job_id is a string
+workspace_id is a string
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
+	kbase_workspace has a value which is a workspace_id
+	clusterjobs has a value which is a reference to a list where each element is a clusterjob
+	postprocess_command has a value which is a string
+	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
+	queuing_command has a value which is a string
+	clustermem has a value which is a float
+	clustertime has a value which is an int
+	clustertoken has a value which is a string
 	queuetime has a value which is a string
 	completetime has a value which is a string
 	complete has a value which is a bool
-	object has a value which is a string
-	workspace has a value which is a string
-	type has a value which is a string
 	owner has a value which is a string
-	queuing_command has a value which is a string
-	queuing_service has a value which is a string
-	postprocess_command has a value which is a string
-	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
-bool is an int
+clusterjob is a reference to a hash where the following keys are defined:
+	authentication has a value which is a string
 CommandArguments is a reference to a hash where the following keys are defined:
 	authentication has a value which is a string
+bool is an int
 
 
 =end text
@@ -4621,35 +5303,51 @@ CommandArguments is a reference to a hash where the following keys are defined:
 
 =item Description
 
-
+Runs specified job
 
 =back
 
 =cut
 
-sub jobs_done
+sub run_job
 {
     my $self = shift;
-    my($job) = @_;
+    my($input) = @_;
 
     my @_bad_arguments;
-    (!ref($job)) or push(@_bad_arguments, "Invalid type for argument \"job\" (value was \"$job\")");
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
     if (@_bad_arguments) {
-	my $msg = "Invalid arguments passed to jobs_done:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	my $msg = "Invalid arguments passed to run_job:\n" . join("", map { "\t$_\n" } @_bad_arguments);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'jobs_done');
+							       method_name => 'run_job');
     }
 
     my $ctx = $fbaModelServicesServer::CallContext;
     my($output);
-    #BEGIN jobs_done
-    #END jobs_done
+    #BEGIN run_job
+    $self->_setContext($ctx,$input);
+    $input = $self->_validateargs($input,["jobid","workspace"],{
+    	"index" => 0,
+    });
+    my $job = $self->_get_msobject("FBAJob",$input->{workspace},$input->{jobid});
+    my $clusterjob = $job->{clusterjobs}->[$input->{"index"}];
+    my $fba = $self->_get_msobject("FBA",$clusterjob->{fbaws},$clusterjob->{fbaid});
+    my $fbaResult = $fba->runFBA();
+    if (!defined($fbaResult)) {
+    	my $msg = "FBA failed with no solution returned!";
+    	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'runfba');
+    }
+    $self->_save_msobject($fba,"FBA",$input->{fbaws},$input->{fbaid},"run_job");
+	$output = $job;
+    $self->jobs_done({$input});
+    $self->_clearContext();
+    #END run_job
     my @_bad_returns;
     (ref($output) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
     if (@_bad_returns) {
-	my $msg = "Invalid returns passed to jobs_done:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	my $msg = "Invalid returns passed to run_job:\n" . join("", map { "\t$_\n" } @_bad_returns);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'jobs_done');
+							       method_name => 'run_job');
     }
     return($output);
 }
@@ -7908,7 +8606,7 @@ authentication has a value which is a string
 
 
 
-=head2 FBAFormulation
+=head2 bound
 
 =over 4
 
@@ -7924,16 +8622,123 @@ NEED DOCUMENTATION
 =begin html
 
 <pre>
+a reference to a list containing 4 items:
+0: a float
+1: a float
+2: a string
+3: a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a list containing 4 items:
+0: a float
+1: a float
+2: a string
+3: a string
+
+
+=end text
+
+=back
+
+
+
+=head2 term
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a list containing 3 items:
+0: a float
+1: a string
+2: a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a list containing 3 items:
+0: a float
+1: a string
+2: a string
+
+
+=end text
+
+=back
+
+
+
+=head2 constraint
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a list containing 4 items:
+0: a float
+1: a string
+2: a reference to a list where each element is a term
+3: a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a list containing 4 items:
+0: a float
+1: a string
+2: a reference to a list where each element is a term
+3: a string
+
+
+=end text
+
+=back
+
+
+
+=head2 FBAFormulation
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
 a reference to a hash where the following keys are defined:
 media has a value which is a media_id
-workspace has a value which is a workspace_id
+media_workspace has a value which is a workspace_id
 objfraction has a value which is a float
 allreversible has a value which is a bool
-objective has a value which is a string
+maximizeObjective has a value which is a bool
+objectiveTerms has a value which is a reference to a list where each element is a term
 geneko has a value which is a reference to a list where each element is a feature_id
 rxnko has a value which is a reference to a list where each element is a reaction_id
-bounds has a value which is a reference to a list where each element is a string
-constraints has a value which is a reference to a list where each element is a string
+bounds has a value which is a reference to a list where each element is a bound
+constraints has a value which is a reference to a list where each element is a constraint
 uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
 defaultmaxflux has a value which is a float
 defaultminuptake has a value which is a float
@@ -7951,14 +8756,15 @@ minthermoerror has a value which is a bool
 
 a reference to a hash where the following keys are defined:
 media has a value which is a media_id
-workspace has a value which is a workspace_id
+media_workspace has a value which is a workspace_id
 objfraction has a value which is a float
 allreversible has a value which is a bool
-objective has a value which is a string
+maximizeObjective has a value which is a bool
+objectiveTerms has a value which is a reference to a list where each element is a term
 geneko has a value which is a reference to a list where each element is a feature_id
 rxnko has a value which is a reference to a list where each element is a reaction_id
-bounds has a value which is a reference to a list where each element is a string
-constraints has a value which is a reference to a list where each element is a string
+bounds has a value which is a reference to a list where each element is a bound
+constraints has a value which is a reference to a list where each element is a constraint
 uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
 defaultmaxflux has a value which is a float
 defaultminuptake has a value which is a float
@@ -7999,6 +8805,7 @@ fba has a value which is a fba_id
 fba_workspace has a value which is a workspace_id
 authentication has a value which is a string
 overwrite has a value which is a bool
+add_to_model has a value which is a bool
 
 </pre>
 
@@ -8019,6 +8826,7 @@ fba has a value which is a fba_id
 fba_workspace has a value which is a workspace_id
 authentication has a value which is a string
 overwrite has a value which is a bool
+add_to_model has a value which is a bool
 
 
 =end text
@@ -8039,8 +8847,8 @@ overwrite has a value which is a bool
 
 <pre>
 a reference to a hash where the following keys are defined:
-in_fba has a value which is a fba_id
-in_workspace has a value which is a workspace_id
+fba has a value which is a fba_id
+workspace has a value which is a workspace_id
 format has a value which is a string
 authentication has a value which is a string
 
@@ -8051,8 +8859,8 @@ authentication has a value which is a string
 =begin text
 
 a reference to a hash where the following keys are defined:
-in_fba has a value which is a fba_id
-in_workspace has a value which is a workspace_id
+fba has a value which is a fba_id
+workspace has a value which is a workspace_id
 format has a value which is a string
 authentication has a value which is a string
 
@@ -8148,7 +8956,7 @@ a reference to a list containing 5 items:
 a reference to a hash where the following keys are defined:
 id has a value which is a phenotypeSet_id
 genome has a value which is a genome_id
-genomeWorkspace has a value which is a workspace_id
+genome_workspace has a value which is a workspace_id
 phenotypes has a value which is a reference to a list where each element is a Phenotype
 importErrors has a value which is a string
 
@@ -8161,7 +8969,7 @@ importErrors has a value which is a string
 a reference to a hash where the following keys are defined:
 id has a value which is a phenotypeSet_id
 genome has a value which is a genome_id
-genomeWorkspace has a value which is a workspace_id
+genome_workspace has a value which is a workspace_id
 phenotypes has a value which is a reference to a list where each element is a Phenotype
 importErrors has a value which is a string
 
@@ -8248,7 +9056,7 @@ a reference to a list containing 4 items:
 a reference to a hash where the following keys are defined:
 id has a value which is a phenotypeSimulationSet_id
 model has a value which is a fbamodel_id
-modelWorkspace has a value which is a workspace_id
+model_workspace has a value which is a workspace_id
 phenotypeSet has a value which is a phenotypeSet_id
 phenotypeSimulations has a value which is a reference to a list where each element is a PhenotypeSimulation
 
@@ -8261,7 +9069,7 @@ phenotypeSimulations has a value which is a reference to a list where each eleme
 a reference to a hash where the following keys are defined:
 id has a value which is a phenotypeSimulationSet_id
 model has a value which is a fbamodel_id
-modelWorkspace has a value which is a workspace_id
+model_workspace has a value which is a workspace_id
 phenotypeSet has a value which is a phenotypeSet_id
 phenotypeSimulations has a value which is a reference to a list where each element is a PhenotypeSimulation
 
@@ -8284,8 +9092,8 @@ phenotypeSimulations has a value which is a reference to a list where each eleme
 
 <pre>
 a reference to a hash where the following keys are defined:
-id has a value which is a phenotypeSet_id
-workspace has a value which is a workspace_id
+phenotypeSet has a value which is a phenotypeSet_id
+phenotypeSet_workspace has a value which is a workspace_id
 genome has a value which is a genome_id
 genome_workspace has a value which is a workspace_id
 phenotypes has a value which is a reference to a list where each element is a Phenotype
@@ -8299,8 +9107,8 @@ authentication has a value which is a string
 =begin text
 
 a reference to a hash where the following keys are defined:
-id has a value which is a phenotypeSet_id
-workspace has a value which is a workspace_id
+phenotypeSet has a value which is a phenotypeSet_id
+phenotypeSet_workspace has a value which is a workspace_id
 genome has a value which is a genome_id
 genome_workspace has a value which is a workspace_id
 phenotypes has a value which is a reference to a list where each element is a Phenotype
@@ -8328,12 +9136,12 @@ authentication has a value which is a string
 a reference to a hash where the following keys are defined:
 model has a value which is a fbamodel_id
 model_workspace has a value which is a workspace_id
-phenotype_set has a value which is a phenotypeSet_id
-phenotype_workspace has a value which is a workspace_id
+phenotypeSet has a value which is a phenotypeSet_id
+phenotypeSet_workspace has a value which is a workspace_id
 formulation has a value which is an FBAFormulation
 notes has a value which is a string
-phenotype_simultation_set has a value which is a phenotypeSimulationSet_id
-out_workspace has a value which is a workspace_id
+phenotypeSimultationSet has a value which is a phenotypeSimulationSet_id
+phenotypeSimultationSet_workspace has a value which is a workspace_id
 overwrite has a value which is a bool
 authentication has a value which is a string
 
@@ -8346,12 +9154,12 @@ authentication has a value which is a string
 a reference to a hash where the following keys are defined:
 model has a value which is a fbamodel_id
 model_workspace has a value which is a workspace_id
-phenotype_set has a value which is a phenotypeSet_id
-phenotype_workspace has a value which is a workspace_id
+phenotypeSet has a value which is a phenotypeSet_id
+phenotypeSet_workspace has a value which is a workspace_id
 formulation has a value which is an FBAFormulation
 notes has a value which is a string
-phenotype_simultation_set has a value which is a phenotypeSimulationSet_id
-out_workspace has a value which is a workspace_id
+phenotypeSimultationSet has a value which is a phenotypeSimulationSet_id
+phenotypeSimultationSet_workspace has a value which is a workspace_id
 overwrite has a value which is a bool
 authentication has a value which is a string
 
@@ -8461,6 +9269,36 @@ authentication has a value which is a string
 
 
 
+=head2 clusterjob
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+authentication has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+authentication has a value which is a string
+
+
+=end text
+
+=back
+
+
+
 =head2 JobObject
 
 =over 4
@@ -8474,17 +9312,18 @@ authentication has a value which is a string
 <pre>
 a reference to a hash where the following keys are defined:
 id has a value which is a job_id
+kbase_workspace has a value which is a workspace_id
+clusterjobs has a value which is a reference to a list where each element is a clusterjob
+postprocess_command has a value which is a string
+postprocess_args has a value which is a reference to a list where each element is a CommandArguments
+queuing_command has a value which is a string
+clustermem has a value which is a float
+clustertime has a value which is an int
+clustertoken has a value which is a string
 queuetime has a value which is a string
 completetime has a value which is a string
 complete has a value which is a bool
-object has a value which is a string
-workspace has a value which is a string
-type has a value which is a string
 owner has a value which is a string
-queuing_command has a value which is a string
-queuing_service has a value which is a string
-postprocess_command has a value which is a string
-postprocess_args has a value which is a reference to a list where each element is a CommandArguments
 
 </pre>
 
@@ -8494,17 +9333,18 @@ postprocess_args has a value which is a reference to a list where each element i
 
 a reference to a hash where the following keys are defined:
 id has a value which is a job_id
+kbase_workspace has a value which is a workspace_id
+clusterjobs has a value which is a reference to a list where each element is a clusterjob
+postprocess_command has a value which is a string
+postprocess_args has a value which is a reference to a list where each element is a CommandArguments
+queuing_command has a value which is a string
+clustermem has a value which is a float
+clustertime has a value which is an int
+clustertoken has a value which is a string
 queuetime has a value which is a string
 completetime has a value which is a string
 complete has a value which is a bool
-object has a value which is a string
-workspace has a value which is a string
-type has a value which is a string
 owner has a value which is a string
-queuing_command has a value which is a string
-queuing_service has a value which is a string
-postprocess_command has a value which is a string
-postprocess_args has a value which is a reference to a list where each element is a CommandArguments
 
 
 =end text
@@ -8555,6 +9395,7 @@ out_model has a value which is a fbamodel_id
 out_workspace has a value which is a workspace_id
 authentication has a value which is a string
 overwrite has a value which is a bool
+donot_submit_job has a value which is a bool
 gapfilling_index has a value which is an int
 job has a value which is a job_id
 
@@ -8595,6 +9436,7 @@ out_model has a value which is a fbamodel_id
 out_workspace has a value which is a workspace_id
 authentication has a value which is a string
 overwrite has a value which is a bool
+donot_submit_job has a value which is a bool
 gapfilling_index has a value which is an int
 job has a value which is a job_id
 
@@ -8632,6 +9474,7 @@ out_model has a value which is a fbamodel_id
 out_workspace has a value which is a workspace_id
 authentication has a value which is a string
 overwrite has a value which is a bool
+donot_submit_job has a value which is a bool
 gapgen_index has a value which is an int
 
 </pre>
@@ -8656,6 +9499,7 @@ out_model has a value which is a fbamodel_id
 out_workspace has a value which is a workspace_id
 authentication has a value which is a string
 overwrite has a value which is a bool
+donot_submit_job has a value which is a bool
 gapgen_index has a value which is an int
 
 
@@ -8706,6 +9550,7 @@ out_model has a value which is a fbamodel_id
 out_workspace has a value which is a workspace_id
 authentication has a value which is a string
 overwrite has a value which is a bool
+donot_submit_job has a value which is a bool
 all_gapgen_indecies has a value which is a reference to a list where each element is an int
 all_gapfill_indecies has a value which is a reference to a list where each element is an int
 gapgen_index has a value which is an int
@@ -8747,6 +9592,7 @@ out_model has a value which is a fbamodel_id
 out_workspace has a value which is a workspace_id
 authentication has a value which is a string
 overwrite has a value which is a bool
+donot_submit_job has a value which is a bool
 all_gapgen_indecies has a value which is a reference to a list where each element is an int
 all_gapfill_indecies has a value which is a reference to a list where each element is an int
 gapgen_index has a value which is an int
@@ -8780,6 +9626,7 @@ notes has a value which is a string
 out_model has a value which is a fbamodel_id
 out_workspace has a value which is a workspace_id
 authentication has a value which is a string
+donot_submit_job has a value which is a bool
 overwrite has a value which is a bool
 
 </pre>
@@ -8798,41 +9645,8 @@ notes has a value which is a string
 out_model has a value which is a fbamodel_id
 out_workspace has a value which is a workspace_id
 authentication has a value which is a string
+donot_submit_job has a value which is a bool
 overwrite has a value which is a bool
-
-
-=end text
-
-=back
-
-
-
-=head2 check_job_params
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-job has a value which is a job_id
-workspace has a value which is a workspace_id
-authentication has a value which is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-job has a value which is a job_id
-workspace has a value which is a workspace_id
-authentication has a value which is a string
 
 
 =end text
@@ -8860,6 +9674,110 @@ a string
 =begin text
 
 a string
+
+=end text
+
+=back
+
+
+
+=head2 jobs_done_params
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+jobid has a value which is a job_id
+workspace has a value which is a workspace_id
+authentication has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+jobid has a value which is a job_id
+workspace has a value which is a workspace_id
+authentication has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 check_job_params
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+jobid has a value which is a job_id
+workspace has a value which is a workspace_id
+authentication has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+jobid has a value which is a job_id
+workspace has a value which is a workspace_id
+authentication has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 run_job_params
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+jobid has a value which is a job_id
+workspace has a value which is a workspace_id
+index has a value which is an int
+authentication has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+jobid has a value which is a job_id
+workspace has a value which is a workspace_id
+index has a value which is an int
+authentication has a value which is a string
+
 
 =end text
 

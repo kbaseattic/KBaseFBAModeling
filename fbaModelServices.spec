@@ -503,16 +503,20 @@ module fbaModelServices {
     /*
         NEED DOCUMENTATION
     */
+    typedef tuple<float min,float max,string varType,string variable> bound;
+    typedef tuple<float coefficient,string varType,string variable> term;
+    typedef tuple<float rhs,string sign,list<term> terms,string name> constraint;
     typedef structure {
 		media_id media;
-		workspace_id workspace;
+		workspace_id media_workspace;
 		float objfraction;
 		bool allreversible;
-		string objective;
+		bool maximizeObjective;
+		list<term> objectiveTerms;
 		list<feature_id> geneko;
 		list<reaction_id> rxnko;
-		list<string> bounds;
-		list<string> constraints;
+		list<bound> bounds;
+		list<constraint> constraints;
 		mapping<string,float> uptakelim;
 		float defaultmaxflux;
 		float defaultminuptake;
@@ -535,6 +539,7 @@ module fbaModelServices {
 		workspace_id fba_workspace;
 		string authentication;
 		bool overwrite;
+		bool add_to_model;
     } runfba_params;
     /*
         Run flux balance analysis and return ID of FBA object with results 
@@ -542,8 +547,8 @@ module fbaModelServices {
     funcdef runfba(runfba_params input) returns (object_metadata fbaMeta);
     
     typedef structure {
-		fba_id in_fba;
-		workspace_id in_workspace;
+		fba_id fba;
+		workspace_id workspace;
 		string format;
 		string authentication;
     } export_fba_params;
@@ -560,7 +565,7 @@ module fbaModelServices {
     typedef structure {
 		phenotypeSet_id id;
 		genome_id genome;
-		workspace_id genomeWorkspace;
+		workspace_id genome_workspace;
 		list<Phenotype> phenotypes;
 		string importErrors;
     } PhenotypeSet;
@@ -570,14 +575,14 @@ module fbaModelServices {
     typedef structure {
     	phenotypeSimulationSet_id id;
 		fbamodel_id model;
-		workspace_id modelWorkspace;
+		workspace_id model_workspace;
 		phenotypeSet_id phenotypeSet;
 		list<PhenotypeSimulation> phenotypeSimulations;
     } PhenotypeSimulationSet;
     
     typedef structure {
-		phenotypeSet_id id;
-		workspace_id workspace;
+		phenotypeSet_id phenotypeSet;
+		workspace_id phenotypeSet_workspace;
 		genome_id genome;
 		workspace_id genome_workspace;
 		list<Phenotype> phenotypes;
@@ -592,12 +597,12 @@ module fbaModelServices {
     typedef structure {
 		fbamodel_id model;
 		workspace_id model_workspace;
-		phenotypeSet_id phenotype_set;
-		workspace_id phenotype_workspace;
+		phenotypeSet_id phenotypeSet;
+		workspace_id phenotypeSet_workspace;
 		FBAFormulation formulation;
 		string notes;
-		phenotypeSimulationSet_id phenotype_simultation_set;
-		workspace_id out_workspace;
+		phenotypeSimulationSet_id phenotypeSimultationSet;
+		workspace_id phenotypeSimultationSet_workspace;
 		bool overwrite;
 		string authentication;
     } simulate_phenotypes_params;
@@ -625,18 +630,22 @@ module fbaModelServices {
 		string authentication;
     } CommandArguments;
     typedef structure {
+		string authentication;
+    } clusterjob;
+    typedef structure {
 		job_id id;
+		workspace_id kbase_workspace;
+		list<clusterjob> clusterjobs;
+		string postprocess_command;
+		list<CommandArguments> postprocess_args;
+		string queuing_command;
+		float clustermem;
+		int clustertime;
+		string clustertoken;
 		string queuetime;
 		string completetime;
 		bool complete;
-		string object;
-		string workspace;
-		string type;
-		string owner;
-		string queuing_command;
-		string queuing_service;
-		string postprocess_command;
-		list<CommandArguments> postprocess_args;
+		string owner;		
     } JobObject;
 	/*
         Queues an FBA job in a single media condition
@@ -674,6 +683,7 @@ module fbaModelServices {
 		workspace_id out_workspace;
 		string authentication;
 		bool overwrite;
+		bool donot_submit_job;
 		int gapfilling_index;
 		job_id job;
     } gapfill_model_params;
@@ -698,6 +708,7 @@ module fbaModelServices {
 		workspace_id out_workspace;
 		string authentication;
 		bool overwrite;
+		bool donot_submit_job;
 		int gapgen_index;
     } gapgen_model_params;
     /*
@@ -735,6 +746,7 @@ module fbaModelServices {
 		workspace_id out_workspace;
 		string authentication;
 		bool overwrite;
+		bool donot_submit_job;
 		list<int> all_gapgen_indecies;
 		list<int> all_gapfill_indecies;
 		int gapgen_index;
@@ -755,15 +767,27 @@ module fbaModelServices {
 		fbamodel_id out_model;
 		workspace_id out_workspace;
 		string authentication;
+		bool donot_submit_job;
 		bool overwrite;
     } combine_wildtype_phenotype_reconciliation_params;
     /*
         Queues an FBAModel reconciliation job
     */
     funcdef queue_combine_wildtype_phenotype_reconciliation_params(combine_wildtype_phenotype_reconciliation_params input) returns (JobObject output);
-    
-    typedef structure {
-		job_id job;
+    	
+	typedef string job_id;
+	typedef structure {
+		job_id jobid;
+		workspace_id workspace;
+		string authentication;
+    } jobs_done_params;
+	/*
+        Mark specified job as complete and run postprocessing
+    */
+	funcdef jobs_done(jobs_done_params input) returns (JobObject output);
+
+	typedef structure {
+		job_id jobid;
 		workspace_id workspace;
 		string authentication;
     } check_job_params;
@@ -771,10 +795,15 @@ module fbaModelServices {
         Retreives job data given a job ID
     */
     funcdef check_job(check_job_params input) returns (JobObject output);       
-	typedef string job_id;
+	
 	typedef structure {
 		job_id jobid;
+		workspace_id workspace;
+		int index;
 		string authentication;
-    } jobs_done_params;
-	funcdef jobs_done(jobs_done_params input) returns (JobObject output);
+    } run_job_params;
+	/*
+        Runs specified job
+    */
+	funcdef run_job(run_job_params input) returns (JobObject output);
 };

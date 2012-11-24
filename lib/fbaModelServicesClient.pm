@@ -1241,6 +1241,56 @@ sub queue_combine_wildtype_phenotype_reconciliation_params
 
 
 
+=head2 $result = jobs_done(input)
+
+Mark specified job as complete and run postprocessing
+
+=cut
+
+sub jobs_done
+{
+    my($self, @args) = @_;
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function jobs_done (received $n, expecting 1)");
+    }
+    {
+	my($input) = @args;
+
+	my @_bad_arguments;
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to jobs_done:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'jobs_done');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.jobs_done",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{code},
+					       method_name => 'jobs_done',
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method jobs_done",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'jobs_done',
+				       );
+    }
+}
+
+
+
 =head2 $result = check_job(input)
 
 Retreives job data given a job ID
@@ -1291,50 +1341,50 @@ sub check_job
 
 
 
-=head2 $result = jobs_done(job)
+=head2 $result = run_job(input)
 
-
+Runs specified job
 
 =cut
 
-sub jobs_done
+sub run_job
 {
     my($self, @args) = @_;
 
     if ((my $n = @args) != 1)
     {
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
-							       "Invalid argument count for function jobs_done (received $n, expecting 1)");
+							       "Invalid argument count for function run_job (received $n, expecting 1)");
     }
     {
-	my($job) = @args;
+	my($input) = @args;
 
 	my @_bad_arguments;
-        (!ref($job)) or push(@_bad_arguments, "Invalid type for argument 1 \"job\" (value was \"$job\")");
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
         if (@_bad_arguments) {
-	    my $msg = "Invalid arguments passed to jobs_done:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    my $msg = "Invalid arguments passed to run_job:\n" . join("", map { "\t$_\n" } @_bad_arguments);
 	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-								   method_name => 'jobs_done');
+								   method_name => 'run_job');
 	}
     }
 
     my $result = $self->{client}->call($self->{url}, {
-	method => "fbaModelServices.jobs_done",
+	method => "fbaModelServices.run_job",
 	params => \@args,
     });
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
 					       code => $result->content->{code},
-					       method_name => 'jobs_done',
+					       method_name => 'run_job',
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
 	}
     } else {
-        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method jobs_done",
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method run_job",
 					    status_line => $self->{client}->status_line,
-					    method_name => 'jobs_done',
+					    method_name => 'run_job',
 				       );
     }
 }
@@ -1352,16 +1402,16 @@ sub version {
             Bio::KBase::Exceptions::JSONRPC->throw(
                 error => $result->error_message,
                 code => $result->content->{code},
-                method_name => 'jobs_done',
+                method_name => 'run_job',
             );
         } else {
             return wantarray ? @{$result->result} : $result->result->[0];
         }
     } else {
         Bio::KBase::Exceptions::HTTP->throw(
-            error => "Error invoking method jobs_done",
+            error => "Error invoking method run_job",
             status_line => $self->{client}->status_line,
-            method_name => 'jobs_done',
+            method_name => 'run_job',
         );
     }
 }

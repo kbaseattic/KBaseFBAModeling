@@ -399,6 +399,22 @@ class fbaModelServices:
         else:
             return None
 
+    def jobs_done(self, input):
+
+        arg_hash = { 'method': 'fbaModelServices.jobs_done',
+                     'params': [input],
+                     'version': '1.1'
+                     }
+
+        body = json.dumps(arg_hash)
+        resp_str = urllib.urlopen(self.url, body).read()
+        resp = json.loads(resp_str)
+
+        if 'result' in resp:
+            return resp['result'][0]
+        else:
+            return None
+
     def check_job(self, input):
 
         arg_hash = { 'method': 'fbaModelServices.check_job',
@@ -415,10 +431,10 @@ class fbaModelServices:
         else:
             return None
 
-    def jobs_done(self, job):
+    def run_job(self, input):
 
-        arg_hash = { 'method': 'fbaModelServices.jobs_done',
-                     'params': [job],
+        arg_hash = { 'method': 'fbaModelServices.run_job',
+                     'params': [input],
                      'version': '1.1'
                      }
 
