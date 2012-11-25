@@ -1,14 +1,44 @@
 module fbaModelServices {
+    /*********************************************************************************
+    Universal simple type definitions
+   	*********************************************************************************/
     typedef int bool;
-    
-    /*IMPORT FROM probabilistic_annotation/ProbabilisticAnnotation.spec*/
-    typedef string md5;
-    typedef list<md5> md5s;
+    typedef string workspace_id;
+	typedef string object_type;
+	typedef string object_id;
+	typedef string username;
+	typedef string timestamp;
+    typedef string compound_id;
+    typedef string biochemistry_id;
     typedef string genome_id;
-    typedef string feature_id;
     typedef string contig_id;
     typedef string feature_type;
-
+    typedef string modelcompartment_id;
+    typedef string modelcompound_id;
+    typedef string feature_id;
+    typedef string reaction_id;
+    typedef string modelreaction_id;
+    typedef string biomass_id;
+    typedef string media_id;
+    typedef string fba_id;
+    typedef string gapgen_id;
+    typedef string gapfill_id;
+    typedef string fbamodel_id;
+    typedef string biochemistry_id;
+    typedef string mapping_id;
+    typedef string media_id;
+    typedef string probabilistic_annotation_id;
+    typedef string regmodel_id;
+    typedef string expression_id;
+    /*********************************************************************************
+    Object type definition
+   	*********************************************************************************/
+    typedef tuple<object_id id,object_type type,timestamp moddate,int instance,string command,username lastmodifier,username owner> object_metadata;
+    /*********************************************************************************
+    Probabilistic Annotation type definition
+   	*********************************************************************************/
+    typedef string md5;
+    typedef list<md5> md5s;
     /* A region of DNA is maintained as a tuple of four components:
 
         the contig
@@ -30,85 +60,77 @@ module fbaModelServices {
     typedef tuple<string function, float probability, list<gene_hit> gene_hits > alt_func;
 
     typedef structure {
-	feature_id id;
-	location location;
-	feature_type type;
-	string function;
-	list<alt_func> alternative_functions;
-	string protein_translation;
-	list<string> aliases;
-	list<annotation> annotations;
+		feature_id id;
+		location location;
+		feature_type type;
+		string function;
+		list<alt_func> alternative_functions;
+		string protein_translation;
+		list<string> aliases;
+		list<annotation> annotations;
     } feature;
 
     typedef structure {
-	contig_id id;
-	string dna;
+		contig_id id;
+		string dna;
     } contig;
 
     typedef structure {
-	genome_id id;
-	string scientific_name;
-	string domain;
-	int genetic_code;
-	string source;
-	string source_id;
-	
-	list<contig> contigs;
-	list<feature> features;
+		genome_id id;
+		string scientific_name;
+		string domain;
+		int genetic_code;
+		string source;
+		string source_id;
+		list<contig> contigs;
+		list<feature> features;
     } GenomeObject;
-    /*END IMPORT*/
-
-    /*BIOCHEMISTRY SPEC*/
-    typedef string reaction_id;
-    typedef string media_id;
-    typedef string compound_id;
-    typedef string biochemistry_id;
+    /*********************************************************************************
+    Biochemistry type definition
+   	*********************************************************************************/
     typedef structure {
-	biochemistry_id id;
-	string name;
-	list<compound_id> compounds;
-	list<reaction_id> reactions;
-	list<media_id> media;
+		biochemistry_id id;
+		string name;
+		list<compound_id> compounds;
+		list<reaction_id> reactions;
+		list<media_id> media;
     } Biochemistry;
     
     typedef structure {
-	media_id id;
-	string name;
-	list<compound_id> compounds;
-	list<float> concentrations;
-	float pH;
-	float temperature;
+		media_id id;
+		string name;
+		list<compound_id> compounds;
+		list<float> concentrations;
+		float pH;
+		float temperature;
     } Media;
     
     typedef structure {
-	compound_id id;
-	string name;
-	list<string> aliases;
-	float charge;
-	string formula;
+		compound_id id;
+		string name;
+		list<string> aliases;
+		float charge;
+		string formula;
     } Compound;
     
     typedef structure {
-	reaction_id id;
-	string reversibility;
-	float deltaG;
-	float deltaGErr;
-	string equation;	
+		reaction_id id;
+		string reversibility;
+		float deltaG;
+		float deltaGErr;
+		string equation;	
     } Reaction;
-    /*END BIOCHEMISTRY SPEC*/
-    
-    /*FBAMODEL SPEC*/
-    typedef string modelcompartment_id;
+    /*********************************************************************************
+    FBAModel type definition
+   	*********************************************************************************/
     typedef structure {
-	modelcompartment_id id;
-	string name;
-	float pH;
-	float potential;
-	int index;
+		modelcompartment_id id;
+		string name;
+		float pH;
+		float potential;
+		int index;
     } ModelCompartment;
     
-    typedef string compound_id;
-    typedef string modelcompound_id;
     typedef structure {
 		modelcompound_id id;
 		compound_id compound;
@@ -116,9 +138,6 @@ module fbaModelServices {
 		modelcompartment_id compartment;
     } ModelCompound;
     
-    typedef string feature_id;
-    typedef string reaction_id;
-    typedef string modelreaction_id;
     typedef structure {
 		modelreaction_id id;
 		reaction_id reaction;
@@ -130,33 +149,25 @@ module fbaModelServices {
     
     typedef tuple<modelcompound_id modelcompound,float coefficient> BiomassCompound;
     
-    typedef string biomass_id;
     typedef structure {
 		biomass_id id;
 		string name;
 		list<BiomassCompound> biomass_compounds;
     } ModelBiomass;
     
-    typedef string media_id;
-    typedef string fba_id;
-    typedef tuple<fba_id id,media_id media,float objective,list<feature_id> ko> FBAMeta;
-    
-    typedef string gapgen_id;
-    typedef tuple<gapgen_id id,media_id media,list<feature_id> ko> GapGenMeta;
-    
-    typedef string gapfill_id;
-    typedef tuple<gapfill_id id,media_id media,list<feature_id> ko> GapFillMeta;
-    
-    typedef string fbamodel_id;
-    typedef string genome_id;
-    typedef string biochemistry_id;
-    typedef string mapping_id;
+    typedef tuple<fba_id id,workspace_id workspace,media_id media,workspace_id media_workspace,float objective,list<feature_id> ko> FBAMeta;
+    typedef tuple<gapgen_id id,workspace_id workspace,media_id media,workspace_id media_workspace,bool done,list<feature_id> ko> GapGenMeta;
+    typedef tuple<gapfill_id id,workspace_id workspace,media_id media,workspace_id media_workspace,bool done,list<feature_id> ko> GapFillMeta;
     
     typedef structure {
 		fbamodel_id id;
+		workspace_id workspace;
 		genome_id genome;
+		workspace_id genome_workspace;
 		mapping_id map;
+		workspace_id map_workspace;
 		biochemistry_id biochemistry;
+		workspace_id biochemistry_workspace;
 		string name;
 		string type;
 		string status;
@@ -172,223 +183,220 @@ module fbaModelServices {
 		list<GapGenMeta> integrated_gapgenerations;
 		list<GapGenMeta> unintegrated_gapgenerations;
     } FBAModel;
-    /*END FBAMODEL SPEC*/
-    
-    /*GAPFILLING FORMULATION SPEC*/
-    typedef string media_id;
-    typedef string probabilistic_annotation_id;
+    /*********************************************************************************
+    Gapfilling type definition
+   	*********************************************************************************/
     typedef structure {
-	media_id media;
-	string notes;
-	string objective;
-	float objfraction;
-	string rxnko;
-	string geneko;
-	string uptakelim;
-	float defaultmaxflux;
-	float defaultmaxuptake;
-	float defaultminuptake;
-	bool nomediahyp;
-	bool nobiomasshyp;
-	bool nogprhyp;
-	bool nopathwayhyp;
-	bool allowunbalanced;
-	float activitybonus;
-	float drainpen;
-	float directionpen;
-	float nostructpen;
-	float unfavorablepen;
-	float nodeltagpen;
-	float biomasstranspen;
-	float singletranspen;
-	float transpen;
-	string blacklistedrxns;
-	string gauranteedrxns;
-	string allowedcmps;
-	probabilistic_annotation_id probabilistic_annotation;
+		media_id media;
+		string notes;
+		string objective;
+		float objfraction;
+		string rxnko;
+		string geneko;
+		string uptakelim;
+		float defaultmaxflux;
+		float defaultmaxuptake;
+		float defaultminuptake;
+		bool nomediahyp;
+		bool nobiomasshyp;
+		bool nogprhyp;
+		bool nopathwayhyp;
+		bool allowunbalanced;
+		float activitybonus;
+		float drainpen;
+		float directionpen;
+		float nostructpen;
+		float unfavorablepen;
+		float nodeltagpen;
+		float biomasstranspen;
+		float singletranspen;
+		float transpen;
+		string blacklistedrxns;
+		string gauranteedrxns;
+		string allowedcmps;
+		probabilistic_annotation_id probabilistic_annotation;
     } GapfillingFormulation;
     
     typedef tuple<reaction_id reaction,string direction> reactionAddition;
-    typedef structure {
-	gapfill_id id;
-        bool isComplete;
-	GapfillingFormulation formulation;
-	list<modelcompound_id> biomassRemovals;
-	list<compound_id> mediaAdditions;
-	list<reactionAddition> reactionAdditions;
-    } GapFill;
-    /*END GAPFILLING FORMULATION SPEC*/
     
-    /*GAPGEN FORMULATION SPEC*/
     typedef structure {
-	media_id media;
-	media_id refmedia;
-	string notes;
-	string objective;
-	float objfraction;
-	string rxnko;
-	string geneko;
-	string uptakelim;
-	float defaultmaxflux;
-	float defaultmaxuptake;
-	float defaultminuptake;
-	bool nomediahyp;
-	bool nobiomasshyp;
-	bool nogprhyp;
-	bool nopathwayhyp;
+		gapfill_id id;
+        bool isComplete;
+		GapfillingFormulation formulation;
+		list<modelcompound_id> biomassRemovals;
+		list<compound_id> mediaAdditions;
+		list<reactionAddition> reactionAdditions;
+    } GapFill;
+    /*********************************************************************************
+    Gap Generation type definition
+   	*********************************************************************************/
+    typedef structure {
+		media_id media;
+		media_id refmedia;
+		string notes;
+		string objective;
+		float objfraction;
+		string rxnko;
+		string geneko;
+		string uptakelim;
+		float defaultmaxflux;
+		float defaultmaxuptake;
+		float defaultminuptake;
+		bool nomediahyp;
+		bool nobiomasshyp;
+		bool nogprhyp;
+		bool nopathwayhyp;
     } GapgenFormulation;
     
     typedef tuple<modelreaction_id reaction,string direction> reactionRemoval;
+    
     typedef structure {
-	gapgen_id id;
+		gapgen_id id;
         bool isComplete;
-	GapgenFormulation formulation;
-	list<compound_id> biomassAdditions;
-	list<compound_id> mediaRemovals;
-	list<reactionRemoval> reactionRemovals;
+		GapgenFormulation formulation;
+		list<compound_id> biomassAdditions;
+		list<compound_id> mediaRemovals;
+		list<reactionRemoval> reactionRemovals;
     } GapGen;
-    
-    /*END GAPGEN FORMULATION SPEC*/
-    
-    /*FBA FORMULATION SPEC*/
-    typedef string feature_id;
+    /*********************************************************************************
+    Flux Balance Analysis type definition
+   	*********************************************************************************/
     typedef tuple<feature_id feature,float growthFraction,float growth,bool isEssential> GeneAssertion;
-    
-    typedef string modelcompound_id;
     typedef tuple<modelcompound_id compound,float value,float upperBound,float lowerBound,float max,float min,string type> CompoundFlux;
-    
-    typedef string modelreaction_id;
     typedef tuple<modelreaction_id reaction,float value,float upperBound,float lowerBound,float max,float min,string type> ReactionFlux;
     typedef tuple<float maximumProduction,modelcompound_id modelcompound> MetaboliteProduction;
-    
+
     typedef string compound_id;
-    typedef structure {
-	list<compound_id> optionalNutrients;
-	list<compound_id> essentialNutrients;
+	    typedef structure {
+		list<compound_id> optionalNutrients;
+		list<compound_id> essentialNutrients;
     } MinimalMediaPrediction;
     
-    typedef string fba_id;
-    typedef string media_id;
-    typedef string fbamodel_id;
-    typedef string regmodel_id;
-    typedef string expression_id;
-    
-    typedef structure {
-	media_id media;
-	fbamodel_id model;
-	regmodel_id regmodel;
-	expression_id expressionData;
-	string objectiveString;
-	float objective;
-	string description;
-	string uptakelimits;
-	float objectiveConstraintFraction;
-	bool allReversible;
-	float defaultMaxFlux;
-	float defaultMaxDrainFlux;
-	float defaultMinDrainFlux;
-	int numberOfSolutions;
-	bool fva;
-	int comboDeletions;
-	bool fluxMinimization;
-	bool findMinimalMedia;
-	bool simpleThermoConstraints;
-	bool thermodynamicConstraints;
-	bool noErrorThermodynamicConstraints;
-	bool minimizeErrorThermodynamicConstraints;
-	list<feature_id> featureKO;
-	list<modelreaction_id> reactionKO;
-	list<string> constraints;
-	list<string> bounds;
+    typedef tuple<float min,float max,string varType,string variable> bound;
+    typedef tuple<float coefficient,string varType,string variable> term;
+    typedef tuple<float rhs,string sign,list<term> terms,string name> constraint;
+	
+	typedef structure {
+		media_id media;
+		workspace_id media_workspace;
+		float objfraction;
+		bool allreversible;
+		bool maximizeObjective;
+		list<term> objectiveTerms;
+		list<feature_id> geneko;
+		list<reaction_id> rxnko;
+		list<bound> bounds;
+		list<constraint> constraints;
+		mapping<string,float> uptakelim;
+		float defaultmaxflux;
+		float defaultminuptake;
+		float defaultmaxuptake;
+		bool simplethermoconst;
+		bool thermoconst;
+		bool nothermoerror;
+		bool minthermoerror;
     } FBAFormulation;
     
     typedef structure {
-	fba_id id;
+		fba_id id;
+		workspace_id workspace;
+        float objective;
         bool isComplete;
-	FBAFormulation formulation;
-	list<MinimalMediaPrediction> minimalMediaPredictions;
-	list<MetaboliteProduction> metaboliteProductions;
-	list<ReactionFlux> reactionFluxes;
-	list<CompoundFlux> compoundFluxes;
-	list<GeneAssertion> geneAssertions;
+		FBAFormulation formulation;
+		list<MinimalMediaPrediction> minimalMediaPredictions;
+		list<MetaboliteProduction> metaboliteProductions;
+		list<ReactionFlux> reactionFluxes;
+		list<CompoundFlux> compoundFluxes;
+		list<GeneAssertion> geneAssertions;
     } FBA;
-    /*END FBA FORMULATION SPEC*/
-    typedef string workspace_id;
-	typedef string object_type;
-	typedef string object_id;
-	typedef string username;
-	typedef string timestamp;
-    typedef tuple<object_id id,object_type type,timestamp moddate,int instance,string command,username lastmodifier,username owner> object_metadata;
-    
-    /*This function returns model data for input ids*/
+    /*********************************************************************************
+    Function definitions relating to data retrieval for Model Objects
+   	*********************************************************************************/
     typedef structure {
-	list<fbamodel_id> in_model_ids;
-	workspace_id workspace;
-	string authentication;
+		list<fbamodel_id> models;
+		list<workspace_id> workspaces;
+		string authentication;
         string id_type;
     } get_models_params;
+    /*
+    	Returns model data for input ids
+    */
     funcdef get_models(get_models_params input) returns (list<FBAModel> out_models);
 
-    /*This function returns fba data for input ids*/
     typedef structure {
-	list<fba_id> in_fba_ids;
-	workspace_id workspace;
-	string authentication;
+		list<fba_id> fbas;
+		list<workspace_id> workspaces; 
+		string authentication;
         string id_type;
     } get_fbas_params;
+    /*
+    	Returns data for the requested flux balance analysis formulations
+    */
     funcdef get_fbas(get_fbas_params input) returns (list<FBA> out_fbas);
 
-    /*This function returns gapfill data for input ids*/
     typedef structure {
-	list<gapfill_id> in_gapfill_ids;
-	workspace_id workspace;
-	string authentication;
+		list<gapfill_id> gapfills;
+		list<workspace_id> workspaces; 
+		string authentication;
         string id_type;
     } get_gapfills_params;
+    /*
+    	Returns data for the requested gap filling simulations
+    */
     funcdef get_gapfills(get_gapfills_params input) returns (list<GapFill> out_gapfills);
 
-    /*This function returns gapgen data for input ids*/
     typedef structure {
-	list<gapgen_id> in_gapgen_ids;
-	workspace_id workspace;
-	string authentication;
+		list<gapgen_id> gapgens;
+		list<workspace_id> workspaces;
+		string authentication;
         string id_type;
     } get_gapgens_params;
+    /*
+    	Returns data for the requested gap generation simulations
+    */
     funcdef get_gapgens(get_gapgens_params input) returns (list<GapGen> out_gapgens);
 
-    /*This function returns reaction data for input ids*/
     typedef structure {
-	list<reaction_id> in_reaction_ids;
-	string authentication;
+		list<reaction_id> reactions;
+		string authentication;
         string id_type;
     } get_reactions_params;
+    /*
+    	Returns data for the requested reactions
+    */
     funcdef get_reactions(get_reactions_params input) returns (list<Reaction> out_reactions);
 
-    /*This function returns compound data for input ids*/
     typedef structure {
-	list<compound_id> in_compound_ids;
-	string authentication;
+		list<compound_id> compounds;
+		string authentication;
         string id_type;
     } get_compounds_params;
+    /*
+    	Returns data for the requested compounds
+    */
     funcdef get_compounds(get_compounds_params input) returns (list<Compound> out_compounds);
 
     /*This function returns media data for input ids*/
     typedef structure {
-	list<media_id> in_media_ids;
-	string authentication;
-        string id_type;
+		list<media_id> medias;
+		list<workspace_id> workspaces;
+		string authentication;
     } get_media_params;
+    /*
+    	Returns data for the requested media formulations
+    */
     funcdef get_media(get_media_params input) returns (list<Media> out_media);
 
-    /*This function returns biochemistry object */
     typedef structure {
-        biochemistry_id in_biochemistry;
-	string authentication;
+        biochemistry_id biochemistry;
+        workspace_id biochemistry_workspace;
         string id_type;
+        string authentication;
     } get_biochemistry_params;
+    /*
+    	Returns biochemistry object
+    */
     funcdef get_biochemistry(get_biochemistry_params input) returns (Biochemistry out_biochemistry);
-
-
 	/*********************************************************************************
     Code relating to reconstruction of metabolic models
    	*********************************************************************************/
@@ -503,29 +511,6 @@ module fbaModelServices {
     /*
         NEED DOCUMENTATION
     */
-    typedef tuple<float min,float max,string varType,string variable> bound;
-    typedef tuple<float coefficient,string varType,string variable> term;
-    typedef tuple<float rhs,string sign,list<term> terms,string name> constraint;
-    typedef structure {
-		media_id media;
-		workspace_id media_workspace;
-		float objfraction;
-		bool allreversible;
-		bool maximizeObjective;
-		list<term> objectiveTerms;
-		list<feature_id> geneko;
-		list<reaction_id> rxnko;
-		list<bound> bounds;
-		list<constraint> constraints;
-		mapping<string,float> uptakelim;
-		float defaultmaxflux;
-		float defaultminuptake;
-		float defaultmaxuptake;
-		bool simplethermoconst;
-		bool thermoconst;
-		bool nothermoerror;
-		bool minthermoerror;
-    } FBAFormulation;
     typedef structure {
     	fbamodel_id model;
 		workspace_id model_workspace;

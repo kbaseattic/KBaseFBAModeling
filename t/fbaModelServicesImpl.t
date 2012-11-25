@@ -20,6 +20,22 @@ my $test_count = 10;
 my $ws = &_initializeTestWorkspace();
 my $obj = fbaModelServicesImpl->new({workspace => $ws});
 
+#Testing biochemistry retrieval method
+my $biochemistry = $obj->get_biochemistry({});
+ok defined($biochemistry), "Successfully printed biochemistry!";
+
+#Testing reaction retrieval method
+my $rxns = $obj->get_reactions({
+	reactions => ["rxn00001","rxn00002"]
+});
+ok defined($rxns->[0]), "Successfully printed reactions!";
+
+#Testing compound retrieval method
+my $cpds = $obj->get_compounds({
+	compounds => ["cpd00001","cpd00002"]
+});
+ok defined($cpds->[0]), "Successfully printed compounds!";
+
 #Now test ability to retrieve annotated genome object from database
 my $genome = $obj->genome_to_workspace({
 	genome => "kb|g.0",
@@ -53,6 +69,13 @@ my $media = $obj->addmedia({
 	]
 });
 ok defined($media), "Media successfully added to workspace!";
+
+#Testing media retrieval method
+my $medias = $obj->get_media({
+	medias => ["Carbon-D-Glucose","Glucose minimal media"],
+	workspaces => ["kbasecdm","testworkspace"]
+});
+ok defined($medias->[0]), "Successfully printed media!";
 
 #Now test phenotype import
 my $phenos = $obj->import_phenotypes({
@@ -108,6 +131,13 @@ open ( $fh, ">", "model.html");
 print $fh $html."\n";
 close($fh);
 
+#Testing model retrieval method
+my $mdls = $obj->get_models({
+	models => [$model->[0]],
+	workspaces => ["testworkspace"],
+});
+ok defined($mdls->[0]), "Successfully printed model data!";
+
 #Now exporting media formulation
 $html = $obj->export_media({
 	media => $media->[0],
@@ -135,6 +165,13 @@ my $fba = $obj->runfba({
 	fba_workspace => "testworkspace"
 });
 ok defined($fba), "FBA successfully run on input model!";
+
+#Testing fba retrieval method
+my $fbas = $obj->get_fbas({
+	fbas => [$fba->[0]],
+	workspaces => ["testworkspace"],
+});
+ok defined($fbas->[0]), "Successfully printed fba data!";
 
 #Now test flux balance analysis export
 $html = $obj->export_fba({

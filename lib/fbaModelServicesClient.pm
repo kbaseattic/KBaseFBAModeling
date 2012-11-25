@@ -42,7 +42,7 @@ sub new
 
 =head2 $result = get_models(input)
 
-
+Returns model data for input ids
 
 =cut
 
@@ -92,7 +92,7 @@ sub get_models
 
 =head2 $result = get_fbas(input)
 
-
+Returns data for the requested flux balance analysis formulations
 
 =cut
 
@@ -142,7 +142,7 @@ sub get_fbas
 
 =head2 $result = get_gapfills(input)
 
-
+Returns data for the requested gap filling simulations
 
 =cut
 
@@ -192,7 +192,7 @@ sub get_gapfills
 
 =head2 $result = get_gapgens(input)
 
-
+Returns data for the requested gap generation simulations
 
 =cut
 
@@ -242,7 +242,7 @@ sub get_gapgens
 
 =head2 $result = get_reactions(input)
 
-
+Returns data for the requested reactions
 
 =cut
 
@@ -292,7 +292,7 @@ sub get_reactions
 
 =head2 $result = get_compounds(input)
 
-
+Returns data for the requested compounds
 
 =cut
 
@@ -342,7 +342,7 @@ sub get_compounds
 
 =head2 $result = get_media(input)
 
-
+Returns data for the requested media formulations
 
 =cut
 
@@ -392,7 +392,7 @@ sub get_media
 
 =head2 $result = get_biochemistry(input)
 
-
+Returns biochemistry object
 
 =cut
 

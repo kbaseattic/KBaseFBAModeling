@@ -350,7 +350,10 @@ sub _save_msobject {
 }
 
 sub _get_msobject {
-	my($self,$type,$ws,$id) = @_;
+	my($self,$type,$ws,$id,$cache) = @_;
+	if (defined($cache->{$type}->{$ws}->{$id})) {
+		return $cache->{$type}->{$ws}->{$id};
+	}
 	my $output = $self->_workspaceServices()->get_object({
 		id => $id,
 		type => $type,
@@ -375,25 +378,25 @@ sub _get_msobject {
 		if ($type eq "Model") {
 			my $linkid = $obj->annotation_uuid();
 			my $array = [split(/\//,$linkid)];
-			$obj->annotation($self->_get_msobject("Annotation",$array->[0],$array->[1]));
+			$obj->annotation($self->_get_msobject("Annotation",$array->[0],$array->[1],$cache));
 			$obj->mapping($obj->annotation()->mapping());
 			$obj->biochemistry($obj->mapping()->biochemistry());
 		} elsif ($type eq "Annotation") {
 			my $linkid = $obj->mapping_uuid();
 			my $array = [split(/\//,$linkid)];
-			$obj->mapping($self->_get_msobject("Mapping",$array->[0],$array->[1]));
+			$obj->mapping($self->_get_msobject("Mapping",$array->[0],$array->[1],$cache));
 		} elsif ($type eq "Mapping") {
 			my $linkid = $obj->biochemistry_uuid();
 			my $array = [split(/\//,$linkid)];
-			$obj->biochemistry($self->_get_msobject("Biochemistry",$array->[0],$array->[1]));
+			$obj->biochemistry($self->_get_msobject("Biochemistry",$array->[0],$array->[1],$cache));
 		} elsif ($type eq "FBA") {
 			my $linkid = $obj->model_uuid();
 			my $array = [split(/\//,$linkid)];
-			$obj->model($self->_get_msobject("Model",$array->[0],$array->[1]));
+			$obj->model($self->_get_msobject("Model",$array->[0],$array->[1],$cache));
 			my $mediauuids = $obj->mediaUUIDs();
 			foreach my $media (@{$mediauuids}) {
 				if ($obj->media_uuid() =~ m/(.+)\/(.+)/) {
-					my $mediaobj = $self->_get_msobject("Media",$1,$2);
+					my $mediaobj = $self->_get_msobject("Media",$1,$2,$cache);
 					$obj->model()->biochemistry()->add("media",$mediaobj);
 				}
 			}
@@ -883,6 +886,138 @@ sub _phenotypeSimulationSet_to_html {
 	return join("\n",@{$htmlArray});
 };
 
+sub _generate_fbameta {
+	my ($self,$obj) = @_;
+	my $objective;
+	if (defined($obj->fbaResults()->[0])) {
+		$objective = $obj->fbaResults()->[0]->objectiveValue();
+	}
+	my $idarray = [split(/\//,$obj->uuid())];
+	(my $mediaid,my $mediaws);
+	if ($obj->media_uuid() =~ m/(.+)\/(.+)/) {
+		$mediaws = $1;
+		$mediaid = $2;
+	} else {
+		$mediaws = "kbasecdm";
+		$mediaid = $obj->media()->id();
+	}
+	my $kos = [];
+	foreach my $gene ($obj->geneKOs()) {
+		push(@{$kos},$gene->id());
+	}
+	return [
+		$idarray->[1],
+		$idarray->[0],
+		$mediaid,
+		$mediaws,
+		$objective,
+		$kos
+	];
+}
+
+sub _generate_gapmeta {
+	my ($self,$obj) = @_;
+	my $idarray = [split(/\//,$obj->uuid())];
+	my $done = 0;
+	if ($obj->_type() eq "GapfillingFormulation" && defined($obj->gapfillingSolutions())) {
+		$done = 1;
+	} elsif ($obj->_type() eq "GapgenFormulation" && defined($obj->gapgenSolutions())) {
+		$done = 1;
+	}
+	(my $mediaid,my $mediaws);
+	if ($obj->fbaFormulation()->media_uuid() =~ m/(.+)\/(.+)/) {
+		$mediaws = $1;
+		$mediaid = $2;
+	} else {
+		$mediaws = "kbasecdm";
+		$mediaid = $obj->fbaFormulation()->media()->id();
+	}
+	my $kos = [];
+	foreach my $gene ($obj->fbaFormulation()->geneKOs()) {
+		push(@{$kos},$gene->id());
+	}
+	return [
+		$idarray->[1],
+		$idarray->[0],
+		$mediaid,
+		$mediaws,
+		$done,
+		$kos
+	];
+}
+
+sub _FBA_to_FBAFormulation {
+	my ($self,$obj) = @_;
+	my $media;
+	my $media_workspace = "kbasecdm";
+	if ($obj->media_uuid() =~ m/(.+)\/(.+)/) {
+		$media_workspace = $1;
+		$media = $2;
+	} else {
+		$media = $obj->media()->id();
+	}
+	my $form = {
+		media => $media,
+		media_workspace => $media_workspace,
+		objfraction => $obj->objectiveConstraintFraction(),
+		allreversible => $obj->allReversible(),
+		maximizeObjective => $obj->maximizeObjective(),
+		objectiveTerms => [],
+		geneko => [],
+		rxnko => [],
+		bounds => [],
+		constraints => [],
+		uptakelim => $obj->uptakeLimits(),
+		defaultmaxflux => $obj->defaultMaxFlux(),
+		defaultminuptake => $obj->defaultMinDrainFlux(),
+		defaultmaxuptake => $obj->defaultMaxDrainFlux(),
+		simplethermoconst => $obj->simpleThermoConstraints(),
+		thermoconst => $obj->thermodynamicConstraints(),
+		nothermoerror => $obj->noErrorThermodynamicConstraints(),
+		minthermoerror => $obj->minimizeErrorThermodynamicConstraints()
+	};
+	foreach my $ko (@{$obj->geneKOs()}) {
+		push(@{$form->{geneko}},$ko->id());
+	}
+	foreach my $ko (@{$obj->reactionKOs()}) {
+		push(@{$form->{rxnko}},$ko->id());
+	}
+	foreach my $const (@{$obj->fbaConstraints()}) {
+		my $terms = [];
+		foreach my $term (@{$const->fbaConstraintVariables()}) {
+			push(@{$terms},[$term->coefficient(),$term->variableType(),$term->entity()->id()]);
+		}
+		push(@{$form->{constraints}},[$const->rhs(),$const->sign(),$terms,$const->name()]);
+	}
+	foreach my $bound (@{$obj->fbaReactionBounds()}) {
+		push(@{$form->{bounds}},[$bound->lowerBound(),$bound->upperBound(),$bound->variableType(),$bound->modelreaction()->id()]);
+	}
+	foreach my $bound (@{$obj->fbaCompoundBounds()}) {
+		push(@{$form->{bounds}},[$bound->lowerBound(),$bound->upperBound(),$bound->variableType(),$bound->modelcompound()->id()]);
+	}
+	foreach my $term (@{$obj->fbaObjectiveTerms()}) {
+		push(@{$form->{objectiveTerms}},[$term->coefficient(),$term->variableType(),$term->entity()->id()]);
+	}
+	return $form;
+}
+
+sub _FBA_to_FBAdata {
+	my ($self,$obj) = @_;
+	my $array = [split(/\//,$obj->uuid())];
+	my $fbadata = {
+    	id => $array->[1],
+    	workspace => $array->[2],
+    	isComplete => 0,
+    	objective => undef,
+    	formulation => $self->_FBA_to_FBAFormulation($obj)
+	};
+    if (defined($obj->fbaResults()->[0])) {
+		$fbadata->{isComplete} = 1;
+		$fbadata->{objective} = $obj->fbaResults()->[0]->objectiveValue();
+    }
+    return $fbadata;
+}
+
 #END_HEADER
 
 sub new
@@ -923,17 +1058,21 @@ sub new
 $input is a get_models_params
 $out_models is a reference to a list where each element is an FBAModel
 get_models_params is a reference to a hash where the following keys are defined:
-	in_model_ids has a value which is a reference to a list where each element is a fbamodel_id
-	workspace has a value which is a workspace_id
+	models has a value which is a reference to a list where each element is a fbamodel_id
+	workspaces has a value which is a reference to a list where each element is a workspace_id
 	authentication has a value which is a string
 	id_type has a value which is a string
 fbamodel_id is a string
 workspace_id is a string
 FBAModel is a reference to a hash where the following keys are defined:
 	id has a value which is a fbamodel_id
+	workspace has a value which is a workspace_id
 	genome has a value which is a genome_id
+	genome_workspace has a value which is a workspace_id
 	map has a value which is a mapping_id
+	map_workspace has a value which is a workspace_id
 	biochemistry has a value which is a biochemistry_id
+	biochemistry_workspace has a value which is a workspace_id
 	name has a value which is a string
 	type has a value which is a string
 	status has a value which is a string
@@ -981,22 +1120,31 @@ ModelCompound is a reference to a hash where the following keys are defined:
 	name has a value which is a string
 	compartment has a value which is a modelcompartment_id
 compound_id is a string
-FBAMeta is a reference to a list containing 4 items:
+FBAMeta is a reference to a list containing 6 items:
 	0: a fba_id
-	1: a media_id
-	2: a float
-	3: a reference to a list where each element is a feature_id
+	1: a workspace_id
+	2: a media_id
+	3: a workspace_id
+	4: a float
+	5: a reference to a list where each element is a feature_id
 fba_id is a string
 media_id is a string
-GapFillMeta is a reference to a list containing 3 items:
+GapFillMeta is a reference to a list containing 6 items:
 	0: a gapfill_id
-	1: a media_id
-	2: a reference to a list where each element is a feature_id
+	1: a workspace_id
+	2: a media_id
+	3: a workspace_id
+	4: a bool
+	5: a reference to a list where each element is a feature_id
 gapfill_id is a string
-GapGenMeta is a reference to a list containing 3 items:
+bool is an int
+GapGenMeta is a reference to a list containing 6 items:
 	0: a gapgen_id
-	1: a media_id
-	2: a reference to a list where each element is a feature_id
+	1: a workspace_id
+	2: a media_id
+	3: a workspace_id
+	4: a bool
+	5: a reference to a list where each element is a feature_id
 gapgen_id is a string
 
 </pre>
@@ -1008,17 +1156,21 @@ gapgen_id is a string
 $input is a get_models_params
 $out_models is a reference to a list where each element is an FBAModel
 get_models_params is a reference to a hash where the following keys are defined:
-	in_model_ids has a value which is a reference to a list where each element is a fbamodel_id
-	workspace has a value which is a workspace_id
+	models has a value which is a reference to a list where each element is a fbamodel_id
+	workspaces has a value which is a reference to a list where each element is a workspace_id
 	authentication has a value which is a string
 	id_type has a value which is a string
 fbamodel_id is a string
 workspace_id is a string
 FBAModel is a reference to a hash where the following keys are defined:
 	id has a value which is a fbamodel_id
+	workspace has a value which is a workspace_id
 	genome has a value which is a genome_id
+	genome_workspace has a value which is a workspace_id
 	map has a value which is a mapping_id
+	map_workspace has a value which is a workspace_id
 	biochemistry has a value which is a biochemistry_id
+	biochemistry_workspace has a value which is a workspace_id
 	name has a value which is a string
 	type has a value which is a string
 	status has a value which is a string
@@ -1066,22 +1218,31 @@ ModelCompound is a reference to a hash where the following keys are defined:
 	name has a value which is a string
 	compartment has a value which is a modelcompartment_id
 compound_id is a string
-FBAMeta is a reference to a list containing 4 items:
+FBAMeta is a reference to a list containing 6 items:
 	0: a fba_id
-	1: a media_id
-	2: a float
-	3: a reference to a list where each element is a feature_id
+	1: a workspace_id
+	2: a media_id
+	3: a workspace_id
+	4: a float
+	5: a reference to a list where each element is a feature_id
 fba_id is a string
 media_id is a string
-GapFillMeta is a reference to a list containing 3 items:
+GapFillMeta is a reference to a list containing 6 items:
 	0: a gapfill_id
-	1: a media_id
-	2: a reference to a list where each element is a feature_id
+	1: a workspace_id
+	2: a media_id
+	3: a workspace_id
+	4: a bool
+	5: a reference to a list where each element is a feature_id
 gapfill_id is a string
-GapGenMeta is a reference to a list containing 3 items:
+bool is an int
+GapGenMeta is a reference to a list containing 6 items:
 	0: a gapgen_id
-	1: a media_id
-	2: a reference to a list where each element is a feature_id
+	1: a workspace_id
+	2: a media_id
+	3: a workspace_id
+	4: a bool
+	5: a reference to a list where each element is a feature_id
 gapgen_id is a string
 
 
@@ -1091,7 +1252,7 @@ gapgen_id is a string
 
 =item Description
 
-
+Returns model data for input ids
 
 =back
 
@@ -1113,6 +1274,105 @@ sub get_models
     my $ctx = $fbaModelServicesServer::CallContext;
     my($out_models);
     #BEGIN get_models
+    $self->_setContext($ctx,$input);
+    $input = $self->_validateargs($input,["models","workspaces"],{
+		id_type => "ModelSEED"
+	});
+	#Creating cache with the biochemistry, to ensure only one is created for all models
+	my $cache = {
+		Biochemistry => {
+			kbase => {
+				"default" => $self->_get_msobject("Biochemistry","kbase","default")
+			}
+		}
+	};
+    for (my $i=0; $i < @{$input->{models}}; $i++) {
+    	my $id = $input->{models}->[$i];
+    	my $ws = $input->{workspaces}->[$i];
+    	my $model = $self->_get_msobject("Model",$input->{workspaces}->[$i],$input->{models}->[$i],$cache);
+    	my $genomeArray = split(/\//,$model->{annotation_uuid});
+    	my $mdldata = {
+    		id => $input->{models}->[$i],
+    		workspace => $input->{workspaces}->[$i],
+    		genome => $genomeArray->[1],
+    		genome_workspace => $genomeArray->[0],
+    		"map" => "default",
+    		map_workspace => "kbase",
+    		biochemistry => "default",
+    		biochemistry_workspace => "kbase",
+    		name => $model->name(),
+    		type => $model->type(),
+    		status => $model->status(),
+    		biomasses => [],
+    		compartments => [],
+    		reactions => [],
+    		compounds => [],
+    		fbas => [],
+    		integrated_gapfillings => [],
+    		unintegrated_gapfillings => [],
+    		integrated_gapgenerations => [],
+    		unintegrated_gapgenerations => []
+    	};
+    	#Creating model biomasses
+    	foreach my $bio (@{$model->biomasses()}) {
+    		my $biodata = {
+    			id => $bio->id(),
+    			name => $bio->name()
+    		};
+    		push(@{$mdldata->{biomasses}},$biodata);
+    	}
+    	#Creating model compartments
+    	foreach my $comp (@{$model->modelcompartments()}) {
+    		my $compdata = {
+    			id => $comp->label(),
+    			name => $comp->label(),
+    			pH => $comp->pH(),
+    			potential => $comp->potential(),
+    			"index" => $comp->compartmentIndex()
+    		};
+    		push(@{$mdldata->{compartments}},$compdata);
+    	}
+    	#Creating model compounds
+    	foreach my $cpd (@{$model->modelcompounds()}) {
+    		my $cpddata = {
+    			id => $cpd->id(),
+    			compound => $cpd->compound()->id(),
+    			name => $cpd->compound()->name(),
+    			compartment => $cpd->modelcompartment()->label()
+    		};
+    		push(@{$mdldata->{compounds}},$cpddata);
+    	}
+    	#Creating model reactions
+    	foreach my $rxn (@{$model->modelreactions()}) {
+    		my $rxndata = {
+    			id => $rxn->id(),
+    			reaction => $rxn->reaction()->id(),
+    			name => $rxn->reaction()->name(),
+    			direction => $rxn->direction(),
+    			features => $rxn->featureIDs(),
+    			compartment => $rxn->modelcompartment()->label()
+    		};
+    		push(@{$mdldata->{reactions}},$rxndata);
+    	}
+    	#Creating fbas, gapfills, and gapgens
+    	foreach my $obj (@{$model->fbaFormulations()}) {
+    		push(@{$mdldata->{fbas}},$self->_generate_fbameta($obj));
+    	}
+    	foreach my $obj (@{$model->integratedGapfillings()}) {
+    		push(@{$mdldata->{integrated_gapfillings}},$self->_generate_gapmeta($obj));
+    	}
+    	foreach my $obj (@{$model->unintegratedGapfillings()}) {
+    		push(@{$mdldata->{unintegrated_gapfillings}},$self->_generate_gapmeta($obj));
+    	}
+    	foreach my $obj (@{$model->integratedGapgens()}) {
+    		push(@{$mdldata->{integrated_gapgenerations}},$self->_generate_gapmeta($obj));
+    	}
+    	foreach my $obj (@{$model->unintegratedGapgens()}) {
+    		push(@{$mdldata->{unintegrated_gapgenerations}},$self->_generate_gapmeta($obj));
+    	}
+    	push(@{$out_models},$mdldata);
+    }
+	$self->_clearContext();
     #END get_models
     my @_bad_returns;
     (ref($out_models) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"out_models\" (value was \"$out_models\")");
@@ -1141,14 +1401,16 @@ sub get_models
 $input is a get_fbas_params
 $out_fbas is a reference to a list where each element is an FBA
 get_fbas_params is a reference to a hash where the following keys are defined:
-	in_fba_ids has a value which is a reference to a list where each element is a fba_id
-	workspace has a value which is a workspace_id
+	fbas has a value which is a reference to a list where each element is a fba_id
+	workspaces has a value which is a reference to a list where each element is a workspace_id
 	authentication has a value which is a string
 	id_type has a value which is a string
 fba_id is a string
 workspace_id is a string
 FBA is a reference to a hash where the following keys are defined:
 	id has a value which is a fba_id
+	workspace has a value which is a workspace_id
+	objective has a value which is a float
 	isComplete has a value which is a bool
 	formulation has a value which is an FBAFormulation
 	minimalMediaPredictions has a value which is a reference to a list where each element is a MinimalMediaPrediction
@@ -1177,11 +1439,22 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	nothermoerror has a value which is a bool
 	minthermoerror has a value which is a bool
 media_id is a string
-fbamodel_id is a string
-regmodel_id is a string
-expression_id is a string
+term is a reference to a list containing 3 items:
+	0: a float
+	1: a string
+	2: a string
 feature_id is a string
-modelreaction_id is a string
+reaction_id is a string
+bound is a reference to a list containing 4 items:
+	0: a float
+	1: a float
+	2: a string
+	3: a string
+constraint is a reference to a list containing 4 items:
+	0: a float
+	1: a string
+	2: a reference to a list where each element is a term
+	3: a string
 MinimalMediaPrediction is a reference to a hash where the following keys are defined:
 	optionalNutrients has a value which is a reference to a list where each element is a compound_id
 	essentialNutrients has a value which is a reference to a list where each element is a compound_id
@@ -1198,6 +1471,7 @@ ReactionFlux is a reference to a list containing 7 items:
 	4: a float
 	5: a float
 	6: a string
+modelreaction_id is a string
 CompoundFlux is a reference to a list containing 7 items:
 	0: a modelcompound_id
 	1: a float
@@ -1221,14 +1495,16 @@ GeneAssertion is a reference to a list containing 4 items:
 $input is a get_fbas_params
 $out_fbas is a reference to a list where each element is an FBA
 get_fbas_params is a reference to a hash where the following keys are defined:
-	in_fba_ids has a value which is a reference to a list where each element is a fba_id
-	workspace has a value which is a workspace_id
+	fbas has a value which is a reference to a list where each element is a fba_id
+	workspaces has a value which is a reference to a list where each element is a workspace_id
 	authentication has a value which is a string
 	id_type has a value which is a string
 fba_id is a string
 workspace_id is a string
 FBA is a reference to a hash where the following keys are defined:
 	id has a value which is a fba_id
+	workspace has a value which is a workspace_id
+	objective has a value which is a float
 	isComplete has a value which is a bool
 	formulation has a value which is an FBAFormulation
 	minimalMediaPredictions has a value which is a reference to a list where each element is a MinimalMediaPrediction
@@ -1257,11 +1533,22 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	nothermoerror has a value which is a bool
 	minthermoerror has a value which is a bool
 media_id is a string
-fbamodel_id is a string
-regmodel_id is a string
-expression_id is a string
+term is a reference to a list containing 3 items:
+	0: a float
+	1: a string
+	2: a string
 feature_id is a string
-modelreaction_id is a string
+reaction_id is a string
+bound is a reference to a list containing 4 items:
+	0: a float
+	1: a float
+	2: a string
+	3: a string
+constraint is a reference to a list containing 4 items:
+	0: a float
+	1: a string
+	2: a reference to a list where each element is a term
+	3: a string
 MinimalMediaPrediction is a reference to a hash where the following keys are defined:
 	optionalNutrients has a value which is a reference to a list where each element is a compound_id
 	essentialNutrients has a value which is a reference to a list where each element is a compound_id
@@ -1278,6 +1565,7 @@ ReactionFlux is a reference to a list containing 7 items:
 	4: a float
 	5: a float
 	6: a string
+modelreaction_id is a string
 CompoundFlux is a reference to a list containing 7 items:
 	0: a modelcompound_id
 	1: a float
@@ -1299,7 +1587,7 @@ GeneAssertion is a reference to a list containing 4 items:
 
 =item Description
 
-
+Returns data for the requested flux balance analysis formulations
 
 =back
 
@@ -1321,6 +1609,25 @@ sub get_fbas
     my $ctx = $fbaModelServicesServer::CallContext;
     my($out_fbas);
     #BEGIN get_fbas
+    $self->_setContext($ctx,$input);
+    $input = $self->_validateargs($input,["fbas","workspaces"],{
+		id_type => "ModelSEED"
+	});
+	#Creating cache with the biochemistry, to ensure only one is created for all models
+	my $cache = {
+		Biochemistry => {
+			kbase => {
+				"default" => $self->_get_msobject("Biochemistry","kbase","default")
+			}
+		}
+	};
+    for (my $i=0; $i < @{$input->{fbas}}; $i++) {
+    	my $id = $input->{fbas}->[$i];
+    	my $ws = $input->{workspaces}->[$i];
+    	my $fba = $self->_get_msobject("FBA",$ws,$id,$cache);
+    	push(@{$out_fbas},$self->_FBA_to_FBAdata($fba));
+    }
+	$self->_clearContext();
     #END get_fbas
     my @_bad_returns;
     (ref($out_fbas) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"out_fbas\" (value was \"$out_fbas\")");
@@ -1349,8 +1656,8 @@ sub get_fbas
 $input is a get_gapfills_params
 $out_gapfills is a reference to a list where each element is a GapFill
 get_gapfills_params is a reference to a hash where the following keys are defined:
-	in_gapfill_ids has a value which is a reference to a list where each element is a gapfill_id
-	workspace has a value which is a workspace_id
+	gapfills has a value which is a reference to a list where each element is a gapfill_id
+	workspaces has a value which is a reference to a list where each element is a workspace_id
 	authentication has a value which is a string
 	id_type has a value which is a string
 gapfill_id is a string
@@ -1410,8 +1717,8 @@ reaction_id is a string
 $input is a get_gapfills_params
 $out_gapfills is a reference to a list where each element is a GapFill
 get_gapfills_params is a reference to a hash where the following keys are defined:
-	in_gapfill_ids has a value which is a reference to a list where each element is a gapfill_id
-	workspace has a value which is a workspace_id
+	gapfills has a value which is a reference to a list where each element is a gapfill_id
+	workspaces has a value which is a reference to a list where each element is a workspace_id
 	authentication has a value which is a string
 	id_type has a value which is a string
 gapfill_id is a string
@@ -1469,7 +1776,7 @@ reaction_id is a string
 
 =item Description
 
-
+Returns data for the requested gap filling simulations
 
 =back
 
@@ -1519,8 +1826,8 @@ sub get_gapfills
 $input is a get_gapgens_params
 $out_gapgens is a reference to a list where each element is a GapGen
 get_gapgens_params is a reference to a hash where the following keys are defined:
-	in_gapgen_ids has a value which is a reference to a list where each element is a gapgen_id
-	workspace has a value which is a workspace_id
+	gapgens has a value which is a reference to a list where each element is a gapgen_id
+	workspaces has a value which is a reference to a list where each element is a workspace_id
 	authentication has a value which is a string
 	id_type has a value which is a string
 gapgen_id is a string
@@ -1565,8 +1872,8 @@ modelreaction_id is a string
 $input is a get_gapgens_params
 $out_gapgens is a reference to a list where each element is a GapGen
 get_gapgens_params is a reference to a hash where the following keys are defined:
-	in_gapgen_ids has a value which is a reference to a list where each element is a gapgen_id
-	workspace has a value which is a workspace_id
+	gapgens has a value which is a reference to a list where each element is a gapgen_id
+	workspaces has a value which is a reference to a list where each element is a workspace_id
 	authentication has a value which is a string
 	id_type has a value which is a string
 gapgen_id is a string
@@ -1609,7 +1916,7 @@ modelreaction_id is a string
 
 =item Description
 
-
+Returns data for the requested gap generation simulations
 
 =back
 
@@ -1659,7 +1966,7 @@ sub get_gapgens
 $input is a get_reactions_params
 $out_reactions is a reference to a list where each element is a Reaction
 get_reactions_params is a reference to a hash where the following keys are defined:
-	in_reaction_ids has a value which is a reference to a list where each element is a reaction_id
+	reactions has a value which is a reference to a list where each element is a reaction_id
 	authentication has a value which is a string
 	id_type has a value which is a string
 reaction_id is a string
@@ -1679,7 +1986,7 @@ Reaction is a reference to a hash where the following keys are defined:
 $input is a get_reactions_params
 $out_reactions is a reference to a list where each element is a Reaction
 get_reactions_params is a reference to a hash where the following keys are defined:
-	in_reaction_ids has a value which is a reference to a list where each element is a reaction_id
+	reactions has a value which is a reference to a list where each element is a reaction_id
 	authentication has a value which is a string
 	id_type has a value which is a string
 reaction_id is a string
@@ -1697,7 +2004,7 @@ Reaction is a reference to a hash where the following keys are defined:
 
 =item Description
 
-
+Returns data for the requested reactions
 
 =back
 
@@ -1770,7 +2077,7 @@ sub get_reactions
 $input is a get_compounds_params
 $out_compounds is a reference to a list where each element is a Compound
 get_compounds_params is a reference to a hash where the following keys are defined:
-	in_compound_ids has a value which is a reference to a list where each element is a compound_id
+	compounds has a value which is a reference to a list where each element is a compound_id
 	authentication has a value which is a string
 	id_type has a value which is a string
 compound_id is a string
@@ -1790,7 +2097,7 @@ Compound is a reference to a hash where the following keys are defined:
 $input is a get_compounds_params
 $out_compounds is a reference to a list where each element is a Compound
 get_compounds_params is a reference to a hash where the following keys are defined:
-	in_compound_ids has a value which is a reference to a list where each element is a compound_id
+	compounds has a value which is a reference to a list where each element is a compound_id
 	authentication has a value which is a string
 	id_type has a value which is a string
 compound_id is a string
@@ -1808,7 +2115,7 @@ Compound is a reference to a hash where the following keys are defined:
 
 =item Description
 
-
+Returns data for the requested compounds
 
 =back
 
@@ -1881,10 +2188,11 @@ sub get_compounds
 $input is a get_media_params
 $out_media is a reference to a list where each element is a Media
 get_media_params is a reference to a hash where the following keys are defined:
-	in_media_ids has a value which is a reference to a list where each element is a media_id
+	medias has a value which is a reference to a list where each element is a media_id
+	workspaces has a value which is a reference to a list where each element is a workspace_id
 	authentication has a value which is a string
-	id_type has a value which is a string
 media_id is a string
+workspace_id is a string
 Media is a reference to a hash where the following keys are defined:
 	id has a value which is a media_id
 	name has a value which is a string
@@ -1903,10 +2211,11 @@ compound_id is a string
 $input is a get_media_params
 $out_media is a reference to a list where each element is a Media
 get_media_params is a reference to a hash where the following keys are defined:
-	in_media_ids has a value which is a reference to a list where each element is a media_id
+	medias has a value which is a reference to a list where each element is a media_id
+	workspaces has a value which is a reference to a list where each element is a workspace_id
 	authentication has a value which is a string
-	id_type has a value which is a string
 media_id is a string
+workspace_id is a string
 Media is a reference to a hash where the following keys are defined:
 	id has a value which is a media_id
 	name has a value which is a string
@@ -1923,7 +2232,7 @@ compound_id is a string
 
 =item Description
 
-
+Returns data for the requested media formulations
 
 =back
 
@@ -2014,10 +2323,12 @@ sub get_media
 $input is a get_biochemistry_params
 $out_biochemistry is a Biochemistry
 get_biochemistry_params is a reference to a hash where the following keys are defined:
-	in_biochemistry has a value which is a biochemistry_id
-	authentication has a value which is a string
+	biochemistry has a value which is a biochemistry_id
+	biochemistry_workspace has a value which is a workspace_id
 	id_type has a value which is a string
+	authentication has a value which is a string
 biochemistry_id is a string
+workspace_id is a string
 Biochemistry is a reference to a hash where the following keys are defined:
 	id has a value which is a biochemistry_id
 	name has a value which is a string
@@ -2037,10 +2348,12 @@ media_id is a string
 $input is a get_biochemistry_params
 $out_biochemistry is a Biochemistry
 get_biochemistry_params is a reference to a hash where the following keys are defined:
-	in_biochemistry has a value which is a biochemistry_id
-	authentication has a value which is a string
+	biochemistry has a value which is a biochemistry_id
+	biochemistry_workspace has a value which is a workspace_id
 	id_type has a value which is a string
+	authentication has a value which is a string
 biochemistry_id is a string
+workspace_id is a string
 Biochemistry is a reference to a hash where the following keys are defined:
 	id has a value which is a biochemistry_id
 	name has a value which is a string
@@ -2058,7 +2371,7 @@ media_id is a string
 
 =item Description
 
-
+Returns biochemistry object
 
 =back
 
@@ -2080,7 +2393,12 @@ sub get_biochemistry
     my $ctx = $fbaModelServicesServer::CallContext;
     my($out_biochemistry);
     #BEGIN get_biochemistry
-
+	$self->_setContext($ctx,$input);
+    $input = $self->_validateargs($input,[],{
+		biochemistry => "default",
+		biochemistry_workspace => "kbase",
+		id_type => "ModelSEED"
+	});
     # for now just return default biochem
 
     $self->_setContext($ctx,$input);
@@ -2100,31 +2418,61 @@ sub get_biochemistry
 
     # the following is very dependent upon the internal data representation
     # of the MS subobjects, and needs to be changed if this representation changes
-
+	
+	my $aliasset = $biochem->queryObject("aliassets",{
+		name => $input->{id_type},
+		attribute => "compounds"
+	});
+	if (!defined($aliasset)) {
+		my $msg = "id_type ".$input->{id_type}." not found for biochemistry compounds!";
+		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'get_biochemistry');
+	}
+	my $aliases = $aliasset->aliasesByuuid();
     foreach my $cpd_info (@{$biochem->_compounds}) {
+        my $uuid;
         if ($cpd_info->{created} == 1) {
-            push(@$compounds, $cpd_info->{object}->uuid);
+            $uuid = $cpd_info->{object}->uuid;
         } else {
-            push(@$compounds, $cpd_info->{data}->{uuid});
+        	$uuid = $cpd_info->{data}->{uuid};
+        }
+        if (defined($aliases->{$uuid})) {
+        	push(@{$compounds},$aliases->{$uuid}->[0]);
+        } else {
+        	push(@{$compounds},$uuid);
         }
     }
-
+   	
+	$aliasset = $biochem->queryObject("aliassets",{
+		name => $input->{id_type},
+		attribute => "reactions"
+	});
+	if (!defined($aliasset)) {
+		my $msg = "id_type ".$input->{id_type}." not found for biochemistry reactions!";
+		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'get_biochemistry');
+	}
+	my $aliases = $aliasset->aliasesByuuid();
     foreach my $rxn_info (@{$biochem->_reactions}) {
+        my $uuid;
         if ($rxn_info->{created} == 1) {
-            push(@$reactions, $rxn_info->{object}->uuid);
+            $uuid = $rxn_info->{object}->uuid;
         } else {
-            push(@$reactions, $rxn_info->{data}->{uuid});
+            $uuid = $rxn_info->{data}->{uuid};
+        }
+        if (defined($aliases->{$uuid})) {
+        	push(@{$reactions},$aliases->{$uuid}->[0]);
+        } else {
+        	push(@{$reactions},$uuid);
         }
     }
 
     foreach my $media_info (@{$biochem->_media}) {
         if ($media_info->{created} == 1) {
-            push(@$media, $media_info->{object}->uuid);
+            push(@$media, $media_info->{object}->id);
         } else {
-            push(@$media, $media_info->{data}->{uuid});
+            push(@$media, $media_info->{data}->{id});
         }
     }
-
+	$self->_clearContext();
     #END get_biochemistry
     my @_bad_returns;
     (ref($out_biochemistry) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"out_biochemistry\" (value was \"$out_biochemistry\")");
@@ -5454,35 +5802,37 @@ sub version {
 
 
 
-=item Definition
-
-=begin html
-
-<pre>
-an int
-</pre>
-
-=end html
-
-=begin text
-
-an int
-
-=end text
-
-=back
-
-
-
-=head2 md5
-
-=over 4
-
-
-
 =item Description
 
-IMPORT FROM probabilistic_annotation/ProbabilisticAnnotation.spec
+********************************************************************************
+    Universal simple type definitions
+   	********************************************************************************
+
+
+=item Definition
+
+=begin html
+
+<pre>
+an int
+</pre>
+
+=end html
+
+=begin text
+
+an int
+
+=end text
+
+=back
+
+
+
+=head2 workspace_id
+
+=over 4
+
 
 
 =item Definition
@@ -5505,7 +5855,7 @@ a string
 
 
 
-=head2 md5s
+=head2 object_type
 
 =over 4
 
@@ -5516,14 +5866,144 @@ a string
 =begin html
 
 <pre>
-a reference to a list where each element is a md5
+a string
 </pre>
 
 =end html
 
 =begin text
 
-a reference to a list where each element is a md5
+a string
+
+=end text
+
+=back
+
+
+
+=head2 object_id
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 username
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 timestamp
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 compound_id
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 biochemistry_id
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
 
 =end text
 
@@ -5532,32 +6012,6 @@ a reference to a list where each element is a md5
 
 
 =head2 genome_id
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a string
-</pre>
-
-=end html
-
-=begin text
-
-a string
-
-=end text
-
-=back
-
-
-
-=head2 feature_id
 
 =over 4
 
@@ -5628,6 +6082,556 @@ a string
 =begin text
 
 a string
+
+=end text
+
+=back
+
+
+
+=head2 modelcompartment_id
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 modelcompound_id
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 feature_id
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 reaction_id
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 modelreaction_id
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 biomass_id
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 media_id
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 fba_id
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 gapgen_id
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 gapfill_id
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 fbamodel_id
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 biochemistry_id
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 mapping_id
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 media_id
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 probabilistic_annotation_id
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 regmodel_id
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 expression_id
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 object_metadata
+
+=over 4
+
+
+
+=item Description
+
+********************************************************************************
+    Object type definition
+   	********************************************************************************
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a list containing 7 items:
+0: an object_id
+1: an object_type
+2: a timestamp
+3: an int
+4: a string
+5: a username
+6: a username
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a list containing 7 items:
+0: an object_id
+1: an object_type
+2: a timestamp
+3: an int
+4: a string
+5: a username
+6: a username
+
+
+=end text
+
+=back
+
+
+
+=head2 md5
+
+=over 4
+
+
+
+=item Description
+
+********************************************************************************
+    Probabilistic Annotation type definition
+   	********************************************************************************
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 md5s
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a list where each element is a md5
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a list where each element is a md5
 
 =end text
 
@@ -5935,7 +6939,7 @@ features has a value which is a reference to a list where each element is a feat
 
 
 
-=head2 reaction_id
+=head2 Biochemistry
 
 =over 4
 
@@ -5943,111 +6947,9 @@ features has a value which is a reference to a list where each element is a feat
 
 =item Description
 
-BIOCHEMISTRY SPEC
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a string
-</pre>
-
-=end html
-
-=begin text
-
-a string
-
-=end text
-
-=back
-
-
-
-=head2 media_id
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a string
-</pre>
-
-=end html
-
-=begin text
-
-a string
-
-=end text
-
-=back
-
-
-
-=head2 compound_id
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a string
-</pre>
-
-=end html
-
-=begin text
-
-a string
-
-=end text
-
-=back
-
-
-
-=head2 biochemistry_id
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a string
-</pre>
-
-=end html
-
-=begin text
-
-a string
-
-=end text
-
-=back
-
-
-
-=head2 Biochemistry
-
-=over 4
-
+********************************************************************************
+    Biochemistry type definition
+   	********************************************************************************
 
 
 =item Definition
@@ -6198,7 +7100,7 @@ equation has a value which is a string
 
 
 
-=head2 modelcompartment_id
+=head2 ModelCompartment
 
 =over 4
 
@@ -6206,33 +7108,9 @@ equation has a value which is a string
 
 =item Description
 
-FBAMODEL SPEC
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a string
-</pre>
-
-=end html
-
-=begin text
-
-a string
-
-=end text
-
-=back
-
-
-
-=head2 ModelCompartment
-
-=over 4
-
+********************************************************************************
+    FBAModel type definition
+   	********************************************************************************
 
 
 =item Definition
@@ -6260,58 +7138,6 @@ pH has a value which is a float
 potential has a value which is a float
 index has a value which is an int
 
-
-=end text
-
-=back
-
-
-
-=head2 compound_id
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a string
-</pre>
-
-=end html
-
-=begin text
-
-a string
-
-=end text
-
-=back
-
-
-
-=head2 modelcompound_id
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a string
-</pre>
-
-=end html
-
-=begin text
-
-a string
 
 =end text
 
@@ -6348,84 +7174,6 @@ compound has a value which is a compound_id
 name has a value which is a string
 compartment has a value which is a modelcompartment_id
 
-
-=end text
-
-=back
-
-
-
-=head2 feature_id
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a string
-</pre>
-
-=end html
-
-=begin text
-
-a string
-
-=end text
-
-=back
-
-
-
-=head2 reaction_id
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a string
-</pre>
-
-=end html
-
-=begin text
-
-a string
-
-=end text
-
-=back
-
-
-
-=head2 modelreaction_id
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a string
-</pre>
-
-=end html
-
-=begin text
-
-a string
 
 =end text
 
@@ -6505,32 +7253,6 @@ a reference to a list containing 2 items:
 
 
 
-=head2 biomass_id
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a string
-</pre>
-
-=end html
-
-=begin text
-
-a string
-
-=end text
-
-=back
-
-
-
 =head2 ModelBiomass
 
 =over 4
@@ -6565,58 +7287,6 @@ biomass_compounds has a value which is a reference to a list where each element 
 
 
 
-=head2 media_id
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a string
-</pre>
-
-=end html
-
-=begin text
-
-a string
-
-=end text
-
-=back
-
-
-
-=head2 fba_id
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a string
-</pre>
-
-=end html
-
-=begin text
-
-a string
-
-=end text
-
-=back
-
-
-
 =head2 FBAMeta
 
 =over 4
@@ -6628,11 +7298,13 @@ a string
 =begin html
 
 <pre>
-a reference to a list containing 4 items:
+a reference to a list containing 6 items:
 0: a fba_id
-1: a media_id
-2: a float
-3: a reference to a list where each element is a feature_id
+1: a workspace_id
+2: a media_id
+3: a workspace_id
+4: a float
+5: a reference to a list where each element is a feature_id
 
 </pre>
 
@@ -6640,38 +7312,14 @@ a reference to a list containing 4 items:
 
 =begin text
 
-a reference to a list containing 4 items:
+a reference to a list containing 6 items:
 0: a fba_id
-1: a media_id
-2: a float
-3: a reference to a list where each element is a feature_id
+1: a workspace_id
+2: a media_id
+3: a workspace_id
+4: a float
+5: a reference to a list where each element is a feature_id
 
-
-=end text
-
-=back
-
-
-
-=head2 gapgen_id
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a string
-</pre>
-
-=end html
-
-=begin text
-
-a string
 
 =end text
 
@@ -6690,10 +7338,13 @@ a string
 =begin html
 
 <pre>
-a reference to a list containing 3 items:
+a reference to a list containing 6 items:
 0: a gapgen_id
-1: a media_id
-2: a reference to a list where each element is a feature_id
+1: a workspace_id
+2: a media_id
+3: a workspace_id
+4: a bool
+5: a reference to a list where each element is a feature_id
 
 </pre>
 
@@ -6701,37 +7352,14 @@ a reference to a list containing 3 items:
 
 =begin text
 
-a reference to a list containing 3 items:
+a reference to a list containing 6 items:
 0: a gapgen_id
-1: a media_id
-2: a reference to a list where each element is a feature_id
+1: a workspace_id
+2: a media_id
+3: a workspace_id
+4: a bool
+5: a reference to a list where each element is a feature_id
 
-
-=end text
-
-=back
-
-
-
-=head2 gapfill_id
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a string
-</pre>
-
-=end html
-
-=begin text
-
-a string
 
 =end text
 
@@ -6750,10 +7378,13 @@ a string
 =begin html
 
 <pre>
-a reference to a list containing 3 items:
+a reference to a list containing 6 items:
 0: a gapfill_id
-1: a media_id
-2: a reference to a list where each element is a feature_id
+1: a workspace_id
+2: a media_id
+3: a workspace_id
+4: a bool
+5: a reference to a list where each element is a feature_id
 
 </pre>
 
@@ -6761,115 +7392,14 @@ a reference to a list containing 3 items:
 
 =begin text
 
-a reference to a list containing 3 items:
+a reference to a list containing 6 items:
 0: a gapfill_id
-1: a media_id
-2: a reference to a list where each element is a feature_id
+1: a workspace_id
+2: a media_id
+3: a workspace_id
+4: a bool
+5: a reference to a list where each element is a feature_id
 
-
-=end text
-
-=back
-
-
-
-=head2 fbamodel_id
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a string
-</pre>
-
-=end html
-
-=begin text
-
-a string
-
-=end text
-
-=back
-
-
-
-=head2 genome_id
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a string
-</pre>
-
-=end html
-
-=begin text
-
-a string
-
-=end text
-
-=back
-
-
-
-=head2 biochemistry_id
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a string
-</pre>
-
-=end html
-
-=begin text
-
-a string
-
-=end text
-
-=back
-
-
-
-=head2 mapping_id
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a string
-</pre>
-
-=end html
-
-=begin text
-
-a string
 
 =end text
 
@@ -6890,9 +7420,13 @@ a string
 <pre>
 a reference to a hash where the following keys are defined:
 id has a value which is a fbamodel_id
+workspace has a value which is a workspace_id
 genome has a value which is a genome_id
+genome_workspace has a value which is a workspace_id
 map has a value which is a mapping_id
+map_workspace has a value which is a workspace_id
 biochemistry has a value which is a biochemistry_id
+biochemistry_workspace has a value which is a workspace_id
 name has a value which is a string
 type has a value which is a string
 status has a value which is a string
@@ -6914,9 +7448,13 @@ unintegrated_gapgenerations has a value which is a reference to a list where eac
 
 a reference to a hash where the following keys are defined:
 id has a value which is a fbamodel_id
+workspace has a value which is a workspace_id
 genome has a value which is a genome_id
+genome_workspace has a value which is a workspace_id
 map has a value which is a mapping_id
+map_workspace has a value which is a workspace_id
 biochemistry has a value which is a biochemistry_id
+biochemistry_workspace has a value which is a workspace_id
 name has a value which is a string
 type has a value which is a string
 status has a value which is a string
@@ -6937,7 +7475,7 @@ unintegrated_gapgenerations has a value which is a reference to a list where eac
 
 
 
-=head2 media_id
+=head2 GapfillingFormulation
 
 =over 4
 
@@ -6945,59 +7483,9 @@ unintegrated_gapgenerations has a value which is a reference to a list where eac
 
 =item Description
 
-GAPFILLING FORMULATION SPEC
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a string
-</pre>
-
-=end html
-
-=begin text
-
-a string
-
-=end text
-
-=back
-
-
-
-=head2 probabilistic_annotation_id
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a string
-</pre>
-
-=end html
-
-=begin text
-
-a string
-
-=end text
-
-=back
-
-
-
-=head2 GapfillingFormulation
-
-=over 4
-
+********************************************************************************
+    Gapfilling type definition
+   	********************************************************************************
 
 
 =item Definition
@@ -7158,7 +7646,9 @@ reactionAdditions has a value which is a reference to a list where each element 
 
 =item Description
 
-GAPGEN FORMULATION SPEC
+********************************************************************************
+    Gap Generation type definition
+   	********************************************************************************
 
 
 =item Definition
@@ -7285,7 +7775,7 @@ reactionRemovals has a value which is a reference to a list where each element i
 
 
 
-=head2 feature_id
+=head2 GeneAssertion
 
 =over 4
 
@@ -7293,33 +7783,9 @@ reactionRemovals has a value which is a reference to a list where each element i
 
 =item Description
 
-FBA FORMULATION SPEC
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a string
-</pre>
-
-=end html
-
-=begin text
-
-a string
-
-=end text
-
-=back
-
-
-
-=head2 GeneAssertion
-
-=over 4
-
+********************************************************************************
+    Flux Balance Analysis type definition
+   	********************************************************************************
 
 
 =item Definition
@@ -7345,32 +7811,6 @@ a reference to a list containing 4 items:
 2: a float
 3: a bool
 
-
-=end text
-
-=back
-
-
-
-=head2 modelcompound_id
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a string
-</pre>
-
-=end html
-
-=begin text
-
-a string
 
 =end text
 
@@ -7413,32 +7853,6 @@ a reference to a list containing 7 items:
 5: a float
 6: a string
 
-
-=end text
-
-=back
-
-
-
-=head2 modelreaction_id
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a string
-</pre>
-
-=end html
-
-=begin text
-
-a string
 
 =end text
 
@@ -7578,7 +7992,7 @@ essentialNutrients has a value which is a reference to a list where each element
 
 
 
-=head2 fba_id
+=head2 bound
 
 =over 4
 
@@ -7589,14 +8003,24 @@ essentialNutrients has a value which is a reference to a list where each element
 =begin html
 
 <pre>
-a string
+a reference to a list containing 4 items:
+0: a float
+1: a float
+2: a string
+3: a string
+
 </pre>
 
 =end html
 
 =begin text
 
-a string
+a reference to a list containing 4 items:
+0: a float
+1: a float
+2: a string
+3: a string
+
 
 =end text
 
@@ -7604,7 +8028,7 @@ a string
 
 
 
-=head2 media_id
+=head2 term
 
 =over 4
 
@@ -7615,14 +8039,22 @@ a string
 =begin html
 
 <pre>
-a string
+a reference to a list containing 3 items:
+0: a float
+1: a string
+2: a string
+
 </pre>
 
 =end html
 
 =begin text
 
-a string
+a reference to a list containing 3 items:
+0: a float
+1: a string
+2: a string
+
 
 =end text
 
@@ -7630,7 +8062,7 @@ a string
 
 
 
-=head2 fbamodel_id
+=head2 constraint
 
 =over 4
 
@@ -7641,66 +8073,24 @@ a string
 =begin html
 
 <pre>
-a string
+a reference to a list containing 4 items:
+0: a float
+1: a string
+2: a reference to a list where each element is a term
+3: a string
+
 </pre>
 
 =end html
 
 =begin text
 
-a string
+a reference to a list containing 4 items:
+0: a float
+1: a string
+2: a reference to a list where each element is a term
+3: a string
 
-=end text
-
-=back
-
-
-
-=head2 regmodel_id
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a string
-</pre>
-
-=end html
-
-=begin text
-
-a string
-
-=end text
-
-=back
-
-
-
-=head2 expression_id
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a string
-</pre>
-
-=end html
-
-=begin text
-
-a string
 
 =end text
 
@@ -7721,31 +8111,23 @@ a string
 <pre>
 a reference to a hash where the following keys are defined:
 media has a value which is a media_id
-model has a value which is a fbamodel_id
-regmodel has a value which is a regmodel_id
-expressionData has a value which is an expression_id
-objectiveString has a value which is a string
-objective has a value which is a float
-description has a value which is a string
-uptakelimits has a value which is a string
-objectiveConstraintFraction has a value which is a float
-allReversible has a value which is a bool
-defaultMaxFlux has a value which is a float
-defaultMaxDrainFlux has a value which is a float
-defaultMinDrainFlux has a value which is a float
-numberOfSolutions has a value which is an int
-fva has a value which is a bool
-comboDeletions has a value which is an int
-fluxMinimization has a value which is a bool
-findMinimalMedia has a value which is a bool
-simpleThermoConstraints has a value which is a bool
-thermodynamicConstraints has a value which is a bool
-noErrorThermodynamicConstraints has a value which is a bool
-minimizeErrorThermodynamicConstraints has a value which is a bool
-featureKO has a value which is a reference to a list where each element is a feature_id
-reactionKO has a value which is a reference to a list where each element is a modelreaction_id
-constraints has a value which is a reference to a list where each element is a string
-bounds has a value which is a reference to a list where each element is a string
+media_workspace has a value which is a workspace_id
+objfraction has a value which is a float
+allreversible has a value which is a bool
+maximizeObjective has a value which is a bool
+objectiveTerms has a value which is a reference to a list where each element is a term
+geneko has a value which is a reference to a list where each element is a feature_id
+rxnko has a value which is a reference to a list where each element is a reaction_id
+bounds has a value which is a reference to a list where each element is a bound
+constraints has a value which is a reference to a list where each element is a constraint
+uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
+defaultmaxflux has a value which is a float
+defaultminuptake has a value which is a float
+defaultmaxuptake has a value which is a float
+simplethermoconst has a value which is a bool
+thermoconst has a value which is a bool
+nothermoerror has a value which is a bool
+minthermoerror has a value which is a bool
 
 </pre>
 
@@ -7755,31 +8137,23 @@ bounds has a value which is a reference to a list where each element is a string
 
 a reference to a hash where the following keys are defined:
 media has a value which is a media_id
-model has a value which is a fbamodel_id
-regmodel has a value which is a regmodel_id
-expressionData has a value which is an expression_id
-objectiveString has a value which is a string
-objective has a value which is a float
-description has a value which is a string
-uptakelimits has a value which is a string
-objectiveConstraintFraction has a value which is a float
-allReversible has a value which is a bool
-defaultMaxFlux has a value which is a float
-defaultMaxDrainFlux has a value which is a float
-defaultMinDrainFlux has a value which is a float
-numberOfSolutions has a value which is an int
-fva has a value which is a bool
-comboDeletions has a value which is an int
-fluxMinimization has a value which is a bool
-findMinimalMedia has a value which is a bool
-simpleThermoConstraints has a value which is a bool
-thermodynamicConstraints has a value which is a bool
-noErrorThermodynamicConstraints has a value which is a bool
-minimizeErrorThermodynamicConstraints has a value which is a bool
-featureKO has a value which is a reference to a list where each element is a feature_id
-reactionKO has a value which is a reference to a list where each element is a modelreaction_id
-constraints has a value which is a reference to a list where each element is a string
-bounds has a value which is a reference to a list where each element is a string
+media_workspace has a value which is a workspace_id
+objfraction has a value which is a float
+allreversible has a value which is a bool
+maximizeObjective has a value which is a bool
+objectiveTerms has a value which is a reference to a list where each element is a term
+geneko has a value which is a reference to a list where each element is a feature_id
+rxnko has a value which is a reference to a list where each element is a reaction_id
+bounds has a value which is a reference to a list where each element is a bound
+constraints has a value which is a reference to a list where each element is a constraint
+uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
+defaultmaxflux has a value which is a float
+defaultminuptake has a value which is a float
+defaultmaxuptake has a value which is a float
+simplethermoconst has a value which is a bool
+thermoconst has a value which is a bool
+nothermoerror has a value which is a bool
+minthermoerror has a value which is a bool
 
 
 =end text
@@ -7801,6 +8175,8 @@ bounds has a value which is a reference to a list where each element is a string
 <pre>
 a reference to a hash where the following keys are defined:
 id has a value which is a fba_id
+workspace has a value which is a workspace_id
+objective has a value which is a float
 isComplete has a value which is a bool
 formulation has a value which is an FBAFormulation
 minimalMediaPredictions has a value which is a reference to a list where each element is a MinimalMediaPrediction
@@ -7817,6 +8193,8 @@ geneAssertions has a value which is a reference to a list where each element is 
 
 a reference to a hash where the following keys are defined:
 id has a value which is a fba_id
+workspace has a value which is a workspace_id
+objective has a value which is a float
 isComplete has a value which is a bool
 formulation has a value which is an FBAFormulation
 minimalMediaPredictions has a value which is a reference to a list where each element is a MinimalMediaPrediction
@@ -7824,183 +8202,6 @@ metaboliteProductions has a value which is a reference to a list where each elem
 reactionFluxes has a value which is a reference to a list where each element is a ReactionFlux
 compoundFluxes has a value which is a reference to a list where each element is a CompoundFlux
 geneAssertions has a value which is a reference to a list where each element is a GeneAssertion
-
-
-=end text
-
-=back
-
-
-
-=head2 workspace_id
-
-=over 4
-
-
-
-=item Description
-
-END FBA FORMULATION SPEC
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a string
-</pre>
-
-=end html
-
-=begin text
-
-a string
-
-=end text
-
-=back
-
-
-
-=head2 object_type
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a string
-</pre>
-
-=end html
-
-=begin text
-
-a string
-
-=end text
-
-=back
-
-
-
-=head2 object_id
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a string
-</pre>
-
-=end html
-
-=begin text
-
-a string
-
-=end text
-
-=back
-
-
-
-=head2 username
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a string
-</pre>
-
-=end html
-
-=begin text
-
-a string
-
-=end text
-
-=back
-
-
-
-=head2 timestamp
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a string
-</pre>
-
-=end html
-
-=begin text
-
-a string
-
-=end text
-
-=back
-
-
-
-=head2 object_metadata
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a list containing 7 items:
-0: an object_id
-1: an object_type
-2: a timestamp
-3: an int
-4: a string
-5: a username
-6: a username
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a list containing 7 items:
-0: an object_id
-1: an object_type
-2: a timestamp
-3: an int
-4: a string
-5: a username
-6: a username
 
 
 =end text
@@ -8017,7 +8218,9 @@ a reference to a list containing 7 items:
 
 =item Description
 
-This function returns model data for input ids
+********************************************************************************
+    Function definitions relating to data retrieval for Model Objects
+   	********************************************************************************
 
 
 =item Definition
@@ -8026,8 +8229,8 @@ This function returns model data for input ids
 
 <pre>
 a reference to a hash where the following keys are defined:
-in_model_ids has a value which is a reference to a list where each element is a fbamodel_id
-workspace has a value which is a workspace_id
+models has a value which is a reference to a list where each element is a fbamodel_id
+workspaces has a value which is a reference to a list where each element is a workspace_id
 authentication has a value which is a string
 id_type has a value which is a string
 
@@ -8038,8 +8241,8 @@ id_type has a value which is a string
 =begin text
 
 a reference to a hash where the following keys are defined:
-in_model_ids has a value which is a reference to a list where each element is a fbamodel_id
-workspace has a value which is a workspace_id
+models has a value which is a reference to a list where each element is a fbamodel_id
+workspaces has a value which is a reference to a list where each element is a workspace_id
 authentication has a value which is a string
 id_type has a value which is a string
 
@@ -8056,19 +8259,14 @@ id_type has a value which is a string
 
 
 
-=item Description
-
-This function returns fba data for input ids
-
-
 =item Definition
 
 =begin html
 
 <pre>
 a reference to a hash where the following keys are defined:
-in_fba_ids has a value which is a reference to a list where each element is a fba_id
-workspace has a value which is a workspace_id
+fbas has a value which is a reference to a list where each element is a fba_id
+workspaces has a value which is a reference to a list where each element is a workspace_id
 authentication has a value which is a string
 id_type has a value which is a string
 
@@ -8079,8 +8277,8 @@ id_type has a value which is a string
 =begin text
 
 a reference to a hash where the following keys are defined:
-in_fba_ids has a value which is a reference to a list where each element is a fba_id
-workspace has a value which is a workspace_id
+fbas has a value which is a reference to a list where each element is a fba_id
+workspaces has a value which is a reference to a list where each element is a workspace_id
 authentication has a value which is a string
 id_type has a value which is a string
 
@@ -8097,19 +8295,14 @@ id_type has a value which is a string
 
 
 
-=item Description
-
-This function returns gapfill data for input ids
-
-
 =item Definition
 
 =begin html
 
 <pre>
 a reference to a hash where the following keys are defined:
-in_gapfill_ids has a value which is a reference to a list where each element is a gapfill_id
-workspace has a value which is a workspace_id
+gapfills has a value which is a reference to a list where each element is a gapfill_id
+workspaces has a value which is a reference to a list where each element is a workspace_id
 authentication has a value which is a string
 id_type has a value which is a string
 
@@ -8120,8 +8313,8 @@ id_type has a value which is a string
 =begin text
 
 a reference to a hash where the following keys are defined:
-in_gapfill_ids has a value which is a reference to a list where each element is a gapfill_id
-workspace has a value which is a workspace_id
+gapfills has a value which is a reference to a list where each element is a gapfill_id
+workspaces has a value which is a reference to a list where each element is a workspace_id
 authentication has a value which is a string
 id_type has a value which is a string
 
@@ -8138,19 +8331,14 @@ id_type has a value which is a string
 
 
 
-=item Description
-
-This function returns gapgen data for input ids
-
-
 =item Definition
 
 =begin html
 
 <pre>
 a reference to a hash where the following keys are defined:
-in_gapgen_ids has a value which is a reference to a list where each element is a gapgen_id
-workspace has a value which is a workspace_id
+gapgens has a value which is a reference to a list where each element is a gapgen_id
+workspaces has a value which is a reference to a list where each element is a workspace_id
 authentication has a value which is a string
 id_type has a value which is a string
 
@@ -8161,8 +8349,8 @@ id_type has a value which is a string
 =begin text
 
 a reference to a hash where the following keys are defined:
-in_gapgen_ids has a value which is a reference to a list where each element is a gapgen_id
-workspace has a value which is a workspace_id
+gapgens has a value which is a reference to a list where each element is a gapgen_id
+workspaces has a value which is a reference to a list where each element is a workspace_id
 authentication has a value which is a string
 id_type has a value which is a string
 
@@ -8179,18 +8367,13 @@ id_type has a value which is a string
 
 
 
-=item Description
-
-This function returns reaction data for input ids
-
-
 =item Definition
 
 =begin html
 
 <pre>
 a reference to a hash where the following keys are defined:
-in_reaction_ids has a value which is a reference to a list where each element is a reaction_id
+reactions has a value which is a reference to a list where each element is a reaction_id
 authentication has a value which is a string
 id_type has a value which is a string
 
@@ -8201,7 +8384,7 @@ id_type has a value which is a string
 =begin text
 
 a reference to a hash where the following keys are defined:
-in_reaction_ids has a value which is a reference to a list where each element is a reaction_id
+reactions has a value which is a reference to a list where each element is a reaction_id
 authentication has a value which is a string
 id_type has a value which is a string
 
@@ -8218,18 +8401,13 @@ id_type has a value which is a string
 
 
 
-=item Description
-
-This function returns compound data for input ids
-
-
 =item Definition
 
 =begin html
 
 <pre>
 a reference to a hash where the following keys are defined:
-in_compound_ids has a value which is a reference to a list where each element is a compound_id
+compounds has a value which is a reference to a list where each element is a compound_id
 authentication has a value which is a string
 id_type has a value which is a string
 
@@ -8240,7 +8418,7 @@ id_type has a value which is a string
 =begin text
 
 a reference to a hash where the following keys are defined:
-in_compound_ids has a value which is a reference to a list where each element is a compound_id
+compounds has a value which is a reference to a list where each element is a compound_id
 authentication has a value which is a string
 id_type has a value which is a string
 
@@ -8268,9 +8446,9 @@ This function returns media data for input ids
 
 <pre>
 a reference to a hash where the following keys are defined:
-in_media_ids has a value which is a reference to a list where each element is a media_id
+medias has a value which is a reference to a list where each element is a media_id
+workspaces has a value which is a reference to a list where each element is a workspace_id
 authentication has a value which is a string
-id_type has a value which is a string
 
 </pre>
 
@@ -8279,9 +8457,9 @@ id_type has a value which is a string
 =begin text
 
 a reference to a hash where the following keys are defined:
-in_media_ids has a value which is a reference to a list where each element is a media_id
+medias has a value which is a reference to a list where each element is a media_id
+workspaces has a value which is a reference to a list where each element is a workspace_id
 authentication has a value which is a string
-id_type has a value which is a string
 
 
 =end text
@@ -8296,20 +8474,16 @@ id_type has a value which is a string
 
 
 
-=item Description
-
-This function returns biochemistry object
-
-
 =item Definition
 
 =begin html
 
 <pre>
 a reference to a hash where the following keys are defined:
-in_biochemistry has a value which is a biochemistry_id
-authentication has a value which is a string
+biochemistry has a value which is a biochemistry_id
+biochemistry_workspace has a value which is a workspace_id
 id_type has a value which is a string
+authentication has a value which is a string
 
 </pre>
 
@@ -8318,9 +8492,10 @@ id_type has a value which is a string
 =begin text
 
 a reference to a hash where the following keys are defined:
-in_biochemistry has a value which is a biochemistry_id
-authentication has a value which is a string
+biochemistry has a value which is a biochemistry_id
+biochemistry_workspace has a value which is a workspace_id
 id_type has a value which is a string
+authentication has a value which is a string
 
 
 =end text
@@ -8661,7 +8836,7 @@ authentication has a value which is a string
 
 
 
-=head2 bound
+=head2 runfba_params
 
 =over 4
 
@@ -8670,176 +8845,6 @@ authentication has a value which is a string
 =item Description
 
 NEED DOCUMENTATION
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a list containing 4 items:
-0: a float
-1: a float
-2: a string
-3: a string
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a list containing 4 items:
-0: a float
-1: a float
-2: a string
-3: a string
-
-
-=end text
-
-=back
-
-
-
-=head2 term
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a list containing 3 items:
-0: a float
-1: a string
-2: a string
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a list containing 3 items:
-0: a float
-1: a string
-2: a string
-
-
-=end text
-
-=back
-
-
-
-=head2 constraint
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a list containing 4 items:
-0: a float
-1: a string
-2: a reference to a list where each element is a term
-3: a string
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a list containing 4 items:
-0: a float
-1: a string
-2: a reference to a list where each element is a term
-3: a string
-
-
-=end text
-
-=back
-
-
-
-=head2 FBAFormulation
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-media has a value which is a media_id
-media_workspace has a value which is a workspace_id
-objfraction has a value which is a float
-allreversible has a value which is a bool
-maximizeObjective has a value which is a bool
-objectiveTerms has a value which is a reference to a list where each element is a term
-geneko has a value which is a reference to a list where each element is a feature_id
-rxnko has a value which is a reference to a list where each element is a reaction_id
-bounds has a value which is a reference to a list where each element is a bound
-constraints has a value which is a reference to a list where each element is a constraint
-uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
-defaultmaxflux has a value which is a float
-defaultminuptake has a value which is a float
-defaultmaxuptake has a value which is a float
-simplethermoconst has a value which is a bool
-thermoconst has a value which is a bool
-nothermoerror has a value which is a bool
-minthermoerror has a value which is a bool
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-media has a value which is a media_id
-media_workspace has a value which is a workspace_id
-objfraction has a value which is a float
-allreversible has a value which is a bool
-maximizeObjective has a value which is a bool
-objectiveTerms has a value which is a reference to a list where each element is a term
-geneko has a value which is a reference to a list where each element is a feature_id
-rxnko has a value which is a reference to a list where each element is a reaction_id
-bounds has a value which is a reference to a list where each element is a bound
-constraints has a value which is a reference to a list where each element is a constraint
-uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
-defaultmaxflux has a value which is a float
-defaultminuptake has a value which is a float
-defaultmaxuptake has a value which is a float
-simplethermoconst has a value which is a bool
-thermoconst has a value which is a bool
-nothermoerror has a value which is a bool
-minthermoerror has a value which is a bool
-
-
-=end text
-
-=back
-
-
-
-=head2 runfba_params
-
-=over 4
-
 
 
 =item Definition
