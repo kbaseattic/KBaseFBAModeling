@@ -29,6 +29,7 @@ module fbaModelServices {
     typedef string media_id;
     typedef string probabilistic_annotation_id;
     typedef string regmodel_id;
+    typedef string compartment_id;
     typedef string expression_id;
     /*********************************************************************************
     Object type definition
@@ -184,81 +185,6 @@ module fbaModelServices {
 		list<GapGenMeta> unintegrated_gapgenerations;
     } FBAModel;
     /*********************************************************************************
-    Gapfilling type definition
-   	*********************************************************************************/
-    typedef structure {
-		media_id media;
-		string notes;
-		string objective;
-		float objfraction;
-		string rxnko;
-		string geneko;
-		string uptakelim;
-		float defaultmaxflux;
-		float defaultmaxuptake;
-		float defaultminuptake;
-		bool nomediahyp;
-		bool nobiomasshyp;
-		bool nogprhyp;
-		bool nopathwayhyp;
-		bool allowunbalanced;
-		float activitybonus;
-		float drainpen;
-		float directionpen;
-		float nostructpen;
-		float unfavorablepen;
-		float nodeltagpen;
-		float biomasstranspen;
-		float singletranspen;
-		float transpen;
-		string blacklistedrxns;
-		string gauranteedrxns;
-		string allowedcmps;
-		probabilistic_annotation_id probabilistic_annotation;
-    } GapfillingFormulation;
-    
-    typedef tuple<reaction_id reaction,string direction> reactionAddition;
-    
-    typedef structure {
-		gapfill_id id;
-        bool isComplete;
-		GapfillingFormulation formulation;
-		list<modelcompound_id> biomassRemovals;
-		list<compound_id> mediaAdditions;
-		list<reactionAddition> reactionAdditions;
-    } GapFill;
-    /*********************************************************************************
-    Gap Generation type definition
-   	*********************************************************************************/
-    typedef structure {
-		media_id media;
-		media_id refmedia;
-		string notes;
-		string objective;
-		float objfraction;
-		string rxnko;
-		string geneko;
-		string uptakelim;
-		float defaultmaxflux;
-		float defaultmaxuptake;
-		float defaultminuptake;
-		bool nomediahyp;
-		bool nobiomasshyp;
-		bool nogprhyp;
-		bool nopathwayhyp;
-    } GapgenFormulation;
-    
-    typedef tuple<modelreaction_id reaction,string direction> reactionRemoval;
-    
-    typedef structure {
-		gapgen_id id;
-        bool isComplete;
-		GapgenFormulation formulation;
-		list<compound_id> biomassAdditions;
-		list<compound_id> mediaRemovals;
-		list<reactionRemoval> reactionRemovals;
-    } GapGen;
-    /*********************************************************************************
     Flux Balance Analysis type definition
    	*********************************************************************************/
     typedef tuple<feature_id feature,float growthFraction,float growth,bool isEssential> GeneAssertion;
@@ -300,6 +226,8 @@ module fbaModelServices {
     typedef structure {
 		fba_id id;
 		workspace_id workspace;
+        fbamodel_id model;
+        workspace_id model_workspace;
         float objective;
         bool isComplete;
 		FBAFormulation formulation;
@@ -309,6 +237,78 @@ module fbaModelServices {
 		list<CompoundFlux> compoundFluxes;
 		list<GeneAssertion> geneAssertions;
     } FBA;
+    /*********************************************************************************
+    Gapfilling type definition
+   	*********************************************************************************/
+    typedef structure {
+		FBAFormulation formulation;
+		bool nomediahyp;
+		bool nobiomasshyp;
+		bool nogprhyp;
+		bool nopathwayhyp;
+		bool allowunbalanced;
+		float activitybonus;
+		float drainpen;
+		float directionpen;
+		float nostructpen;
+		float unfavorablepen;
+		float nodeltagpen;
+		float biomasstranspen;
+		float singletranspen;
+		float transpen;
+		list<reaction_id> blacklistedrxns;
+		list<reaction_id> gauranteedrxns;
+		list<compartment_id> allowedcmps;
+		probabilistic_annotation_id probabilistic_annotation;
+    } GapfillingFormulation;
+    
+    typedef tuple<reaction_id reaction,string direction> reactionAddition;
+    
+    typedef structure {
+        float objective;
+		list<modelcompound_id> biomassRemovals;
+		list<compound_id> mediaAdditions;
+		list<reactionAddition> reactionAdditions;
+    } GapFillSolution;
+    
+    typedef structure {
+		gapfill_id id;
+		workspace_id workspace;
+		fbamodel_id model;
+        workspace_id model_workspace;
+        bool isComplete;
+		GapfillingFormulation formulation;
+		list<GapFillSolution> solutions;
+    } GapFill;
+    /*********************************************************************************
+    Gap Generation type definition
+   	*********************************************************************************/
+    typedef structure {
+		FBAFormulation formulation;
+		bool nomediahyp;
+		bool nobiomasshyp;
+		bool nogprhyp;
+		bool nopathwayhyp;
+    } GapgenFormulation;
+    
+    typedef tuple<modelreaction_id reaction,string direction> reactionRemoval;
+    
+    typedef structure {
+        float objective;
+		list<compound_id> biomassAdditions;
+		list<compound_id> mediaRemovals;
+		list<reactionRemoval> reactionRemovals;
+    } GapgenSolution;
+    
+    typedef structure {
+		gapgen_id id;
+		workspace_id workspace;
+		fbamodel_id model;
+        workspace_id model_workspace;
+        bool isComplete;
+		GapgenFormulation formulation;
+		list<GapgenSolution> solutions;
+    } GapGen;
     /*********************************************************************************
     Function definitions relating to data retrieval for Model Objects
    	*********************************************************************************/
@@ -437,7 +437,7 @@ module fbaModelServices {
         workspace_id in_workspace
         This parameter specifies the ID of the workspace containing the specified genome object. This parameter is also required.
     
-        model_id out_model
+        fbamodel_id out_model
         This parameter specifies the ID to which the generated model should be save. This is optional.
         If unspecified, a new KBase model ID will be checked out for the model.
     

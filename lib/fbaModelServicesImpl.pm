@@ -372,6 +372,7 @@ sub _get_msobject {
 		FBA => "FBAFormulation",
 		Media => "Media"
 	};
+	my $obj;
 	if (defined($msProvTypes->{$type})) {
 		my $class = "ModelSEED::MS::".$msProvTypes->{$type};
 		my $obj = $class->new($output->{data});
@@ -401,11 +402,13 @@ sub _get_msobject {
 				}
 			}
 		}
-		return $obj;
 	} else {
-		return $output->{data};
+		$obj = $output->{data};
 	}
-	return undef;
+	$obj->{kbase}->{wsid} = $id;
+	$obj->{kbase}->{ws} = $ws;
+	$obj->{kbase}->{wsinst} = $output->{metadata}->[3];	
+	return $obj;
 }
 
 sub _get_genomeObj_from_CDM {
@@ -1004,18 +1007,180 @@ sub _FBA_to_FBAFormulation {
 sub _FBA_to_FBAdata {
 	my ($self,$obj) = @_;
 	my $array = [split(/\//,$obj->uuid())];
+	my $mdlarray = [split(/\//,$obj->model()->uuid())];
 	my $fbadata = {
     	id => $array->[1],
-    	workspace => $array->[2],
+    	workspace => $array->[0],
+    	model => $mdlarray->[1],
+    	model_workspace => $mdlarray->[0],
     	isComplete => 0,
     	objective => undef,
-    	formulation => $self->_FBA_to_FBAFormulation($obj)
+    	formulation => $self->_FBA_to_FBAFormulation($obj),
+    	minimalMediaPredictions => [],
+		metaboliteProductions => [],
+		reactionFluxes => [],
+		compoundFluxes => [],
+		geneAssertions => []
 	};
     if (defined($obj->fbaResults()->[0])) {
 		$fbadata->{isComplete} = 1;
-		$fbadata->{objective} = $obj->fbaResults()->[0]->objectiveValue();
+		my $result = $obj->fbaResults()->[0];
+		$fbadata->{objective} = $result->objectiveValue();
+		foreach my $var (@{$result->fbaCompoundVariables()}) {
+			push(@{$fbadata->{compoundFluxes}},[
+				$var->modelcompound()->id(),
+				$var->value(),
+				$var->upperBound(),
+				$var->lowerBound(),
+				$var->max(),
+				$var->min(),
+				$var->variableType()
+			]);
+		}
+		foreach my $var (@{$result->fbaReactionVariables()}) {
+			push(@{$fbadata->{reactionFluxes}},[
+				$var->modelreaction()->id(),
+				$var->value(),
+				$var->upperBound(),
+				$var->lowerBound(),
+				$var->max(),
+				$var->min(),
+				$var->variableType()
+			]);
+		}
+		foreach my $var (@{$result->fbaBiomassVariables()}) {
+			push(@{$fbadata->{reactionFluxes}},[
+				$var->biomass()->id(),
+				$var->value(),
+				$var->upperBound(),
+				$var->lowerBound(),
+				$var->max(),
+				$var->min(),
+				$var->variableType()
+			]);
+		}
+		foreach my $var (@{$result->fbaDeletionResults()}) {
+			my $essential = 1;
+			if ($var->growthFraction() > 0.05) {
+				$essential = 0;
+			}
+			push(@{$fbadata->{geneAssertions}},[
+				$var->genekos()->[0]->id(),
+				$var->growthFraction(),
+				($var->growthFraction()*$fbadata->{objective}),
+				$essential
+			]);
+		}
+		foreach my $var (@{$result->fbaMetaboliteProductionResults()}) {
+			push(@{$fbadata->{metaboliteProductions}},[
+				$var->maximumProduction(),
+				$var->modelCompound()->id()
+			]);
+		}
+		foreach my $minmedia (@{$result->minimalMediaResults()}) {
+			my $data = {
+				optionalNutrients => [],
+				essentialNutrients => []
+			};
+			foreach my $cpd (@{$result->essentialNutrients()}) {
+				push(@{$data->{essentialNutrients}},$cpd->id())
+			}
+			foreach my $cpd (@{$result->optionalNutrients()}) {
+				push(@{$data->{optionalNutrients}},$cpd->id())
+			}
+			push(@{$fbadata->{minimalMediaPredictions}},$data);	
+		}
     }
     return $fbadata;
+}
+
+sub _invert_boolean {
+	my ($self,$input) = @_;
+	if ($input == 1) {
+		return 0;
+	}
+	return 1;
+}
+
+sub _GapFill_to_GapFillFormulation {
+	my ($self,$obj) = @_;
+	my $form = {
+		formulation => $self->_FBA_to_FBAFormulation($obj->fbaFormulation()),
+		nomediahyp => $self->_invert_boolean($obj->mediaHypothesis()),
+		nobiomasshyp => $self->_invert_boolean($obj->biomassHypothesis()),
+		nogprhyp => $self->_invert_boolean($obj->gprHypothesis()),
+		nopathwayhyp => $self->_invert_boolean($obj->reactionAdditionHypothesis()),
+		allowunbalanced => $self->_invert_boolean($obj->balancedReactionsOnly()),
+		activitybonus => $obj->reactionActivationBonus(),
+		drainpen => $obj->drainFluxMultiplier(),
+		directionpen => $obj->directionalityMultiplier(),
+		nostructpen => $obj->noStructureMultiplier(),
+		unfavorablepen => $obj->deltaGMultiplier(),
+		nodeltagpen => $obj->noDeltaGMultiplier(),
+		biomasstranspen => $obj->biomassTransporterMultiplier(),
+		singletranspen => $obj->singleTransporterMultiplier(),
+		transpen => $obj->transporterMultiplier(),
+		blacklistedrxns => [],
+		gauranteedrxns => [],
+		allowedcmps => [],
+		probabilistic_annotation => undef
+	};
+	foreach my $rxn (@{$obj->blacklistedReactions()}) {
+		push(@{$form->{blacklistedrxns}},$rxn->id());
+	}
+	foreach my $rxn (@{$obj->guaranteedReactions()}) {
+		push(@{$form->{gauranteedrxns}},$rxn->id());
+	}
+	foreach my $comp (@{$obj->allowableCompartments()}) {
+		push(@{$form->{allowedcmps}},$comp->id());
+	}
+	return $form;
+}
+
+sub _GapFill_to_GapFillData {
+	my ($self,$obj) = @_;
+	my $array = [split(/\//,$obj->uuid())];
+	my $mdlarray = [split(/\//,$obj->model()->uuid())];
+	my $data = {
+    	id => $array->[1],
+    	workspace => $array->[0],
+    	model => $mdlarray->[1],
+    	model_workspace => $mdlarray->[0],
+    	isComplete => 0,
+    	formulation => $self->_GapFill_to_GapFillFormulation($obj),
+    	solutions => []
+	};
+    if (defined($obj->fbaFormulation()->fbaResults()->[0])) {
+		$data->{isComplete} = 1;
+		#TODO
+	}
+    return $data;
+}
+
+sub _GapGen_to_GapGenData {
+	my ($self,$obj) = @_;
+	my $array = [split(/\//,$obj->uuid())];
+	my $mdlarray = [split(/\//,$obj->model()->uuid())];
+	my $data = {
+    	id => $array->[1],
+    	workspace => $array->[0],
+    	model => $mdlarray->[1],
+    	model_workspace => $mdlarray->[0],
+    	isComplete => 0,
+    	formulation => {
+    		formulation => $self->_FBA_to_FBAFormulation($obj->fbaFormulation()),
+    		nomediahyp => $self->_invert_boolean($obj->mediaHypothesis()),
+			nobiomasshyp => $self->_invert_boolean($obj->biomassHypothesis()),
+			nogprhyp => $self->_invert_boolean($obj->gprHypothesis()),
+			nopathwayhyp => $self->_invert_boolean($obj->reactionRemovalHypothesis())
+    	},
+    	solutions => []
+	};
+    if (defined($obj->fbaFormulation()->fbaResults()->[0])) {
+		$data->{isComplete} = 1;
+		#TODO
+    }
+    return $data;
 }
 
 #END_HEADER
@@ -1410,6 +1575,8 @@ workspace_id is a string
 FBA is a reference to a hash where the following keys are defined:
 	id has a value which is a fba_id
 	workspace has a value which is a workspace_id
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
 	objective has a value which is a float
 	isComplete has a value which is a bool
 	formulation has a value which is an FBAFormulation
@@ -1418,6 +1585,7 @@ FBA is a reference to a hash where the following keys are defined:
 	reactionFluxes has a value which is a reference to a list where each element is a ReactionFlux
 	compoundFluxes has a value which is a reference to a list where each element is a CompoundFlux
 	geneAssertions has a value which is a reference to a list where each element is a GeneAssertion
+fbamodel_id is a string
 bool is an int
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
@@ -1504,6 +1672,8 @@ workspace_id is a string
 FBA is a reference to a hash where the following keys are defined:
 	id has a value which is a fba_id
 	workspace has a value which is a workspace_id
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
 	objective has a value which is a float
 	isComplete has a value which is a bool
 	formulation has a value which is an FBAFormulation
@@ -1512,6 +1682,7 @@ FBA is a reference to a hash where the following keys are defined:
 	reactionFluxes has a value which is a reference to a list where each element is a ReactionFlux
 	compoundFluxes has a value which is a reference to a list where each element is a CompoundFlux
 	geneAssertions has a value which is a reference to a list where each element is a GeneAssertion
+fbamodel_id is a string
 bool is an int
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
@@ -1625,7 +1796,10 @@ sub get_fbas
     	my $id = $input->{fbas}->[$i];
     	my $ws = $input->{workspaces}->[$i];
     	my $fba = $self->_get_msobject("FBA",$ws,$id,$cache);
-    	push(@{$out_fbas},$self->_FBA_to_FBAdata($fba));
+    	my $fbadata = $self->_FBA_to_FBAdata($fba);
+    	$cache->{FBA}->{$ws}->{$id} = $fba;
+    	$cache->{Model}->{$fbadata->{model_workspace}}->{$fbadata->{model}} = $fba->model();
+    	push(@{$out_fbas},$fbadata);
     }
 	$self->_clearContext();
     #END get_fbas
@@ -1664,23 +1838,16 @@ gapfill_id is a string
 workspace_id is a string
 GapFill is a reference to a hash where the following keys are defined:
 	id has a value which is a gapfill_id
+	workspace has a value which is a workspace_id
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
 	isComplete has a value which is a bool
 	formulation has a value which is a GapfillingFormulation
-	biomassRemovals has a value which is a reference to a list where each element is a modelcompound_id
-	mediaAdditions has a value which is a reference to a list where each element is a compound_id
-	reactionAdditions has a value which is a reference to a list where each element is a reactionAddition
+	solutions has a value which is a reference to a list where each element is a GapFillSolution
+fbamodel_id is a string
 bool is an int
 GapfillingFormulation is a reference to a hash where the following keys are defined:
-	media has a value which is a media_id
-	notes has a value which is a string
-	objective has a value which is a string
-	objfraction has a value which is a float
-	rxnko has a value which is a string
-	geneko has a value which is a string
-	uptakelim has a value which is a string
-	defaultmaxflux has a value which is a float
-	defaultmaxuptake has a value which is a float
-	defaultminuptake has a value which is a float
+	formulation has a value which is an FBAFormulation
 	nomediahyp has a value which is a bool
 	nobiomasshyp has a value which is a bool
 	nogprhyp has a value which is a bool
@@ -1695,18 +1862,58 @@ GapfillingFormulation is a reference to a hash where the following keys are defi
 	biomasstranspen has a value which is a float
 	singletranspen has a value which is a float
 	transpen has a value which is a float
-	blacklistedrxns has a value which is a string
-	gauranteedrxns has a value which is a string
-	allowedcmps has a value which is a string
+	blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
+	gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
+	allowedcmps has a value which is a reference to a list where each element is a compartment_id
 	probabilistic_annotation has a value which is a probabilistic_annotation_id
+FBAFormulation is a reference to a hash where the following keys are defined:
+	media has a value which is a media_id
+	media_workspace has a value which is a workspace_id
+	objfraction has a value which is a float
+	allreversible has a value which is a bool
+	maximizeObjective has a value which is a bool
+	objectiveTerms has a value which is a reference to a list where each element is a term
+	geneko has a value which is a reference to a list where each element is a feature_id
+	rxnko has a value which is a reference to a list where each element is a reaction_id
+	bounds has a value which is a reference to a list where each element is a bound
+	constraints has a value which is a reference to a list where each element is a constraint
+	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
+	defaultmaxflux has a value which is a float
+	defaultminuptake has a value which is a float
+	defaultmaxuptake has a value which is a float
+	simplethermoconst has a value which is a bool
+	thermoconst has a value which is a bool
+	nothermoerror has a value which is a bool
+	minthermoerror has a value which is a bool
 media_id is a string
+term is a reference to a list containing 3 items:
+	0: a float
+	1: a string
+	2: a string
+feature_id is a string
+reaction_id is a string
+bound is a reference to a list containing 4 items:
+	0: a float
+	1: a float
+	2: a string
+	3: a string
+constraint is a reference to a list containing 4 items:
+	0: a float
+	1: a string
+	2: a reference to a list where each element is a term
+	3: a string
+compartment_id is a string
 probabilistic_annotation_id is a string
+GapFillSolution is a reference to a hash where the following keys are defined:
+	objective has a value which is a float
+	biomassRemovals has a value which is a reference to a list where each element is a modelcompound_id
+	mediaAdditions has a value which is a reference to a list where each element is a compound_id
+	reactionAdditions has a value which is a reference to a list where each element is a reactionAddition
 modelcompound_id is a string
 compound_id is a string
 reactionAddition is a reference to a list containing 2 items:
 	0: a reaction_id
 	1: a string
-reaction_id is a string
 
 </pre>
 
@@ -1725,23 +1932,16 @@ gapfill_id is a string
 workspace_id is a string
 GapFill is a reference to a hash where the following keys are defined:
 	id has a value which is a gapfill_id
+	workspace has a value which is a workspace_id
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
 	isComplete has a value which is a bool
 	formulation has a value which is a GapfillingFormulation
-	biomassRemovals has a value which is a reference to a list where each element is a modelcompound_id
-	mediaAdditions has a value which is a reference to a list where each element is a compound_id
-	reactionAdditions has a value which is a reference to a list where each element is a reactionAddition
+	solutions has a value which is a reference to a list where each element is a GapFillSolution
+fbamodel_id is a string
 bool is an int
 GapfillingFormulation is a reference to a hash where the following keys are defined:
-	media has a value which is a media_id
-	notes has a value which is a string
-	objective has a value which is a string
-	objfraction has a value which is a float
-	rxnko has a value which is a string
-	geneko has a value which is a string
-	uptakelim has a value which is a string
-	defaultmaxflux has a value which is a float
-	defaultmaxuptake has a value which is a float
-	defaultminuptake has a value which is a float
+	formulation has a value which is an FBAFormulation
 	nomediahyp has a value which is a bool
 	nobiomasshyp has a value which is a bool
 	nogprhyp has a value which is a bool
@@ -1756,18 +1956,58 @@ GapfillingFormulation is a reference to a hash where the following keys are defi
 	biomasstranspen has a value which is a float
 	singletranspen has a value which is a float
 	transpen has a value which is a float
-	blacklistedrxns has a value which is a string
-	gauranteedrxns has a value which is a string
-	allowedcmps has a value which is a string
+	blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
+	gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
+	allowedcmps has a value which is a reference to a list where each element is a compartment_id
 	probabilistic_annotation has a value which is a probabilistic_annotation_id
+FBAFormulation is a reference to a hash where the following keys are defined:
+	media has a value which is a media_id
+	media_workspace has a value which is a workspace_id
+	objfraction has a value which is a float
+	allreversible has a value which is a bool
+	maximizeObjective has a value which is a bool
+	objectiveTerms has a value which is a reference to a list where each element is a term
+	geneko has a value which is a reference to a list where each element is a feature_id
+	rxnko has a value which is a reference to a list where each element is a reaction_id
+	bounds has a value which is a reference to a list where each element is a bound
+	constraints has a value which is a reference to a list where each element is a constraint
+	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
+	defaultmaxflux has a value which is a float
+	defaultminuptake has a value which is a float
+	defaultmaxuptake has a value which is a float
+	simplethermoconst has a value which is a bool
+	thermoconst has a value which is a bool
+	nothermoerror has a value which is a bool
+	minthermoerror has a value which is a bool
 media_id is a string
+term is a reference to a list containing 3 items:
+	0: a float
+	1: a string
+	2: a string
+feature_id is a string
+reaction_id is a string
+bound is a reference to a list containing 4 items:
+	0: a float
+	1: a float
+	2: a string
+	3: a string
+constraint is a reference to a list containing 4 items:
+	0: a float
+	1: a string
+	2: a reference to a list where each element is a term
+	3: a string
+compartment_id is a string
 probabilistic_annotation_id is a string
+GapFillSolution is a reference to a hash where the following keys are defined:
+	objective has a value which is a float
+	biomassRemovals has a value which is a reference to a list where each element is a modelcompound_id
+	mediaAdditions has a value which is a reference to a list where each element is a compound_id
+	reactionAdditions has a value which is a reference to a list where each element is a reactionAddition
 modelcompound_id is a string
 compound_id is a string
 reactionAddition is a reference to a list containing 2 items:
 	0: a reaction_id
 	1: a string
-reaction_id is a string
 
 
 =end text
@@ -1798,6 +2038,28 @@ sub get_gapfills
     my $ctx = $fbaModelServicesServer::CallContext;
     my($out_gapfills);
     #BEGIN get_gapfills
+    $self->_setContext($ctx,$input);
+    $input = $self->_validateargs($input,["gapfills","workspaces"],{
+		id_type => "ModelSEED"
+	});
+	#Creating cache with the biochemistry, to ensure only one is created for all models
+	my $cache = {
+		Biochemistry => {
+			kbase => {
+				"default" => $self->_get_msobject("Biochemistry","kbase","default")
+			}
+		}
+	};
+    for (my $i=0; $i < @{$input->{gapfills}}; $i++) {
+    	my $id = $input->{gapfills}->[$i];
+    	my $ws = $input->{workspaces}->[$i];
+    	my $obj = $self->_get_msobject("GapFill",$ws,$id,$cache);
+    	my $data = $self->_GapFill_to_GapFillData($obj);
+    	$cache->{GapFill}->{$ws}->{$id} = $obj;
+    	$cache->{Model}->{$data->{model_workspace}}->{$data->{model}} = $obj->model();
+    	push(@{$out_gapfills},$data);
+    }
+	$self->_clearContext();
     #END get_gapfills
     my @_bad_returns;
     (ref($out_gapfills) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"out_gapfills\" (value was \"$out_gapfills\")");
@@ -1834,29 +2096,61 @@ gapgen_id is a string
 workspace_id is a string
 GapGen is a reference to a hash where the following keys are defined:
 	id has a value which is a gapgen_id
+	workspace has a value which is a workspace_id
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
 	isComplete has a value which is a bool
 	formulation has a value which is a GapgenFormulation
-	biomassAdditions has a value which is a reference to a list where each element is a compound_id
-	mediaRemovals has a value which is a reference to a list where each element is a compound_id
-	reactionRemovals has a value which is a reference to a list where each element is a reactionRemoval
+	solutions has a value which is a reference to a list where each element is a GapgenSolution
+fbamodel_id is a string
 bool is an int
 GapgenFormulation is a reference to a hash where the following keys are defined:
-	media has a value which is a media_id
-	refmedia has a value which is a media_id
-	notes has a value which is a string
-	objective has a value which is a string
-	objfraction has a value which is a float
-	rxnko has a value which is a string
-	geneko has a value which is a string
-	uptakelim has a value which is a string
-	defaultmaxflux has a value which is a float
-	defaultmaxuptake has a value which is a float
-	defaultminuptake has a value which is a float
+	formulation has a value which is an FBAFormulation
 	nomediahyp has a value which is a bool
 	nobiomasshyp has a value which is a bool
 	nogprhyp has a value which is a bool
 	nopathwayhyp has a value which is a bool
+FBAFormulation is a reference to a hash where the following keys are defined:
+	media has a value which is a media_id
+	media_workspace has a value which is a workspace_id
+	objfraction has a value which is a float
+	allreversible has a value which is a bool
+	maximizeObjective has a value which is a bool
+	objectiveTerms has a value which is a reference to a list where each element is a term
+	geneko has a value which is a reference to a list where each element is a feature_id
+	rxnko has a value which is a reference to a list where each element is a reaction_id
+	bounds has a value which is a reference to a list where each element is a bound
+	constraints has a value which is a reference to a list where each element is a constraint
+	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
+	defaultmaxflux has a value which is a float
+	defaultminuptake has a value which is a float
+	defaultmaxuptake has a value which is a float
+	simplethermoconst has a value which is a bool
+	thermoconst has a value which is a bool
+	nothermoerror has a value which is a bool
+	minthermoerror has a value which is a bool
 media_id is a string
+term is a reference to a list containing 3 items:
+	0: a float
+	1: a string
+	2: a string
+feature_id is a string
+reaction_id is a string
+bound is a reference to a list containing 4 items:
+	0: a float
+	1: a float
+	2: a string
+	3: a string
+constraint is a reference to a list containing 4 items:
+	0: a float
+	1: a string
+	2: a reference to a list where each element is a term
+	3: a string
+GapgenSolution is a reference to a hash where the following keys are defined:
+	objective has a value which is a float
+	biomassAdditions has a value which is a reference to a list where each element is a compound_id
+	mediaRemovals has a value which is a reference to a list where each element is a compound_id
+	reactionRemovals has a value which is a reference to a list where each element is a reactionRemoval
 compound_id is a string
 reactionRemoval is a reference to a list containing 2 items:
 	0: a modelreaction_id
@@ -1880,29 +2174,61 @@ gapgen_id is a string
 workspace_id is a string
 GapGen is a reference to a hash where the following keys are defined:
 	id has a value which is a gapgen_id
+	workspace has a value which is a workspace_id
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
 	isComplete has a value which is a bool
 	formulation has a value which is a GapgenFormulation
-	biomassAdditions has a value which is a reference to a list where each element is a compound_id
-	mediaRemovals has a value which is a reference to a list where each element is a compound_id
-	reactionRemovals has a value which is a reference to a list where each element is a reactionRemoval
+	solutions has a value which is a reference to a list where each element is a GapgenSolution
+fbamodel_id is a string
 bool is an int
 GapgenFormulation is a reference to a hash where the following keys are defined:
-	media has a value which is a media_id
-	refmedia has a value which is a media_id
-	notes has a value which is a string
-	objective has a value which is a string
-	objfraction has a value which is a float
-	rxnko has a value which is a string
-	geneko has a value which is a string
-	uptakelim has a value which is a string
-	defaultmaxflux has a value which is a float
-	defaultmaxuptake has a value which is a float
-	defaultminuptake has a value which is a float
+	formulation has a value which is an FBAFormulation
 	nomediahyp has a value which is a bool
 	nobiomasshyp has a value which is a bool
 	nogprhyp has a value which is a bool
 	nopathwayhyp has a value which is a bool
+FBAFormulation is a reference to a hash where the following keys are defined:
+	media has a value which is a media_id
+	media_workspace has a value which is a workspace_id
+	objfraction has a value which is a float
+	allreversible has a value which is a bool
+	maximizeObjective has a value which is a bool
+	objectiveTerms has a value which is a reference to a list where each element is a term
+	geneko has a value which is a reference to a list where each element is a feature_id
+	rxnko has a value which is a reference to a list where each element is a reaction_id
+	bounds has a value which is a reference to a list where each element is a bound
+	constraints has a value which is a reference to a list where each element is a constraint
+	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
+	defaultmaxflux has a value which is a float
+	defaultminuptake has a value which is a float
+	defaultmaxuptake has a value which is a float
+	simplethermoconst has a value which is a bool
+	thermoconst has a value which is a bool
+	nothermoerror has a value which is a bool
+	minthermoerror has a value which is a bool
 media_id is a string
+term is a reference to a list containing 3 items:
+	0: a float
+	1: a string
+	2: a string
+feature_id is a string
+reaction_id is a string
+bound is a reference to a list containing 4 items:
+	0: a float
+	1: a float
+	2: a string
+	3: a string
+constraint is a reference to a list containing 4 items:
+	0: a float
+	1: a string
+	2: a reference to a list where each element is a term
+	3: a string
+GapgenSolution is a reference to a hash where the following keys are defined:
+	objective has a value which is a float
+	biomassAdditions has a value which is a reference to a list where each element is a compound_id
+	mediaRemovals has a value which is a reference to a list where each element is a compound_id
+	reactionRemovals has a value which is a reference to a list where each element is a reactionRemoval
 compound_id is a string
 reactionRemoval is a reference to a list containing 2 items:
 	0: a modelreaction_id
@@ -1938,6 +2264,28 @@ sub get_gapgens
     my $ctx = $fbaModelServicesServer::CallContext;
     my($out_gapgens);
     #BEGIN get_gapgens
+    $self->_setContext($ctx,$input);
+    $input = $self->_validateargs($input,["gapgens","workspaces"],{
+		id_type => "ModelSEED"
+	});
+	#Creating cache with the biochemistry, to ensure only one is created for all models
+	my $cache = {
+		Biochemistry => {
+			kbase => {
+				"default" => $self->_get_msobject("Biochemistry","kbase","default")
+			}
+		}
+	};
+    for (my $i=0; $i < @{$input->{gapgens}}; $i++) {
+    	my $id = $input->{gapgens}->[$i];
+    	my $ws = $input->{workspaces}->[$i];
+    	my $obj = $self->_get_msobject("GapGen",$ws,$id,$cache);
+    	my $data = $self->_GapGen_to_GapGenData($obj);
+    	$cache->{GapGen}->{$ws}->{$id} = $obj;
+    	$cache->{Model}->{$data->{model_workspace}}->{$data->{model}} = $obj->model();
+    	push(@{$out_gapgens},$data);
+    }
+	$self->_clearContext();
     #END get_gapgens
     my @_bad_returns;
     (ref($out_gapgens) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"out_gapgens\" (value was \"$out_gapgens\")");
@@ -4392,7 +4740,8 @@ sub queue_runfba
 		findminmedia => 0,
 		notes => "",
 		fba_workspace => $input->{model_workspace},
-		fba => undef
+		fba => undef,
+		donot_submit_job => 0
 	});
 	#Creating FBAFormulation Object
 	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
@@ -4400,11 +4749,21 @@ sub queue_runfba
 	my $fba = $self->_buildFBAObject($input->{formulation},$model);
 	#Saving FBAFormulation to database
 	my $fbameta = $self->_save_msobject($fba,"FBA",$input->{fba_workspace},$input->{fba},"queue_runfba");
+	my $mediaids = [];
+	my $mediaws = [];
+	my $mediainst = [];
+	my $mediauuids = $fba->mediaUUIDs();
+	foreach my $media (@{$mediauuids}) {
+		my $mediaObj = $fba->model()->biochemistry()->getObject("media",$media);
+		push(@{$mediaids},$mediaObj->{kbase}->{wsid});
+		push(@{$mediaws},$mediaObj->{kbase}->{ws});
+		push(@{$mediainst},$mediaObj->{kbase}->{wsinst});
+	}
 	my $job = $self->_create_job({
 		clusterjobs => [{
-			mediaids => [],
-			mediawss => [],
-			mediainsts => [],
+			mediaids => $mediaids,
+			mediawss => $mediaws,
+			mediainsts => $mediainst,
 			bioid => "kbase",
 			biows => "default",
 			bioinst => 0,
@@ -4426,7 +4785,9 @@ sub queue_runfba
 		queuing_command => "queue_runfba",
 		workspace => $input->{fba_workspace}
 	});
-	$output = $self->_submit_job($job);
+	if ($input->{donot_submit_job} == 0) {
+		$output = $self->_submit_job($job);
+	}
 	$self->_clearContext();
     #END queue_runfba
     my @_bad_returns;
@@ -5485,8 +5846,10 @@ sub jobs_done
     my $job = $self->_get_msobject("FBAJob",$input->{workspace},$input->{jobid});
     $job->{complete} = 1;
     $job->{completetime} = Data::UUID->new()->create_str();
-    my $function = $job->{postprocess_command};
-    $self->$function(@{$job->{postprocess_args}});
+    if (defined($job->{postprocess_command})) {
+    	my $function = $job->{postprocess_command};
+    	$self->$function(@{$job->{postprocess_args}});
+    }
     $self->_save_msobject($job,"FBAJob",$input->{workspace},$input->{jobid},"run_job",1);
     $output = $job;
     $self->_clearContext();
@@ -6505,6 +6868,32 @@ a string
 
 
 
+=head2 compartment_id
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
 =head2 expression_id
 
 =over 4
@@ -7475,306 +7864,6 @@ unintegrated_gapgenerations has a value which is a reference to a list where eac
 
 
 
-=head2 GapfillingFormulation
-
-=over 4
-
-
-
-=item Description
-
-********************************************************************************
-    Gapfilling type definition
-   	********************************************************************************
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-media has a value which is a media_id
-notes has a value which is a string
-objective has a value which is a string
-objfraction has a value which is a float
-rxnko has a value which is a string
-geneko has a value which is a string
-uptakelim has a value which is a string
-defaultmaxflux has a value which is a float
-defaultmaxuptake has a value which is a float
-defaultminuptake has a value which is a float
-nomediahyp has a value which is a bool
-nobiomasshyp has a value which is a bool
-nogprhyp has a value which is a bool
-nopathwayhyp has a value which is a bool
-allowunbalanced has a value which is a bool
-activitybonus has a value which is a float
-drainpen has a value which is a float
-directionpen has a value which is a float
-nostructpen has a value which is a float
-unfavorablepen has a value which is a float
-nodeltagpen has a value which is a float
-biomasstranspen has a value which is a float
-singletranspen has a value which is a float
-transpen has a value which is a float
-blacklistedrxns has a value which is a string
-gauranteedrxns has a value which is a string
-allowedcmps has a value which is a string
-probabilistic_annotation has a value which is a probabilistic_annotation_id
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-media has a value which is a media_id
-notes has a value which is a string
-objective has a value which is a string
-objfraction has a value which is a float
-rxnko has a value which is a string
-geneko has a value which is a string
-uptakelim has a value which is a string
-defaultmaxflux has a value which is a float
-defaultmaxuptake has a value which is a float
-defaultminuptake has a value which is a float
-nomediahyp has a value which is a bool
-nobiomasshyp has a value which is a bool
-nogprhyp has a value which is a bool
-nopathwayhyp has a value which is a bool
-allowunbalanced has a value which is a bool
-activitybonus has a value which is a float
-drainpen has a value which is a float
-directionpen has a value which is a float
-nostructpen has a value which is a float
-unfavorablepen has a value which is a float
-nodeltagpen has a value which is a float
-biomasstranspen has a value which is a float
-singletranspen has a value which is a float
-transpen has a value which is a float
-blacklistedrxns has a value which is a string
-gauranteedrxns has a value which is a string
-allowedcmps has a value which is a string
-probabilistic_annotation has a value which is a probabilistic_annotation_id
-
-
-=end text
-
-=back
-
-
-
-=head2 reactionAddition
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a list containing 2 items:
-0: a reaction_id
-1: a string
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a list containing 2 items:
-0: a reaction_id
-1: a string
-
-
-=end text
-
-=back
-
-
-
-=head2 GapFill
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-id has a value which is a gapfill_id
-isComplete has a value which is a bool
-formulation has a value which is a GapfillingFormulation
-biomassRemovals has a value which is a reference to a list where each element is a modelcompound_id
-mediaAdditions has a value which is a reference to a list where each element is a compound_id
-reactionAdditions has a value which is a reference to a list where each element is a reactionAddition
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-id has a value which is a gapfill_id
-isComplete has a value which is a bool
-formulation has a value which is a GapfillingFormulation
-biomassRemovals has a value which is a reference to a list where each element is a modelcompound_id
-mediaAdditions has a value which is a reference to a list where each element is a compound_id
-reactionAdditions has a value which is a reference to a list where each element is a reactionAddition
-
-
-=end text
-
-=back
-
-
-
-=head2 GapgenFormulation
-
-=over 4
-
-
-
-=item Description
-
-********************************************************************************
-    Gap Generation type definition
-   	********************************************************************************
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-media has a value which is a media_id
-refmedia has a value which is a media_id
-notes has a value which is a string
-objective has a value which is a string
-objfraction has a value which is a float
-rxnko has a value which is a string
-geneko has a value which is a string
-uptakelim has a value which is a string
-defaultmaxflux has a value which is a float
-defaultmaxuptake has a value which is a float
-defaultminuptake has a value which is a float
-nomediahyp has a value which is a bool
-nobiomasshyp has a value which is a bool
-nogprhyp has a value which is a bool
-nopathwayhyp has a value which is a bool
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-media has a value which is a media_id
-refmedia has a value which is a media_id
-notes has a value which is a string
-objective has a value which is a string
-objfraction has a value which is a float
-rxnko has a value which is a string
-geneko has a value which is a string
-uptakelim has a value which is a string
-defaultmaxflux has a value which is a float
-defaultmaxuptake has a value which is a float
-defaultminuptake has a value which is a float
-nomediahyp has a value which is a bool
-nobiomasshyp has a value which is a bool
-nogprhyp has a value which is a bool
-nopathwayhyp has a value which is a bool
-
-
-=end text
-
-=back
-
-
-
-=head2 reactionRemoval
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a list containing 2 items:
-0: a modelreaction_id
-1: a string
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a list containing 2 items:
-0: a modelreaction_id
-1: a string
-
-
-=end text
-
-=back
-
-
-
-=head2 GapGen
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-id has a value which is a gapgen_id
-isComplete has a value which is a bool
-formulation has a value which is a GapgenFormulation
-biomassAdditions has a value which is a reference to a list where each element is a compound_id
-mediaRemovals has a value which is a reference to a list where each element is a compound_id
-reactionRemovals has a value which is a reference to a list where each element is a reactionRemoval
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-id has a value which is a gapgen_id
-isComplete has a value which is a bool
-formulation has a value which is a GapgenFormulation
-biomassAdditions has a value which is a reference to a list where each element is a compound_id
-mediaRemovals has a value which is a reference to a list where each element is a compound_id
-reactionRemovals has a value which is a reference to a list where each element is a reactionRemoval
-
-
-=end text
-
-=back
-
-
-
 =head2 GeneAssertion
 
 =over 4
@@ -8176,6 +8265,8 @@ minthermoerror has a value which is a bool
 a reference to a hash where the following keys are defined:
 id has a value which is a fba_id
 workspace has a value which is a workspace_id
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
 objective has a value which is a float
 isComplete has a value which is a bool
 formulation has a value which is an FBAFormulation
@@ -8194,6 +8285,8 @@ geneAssertions has a value which is a reference to a list where each element is 
 a reference to a hash where the following keys are defined:
 id has a value which is a fba_id
 workspace has a value which is a workspace_id
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
 objective has a value which is a float
 isComplete has a value which is a bool
 formulation has a value which is an FBAFormulation
@@ -8202,6 +8295,344 @@ metaboliteProductions has a value which is a reference to a list where each elem
 reactionFluxes has a value which is a reference to a list where each element is a ReactionFlux
 compoundFluxes has a value which is a reference to a list where each element is a CompoundFlux
 geneAssertions has a value which is a reference to a list where each element is a GeneAssertion
+
+
+=end text
+
+=back
+
+
+
+=head2 GapfillingFormulation
+
+=over 4
+
+
+
+=item Description
+
+********************************************************************************
+    Gapfilling type definition
+   	********************************************************************************
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+formulation has a value which is an FBAFormulation
+nomediahyp has a value which is a bool
+nobiomasshyp has a value which is a bool
+nogprhyp has a value which is a bool
+nopathwayhyp has a value which is a bool
+allowunbalanced has a value which is a bool
+activitybonus has a value which is a float
+drainpen has a value which is a float
+directionpen has a value which is a float
+nostructpen has a value which is a float
+unfavorablepen has a value which is a float
+nodeltagpen has a value which is a float
+biomasstranspen has a value which is a float
+singletranspen has a value which is a float
+transpen has a value which is a float
+blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
+gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
+allowedcmps has a value which is a reference to a list where each element is a compartment_id
+probabilistic_annotation has a value which is a probabilistic_annotation_id
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+formulation has a value which is an FBAFormulation
+nomediahyp has a value which is a bool
+nobiomasshyp has a value which is a bool
+nogprhyp has a value which is a bool
+nopathwayhyp has a value which is a bool
+allowunbalanced has a value which is a bool
+activitybonus has a value which is a float
+drainpen has a value which is a float
+directionpen has a value which is a float
+nostructpen has a value which is a float
+unfavorablepen has a value which is a float
+nodeltagpen has a value which is a float
+biomasstranspen has a value which is a float
+singletranspen has a value which is a float
+transpen has a value which is a float
+blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
+gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
+allowedcmps has a value which is a reference to a list where each element is a compartment_id
+probabilistic_annotation has a value which is a probabilistic_annotation_id
+
+
+=end text
+
+=back
+
+
+
+=head2 reactionAddition
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a list containing 2 items:
+0: a reaction_id
+1: a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a list containing 2 items:
+0: a reaction_id
+1: a string
+
+
+=end text
+
+=back
+
+
+
+=head2 GapFillSolution
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+objective has a value which is a float
+biomassRemovals has a value which is a reference to a list where each element is a modelcompound_id
+mediaAdditions has a value which is a reference to a list where each element is a compound_id
+reactionAdditions has a value which is a reference to a list where each element is a reactionAddition
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+objective has a value which is a float
+biomassRemovals has a value which is a reference to a list where each element is a modelcompound_id
+mediaAdditions has a value which is a reference to a list where each element is a compound_id
+reactionAdditions has a value which is a reference to a list where each element is a reactionAddition
+
+
+=end text
+
+=back
+
+
+
+=head2 GapFill
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+id has a value which is a gapfill_id
+workspace has a value which is a workspace_id
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+isComplete has a value which is a bool
+formulation has a value which is a GapfillingFormulation
+solutions has a value which is a reference to a list where each element is a GapFillSolution
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+id has a value which is a gapfill_id
+workspace has a value which is a workspace_id
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+isComplete has a value which is a bool
+formulation has a value which is a GapfillingFormulation
+solutions has a value which is a reference to a list where each element is a GapFillSolution
+
+
+=end text
+
+=back
+
+
+
+=head2 GapgenFormulation
+
+=over 4
+
+
+
+=item Description
+
+********************************************************************************
+    Gap Generation type definition
+   	********************************************************************************
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+formulation has a value which is an FBAFormulation
+nomediahyp has a value which is a bool
+nobiomasshyp has a value which is a bool
+nogprhyp has a value which is a bool
+nopathwayhyp has a value which is a bool
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+formulation has a value which is an FBAFormulation
+nomediahyp has a value which is a bool
+nobiomasshyp has a value which is a bool
+nogprhyp has a value which is a bool
+nopathwayhyp has a value which is a bool
+
+
+=end text
+
+=back
+
+
+
+=head2 reactionRemoval
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a list containing 2 items:
+0: a modelreaction_id
+1: a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a list containing 2 items:
+0: a modelreaction_id
+1: a string
+
+
+=end text
+
+=back
+
+
+
+=head2 GapgenSolution
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+objective has a value which is a float
+biomassAdditions has a value which is a reference to a list where each element is a compound_id
+mediaRemovals has a value which is a reference to a list where each element is a compound_id
+reactionRemovals has a value which is a reference to a list where each element is a reactionRemoval
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+objective has a value which is a float
+biomassAdditions has a value which is a reference to a list where each element is a compound_id
+mediaRemovals has a value which is a reference to a list where each element is a compound_id
+reactionRemovals has a value which is a reference to a list where each element is a reactionRemoval
+
+
+=end text
+
+=back
+
+
+
+=head2 GapGen
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+id has a value which is a gapgen_id
+workspace has a value which is a workspace_id
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+isComplete has a value which is a bool
+formulation has a value which is a GapgenFormulation
+solutions has a value which is a reference to a list where each element is a GapgenSolution
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+id has a value which is a gapgen_id
+workspace has a value which is a workspace_id
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+isComplete has a value which is a bool
+formulation has a value which is a GapgenFormulation
+solutions has a value which is a reference to a list where each element is a GapgenSolution
 
 
 =end text
@@ -8657,7 +9088,7 @@ This parameter specifies the ID of the genome for which a model is to be built. 
 workspace_id in_workspace
 This parameter specifies the ID of the workspace containing the specified genome object. This parameter is also required.
     
-model_id out_model
+fbamodel_id out_model
 This parameter specifies the ID to which the generated model should be save. This is optional.
 If unspecified, a new KBase model ID will be checked out for the model.
     
