@@ -108,14 +108,21 @@ module fbaModelServices {
     
     typedef structure {
 		compound_id id;
+		string abbrev;
 		string name;
 		list<string> aliases;
 		float charge;
+		float deltaG;
+		float deltaGErr;
 		string formula;
     } Compound;
     
     typedef structure {
 		reaction_id id;
+		string name;
+		string abbrev;
+		list<string> enzymes;
+		string direction;
 		string reversibility;
 		float deltaG;
 		float deltaGErr;
@@ -144,6 +151,7 @@ module fbaModelServices {
 		reaction_id reaction;
 		string name;
 		string direction;
+		string equation;
 		list<feature_id> features;
 		modelcompartment_id compartment;
     } ModelReaction;

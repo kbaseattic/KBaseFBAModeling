@@ -14,7 +14,7 @@ use warnings;
 use Test::More;
 use Data::Dumper;
 use File::Temp qw(tempfile);
-my $test_count = 10;
+my $test_count = 16;
 
 #Initializing test workspace
 my $ws = &_initializeTestWorkspace();

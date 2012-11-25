@@ -375,7 +375,7 @@ sub _get_msobject {
 	my $obj;
 	if (defined($msProvTypes->{$type})) {
 		my $class = "ModelSEED::MS::".$msProvTypes->{$type};
-		my $obj = $class->new($output->{data});
+		$obj = $class->new($output->{data});
 		if ($type eq "Model") {
 			my $linkid = $obj->annotation_uuid();
 			my $array = [split(/\//,$linkid)];
@@ -1455,7 +1455,7 @@ sub get_models
     	my $id = $input->{models}->[$i];
     	my $ws = $input->{workspaces}->[$i];
     	my $model = $self->_get_msobject("Model",$input->{workspaces}->[$i],$input->{models}->[$i],$cache);
-    	my $genomeArray = split(/\//,$model->{annotation_uuid});
+    	my $genomeArray = [split(/\//,$model->{annotation_uuid})];
     	my $mdldata = {
     		id => $input->{models}->[$i],
     		workspace => $input->{workspaces}->[$i],
@@ -1515,7 +1515,8 @@ sub get_models
     			name => $rxn->reaction()->name(),
     			direction => $rxn->direction(),
     			features => $rxn->featureIDs(),
-    			compartment => $rxn->modelcompartment()->label()
+    			compartment => $rxn->modelcompartment()->label(),
+    			equation => $rxn->equation()
     		};
     		push(@{$mdldata->{reactions}},$rxndata);
     	}
@@ -2374,29 +2375,32 @@ sub get_reactions
     my $ctx = $fbaModelServicesServer::CallContext;
     my($out_reactions);
     #BEGIN get_reactions
-
-    # should also be able to pass in uuid
-
-    $self->_setContext($ctx,$input);
-    my $biochem = $self->_get_msobject("Biochemistry","kbase","default");
-
-    $out_reactions = [];
-    foreach my $in_rxn (@{$input->{in_reaction_ids}}) {
-        my $reaction = $biochem->getObjectByAlias("reactions", $in_rxn, $input->{id_type});
-        my $new;
-        if (defined($reaction)) {
-            # transform reaction
-            $new = {
-                id => $reaction->uuid, # Q: should we use uuid or the alias?
-                reversibility => $reaction->thermoReversibility,
-                deltaG => $reaction->deltaG,
-                deltaGErr => $reaction->deltaGErr,
-                equation => $reaction->equation # Q: what equation type should we use? This uses MS ids
-            }
-        }
-        push(@$out_reactions, $new);
-    }
-
+	$self->_setContext($ctx,$input);
+    $input = $self->_validateargs($input,["reactions"],{
+    	id_type => "ModelSEED"
+    });
+	my $biochem = $self->_get_msobject("Biochemistry","kbase","default");
+	$out_reactions = [];
+	for (my $i=0; $i < @{$input->{reactions}}; $i++) {
+		my $rxn = $input->{reactions}->[$i];
+		my $obj = $biochem->getObjectByAlias("reactions",$rxn,$input->{id_type});
+		my $new;
+		if (defined($obj)) {
+			$new = {
+                id => $obj->id(),
+                abbrev => $obj->abbreviation(),
+                name => $obj->name(),
+                enzymes => $obj->getAliases("Enzyme Class"),
+                direction => $obj->direction(),
+                reversibility => $obj->thermoReversibility(),
+                deltaG => $obj->deltaG(),
+                deltaGErr => $obj->deltaGErr(),
+                equation => $obj->equation(),
+			};
+		}
+		push(@{$out_reactions},$new);
+	}
+	$self->_clearContext();
     #END get_reactions
     my @_bad_returns;
     (ref($out_reactions) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"out_reactions\" (value was \"$out_reactions\")");
@@ -2485,29 +2489,31 @@ sub get_compounds
     my $ctx = $fbaModelServicesServer::CallContext;
     my($out_compounds);
     #BEGIN get_compounds
-
-    # should also be able to pass in uuid
-
-    $self->_setContext($ctx,$input);
-    my $biochem = $self->_get_msobject("Biochemistry","kbase","default");
-
-    $out_compounds = [];
-    foreach my $in_cpd (@{$input->{in_compound_ids}}) {
-        my $compound = $biochem->getObjectByAlias("compounds", $in_cpd, $input->{id_type});
-        my $new;
-        if (defined($compound)) {
-            # transform compound
-            $new = {
-                id => $compound->uuid, # Q: should we use uuid or the alias?
-                name => $compound->name,
-                aliases => $compound->getAliases("name"),
-                charge => $compound->defaultCharge,
-                formula => $compound->formula
-            };
-        }
-        push(@$out_compounds, $new);
-    }
-
+	$self->_setContext($ctx,$input);
+    $input = $self->_validateargs($input,["compounds"],{
+    	id_type => "ModelSEED"
+    });
+	my $biochem = $self->_get_msobject("Biochemistry","kbase","default");
+	$out_compounds = [];
+	for (my $i=0; $i < @{$input->{compounds}}; $i++) {
+		my $cpd = $input->{compounds}->[$i];
+		my $obj = $biochem->getObjectByAlias("compounds",$cpd,$input->{id_type});
+		my $new;
+		if (defined($obj)) {
+			$new = {
+                id => $obj->id(),
+                name => $obj->name(),
+                abbrev => $obj->abbreviation(),
+                aliases => $obj->getAliases("name"),
+                charge => $obj->defaultCharge,
+                formula => $obj->formula,
+                deltaG => $obj->deltaG(),
+                deltaGErr => $obj->deltaGErr()
+			};
+		}
+		push(@{$out_compounds},$new);
+	}
+	$self->_clearContext();
     #END get_compounds
     my @_bad_returns;
     (ref($out_compounds) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"out_compounds\" (value was \"$out_compounds\")");
@@ -2602,47 +2608,38 @@ sub get_media
     my $ctx = $fbaModelServicesServer::CallContext;
     my($out_media);
     #BEGIN get_media
-
-    $self->_setContext($ctx,$input);
-    my $biochem = $self->_get_msobject("Biochemistry","kbase","default");
-
-    # what are possible id_type values? uuid and name?
-    my $media_map = { uuid => {}, name => {} };
-    unless (exists($media_map->{$input->{id_type}})) {
-        die "Unknown type: " . $input->{id_type};
-    }
-
-    my $all_media = $biochem->media;
-    foreach my $media (@$all_media) {
-        $media_map->{uuid}->{$media->uuid} = $media;
-        $media_map->{name}->{$media->name} = $media;
-    }
-
-    $out_media = [];
-    foreach my $in_media (@{$input->{in_media_ids}}) {
-        my $media = $media_map->{$input->{id_type}}->{$in_media};
-        my $new;
-        if (defined($media)) {
-            # transform media
-            $new = {
-                id => $media->uuid, # Q: should we use uuid or the alias?
-                name => $media->name,
+	$self->_setContext($ctx,$input);
+    $input = $self->_validateargs($input,["medias","workspaces"],{});
+	my $biochem = $self->_get_msobject("Biochemistry","kbase","default");
+	$out_media = [];
+	for (my $i=0; $i < @{$input->{medias}}; $i++) {
+		my $media = $input->{medias}->[$i];
+		my $workspace = $input->{workspaces}->[$i];
+		my $obj;
+		if (!defined($workspace) || $workspace eq "kbasecdm") {
+			$obj = $biochem->queryObject("media",{id => $media});
+		} else {
+			$obj = $self->_get_msobject("Media",$workspace,$media);
+			$biochem->add("media",$obj);
+		}
+		my $new;
+		if (defined($obj)) {
+			$new = {
+                id => $obj->id(),
+                name => $obj->name(),
                 pH => 7,
-                temperature => 298
+                temperature => 298,
+                compounds => [],
+                concentrations => []
             };
-
-            my $compounds = [];
-            my $concentrations = [];
-            foreach my $mediaCompound (@{$media->mediacompounds}) {
-                push(@$compounds, $mediaCompound->compound_uuid);
-                push(@$concentrations, $mediaCompound->concentration);
+            foreach my $mediaCompound (@{$obj->mediacompounds}) {
+                push(@{$new->{compounds}}, $mediaCompound->compound()->id());
+                push(@{$new->{concentrations}}, $mediaCompound->concentration());
             }
-            $new->{compounds} = $compounds;
-            $new->{concentrations} = $concentrations;
-        }
-        push(@$out_media, $new);
-    }
-
+		}
+		push(@{$out_media},$new);
+	}
+	$self->_clearContext();
     #END get_media
     my @_bad_returns;
     (ref($out_media) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"out_media\" (value was \"$out_media\")");
@@ -2747,17 +2744,14 @@ sub get_biochemistry
 		biochemistry_workspace => "kbase",
 		id_type => "ModelSEED"
 	});
-    # for now just return default biochem
-
-    $self->_setContext($ctx,$input);
     my $biochem = $self->_get_msobject("Biochemistry","kbase","default");
-
+    
     my $compounds = [];
     my $reactions = [];
     my $media = [];
 
     $out_biochemistry = {
-        id => $biochem->uuid, # Q: should we use uuid?
+        id => $biochem->uuid,
         name => $biochem->name,
         compounds => $compounds,
         reactions => $reactions,
@@ -2767,7 +2761,7 @@ sub get_biochemistry
     # the following is very dependent upon the internal data representation
     # of the MS subobjects, and needs to be changed if this representation changes
 	
-	my $aliasset = $biochem->queryObject("aliassets",{
+	my $aliasset = $biochem->queryObject("aliasSets",{
 		name => $input->{id_type},
 		attribute => "compounds"
 	});
@@ -2790,7 +2784,7 @@ sub get_biochemistry
         }
     }
    	
-	$aliasset = $biochem->queryObject("aliassets",{
+	$aliasset = $biochem->queryObject("aliasSets",{
 		name => $input->{id_type},
 		attribute => "reactions"
 	});
