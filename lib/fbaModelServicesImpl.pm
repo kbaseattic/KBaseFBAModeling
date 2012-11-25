@@ -1274,6 +1274,7 @@ ModelReaction is a reference to a hash where the following keys are defined:
 	reaction has a value which is a reaction_id
 	name has a value which is a string
 	direction has a value which is a string
+	equation has a value which is a string
 	features has a value which is a reference to a list where each element is a feature_id
 	compartment has a value which is a modelcompartment_id
 modelreaction_id is a string
@@ -1372,6 +1373,7 @@ ModelReaction is a reference to a hash where the following keys are defined:
 	reaction has a value which is a reaction_id
 	name has a value which is a string
 	direction has a value which is a string
+	equation has a value which is a string
 	features has a value which is a reference to a list where each element is a feature_id
 	compartment has a value which is a modelcompartment_id
 modelreaction_id is a string
@@ -2321,6 +2323,10 @@ get_reactions_params is a reference to a hash where the following keys are defin
 reaction_id is a string
 Reaction is a reference to a hash where the following keys are defined:
 	id has a value which is a reaction_id
+	name has a value which is a string
+	abbrev has a value which is a string
+	enzymes has a value which is a reference to a list where each element is a string
+	direction has a value which is a string
 	reversibility has a value which is a string
 	deltaG has a value which is a float
 	deltaGErr has a value which is a float
@@ -2341,6 +2347,10 @@ get_reactions_params is a reference to a hash where the following keys are defin
 reaction_id is a string
 Reaction is a reference to a hash where the following keys are defined:
 	id has a value which is a reaction_id
+	name has a value which is a string
+	abbrev has a value which is a string
+	enzymes has a value which is a reference to a list where each element is a string
+	direction has a value which is a string
 	reversibility has a value which is a string
 	deltaG has a value which is a float
 	deltaGErr has a value which is a float
@@ -2435,9 +2445,12 @@ get_compounds_params is a reference to a hash where the following keys are defin
 compound_id is a string
 Compound is a reference to a hash where the following keys are defined:
 	id has a value which is a compound_id
+	abbrev has a value which is a string
 	name has a value which is a string
 	aliases has a value which is a reference to a list where each element is a string
 	charge has a value which is a float
+	deltaG has a value which is a float
+	deltaGErr has a value which is a float
 	formula has a value which is a string
 
 </pre>
@@ -2455,9 +2468,12 @@ get_compounds_params is a reference to a hash where the following keys are defin
 compound_id is a string
 Compound is a reference to a hash where the following keys are defined:
 	id has a value which is a compound_id
+	abbrev has a value which is a string
 	name has a value which is a string
 	aliases has a value which is a reference to a list where each element is a string
 	charge has a value which is a float
+	deltaG has a value which is a float
+	deltaGErr has a value which is a float
 	formula has a value which is a string
 
 
@@ -7420,9 +7436,12 @@ temperature has a value which is a float
 <pre>
 a reference to a hash where the following keys are defined:
 id has a value which is a compound_id
+abbrev has a value which is a string
 name has a value which is a string
 aliases has a value which is a reference to a list where each element is a string
 charge has a value which is a float
+deltaG has a value which is a float
+deltaGErr has a value which is a float
 formula has a value which is a string
 
 </pre>
@@ -7433,9 +7452,12 @@ formula has a value which is a string
 
 a reference to a hash where the following keys are defined:
 id has a value which is a compound_id
+abbrev has a value which is a string
 name has a value which is a string
 aliases has a value which is a reference to a list where each element is a string
 charge has a value which is a float
+deltaG has a value which is a float
+deltaGErr has a value which is a float
 formula has a value which is a string
 
 
@@ -7458,6 +7480,10 @@ formula has a value which is a string
 <pre>
 a reference to a hash where the following keys are defined:
 id has a value which is a reaction_id
+name has a value which is a string
+abbrev has a value which is a string
+enzymes has a value which is a reference to a list where each element is a string
+direction has a value which is a string
 reversibility has a value which is a string
 deltaG has a value which is a float
 deltaGErr has a value which is a float
@@ -7471,6 +7497,10 @@ equation has a value which is a string
 
 a reference to a hash where the following keys are defined:
 id has a value which is a reaction_id
+name has a value which is a string
+abbrev has a value which is a string
+enzymes has a value which is a reference to a list where each element is a string
+direction has a value which is a string
 reversibility has a value which is a string
 deltaG has a value which is a float
 deltaGErr has a value which is a float
@@ -7580,6 +7610,7 @@ id has a value which is a modelreaction_id
 reaction has a value which is a reaction_id
 name has a value which is a string
 direction has a value which is a string
+equation has a value which is a string
 features has a value which is a reference to a list where each element is a feature_id
 compartment has a value which is a modelcompartment_id
 
@@ -7594,6 +7625,7 @@ id has a value which is a modelreaction_id
 reaction has a value which is a reaction_id
 name has a value which is a string
 direction has a value which is a string
+equation has a value which is a string
 features has a value which is a reference to a list where each element is a feature_id
 compartment has a value which is a modelcompartment_id
 
