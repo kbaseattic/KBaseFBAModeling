@@ -328,6 +328,9 @@ sub _workspaceServices {
 sub _save_msobject {
 	my($self,$obj,$type,$ws,$id,$command,$overwrite) = @_;
 	my $data;
+	if (defined($obj->{_kbaseWSMeta})) {
+		delete $obj->{_kbaseWSMeta};
+	}
 	if (ref($obj) eq "HASH") {
 		$data = $obj;
 	} else {
@@ -346,6 +349,9 @@ sub _save_msobject {
 		my $msg = "Unable to save object:".$type."/".$ws."/".$id;
 		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => '_get_msobject');
 	}
+	$obj->{_kbaseWSMeta}->{wsid} = $id;
+	$obj->{_kbaseWSMeta}->{ws} = $ws;
+	$obj->{_kbaseWSMeta}->{wsinst} = $objmeta->[3];	
 	return $objmeta;
 }
 
@@ -405,9 +411,9 @@ sub _get_msobject {
 	} else {
 		$obj = $output->{data};
 	}
-	$obj->{kbase}->{wsid} = $id;
-	$obj->{kbase}->{ws} = $ws;
-	$obj->{kbase}->{wsinst} = $output->{metadata}->[3];	
+	$obj->{_kbaseWSMeta}->{wsid} = $id;
+	$obj->{_kbaseWSMeta}->{ws} = $ws;
+	$obj->{_kbaseWSMeta}->{wsinst} = $output->{metadata}->[3];	
 	return $obj;
 }
 
@@ -741,7 +747,7 @@ sub _create_job {
 	});
 	my $jobid = Data::UUID->new()->create_str();
 	return {
-		kbase_workspace => $args->{workspace},
+		workspace => $args->{workspace},
 		clustermem => $args->{clustermem},
 		clustertime => $args->{clustertime},
 		id => $jobid,
@@ -767,7 +773,6 @@ sub _submit_job {
 		jobs => $job->{clusterjobs}
 	});
 	$job->{clustertoken} = $clusterJob->{ID};
-	$self->_save_msobject($job,"ClusterJob",$job->{kbase_workspace},$job->{kbase_id},"queue_runfba");
 	return $job;
 };
 
@@ -4554,9 +4559,9 @@ sub export_phenotypeSimulationSet
 =begin html
 
 <pre>
-$input is a runfba_params
-$output is a JobObject
-runfba_params is a reference to a hash where the following keys are defined:
+$input is a queue_runfba_params
+$output is an object_metadata
+queue_runfba_params is a reference to a hash where the following keys are defined:
 	model has a value which is a fbamodel_id
 	model_workspace has a value which is a workspace_id
 	formulation has a value which is an FBAFormulation
@@ -4570,6 +4575,7 @@ runfba_params is a reference to a hash where the following keys are defined:
 	authentication has a value which is a string
 	overwrite has a value which is a bool
 	add_to_model has a value which is a bool
+	donot_submit_job has a value which is a bool
 fbamodel_id is a string
 workspace_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
@@ -4610,25 +4616,18 @@ constraint is a reference to a list containing 4 items:
 	2: a reference to a list where each element is a term
 	3: a string
 fba_id is a string
-JobObject is a reference to a hash where the following keys are defined:
-	id has a value which is a job_id
-	kbase_workspace has a value which is a workspace_id
-	clusterjobs has a value which is a reference to a list where each element is a clusterjob
-	postprocess_command has a value which is a string
-	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
-	queuing_command has a value which is a string
-	clustermem has a value which is a float
-	clustertime has a value which is an int
-	clustertoken has a value which is a string
-	queuetime has a value which is a string
-	completetime has a value which is a string
-	complete has a value which is a bool
-	owner has a value which is a string
-job_id is a string
-clusterjob is a reference to a hash where the following keys are defined:
-	authentication has a value which is a string
-CommandArguments is a reference to a hash where the following keys are defined:
-	authentication has a value which is a string
+object_metadata is a reference to a list containing 7 items:
+	0: an object_id
+	1: an object_type
+	2: a timestamp
+	3: an int
+	4: a string
+	5: a username
+	6: a username
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
 
 </pre>
 
@@ -4636,9 +4635,9 @@ CommandArguments is a reference to a hash where the following keys are defined:
 
 =begin text
 
-$input is a runfba_params
-$output is a JobObject
-runfba_params is a reference to a hash where the following keys are defined:
+$input is a queue_runfba_params
+$output is an object_metadata
+queue_runfba_params is a reference to a hash where the following keys are defined:
 	model has a value which is a fbamodel_id
 	model_workspace has a value which is a workspace_id
 	formulation has a value which is an FBAFormulation
@@ -4652,6 +4651,7 @@ runfba_params is a reference to a hash where the following keys are defined:
 	authentication has a value which is a string
 	overwrite has a value which is a bool
 	add_to_model has a value which is a bool
+	donot_submit_job has a value which is a bool
 fbamodel_id is a string
 workspace_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
@@ -4692,25 +4692,18 @@ constraint is a reference to a list containing 4 items:
 	2: a reference to a list where each element is a term
 	3: a string
 fba_id is a string
-JobObject is a reference to a hash where the following keys are defined:
-	id has a value which is a job_id
-	kbase_workspace has a value which is a workspace_id
-	clusterjobs has a value which is a reference to a list where each element is a clusterjob
-	postprocess_command has a value which is a string
-	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
-	queuing_command has a value which is a string
-	clustermem has a value which is a float
-	clustertime has a value which is an int
-	clustertoken has a value which is a string
-	queuetime has a value which is a string
-	completetime has a value which is a string
-	complete has a value which is a bool
-	owner has a value which is a string
-job_id is a string
-clusterjob is a reference to a hash where the following keys are defined:
-	authentication has a value which is a string
-CommandArguments is a reference to a hash where the following keys are defined:
-	authentication has a value which is a string
+object_metadata is a reference to a list containing 7 items:
+	0: an object_id
+	1: an object_type
+	2: a timestamp
+	3: an int
+	4: a string
+	5: a username
+	6: a username
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
 
 
 =end text
@@ -4753,6 +4746,9 @@ sub queue_runfba
 		fba => undef,
 		donot_submit_job => 0
 	});
+	if (!defined($input->{fba})) {
+		$input->{fba} = $self->_get_new_id($input->{model}.".fba.");
+	}
 	#Creating FBAFormulation Object
 	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
 	my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
@@ -4765,9 +4761,9 @@ sub queue_runfba
 	my $mediauuids = $fba->mediaUUIDs();
 	foreach my $media (@{$mediauuids}) {
 		my $mediaObj = $fba->model()->biochemistry()->getObject("media",$media);
-		push(@{$mediaids},$mediaObj->{kbase}->{wsid});
-		push(@{$mediaws},$mediaObj->{kbase}->{ws});
-		push(@{$mediainst},$mediaObj->{kbase}->{wsinst});
+		push(@{$mediaids},$mediaObj->{_kbaseWSMeta}->{wsid});
+		push(@{$mediaws},$mediaObj->{_kbaseWSMeta}->{ws});
+		push(@{$mediainst},$mediaObj->{_kbaseWSMeta}->{wsinst});
 	}
 	my $job = $self->_create_job({
 		clusterjobs => [{
@@ -4780,15 +4776,15 @@ sub queue_runfba
 			mapid => "kbase",
 			mapws => "default",
 			mapinst => 0,
-			annoid => $model->annotation()->{kbase}->{wsid},
-			annows => $model->annotation()->{kbase}->{ws},
-			annoinst => $model->annotation()->{kbase}->{wsinst},
-			modelid => $model->{kbase}->{wsid},
-			modelws => $model->{kbase}->{ws},
-			modelinst => $model->{kbase}->{wsinst},
-			fbaid => $fba->{kbase}->{wsid},
-			fbaws => $fba->{kbase}->{ws},
-			fbainst => $fba->{kbase}->{wsinst},
+			annoid => $model->annotation()->{_kbaseWSMeta}->{wsid},
+			annows => $model->annotation()->{_kbaseWSMeta}->{ws},
+			annoinst => $model->annotation()->{_kbaseWSMeta}->{wsinst},
+			modelid => $model->{_kbaseWSMeta}->{wsid},
+			modelws => $model->{_kbaseWSMeta}->{ws},
+			modelinst => $model->{_kbaseWSMeta}->{wsinst},
+			fbaid => $fba->{_kbaseWSMeta}->{wsid},
+			fbaws => $fba->{_kbaseWSMeta}->{ws},
+			fbainst => $fba->{_kbaseWSMeta}->{wsinst},
 		}],
 		postprocess_command => undef,
 		postprocess_args => undef,
@@ -4796,12 +4792,13 @@ sub queue_runfba
 		workspace => $input->{fba_workspace}
 	});
 	if ($input->{donot_submit_job} == 0) {
-		$output = $self->_submit_job($job);
+		$job = $self->_submit_job($job);
 	}
+	$output = $self->_save_msobject($job,"FBAJob",$job->{workspace},$job->{id},"queue_runfba");
 	$self->_clearContext();
     #END queue_runfba
     my @_bad_returns;
-    (ref($output) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
     if (@_bad_returns) {
 	my $msg = "Invalid returns passed to queue_runfba:\n" . join("", map { "\t$_\n" } @_bad_returns);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
@@ -4825,7 +4822,7 @@ sub queue_runfba
 
 <pre>
 $input is a gapfill_model_params
-$output is a JobObject
+$output is an object_metadata
 gapfill_model_params is a reference to a hash where the following keys are defined:
 	id has a value which is a phenotypeSet_id
 	in_model has a value which is a fbamodel_id
@@ -4902,24 +4899,18 @@ constraint is a reference to a list containing 4 items:
 	3: a string
 genome_id is a string
 job_id is a string
-JobObject is a reference to a hash where the following keys are defined:
-	id has a value which is a job_id
-	kbase_workspace has a value which is a workspace_id
-	clusterjobs has a value which is a reference to a list where each element is a clusterjob
-	postprocess_command has a value which is a string
-	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
-	queuing_command has a value which is a string
-	clustermem has a value which is a float
-	clustertime has a value which is an int
-	clustertoken has a value which is a string
-	queuetime has a value which is a string
-	completetime has a value which is a string
-	complete has a value which is a bool
-	owner has a value which is a string
-clusterjob is a reference to a hash where the following keys are defined:
-	authentication has a value which is a string
-CommandArguments is a reference to a hash where the following keys are defined:
-	authentication has a value which is a string
+object_metadata is a reference to a list containing 7 items:
+	0: an object_id
+	1: an object_type
+	2: a timestamp
+	3: an int
+	4: a string
+	5: a username
+	6: a username
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
 
 </pre>
 
@@ -4928,7 +4919,7 @@ CommandArguments is a reference to a hash where the following keys are defined:
 =begin text
 
 $input is a gapfill_model_params
-$output is a JobObject
+$output is an object_metadata
 gapfill_model_params is a reference to a hash where the following keys are defined:
 	id has a value which is a phenotypeSet_id
 	in_model has a value which is a fbamodel_id
@@ -5005,24 +4996,18 @@ constraint is a reference to a list containing 4 items:
 	3: a string
 genome_id is a string
 job_id is a string
-JobObject is a reference to a hash where the following keys are defined:
-	id has a value which is a job_id
-	kbase_workspace has a value which is a workspace_id
-	clusterjobs has a value which is a reference to a list where each element is a clusterjob
-	postprocess_command has a value which is a string
-	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
-	queuing_command has a value which is a string
-	clustermem has a value which is a float
-	clustertime has a value which is an int
-	clustertoken has a value which is a string
-	queuetime has a value which is a string
-	completetime has a value which is a string
-	complete has a value which is a bool
-	owner has a value which is a string
-clusterjob is a reference to a hash where the following keys are defined:
-	authentication has a value which is a string
-CommandArguments is a reference to a hash where the following keys are defined:
-	authentication has a value which is a string
+object_metadata is a reference to a list containing 7 items:
+	0: an object_id
+	1: an object_type
+	2: a timestamp
+	3: an int
+	4: a string
+	5: a username
+	6: a username
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
 
 
 =end text
@@ -5055,7 +5040,7 @@ sub queue_gapfill_model
     #BEGIN queue_gapfill_model
     #END queue_gapfill_model
     my @_bad_returns;
-    (ref($output) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
     if (@_bad_returns) {
 	my $msg = "Invalid returns passed to queue_gapfill_model:\n" . join("", map { "\t$_\n" } @_bad_returns);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
@@ -5079,7 +5064,7 @@ sub queue_gapfill_model
 
 <pre>
 $input is a gapgen_model_params
-$output is a JobObject
+$output is an object_metadata
 gapgen_model_params is a reference to a hash where the following keys are defined:
 	id has a value which is a phenotypeSet_id
 	in_model has a value which is a fbamodel_id
@@ -5138,25 +5123,18 @@ constraint is a reference to a list containing 4 items:
 	1: a string
 	2: a reference to a list where each element is a term
 	3: a string
-JobObject is a reference to a hash where the following keys are defined:
-	id has a value which is a job_id
-	kbase_workspace has a value which is a workspace_id
-	clusterjobs has a value which is a reference to a list where each element is a clusterjob
-	postprocess_command has a value which is a string
-	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
-	queuing_command has a value which is a string
-	clustermem has a value which is a float
-	clustertime has a value which is an int
-	clustertoken has a value which is a string
-	queuetime has a value which is a string
-	completetime has a value which is a string
-	complete has a value which is a bool
-	owner has a value which is a string
-job_id is a string
-clusterjob is a reference to a hash where the following keys are defined:
-	authentication has a value which is a string
-CommandArguments is a reference to a hash where the following keys are defined:
-	authentication has a value which is a string
+object_metadata is a reference to a list containing 7 items:
+	0: an object_id
+	1: an object_type
+	2: a timestamp
+	3: an int
+	4: a string
+	5: a username
+	6: a username
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
 
 </pre>
 
@@ -5165,7 +5143,7 @@ CommandArguments is a reference to a hash where the following keys are defined:
 =begin text
 
 $input is a gapgen_model_params
-$output is a JobObject
+$output is an object_metadata
 gapgen_model_params is a reference to a hash where the following keys are defined:
 	id has a value which is a phenotypeSet_id
 	in_model has a value which is a fbamodel_id
@@ -5224,25 +5202,18 @@ constraint is a reference to a list containing 4 items:
 	1: a string
 	2: a reference to a list where each element is a term
 	3: a string
-JobObject is a reference to a hash where the following keys are defined:
-	id has a value which is a job_id
-	kbase_workspace has a value which is a workspace_id
-	clusterjobs has a value which is a reference to a list where each element is a clusterjob
-	postprocess_command has a value which is a string
-	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
-	queuing_command has a value which is a string
-	clustermem has a value which is a float
-	clustertime has a value which is an int
-	clustertoken has a value which is a string
-	queuetime has a value which is a string
-	completetime has a value which is a string
-	complete has a value which is a bool
-	owner has a value which is a string
-job_id is a string
-clusterjob is a reference to a hash where the following keys are defined:
-	authentication has a value which is a string
-CommandArguments is a reference to a hash where the following keys are defined:
-	authentication has a value which is a string
+object_metadata is a reference to a list containing 7 items:
+	0: an object_id
+	1: an object_type
+	2: a timestamp
+	3: an int
+	4: a string
+	5: a username
+	6: a username
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
 
 
 =end text
@@ -5275,7 +5246,7 @@ sub queue_gapgen_model
     #BEGIN queue_gapgen_model
     #END queue_gapgen_model
     my @_bad_returns;
-    (ref($output) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
     if (@_bad_returns) {
 	my $msg = "Invalid returns passed to queue_gapgen_model:\n" . join("", map { "\t$_\n" } @_bad_returns);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
@@ -5299,7 +5270,7 @@ sub queue_gapgen_model
 
 <pre>
 $input is a wildtype_phenotype_reconciliation_params
-$output is a JobObject
+$output is an object_metadata
 wildtype_phenotype_reconciliation_params is a reference to a hash where the following keys are defined:
 	id has a value which is a phenotypeSet_id
 	in_model has a value which is a fbamodel_id
@@ -5376,25 +5347,18 @@ constraint is a reference to a list containing 4 items:
 	2: a reference to a list where each element is a term
 	3: a string
 genome_id is a string
-JobObject is a reference to a hash where the following keys are defined:
-	id has a value which is a job_id
-	kbase_workspace has a value which is a workspace_id
-	clusterjobs has a value which is a reference to a list where each element is a clusterjob
-	postprocess_command has a value which is a string
-	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
-	queuing_command has a value which is a string
-	clustermem has a value which is a float
-	clustertime has a value which is an int
-	clustertoken has a value which is a string
-	queuetime has a value which is a string
-	completetime has a value which is a string
-	complete has a value which is a bool
-	owner has a value which is a string
-job_id is a string
-clusterjob is a reference to a hash where the following keys are defined:
-	authentication has a value which is a string
-CommandArguments is a reference to a hash where the following keys are defined:
-	authentication has a value which is a string
+object_metadata is a reference to a list containing 7 items:
+	0: an object_id
+	1: an object_type
+	2: a timestamp
+	3: an int
+	4: a string
+	5: a username
+	6: a username
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
 
 </pre>
 
@@ -5403,7 +5367,7 @@ CommandArguments is a reference to a hash where the following keys are defined:
 =begin text
 
 $input is a wildtype_phenotype_reconciliation_params
-$output is a JobObject
+$output is an object_metadata
 wildtype_phenotype_reconciliation_params is a reference to a hash where the following keys are defined:
 	id has a value which is a phenotypeSet_id
 	in_model has a value which is a fbamodel_id
@@ -5480,25 +5444,18 @@ constraint is a reference to a list containing 4 items:
 	2: a reference to a list where each element is a term
 	3: a string
 genome_id is a string
-JobObject is a reference to a hash where the following keys are defined:
-	id has a value which is a job_id
-	kbase_workspace has a value which is a workspace_id
-	clusterjobs has a value which is a reference to a list where each element is a clusterjob
-	postprocess_command has a value which is a string
-	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
-	queuing_command has a value which is a string
-	clustermem has a value which is a float
-	clustertime has a value which is an int
-	clustertoken has a value which is a string
-	queuetime has a value which is a string
-	completetime has a value which is a string
-	complete has a value which is a bool
-	owner has a value which is a string
-job_id is a string
-clusterjob is a reference to a hash where the following keys are defined:
-	authentication has a value which is a string
-CommandArguments is a reference to a hash where the following keys are defined:
-	authentication has a value which is a string
+object_metadata is a reference to a list containing 7 items:
+	0: an object_id
+	1: an object_type
+	2: a timestamp
+	3: an int
+	4: a string
+	5: a username
+	6: a username
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
 
 
 =end text
@@ -5531,7 +5488,7 @@ sub queue_wildtype_phenotype_reconciliation
     #BEGIN queue_wildtype_phenotype_reconciliation
     #END queue_wildtype_phenotype_reconciliation
     my @_bad_returns;
-    (ref($output) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
     if (@_bad_returns) {
 	my $msg = "Invalid returns passed to queue_wildtype_phenotype_reconciliation:\n" . join("", map { "\t$_\n" } @_bad_returns);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
@@ -5555,7 +5512,7 @@ sub queue_wildtype_phenotype_reconciliation
 
 <pre>
 $input is a combine_wildtype_phenotype_reconciliation_params
-$output is a JobObject
+$output is an object_metadata
 combine_wildtype_phenotype_reconciliation_params is a reference to a hash where the following keys are defined:
 	in_model has a value which is a fbamodel_id
 	in_workspace has a value which is a workspace_id
@@ -5607,25 +5564,18 @@ constraint is a reference to a list containing 4 items:
 	1: a string
 	2: a reference to a list where each element is a term
 	3: a string
-JobObject is a reference to a hash where the following keys are defined:
-	id has a value which is a job_id
-	kbase_workspace has a value which is a workspace_id
-	clusterjobs has a value which is a reference to a list where each element is a clusterjob
-	postprocess_command has a value which is a string
-	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
-	queuing_command has a value which is a string
-	clustermem has a value which is a float
-	clustertime has a value which is an int
-	clustertoken has a value which is a string
-	queuetime has a value which is a string
-	completetime has a value which is a string
-	complete has a value which is a bool
-	owner has a value which is a string
-job_id is a string
-clusterjob is a reference to a hash where the following keys are defined:
-	authentication has a value which is a string
-CommandArguments is a reference to a hash where the following keys are defined:
-	authentication has a value which is a string
+object_metadata is a reference to a list containing 7 items:
+	0: an object_id
+	1: an object_type
+	2: a timestamp
+	3: an int
+	4: a string
+	5: a username
+	6: a username
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
 
 </pre>
 
@@ -5634,7 +5584,7 @@ CommandArguments is a reference to a hash where the following keys are defined:
 =begin text
 
 $input is a combine_wildtype_phenotype_reconciliation_params
-$output is a JobObject
+$output is an object_metadata
 combine_wildtype_phenotype_reconciliation_params is a reference to a hash where the following keys are defined:
 	in_model has a value which is a fbamodel_id
 	in_workspace has a value which is a workspace_id
@@ -5686,25 +5636,18 @@ constraint is a reference to a list containing 4 items:
 	1: a string
 	2: a reference to a list where each element is a term
 	3: a string
-JobObject is a reference to a hash where the following keys are defined:
-	id has a value which is a job_id
-	kbase_workspace has a value which is a workspace_id
-	clusterjobs has a value which is a reference to a list where each element is a clusterjob
-	postprocess_command has a value which is a string
-	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
-	queuing_command has a value which is a string
-	clustermem has a value which is a float
-	clustertime has a value which is an int
-	clustertoken has a value which is a string
-	queuetime has a value which is a string
-	completetime has a value which is a string
-	complete has a value which is a bool
-	owner has a value which is a string
-job_id is a string
-clusterjob is a reference to a hash where the following keys are defined:
-	authentication has a value which is a string
-CommandArguments is a reference to a hash where the following keys are defined:
-	authentication has a value which is a string
+object_metadata is a reference to a list containing 7 items:
+	0: an object_id
+	1: an object_type
+	2: a timestamp
+	3: an int
+	4: a string
+	5: a username
+	6: a username
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
 
 
 =end text
@@ -5737,7 +5680,7 @@ sub queue_combine_wildtype_phenotype_reconciliation_params
     #BEGIN queue_combine_wildtype_phenotype_reconciliation_params
     #END queue_combine_wildtype_phenotype_reconciliation_params
     my @_bad_returns;
-    (ref($output) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
     if (@_bad_returns) {
 	my $msg = "Invalid returns passed to queue_combine_wildtype_phenotype_reconciliation_params:\n" . join("", map { "\t$_\n" } @_bad_returns);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
@@ -5770,7 +5713,7 @@ job_id is a string
 workspace_id is a string
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
-	kbase_workspace has a value which is a workspace_id
+	workspace has a value which is a workspace_id
 	clusterjobs has a value which is a reference to a list where each element is a clusterjob
 	postprocess_command has a value which is a string
 	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
@@ -5804,7 +5747,7 @@ job_id is a string
 workspace_id is a string
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
-	kbase_workspace has a value which is a workspace_id
+	workspace has a value which is a workspace_id
 	clusterjobs has a value which is a reference to a list where each element is a clusterjob
 	postprocess_command has a value which is a string
 	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
@@ -5898,7 +5841,7 @@ job_id is a string
 workspace_id is a string
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
-	kbase_workspace has a value which is a workspace_id
+	workspace has a value which is a workspace_id
 	clusterjobs has a value which is a reference to a list where each element is a clusterjob
 	postprocess_command has a value which is a string
 	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
@@ -5932,7 +5875,7 @@ job_id is a string
 workspace_id is a string
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
-	kbase_workspace has a value which is a workspace_id
+	workspace has a value which is a workspace_id
 	clusterjobs has a value which is a reference to a list where each element is a clusterjob
 	postprocess_command has a value which is a string
 	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
@@ -6019,7 +5962,7 @@ job_id is a string
 workspace_id is a string
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
-	kbase_workspace has a value which is a workspace_id
+	workspace has a value which is a workspace_id
 	clusterjobs has a value which is a reference to a list where each element is a clusterjob
 	postprocess_command has a value which is a string
 	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
@@ -6054,7 +5997,7 @@ job_id is a string
 workspace_id is a string
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
-	kbase_workspace has a value which is a workspace_id
+	workspace has a value which is a workspace_id
 	clusterjobs has a value which is a reference to a list where each element is a clusterjob
 	postprocess_command has a value which is a string
 	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
@@ -6113,9 +6056,9 @@ sub run_job
     	my $msg = "FBA failed with no solution returned!";
     	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'runfba');
     }
-    $self->_save_msobject($fba,"FBA",$input->{fbaws},$input->{fbaid},"run_job");
+    $self->_save_msobject($fba,"FBA",$clusterjob->{fbaws},$clusterjob->{fbaid},"run_job");
 	$output = $job;
-    $self->jobs_done({$input});
+    $self->jobs_done($input);
     $self->_clearContext();
     #END run_job
     my @_bad_returns;
@@ -9829,7 +9772,7 @@ authentication has a value which is a string
 <pre>
 a reference to a hash where the following keys are defined:
 id has a value which is a job_id
-kbase_workspace has a value which is a workspace_id
+workspace has a value which is a workspace_id
 clusterjobs has a value which is a reference to a list where each element is a clusterjob
 postprocess_command has a value which is a string
 postprocess_args has a value which is a reference to a list where each element is a CommandArguments
@@ -9850,7 +9793,7 @@ owner has a value which is a string
 
 a reference to a hash where the following keys are defined:
 id has a value which is a job_id
-kbase_workspace has a value which is a workspace_id
+workspace has a value which is a workspace_id
 clusterjobs has a value which is a reference to a list where each element is a clusterjob
 postprocess_command has a value which is a string
 postprocess_args has a value which is a reference to a list where each element is a CommandArguments
@@ -9862,6 +9805,62 @@ queuetime has a value which is a string
 completetime has a value which is a string
 complete has a value which is a bool
 owner has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 queue_runfba_params
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+formulation has a value which is an FBAFormulation
+fva has a value which is a bool
+simulateko has a value which is a bool
+minimizeflux has a value which is a bool
+findminmedia has a value which is a bool
+notes has a value which is a string
+fba has a value which is a fba_id
+fba_workspace has a value which is a workspace_id
+authentication has a value which is a string
+overwrite has a value which is a bool
+add_to_model has a value which is a bool
+donot_submit_job has a value which is a bool
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+formulation has a value which is an FBAFormulation
+fva has a value which is a bool
+simulateko has a value which is a bool
+minimizeflux has a value which is a bool
+findminmedia has a value which is a bool
+notes has a value which is a string
+fba has a value which is a fba_id
+fba_workspace has a value which is a workspace_id
+authentication has a value which is a string
+overwrite has a value which is a bool
+add_to_model has a value which is a bool
+donot_submit_job has a value which is a bool
 
 
 =end text

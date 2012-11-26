@@ -627,7 +627,7 @@ module fbaModelServices {
     } clusterjob;
     typedef structure {
 		job_id id;
-		workspace_id kbase_workspace;
+		workspace_id workspace;
 		list<clusterjob> clusterjobs;
 		string postprocess_command;
 		list<CommandArguments> postprocess_args;
@@ -640,10 +640,27 @@ module fbaModelServices {
 		bool complete;
 		string owner;		
     } JobObject;
+    
+    typedef structure {
+    	fbamodel_id model;
+		workspace_id model_workspace;
+		FBAFormulation formulation;
+		bool fva;
+		bool simulateko;
+		bool minimizeflux;
+		bool findminmedia;
+		string notes;
+		fba_id fba;
+		workspace_id fba_workspace;
+		string authentication;
+		bool overwrite;
+		bool add_to_model;
+		bool donot_submit_job;
+    } queue_runfba_params;
 	/*
         Queues an FBA job in a single media condition
     */
-	funcdef queue_runfba(runfba_params input) returns (JobObject output);
+	funcdef queue_runfba(queue_runfba_params input) returns (object_metadata output);
    
     typedef structure {
 		phenotypeSet_id id;
@@ -683,7 +700,7 @@ module fbaModelServices {
     /*
         Queues an FBAModel gapfilling job in single media condition
     */
-    funcdef queue_gapfill_model(gapfill_model_params input) returns (JobObject output);
+    funcdef queue_gapfill_model(gapfill_model_params input) returns (object_metadata output);
     
     typedef structure {
 		phenotypeSet_id id;
@@ -707,7 +724,7 @@ module fbaModelServices {
     /*
         Queues an FBAModel gapfilling job in single media condition
     */
-    funcdef queue_gapgen_model(gapgen_model_params input) returns (JobObject output);
+    funcdef queue_gapgen_model(gapgen_model_params input) returns (object_metadata output);
     
     typedef structure {
 		phenotypeSet_id id;
@@ -748,7 +765,7 @@ module fbaModelServices {
     /*
         Queues an FBAModel reconciliation job
     */
-    funcdef queue_wildtype_phenotype_reconciliation(wildtype_phenotype_reconciliation_params input) returns (JobObject output);
+    funcdef queue_wildtype_phenotype_reconciliation(wildtype_phenotype_reconciliation_params input) returns (object_metadata output);
     
     typedef structure {
 		fbamodel_id in_model;
@@ -766,7 +783,7 @@ module fbaModelServices {
     /*
         Queues an FBAModel reconciliation job
     */
-    funcdef queue_combine_wildtype_phenotype_reconciliation_params(combine_wildtype_phenotype_reconciliation_params input) returns (JobObject output);
+    funcdef queue_combine_wildtype_phenotype_reconciliation_params(combine_wildtype_phenotype_reconciliation_params input) returns (object_metadata output);
     	
 	typedef string job_id;
 	typedef structure {

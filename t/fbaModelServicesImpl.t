@@ -14,7 +14,8 @@ use warnings;
 use Test::More;
 use Data::Dumper;
 use File::Temp qw(tempfile);
-my $test_count = 16;
+my $test_count = 20;
+my $genomeObj;
 
 #Initializing test workspace
 my $ws = &_initializeTestWorkspace();
@@ -26,53 +27,40 @@ ok defined($biochemistry), "Successfully printed biochemistry!";
 
 #Testing reaction retrieval method
 my $rxns = $obj->get_reactions({
-	reactions => ["rxn00001","rxn00002"]
+	reactions => ["rxn1","rxn2"]
 });
 ok defined($rxns->[0]), "Successfully printed reactions!";
 
 #Testing compound retrieval method
 my $cpds = $obj->get_compounds({
-	compounds => ["cpd00001","cpd00002"]
+	compounds => ["A","B"]
 });
 ok defined($cpds->[0]), "Successfully printed compounds!";
 
-#Now test ability to retrieve annotated genome object from database
-my $genome = $obj->genome_to_workspace({
-	genome => "kb|g.0",
+my $genome = $obj->genome_object_to_workspace({
+	genomeobj => $genomeObj,
 	workspace => "testworkspace"
 });
-ok defined($genome), "Genome successfully imported to workspace from CDM!"; 
+ok defined($cpds->[0]), "Successfully loaded genome object to workspace!";
 
 #Now adding media formulation to workspace
 my $media = $obj->addmedia({
-	media => "Glucose minimal media",
+	media => "CustomMedia",
 	workspace => "testworkspace",
-	name => "Glucose minimal media",
+	name => "CustomMedia",
 	isDefined => 1,
 	isMinimal => 1,
 	type => "Minimal media",
-	compounds => [qw(
-		Oxaloacetate Co2+ Cl- H+ Ca2+ Cu2+ Sulfate Zn2+ Mn2+ NH3
-		Phosphate H2O O2 K+ Mg Na+ Fe2+ fe3 Molybdate Ni2+ D-Glucose
-	)],
-	concentrations => [
-		0.001,0.001,0.001,0.001,0.001,0.001,0.001,0.001,0.001,0.001,
-		0.001,0.001,0.001,0.001,0.001,0.001,0.001,0.001,0.001,0.001
-	],
-	maxflux => [
-		1000,1000,1000,1000,1000,1000,1000,1000,1000,1000,
-		1000,1000,1000,1000,1000,1000,1000,1000,1000,1000
-	],
-	minflux => [
-		-1000,-1000,-1000,-1000,-1000,-1000,-1000,-1000,-1000,-1000,
-		-1000,-1000,-1000,-1000,-1000,-1000,-1000,-1000,-1000,-1000
-	]
+	compounds => ["A name","B name","C name"],
+	concentrations => [0.001,0.001,0.001],
+	maxflux => [1000,1000,1000],
+	minflux => [-1000,-1000,-1000]
 });
 ok defined($media), "Media successfully added to workspace!";
 
 #Testing media retrieval method
 my $medias = $obj->get_media({
-	medias => ["Carbon-D-Glucose","Glucose minimal media"],
+	medias => ["Media1","CustomMedia"],
 	workspaces => ["kbasecdm","testworkspace"]
 });
 ok defined($medias->[0]), "Successfully printed media!";
@@ -83,9 +71,9 @@ my $phenos = $obj->import_phenotypes({
 	genome => $genome->[0],
 	genome_workspace => "testworkspace",
 	phenotypes => [
-		[[],"Glucose minimal media","testworkspace",["CoA"],1],
-		[[],"Carbon-D-Glucose","kbasecdm",["Folate"],1],
-		[["kb|g.0.peg.3078","kb|g.0.peg.1052"],"ArgonneLBMedia","kbasecdm",[],1]
+		[[],"CustomMedia","testworkspace",["D name"],1],
+		[[],"Media1","kbasecdm",["A name"],1],
+		[["kb|g.0.peg.1","kb|g.0.peg.2"],"Media2","kbasecdm",[],1]
 	],
 	notes => "",
 });
@@ -154,7 +142,7 @@ my $fba = $obj->runfba({
 	model => $model->[0],
 	model_workspace => "testworkspace",
 	formulation => {
-		media => "Glucose minimal media",
+		media => "CustomMedia",
 		media_workspace => "testworkspace"
 	},
 	fva => 0,
@@ -183,6 +171,49 @@ ok defined($html), "Successfully exported FBA to html format!";
 open ( $fh, ">", "fba.html");
 print $fh $html."\n";
 close($fh);
+
+#Now test the queue fba function, without submitting the job to the cluster
+my $job = $obj->queue_runfba({
+	model => $model->[0],
+	model_workspace => "testworkspace",
+	formulation => {
+		media => "CustomMedia",
+		media_workspace => "testworkspace"
+	},
+	fva => 0,
+	simulateko => 0,
+	minimizeflux => 0,
+	findminmedia => 0,
+	notes => "",
+	fba_workspace => "testworkspace",
+	donot_submit_job => 1
+});
+ok defined($job), "FBA successfully queued for input model!";
+
+#Now running queued FBA job mannually to ensure that the job runs and postprocessing works
+my $job = $obj->run_job({
+	jobid => $job->[0],
+	workspace => "testworkspace"
+});
+ok defined($job), "Successfully ran queued job!";
+
+#Now exporting queued FBA
+$html = $obj->export_fba({
+	fba => $job->{clusterjobs}->[0]->{fbaid},
+	workspace => "testworkspace",
+	format => "html"
+});
+ok defined($html), "Successfully exported FBA to html format!";
+open ( $fh, ">", "fba2.html");
+print $fh $html."\n";
+close($fh);
+
+#Now test ability to retrieve annotated genome object from database
+my $cdmgenome = $obj->genome_to_workspace({
+	genome => "kb|g.0",
+	workspace => "testworkspace"
+});
+ok defined($cdmgenome), "Genome successfully imported to workspace from CDM!"; 
 
 done_testing($test_count);
 
@@ -226,6 +257,60 @@ sub _loadBiochemToDB {
 	});
 }
 
+sub _loadTestBiochemToDB {
+	my ($ws) = @_;
+	my $url = "http://bioseed.mcs.anl.gov/~chenry/KbaseFiles/biochemistry.test.json";
+	my ($fh2, $uncompressed_filename) = tempfile();
+	close($fh2);
+	my $status = getstore($url, $uncompressed_filename);
+	die "Unable to fetch from model_seed\n" unless($status == 200);
+	local $/;
+	open(my $fh, "<", $uncompressed_filename) || die "$!: $@";
+	my $string = <$fh>;
+	my $data = JSON::XS->new->utf8->decode($string);
+	$data->{uuid} = "kbase/default";
+	$ws->save_object({
+		id => "default",
+		type => "Biochemistry",
+		data => $data,
+		workspace => "kbase",
+		command => "_loadBiochemToDB"
+	});
+	$url = "http://bioseed.mcs.anl.gov/~chenry/KbaseFiles/mapping.test.json";
+	$status = getstore($url, $uncompressed_filename);
+	open($fh, "<", $uncompressed_filename) || die "$!: $@";
+	$string = <$fh>;
+	$data = JSON::XS->new->utf8->decode($string);
+	$data->{biochemistry_uuid} = "kbase/default";
+	$data->{uuid} = "kbase/default";
+	$ws->save_object({
+		id => "default",
+		type => "Mapping",
+		data => $data,
+		workspace => "kbase",
+		command => "_loadBiochemToDB"
+	});
+	$url = "http://bioseed.mcs.anl.gov/~chenry/KbaseFiles/mapping.test.json";
+	$status = getstore($url, $uncompressed_filename);
+	open($fh, "<", $uncompressed_filename) || die "$!: $@";
+	$string = <$fh>;
+	$data = JSON::XS->new->utf8->decode($string);
+	$data->{biochemistry_uuid} = "kbase/default";
+	$data->{uuid} = "kbase/default";
+	$ws->save_object({
+		id => "default",
+		type => "Mapping",
+		data => $data,
+		workspace => "kbase",
+		command => "_loadBiochemToDB"
+	});
+	$url = "http://bioseed.mcs.anl.gov/~chenry/KbaseFiles/genome.test.json";
+	$status = getstore($url, $uncompressed_filename);
+	open($fh, "<", $uncompressed_filename) || die "$!: $@";
+	$string = <$fh>;
+	$genomeObj = JSON::XS->new->utf8->decode($string);
+}
+
 sub _initializeTestWorkspace {
 	$ENV{MONGODBHOST} = "127.0.0.1";
 	$ENV{MONGODBDB} = "testWorkspace";
@@ -238,7 +323,7 @@ sub _initializeTestWorkspace {
 		workspace => "kbase",
 		default_permission => "r"
 	});
-	&_loadBiochemToDB($ws);
+	&_loadTestBiochemToDB($ws);
 	$ws = Bio::KBase::workspaceService::Impl->new({testuser => "testuser"});
 	$ws->create_workspace({
 		workspace => "testworkspace",
@@ -246,3 +331,35 @@ sub _initializeTestWorkspace {
 	});
 	return $ws;
 }
+
+sub prettyPrintKBaseGenome {
+	my ($wss,$id,$ws) = @_;
+	my $output = $wss->get_object({
+		type => "Genome",
+		workspace => $ws,
+		id => $id
+	});
+	my $JSON = JSON::XS->new->utf8(1);
+	$JSON->pretty(1);
+	open ( my $fh, ">", "genome.json");
+	print $fh $JSON->encode($output->{data})."\n";
+	close($fh);
+}
+
+#Old 'real' test media formulation
+#compounds => [qw(
+#	Oxaloacetate Co2+ Cl- H+ Ca2+ Cu2+ Sulfate Zn2+ Mn2+ NH3
+#	Phosphate H2O O2 K+ Mg Na+ Fe2+ fe3 Molybdate Ni2+ D-Glucose
+#)],
+#concentrations => [
+#	0.001,0.001,0.001,0.001,0.001,0.001,0.001,0.001,0.001,0.001,
+#	0.001,0.001,0.001,0.001,0.001,0.001,0.001,0.001,0.001,0.001
+#],
+#maxflux => [
+#	1000,1000,1000,1000,1000,1000,1000,1000,1000,1000,
+#	1000,1000,1000,1000,1000,1000,1000,1000,1000,1000
+#],
+#minflux => [
+#	-1000,-1000,-1000,-1000,-1000,-1000,-1000,-1000,-1000,-1000,
+#	-1000,-1000,-1000,-1000,-1000,-1000,-1000,-1000,-1000,-1000
+#]
