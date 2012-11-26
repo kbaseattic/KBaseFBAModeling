@@ -376,18 +376,37 @@ sub _get_msobject {
 		Annotation => "Annotation",
 		Mapping => "Mapping",
 		FBA => "FBAFormulation",
-		Media => "Media"
+		Media => "Media",
+		GapFill => "GapfillingFormulation",
+		GapGen => "GapgenFormulation"
 	};
 	my $obj;
 	if (defined($msProvTypes->{$type})) {
 		my $class = "ModelSEED::MS::".$msProvTypes->{$type};
 		$obj = $class->new($output->{data});
+		$cache->{$type}->{$ws}->{$id} = $obj;
 		if ($type eq "Model") {
 			my $linkid = $obj->annotation_uuid();
 			my $array = [split(/\//,$linkid)];
 			$obj->annotation($self->_get_msobject("Annotation",$array->[0],$array->[1],$cache));
 			$obj->mapping($obj->annotation()->mapping());
 			$obj->biochemistry($obj->mapping()->biochemistry());
+			my $subobjs = {
+				fbaFormulation_uuids => ["fbaFormulations","FBA"],
+				unintegratedGapfilling_uuids => ["unintegratedGapfillings","GapFill"],
+				integratedGapfilling_uuids => ["integratedGapfillings","GapFill"],
+				unintegratedGapgen_uuids => ["unintegratedGapgens","GapGen"],
+				integratedGapgen_uuids => ["integratedGapgens","GapGen"]
+			};
+			foreach my $attribute (keys(%{$subobjs})) {
+				my $link = $subobjs->{$attribute}->[0];
+				my $linkType = $subobjs->{$attribute}->[1];
+				for (my $i=0; $i < @{$obj->$attribute()}; $i++) {
+					my $linkid = $obj->$attribute()->[$i];
+					my $array = [split(/\//,$linkid)];
+					$obj->$link()->[$i] = $self->_get_msobject($linkType,$array->[0],$array->[1],$cache);
+				} 
+			}
 		} elsif ($type eq "Annotation") {
 			my $linkid = $obj->mapping_uuid();
 			my $array = [split(/\//,$linkid)];
@@ -407,7 +426,18 @@ sub _get_msobject {
 					$obj->model()->biochemistry()->add("media",$mediaobj);
 				}
 			}
+		} elsif ($type eq "GapFill") {
+			my $linkid = $obj->fbaFormulation_uuid();
+			my $array = [split(/\//,$linkid)];
+			$obj->fbaFormulation($self->_get_msobject("FBA",$array->[0],$array->[1],$cache));
+			$obj->model($obj->fbaFormulation()->model());
+		} elsif ($type eq "GapGen") {
+			my $linkid = $obj->fbaFormulation_uuid();
+			my $array = [split(/\//,$linkid)];
+			$obj->fbaFormulation($self->_get_msobject("FBA",$array->[0],$array->[1],$cache));
+			$obj->model($obj->fbaFormulation()->model());
 		}
+		delete $cache->{$type}->{$ws}->{$id};
 	} else {
 		$obj = $output->{data};
 	}
@@ -574,7 +604,7 @@ sub _setDefaultFBAFormulation {
 }
 
 sub _buildFBAObject {
-	my ($self,$fbaFormulation,$model) = @_;
+	my ($self,$fbaFormulation,$model,$workspace,$id) = @_;
 	#Parsing media
 	my $media;
 	if ($fbaFormulation->{media_workspace} ne "kbasecdm") {
@@ -593,6 +623,7 @@ sub _buildFBAObject {
 	}
 	#Building FBAFormulation object
 	my $form = ModelSEED::MS::FBAFormulation->new({
+		uuid => $workspace."/".$id,
 		model_uuid => $model->uuid(),
 		model => $model,
 		media_uuid => $media,
@@ -673,6 +704,135 @@ sub _buildFBAObject {
 		}
 	}
 	return $form;
+}
+
+sub _setDefaultGapfillFormulation {
+	my ($self,$formulation) = @_;
+	if (!defined($formulation)) {
+		$formulation = {};
+	}
+	$formulation = $self->_validateargs($formulation,[],{
+		formulation => undef,
+		num_solutions => 1,
+		nomediahyp => 0,
+		nobiomasshyp => 0,
+		nogprhyp => 0,
+		nopathwayhyp => 0,
+		allowunbalanced => 0,
+		activitybonus => 0,
+		drainpen => 1,
+		directionpen => 1,
+		nostructpen => 1,
+		unfavorablepen => 1,
+		nodeltagpen => 1,
+		biomasstranspen => 1,
+		singletranspen => 1,
+		transpen => 1,
+		blacklistedrxns => [qw(
+rxn12985 rxn00238 rxn07058 rxn05305 rxn00154 rxn09037 rxn10643
+rxn11317 rxn05254 rxn05257 rxn05258 rxn05259 rxn05264 rxn05268
+rxn05269 rxn05270 rxn05271 rxn05272 rxn05273 rxn05274 rxn05275
+rxn05276 rxn05277 rxn05278 rxn05279 rxn05280 rxn05281 rxn05282
+rxn05283 rxn05284 rxn05285 rxn05286 rxn05963 rxn05964 rxn05971
+rxn05989 rxn05990 rxn06041 rxn06042 rxn06043 rxn06044 rxn06045
+rxn06046 rxn06079 rxn06080 rxn06081 rxn06086 rxn06087 rxn06088
+rxn06089 rxn06090 rxn06091 rxn06092 rxn06138 rxn06139 rxn06140
+rxn06141 rxn06145 rxn06217 rxn06218 rxn06219 rxn06220 rxn06221
+rxn06222 rxn06223 rxn06235 rxn06362 rxn06368 rxn06378 rxn06474
+rxn06475 rxn06502 rxn06562 rxn06569 rxn06604 rxn06702 rxn06706
+rxn06715 rxn06803 rxn06811 rxn06812 rxn06850 rxn06901 rxn06971
+rxn06999 rxn07123 rxn07172 rxn07254 rxn07255 rxn07269 rxn07451
+rxn09037 rxn10018 rxn10077 rxn10096 rxn10097 rxn10098 rxn10099
+rxn10101 rxn10102 rxn10103 rxn10104 rxn10105 rxn10106 rxn10107
+rxn10109 rxn10111 rxn10403 rxn10410 rxn10416 rxn11313 rxn11316
+rxn11318 rxn11353 rxn05224 rxn05795 rxn05796 rxn05797 rxn05798
+rxn05799 rxn05801 rxn05802 rxn05803 rxn05804 rxn05805 rxn05806
+rxn05808 rxn05812 rxn05815 rxn05832 rxn05836 rxn05851 rxn05857
+rxn05869 rxn05870 rxn05884 rxn05888 rxn05896 rxn05898 rxn05900
+rxn05903 rxn05904 rxn05905 rxn05911 rxn05921 rxn05925 rxn05936
+rxn05947 rxn05956 rxn05959 rxn05960 rxn05980 rxn05991 rxn05992
+rxn05999 rxn06001 rxn06014 rxn06017 rxn06021 rxn06026 rxn06027
+rxn06034 rxn06048 rxn06052 rxn06053 rxn06054 rxn06057 rxn06059
+rxn06061 rxn06102 rxn06103 rxn06127 rxn06128 rxn06129 rxn06130
+rxn06131 rxn06132 rxn06137 rxn06146 rxn06161 rxn06167 rxn06172
+rxn06174 rxn06175 rxn06187 rxn06189 rxn06203 rxn06204 rxn06246
+rxn06261 rxn06265 rxn06266 rxn06286 rxn06291 rxn06294 rxn06310
+rxn06320 rxn06327 rxn06334 rxn06337 rxn06339 rxn06342 rxn06343
+rxn06350 rxn06352 rxn06358 rxn06361 rxn06369 rxn06380 rxn06395
+rxn06415 rxn06419 rxn06420 rxn06421 rxn06423 rxn06450 rxn06457
+rxn06463 rxn06464 rxn06466 rxn06471 rxn06482 rxn06483 rxn06486
+rxn06492 rxn06497 rxn06498 rxn06501 rxn06505 rxn06506 rxn06521
+rxn06534 rxn06580 rxn06585 rxn06593 rxn06609 rxn06613 rxn06654
+rxn06667 rxn06676 rxn06693 rxn06730 rxn06746 rxn06762 rxn06779
+rxn06790 rxn06791 rxn06792 rxn06793 rxn06794 rxn06795 rxn06796
+rxn06797 rxn06821 rxn06826 rxn06827 rxn06829 rxn06839 rxn06841
+rxn06842 rxn06851 rxn06866 rxn06867 rxn06873 rxn06885 rxn06891
+rxn06892 rxn06896 rxn06938 rxn06939 rxn06944 rxn06951 rxn06952
+rxn06955 rxn06957 rxn06960 rxn06964 rxn06965 rxn07086 rxn07097
+rxn07103 rxn07104 rxn07105 rxn07106 rxn07107 rxn07109 rxn07119
+rxn07179 rxn07186 rxn07187 rxn07188 rxn07195 rxn07196 rxn07197
+rxn07198 rxn07201 rxn07205 rxn07206 rxn07210 rxn07244 rxn07245
+rxn07253 rxn07275 rxn07299 rxn07302 rxn07651 rxn07723 rxn07736
+rxn07878 rxn11417 rxn11582 rxn11593 rxn11597 rxn11615 rxn11617
+rxn11619 rxn11620 rxn11624 rxn11626 rxn11638 rxn11648 rxn11651
+rxn11665 rxn11666 rxn11667 rxn11698 rxn11983 rxn11986 rxn11994
+rxn12006 rxn12007 rxn12014 rxn12017 rxn12022 rxn12160 rxn12161
+rxn01267 )],
+		gauranteedrxns => [qw(
+rxn1 rxn2 rxn3 rxn4 rxn5 rxn6 rxn7 rxn8
+rxn13782 rxn13783 rxn13784 rxn05294 rxn05295 rxn05296 rxn10002
+rxn10088 rxn11921 rxn11922 rxn10200 rxn11923 rxn05029 )],
+		allowedcmps => ["c","e","p"]
+	});
+	$formulation->{formulation} = $self->_setDefaultFBAFormulation($formulation->{formulation});
+	return $formulation;
+}
+
+sub _buildGapfillObject {
+	my ($self,$formulation,$model,$workspace,$id) = @_;
+	my $fbaid = $self->_get_new_id($id.".fba.");
+	my $gapform = ModelSEED::MS::GapfillingFormulation->new({
+		uuid => $workspace."/".$id,
+		model_uuid => $model->uuid(),
+		model => $model,
+		fbaFormulation_uuid => $workspace."/".$fbaid,
+		fbaFormulation => $self->_buildFBAObject($formulation->{formulation},$model,$workspace,$fbaid),
+		balancedReactionsOnly => $self->_invert_boolean($formulation->{allowunbalanced}),
+		reactionActivationBonus => $formulation->{activitybonus},
+		drainFluxMultiplier => $formulation->{drainpen},
+		directionalityMultiplier => $formulation->{directionpen},
+		deltaGMultiplier => $formulation->{unfavorablepen},
+		noStructureMultiplier => $formulation->{nostructpen},
+		noDeltaGMultiplier => $formulation->{nodeltagpen},
+		biomassTransporterMultiplier => $formulation->{biomasstranspen},
+		singleTransporterMultiplier => $formulation->{singletranspen},
+		transporterMultiplier => $formulation->{transpen},
+		mediaHypothesis => $self->_invert_boolean($formulation->{nomediahyp}),
+		biomassHypothesis => $self->_invert_boolean($formulation->{nobiomasshyp}),
+		gprHypothesis => $self->_invert_boolean($formulation->{nogprhyp}),
+		reactionAdditionHypothesis => $self->_invert_boolean($formulation->{nopathwayhyp}),
+	});
+	$gapform->prepareFBAFormulation();
+	$gapform->fbaFormulation()->numberOfSolutions($formulation->{num_solutions});
+	foreach my $reaction (@{$formulation->{gauranteedrxns}}) {
+		my $rxnObj = $model->biochemistry()->searchForReaction($reaction);
+		if (defined($rxnObj)) {
+			$gapform->addLinkArrayItem("guaranteedReactions",$rxnObj);
+		}
+	}
+	foreach my $reaction (@{$formulation->{blacklistedrxns}}) {
+		my $rxnObj = $model->biochemistry()->searchForReaction($reaction);
+		if (defined($rxnObj)) {
+			$gapform->addLinkArrayItem("blacklistedReactions",$rxnObj);
+		}
+	}
+	foreach my $comp (@{$formulation->{allowedcmps}}) {
+		my $compObj = $model->biochemistry()->queryObject("compartments",{id => $comp});
+		if (defined($compObj)) {
+			$gapform->addLinkArrayItem("allowableCompartments",$compObj);
+		}
+	}
+	return $gapform;
 }
 
 sub _parseTerm {
@@ -1856,6 +2016,7 @@ fbamodel_id is a string
 bool is an int
 GapfillingFormulation is a reference to a hash where the following keys are defined:
 	formulation has a value which is an FBAFormulation
+	num_solutions has a value which is an int
 	nomediahyp has a value which is a bool
 	nobiomasshyp has a value which is a bool
 	nogprhyp has a value which is a bool
@@ -1873,7 +2034,8 @@ GapfillingFormulation is a reference to a hash where the following keys are defi
 	blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
 	gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
 	allowedcmps has a value which is a reference to a list where each element is a compartment_id
-	probabilistic_annotation has a value which is a probabilistic_annotation_id
+	probabilisticAnnotation has a value which is a probabilisticAnnotation_id
+	probabilisticAnnotation_workspace has a value which is a workspace_id
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	media_workspace has a value which is a workspace_id
@@ -1911,7 +2073,7 @@ constraint is a reference to a list containing 4 items:
 	2: a reference to a list where each element is a term
 	3: a string
 compartment_id is a string
-probabilistic_annotation_id is a string
+probabilisticAnnotation_id is a string
 GapFillSolution is a reference to a hash where the following keys are defined:
 	objective has a value which is a float
 	biomassRemovals has a value which is a reference to a list where each element is a modelcompound_id
@@ -1950,6 +2112,7 @@ fbamodel_id is a string
 bool is an int
 GapfillingFormulation is a reference to a hash where the following keys are defined:
 	formulation has a value which is an FBAFormulation
+	num_solutions has a value which is an int
 	nomediahyp has a value which is a bool
 	nobiomasshyp has a value which is a bool
 	nogprhyp has a value which is a bool
@@ -1967,7 +2130,8 @@ GapfillingFormulation is a reference to a hash where the following keys are defi
 	blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
 	gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
 	allowedcmps has a value which is a reference to a list where each element is a compartment_id
-	probabilistic_annotation has a value which is a probabilistic_annotation_id
+	probabilisticAnnotation has a value which is a probabilisticAnnotation_id
+	probabilisticAnnotation_workspace has a value which is a workspace_id
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	media_workspace has a value which is a workspace_id
@@ -2005,7 +2169,7 @@ constraint is a reference to a list containing 4 items:
 	2: a reference to a list where each element is a term
 	3: a string
 compartment_id is a string
-probabilistic_annotation_id is a string
+probabilisticAnnotation_id is a string
 GapFillSolution is a reference to a hash where the following keys are defined:
 	objective has a value which is a float
 	biomassRemovals has a value which is a reference to a list where each element is a modelcompound_id
@@ -2114,6 +2278,7 @@ fbamodel_id is a string
 bool is an int
 GapgenFormulation is a reference to a hash where the following keys are defined:
 	formulation has a value which is an FBAFormulation
+	num_solutions has a value which is an int
 	nomediahyp has a value which is a bool
 	nobiomasshyp has a value which is a bool
 	nogprhyp has a value which is a bool
@@ -2192,6 +2357,7 @@ fbamodel_id is a string
 bool is an int
 GapgenFormulation is a reference to a hash where the following keys are defined:
 	formulation has a value which is an FBAFormulation
+	num_solutions has a value which is an int
 	nomediahyp has a value which is a bool
 	nobiomasshyp has a value which is a bool
 	nogprhyp has a value which is a bool
@@ -3792,12 +3958,11 @@ sub runfba
 	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
 	#Creating FBAFormulation Object
 	my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
-	my $fba = $self->_buildFBAObject($input->{formulation},$model);
+	my $fba = $self->_buildFBAObject($input->{formulation},$model,$input->{fba_workspace},$input->{fba});
 	$fba->fva($input->{fva});
 	$fba->comboDeletions($input->{simulateko});
 	$fba->fluxMinimization($input->{minimizeflux});
 	$fba->findMinimalMedia($input->{findminmedia});
-	$fba->uuid($input->{fba_workspace}."/".$input->{fba});
     #Running FBA
     my $fbaResult = $fba->runFBA();
     if (!defined($fbaResult)) {
@@ -4361,7 +4526,7 @@ sub simulate_phenotypes
 	my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
 	#Creating FBAFormulation Object
 	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
-	my $fba = $self->_buildFBAObject($input->{formulation},$model);
+	my $fba = $self->_buildFBAObject($input->{formulation},$model,$input->{model_workspace},$input->{model}.".fba");
 	#Translating phenotypes to fbaformulation
 	my $bio = $model->biochemistry();
 	for (my $i=0; $i < @{$pheno->{phenotypes}};$i++) {
@@ -4752,7 +4917,7 @@ sub queue_runfba
 	#Creating FBAFormulation Object
 	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
 	my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
-	my $fba = $self->_buildFBAObject($input->{formulation},$model);
+	my $fba = $self->_buildFBAObject($input->{formulation},$model,$input->{fba_workspace},$input->{fba});
 	#Saving FBAFormulation to database
 	my $fbameta = $self->_save_msobject($fba,"FBA",$input->{fba_workspace},$input->{fba},"queue_runfba");
 	my $mediaids = [];
@@ -4761,9 +4926,11 @@ sub queue_runfba
 	my $mediauuids = $fba->mediaUUIDs();
 	foreach my $media (@{$mediauuids}) {
 		my $mediaObj = $fba->model()->biochemistry()->getObject("media",$media);
-		push(@{$mediaids},$mediaObj->{_kbaseWSMeta}->{wsid});
-		push(@{$mediaws},$mediaObj->{_kbaseWSMeta}->{ws});
-		push(@{$mediainst},$mediaObj->{_kbaseWSMeta}->{wsinst});
+		if (defined($mediaObj->{_kbaseWSMeta})) {
+			push(@{$mediaids},$mediaObj->{_kbaseWSMeta}->{wsid});
+			push(@{$mediaws},$mediaObj->{_kbaseWSMeta}->{ws});
+			push(@{$mediainst},$mediaObj->{_kbaseWSMeta}->{wsinst});
+		}
 	}
 	my $job = $self->_create_job({
 		clusterjobs => [{
@@ -4824,42 +4991,43 @@ sub queue_runfba
 $input is a gapfill_model_params
 $output is an object_metadata
 gapfill_model_params is a reference to a hash where the following keys are defined:
-	id has a value which is a phenotypeSet_id
-	in_model has a value which is a fbamodel_id
-	in_workspace has a value which is a workspace_id
-	in_formulation has a value which is an FBAFormulation
-	num_solutions has a value which is an int
-	no_media_hypothesis has a value which is a bool
-	no_biomass_hypothesis has a value which is a bool
-	no_gpr_hypothesis has a value which is a bool
-	no_pathway_hypothesis has a value which is a bool
-	allow_unbalanced has a value which is a bool
-	activity_bonus has a value which is a float
-	drain_penalty has a value which is a float
-	direction_penalty has a value which is a float
-	no_structure_penalty has a value which is a float
-	unfavorable_penalty has a value which is a float
-	no_deltag_penalty has a value which is a float
-	biomass_transport_penalty has a value which is a float
-	single_transport_penalty has a value which is a float
-	transport_penalty has a value which is a float
-	blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
-	gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
-	allowed_compartments has a value which is a reference to a list where each element is a string
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
+	formulation has a value which is a GapfillingFormulation
+	phenotypeSet has a value which is a phenotypeSet_id
+	phenotypeSet_workspace has a value which is a workspace_id
 	integrate_solution has a value which is a bool
-	notes has a value which is a string
-	prob_anno has a value which is a genome_id
-	prob_anno_workspace has a value which is a workspace_id
 	out_model has a value which is a fbamodel_id
 	out_workspace has a value which is a workspace_id
+	gapFill has a value which is a gapfill_id
+	gapFill_workspace has a value which is a workspace_id
 	authentication has a value which is a string
 	overwrite has a value which is a bool
 	donot_submit_job has a value which is a bool
-	gapfilling_index has a value which is an int
-	job has a value which is a job_id
-phenotypeSet_id is a string
 fbamodel_id is a string
 workspace_id is a string
+GapfillingFormulation is a reference to a hash where the following keys are defined:
+	formulation has a value which is an FBAFormulation
+	num_solutions has a value which is an int
+	nomediahyp has a value which is a bool
+	nobiomasshyp has a value which is a bool
+	nogprhyp has a value which is a bool
+	nopathwayhyp has a value which is a bool
+	allowunbalanced has a value which is a bool
+	activitybonus has a value which is a float
+	drainpen has a value which is a float
+	directionpen has a value which is a float
+	nostructpen has a value which is a float
+	unfavorablepen has a value which is a float
+	nodeltagpen has a value which is a float
+	biomasstranspen has a value which is a float
+	singletranspen has a value which is a float
+	transpen has a value which is a float
+	blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
+	gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
+	allowedcmps has a value which is a reference to a list where each element is a compartment_id
+	probabilisticAnnotation has a value which is a probabilisticAnnotation_id
+	probabilisticAnnotation_workspace has a value which is a workspace_id
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	media_workspace has a value which is a workspace_id
@@ -4897,8 +5065,10 @@ constraint is a reference to a list containing 4 items:
 	1: a string
 	2: a reference to a list where each element is a term
 	3: a string
-genome_id is a string
-job_id is a string
+compartment_id is a string
+probabilisticAnnotation_id is a string
+phenotypeSet_id is a string
+gapfill_id is a string
 object_metadata is a reference to a list containing 7 items:
 	0: an object_id
 	1: an object_type
@@ -4921,42 +5091,43 @@ username is a string
 $input is a gapfill_model_params
 $output is an object_metadata
 gapfill_model_params is a reference to a hash where the following keys are defined:
-	id has a value which is a phenotypeSet_id
-	in_model has a value which is a fbamodel_id
-	in_workspace has a value which is a workspace_id
-	in_formulation has a value which is an FBAFormulation
-	num_solutions has a value which is an int
-	no_media_hypothesis has a value which is a bool
-	no_biomass_hypothesis has a value which is a bool
-	no_gpr_hypothesis has a value which is a bool
-	no_pathway_hypothesis has a value which is a bool
-	allow_unbalanced has a value which is a bool
-	activity_bonus has a value which is a float
-	drain_penalty has a value which is a float
-	direction_penalty has a value which is a float
-	no_structure_penalty has a value which is a float
-	unfavorable_penalty has a value which is a float
-	no_deltag_penalty has a value which is a float
-	biomass_transport_penalty has a value which is a float
-	single_transport_penalty has a value which is a float
-	transport_penalty has a value which is a float
-	blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
-	gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
-	allowed_compartments has a value which is a reference to a list where each element is a string
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
+	formulation has a value which is a GapfillingFormulation
+	phenotypeSet has a value which is a phenotypeSet_id
+	phenotypeSet_workspace has a value which is a workspace_id
 	integrate_solution has a value which is a bool
-	notes has a value which is a string
-	prob_anno has a value which is a genome_id
-	prob_anno_workspace has a value which is a workspace_id
 	out_model has a value which is a fbamodel_id
 	out_workspace has a value which is a workspace_id
+	gapFill has a value which is a gapfill_id
+	gapFill_workspace has a value which is a workspace_id
 	authentication has a value which is a string
 	overwrite has a value which is a bool
 	donot_submit_job has a value which is a bool
-	gapfilling_index has a value which is an int
-	job has a value which is a job_id
-phenotypeSet_id is a string
 fbamodel_id is a string
 workspace_id is a string
+GapfillingFormulation is a reference to a hash where the following keys are defined:
+	formulation has a value which is an FBAFormulation
+	num_solutions has a value which is an int
+	nomediahyp has a value which is a bool
+	nobiomasshyp has a value which is a bool
+	nogprhyp has a value which is a bool
+	nopathwayhyp has a value which is a bool
+	allowunbalanced has a value which is a bool
+	activitybonus has a value which is a float
+	drainpen has a value which is a float
+	directionpen has a value which is a float
+	nostructpen has a value which is a float
+	unfavorablepen has a value which is a float
+	nodeltagpen has a value which is a float
+	biomasstranspen has a value which is a float
+	singletranspen has a value which is a float
+	transpen has a value which is a float
+	blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
+	gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
+	allowedcmps has a value which is a reference to a list where each element is a compartment_id
+	probabilisticAnnotation has a value which is a probabilisticAnnotation_id
+	probabilisticAnnotation_workspace has a value which is a workspace_id
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	media_workspace has a value which is a workspace_id
@@ -4994,8 +5165,10 @@ constraint is a reference to a list containing 4 items:
 	1: a string
 	2: a reference to a list where each element is a term
 	3: a string
-genome_id is a string
-job_id is a string
+compartment_id is a string
+probabilisticAnnotation_id is a string
+phenotypeSet_id is a string
+gapfill_id is a string
 object_metadata is a reference to a list containing 7 items:
 	0: an object_id
 	1: an object_type
@@ -5038,6 +5211,89 @@ sub queue_gapfill_model
     my $ctx = $fbaModelServicesServer::CallContext;
     my($output);
     #BEGIN queue_gapfill_model
+    $self->_setContext($ctx,$input);
+	$input = $self->_validateargs($input,["model","model_workspace"],{
+		formulation => undef,
+		phenotypeSet => undef,
+		phenotypeSet_workspace => $input->{model_workspace},
+		integrate_solution => 0,
+		out_model => $input->{model},
+		out_workspace => $input->{model_workspace},
+		gapFill => undef,
+		gapFill_workspace => $input->{model_workspace},
+		overwrite => 0,
+		donot_submit_job => 0
+	});
+	#Checking is this is a postprocessing or initialization call
+	if (!defined($input->{gapFill})) {
+		$input->{gapFill} = $self->_get_new_id($input->{model}.".gapfill.");
+		$input->{formulation} = $self->_setDefaultGapfillFormulation($input->{formulation});
+		my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
+		my $gapfill = $self->_buildGapfillObject($input->{formulation},$model,$input->{gapFill_workspace},$input->{gapFill});
+		my $fbameta = $self->_save_msobject($gapfill->fbaFormulation(),"FBA",$gapfill->fbaFormulation()->{_kbaseWSMeta}->{ws},$gapfill->fbaFormulation()->{_kbaseWSMeta}->{wsid},"queue_gapfill_model");
+		my $gapfillmeta = $self->_save_msobject($gapfill,"GapFill",$input->{gapFill_workspace},$input->{gapFill},"queue_gapfill_model");
+		push(@{$model->unintegratedGapfilling_uuids()},$gapfill->uuid());
+		my $modelmeta = $self->_save_msobject($model,"Model",$input->{out_workspace},$input->{out_model},"queue_gapfill_model");
+		my $fba = $gapfill->fbaFormulation();
+		my $mediaids = [];
+		my $mediaws = [];
+		my $mediainst = [];
+		my $mediauuids = $fba->mediaUUIDs();
+		foreach my $media (@{$mediauuids}) {
+			my $mediaObj = $fba->model()->biochemistry()->getObject("media",$media);
+			if (defined($mediaObj->{_kbaseWSMeta})) {
+				push(@{$mediaids},$mediaObj->{_kbaseWSMeta}->{wsid});
+				push(@{$mediaws},$mediaObj->{_kbaseWSMeta}->{ws});
+				push(@{$mediainst},$mediaObj->{_kbaseWSMeta}->{wsinst});
+			}
+		}
+		my $job = $self->_create_job({
+			clusterjobs => [{
+				mediaids => $mediaids,
+				mediawss => $mediaws,
+				mediainsts => $mediainst,
+				bioid => "kbase",
+				biows => "default",
+				bioinst => 0,
+				mapid => "kbase",
+				mapws => "default",
+				mapinst => 0,
+				annoid => $model->annotation()->{_kbaseWSMeta}->{wsid},
+				annows => $model->annotation()->{_kbaseWSMeta}->{ws},
+				annoinst => $model->annotation()->{_kbaseWSMeta}->{wsinst},
+				modelid => $model->{_kbaseWSMeta}->{wsid},
+				modelws => $model->{_kbaseWSMeta}->{ws},
+				modelinst => $model->{_kbaseWSMeta}->{wsinst},
+				fbaid => $fba->{_kbaseWSMeta}->{wsid},
+				fbaws => $fba->{_kbaseWSMeta}->{ws},
+				fbainst => $fba->{_kbaseWSMeta}->{wsinst},
+			}],
+			postprocess_command => "queue_gapfill_model",
+			postprocess_args => [{
+				$input
+			}],
+			queuing_command => "queue_gapfill_model",
+			workspace => $input->{fba_workspace}
+		});
+		if ($input->{donot_submit_job} == 0) {
+			$job = $self->_submit_job($job);
+		}
+		$output = $self->_save_msobject($job,"FBAJob",$job->{workspace},$job->{id},"queue_gapfill_model");
+	} else {
+		my $gapfill = $self->_get_msobject("GapFill",$input->{gapFill_workspace},$input->{gapFill});
+		if (!defined($gapfill->fbaFormulation()->fbaResults())) {
+			my $msg = "Gapfilling completed with no solutions found. Gapfilling failed!";
+			Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'queue_gapfill_model');
+		}
+		$gapfill->parseGapfillingResults($gapfill->fbaFormulation()->fbaResults());
+		if ($input->{integrate_solution} == 1) {
+			my $model = $gapfill->model();
+			$model->integrateGapfillSolution($gapfill,0);
+			my $modelmeta = $self->_save_msobject($model,"Model",$input->{out_workspace},$input->{out_model},"queue_gapfill_model");
+		}
+		$output = $self->_save_msobject($gapfill,"GapFill",$input->{gapFill_workspace},$input->{gapFill},"queue_gapfill_model");
+	}
+	$self->_clearContext();
     #END queue_gapfill_model
     my @_bad_returns;
     (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
@@ -5066,26 +5322,28 @@ sub queue_gapfill_model
 $input is a gapgen_model_params
 $output is an object_metadata
 gapgen_model_params is a reference to a hash where the following keys are defined:
-	id has a value which is a phenotypeSet_id
-	in_model has a value which is a fbamodel_id
-	in_workspace has a value which is a workspace_id
-	in_formulation has a value which is an FBAFormulation
-	num_solutions has a value which is an int
-	no_media_hypothesis has a value which is a bool
-	no_biomass_hypothesis has a value which is a bool
-	no_gpr_hypothesis has a value which is a bool
-	no_pathway_hypothesis has a value which is a bool
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
+	formulation has a value which is a GapgenFormulation
+	phenotypeSet has a value which is a phenotypeSet_id
+	phenotypeSet_workspace has a value which is a workspace_id
 	integrate_solution has a value which is a bool
-	notes has a value which is a string
 	out_model has a value which is a fbamodel_id
 	out_workspace has a value which is a workspace_id
+	gapgen has a value which is a gapgen_id
+	gapGen_workspace has a value which is a workspace_id
 	authentication has a value which is a string
 	overwrite has a value which is a bool
 	donot_submit_job has a value which is a bool
-	gapgen_index has a value which is an int
-phenotypeSet_id is a string
 fbamodel_id is a string
 workspace_id is a string
+GapgenFormulation is a reference to a hash where the following keys are defined:
+	formulation has a value which is an FBAFormulation
+	num_solutions has a value which is an int
+	nomediahyp has a value which is a bool
+	nobiomasshyp has a value which is a bool
+	nogprhyp has a value which is a bool
+	nopathwayhyp has a value which is a bool
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	media_workspace has a value which is a workspace_id
@@ -5123,6 +5381,8 @@ constraint is a reference to a list containing 4 items:
 	1: a string
 	2: a reference to a list where each element is a term
 	3: a string
+phenotypeSet_id is a string
+gapgen_id is a string
 object_metadata is a reference to a list containing 7 items:
 	0: an object_id
 	1: an object_type
@@ -5145,26 +5405,28 @@ username is a string
 $input is a gapgen_model_params
 $output is an object_metadata
 gapgen_model_params is a reference to a hash where the following keys are defined:
-	id has a value which is a phenotypeSet_id
-	in_model has a value which is a fbamodel_id
-	in_workspace has a value which is a workspace_id
-	in_formulation has a value which is an FBAFormulation
-	num_solutions has a value which is an int
-	no_media_hypothesis has a value which is a bool
-	no_biomass_hypothesis has a value which is a bool
-	no_gpr_hypothesis has a value which is a bool
-	no_pathway_hypothesis has a value which is a bool
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
+	formulation has a value which is a GapgenFormulation
+	phenotypeSet has a value which is a phenotypeSet_id
+	phenotypeSet_workspace has a value which is a workspace_id
 	integrate_solution has a value which is a bool
-	notes has a value which is a string
 	out_model has a value which is a fbamodel_id
 	out_workspace has a value which is a workspace_id
+	gapgen has a value which is a gapgen_id
+	gapGen_workspace has a value which is a workspace_id
 	authentication has a value which is a string
 	overwrite has a value which is a bool
 	donot_submit_job has a value which is a bool
-	gapgen_index has a value which is an int
-phenotypeSet_id is a string
 fbamodel_id is a string
 workspace_id is a string
+GapgenFormulation is a reference to a hash where the following keys are defined:
+	formulation has a value which is an FBAFormulation
+	num_solutions has a value which is an int
+	nomediahyp has a value which is a bool
+	nobiomasshyp has a value which is a bool
+	nogprhyp has a value which is a bool
+	nopathwayhyp has a value which is a bool
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	media_workspace has a value which is a workspace_id
@@ -5202,6 +5464,8 @@ constraint is a reference to a list containing 4 items:
 	1: a string
 	2: a reference to a list where each element is a term
 	3: a string
+phenotypeSet_id is a string
+gapgen_id is a string
 object_metadata is a reference to a list containing 7 items:
 	0: an object_id
 	1: an object_type
@@ -5272,43 +5536,44 @@ sub queue_gapgen_model
 $input is a wildtype_phenotype_reconciliation_params
 $output is an object_metadata
 wildtype_phenotype_reconciliation_params is a reference to a hash where the following keys are defined:
-	id has a value which is a phenotypeSet_id
-	in_model has a value which is a fbamodel_id
-	in_workspace has a value which is a workspace_id
-	in_formulation has a value which is an FBAFormulation
-	num_solutions has a value which is an int
-	no_media_hypothesis has a value which is a bool
-	no_biomass_hypothesis has a value which is a bool
-	no_gpr_hypothesis has a value which is a bool
-	no_pathway_hypothesis has a value which is a bool
-	allow_unbalanced has a value which is a bool
-	activity_bonus has a value which is a float
-	drain_penalty has a value which is a float
-	direction_penalty has a value which is a float
-	no_structure_penalty has a value which is a float
-	unfavorable_penalty has a value which is a float
-	no_deltag_penalty has a value which is a float
-	biomass_transport_penalty has a value which is a float
-	single_transport_penalty has a value which is a float
-	transport_penalty has a value which is a float
-	blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
-	gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
-	allowed_compartments has a value which is a reference to a list where each element is a string
-	notes has a value which is a string
-	prob_anno has a value which is a genome_id
-	prob_anno_workspace has a value which is a workspace_id
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
+	formulation has a value which is a GapfillingFormulation
+	formulation has a value which is a GapgenFormulation
+	phenotypeSet has a value which is a phenotypeSet_id
+	phenotypeSet_workspace has a value which is a workspace_id
 	out_model has a value which is a fbamodel_id
 	out_workspace has a value which is a workspace_id
+	gapFills has a value which is a reference to a list where each element is a gapfill_id
+	gapGens has a value which is a reference to a list where each element is a gapgen_id
+	gapFill_workspace has a value which is a workspace_id
 	authentication has a value which is a string
 	overwrite has a value which is a bool
 	donot_submit_job has a value which is a bool
-	all_gapgen_indecies has a value which is a reference to a list where each element is an int
-	all_gapfill_indecies has a value which is a reference to a list where each element is an int
-	gapgen_index has a value which is an int
-	gapfill_index has a value which is an int
-phenotypeSet_id is a string
 fbamodel_id is a string
 workspace_id is a string
+GapfillingFormulation is a reference to a hash where the following keys are defined:
+	formulation has a value which is an FBAFormulation
+	num_solutions has a value which is an int
+	nomediahyp has a value which is a bool
+	nobiomasshyp has a value which is a bool
+	nogprhyp has a value which is a bool
+	nopathwayhyp has a value which is a bool
+	allowunbalanced has a value which is a bool
+	activitybonus has a value which is a float
+	drainpen has a value which is a float
+	directionpen has a value which is a float
+	nostructpen has a value which is a float
+	unfavorablepen has a value which is a float
+	nodeltagpen has a value which is a float
+	biomasstranspen has a value which is a float
+	singletranspen has a value which is a float
+	transpen has a value which is a float
+	blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
+	gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
+	allowedcmps has a value which is a reference to a list where each element is a compartment_id
+	probabilisticAnnotation has a value which is a probabilisticAnnotation_id
+	probabilisticAnnotation_workspace has a value which is a workspace_id
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	media_workspace has a value which is a workspace_id
@@ -5346,7 +5611,18 @@ constraint is a reference to a list containing 4 items:
 	1: a string
 	2: a reference to a list where each element is a term
 	3: a string
-genome_id is a string
+compartment_id is a string
+probabilisticAnnotation_id is a string
+GapgenFormulation is a reference to a hash where the following keys are defined:
+	formulation has a value which is an FBAFormulation
+	num_solutions has a value which is an int
+	nomediahyp has a value which is a bool
+	nobiomasshyp has a value which is a bool
+	nogprhyp has a value which is a bool
+	nopathwayhyp has a value which is a bool
+phenotypeSet_id is a string
+gapfill_id is a string
+gapgen_id is a string
 object_metadata is a reference to a list containing 7 items:
 	0: an object_id
 	1: an object_type
@@ -5369,43 +5645,44 @@ username is a string
 $input is a wildtype_phenotype_reconciliation_params
 $output is an object_metadata
 wildtype_phenotype_reconciliation_params is a reference to a hash where the following keys are defined:
-	id has a value which is a phenotypeSet_id
-	in_model has a value which is a fbamodel_id
-	in_workspace has a value which is a workspace_id
-	in_formulation has a value which is an FBAFormulation
-	num_solutions has a value which is an int
-	no_media_hypothesis has a value which is a bool
-	no_biomass_hypothesis has a value which is a bool
-	no_gpr_hypothesis has a value which is a bool
-	no_pathway_hypothesis has a value which is a bool
-	allow_unbalanced has a value which is a bool
-	activity_bonus has a value which is a float
-	drain_penalty has a value which is a float
-	direction_penalty has a value which is a float
-	no_structure_penalty has a value which is a float
-	unfavorable_penalty has a value which is a float
-	no_deltag_penalty has a value which is a float
-	biomass_transport_penalty has a value which is a float
-	single_transport_penalty has a value which is a float
-	transport_penalty has a value which is a float
-	blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
-	gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
-	allowed_compartments has a value which is a reference to a list where each element is a string
-	notes has a value which is a string
-	prob_anno has a value which is a genome_id
-	prob_anno_workspace has a value which is a workspace_id
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
+	formulation has a value which is a GapfillingFormulation
+	formulation has a value which is a GapgenFormulation
+	phenotypeSet has a value which is a phenotypeSet_id
+	phenotypeSet_workspace has a value which is a workspace_id
 	out_model has a value which is a fbamodel_id
 	out_workspace has a value which is a workspace_id
+	gapFills has a value which is a reference to a list where each element is a gapfill_id
+	gapGens has a value which is a reference to a list where each element is a gapgen_id
+	gapFill_workspace has a value which is a workspace_id
 	authentication has a value which is a string
 	overwrite has a value which is a bool
 	donot_submit_job has a value which is a bool
-	all_gapgen_indecies has a value which is a reference to a list where each element is an int
-	all_gapfill_indecies has a value which is a reference to a list where each element is an int
-	gapgen_index has a value which is an int
-	gapfill_index has a value which is an int
-phenotypeSet_id is a string
 fbamodel_id is a string
 workspace_id is a string
+GapfillingFormulation is a reference to a hash where the following keys are defined:
+	formulation has a value which is an FBAFormulation
+	num_solutions has a value which is an int
+	nomediahyp has a value which is a bool
+	nobiomasshyp has a value which is a bool
+	nogprhyp has a value which is a bool
+	nopathwayhyp has a value which is a bool
+	allowunbalanced has a value which is a bool
+	activitybonus has a value which is a float
+	drainpen has a value which is a float
+	directionpen has a value which is a float
+	nostructpen has a value which is a float
+	unfavorablepen has a value which is a float
+	nodeltagpen has a value which is a float
+	biomasstranspen has a value which is a float
+	singletranspen has a value which is a float
+	transpen has a value which is a float
+	blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
+	gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
+	allowedcmps has a value which is a reference to a list where each element is a compartment_id
+	probabilisticAnnotation has a value which is a probabilisticAnnotation_id
+	probabilisticAnnotation_workspace has a value which is a workspace_id
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	media_workspace has a value which is a workspace_id
@@ -5443,7 +5720,18 @@ constraint is a reference to a list containing 4 items:
 	1: a string
 	2: a reference to a list where each element is a term
 	3: a string
-genome_id is a string
+compartment_id is a string
+probabilisticAnnotation_id is a string
+GapgenFormulation is a reference to a hash where the following keys are defined:
+	formulation has a value which is an FBAFormulation
+	num_solutions has a value which is an int
+	nomediahyp has a value which is a bool
+	nobiomasshyp has a value which is a bool
+	nogprhyp has a value which is a bool
+	nopathwayhyp has a value which is a bool
+phenotypeSet_id is a string
+gapfill_id is a string
+gapgen_id is a string
 object_metadata is a reference to a list containing 7 items:
 	0: an object_id
 	1: an object_type
@@ -5514,56 +5802,28 @@ sub queue_wildtype_phenotype_reconciliation
 $input is a combine_wildtype_phenotype_reconciliation_params
 $output is an object_metadata
 combine_wildtype_phenotype_reconciliation_params is a reference to a hash where the following keys are defined:
-	in_model has a value which is a fbamodel_id
-	in_workspace has a value which is a workspace_id
-	in_formulation has a value which is an FBAFormulation
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
+	gapFills has a value which is a reference to a list where each element is a gapfill_id
+	gapGens has a value which is a reference to a list where each element is a gapgen_id
 	num_solutions has a value which is an int
-	integrate_solution has a value which is a bool
-	notes has a value which is a string
+	phenotypeSet has a value which is a phenotypeSet_id
+	phenotypeSet_workspace has a value which is a workspace_id
 	out_model has a value which is a fbamodel_id
 	out_workspace has a value which is a workspace_id
+	fba has a value which is a fba_id
+	gapFill_workspace has a value which is a workspace_id
+	integrate_solution has a value which is a bool
 	authentication has a value which is a string
-	donot_submit_job has a value which is a bool
 	overwrite has a value which is a bool
+	donot_submit_job has a value which is a bool
 fbamodel_id is a string
 workspace_id is a string
-FBAFormulation is a reference to a hash where the following keys are defined:
-	media has a value which is a media_id
-	media_workspace has a value which is a workspace_id
-	objfraction has a value which is a float
-	allreversible has a value which is a bool
-	maximizeObjective has a value which is a bool
-	objectiveTerms has a value which is a reference to a list where each element is a term
-	geneko has a value which is a reference to a list where each element is a feature_id
-	rxnko has a value which is a reference to a list where each element is a reaction_id
-	bounds has a value which is a reference to a list where each element is a bound
-	constraints has a value which is a reference to a list where each element is a constraint
-	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
-	defaultmaxflux has a value which is a float
-	defaultminuptake has a value which is a float
-	defaultmaxuptake has a value which is a float
-	simplethermoconst has a value which is a bool
-	thermoconst has a value which is a bool
-	nothermoerror has a value which is a bool
-	minthermoerror has a value which is a bool
-media_id is a string
+gapfill_id is a string
+gapgen_id is a string
+phenotypeSet_id is a string
+fba_id is a string
 bool is an int
-term is a reference to a list containing 3 items:
-	0: a float
-	1: a string
-	2: a string
-feature_id is a string
-reaction_id is a string
-bound is a reference to a list containing 4 items:
-	0: a float
-	1: a float
-	2: a string
-	3: a string
-constraint is a reference to a list containing 4 items:
-	0: a float
-	1: a string
-	2: a reference to a list where each element is a term
-	3: a string
 object_metadata is a reference to a list containing 7 items:
 	0: an object_id
 	1: an object_type
@@ -5586,56 +5846,28 @@ username is a string
 $input is a combine_wildtype_phenotype_reconciliation_params
 $output is an object_metadata
 combine_wildtype_phenotype_reconciliation_params is a reference to a hash where the following keys are defined:
-	in_model has a value which is a fbamodel_id
-	in_workspace has a value which is a workspace_id
-	in_formulation has a value which is an FBAFormulation
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
+	gapFills has a value which is a reference to a list where each element is a gapfill_id
+	gapGens has a value which is a reference to a list where each element is a gapgen_id
 	num_solutions has a value which is an int
-	integrate_solution has a value which is a bool
-	notes has a value which is a string
+	phenotypeSet has a value which is a phenotypeSet_id
+	phenotypeSet_workspace has a value which is a workspace_id
 	out_model has a value which is a fbamodel_id
 	out_workspace has a value which is a workspace_id
+	fba has a value which is a fba_id
+	gapFill_workspace has a value which is a workspace_id
+	integrate_solution has a value which is a bool
 	authentication has a value which is a string
-	donot_submit_job has a value which is a bool
 	overwrite has a value which is a bool
+	donot_submit_job has a value which is a bool
 fbamodel_id is a string
 workspace_id is a string
-FBAFormulation is a reference to a hash where the following keys are defined:
-	media has a value which is a media_id
-	media_workspace has a value which is a workspace_id
-	objfraction has a value which is a float
-	allreversible has a value which is a bool
-	maximizeObjective has a value which is a bool
-	objectiveTerms has a value which is a reference to a list where each element is a term
-	geneko has a value which is a reference to a list where each element is a feature_id
-	rxnko has a value which is a reference to a list where each element is a reaction_id
-	bounds has a value which is a reference to a list where each element is a bound
-	constraints has a value which is a reference to a list where each element is a constraint
-	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
-	defaultmaxflux has a value which is a float
-	defaultminuptake has a value which is a float
-	defaultmaxuptake has a value which is a float
-	simplethermoconst has a value which is a bool
-	thermoconst has a value which is a bool
-	nothermoerror has a value which is a bool
-	minthermoerror has a value which is a bool
-media_id is a string
+gapfill_id is a string
+gapgen_id is a string
+phenotypeSet_id is a string
+fba_id is a string
 bool is an int
-term is a reference to a list containing 3 items:
-	0: a float
-	1: a string
-	2: a string
-feature_id is a string
-reaction_id is a string
-bound is a reference to a list containing 4 items:
-	0: a float
-	1: a float
-	2: a string
-	3: a string
-constraint is a reference to a list containing 4 items:
-	0: a float
-	1: a string
-	2: a reference to a list where each element is a term
-	3: a string
 object_metadata is a reference to a list containing 7 items:
 	0: an object_id
 	1: an object_type
@@ -6769,7 +7001,7 @@ a string
 
 
 
-=head2 probabilistic_annotation_id
+=head2 probabilisticAnnotation_id
 
 =over 4
 
@@ -6848,6 +7080,32 @@ a string
 
 
 =head2 expression_id
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 phenotypeSet_id
 
 =over 4
 
@@ -8292,6 +8550,7 @@ geneAssertions has a value which is a reference to a list where each element is 
 <pre>
 a reference to a hash where the following keys are defined:
 formulation has a value which is an FBAFormulation
+num_solutions has a value which is an int
 nomediahyp has a value which is a bool
 nobiomasshyp has a value which is a bool
 nogprhyp has a value which is a bool
@@ -8309,7 +8568,8 @@ transpen has a value which is a float
 blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
 gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
 allowedcmps has a value which is a reference to a list where each element is a compartment_id
-probabilistic_annotation has a value which is a probabilistic_annotation_id
+probabilisticAnnotation has a value which is a probabilisticAnnotation_id
+probabilisticAnnotation_workspace has a value which is a workspace_id
 
 </pre>
 
@@ -8319,6 +8579,7 @@ probabilistic_annotation has a value which is a probabilistic_annotation_id
 
 a reference to a hash where the following keys are defined:
 formulation has a value which is an FBAFormulation
+num_solutions has a value which is an int
 nomediahyp has a value which is a bool
 nobiomasshyp has a value which is a bool
 nogprhyp has a value which is a bool
@@ -8336,7 +8597,8 @@ transpen has a value which is a float
 blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
 gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
 allowedcmps has a value which is a reference to a list where each element is a compartment_id
-probabilistic_annotation has a value which is a probabilistic_annotation_id
+probabilisticAnnotation has a value which is a probabilisticAnnotation_id
+probabilisticAnnotation_workspace has a value which is a workspace_id
 
 
 =end text
@@ -8475,6 +8737,7 @@ solutions has a value which is a reference to a list where each element is a Gap
 <pre>
 a reference to a hash where the following keys are defined:
 formulation has a value which is an FBAFormulation
+num_solutions has a value which is an int
 nomediahyp has a value which is a bool
 nobiomasshyp has a value which is a bool
 nogprhyp has a value which is a bool
@@ -8488,6 +8751,7 @@ nopathwayhyp has a value which is a bool
 
 a reference to a hash where the following keys are defined:
 formulation has a value which is an FBAFormulation
+num_solutions has a value which is an int
 nomediahyp has a value which is a bool
 nobiomasshyp has a value which is a bool
 nogprhyp has a value which is a bool
@@ -9331,7 +9595,7 @@ authentication has a value which is a string
 
 
 
-=head2 phenotypeSet_id
+=head2 Phenotype
 
 =over 4
 
@@ -9342,32 +9606,6 @@ authentication has a value which is a string
 ********************************************************************************
     Code relating to phenotype simulation and reconciliation
    	********************************************************************************
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a string
-</pre>
-
-=end html
-
-=begin text
-
-a string
-
-=end text
-
-=back
-
-
-
-=head2 Phenotype
-
-=over 4
-
 
 
 =item Definition
@@ -9881,39 +10119,19 @@ donot_submit_job has a value which is a bool
 
 <pre>
 a reference to a hash where the following keys are defined:
-id has a value which is a phenotypeSet_id
-in_model has a value which is a fbamodel_id
-in_workspace has a value which is a workspace_id
-in_formulation has a value which is an FBAFormulation
-num_solutions has a value which is an int
-no_media_hypothesis has a value which is a bool
-no_biomass_hypothesis has a value which is a bool
-no_gpr_hypothesis has a value which is a bool
-no_pathway_hypothesis has a value which is a bool
-allow_unbalanced has a value which is a bool
-activity_bonus has a value which is a float
-drain_penalty has a value which is a float
-direction_penalty has a value which is a float
-no_structure_penalty has a value which is a float
-unfavorable_penalty has a value which is a float
-no_deltag_penalty has a value which is a float
-biomass_transport_penalty has a value which is a float
-single_transport_penalty has a value which is a float
-transport_penalty has a value which is a float
-blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
-gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
-allowed_compartments has a value which is a reference to a list where each element is a string
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+formulation has a value which is a GapfillingFormulation
+phenotypeSet has a value which is a phenotypeSet_id
+phenotypeSet_workspace has a value which is a workspace_id
 integrate_solution has a value which is a bool
-notes has a value which is a string
-prob_anno has a value which is a genome_id
-prob_anno_workspace has a value which is a workspace_id
 out_model has a value which is a fbamodel_id
 out_workspace has a value which is a workspace_id
+gapFill has a value which is a gapfill_id
+gapFill_workspace has a value which is a workspace_id
 authentication has a value which is a string
 overwrite has a value which is a bool
 donot_submit_job has a value which is a bool
-gapfilling_index has a value which is an int
-job has a value which is a job_id
 
 </pre>
 
@@ -9922,39 +10140,19 @@ job has a value which is a job_id
 =begin text
 
 a reference to a hash where the following keys are defined:
-id has a value which is a phenotypeSet_id
-in_model has a value which is a fbamodel_id
-in_workspace has a value which is a workspace_id
-in_formulation has a value which is an FBAFormulation
-num_solutions has a value which is an int
-no_media_hypothesis has a value which is a bool
-no_biomass_hypothesis has a value which is a bool
-no_gpr_hypothesis has a value which is a bool
-no_pathway_hypothesis has a value which is a bool
-allow_unbalanced has a value which is a bool
-activity_bonus has a value which is a float
-drain_penalty has a value which is a float
-direction_penalty has a value which is a float
-no_structure_penalty has a value which is a float
-unfavorable_penalty has a value which is a float
-no_deltag_penalty has a value which is a float
-biomass_transport_penalty has a value which is a float
-single_transport_penalty has a value which is a float
-transport_penalty has a value which is a float
-blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
-gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
-allowed_compartments has a value which is a reference to a list where each element is a string
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+formulation has a value which is a GapfillingFormulation
+phenotypeSet has a value which is a phenotypeSet_id
+phenotypeSet_workspace has a value which is a workspace_id
 integrate_solution has a value which is a bool
-notes has a value which is a string
-prob_anno has a value which is a genome_id
-prob_anno_workspace has a value which is a workspace_id
 out_model has a value which is a fbamodel_id
 out_workspace has a value which is a workspace_id
+gapFill has a value which is a gapfill_id
+gapFill_workspace has a value which is a workspace_id
 authentication has a value which is a string
 overwrite has a value which is a bool
 donot_submit_job has a value which is a bool
-gapfilling_index has a value which is an int
-job has a value which is a job_id
 
 
 =end text
@@ -9975,23 +10173,19 @@ job has a value which is a job_id
 
 <pre>
 a reference to a hash where the following keys are defined:
-id has a value which is a phenotypeSet_id
-in_model has a value which is a fbamodel_id
-in_workspace has a value which is a workspace_id
-in_formulation has a value which is an FBAFormulation
-num_solutions has a value which is an int
-no_media_hypothesis has a value which is a bool
-no_biomass_hypothesis has a value which is a bool
-no_gpr_hypothesis has a value which is a bool
-no_pathway_hypothesis has a value which is a bool
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+formulation has a value which is a GapgenFormulation
+phenotypeSet has a value which is a phenotypeSet_id
+phenotypeSet_workspace has a value which is a workspace_id
 integrate_solution has a value which is a bool
-notes has a value which is a string
 out_model has a value which is a fbamodel_id
 out_workspace has a value which is a workspace_id
+gapgen has a value which is a gapgen_id
+gapGen_workspace has a value which is a workspace_id
 authentication has a value which is a string
 overwrite has a value which is a bool
 donot_submit_job has a value which is a bool
-gapgen_index has a value which is an int
 
 </pre>
 
@@ -10000,23 +10194,19 @@ gapgen_index has a value which is an int
 =begin text
 
 a reference to a hash where the following keys are defined:
-id has a value which is a phenotypeSet_id
-in_model has a value which is a fbamodel_id
-in_workspace has a value which is a workspace_id
-in_formulation has a value which is an FBAFormulation
-num_solutions has a value which is an int
-no_media_hypothesis has a value which is a bool
-no_biomass_hypothesis has a value which is a bool
-no_gpr_hypothesis has a value which is a bool
-no_pathway_hypothesis has a value which is a bool
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+formulation has a value which is a GapgenFormulation
+phenotypeSet has a value which is a phenotypeSet_id
+phenotypeSet_workspace has a value which is a workspace_id
 integrate_solution has a value which is a bool
-notes has a value which is a string
 out_model has a value which is a fbamodel_id
 out_workspace has a value which is a workspace_id
+gapgen has a value which is a gapgen_id
+gapGen_workspace has a value which is a workspace_id
 authentication has a value which is a string
 overwrite has a value which is a bool
 donot_submit_job has a value which is a bool
-gapgen_index has a value which is an int
 
 
 =end text
@@ -10037,40 +10227,20 @@ gapgen_index has a value which is an int
 
 <pre>
 a reference to a hash where the following keys are defined:
-id has a value which is a phenotypeSet_id
-in_model has a value which is a fbamodel_id
-in_workspace has a value which is a workspace_id
-in_formulation has a value which is an FBAFormulation
-num_solutions has a value which is an int
-no_media_hypothesis has a value which is a bool
-no_biomass_hypothesis has a value which is a bool
-no_gpr_hypothesis has a value which is a bool
-no_pathway_hypothesis has a value which is a bool
-allow_unbalanced has a value which is a bool
-activity_bonus has a value which is a float
-drain_penalty has a value which is a float
-direction_penalty has a value which is a float
-no_structure_penalty has a value which is a float
-unfavorable_penalty has a value which is a float
-no_deltag_penalty has a value which is a float
-biomass_transport_penalty has a value which is a float
-single_transport_penalty has a value which is a float
-transport_penalty has a value which is a float
-blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
-gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
-allowed_compartments has a value which is a reference to a list where each element is a string
-notes has a value which is a string
-prob_anno has a value which is a genome_id
-prob_anno_workspace has a value which is a workspace_id
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+formulation has a value which is a GapfillingFormulation
+formulation has a value which is a GapgenFormulation
+phenotypeSet has a value which is a phenotypeSet_id
+phenotypeSet_workspace has a value which is a workspace_id
 out_model has a value which is a fbamodel_id
 out_workspace has a value which is a workspace_id
+gapFills has a value which is a reference to a list where each element is a gapfill_id
+gapGens has a value which is a reference to a list where each element is a gapgen_id
+gapFill_workspace has a value which is a workspace_id
 authentication has a value which is a string
 overwrite has a value which is a bool
 donot_submit_job has a value which is a bool
-all_gapgen_indecies has a value which is a reference to a list where each element is an int
-all_gapfill_indecies has a value which is a reference to a list where each element is an int
-gapgen_index has a value which is an int
-gapfill_index has a value which is an int
 
 </pre>
 
@@ -10079,40 +10249,20 @@ gapfill_index has a value which is an int
 =begin text
 
 a reference to a hash where the following keys are defined:
-id has a value which is a phenotypeSet_id
-in_model has a value which is a fbamodel_id
-in_workspace has a value which is a workspace_id
-in_formulation has a value which is an FBAFormulation
-num_solutions has a value which is an int
-no_media_hypothesis has a value which is a bool
-no_biomass_hypothesis has a value which is a bool
-no_gpr_hypothesis has a value which is a bool
-no_pathway_hypothesis has a value which is a bool
-allow_unbalanced has a value which is a bool
-activity_bonus has a value which is a float
-drain_penalty has a value which is a float
-direction_penalty has a value which is a float
-no_structure_penalty has a value which is a float
-unfavorable_penalty has a value which is a float
-no_deltag_penalty has a value which is a float
-biomass_transport_penalty has a value which is a float
-single_transport_penalty has a value which is a float
-transport_penalty has a value which is a float
-blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
-gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
-allowed_compartments has a value which is a reference to a list where each element is a string
-notes has a value which is a string
-prob_anno has a value which is a genome_id
-prob_anno_workspace has a value which is a workspace_id
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+formulation has a value which is a GapfillingFormulation
+formulation has a value which is a GapgenFormulation
+phenotypeSet has a value which is a phenotypeSet_id
+phenotypeSet_workspace has a value which is a workspace_id
 out_model has a value which is a fbamodel_id
 out_workspace has a value which is a workspace_id
+gapFills has a value which is a reference to a list where each element is a gapfill_id
+gapGens has a value which is a reference to a list where each element is a gapgen_id
+gapFill_workspace has a value which is a workspace_id
 authentication has a value which is a string
 overwrite has a value which is a bool
 donot_submit_job has a value which is a bool
-all_gapgen_indecies has a value which is a reference to a list where each element is an int
-all_gapfill_indecies has a value which is a reference to a list where each element is an int
-gapgen_index has a value which is an int
-gapfill_index has a value which is an int
 
 
 =end text
@@ -10133,17 +10283,21 @@ gapfill_index has a value which is an int
 
 <pre>
 a reference to a hash where the following keys are defined:
-in_model has a value which is a fbamodel_id
-in_workspace has a value which is a workspace_id
-in_formulation has a value which is an FBAFormulation
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+gapFills has a value which is a reference to a list where each element is a gapfill_id
+gapGens has a value which is a reference to a list where each element is a gapgen_id
 num_solutions has a value which is an int
-integrate_solution has a value which is a bool
-notes has a value which is a string
+phenotypeSet has a value which is a phenotypeSet_id
+phenotypeSet_workspace has a value which is a workspace_id
 out_model has a value which is a fbamodel_id
 out_workspace has a value which is a workspace_id
+fba has a value which is a fba_id
+gapFill_workspace has a value which is a workspace_id
+integrate_solution has a value which is a bool
 authentication has a value which is a string
-donot_submit_job has a value which is a bool
 overwrite has a value which is a bool
+donot_submit_job has a value which is a bool
 
 </pre>
 
@@ -10152,17 +10306,21 @@ overwrite has a value which is a bool
 =begin text
 
 a reference to a hash where the following keys are defined:
-in_model has a value which is a fbamodel_id
-in_workspace has a value which is a workspace_id
-in_formulation has a value which is an FBAFormulation
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+gapFills has a value which is a reference to a list where each element is a gapfill_id
+gapGens has a value which is a reference to a list where each element is a gapgen_id
 num_solutions has a value which is an int
-integrate_solution has a value which is a bool
-notes has a value which is a string
+phenotypeSet has a value which is a phenotypeSet_id
+phenotypeSet_workspace has a value which is a workspace_id
 out_model has a value which is a fbamodel_id
 out_workspace has a value which is a workspace_id
+fba has a value which is a fba_id
+gapFill_workspace has a value which is a workspace_id
+integrate_solution has a value which is a bool
 authentication has a value which is a string
-donot_submit_job has a value which is a bool
 overwrite has a value which is a bool
+donot_submit_job has a value which is a bool
 
 
 =end text

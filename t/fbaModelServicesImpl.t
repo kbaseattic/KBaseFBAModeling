@@ -191,7 +191,7 @@ my $job = $obj->queue_runfba({
 ok defined($job), "FBA successfully queued for input model!";
 
 #Now running queued FBA job mannually to ensure that the job runs and postprocessing works
-my $job = $obj->run_job({
+$job = $obj->run_job({
 	jobid => $job->[0],
 	workspace => "testworkspace"
 });

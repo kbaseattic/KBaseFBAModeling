@@ -27,10 +27,11 @@ module fbaModelServices {
     typedef string biochemistry_id;
     typedef string mapping_id;
     typedef string media_id;
-    typedef string probabilistic_annotation_id;
+    typedef string probabilisticAnnotation_id;
     typedef string regmodel_id;
     typedef string compartment_id;
     typedef string expression_id;
+    typedef string phenotypeSet_id;
     /*********************************************************************************
     Object type definition
    	*********************************************************************************/
@@ -250,6 +251,7 @@ module fbaModelServices {
    	*********************************************************************************/
     typedef structure {
 		FBAFormulation formulation;
+		int num_solutions;
 		bool nomediahyp;
 		bool nobiomasshyp;
 		bool nogprhyp;
@@ -267,7 +269,8 @@ module fbaModelServices {
 		list<reaction_id> blacklistedrxns;
 		list<reaction_id> gauranteedrxns;
 		list<compartment_id> allowedcmps;
-		probabilistic_annotation_id probabilistic_annotation;
+		probabilisticAnnotation_id probabilisticAnnotation;
+		workspace_id probabilisticAnnotation_workspace;
     } GapfillingFormulation;
     
     typedef tuple<reaction_id reaction,string direction> reactionAddition;
@@ -293,6 +296,7 @@ module fbaModelServices {
    	*********************************************************************************/
     typedef structure {
 		FBAFormulation formulation;
+		int num_solutions;
 		bool nomediahyp;
 		bool nobiomasshyp;
 		bool nogprhyp;
@@ -553,7 +557,6 @@ module fbaModelServices {
     /*********************************************************************************
     Code relating to phenotype simulation and reconciliation
    	*********************************************************************************/
-    typedef string phenotypeSet_id;
     typedef tuple< list<feature_id> geneKO,media_id baseMedia,workspace_id media_workspace,list<compound_id> additionalCpd,float normalizedGrowth> Phenotype;
     typedef structure {
 		phenotypeSet_id id;
@@ -663,39 +666,19 @@ module fbaModelServices {
 	funcdef queue_runfba(queue_runfba_params input) returns (object_metadata output);
    
     typedef structure {
-		phenotypeSet_id id;
-		fbamodel_id in_model;
-		workspace_id in_workspace;
-		FBAFormulation in_formulation;
-		int num_solutions;
-		bool no_media_hypothesis;
-		bool no_biomass_hypothesis;
-		bool no_gpr_hypothesis;
-		bool no_pathway_hypothesis;
-		bool allow_unbalanced;
-		float activity_bonus;
-		float drain_penalty;
-		float direction_penalty;
-		float no_structure_penalty;
-		float unfavorable_penalty;
-		float no_deltag_penalty;
-		float biomass_transport_penalty;
-		float single_transport_penalty;
-		float transport_penalty;
-		list<reaction_id> blacklistedrxns;
-		list<reaction_id> gauranteedrxns;
-		list<string> allowed_compartments;
+		fbamodel_id model;
+		workspace_id model_workspace;
+		GapfillingFormulation formulation;
+		phenotypeSet_id phenotypeSet;
+		workspace_id phenotypeSet_workspace;
 		bool integrate_solution;
-		string notes;
-		genome_id prob_anno;
-		workspace_id prob_anno_workspace;
 		fbamodel_id out_model;
 		workspace_id out_workspace;
+		gapfill_id gapFill;
+		workspace_id gapFill_workspace;
 		string authentication;
 		bool overwrite;
 		bool donot_submit_job;
-		int gapfilling_index;
-		job_id job;
     } gapfill_model_params;
     /*
         Queues an FBAModel gapfilling job in single media condition
@@ -703,23 +686,19 @@ module fbaModelServices {
     funcdef queue_gapfill_model(gapfill_model_params input) returns (object_metadata output);
     
     typedef structure {
-		phenotypeSet_id id;
-		fbamodel_id in_model;
-		workspace_id in_workspace;
-		FBAFormulation in_formulation;
-		int num_solutions;
-		bool no_media_hypothesis;
-		bool no_biomass_hypothesis;
-		bool no_gpr_hypothesis;
-		bool no_pathway_hypothesis;
+		fbamodel_id model;
+		workspace_id model_workspace;
+		GapgenFormulation formulation;
+		phenotypeSet_id phenotypeSet;
+		workspace_id phenotypeSet_workspace;
 		bool integrate_solution;
-		string notes;
 		fbamodel_id out_model;
 		workspace_id out_workspace;
+		gapgen_id gapgen;
+		workspace_id gapGen_workspace;
 		string authentication;
 		bool overwrite;
 		bool donot_submit_job;
-		int gapgen_index;
     } gapgen_model_params;
     /*
         Queues an FBAModel gapfilling job in single media condition
@@ -727,40 +706,20 @@ module fbaModelServices {
     funcdef queue_gapgen_model(gapgen_model_params input) returns (object_metadata output);
     
     typedef structure {
-		phenotypeSet_id id;
-		fbamodel_id in_model;
-		workspace_id in_workspace;
-		FBAFormulation in_formulation;
-		int num_solutions;
-		bool no_media_hypothesis;
-		bool no_biomass_hypothesis;
-		bool no_gpr_hypothesis;
-		bool no_pathway_hypothesis;
-		bool allow_unbalanced;
-		float activity_bonus;
-		float drain_penalty;
-		float direction_penalty;
-		float no_structure_penalty;
-		float unfavorable_penalty;
-		float no_deltag_penalty;
-		float biomass_transport_penalty;
-		float single_transport_penalty;
-		float transport_penalty;
-		list<reaction_id> blacklistedrxns;
-		list<reaction_id> gauranteedrxns;
-		list<string> allowed_compartments;
-		string notes;
-		genome_id prob_anno;
-		workspace_id prob_anno_workspace;
+		fbamodel_id model;
+		workspace_id model_workspace;
+		GapfillingFormulation formulation;
+		GapgenFormulation formulation;
+		phenotypeSet_id phenotypeSet;
+		workspace_id phenotypeSet_workspace;
 		fbamodel_id out_model;
 		workspace_id out_workspace;
+		list<gapfill_id> gapFills;
+		list<gapgen_id> gapGens;
+		workspace_id gapFill_workspace;
 		string authentication;
 		bool overwrite;
 		bool donot_submit_job;
-		list<int> all_gapgen_indecies;
-		list<int> all_gapfill_indecies;
-		int gapgen_index;
-		int gapfill_index;
     } wildtype_phenotype_reconciliation_params;
     /*
         Queues an FBAModel reconciliation job
@@ -768,17 +727,21 @@ module fbaModelServices {
     funcdef queue_wildtype_phenotype_reconciliation(wildtype_phenotype_reconciliation_params input) returns (object_metadata output);
     
     typedef structure {
-		fbamodel_id in_model;
-		workspace_id in_workspace;
-		FBAFormulation in_formulation;
+		fbamodel_id model;
+		workspace_id model_workspace;
+		list<gapfill_id> gapFills;
+		list<gapgen_id> gapGens;
 		int num_solutions;
-		bool integrate_solution;
-		string notes;
+		phenotypeSet_id phenotypeSet;
+		workspace_id phenotypeSet_workspace;
 		fbamodel_id out_model;
 		workspace_id out_workspace;
+		fba_id fba;
+		workspace_id gapFill_workspace;
+		bool integrate_solution;
 		string authentication;
-		bool donot_submit_job;
 		bool overwrite;
+		bool donot_submit_job;
     } combine_wildtype_phenotype_reconciliation_params;
     /*
         Queues an FBAModel reconciliation job
