@@ -4,24 +4,16 @@
 # Development location: Mathematics and Computer Science Division, Argonne National Lab
 ########################################################################
 use strict;
-use fbaModelServicesScriptSupport;
-
-my $name = "genome_to_fbamodel";
-my $primin = "genome_in";
-my $primout = "model_out";
+use warnings;
+use fbaModelServicesClient;
 my $defaultURL = "http://bio-data-1.mcs.anl.gov/services/fba";
-
-my $opts = [
-	["inputfile|i:s", "Filename that input should be read from instead of STDIN",undef],
-	["outputfile|f:s", "Filename that output should be printed to instead of STDOUT",undef],
-	["url=s","URL of the kbase webservice to use",$defaultURL]
-];
-
-my ($options,$clientObj) = fbaModelServicesScriptSupport::initialize($opts,$name,$primin,$primout);
-my $inputArray = fbaModelServicesScriptSupport::readPrimaryInput($options,$opts,$name,$primin,$primout);
-my $json = JSON::XS->new;
-my $input = $json->decode(join("\n",@{$inputArray}));
-my $outputdata = $clientObj->genome_to_fbamodel($input);
-$json->pretty(1);
-my $output = $json->encode($outputdata);
-fbaModelServicesScriptSupport::printPrimaryOutput($options,$output);
+my $serv = fbaModelServicesClient->new($defaultURL);
+my $usage = "$0 <workspace> <genome_name> <model_name>\n";
+my ($workspace, $genome, $model) = @ARGV;
+die $usage unless defined $workspace && defined $genome && defined $model;
+$serv->genome_to_fbamodel({
+    genome => $genome,
+    genome_workspace => $workspace,
+    model_workspace => $workspace,
+    model => $model,
+});
