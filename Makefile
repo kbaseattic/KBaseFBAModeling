@@ -125,5 +125,5 @@ deploy-cli-service:
 
 deploy-doc:
 	if [ ! -d doc ] ; then mkdir doc ; fi
-	$(KB_RUNTIME)/bin/pod2html -t "fbaModelServices" lib/fbaModelServices.pm > doc/fbaModelServices.html
+	$(KB_RUNTIME)/bin/pod2html -t "fbaModelServices" lib/fbaModelServicesImpl.pm > doc/fbaModelServices.html
 	cp doc/*html $(SERV_SERVICE_DIR)/webroot/.
