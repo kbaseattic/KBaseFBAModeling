@@ -1,4 +1,4 @@
-package fbaModelServicesImpl;
+package Bio::KBase::fbaModelServices::Impl;
 use strict;
 use Bio::KBase::Exceptions;
 # Use Semantic Versioning (2.0.0-rc.1)
@@ -1661,7 +1661,7 @@ sub get_models
 							       method_name => 'get_models');
     }
 
-    my $ctx = $fbaModelServicesServer::CallContext;
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
     my($out_models);
     #BEGIN get_models
     $self->_setContext($ctx,$input);
@@ -2003,7 +2003,7 @@ sub get_fbas
 							       method_name => 'get_fbas');
     }
 
-    my $ctx = $fbaModelServicesServer::CallContext;
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
     my($out_fbas);
     #BEGIN get_fbas
     $self->_setContext($ctx,$input);
@@ -2265,7 +2265,7 @@ sub get_gapfills
 							       method_name => 'get_gapfills');
     }
 
-    my $ctx = $fbaModelServicesServer::CallContext;
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
     my($out_gapfills);
     #BEGIN get_gapfills
     $self->_setContext($ctx,$input);
@@ -2336,6 +2336,8 @@ fbamodel_id is a string
 bool is an int
 GapgenFormulation is a reference to a hash where the following keys are defined:
 	formulation has a value which is an FBAFormulation
+	refmedia has a value which is a media_id
+	refmedia_workspace has a value which is a workspace_id
 	num_solutions has a value which is an int
 	nomediahyp has a value which is a bool
 	nobiomasshyp has a value which is a bool
@@ -2415,6 +2417,8 @@ fbamodel_id is a string
 bool is an int
 GapgenFormulation is a reference to a hash where the following keys are defined:
 	formulation has a value which is an FBAFormulation
+	refmedia has a value which is a media_id
+	refmedia_workspace has a value which is a workspace_id
 	num_solutions has a value which is an int
 	nomediahyp has a value which is a bool
 	nobiomasshyp has a value which is a bool
@@ -2493,7 +2497,7 @@ sub get_gapgens
 							       method_name => 'get_gapgens');
     }
 
-    my $ctx = $fbaModelServicesServer::CallContext;
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
     my($out_gapgens);
     #BEGIN get_gapgens
     $self->_setContext($ctx,$input);
@@ -2611,7 +2615,7 @@ sub get_reactions
 							       method_name => 'get_reactions');
     }
 
-    my $ctx = $fbaModelServicesServer::CallContext;
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
     my($out_reactions);
     #BEGIN get_reactions
 	$self->_setContext($ctx,$input);
@@ -2731,7 +2735,7 @@ sub get_compounds
 							       method_name => 'get_compounds');
     }
 
-    my $ctx = $fbaModelServicesServer::CallContext;
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
     my($out_compounds);
     #BEGIN get_compounds
 	$self->_setContext($ctx,$input);
@@ -2850,7 +2854,7 @@ sub get_media
 							       method_name => 'get_media');
     }
 
-    my $ctx = $fbaModelServicesServer::CallContext;
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
     my($out_media);
     #BEGIN get_media
 	$self->_setContext($ctx,$input);
@@ -2980,7 +2984,7 @@ sub get_biochemistry
 							       method_name => 'get_biochemistry');
     }
 
-    my $ctx = $fbaModelServicesServer::CallContext;
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
     my($out_biochemistry);
     #BEGIN get_biochemistry
 	$self->_setContext($ctx,$input);
@@ -3167,7 +3171,7 @@ sub genome_object_to_workspace
 							       method_name => 'genome_object_to_workspace');
     }
 
-    my $ctx = $fbaModelServicesServer::CallContext;
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
     my($genomeMeta);
     #BEGIN genome_object_to_workspace
     $self->_setContext($ctx,$input);
@@ -3279,7 +3283,7 @@ sub genome_to_workspace
 							       method_name => 'genome_to_workspace');
     }
 
-    my $ctx = $fbaModelServicesServer::CallContext;
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
     my($genomeMeta);
     #BEGIN genome_to_workspace
     $self->_setContext($ctx,$input);
@@ -3399,7 +3403,7 @@ sub genome_to_fbamodel
 							       method_name => 'genome_to_fbamodel');
     }
 
-    my $ctx = $fbaModelServicesServer::CallContext;
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
     my($modelMeta);
     #BEGIN genome_to_fbamodel
     $self->_setContext($ctx,$input);
@@ -3514,7 +3518,7 @@ sub export_fbamodel
 							       method_name => 'export_fbamodel');
     }
 
-    my $ctx = $fbaModelServicesServer::CallContext;
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
     my($output);
     #BEGIN export_fbamodel
     $self->_setContext($ctx,$input);
@@ -3643,7 +3647,7 @@ sub addmedia
 							       method_name => 'addmedia');
     }
 
-    my $ctx = $fbaModelServicesServer::CallContext;
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
     my($mediaMeta);
     #BEGIN addmedia
 	$self->_setContext($ctx,$input);
@@ -3778,7 +3782,7 @@ sub export_media
 							       method_name => 'export_media');
     }
 
-    my $ctx = $fbaModelServicesServer::CallContext;
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
     my($output);
     #BEGIN export_media
     $self->_setContext($ctx,$input);
@@ -3994,7 +3998,7 @@ sub runfba
 							       method_name => 'runfba');
     }
 
-    my $ctx = $fbaModelServicesServer::CallContext;
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
     my($fbaMeta);
     #BEGIN runfba
     $self->_setContext($ctx,$input);
@@ -4110,7 +4114,7 @@ sub export_fba
 							       method_name => 'export_fba');
     }
 
-    my $ctx = $fbaModelServicesServer::CallContext;
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
     my($output);
     #BEGIN export_fba
     $self->_setContext($ctx,$input);
@@ -4249,7 +4253,7 @@ sub import_phenotypes
 							       method_name => 'import_phenotypes');
     }
 
-    my $ctx = $fbaModelServicesServer::CallContext;
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
     my($output);
     #BEGIN import_phenotypes
     $self->_setContext($ctx,$input);
@@ -4566,7 +4570,7 @@ sub simulate_phenotypes
 							       method_name => 'simulate_phenotypes');
     }
 
-    my $ctx = $fbaModelServicesServer::CallContext;
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
     my($output);
     #BEGIN simulate_phenotypes
     $self->_setContext($ctx,$input);
@@ -4731,7 +4735,7 @@ sub export_phenotypeSimulationSet
 							       method_name => 'export_phenotypeSimulationSet');
     }
 
-    my $ctx = $fbaModelServicesServer::CallContext;
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
     my($output);
     #BEGIN export_phenotypeSimulationSet
     $self->_setContext($ctx,$input);
@@ -4954,7 +4958,7 @@ sub queue_runfba
 							       method_name => 'queue_runfba');
     }
 
-    my $ctx = $fbaModelServicesServer::CallContext;
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
     my($output);
     #BEGIN queue_runfba
     $self->_setContext($ctx,$input);
@@ -5266,7 +5270,7 @@ sub queue_gapfill_model
 							       method_name => 'queue_gapfill_model');
     }
 
-    my $ctx = $fbaModelServicesServer::CallContext;
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
     my($output);
     #BEGIN queue_gapfill_model
     $self->_setContext($ctx,$input);
@@ -5388,7 +5392,7 @@ gapgen_model_params is a reference to a hash where the following keys are define
 	integrate_solution has a value which is a bool
 	out_model has a value which is a fbamodel_id
 	out_workspace has a value which is a workspace_id
-	gapgen has a value which is a gapgen_id
+	gapGen has a value which is a gapgen_id
 	gapGen_workspace has a value which is a workspace_id
 	authentication has a value which is a string
 	overwrite has a value which is a bool
@@ -5397,6 +5401,8 @@ fbamodel_id is a string
 workspace_id is a string
 GapgenFormulation is a reference to a hash where the following keys are defined:
 	formulation has a value which is an FBAFormulation
+	refmedia has a value which is a media_id
+	refmedia_workspace has a value which is a workspace_id
 	num_solutions has a value which is an int
 	nomediahyp has a value which is a bool
 	nobiomasshyp has a value which is a bool
@@ -5471,7 +5477,7 @@ gapgen_model_params is a reference to a hash where the following keys are define
 	integrate_solution has a value which is a bool
 	out_model has a value which is a fbamodel_id
 	out_workspace has a value which is a workspace_id
-	gapgen has a value which is a gapgen_id
+	gapGen has a value which is a gapgen_id
 	gapGen_workspace has a value which is a workspace_id
 	authentication has a value which is a string
 	overwrite has a value which is a bool
@@ -5480,6 +5486,8 @@ fbamodel_id is a string
 workspace_id is a string
 GapgenFormulation is a reference to a hash where the following keys are defined:
 	formulation has a value which is an FBAFormulation
+	refmedia has a value which is a media_id
+	refmedia_workspace has a value which is a workspace_id
 	num_solutions has a value which is an int
 	nomediahyp has a value which is a bool
 	nobiomasshyp has a value which is a bool
@@ -5563,7 +5571,7 @@ sub queue_gapgen_model
 							       method_name => 'queue_gapgen_model');
     }
 
-    my $ctx = $fbaModelServicesServer::CallContext;
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
     my($output);
     #BEGIN queue_gapgen_model
     $self->_setContext($ctx,$input);
@@ -5756,6 +5764,8 @@ compartment_id is a string
 probabilisticAnnotation_id is a string
 GapgenFormulation is a reference to a hash where the following keys are defined:
 	formulation has a value which is an FBAFormulation
+	refmedia has a value which is a media_id
+	refmedia_workspace has a value which is a workspace_id
 	num_solutions has a value which is an int
 	nomediahyp has a value which is a bool
 	nobiomasshyp has a value which is a bool
@@ -5865,6 +5875,8 @@ compartment_id is a string
 probabilisticAnnotation_id is a string
 GapgenFormulation is a reference to a hash where the following keys are defined:
 	formulation has a value which is an FBAFormulation
+	refmedia has a value which is a media_id
+	refmedia_workspace has a value which is a workspace_id
 	num_solutions has a value which is an int
 	nomediahyp has a value which is a bool
 	nobiomasshyp has a value which is a bool
@@ -5912,7 +5924,7 @@ sub queue_wildtype_phenotype_reconciliation
 							       method_name => 'queue_wildtype_phenotype_reconciliation');
     }
 
-    my $ctx = $fbaModelServicesServer::CallContext;
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
     my($output);
     #BEGIN queue_wildtype_phenotype_reconciliation
     #END queue_wildtype_phenotype_reconciliation
@@ -6048,7 +6060,7 @@ sub queue_combine_wildtype_phenotype_reconciliation_params
 							       method_name => 'queue_combine_wildtype_phenotype_reconciliation_params');
     }
 
-    my $ctx = $fbaModelServicesServer::CallContext;
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
     my($output);
     #BEGIN queue_combine_wildtype_phenotype_reconciliation_params
     #END queue_combine_wildtype_phenotype_reconciliation_params
@@ -6164,7 +6176,7 @@ sub jobs_done
 							       method_name => 'jobs_done');
     }
 
-    my $ctx = $fbaModelServicesServer::CallContext;
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
     my($output);
     #BEGIN jobs_done
     $self->_setContext($ctx,$input);
@@ -6292,7 +6304,7 @@ sub check_job
 							       method_name => 'check_job');
     }
 
-    my $ctx = $fbaModelServicesServer::CallContext;
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
     my($output);
     #BEGIN check_job
     $self->_setContext($ctx,$input);
@@ -6414,7 +6426,7 @@ sub run_job
 							       method_name => 'run_job');
     }
 
-    my $ctx = $fbaModelServicesServer::CallContext;
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
     my($output);
     #BEGIN run_job
     $self->_setContext($ctx,$input);
@@ -8878,6 +8890,8 @@ solutions has a value which is a reference to a list where each element is a Gap
 <pre>
 a reference to a hash where the following keys are defined:
 formulation has a value which is an FBAFormulation
+refmedia has a value which is a media_id
+refmedia_workspace has a value which is a workspace_id
 num_solutions has a value which is an int
 nomediahyp has a value which is a bool
 nobiomasshyp has a value which is a bool
@@ -8892,6 +8906,8 @@ nopathwayhyp has a value which is a bool
 
 a reference to a hash where the following keys are defined:
 formulation has a value which is an FBAFormulation
+refmedia has a value which is a media_id
+refmedia_workspace has a value which is a workspace_id
 num_solutions has a value which is an int
 nomediahyp has a value which is a bool
 nobiomasshyp has a value which is a bool
@@ -10322,7 +10338,7 @@ phenotypeSet_workspace has a value which is a workspace_id
 integrate_solution has a value which is a bool
 out_model has a value which is a fbamodel_id
 out_workspace has a value which is a workspace_id
-gapgen has a value which is a gapgen_id
+gapGen has a value which is a gapgen_id
 gapGen_workspace has a value which is a workspace_id
 authentication has a value which is a string
 overwrite has a value which is a bool
@@ -10343,7 +10359,7 @@ phenotypeSet_workspace has a value which is a workspace_id
 integrate_solution has a value which is a bool
 out_model has a value which is a fbamodel_id
 out_workspace has a value which is a workspace_id
-gapgen has a value which is a gapgen_id
+gapGen has a value which is a gapgen_id
 gapGen_workspace has a value which is a workspace_id
 authentication has a value which is a string
 overwrite has a value which is a bool

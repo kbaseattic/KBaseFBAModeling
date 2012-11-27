@@ -296,6 +296,8 @@ module fbaModelServices {
    	*********************************************************************************/
     typedef structure {
 		FBAFormulation formulation;
+		media_id refmedia;
+		workspace_id refmedia_workspace;
 		int num_solutions;
 		bool nomediahyp;
 		bool nobiomasshyp;
@@ -694,7 +696,7 @@ module fbaModelServices {
 		bool integrate_solution;
 		fbamodel_id out_model;
 		workspace_id out_workspace;
-		gapgen_id gapgen;
+		gapgen_id gapGen;
 		workspace_id gapGen_workspace;
 		string authentication;
 		bool overwrite;

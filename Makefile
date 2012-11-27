@@ -1,3 +1,4 @@
+ROOT_DEV_MODULE_DIR := $(abspath $(dir $lastword $(MAKEFILE_LIST)))
 TOP_DIR = ../..
 DEPLOY_RUNTIME ?= /kb/runtime
 TARGET ?= /kb/deployment
@@ -127,3 +128,35 @@ deploy-doc:
 	if [ ! -d doc ] ; then mkdir doc ; fi
 	$(KB_RUNTIME)/bin/pod2html -t "fbaModelServices" lib/fbaModelServices.pm > doc/fbaModelServices.html
 	cp doc/*html $(SERV_SERVICE_DIR)/webroot/.
+
+compile-typespec: compile-fbaModelServices compile-fbaModelCLI compile-fbaModelData
+
+compile-fbaModelServices:
+	compile_typespec \
+	-impl Bio::KBase::fbaModelServices::Impl \
+	-service Bio::KBase::fbaModelServices::Server \
+	-psgi fbaModelServices.psgi \
+	-client Bio::KBase::fbaModelServices::Client \
+	-js javascript/fbaModelServices/Client \
+	-py biokbase/fbaModelServices/Client \
+	fbaModelServices.spec lib
+
+compile-fbaModelCLI:
+	compile_typespec \
+	-impl Bio::KBase::fbaModelCLI::Impl \
+	-service Bio::KBase::fbaModelCLI::Server \
+	-psgi fbaModelCLI.psgi \
+	-client Bio::KBase::fbaModelCLI::Client \
+	-js javascript/fbaModelCLI/Client \
+	-py biokbase/fbaModelCLI/Client \
+	fbaModelCLI.spec lib
+
+compile-fbaModelData:
+	compile_typespec \
+	-impl Bio::KBase::fbaModelData::Impl \
+	-service Bio::KBase::fbaModelData::Server \
+	-psgi fbaModelData.psgi \
+	-client Bio::KBase::fbaModelData::Client \
+	-js javascript/fbaModelData/Client \
+	-py biokbase/fbaModelData/Client \
+	fbaModelData.spec lib

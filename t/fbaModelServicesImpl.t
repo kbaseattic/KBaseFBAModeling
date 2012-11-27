@@ -195,7 +195,7 @@ $job = $obj->run_job({
 	jobid => $job->[0],
 	workspace => "testworkspace"
 });
-ok defined($job), "Successfully ran queued job!";
+ok defined($job), "Successfully ran queued FBA job!";
 
 #Now exporting queued FBA
 $html = $obj->export_fba({
@@ -205,6 +205,58 @@ $html = $obj->export_fba({
 });
 ok defined($html), "Successfully exported FBA to html format!";
 open ( $fh, ">", "fba2.html");
+print $fh $html."\n";
+close($fh);
+
+#Now exporting queued FBA
+$job = $obj->queue_gapfill_model({
+	model => $model->[0],
+	model_workspace => "testworkspace",
+	formulation => {
+		formulation => {
+			media => "CustomMedia",
+			media_workspace => "testworkspace"
+		},
+		num_solutions => 1
+	},
+	integrate_solution => 1;
+	out_model => $model->[0].".gapfilled";
+	donot_submit_job => 1
+});
+ok defined($html), "Successfully queued gapfill job!";
+
+#Now running queued gapfill job mannually to ensure that the job runs and postprocessing works
+$job = $obj->run_job({
+	jobid => $job->[0],
+	workspace => "testworkspace"
+});
+ok defined($job), "Successfully ran queued gapfill job!";
+
+#Now test flux balance analysis
+$fba = $obj->runfba({
+	model => $model->[0],
+	model_workspace => "testworkspace",
+	formulation => {
+		media => "CustomMedia",
+		media_workspace => "testworkspace"
+	},
+	fva => 0,
+	simulateko => 0,
+	minimizeflux => 0,
+	findminmedia => 0,
+	notes => "",
+	fba_workspace => "testworkspace"
+});
+ok defined($fba), "FBA successfully run on gapfilled model!";
+
+#Now exporting queued FBA
+$html = $obj->export_fba({
+	fba => $fba->[0],
+	workspace => "testworkspace",
+	format => "html"
+});
+ok defined($html), "Successfully exported FBA to html format!";
+open ( $fh, ">", "fba3.html");
 print $fh $html."\n";
 close($fh);
 
