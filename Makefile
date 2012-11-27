@@ -123,7 +123,7 @@ deploy-cli-service:
 	tpage $(CLI_TPAGE_ARGS) service/process.tt > $(TARGET)/services/$(CLI_SERVICE)/process.$(CLI_SERVICE); \
 	chmod +x $(TARGET)/services/$(CLI_SERVICE)/process.$(CLI_SERVICE);
 
-deploy-doc:
+deploy-docs:
 	if [ ! -d doc ] ; then mkdir doc ; fi
 	$(KB_RUNTIME)/bin/pod2html -t "fbaModelServices" lib/fbaModelServicesImpl.pm > doc/fbaModelServices.html
 	cp doc/*html $(SERV_SERVICE_DIR)/webroot/.
