@@ -35,7 +35,7 @@ my $config = {
     nothermoerror => [ "nothermoerror", "Do not include uncertainty in thermodynamic constraints", 0, "form" ],
 	minthermoerror => [ "minthermoerror","Minimize uncertainty in thermodynamic constraints",  0, "form" ],
 };
-my $usage = "$0 <workspace> <model> [options]";
+my $usage = "$0 <workspace> <model> [options]\n";
 my ($rtv, $options) = describe_options(
     "$0 %o <workspace> <model>",
     make_options($config)
@@ -59,13 +59,13 @@ sub make_options {
     my ($config) = @_;
     my @options;
     foreach my $key (keys %$config) {
-        my $config = $config->{$key}->[0];
+        my $c = $config->{$key}->[0];
         my $description = $config->{$key}->[1];
         my $default = $config->{$key}->[2];
         if (defined $default) {
             $description .= " Default: $default";
         }
-        push(@options, [ $config, $description ]);
+        push(@options, [ $c, $description ]);
     }
     return @options;
 }
