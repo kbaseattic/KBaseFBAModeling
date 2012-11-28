@@ -1,3 +1,4 @@
+#!/usr/bin/env perl
 ########################################################################
 # Authors: Christopher Henry, Scott Devoid, Paul Frybarger
 # Contact email: chenry@mcs.anl.gov

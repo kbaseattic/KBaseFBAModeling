@@ -28,6 +28,7 @@ if (defined $filename && -f $filename) {
 }
 if ( -t $fh ) {
     die $usage; 
+}
 my $genome_obj;
 {
     local $/;

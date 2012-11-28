@@ -15,7 +15,7 @@ use fbaModelServicesClient;
 my $defaultURL = "http://kbase.us/services/fbaModelServices";
 my $serv = fbaModelServicesClient->new($defaultURL);
 my ($workspace, $model, $format) = @ARGV;
-my $supported = { map { $_ => 1 } qw( html sbml readable json ) };
+my $supported = { map { $_ => 1 } qw( html sbml readable json cytoseed ) };
 my $usage = "$0 [workspace] [model] [format]\n" . 
 "Supported formats: " . join(", ", keys %$supported) . "\n";
 unless (defined $workspace && defined $model &&
