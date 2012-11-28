@@ -5659,10 +5659,13 @@ sub queue_gapgen_model
 			my $msg = "Gap generation completed with no solutions found. Gap generation failed!";
 			Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'queue_gapgen_model');
 		}
-		$gapgen->parseGapgenResults($gapgen->fbaFormulation()->fbaResults());
+		$gapgen->parseGapgenResults($gapgen->fbaFormulation()->fbaResults()->[0]);
 		if ($input->{integrate_solution} == 1) {
 			my $model = $gapgen->model();
-			$model->integrateGapfillSolution($gapgen,0);
+			$model->integrateGapgenSolution({
+				gapgenFormulation => $gapgen,
+				solutionNum => 0
+			});
 			my $modelmeta = $self->_save_msobject($model,"Model",$input->{out_workspace},$input->{out_model},"queue_gapgen_model");
 		}
 		$output = $self->_save_msobject($gapgen,"GapFill",$input->{gapGen_workspace},$input->{gapGen},"queue_gapgen_model");
@@ -6452,6 +6455,7 @@ sub run_job
     	my $msg = "FBA failed with no solution returned!";
     	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'runfba');
     }
+    print $job->{queuing_command}."\t".$fba->jobDirectory()."\n";
     $self->_save_msobject($fba,"FBA",$clusterjob->{fbaws},$clusterjob->{fbaid},"run_job");
 	$output = $job;
     $self->jobs_done($input);
