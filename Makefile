@@ -126,7 +126,14 @@ deploy-cli-service:
 
 deploy-docs:
 	if [ ! -d doc ] ; then mkdir doc ; fi
-	$(KB_RUNTIME)/bin/pod2html -t "fbaModelServices" lib/fbaModelServicesImpl.pm > doc/fbaModelServices.html
+	cd lib/Bio/KBase; \
+	for f in fbaModel*/*.pm ; do \
+		dirname=`dirname $$f`; \
+		basename=`basename $$f .pm`; \
+		name="$$dirname::$$basename"; \
+		echo $$name; \
+		$(KB_RUNTIME)/bin/pod2html -t "$$name" $$f > "../../../doc/$$name.html"; \
+	done
 	cp doc/*html $(SERV_SERVICE_DIR)/webroot/.
 
 compile-typespec: compile-fbaModelServices compile-fbaModelCLI compile-fbaModelData
