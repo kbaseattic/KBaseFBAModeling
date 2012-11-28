@@ -31,6 +31,7 @@ use ModelSEED::MS::Model;
 use ModelSEED::MS::Utilities::GlobalFunctions;
 use ModelSEED::MS::Factories::ExchangeFormatFactory;
 use ModelSEED::MS::GapfillingFormulation;
+use ModelSEED::MS::GapgenFormulation;
 use ModelSEED::MS::FBAFormulation;
 use ModelSEED::MS::FBAProblem;
 use ModelSEED::MS::Metadata::Definitions;
@@ -402,11 +403,16 @@ sub _get_msobject {
 			foreach my $attribute (keys(%{$subobjs})) {
 				my $link = $subobjs->{$attribute}->[0];
 				my $linkType = $subobjs->{$attribute}->[1];
+				my $array = [];
 				for (my $i=0; $i < @{$obj->$attribute()}; $i++) {
 					my $linkid = $obj->$attribute()->[$i];
 					my $array = [split(/\//,$linkid)];
-					$obj->$link()->[$i] = $self->_get_msobject($linkType,$array->[0],$array->[1],$cache);
-				} 
+					my $object = $self->_get_msobject($linkType,$array->[0],$array->[1],$cache);
+					$array->[$i] = $object;
+				}
+				if (@{$array} > 0) {
+					$obj->$link($array);
+				}
 			}
 		} elsif ($type eq "Annotation") {
 			my $linkid = $obj->mapping_uuid();
@@ -652,6 +658,8 @@ sub _buildFBAObject {
 		parameters => {},
 		numberOfSolutions => 1,
 	});
+	$form->{_kbaseWSMeta}->{wsid} = $id;
+	$form->{_kbaseWSMeta}->{ws} = $workspace;
 	#Parse objective equation
 	foreach my $term (@{$fbaFormulation->{objectiveTerms}}) {
 		my $output = $self->_parseTerm($term,$model);
@@ -813,6 +821,8 @@ sub _buildGapfillObject {
 		gprHypothesis => $self->_invert_boolean($formulation->{nogprhyp}),
 		reactionAdditionHypothesis => $self->_invert_boolean($formulation->{nopathwayhyp}),
 	});
+	$gapform->{_kbaseWSMeta}->{wsid} = $id;
+	$gapform->{_kbaseWSMeta}->{ws} = $workspace;
 	$gapform->prepareFBAFormulation();
 	$gapform->fbaFormulation()->numberOfSolutions($formulation->{num_solutions});
 	foreach my $reaction (@{$formulation->{gauranteedrxns}}) {
@@ -861,18 +871,18 @@ sub _buildGapGenObject {
 	my $media;
 	my $mediaobj;
 	if ($formulation->{refmedia_workspace} ne "kbasecdm") {
-		$mediaobj = $self->_get_msobject("Media",$fbaFormulation->{refmedia_workspace},$fbaFormulation->{refmedia});
+		$mediaobj = $self->_get_msobject("Media",$formulation->{refmedia_workspace},$formulation->{refmedia});
 		$model->biochemistry()->add("media",$mediaobj);
-		$media = $fbaFormulation->{refmedia_workspace}."/".$fbaFormulation->{refmedia};
+		$media = $formulation->{refmedia_workspace}."/".$formulation->{refmedia};
 	} else {
-		$mediaObj = $model->biochemistry()->queryObject("media",{
-			id => $fbaFormulation->{refmedia}
+		$mediaobj = $model->biochemistry()->queryObject("media",{
+			id => $formulation->{refmedia}
 		});
-		if (!defined($mediaObj)) {
-			my $msg = "Media object ".$fbaFormulation->{refmedia}." not found in biochemistry!";
+		if (!defined($mediaobj)) {
+			my $msg = "Media object ".$formulation->{refmedia}." not found in biochemistry!";
 			Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => '_buildFBAObject');
 		}
-		$media = $mediaObj->uuid();
+		$media = $mediaobj->uuid();
 	}
 	my $fbaid = $self->_get_new_id($id.".fba.");
 	my $gapform = ModelSEED::MS::GapgenFormulation->new({
@@ -888,6 +898,8 @@ sub _buildGapGenObject {
 		referenceMedia_uuid => $media,
 		referenceMedia => $mediaobj
 	});
+	$gapform->{_kbaseWSMeta}->{wsid} = $id;
+	$gapform->{_kbaseWSMeta}->{ws} = $workspace;
 	$gapform->prepareFBAFormulation();
 	$gapform->fbaFormulation()->numberOfSolutions($formulation->{num_solutions});
 	return $gapform;
@@ -5331,11 +5343,9 @@ sub queue_gapfill_model
 				fbainst => $fba->{_kbaseWSMeta}->{wsinst},
 			}],
 			postprocess_command => "queue_gapfill_model",
-			postprocess_args => [{
-				$input
-			}],
+			postprocess_args => [$input],
 			queuing_command => "queue_gapfill_model",
-			workspace => $input->{fba_workspace}
+			workspace => $input->{out_workspace}
 		});
 		if ($input->{donot_submit_job} == 0) {
 			$job = $self->_submit_job($job);
@@ -5343,14 +5353,17 @@ sub queue_gapfill_model
 		$output = $self->_save_msobject($job,"FBAJob",$job->{workspace},$job->{id},"queue_gapfill_model");
 	} else {
 		my $gapfill = $self->_get_msobject("GapFill",$input->{gapFill_workspace},$input->{gapFill});
-		if (!defined($gapfill->fbaFormulation()->fbaResults())) {
+		if (!defined($gapfill->fbaFormulation()->fbaResults()->[0])) {
 			my $msg = "Gapfilling completed with no solutions found. Gapfilling failed!";
 			Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'queue_gapfill_model');
 		}
-		$gapfill->parseGapfillingResults($gapfill->fbaFormulation()->fbaResults());
+		$gapfill->parseGapfillingResults($gapfill->fbaFormulation()->fbaResults()->[0]);
 		if ($input->{integrate_solution} == 1) {
 			my $model = $gapfill->model();
-			$model->integrateGapfillSolution($gapfill,0);
+			$model->integrateGapfillSolution({
+				gapfillingFormulation => $gapfill,
+				solutionNum => 0
+			});
 			my $modelmeta = $self->_save_msobject($model,"Model",$input->{out_workspace},$input->{out_model},"queue_gapfill_model");
 		}
 		$output = $self->_save_msobject($gapfill,"GapFill",$input->{gapFill_workspace},$input->{gapFill},"queue_gapfill_model");
@@ -5632,11 +5645,9 @@ sub queue_gapgen_model
 				fbainst => $fba->{_kbaseWSMeta}->{wsinst},
 			}],
 			postprocess_command => "queue_gapgen_model",
-			postprocess_args => [{
-				$input
-			}],
+			postprocess_args => [$input],
 			queuing_command => "queue_gapgen_model",
-			workspace => $input->{fba_workspace}
+			workspace => $input->{out_workspace}
 		});
 		if ($input->{donot_submit_job} == 0) {
 			$job = $self->_submit_job($job);
@@ -5648,7 +5659,7 @@ sub queue_gapgen_model
 			my $msg = "Gap generation completed with no solutions found. Gap generation failed!";
 			Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'queue_gapgen_model');
 		}
-		$gapgen->parseGapfillingResults($gapgen->fbaFormulation()->fbaResults());
+		$gapgen->parseGapgenResults($gapgen->fbaFormulation()->fbaResults());
 		if ($input->{integrate_solution} == 1) {
 			my $model = $gapgen->model();
 			$model->integrateGapfillSolution($gapgen,0);

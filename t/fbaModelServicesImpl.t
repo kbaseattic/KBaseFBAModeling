@@ -7,19 +7,19 @@ use Bio::KBase::workspaceService::Impl;
 use LWP::Simple qw(getstore);
 use IO::Compress::Gzip qw(gzip);
 use IO::Uncompress::Gunzip qw(gunzip);
-use fbaModelServicesImpl;
+use Bio::KBase::fbaModelServices::Impl;
 use JSON::XS;
 use strict;
 use warnings;
 use Test::More;
 use Data::Dumper;
 use File::Temp qw(tempfile);
-my $test_count = 20;
+my $test_count = 26;
 my $genomeObj;
 
 #Initializing test workspace
 my $ws = &_initializeTestWorkspace();
-my $obj = fbaModelServicesImpl->new({workspace => $ws});
+my $obj = Bio::KBase::fbaModelServices::Impl->new({workspace => $ws});
 
 #Testing biochemistry retrieval method
 my $biochemistry = $obj->get_biochemistry({});
@@ -108,7 +108,17 @@ open ( my $fh, ">", "PhenotypeSim.html");
 print $fh $html."\n";
 close($fh);
 
-#Testing model export to html
+#Testing model export
+my $cytoseed = $obj->export_fbamodel({
+	model => $model->[0],
+	workspace => "testworkspace",
+	format => "cytoseed"
+});
+ok defined($cytoseed), "Successfully exported model to cytoseed format!";
+open ( $fh, ">", "model.cytoseed");
+print $fh $cytoseed."\n";
+close($fh);
+
 $html = $obj->export_fbamodel({
 	model => $model->[0],
 	workspace => "testworkspace",
@@ -117,6 +127,16 @@ $html = $obj->export_fbamodel({
 ok defined($html), "Successfully exported model to html format!";
 open ( $fh, ">", "model.html");
 print $fh $html."\n";
+close($fh);
+
+my $sbml = $obj->export_fbamodel({
+	model => $model->[0],
+	workspace => "testworkspace",
+	format => "sbml"
+});
+ok defined($sbml), "Successfully exported model to sml format!";
+open ( $fh, ">", "model.sbml");
+print $fh $sbml."\n";
 close($fh);
 
 #Testing model retrieval method
@@ -208,7 +228,31 @@ open ( $fh, ">", "fba2.html");
 print $fh $html."\n";
 close($fh);
 
-#Now exporting queued FBA
+#Now queuing gapfilling in complete media
+$job = $obj->queue_gapfill_model({
+	model => $model->[0],
+	model_workspace => "testworkspace",
+	formulation => {
+		formulation => {
+			media => "Complete",
+			media_workspace => "kbasecdm"
+		},
+		num_solutions => 1
+	},
+	integrate_solution => 1,
+	out_model => $model->[0].".gapfilled",
+	donot_submit_job => 1
+});
+ok defined($html), "Successfully queued gapfill job!";
+
+#Now running queued gapfill job mannually to ensure that the job runs and postprocessing works
+$job = $obj->run_job({
+	jobid => $job->[0],
+	workspace => "testworkspace"
+});
+ok defined($job), "Successfully ran queued gapfill job!";
+
+#Now queuing gapfilling in custom media
 $job = $obj->queue_gapfill_model({
 	model => $model->[0],
 	model_workspace => "testworkspace",
@@ -219,8 +263,8 @@ $job = $obj->queue_gapfill_model({
 		},
 		num_solutions => 1
 	},
-	integrate_solution => 1;
-	out_model => $model->[0].".gapfilled";
+	integrate_solution => 1,
+	out_model => $model->[0].".gapfilled",
 	donot_submit_job => 1
 });
 ok defined($html), "Successfully queued gapfill job!";
@@ -234,7 +278,7 @@ ok defined($job), "Successfully ran queued gapfill job!";
 
 #Now test flux balance analysis
 $fba = $obj->runfba({
-	model => $model->[0],
+	model => $model->[0].".gapfilled",
 	model_workspace => "testworkspace",
 	formulation => {
 		media => "CustomMedia",
@@ -256,7 +300,61 @@ $html = $obj->export_fba({
 	format => "html"
 });
 ok defined($html), "Successfully exported FBA to html format!";
-open ( $fh, ">", "fba3.html");
+open ( $fh, ">", "fba-GapFill.html");
+print $fh $html."\n";
+close($fh);
+
+#Now exporting queued FBA
+$job = $obj->queue_gapgen_model({
+	model => $model->[0],
+	model_workspace => "testworkspace",
+	formulation => {
+		formulation => {
+			media => "Complete",
+			media_workspace => "kbasecdm"
+		},
+		refmedia => "CustomMedia",
+		refmedia_workspace => "testworkspace",
+		num_solutions => 1
+	},
+	integrate_solution => 1,
+	out_model => $model->[0].".gapgen",
+	donot_submit_job => 1
+});
+ok defined($html), "Successfully queued gapgen job!";
+
+#Now running queued gapfill job mannually to ensure that the job runs and postprocessing works
+$job = $obj->run_job({
+	jobid => $job->[0],
+	workspace => "testworkspace"
+});
+ok defined($job), "Successfully ran queued gapgen job!";
+
+#Now test flux balance analysis
+$fba = $obj->runfba({
+	model => $model->[0].".gapgen",
+	model_workspace => "testworkspace",
+	formulation => {
+		media => "CustomMedia",
+		media_workspace => "testworkspace"
+	},
+	fva => 0,
+	simulateko => 0,
+	minimizeflux => 0,
+	findminmedia => 0,
+	notes => "",
+	fba_workspace => "testworkspace"
+});
+ok defined($fba), "FBA successfully run on gapgen model!";
+
+#Now exporting queued FBA
+$html = $obj->export_fba({
+	fba => $fba->[0],
+	workspace => "testworkspace",
+	format => "html"
+});
+ok defined($html), "Successfully exported FBA to html format!";
+open ( $fh, ">", "fba-Gapgen.html");
 print $fh $html."\n";
 close($fh);
 
