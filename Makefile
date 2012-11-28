@@ -70,10 +70,11 @@ test-client:
 		fi \
 	done
 
-deploy: deploy-service
+deploy: compile-typespec deploy-client
+deploy-all: compile-typespec deploy-client deploy-service
 
-deploy-service: deploy-dir deploy-scripts deploy-libs deploy-services
-deploy-client: deploy-dir deploy-scripts deploy-libs  deploy-doc
+deploy-service: deploy-dir deploy-libs deploy-scripts deploy-services
+deploy-client: deploy-dir deploy-libs deploy-scripts deploy-docs
 
 deploy-dir:
 	if [ ! -d $(SERV_SERVICE_DIR) ] ; then mkdir $(SERV_SERVICE_DIR) ; fi
