@@ -70,8 +70,8 @@ test-client:
 		fi \
 	done
 
-deploy: compile-typespec deploy-client
-deploy-all: compile-typespec deploy-client deploy-service
+deploy: deploy-client
+deploy-all: deploy-client deploy-service
 
 deploy-service: deploy-dir deploy-libs deploy-scripts deploy-services
 deploy-client: deploy-dir deploy-libs deploy-scripts deploy-docs
