@@ -18,17 +18,24 @@ Bio::KBase::fbaModelCLI::Client
 =head1 DESCRIPTION
 
 
+API for executing command line functions. This API acts as a
+pass-through service for executing command line functions for FBA
+modeling hosted in KBase. This aleviates the need to have specifically
+tailored CLI commands.
+
 
 =cut
 
 sub new
 {
-    my($class, $url) = @_;
+    my($class, $url, @args) = @_;
 
     my $self = {
 	client => Bio::KBase::fbaModelCLI::Client::RpcClient->new,
 	url => $url,
     };
+
+
     my $ua = $self->{client}->ua;	 
     my $timeout = $ENV{CDMI_TIMEOUT} || (30 * 60);	 
     $ua->timeout($timeout);
@@ -40,15 +47,59 @@ sub new
 
 
 
-=head2 $result = execute_command(args, stdin)
+=head2 execute_command
+
+  $status, $stdout, $stderr = $obj->execute_command($args, $stdin)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$args is an ARGV
+$stdin is an STDIN
+$status is an int
+$stdout is an STDOUT
+$stderr is an STDERR
+ARGV is a reference to a list where each element is a string
+STDIN is a string
+STDOUT is a string
+STDERR is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$args is an ARGV
+$stdin is an STDIN
+$status is an int
+$stdout is an STDOUT
+$stderr is an STDERR
+ARGV is a reference to a list where each element is a string
+STDIN is a string
+STDOUT is a string
+STDERR is a string
 
 
+=end text
+
+=item Description
+
+
+
+=back
 
 =cut
 
 sub execute_command
 {
     my($self, @args) = @_;
+
+# Authentication: none
 
     if ((my $n = @args) != 2)
     {
@@ -144,6 +195,116 @@ sub _validate_version {
     }
 }
 
+=head1 TYPES
+
+
+
+=head2 ARGV
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a list where each element is a string
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a list where each element is a string
+
+=end text
+
+=back
+
+
+
+=head2 STDIN
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 STDOUT
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 STDERR
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=cut
+
 package Bio::KBase::fbaModelCLI::Client::RpcClient;
 use base 'JSON::RPC::Client';
 
@@ -185,5 +346,38 @@ sub call {
         return;
     }
 }
+
+
+sub _post {
+    my ($self, $uri, $obj) = @_;
+    my $json = $self->json;
+
+    $obj->{version} ||= $self->{version} || '1.1';
+
+    if ($obj->{version} eq '1.0') {
+        delete $obj->{version};
+        if (exists $obj->{id}) {
+            $self->id($obj->{id}) if ($obj->{id}); # if undef, it is notification.
+        }
+        else {
+            $obj->{id} = $self->id || ($self->id('JSON::RPC::Client'));
+        }
+    }
+    else {
+        $obj->{id} = $self->id if (defined $self->id);
+    }
+
+    my $content = $json->encode($obj);
+
+    $self->ua->post(
+        $uri,
+        Content_Type   => $self->{content_type},
+        Content        => $content,
+        Accept         => 'application/json',
+	($self->{token} ? (Authorization => $self->{token}) : ()),
+    );
+}
+
+
 
 1;

@@ -18,17 +18,24 @@ Bio::KBase::fbaModelData::Client
 =head1 DESCRIPTION
 
 
+=head1 fbaModelData
+
+Data access library for fbaModel services. This API is meant for
+interanl use only. Do not distribute or expose publically.
+
 
 =cut
 
 sub new
 {
-    my($class, $url) = @_;
+    my($class, $url, @args) = @_;
 
     my $self = {
 	client => Bio::KBase::fbaModelData::Client::RpcClient->new,
 	url => $url,
     };
+
+
     my $ua = $self->{client}->ua;	 
     my $timeout = $ENV{CDMI_TIMEOUT} || (30 * 60);	 
     $ua->timeout($timeout);
@@ -40,15 +47,49 @@ sub new
 
 
 
-=head2 $result = has_data(ref)
+=head2 has_data
+
+  $existence = $obj->has_data($ref)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$ref is a Ref
+$existence is a Bool
+Ref is a string
+Bool is an int
+
+</pre>
+
+=end html
+
+=begin text
+
+$ref is a Ref
+$existence is a Bool
+Ref is a string
+Bool is an int
 
 
+=end text
+
+=item Description
+
+
+
+=back
 
 =cut
 
 sub has_data
 {
     my($self, @args) = @_;
+
+# Authentication: none
 
     if ((my $n = @args) != 1)
     {
@@ -90,15 +131,49 @@ sub has_data
 
 
 
-=head2 $result = get_data(ref)
+=head2 get_data
+
+  $data = $obj->get_data($ref)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$ref is a Ref
+$data is a Data
+Ref is a string
+Data is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$ref is a Ref
+$data is a Data
+Ref is a string
+Data is a string
 
 
+=end text
+
+=item Description
+
+
+
+=back
 
 =cut
 
 sub get_data
 {
     my($self, @args) = @_;
+
+# Authentication: none
 
     if ((my $n = @args) != 1)
     {
@@ -140,15 +215,61 @@ sub get_data
 
 
 
-=head2 $result = save_data(ref, data, config)
+=head2 save_data
+
+  $success = $obj->save_data($ref, $data, $config)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$ref is a Ref
+$data is a Data
+$config is a SaveConf
+$success is a Bool
+Ref is a string
+Data is a string
+SaveConf is a reference to a hash where the following keys are defined:
+	is_merge has a value which is a Bool
+	schema_update has a value which is a Bool
+Bool is an int
+
+</pre>
+
+=end html
+
+=begin text
+
+$ref is a Ref
+$data is a Data
+$config is a SaveConf
+$success is a Bool
+Ref is a string
+Data is a string
+SaveConf is a reference to a hash where the following keys are defined:
+	is_merge has a value which is a Bool
+	schema_update has a value which is a Bool
+Bool is an int
 
 
+=end text
+
+=item Description
+
+
+
+=back
 
 =cut
 
 sub save_data
 {
     my($self, @args) = @_;
+
+# Authentication: none
 
     if ((my $n = @args) != 3)
     {
@@ -192,15 +313,61 @@ sub save_data
 
 
 
-=head2 $result = get_aliases(query)
+=head2 get_aliases
+
+  $aliases = $obj->get_aliases($query)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$query is an Alias
+$aliases is an Aliases
+Alias is a reference to a hash where the following keys are defined:
+	uuid has a value which is an UUID
+	owner has a value which is a Username
+	type has a value which is a string
+	alias has a value which is a string
+UUID is a string
+Username is a string
+Aliases is a reference to a list where each element is an Alias
+
+</pre>
+
+=end html
+
+=begin text
+
+$query is an Alias
+$aliases is an Aliases
+Alias is a reference to a hash where the following keys are defined:
+	uuid has a value which is an UUID
+	owner has a value which is a Username
+	type has a value which is a string
+	alias has a value which is a string
+UUID is a string
+Username is a string
+Aliases is a reference to a list where each element is an Alias
 
 
+=end text
+
+=item Description
+
+
+
+=back
 
 =cut
 
 sub get_aliases
 {
     my($self, @args) = @_;
+
+# Authentication: none
 
     if ((my $n = @args) != 1)
     {
@@ -242,15 +409,53 @@ sub get_aliases
 
 
 
-=head2 $result = update_alias(ref, uuid)
+=head2 update_alias
+
+  $success = $obj->update_alias($ref, $uuid)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$ref is a Ref
+$uuid is an UUID
+$success is a Bool
+Ref is a string
+UUID is a string
+Bool is an int
+
+</pre>
+
+=end html
+
+=begin text
+
+$ref is a Ref
+$uuid is an UUID
+$success is a Bool
+Ref is a string
+UUID is a string
+Bool is an int
 
 
+=end text
+
+=item Description
+
+
+
+=back
 
 =cut
 
 sub update_alias
 {
     my($self, @args) = @_;
+
+# Authentication: none
 
     if ((my $n = @args) != 2)
     {
@@ -293,15 +498,53 @@ sub update_alias
 
 
 
-=head2 $result = add_viewer(ref, viewer)
+=head2 add_viewer
+
+  $success = $obj->add_viewer($ref, $viewer)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$ref is a Ref
+$viewer is a Username
+$success is a Bool
+Ref is a string
+Username is a string
+Bool is an int
+
+</pre>
+
+=end html
+
+=begin text
+
+$ref is a Ref
+$viewer is a Username
+$success is a Bool
+Ref is a string
+Username is a string
+Bool is an int
 
 
+=end text
+
+=item Description
+
+
+
+=back
 
 =cut
 
 sub add_viewer
 {
     my($self, @args) = @_;
+
+# Authentication: none
 
     if ((my $n = @args) != 2)
     {
@@ -344,15 +587,53 @@ sub add_viewer
 
 
 
-=head2 $result = remove_viewer(ref, viewer)
+=head2 remove_viewer
+
+  $success = $obj->remove_viewer($ref, $viewer)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$ref is a Ref
+$viewer is a Username
+$success is a Bool
+Ref is a string
+Username is a string
+Bool is an int
+
+</pre>
+
+=end html
+
+=begin text
+
+$ref is a Ref
+$viewer is a Username
+$success is a Bool
+Ref is a string
+Username is a string
+Bool is an int
 
 
+=end text
+
+=item Description
+
+
+
+=back
 
 =cut
 
 sub remove_viewer
 {
     my($self, @args) = @_;
+
+# Authentication: none
 
     if ((my $n = @args) != 2)
     {
@@ -395,15 +676,51 @@ sub remove_viewer
 
 
 
-=head2 $result = set_public(ref, public)
+=head2 set_public
+
+  $success = $obj->set_public($ref, $public)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$ref is a Ref
+$public is a Bool
+$success is a Bool
+Ref is a string
+Bool is an int
+
+</pre>
+
+=end html
+
+=begin text
+
+$ref is a Ref
+$public is a Bool
+$success is a Bool
+Ref is a string
+Bool is an int
 
 
+=end text
+
+=item Description
+
+
+
+=back
 
 =cut
 
 sub set_public
 {
     my($self, @args) = @_;
+
+# Authentication: none
 
     if ((my $n = @args) != 2)
     {
@@ -446,15 +763,49 @@ sub set_public
 
 
 
-=head2 $result = alias_owner(ref)
+=head2 alias_owner
+
+  $owner = $obj->alias_owner($ref)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$ref is a Ref
+$owner is a Username
+Ref is a string
+Username is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$ref is a Ref
+$owner is a Username
+Ref is a string
+Username is a string
 
 
+=end text
+
+=item Description
+
+
+
+=back
 
 =cut
 
 sub alias_owner
 {
     my($self, @args) = @_;
+
+# Authentication: none
 
     if ((my $n = @args) != 1)
     {
@@ -496,15 +847,49 @@ sub alias_owner
 
 
 
-=head2 $result = alias_public(ref)
+=head2 alias_public
+
+  $public = $obj->alias_public($ref)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$ref is a Ref
+$public is a Bool
+Ref is a string
+Bool is an int
+
+</pre>
+
+=end html
+
+=begin text
+
+$ref is a Ref
+$public is a Bool
+Ref is a string
+Bool is an int
 
 
+=end text
+
+=item Description
+
+
+
+=back
 
 =cut
 
 sub alias_public
 {
     my($self, @args) = @_;
+
+# Authentication: none
 
     if ((my $n = @args) != 1)
     {
@@ -546,15 +931,51 @@ sub alias_public
 
 
 
-=head2 $result = alias_viewers(ref)
+=head2 alias_viewers
+
+  $viewers = $obj->alias_viewers($ref)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$ref is a Ref
+$viewers is a Usernames
+Ref is a string
+Usernames is a reference to a list where each element is a Username
+Username is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$ref is a Ref
+$viewers is a Usernames
+Ref is a string
+Usernames is a reference to a list where each element is a Username
+Username is a string
 
 
+=end text
+
+=item Description
+
+
+
+=back
 
 =cut
 
 sub alias_viewers
 {
     my($self, @args) = @_;
+
+# Authentication: none
 
     if ((my $n = @args) != 1)
     {
@@ -596,15 +1017,51 @@ sub alias_viewers
 
 
 
-=head2 $result = ancestors(ref)
+=head2 ancestors
+
+  $ancestors = $obj->ancestors($ref)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$ref is a Ref
+$ancestors is an UUIDs
+Ref is a string
+UUIDs is a reference to a list where each element is an UUID
+UUID is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$ref is a Ref
+$ancestors is an UUIDs
+Ref is a string
+UUIDs is a reference to a list where each element is an UUID
+UUID is a string
 
 
+=end text
+
+=item Description
+
+
+
+=back
 
 =cut
 
 sub ancestors
 {
     my($self, @args) = @_;
+
+# Authentication: none
 
     if ((my $n = @args) != 1)
     {
@@ -646,15 +1103,57 @@ sub ancestors
 
 
 
-=head2 $result = ancestor_graph(ref)
+=head2 ancestor_graph
+
+  $graph = $obj->ancestor_graph($ref)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$ref is a Ref
+$graph is an AncestorGraph
+Ref is a string
+AncestorGraph is a reference to a hash where the following keys are defined:
+	object has a value which is an UUIDs
+	objectParents has a value which is a reference to a list where each element is an UUIDs
+UUIDs is a reference to a list where each element is an UUID
+UUID is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$ref is a Ref
+$graph is an AncestorGraph
+Ref is a string
+AncestorGraph is a reference to a hash where the following keys are defined:
+	object has a value which is an UUIDs
+	objectParents has a value which is a reference to a list where each element is an UUIDs
+UUIDs is a reference to a list where each element is an UUID
+UUID is a string
 
 
+=end text
+
+=item Description
+
+
+
+=back
 
 =cut
 
 sub ancestor_graph
 {
     my($self, @args) = @_;
+
+# Authentication: none
 
     if ((my $n = @args) != 1)
     {
@@ -696,15 +1195,51 @@ sub ancestor_graph
 
 
 
-=head2 $result = descendants(ref)
+=head2 descendants
+
+  $descendants = $obj->descendants($ref)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$ref is a Ref
+$descendants is an UUIDs
+Ref is a string
+UUIDs is a reference to a list where each element is an UUID
+UUID is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$ref is a Ref
+$descendants is an UUIDs
+Ref is a string
+UUIDs is a reference to a list where each element is an UUID
+UUID is a string
 
 
+=end text
+
+=item Description
+
+
+
+=back
 
 =cut
 
 sub descendants
 {
     my($self, @args) = @_;
+
+# Authentication: none
 
     if ((my $n = @args) != 1)
     {
@@ -746,15 +1281,57 @@ sub descendants
 
 
 
-=head2 $result = descendant_graph(ref)
+=head2 descendant_graph
+
+  $graph = $obj->descendant_graph($ref)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$ref is a Ref
+$graph is a DescendantGraph
+Ref is a string
+DescendantGraph is a reference to a hash where the following keys are defined:
+	object has a value which is an UUIDs
+	objectChildren has a value which is a reference to a list where each element is an UUIDs
+UUIDs is a reference to a list where each element is an UUID
+UUID is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$ref is a Ref
+$graph is a DescendantGraph
+Ref is a string
+DescendantGraph is a reference to a hash where the following keys are defined:
+	object has a value which is an UUIDs
+	objectChildren has a value which is a reference to a list where each element is an UUIDs
+UUIDs is a reference to a list where each element is an UUID
+UUID is a string
 
 
+=end text
+
+=item Description
+
+
+
+=back
 
 =cut
 
 sub descendant_graph
 {
     my($self, @args) = @_;
+
+# Authentication: none
 
     if ((my $n = @args) != 1)
     {
@@ -796,15 +1373,45 @@ sub descendant_graph
 
 
 
-=head2 $result = init_database()
+=head2 init_database
+
+  $success = $obj->init_database()
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$success is a Bool
+Bool is an int
+
+</pre>
+
+=end html
+
+=begin text
+
+$success is a Bool
+Bool is an int
 
 
+=end text
+
+=item Description
+
+
+
+=back
 
 =cut
 
 sub init_database
 {
     my($self, @args) = @_;
+
+# Authentication: none
 
     if ((my $n = @args) != 0)
     {
@@ -835,15 +1442,51 @@ sub init_database
 
 
 
-=head2 $result = delete_database(config)
+=head2 delete_database
+
+  $success = $obj->delete_database($config)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$config is a DeleteConf
+$success is a Bool
+DeleteConf is a reference to a hash where the following keys are defined:
+	keep_data has a value which is a Bool
+Bool is an int
+
+</pre>
+
+=end html
+
+=begin text
+
+$config is a DeleteConf
+$success is a Bool
+DeleteConf is a reference to a hash where the following keys are defined:
+	keep_data has a value which is a Bool
+Bool is an int
 
 
+=end text
+
+=item Description
+
+
+
+=back
 
 =cut
 
 sub delete_database
 {
     my($self, @args) = @_;
+
+# Authentication: none
 
     if ((my $n = @args) != 1)
     {
@@ -938,6 +1581,382 @@ sub _validate_version {
     }
 }
 
+=head1 TYPES
+
+
+
+=head2 Bool
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+an int
+</pre>
+
+=end html
+
+=begin text
+
+an int
+
+=end text
+
+=back
+
+
+
+=head2 Ref
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 Username
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 UUID
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 Data
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 UUIDs
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a list where each element is an UUID
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a list where each element is an UUID
+
+=end text
+
+=back
+
+
+
+=head2 Usernames
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a list where each element is a Username
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a list where each element is a Username
+
+=end text
+
+=back
+
+
+
+=head2 Alias
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+uuid has a value which is an UUID
+owner has a value which is a Username
+type has a value which is a string
+alias has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+uuid has a value which is an UUID
+owner has a value which is a Username
+type has a value which is a string
+alias has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 Aliases
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a list where each element is an Alias
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a list where each element is an Alias
+
+=end text
+
+=back
+
+
+
+=head2 AncestorGraph
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+object has a value which is an UUIDs
+objectParents has a value which is a reference to a list where each element is an UUIDs
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+object has a value which is an UUIDs
+objectParents has a value which is a reference to a list where each element is an UUIDs
+
+
+=end text
+
+=back
+
+
+
+=head2 DescendantGraph
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+object has a value which is an UUIDs
+objectChildren has a value which is a reference to a list where each element is an UUIDs
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+object has a value which is an UUIDs
+objectChildren has a value which is a reference to a list where each element is an UUIDs
+
+
+=end text
+
+=back
+
+
+
+=head2 SaveConf
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+is_merge has a value which is a Bool
+schema_update has a value which is a Bool
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+is_merge has a value which is a Bool
+schema_update has a value which is a Bool
+
+
+=end text
+
+=back
+
+
+
+=head2 DeleteConf
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+keep_data has a value which is a Bool
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+keep_data has a value which is a Bool
+
+
+=end text
+
+=back
+
+
+
+=cut
+
 package Bio::KBase::fbaModelData::Client::RpcClient;
 use base 'JSON::RPC::Client';
 
@@ -979,5 +1998,38 @@ sub call {
         return;
     }
 }
+
+
+sub _post {
+    my ($self, $uri, $obj) = @_;
+    my $json = $self->json;
+
+    $obj->{version} ||= $self->{version} || '1.1';
+
+    if ($obj->{version} eq '1.0') {
+        delete $obj->{version};
+        if (exists $obj->{id}) {
+            $self->id($obj->{id}) if ($obj->{id}); # if undef, it is notification.
+        }
+        else {
+            $obj->{id} = $self->id || ($self->id('JSON::RPC::Client'));
+        }
+    }
+    else {
+        $obj->{id} = $self->id if (defined $self->id);
+    }
+
+    my $content = $json->encode($obj);
+
+    $self->ua->post(
+        $uri,
+        Content_Type   => $self->{content_type},
+        Content        => $content,
+        Accept         => 'application/json',
+	($self->{token} ? (Authorization => $self->{token}) : ()),
+    );
+}
+
+
 
 1;

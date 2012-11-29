@@ -196,9 +196,9 @@ sub _getUsername {
 
 sub _setContext {
 	my ($self,$context,$params) = @_;
-    if ( defined $params->{authentication} ) {
+    if ( defined $params->{auth} ) {
         my $token = Bio::KBase::AuthToken->new(
-            token => $params->{authentication},
+            token => $params->{auth},
         );
         if ($token->validate()) {
             $self->{_currentUser} = $token->user_id;
@@ -207,7 +207,7 @@ sub _setContext {
                 method_name => 'workspaceDocument::_setContext');
         }
     }
-	$self->{_authentication} = $params->{authentication};
+	$self->{_authentication} = $params->{auth};
 	$self->{_context} = $context;
 }
 
@@ -343,7 +343,7 @@ sub _save_msobject {
 		data => $data,
 		workspace => $ws,
 		command => $command,
-		authentication => $self->_authentication(),
+		auth => $self->_authentication(),
 		overwrite => $overwrite
 	});
 	if (!defined($objmeta)) {
@@ -365,7 +365,7 @@ sub _get_msobject {
 		id => $id,
 		type => $type,
 		workspace => $ws,
-		authentication => $self->_authentication()
+		auth => $self->_authentication()
 	});
 	if (!defined($output->{data})) {
 		my $msg = "Unable to retrieve object:".$type."/".$ws."/".$id;
@@ -1460,7 +1460,7 @@ $out_models is a reference to a list where each element is an FBAModel
 get_models_params is a reference to a hash where the following keys are defined:
 	models has a value which is a reference to a list where each element is a fbamodel_id
 	workspaces has a value which is a reference to a list where each element is a workspace_id
-	authentication has a value which is a string
+	auth has a value which is a string
 	id_type has a value which is a string
 fbamodel_id is a string
 workspace_id is a string
@@ -1559,7 +1559,7 @@ $out_models is a reference to a list where each element is an FBAModel
 get_models_params is a reference to a hash where the following keys are defined:
 	models has a value which is a reference to a list where each element is a fbamodel_id
 	workspaces has a value which is a reference to a list where each element is a workspace_id
-	authentication has a value which is a string
+	auth has a value which is a string
 	id_type has a value which is a string
 fbamodel_id is a string
 workspace_id is a string
@@ -1806,7 +1806,7 @@ $out_fbas is a reference to a list where each element is an FBA
 get_fbas_params is a reference to a hash where the following keys are defined:
 	fbas has a value which is a reference to a list where each element is a fba_id
 	workspaces has a value which is a reference to a list where each element is a workspace_id
-	authentication has a value which is a string
+	auth has a value which is a string
 	id_type has a value which is a string
 fba_id is a string
 workspace_id is a string
@@ -1903,7 +1903,7 @@ $out_fbas is a reference to a list where each element is an FBA
 get_fbas_params is a reference to a hash where the following keys are defined:
 	fbas has a value which is a reference to a list where each element is a fba_id
 	workspaces has a value which is a reference to a list where each element is a workspace_id
-	authentication has a value which is a string
+	auth has a value which is a string
 	id_type has a value which is a string
 fba_id is a string
 workspace_id is a string
@@ -2070,7 +2070,7 @@ $out_gapfills is a reference to a list where each element is a GapFill
 get_gapfills_params is a reference to a hash where the following keys are defined:
 	gapfills has a value which is a reference to a list where each element is a gapfill_id
 	workspaces has a value which is a reference to a list where each element is a workspace_id
-	authentication has a value which is a string
+	auth has a value which is a string
 	id_type has a value which is a string
 gapfill_id is a string
 workspace_id is a string
@@ -2166,7 +2166,7 @@ $out_gapfills is a reference to a list where each element is a GapFill
 get_gapfills_params is a reference to a hash where the following keys are defined:
 	gapfills has a value which is a reference to a list where each element is a gapfill_id
 	workspaces has a value which is a reference to a list where each element is a workspace_id
-	authentication has a value which is a string
+	auth has a value which is a string
 	id_type has a value which is a string
 gapfill_id is a string
 workspace_id is a string
@@ -2332,7 +2332,7 @@ $out_gapgens is a reference to a list where each element is a GapGen
 get_gapgens_params is a reference to a hash where the following keys are defined:
 	gapgens has a value which is a reference to a list where each element is a gapgen_id
 	workspaces has a value which is a reference to a list where each element is a workspace_id
-	authentication has a value which is a string
+	auth has a value which is a string
 	id_type has a value which is a string
 gapgen_id is a string
 workspace_id is a string
@@ -2413,7 +2413,7 @@ $out_gapgens is a reference to a list where each element is a GapGen
 get_gapgens_params is a reference to a hash where the following keys are defined:
 	gapgens has a value which is a reference to a list where each element is a gapgen_id
 	workspaces has a value which is a reference to a list where each element is a workspace_id
-	authentication has a value which is a string
+	auth has a value which is a string
 	id_type has a value which is a string
 gapgen_id is a string
 workspace_id is a string
@@ -2563,7 +2563,7 @@ $input is a get_reactions_params
 $out_reactions is a reference to a list where each element is a Reaction
 get_reactions_params is a reference to a hash where the following keys are defined:
 	reactions has a value which is a reference to a list where each element is a reaction_id
-	authentication has a value which is a string
+	auth has a value which is a string
 	id_type has a value which is a string
 reaction_id is a string
 Reaction is a reference to a hash where the following keys are defined:
@@ -2587,7 +2587,7 @@ $input is a get_reactions_params
 $out_reactions is a reference to a list where each element is a Reaction
 get_reactions_params is a reference to a hash where the following keys are defined:
 	reactions has a value which is a reference to a list where each element is a reaction_id
-	authentication has a value which is a string
+	auth has a value which is a string
 	id_type has a value which is a string
 reaction_id is a string
 Reaction is a reference to a hash where the following keys are defined:
@@ -2685,7 +2685,7 @@ $input is a get_compounds_params
 $out_compounds is a reference to a list where each element is a Compound
 get_compounds_params is a reference to a hash where the following keys are defined:
 	compounds has a value which is a reference to a list where each element is a compound_id
-	authentication has a value which is a string
+	auth has a value which is a string
 	id_type has a value which is a string
 compound_id is a string
 Compound is a reference to a hash where the following keys are defined:
@@ -2708,7 +2708,7 @@ $input is a get_compounds_params
 $out_compounds is a reference to a list where each element is a Compound
 get_compounds_params is a reference to a hash where the following keys are defined:
 	compounds has a value which is a reference to a list where each element is a compound_id
-	authentication has a value which is a string
+	auth has a value which is a string
 	id_type has a value which is a string
 compound_id is a string
 Compound is a reference to a hash where the following keys are defined:
@@ -2805,7 +2805,7 @@ $out_media is a reference to a list where each element is a Media
 get_media_params is a reference to a hash where the following keys are defined:
 	medias has a value which is a reference to a list where each element is a media_id
 	workspaces has a value which is a reference to a list where each element is a workspace_id
-	authentication has a value which is a string
+	auth has a value which is a string
 media_id is a string
 workspace_id is a string
 Media is a reference to a hash where the following keys are defined:
@@ -2828,7 +2828,7 @@ $out_media is a reference to a list where each element is a Media
 get_media_params is a reference to a hash where the following keys are defined:
 	medias has a value which is a reference to a list where each element is a media_id
 	workspaces has a value which is a reference to a list where each element is a workspace_id
-	authentication has a value which is a string
+	auth has a value which is a string
 media_id is a string
 workspace_id is a string
 Media is a reference to a hash where the following keys are defined:
@@ -2932,7 +2932,7 @@ get_biochemistry_params is a reference to a hash where the following keys are de
 	biochemistry has a value which is a biochemistry_id
 	biochemistry_workspace has a value which is a workspace_id
 	id_type has a value which is a string
-	authentication has a value which is a string
+	auth has a value which is a string
 biochemistry_id is a string
 workspace_id is a string
 Biochemistry is a reference to a hash where the following keys are defined:
@@ -2957,7 +2957,7 @@ get_biochemistry_params is a reference to a hash where the following keys are de
 	biochemistry has a value which is a biochemistry_id
 	biochemistry_workspace has a value which is a workspace_id
 	id_type has a value which is a string
-	authentication has a value which is a string
+	auth has a value which is a string
 biochemistry_id is a string
 workspace_id is a string
 Biochemistry is a reference to a hash where the following keys are defined:
@@ -3106,7 +3106,7 @@ $genomeMeta is an object_metadata
 genome_object_to_workspace_params is a reference to a hash where the following keys are defined:
 	genomeobj has a value which is a genomeTO
 	workspace has a value which is a workspace_id
-	authentication has a value which is a string
+	auth has a value which is a string
 	overwrite has a value which is a bool
 genomeTO is a reference to a hash where the following keys are defined:
 	id has a value which is a genome_id
@@ -3137,7 +3137,7 @@ $genomeMeta is an object_metadata
 genome_object_to_workspace_params is a reference to a hash where the following keys are defined:
 	genomeobj has a value which is a genomeTO
 	workspace has a value which is a workspace_id
-	authentication has a value which is a string
+	auth has a value which is a string
 	overwrite has a value which is a bool
 genomeTO is a reference to a hash where the following keys are defined:
 	id has a value which is a genome_id
@@ -3222,7 +3222,7 @@ $genomeMeta is an object_metadata
 genome_to_workspace_params is a reference to a hash where the following keys are defined:
 	genome has a value which is a genome_id
 	workspace has a value which is a workspace_id
-	authentication has a value which is a string
+	auth has a value which is a string
 	overwrite has a value which is a bool
 genome_id is a string
 workspace_id is a string
@@ -3251,7 +3251,7 @@ $genomeMeta is an object_metadata
 genome_to_workspace_params is a reference to a hash where the following keys are defined:
 	genome has a value which is a genome_id
 	workspace has a value which is a workspace_id
-	authentication has a value which is a string
+	auth has a value which is a string
 	overwrite has a value which is a bool
 genome_id is a string
 workspace_id is a string
@@ -3337,7 +3337,7 @@ genome_to_fbamodel_params is a reference to a hash where the following keys are 
 	genome_workspace has a value which is a workspace_id
 	model has a value which is a fbamodel_id
 	model_workspace has a value which is a workspace_id
-	authentication has a value which is a string
+	auth has a value which is a string
 	overwrite has a value which is a bool
 genome_id is a string
 workspace_id is a string
@@ -3369,7 +3369,7 @@ genome_to_fbamodel_params is a reference to a hash where the following keys are 
 	genome_workspace has a value which is a workspace_id
 	model has a value which is a fbamodel_id
 	model_workspace has a value which is a workspace_id
-	authentication has a value which is a string
+	auth has a value which is a string
 	overwrite has a value which is a bool
 genome_id is a string
 workspace_id is a string
@@ -3484,7 +3484,7 @@ export_fbamodel_params is a reference to a hash where the following keys are def
 	model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
 	format has a value which is a string
-	authentication has a value which is a string
+	auth has a value which is a string
 fbamodel_id is a string
 workspace_id is a string
 
@@ -3500,7 +3500,7 @@ export_fbamodel_params is a reference to a hash where the following keys are def
 	model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
 	format has a value which is a string
-	authentication has a value which is a string
+	auth has a value which is a string
 fbamodel_id is a string
 workspace_id is a string
 
@@ -3534,9 +3534,7 @@ sub export_fbamodel
     my($output);
     #BEGIN export_fbamodel
     $self->_setContext($ctx,$input);
-    $input = $self->_validateargs($input,["model","workspace","format"],{
-    	authentication => undef
-    });
+    $input = $self->_validateargs($input,["model","workspace","format"],{});
     my $model = $self->_get_msobject("Model",$input->{workspace},$input->{model});
     $output = $model->export({format => $input->{format}});
     $self->_clearContext();
@@ -3579,7 +3577,7 @@ addmedia_params is a reference to a hash where the following keys are defined:
 	maxflux has a value which is a reference to a list where each element is a float
 	minflux has a value which is a reference to a list where each element is a float
 	overwrite has a value which is a bool
-	authentication has a value which is a string
+	auth has a value which is a string
 media_id is a string
 workspace_id is a string
 bool is an int
@@ -3616,7 +3614,7 @@ addmedia_params is a reference to a hash where the following keys are defined:
 	maxflux has a value which is a reference to a list where each element is a float
 	minflux has a value which is a reference to a list where each element is a float
 	overwrite has a value which is a bool
-	authentication has a value which is a string
+	auth has a value which is a string
 media_id is a string
 workspace_id is a string
 bool is an int
@@ -3748,7 +3746,7 @@ export_media_params is a reference to a hash where the following keys are define
 	media has a value which is a media_id
 	workspace has a value which is a workspace_id
 	format has a value which is a string
-	authentication has a value which is a string
+	auth has a value which is a string
 media_id is a string
 workspace_id is a string
 
@@ -3764,7 +3762,7 @@ export_media_params is a reference to a hash where the following keys are define
 	media has a value which is a media_id
 	workspace has a value which is a workspace_id
 	format has a value which is a string
-	authentication has a value which is a string
+	auth has a value which is a string
 media_id is a string
 workspace_id is a string
 
@@ -3853,7 +3851,7 @@ runfba_params is a reference to a hash where the following keys are defined:
 	notes has a value which is a string
 	fba has a value which is a fba_id
 	fba_workspace has a value which is a workspace_id
-	authentication has a value which is a string
+	auth has a value which is a string
 	overwrite has a value which is a bool
 	add_to_model has a value which is a bool
 fbamodel_id is a string
@@ -3928,7 +3926,7 @@ runfba_params is a reference to a hash where the following keys are defined:
 	notes has a value which is a string
 	fba has a value which is a fba_id
 	fba_workspace has a value which is a workspace_id
-	authentication has a value which is a string
+	auth has a value which is a string
 	overwrite has a value which is a bool
 	add_to_model has a value which is a bool
 fbamodel_id is a string
@@ -4080,7 +4078,7 @@ export_fba_params is a reference to a hash where the following keys are defined:
 	fba has a value which is a fba_id
 	workspace has a value which is a workspace_id
 	format has a value which is a string
-	authentication has a value which is a string
+	auth has a value which is a string
 fba_id is a string
 workspace_id is a string
 
@@ -4096,7 +4094,7 @@ export_fba_params is a reference to a hash where the following keys are defined:
 	fba has a value which is a fba_id
 	workspace has a value which is a workspace_id
 	format has a value which is a string
-	authentication has a value which is a string
+	auth has a value which is a string
 fba_id is a string
 workspace_id is a string
 
@@ -4170,7 +4168,7 @@ import_phenotypes_params is a reference to a hash where the following keys are d
 	genome_workspace has a value which is a workspace_id
 	phenotypes has a value which is a reference to a list where each element is a Phenotype
 	ignore_errors has a value which is a bool
-	authentication has a value which is a string
+	auth has a value which is a string
 phenotypeSet_id is a string
 workspace_id is a string
 genome_id is a string
@@ -4212,7 +4210,7 @@ import_phenotypes_params is a reference to a hash where the following keys are d
 	genome_workspace has a value which is a workspace_id
 	phenotypes has a value which is a reference to a list where each element is a Phenotype
 	ignore_errors has a value which is a bool
-	authentication has a value which is a string
+	auth has a value which is a string
 phenotypeSet_id is a string
 workspace_id is a string
 genome_id is a string
@@ -4383,7 +4381,7 @@ sub import_phenotypes
 		data => $object,
 		workspace => $input->{phenotypeSet_workspace},
 		command => "import_phenotypes",
-		authentication => $self->_authentication()
+		auth => $self->_authentication()
 	});
 	if (!defined($objmeta)) {
 		my $msg = "Unable to save object:PhenotypeSet/".$input->{phenotypeSet_workspace}."/".$input->{id};
@@ -4428,7 +4426,7 @@ simulate_phenotypes_params is a reference to a hash where the following keys are
 	phenotypeSimultationSet has a value which is a phenotypeSimulationSet_id
 	phenotypeSimultationSet_workspace has a value which is a workspace_id
 	overwrite has a value which is a bool
-	authentication has a value which is a string
+	auth has a value which is a string
 fbamodel_id is a string
 workspace_id is a string
 phenotypeSet_id is a string
@@ -4501,7 +4499,7 @@ simulate_phenotypes_params is a reference to a hash where the following keys are
 	phenotypeSimultationSet has a value which is a phenotypeSimulationSet_id
 	phenotypeSimultationSet_workspace has a value which is a workspace_id
 	overwrite has a value which is a bool
-	authentication has a value which is a string
+	auth has a value which is a string
 fbamodel_id is a string
 workspace_id is a string
 phenotypeSet_id is a string
@@ -4665,7 +4663,7 @@ sub simulate_phenotypes
 		data => $object,
 		workspace => $input->{phenotypeSimultationSet_workspace},
 		command => "simulate_phenotypes",
-		authentication => $self->_authentication(),
+		auth => $self->_authentication(),
 		overwrite => $input->{overwrite}
 	});
 	$output = $objmeta;
@@ -4701,7 +4699,7 @@ export_phenotypeSimulationSet_params is a reference to a hash where the followin
 	phenotypeSimulationSet has a value which is a phenotypeSimulationSet_id
 	workspace has a value which is a workspace_id
 	format has a value which is a string
-	authentication has a value which is a string
+	auth has a value which is a string
 phenotypeSimulationSet_id is a string
 workspace_id is a string
 
@@ -4717,7 +4715,7 @@ export_phenotypeSimulationSet_params is a reference to a hash where the followin
 	phenotypeSimulationSet has a value which is a phenotypeSimulationSet_id
 	workspace has a value which is a workspace_id
 	format has a value which is a string
-	authentication has a value which is a string
+	auth has a value which is a string
 phenotypeSimulationSet_id is a string
 workspace_id is a string
 
@@ -4811,7 +4809,7 @@ queue_runfba_params is a reference to a hash where the following keys are define
 	notes has a value which is a string
 	fba has a value which is a fba_id
 	fba_workspace has a value which is a workspace_id
-	authentication has a value which is a string
+	auth has a value which is a string
 	overwrite has a value which is a bool
 	add_to_model has a value which is a bool
 	donot_submit_job has a value which is a bool
@@ -4887,7 +4885,7 @@ queue_runfba_params is a reference to a hash where the following keys are define
 	notes has a value which is a string
 	fba has a value which is a fba_id
 	fba_workspace has a value which is a workspace_id
-	authentication has a value which is a string
+	auth has a value which is a string
 	overwrite has a value which is a bool
 	add_to_model has a value which is a bool
 	donot_submit_job has a value which is a bool
@@ -5075,7 +5073,7 @@ gapfill_model_params is a reference to a hash where the following keys are defin
 	out_workspace has a value which is a workspace_id
 	gapFill has a value which is a gapfill_id
 	gapFill_workspace has a value which is a workspace_id
-	authentication has a value which is a string
+	auth has a value which is a string
 	overwrite has a value which is a bool
 	donot_submit_job has a value which is a bool
 fbamodel_id is a string
@@ -5175,7 +5173,7 @@ gapfill_model_params is a reference to a hash where the following keys are defin
 	out_workspace has a value which is a workspace_id
 	gapFill has a value which is a gapfill_id
 	gapFill_workspace has a value which is a workspace_id
-	authentication has a value which is a string
+	auth has a value which is a string
 	overwrite has a value which is a bool
 	donot_submit_job has a value which is a bool
 fbamodel_id is a string
@@ -5407,7 +5405,7 @@ gapgen_model_params is a reference to a hash where the following keys are define
 	out_workspace has a value which is a workspace_id
 	gapGen has a value which is a gapgen_id
 	gapGen_workspace has a value which is a workspace_id
-	authentication has a value which is a string
+	auth has a value which is a string
 	overwrite has a value which is a bool
 	donot_submit_job has a value which is a bool
 fbamodel_id is a string
@@ -5492,7 +5490,7 @@ gapgen_model_params is a reference to a hash where the following keys are define
 	out_workspace has a value which is a workspace_id
 	gapGen has a value which is a gapgen_id
 	gapGen_workspace has a value which is a workspace_id
-	authentication has a value which is a string
+	auth has a value which is a string
 	overwrite has a value which is a bool
 	donot_submit_job has a value which is a bool
 fbamodel_id is a string
@@ -5710,7 +5708,7 @@ wildtype_phenotype_reconciliation_params is a reference to a hash where the foll
 	gapFills has a value which is a reference to a list where each element is a gapfill_id
 	gapGens has a value which is a reference to a list where each element is a gapgen_id
 	gapFill_workspace has a value which is a workspace_id
-	authentication has a value which is a string
+	auth has a value which is a string
 	overwrite has a value which is a bool
 	donot_submit_job has a value which is a bool
 fbamodel_id is a string
@@ -5821,7 +5819,7 @@ wildtype_phenotype_reconciliation_params is a reference to a hash where the foll
 	gapFills has a value which is a reference to a list where each element is a gapfill_id
 	gapGens has a value which is a reference to a list where each element is a gapgen_id
 	gapFill_workspace has a value which is a workspace_id
-	authentication has a value which is a string
+	auth has a value which is a string
 	overwrite has a value which is a bool
 	donot_submit_job has a value which is a bool
 fbamodel_id is a string
@@ -5981,7 +5979,7 @@ combine_wildtype_phenotype_reconciliation_params is a reference to a hash where 
 	fba has a value which is a fba_id
 	gapFill_workspace has a value which is a workspace_id
 	integrate_solution has a value which is a bool
-	authentication has a value which is a string
+	auth has a value which is a string
 	overwrite has a value which is a bool
 	donot_submit_job has a value which is a bool
 fbamodel_id is a string
@@ -6025,7 +6023,7 @@ combine_wildtype_phenotype_reconciliation_params is a reference to a hash where 
 	fba has a value which is a fba_id
 	gapFill_workspace has a value which is a workspace_id
 	integrate_solution has a value which is a bool
-	authentication has a value which is a string
+	auth has a value which is a string
 	overwrite has a value which is a bool
 	donot_submit_job has a value which is a bool
 fbamodel_id is a string
@@ -6107,7 +6105,7 @@ $output is a JobObject
 jobs_done_params is a reference to a hash where the following keys are defined:
 	jobid has a value which is a job_id
 	workspace has a value which is a workspace_id
-	authentication has a value which is a string
+	auth has a value which is a string
 job_id is a string
 workspace_id is a string
 JobObject is a reference to a hash where the following keys are defined:
@@ -6125,9 +6123,9 @@ JobObject is a reference to a hash where the following keys are defined:
 	complete has a value which is a bool
 	owner has a value which is a string
 clusterjob is a reference to a hash where the following keys are defined:
-	authentication has a value which is a string
+	auth has a value which is a string
 CommandArguments is a reference to a hash where the following keys are defined:
-	authentication has a value which is a string
+	auth has a value which is a string
 bool is an int
 
 </pre>
@@ -6141,7 +6139,7 @@ $output is a JobObject
 jobs_done_params is a reference to a hash where the following keys are defined:
 	jobid has a value which is a job_id
 	workspace has a value which is a workspace_id
-	authentication has a value which is a string
+	auth has a value which is a string
 job_id is a string
 workspace_id is a string
 JobObject is a reference to a hash where the following keys are defined:
@@ -6159,9 +6157,9 @@ JobObject is a reference to a hash where the following keys are defined:
 	complete has a value which is a bool
 	owner has a value which is a string
 clusterjob is a reference to a hash where the following keys are defined:
-	authentication has a value which is a string
+	auth has a value which is a string
 CommandArguments is a reference to a hash where the following keys are defined:
-	authentication has a value which is a string
+	auth has a value which is a string
 bool is an int
 
 
@@ -6235,7 +6233,7 @@ $output is a JobObject
 check_job_params is a reference to a hash where the following keys are defined:
 	jobid has a value which is a job_id
 	workspace has a value which is a workspace_id
-	authentication has a value which is a string
+	auth has a value which is a string
 job_id is a string
 workspace_id is a string
 JobObject is a reference to a hash where the following keys are defined:
@@ -6253,9 +6251,9 @@ JobObject is a reference to a hash where the following keys are defined:
 	complete has a value which is a bool
 	owner has a value which is a string
 clusterjob is a reference to a hash where the following keys are defined:
-	authentication has a value which is a string
+	auth has a value which is a string
 CommandArguments is a reference to a hash where the following keys are defined:
-	authentication has a value which is a string
+	auth has a value which is a string
 bool is an int
 
 </pre>
@@ -6269,7 +6267,7 @@ $output is a JobObject
 check_job_params is a reference to a hash where the following keys are defined:
 	jobid has a value which is a job_id
 	workspace has a value which is a workspace_id
-	authentication has a value which is a string
+	auth has a value which is a string
 job_id is a string
 workspace_id is a string
 JobObject is a reference to a hash where the following keys are defined:
@@ -6287,9 +6285,9 @@ JobObject is a reference to a hash where the following keys are defined:
 	complete has a value which is a bool
 	owner has a value which is a string
 clusterjob is a reference to a hash where the following keys are defined:
-	authentication has a value which is a string
+	auth has a value which is a string
 CommandArguments is a reference to a hash where the following keys are defined:
-	authentication has a value which is a string
+	auth has a value which is a string
 bool is an int
 
 
@@ -6356,7 +6354,7 @@ run_job_params is a reference to a hash where the following keys are defined:
 	jobid has a value which is a job_id
 	workspace has a value which is a workspace_id
 	index has a value which is an int
-	authentication has a value which is a string
+	auth has a value which is a string
 job_id is a string
 workspace_id is a string
 JobObject is a reference to a hash where the following keys are defined:
@@ -6374,9 +6372,9 @@ JobObject is a reference to a hash where the following keys are defined:
 	complete has a value which is a bool
 	owner has a value which is a string
 clusterjob is a reference to a hash where the following keys are defined:
-	authentication has a value which is a string
+	auth has a value which is a string
 CommandArguments is a reference to a hash where the following keys are defined:
-	authentication has a value which is a string
+	auth has a value which is a string
 bool is an int
 
 </pre>
@@ -6391,7 +6389,7 @@ run_job_params is a reference to a hash where the following keys are defined:
 	jobid has a value which is a job_id
 	workspace has a value which is a workspace_id
 	index has a value which is an int
-	authentication has a value which is a string
+	auth has a value which is a string
 job_id is a string
 workspace_id is a string
 JobObject is a reference to a hash where the following keys are defined:
@@ -6409,9 +6407,9 @@ JobObject is a reference to a hash where the following keys are defined:
 	complete has a value which is a bool
 	owner has a value which is a string
 clusterjob is a reference to a hash where the following keys are defined:
-	authentication has a value which is a string
+	auth has a value which is a string
 CommandArguments is a reference to a hash where the following keys are defined:
-	authentication has a value which is a string
+	auth has a value which is a string
 bool is an int
 
 
@@ -9067,7 +9065,7 @@ solutions has a value which is a reference to a list where each element is a Gap
 a reference to a hash where the following keys are defined:
 models has a value which is a reference to a list where each element is a fbamodel_id
 workspaces has a value which is a reference to a list where each element is a workspace_id
-authentication has a value which is a string
+auth has a value which is a string
 id_type has a value which is a string
 
 </pre>
@@ -9079,7 +9077,7 @@ id_type has a value which is a string
 a reference to a hash where the following keys are defined:
 models has a value which is a reference to a list where each element is a fbamodel_id
 workspaces has a value which is a reference to a list where each element is a workspace_id
-authentication has a value which is a string
+auth has a value which is a string
 id_type has a value which is a string
 
 
@@ -9103,7 +9101,7 @@ id_type has a value which is a string
 a reference to a hash where the following keys are defined:
 fbas has a value which is a reference to a list where each element is a fba_id
 workspaces has a value which is a reference to a list where each element is a workspace_id
-authentication has a value which is a string
+auth has a value which is a string
 id_type has a value which is a string
 
 </pre>
@@ -9115,7 +9113,7 @@ id_type has a value which is a string
 a reference to a hash where the following keys are defined:
 fbas has a value which is a reference to a list where each element is a fba_id
 workspaces has a value which is a reference to a list where each element is a workspace_id
-authentication has a value which is a string
+auth has a value which is a string
 id_type has a value which is a string
 
 
@@ -9139,7 +9137,7 @@ id_type has a value which is a string
 a reference to a hash where the following keys are defined:
 gapfills has a value which is a reference to a list where each element is a gapfill_id
 workspaces has a value which is a reference to a list where each element is a workspace_id
-authentication has a value which is a string
+auth has a value which is a string
 id_type has a value which is a string
 
 </pre>
@@ -9151,7 +9149,7 @@ id_type has a value which is a string
 a reference to a hash where the following keys are defined:
 gapfills has a value which is a reference to a list where each element is a gapfill_id
 workspaces has a value which is a reference to a list where each element is a workspace_id
-authentication has a value which is a string
+auth has a value which is a string
 id_type has a value which is a string
 
 
@@ -9175,7 +9173,7 @@ id_type has a value which is a string
 a reference to a hash where the following keys are defined:
 gapgens has a value which is a reference to a list where each element is a gapgen_id
 workspaces has a value which is a reference to a list where each element is a workspace_id
-authentication has a value which is a string
+auth has a value which is a string
 id_type has a value which is a string
 
 </pre>
@@ -9187,7 +9185,7 @@ id_type has a value which is a string
 a reference to a hash where the following keys are defined:
 gapgens has a value which is a reference to a list where each element is a gapgen_id
 workspaces has a value which is a reference to a list where each element is a workspace_id
-authentication has a value which is a string
+auth has a value which is a string
 id_type has a value which is a string
 
 
@@ -9210,7 +9208,7 @@ id_type has a value which is a string
 <pre>
 a reference to a hash where the following keys are defined:
 reactions has a value which is a reference to a list where each element is a reaction_id
-authentication has a value which is a string
+auth has a value which is a string
 id_type has a value which is a string
 
 </pre>
@@ -9221,7 +9219,7 @@ id_type has a value which is a string
 
 a reference to a hash where the following keys are defined:
 reactions has a value which is a reference to a list where each element is a reaction_id
-authentication has a value which is a string
+auth has a value which is a string
 id_type has a value which is a string
 
 
@@ -9244,7 +9242,7 @@ id_type has a value which is a string
 <pre>
 a reference to a hash where the following keys are defined:
 compounds has a value which is a reference to a list where each element is a compound_id
-authentication has a value which is a string
+auth has a value which is a string
 id_type has a value which is a string
 
 </pre>
@@ -9255,7 +9253,7 @@ id_type has a value which is a string
 
 a reference to a hash where the following keys are defined:
 compounds has a value which is a reference to a list where each element is a compound_id
-authentication has a value which is a string
+auth has a value which is a string
 id_type has a value which is a string
 
 
@@ -9284,7 +9282,7 @@ This function returns media data for input ids
 a reference to a hash where the following keys are defined:
 medias has a value which is a reference to a list where each element is a media_id
 workspaces has a value which is a reference to a list where each element is a workspace_id
-authentication has a value which is a string
+auth has a value which is a string
 
 </pre>
 
@@ -9295,7 +9293,7 @@ authentication has a value which is a string
 a reference to a hash where the following keys are defined:
 medias has a value which is a reference to a list where each element is a media_id
 workspaces has a value which is a reference to a list where each element is a workspace_id
-authentication has a value which is a string
+auth has a value which is a string
 
 
 =end text
@@ -9319,7 +9317,7 @@ a reference to a hash where the following keys are defined:
 biochemistry has a value which is a biochemistry_id
 biochemistry_workspace has a value which is a workspace_id
 id_type has a value which is a string
-authentication has a value which is a string
+auth has a value which is a string
 
 </pre>
 
@@ -9331,7 +9329,7 @@ a reference to a hash where the following keys are defined:
 biochemistry has a value which is a biochemistry_id
 biochemistry_workspace has a value which is a workspace_id
 id_type has a value which is a string
-authentication has a value which is a string
+auth has a value which is a string
 
 
 =end text
@@ -9417,7 +9415,7 @@ id has a value which is a genome_id
 a reference to a hash where the following keys are defined:
 genomeobj has a value which is a genomeTO
 workspace has a value which is a workspace_id
-authentication has a value which is a string
+auth has a value which is a string
 overwrite has a value which is a bool
 
 </pre>
@@ -9429,7 +9427,7 @@ overwrite has a value which is a bool
 a reference to a hash where the following keys are defined:
 genomeobj has a value which is a genomeTO
 workspace has a value which is a workspace_id
-authentication has a value which is a string
+auth has a value which is a string
 overwrite has a value which is a bool
 
 
@@ -9453,7 +9451,7 @@ overwrite has a value which is a bool
 a reference to a hash where the following keys are defined:
 genome has a value which is a genome_id
 workspace has a value which is a workspace_id
-authentication has a value which is a string
+auth has a value which is a string
 overwrite has a value which is a bool
 
 </pre>
@@ -9465,7 +9463,7 @@ overwrite has a value which is a bool
 a reference to a hash where the following keys are defined:
 genome has a value which is a genome_id
 workspace has a value which is a workspace_id
-authentication has a value which is a string
+auth has a value which is a string
 overwrite has a value which is a bool
 
 
@@ -9512,7 +9510,7 @@ genome has a value which is a genome_id
 genome_workspace has a value which is a workspace_id
 model has a value which is a fbamodel_id
 model_workspace has a value which is a workspace_id
-authentication has a value which is a string
+auth has a value which is a string
 overwrite has a value which is a bool
 
 </pre>
@@ -9526,7 +9524,7 @@ genome has a value which is a genome_id
 genome_workspace has a value which is a workspace_id
 model has a value which is a fbamodel_id
 model_workspace has a value which is a workspace_id
-authentication has a value which is a string
+auth has a value which is a string
 overwrite has a value which is a bool
 
 
@@ -9556,7 +9554,7 @@ a reference to a hash where the following keys are defined:
 model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
 format has a value which is a string
-authentication has a value which is a string
+auth has a value which is a string
 
 </pre>
 
@@ -9568,7 +9566,7 @@ a reference to a hash where the following keys are defined:
 model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
 format has a value which is a string
-authentication has a value which is a string
+auth has a value which is a string
 
 
 =end text
@@ -9607,7 +9605,7 @@ concentrations has a value which is a reference to a list where each element is 
 maxflux has a value which is a reference to a list where each element is a float
 minflux has a value which is a reference to a list where each element is a float
 overwrite has a value which is a bool
-authentication has a value which is a string
+auth has a value which is a string
 
 </pre>
 
@@ -9627,7 +9625,7 @@ concentrations has a value which is a reference to a list where each element is 
 maxflux has a value which is a reference to a list where each element is a float
 minflux has a value which is a reference to a list where each element is a float
 overwrite has a value which is a bool
-authentication has a value which is a string
+auth has a value which is a string
 
 
 =end text
@@ -9651,7 +9649,7 @@ a reference to a hash where the following keys are defined:
 media has a value which is a media_id
 workspace has a value which is a workspace_id
 format has a value which is a string
-authentication has a value which is a string
+auth has a value which is a string
 
 </pre>
 
@@ -9663,7 +9661,7 @@ a reference to a hash where the following keys are defined:
 media has a value which is a media_id
 workspace has a value which is a workspace_id
 format has a value which is a string
-authentication has a value which is a string
+auth has a value which is a string
 
 
 =end text
@@ -9699,7 +9697,7 @@ findminmedia has a value which is a bool
 notes has a value which is a string
 fba has a value which is a fba_id
 fba_workspace has a value which is a workspace_id
-authentication has a value which is a string
+auth has a value which is a string
 overwrite has a value which is a bool
 add_to_model has a value which is a bool
 
@@ -9720,7 +9718,7 @@ findminmedia has a value which is a bool
 notes has a value which is a string
 fba has a value which is a fba_id
 fba_workspace has a value which is a workspace_id
-authentication has a value which is a string
+auth has a value which is a string
 overwrite has a value which is a bool
 add_to_model has a value which is a bool
 
@@ -9746,7 +9744,7 @@ a reference to a hash where the following keys are defined:
 fba has a value which is a fba_id
 workspace has a value which is a workspace_id
 format has a value which is a string
-authentication has a value which is a string
+auth has a value which is a string
 
 </pre>
 
@@ -9758,7 +9756,7 @@ a reference to a hash where the following keys are defined:
 fba has a value which is a fba_id
 workspace has a value which is a workspace_id
 format has a value which is a string
-authentication has a value which is a string
+auth has a value which is a string
 
 
 =end text
@@ -9968,7 +9966,7 @@ genome has a value which is a genome_id
 genome_workspace has a value which is a workspace_id
 phenotypes has a value which is a reference to a list where each element is a Phenotype
 ignore_errors has a value which is a bool
-authentication has a value which is a string
+auth has a value which is a string
 
 </pre>
 
@@ -9983,7 +9981,7 @@ genome has a value which is a genome_id
 genome_workspace has a value which is a workspace_id
 phenotypes has a value which is a reference to a list where each element is a Phenotype
 ignore_errors has a value which is a bool
-authentication has a value which is a string
+auth has a value which is a string
 
 
 =end text
@@ -10013,7 +10011,7 @@ notes has a value which is a string
 phenotypeSimultationSet has a value which is a phenotypeSimulationSet_id
 phenotypeSimultationSet_workspace has a value which is a workspace_id
 overwrite has a value which is a bool
-authentication has a value which is a string
+auth has a value which is a string
 
 </pre>
 
@@ -10031,7 +10029,7 @@ notes has a value which is a string
 phenotypeSimultationSet has a value which is a phenotypeSimulationSet_id
 phenotypeSimultationSet_workspace has a value which is a workspace_id
 overwrite has a value which is a bool
-authentication has a value which is a string
+auth has a value which is a string
 
 
 =end text
@@ -10055,7 +10053,7 @@ a reference to a hash where the following keys are defined:
 phenotypeSimulationSet has a value which is a phenotypeSimulationSet_id
 workspace has a value which is a workspace_id
 format has a value which is a string
-authentication has a value which is a string
+auth has a value which is a string
 
 </pre>
 
@@ -10067,7 +10065,7 @@ a reference to a hash where the following keys are defined:
 phenotypeSimulationSet has a value which is a phenotypeSimulationSet_id
 workspace has a value which is a workspace_id
 format has a value which is a string
-authentication has a value which is a string
+auth has a value which is a string
 
 
 =end text
@@ -10121,7 +10119,7 @@ a string
 
 <pre>
 a reference to a hash where the following keys are defined:
-authentication has a value which is a string
+auth has a value which is a string
 
 </pre>
 
@@ -10130,7 +10128,7 @@ authentication has a value which is a string
 =begin text
 
 a reference to a hash where the following keys are defined:
-authentication has a value which is a string
+auth has a value which is a string
 
 
 =end text
@@ -10151,7 +10149,7 @@ authentication has a value which is a string
 
 <pre>
 a reference to a hash where the following keys are defined:
-authentication has a value which is a string
+auth has a value which is a string
 
 </pre>
 
@@ -10160,7 +10158,7 @@ authentication has a value which is a string
 =begin text
 
 a reference to a hash where the following keys are defined:
-authentication has a value which is a string
+auth has a value which is a string
 
 
 =end text
@@ -10245,7 +10243,7 @@ findminmedia has a value which is a bool
 notes has a value which is a string
 fba has a value which is a fba_id
 fba_workspace has a value which is a workspace_id
-authentication has a value which is a string
+auth has a value which is a string
 overwrite has a value which is a bool
 add_to_model has a value which is a bool
 donot_submit_job has a value which is a bool
@@ -10267,7 +10265,7 @@ findminmedia has a value which is a bool
 notes has a value which is a string
 fba has a value which is a fba_id
 fba_workspace has a value which is a workspace_id
-authentication has a value which is a string
+auth has a value which is a string
 overwrite has a value which is a bool
 add_to_model has a value which is a bool
 donot_submit_job has a value which is a bool
@@ -10301,7 +10299,7 @@ out_model has a value which is a fbamodel_id
 out_workspace has a value which is a workspace_id
 gapFill has a value which is a gapfill_id
 gapFill_workspace has a value which is a workspace_id
-authentication has a value which is a string
+auth has a value which is a string
 overwrite has a value which is a bool
 donot_submit_job has a value which is a bool
 
@@ -10322,7 +10320,7 @@ out_model has a value which is a fbamodel_id
 out_workspace has a value which is a workspace_id
 gapFill has a value which is a gapfill_id
 gapFill_workspace has a value which is a workspace_id
-authentication has a value which is a string
+auth has a value which is a string
 overwrite has a value which is a bool
 donot_submit_job has a value which is a bool
 
@@ -10355,7 +10353,7 @@ out_model has a value which is a fbamodel_id
 out_workspace has a value which is a workspace_id
 gapGen has a value which is a gapgen_id
 gapGen_workspace has a value which is a workspace_id
-authentication has a value which is a string
+auth has a value which is a string
 overwrite has a value which is a bool
 donot_submit_job has a value which is a bool
 
@@ -10376,7 +10374,7 @@ out_model has a value which is a fbamodel_id
 out_workspace has a value which is a workspace_id
 gapGen has a value which is a gapgen_id
 gapGen_workspace has a value which is a workspace_id
-authentication has a value which is a string
+auth has a value which is a string
 overwrite has a value which is a bool
 donot_submit_job has a value which is a bool
 
@@ -10410,7 +10408,7 @@ out_workspace has a value which is a workspace_id
 gapFills has a value which is a reference to a list where each element is a gapfill_id
 gapGens has a value which is a reference to a list where each element is a gapgen_id
 gapFill_workspace has a value which is a workspace_id
-authentication has a value which is a string
+auth has a value which is a string
 overwrite has a value which is a bool
 donot_submit_job has a value which is a bool
 
@@ -10432,7 +10430,7 @@ out_workspace has a value which is a workspace_id
 gapFills has a value which is a reference to a list where each element is a gapfill_id
 gapGens has a value which is a reference to a list where each element is a gapgen_id
 gapFill_workspace has a value which is a workspace_id
-authentication has a value which is a string
+auth has a value which is a string
 overwrite has a value which is a bool
 donot_submit_job has a value which is a bool
 
@@ -10467,7 +10465,7 @@ out_workspace has a value which is a workspace_id
 fba has a value which is a fba_id
 gapFill_workspace has a value which is a workspace_id
 integrate_solution has a value which is a bool
-authentication has a value which is a string
+auth has a value which is a string
 overwrite has a value which is a bool
 donot_submit_job has a value which is a bool
 
@@ -10490,7 +10488,7 @@ out_workspace has a value which is a workspace_id
 fba has a value which is a fba_id
 gapFill_workspace has a value which is a workspace_id
 integrate_solution has a value which is a bool
-authentication has a value which is a string
+auth has a value which is a string
 overwrite has a value which is a bool
 donot_submit_job has a value which is a bool
 
@@ -10541,7 +10539,7 @@ a string
 a reference to a hash where the following keys are defined:
 jobid has a value which is a job_id
 workspace has a value which is a workspace_id
-authentication has a value which is a string
+auth has a value which is a string
 
 </pre>
 
@@ -10552,7 +10550,7 @@ authentication has a value which is a string
 a reference to a hash where the following keys are defined:
 jobid has a value which is a job_id
 workspace has a value which is a workspace_id
-authentication has a value which is a string
+auth has a value which is a string
 
 
 =end text
@@ -10575,7 +10573,7 @@ authentication has a value which is a string
 a reference to a hash where the following keys are defined:
 jobid has a value which is a job_id
 workspace has a value which is a workspace_id
-authentication has a value which is a string
+auth has a value which is a string
 
 </pre>
 
@@ -10586,7 +10584,7 @@ authentication has a value which is a string
 a reference to a hash where the following keys are defined:
 jobid has a value which is a job_id
 workspace has a value which is a workspace_id
-authentication has a value which is a string
+auth has a value which is a string
 
 
 =end text
@@ -10610,7 +10608,7 @@ a reference to a hash where the following keys are defined:
 jobid has a value which is a job_id
 workspace has a value which is a workspace_id
 index has a value which is an int
-authentication has a value which is a string
+auth has a value which is a string
 
 </pre>
 
@@ -10622,7 +10620,7 @@ a reference to a hash where the following keys are defined:
 jobid has a value which is a job_id
 workspace has a value which is a workspace_id
 index has a value which is an int
-authentication has a value which is a string
+auth has a value which is a string
 
 
 =end text

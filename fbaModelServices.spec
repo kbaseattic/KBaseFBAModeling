@@ -329,7 +329,7 @@ module fbaModelServices {
     typedef structure {
 		list<fbamodel_id> models;
 		list<workspace_id> workspaces;
-		string authentication;
+		string auth;
         string id_type;
     } get_models_params;
     /*
@@ -340,7 +340,7 @@ module fbaModelServices {
     typedef structure {
 		list<fba_id> fbas;
 		list<workspace_id> workspaces; 
-		string authentication;
+		string auth;
         string id_type;
     } get_fbas_params;
     /*
@@ -351,7 +351,7 @@ module fbaModelServices {
     typedef structure {
 		list<gapfill_id> gapfills;
 		list<workspace_id> workspaces; 
-		string authentication;
+		string auth;
         string id_type;
     } get_gapfills_params;
     /*
@@ -362,7 +362,7 @@ module fbaModelServices {
     typedef structure {
 		list<gapgen_id> gapgens;
 		list<workspace_id> workspaces;
-		string authentication;
+		string auth;
         string id_type;
     } get_gapgens_params;
     /*
@@ -372,7 +372,7 @@ module fbaModelServices {
 
     typedef structure {
 		list<reaction_id> reactions;
-		string authentication;
+		string auth;
         string id_type;
     } get_reactions_params;
     /*
@@ -382,7 +382,7 @@ module fbaModelServices {
 
     typedef structure {
 		list<compound_id> compounds;
-		string authentication;
+		string auth;
         string id_type;
     } get_compounds_params;
     /*
@@ -394,7 +394,7 @@ module fbaModelServices {
     typedef structure {
 		list<media_id> medias;
 		list<workspace_id> workspaces;
-		string authentication;
+		string auth;
     } get_media_params;
     /*
     	Returns data for the requested media formulations
@@ -405,7 +405,7 @@ module fbaModelServices {
         biochemistry_id biochemistry;
         workspace_id biochemistry_workspace;
         string id_type;
-        string authentication;
+        string auth;
     } get_biochemistry_params;
     /*
     	Returns biochemistry object
@@ -421,7 +421,7 @@ module fbaModelServices {
     typedef structure {
 		genomeTO genomeobj;
 		workspace_id workspace;
-		string authentication;
+		string auth;
 		bool overwrite;
     } genome_object_to_workspace_params;
     /*
@@ -432,7 +432,7 @@ module fbaModelServices {
     typedef structure {
 		genome_id genome;
 		workspace_id workspace;
-		string authentication;
+		string auth;
 		bool overwrite;
     } genome_to_workspace_params;
     /*
@@ -464,7 +464,7 @@ module fbaModelServices {
 		workspace_id genome_workspace;
 		fbamodel_id model;
 		workspace_id model_workspace;
-		string authentication;
+		string auth;
 		bool overwrite;
     } genome_to_fbamodel_params;
     /*
@@ -480,7 +480,7 @@ module fbaModelServices {
 		fbamodel_id model;
 		workspace_id workspace;
 		string format;
-		string authentication;
+		string auth;
     } export_fbamodel_params;
     
     /*
@@ -504,7 +504,7 @@ module fbaModelServices {
 		list<float> maxflux;
 		list<float> minflux;
 		bool overwrite;
-		string authentication;
+		string auth;
     } addmedia_params;
     /*
         Add media condition to workspace
@@ -515,7 +515,7 @@ module fbaModelServices {
 		media_id media;
 		workspace_id workspace;
 		string format;
-		string authentication;
+		string auth;
     } export_media_params;
     /*
         Exports media in specified format (html,readable)
@@ -536,7 +536,7 @@ module fbaModelServices {
 		string notes;
 		fba_id fba;
 		workspace_id fba_workspace;
-		string authentication;
+		string auth;
 		bool overwrite;
 		bool add_to_model;
     } runfba_params;
@@ -549,7 +549,7 @@ module fbaModelServices {
 		fba_id fba;
 		workspace_id workspace;
 		string format;
-		string authentication;
+		string auth;
     } export_fba_params;
     /*
         Export an FBA solution for viewing
@@ -585,7 +585,7 @@ module fbaModelServices {
 		workspace_id genome_workspace;
 		list<Phenotype> phenotypes;
 		bool ignore_errors;
-		string authentication;
+		string auth;
     } import_phenotypes_params;
     /*
         Loads the specified phenotypes into the workspace
@@ -602,7 +602,7 @@ module fbaModelServices {
 		phenotypeSimulationSet_id phenotypeSimultationSet;
 		workspace_id phenotypeSimultationSet_workspace;
 		bool overwrite;
-		string authentication;
+		string auth;
     } simulate_phenotypes_params;
     /*
         Simulates the specified phenotype set
@@ -613,7 +613,7 @@ module fbaModelServices {
 		phenotypeSimulationSet_id phenotypeSimulationSet;
 		workspace_id workspace;
 		string format;
-		string authentication;
+		string auth;
     } export_phenotypeSimulationSet_params;
     /*
         Export a PhenotypeSimulationSet for viewing
@@ -625,10 +625,10 @@ module fbaModelServices {
    	*********************************************************************************/ 
     typedef string job_id;
     typedef structure {
-		string authentication;
+		string auth;
     } CommandArguments;
     typedef structure {
-		string authentication;
+		string auth;
     } clusterjob;
     typedef structure {
 		job_id id;
@@ -657,7 +657,7 @@ module fbaModelServices {
 		string notes;
 		fba_id fba;
 		workspace_id fba_workspace;
-		string authentication;
+		string auth;
 		bool overwrite;
 		bool add_to_model;
 		bool donot_submit_job;
@@ -678,7 +678,7 @@ module fbaModelServices {
 		workspace_id out_workspace;
 		gapfill_id gapFill;
 		workspace_id gapFill_workspace;
-		string authentication;
+		string auth;
 		bool overwrite;
 		bool donot_submit_job;
     } gapfill_model_params;
@@ -698,7 +698,7 @@ module fbaModelServices {
 		workspace_id out_workspace;
 		gapgen_id gapGen;
 		workspace_id gapGen_workspace;
-		string authentication;
+		string auth;
 		bool overwrite;
 		bool donot_submit_job;
     } gapgen_model_params;
@@ -719,7 +719,7 @@ module fbaModelServices {
 		list<gapfill_id> gapFills;
 		list<gapgen_id> gapGens;
 		workspace_id gapFill_workspace;
-		string authentication;
+		string auth;
 		bool overwrite;
 		bool donot_submit_job;
     } wildtype_phenotype_reconciliation_params;
@@ -741,7 +741,7 @@ module fbaModelServices {
 		fba_id fba;
 		workspace_id gapFill_workspace;
 		bool integrate_solution;
-		string authentication;
+		string auth;
 		bool overwrite;
 		bool donot_submit_job;
     } combine_wildtype_phenotype_reconciliation_params;
@@ -754,7 +754,7 @@ module fbaModelServices {
 	typedef structure {
 		job_id jobid;
 		workspace_id workspace;
-		string authentication;
+		string auth;
     } jobs_done_params;
 	/*
         Mark specified job as complete and run postprocessing
@@ -764,7 +764,7 @@ module fbaModelServices {
 	typedef structure {
 		job_id jobid;
 		workspace_id workspace;
-		string authentication;
+		string auth;
     } check_job_params;
     /*
         Retreives job data given a job ID
@@ -775,7 +775,7 @@ module fbaModelServices {
 		job_id jobid;
 		workspace_id workspace;
 		int index;
-		string authentication;
+		string auth;
     } run_job_params;
 	/*
         Runs specified job

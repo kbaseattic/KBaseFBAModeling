@@ -1,0 +1,35 @@
+OVERVIEW
+-----------------------------------------
+This KBase service contains all commands that support the reconstruction, optimization, and 
+analysis of genome-scale metabolic models.
+
+VERSION: 0.0.2 (Released 11/30/2012)
+------------------------------------------
+NEW FEATURES:
+-This is the first public release of the KBaseFBAModeling Services.
+-adjusted functions to accept arguments as a hash instead of an array
+-added ability to provide authentication token in input arguments
+-switched function to operate against the workspaces rather than receiving typed objects directly
+-set functions to utilize queuing and the cluster so no command runs longer than 60 seconds
+-added reconciliation commands
+-added accessors to retrieve model data for viewing in websites: GLAMM and ModelViewer
+
+UPDATED FEATURES / MAJOR BUG FIXES:
+-none.
+
+ANTICIPATED FUTURE DEVELOPMENTS:
+-more commands to support model reconciliation
+-commands to view model history
+-enable import of models from SBML
+-support for PROM constraints
+
+VERSION: 0.0.1 (Released 8/4/2012)
+------------------------------------------
+NEW FEATURES:
+-This is the first internal release of the KBaseFBAModeling Service, all methods are new.
+
+UPDATED FEATURES / MAJOR BUG FIXES:
+-none.
+
+ANTICIPATED FUTURE DEVELOPMENTS:
+-public release of the service
