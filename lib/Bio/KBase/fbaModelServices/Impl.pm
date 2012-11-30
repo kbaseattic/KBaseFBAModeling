@@ -227,24 +227,22 @@ sub _clearContext {
 sub _translate_genome_to_annotation {
 	my $self = shift;
     my($genome,$mapping) = @_;
-    #Creating the annotation from the input genome object
-	my $size = 0;
-	my $gc   = 0;
-	for ( my $i = 0 ; $i < @{ $genome->{contigs} } ; $i++ ) {
-		my $dna = $genome->{contigs}->[$i]->{dna};
-		$size += length($dna);
-		for ( my $j = 0 ; $j < length($dna) ; $j++ ) {
-			if ( substr( $dna, $j, 1 ) =~ m/[gcGC]/ ) {
-				$gc++;
+   	if (!defined($genome->{gc}) || !defined($genome->{size})) {
+   		$genome->{gc} = 0.5;
+   		$genome->{size} = 0;
+   		if (defined($genome->{contigs})) {
+   			for ( my $i = 0 ; $i < @{ $genome->{contigs} } ; $i++ ) {
+				my $dna = $genome->{contigs}->[$i]->{dna};
+				$genome->{size} += length($dna);
+				for ( my $j = 0 ; $j < length($dna) ; $j++ ) {
+					if ( substr( $dna, $j, 1 ) =~ m/[gcGC]/ ) {
+						$genome->{gc}++;
+					}
+				}
 			}
-		}
-	}
-	if ($size == 0) {
-		$gc = 0.5;
-		$size = 0;
-	} else {
-		$gc = $gc / $size;
-	}
+   		}
+   	}
+    #Creating the annotation from the input genome object
 	my $annotation = ModelSEED::MS::Annotation->new({
 	  name         => $genome->{scientific_name},
 	  mapping_uuid => "kbase/default",
@@ -257,8 +255,8 @@ sub _translate_genome_to_annotation {
 		 class    => "unknown",
 		 taxonomy => $genome->{domain},
 		 etcType  => "unknown",
-		 size     => $size,
-		 gc       => $gc
+		 size     => $genome->{size},
+		 gc       => $genome->{gc}
 	  }]
 	});
 	for ( my $i = 0 ; $i < @{ $genome->{features} } ; $i++ ) {
@@ -538,6 +536,19 @@ sub _get_genomeObj_from_CDM {
   		
   		push(@{$genomeObj->{features}},$feature);
   	}
+  	my $size = 0;
+	my $gc   = 0;
+	for ( my $i = 0 ; $i < @{ $genomeObj->{contigs} } ; $i++ ) {
+		my $dna = $genomeObj->{contigs}->[$i]->{dna};
+		$size += length($dna);
+		for ( my $j = 0 ; $j < length($dna) ; $j++ ) {
+			if ( substr( $dna, $j, 1 ) =~ m/[gcGC]/ ) {
+				$gc++;
+			}
+		}
+	}
+	$genomeObj->{gc} = $gc;
+	$genomeObj->{size} = $size;
 	return $genomeObj;
 }
 
