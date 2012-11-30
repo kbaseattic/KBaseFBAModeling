@@ -70,10 +70,11 @@ test-client:
 		fi \
 	done
 
-deploy: deploy-service
+deploy: deploy-client
+deploy-all: deploy-client deploy-service
 
-deploy-service: deploy-dir deploy-scripts deploy-libs deploy-services
-deploy-client: deploy-dir deploy-scripts deploy-libs  deploy-doc
+deploy-service: deploy-dir deploy-libs deploy-scripts deploy-services
+deploy-client: deploy-dir deploy-libs deploy-scripts deploy-docs
 
 deploy-dir:
 	if [ ! -d $(SERV_SERVICE_DIR) ] ; then mkdir $(SERV_SERVICE_DIR) ; fi
@@ -126,7 +127,14 @@ deploy-cli-service:
 
 deploy-docs:
 	if [ ! -d doc ] ; then mkdir doc ; fi
-	$(KB_RUNTIME)/bin/pod2html -t "fbaModelServices" lib/fbaModelServicesImpl.pm > doc/fbaModelServices.html
+	cd lib/Bio/KBase; \
+	for f in fbaModel*/*.pm ; do \
+		dirname=`dirname $$f`; \
+		basename=`basename $$f .pm`; \
+		name="$$dirname::$$basename"; \
+		echo $$name; \
+		$(KB_RUNTIME)/bin/pod2html -t "$$name" $$f > "../../../doc/$$name.html"; \
+	done
 	cp doc/*html $(SERV_SERVICE_DIR)/webroot/.
 
 compile-typespec: compile-fbaModelServices compile-fbaModelCLI compile-fbaModelData
