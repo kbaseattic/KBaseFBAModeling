@@ -12,7 +12,7 @@ my $test_count = 32;
 my $genomeObj;
 
 #Instantiating client object
-my $obj = Bio::KBase::fbaModelServices::Client->new();
+my $obj = Bio::KBase::fbaModelServices::Client->new("http://kbase.us/services/fbaModelServices");
 
 #Testing biochemistry retrieval method
 my $biochemistry = $obj->get_biochemistry({});
@@ -31,12 +31,12 @@ my $cpds = $obj->get_compounds({
 ok defined($cpds->[0]), "Successfully printed compounds!";
 
 #Initializing test workspace
-my $ws = Bio::KBase::workspaceService::Client->new();
+my $ws = Bio::KBase::workspaceService::Client->new("http://140.221.92.150:8080");
 my $token = Bio::KBase::AuthToken->new(
     user_id => 'kbasetest', password => '@Suite525'
 );
 $token = $token->token;
-my ($meta) = $impl->create_workspace({
+my ($meta) = $ws->create_workspace({
         workspace => "testworkspace",
         default_permission => "n",
         auth => $token,
@@ -47,7 +47,7 @@ my ($fh, $uncompressed_filename) = tempfile();
 close($fh);
 my $status = getstore("http://bioseed.mcs.anl.gov/~chenry/KbaseFiles/genome.test.json", $uncompressed_filename);
 open($fh, "<", $uncompressed_filename) || die "$!: $@";
-$string = <$fh>;
+my $string = <$fh>;
 $genomeObj = JSON::XS->new->utf8->decode($string);
 my $genome = $obj->genome_object_to_workspace({
 	genomeobj => $genomeObj,
@@ -131,7 +131,7 @@ my $html = $obj->export_phenotypeSimulationSet({
 	auth => $token
 });
 ok defined($html), "Successfully exported phenotype simulations to html format!";
-open ( my $fh, ">", "PhenotypeSim.html");
+open ( $fh, ">", "PhenotypeSim.html");
 print $fh $html."\n";
 close($fh);
 
@@ -406,150 +406,3 @@ ok defined($html), "Successfully queued gapgen job!";
 #close($fh);
 
 done_testing($test_count);
-
-sub _loadBiochemToDB {
-	my ($ws) = @_;
-	my $url = "http://bioseed.mcs.anl.gov/~chenry/exampleObjects/defaultBiochem.json.gz";
-	my ($fh1, $compressed_filename) = tempfile();
-	my ($fh2, $uncompressed_filename) = tempfile();
-	close($fh1);
-	close($fh2);
-	my $status = getstore($url, $compressed_filename);
-	die "Unable to fetch from model_seed\n" unless($status == 200);
-	gunzip $compressed_filename => $uncompressed_filename;
-	local $/;
-	open(my $fh, "<", $uncompressed_filename) || die "$!: $@";
-	my $string = <$fh>;
-	my $data = JSON::XS->new->utf8->decode($string);
-	$data->{uuid} = "kbase/default";
-	$ws->save_object({
-		id => "default",
-		type => "Biochemistry",
-		data => $data,
-		workspace => "kbase",
-		command => "_loadBiochemToDB"
-	});
-	$url = "http://bioseed.mcs.anl.gov/~chenry/exampleObjects/defaultMap.json.gz";
-	$status = getstore($url, $compressed_filename);
-	die "Unable to fetch from model_seed\n" unless($status == 200);
-	gunzip $compressed_filename => $uncompressed_filename;
-	open($fh, "<", $uncompressed_filename) || die "$!: $@";
-	$string = <$fh>;
-	$data = JSON::XS->new->utf8->decode($string);
-	$data->{biochemistry_uuid} = "kbase/default";
-	$data->{uuid} = "kbase/default";
-	$ws->save_object({
-		id => "default",
-		type => "Mapping",
-		data => $data,
-		workspace => "kbase",
-		command => "_loadBiochemToDB"
-	});
-}
-
-sub _loadTestBiochemToDB {
-	my ($ws) = @_;
-	my $url = "http://bioseed.mcs.anl.gov/~chenry/KbaseFiles/biochemistry.test.json";
-	my ($fh2, $uncompressed_filename) = tempfile();
-	close($fh2);
-	my $status = getstore($url, $uncompressed_filename);
-	die "Unable to fetch from model_seed\n" unless($status == 200);
-	local $/;
-	open(my $fh, "<", $uncompressed_filename) || die "$!: $@";
-	my $string = <$fh>;
-	my $data = JSON::XS->new->utf8->decode($string);
-	$data->{uuid} = "kbase/default";
-	$ws->save_object({
-		id => "default",
-		type => "Biochemistry",
-		data => $data,
-		workspace => "kbase",
-		command => "_loadBiochemToDB"
-	});
-	$url = "http://bioseed.mcs.anl.gov/~chenry/KbaseFiles/mapping.test.json";
-	$status = getstore($url, $uncompressed_filename);
-	open($fh, "<", $uncompressed_filename) || die "$!: $@";
-	$string = <$fh>;
-	$data = JSON::XS->new->utf8->decode($string);
-	$data->{biochemistry_uuid} = "kbase/default";
-	$data->{uuid} = "kbase/default";
-	$ws->save_object({
-		id => "default",
-		type => "Mapping",
-		data => $data,
-		workspace => "kbase",
-		command => "_loadBiochemToDB"
-	});
-	$url = "http://bioseed.mcs.anl.gov/~chenry/KbaseFiles/mapping.test.json";
-	$status = getstore($url, $uncompressed_filename);
-	open($fh, "<", $uncompressed_filename) || die "$!: $@";
-	$string = <$fh>;
-	$data = JSON::XS->new->utf8->decode($string);
-	$data->{biochemistry_uuid} = "kbase/default";
-	$data->{uuid} = "kbase/default";
-	$ws->save_object({
-		id => "default",
-		type => "Mapping",
-		data => $data,
-		workspace => "kbase",
-		command => "_loadBiochemToDB"
-	});
-	$url = "http://bioseed.mcs.anl.gov/~chenry/KbaseFiles/genome.test.json";
-	$status = getstore($url, $uncompressed_filename);
-	open($fh, "<", $uncompressed_filename) || die "$!: $@";
-	$string = <$fh>;
-	$genomeObj = JSON::XS->new->utf8->decode($string);
-}
-
-sub _initializeTestWorkspace {
-	$ENV{MONGODBHOST} = "127.0.0.1";
-	$ENV{MONGODBDB} = "testWorkspace";
-	my $ws = Bio::KBase::workspaceService::Impl->new({testuser => "kbaseadmin"});
-	$ws->_clearAllWorkspaces();
-	$ws->_clearAllWorkspaceObjects();
-	$ws->_clearAllWorkspaceUsers();
-	$ws->_clearAllWorkspaceDataObjects();
-	$ws->create_workspace({
-		workspace => "kbase",
-		default_permission => "r"
-	});
-	&_loadTestBiochemToDB($ws);
-	$ws = Bio::KBase::workspaceService::Impl->new({testuser => "testuser"});
-	$ws->create_workspace({
-		workspace => "testworkspace",
-		default_permission => "r"
-	});
-	return $ws;
-}
-
-sub prettyPrintKBaseGenome {
-	my ($wss,$id,$ws) = @_;
-	my $output = $wss->get_object({
-		type => "Genome",
-		workspace => $ws,
-		id => $id
-	});
-	my $JSON = JSON::XS->new->utf8(1);
-	$JSON->pretty(1);
-	open ( my $fh, ">", "genome.json");
-	print $fh $JSON->encode($output->{data})."\n";
-	close($fh);
-}
-
-#Old 'real' test media formulation
-#compounds => [qw(
-#	Oxaloacetate Co2+ Cl- H+ Ca2+ Cu2+ Sulfate Zn2+ Mn2+ NH3
-#	Phosphate H2O O2 K+ Mg Na+ Fe2+ fe3 Molybdate Ni2+ D-Glucose
-#)],
-#concentrations => [
-#	0.001,0.001,0.001,0.001,0.001,0.001,0.001,0.001,0.001,0.001,
-#	0.001,0.001,0.001,0.001,0.001,0.001,0.001,0.001,0.001,0.001
-#],
-#maxflux => [
-#	1000,1000,1000,1000,1000,1000,1000,1000,1000,1000,
-#	1000,1000,1000,1000,1000,1000,1000,1000,1000,1000
-#],
-#minflux => [
-#	-1000,-1000,-1000,-1000,-1000,-1000,-1000,-1000,-1000,-1000,
-#	-1000,-1000,-1000,-1000,-1000,-1000,-1000,-1000,-1000,-1000
-#]
