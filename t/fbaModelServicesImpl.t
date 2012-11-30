@@ -14,7 +14,7 @@ use warnings;
 use Test::More;
 use Data::Dumper;
 use File::Temp qw(tempfile);
-my $test_count = 26;
+my $test_count = 32;
 my $genomeObj;
 
 #Initializing test workspace
@@ -51,7 +51,7 @@ my $media = $obj->addmedia({
 	isDefined => 1,
 	isMinimal => 1,
 	type => "Minimal media",
-	compounds => ["A name","B name","C name"],
+	compounds => ["C name","D name","B name"],
 	concentrations => [0.001,0.001,0.001],
 	maxflux => [1000,1000,1000],
 	minflux => [-1000,-1000,-1000]
@@ -234,13 +234,13 @@ $job = $obj->queue_gapfill_model({
 	model_workspace => "testworkspace",
 	formulation => {
 		formulation => {
-			media => "Complete",
-			media_workspace => "kbasecdm"
+			media => "CustomMedia",
+			media_workspace => "testworkspace"
 		},
 		num_solutions => 1
 	},
 	integrate_solution => 1,
-	out_model => $model->[0].".gapfilled",
+	out_model => $model->[0].".gf",
 	donot_submit_job => 1
 });
 ok defined($html), "Successfully queued gapfill job!";
@@ -254,17 +254,17 @@ ok defined($job), "Successfully ran queued gapfill job!";
 
 #Now queuing gapfilling in custom media
 $job = $obj->queue_gapfill_model({
-	model => $model->[0],
+	model => $model->[0].".gf",
 	model_workspace => "testworkspace",
 	formulation => {
 		formulation => {
-			media => "CustomMedia",
-			media_workspace => "testworkspace"
+			media => "Complete",
+			media_workspace => "kbasecdm"
 		},
 		num_solutions => 1
 	},
 	integrate_solution => 1,
-	out_model => $model->[0].".gapfilled",
+	out_model => $model->[0].".gf2",
 	donot_submit_job => 1
 });
 ok defined($html), "Successfully queued gapfill job!";
@@ -278,7 +278,7 @@ ok defined($job), "Successfully ran queued gapfill job!";
 
 #Now test flux balance analysis
 $fba = $obj->runfba({
-	model => $model->[0].".gapfilled",
+	model => $model->[0].".gf2",
 	model_workspace => "testworkspace",
 	formulation => {
 		media => "CustomMedia",
@@ -306,7 +306,7 @@ close($fh);
 
 #Now exporting queued FBA
 $job = $obj->queue_gapgen_model({
-	model => $model->[0],
+	model => $model->[0].".gf2",
 	model_workspace => "testworkspace",
 	formulation => {
 		formulation => {
@@ -318,7 +318,7 @@ $job = $obj->queue_gapgen_model({
 		num_solutions => 1
 	},
 	integrate_solution => 1,
-	out_model => $model->[0].".gapgen",
+	out_model => $model->[0].".gg",
 	donot_submit_job => 1
 });
 ok defined($html), "Successfully queued gapgen job!";
@@ -332,7 +332,7 @@ ok defined($job), "Successfully ran queued gapgen job!";
 
 #Now test flux balance analysis
 $fba = $obj->runfba({
-	model => $model->[0].".gapgen",
+	model => $model->[0].".gg",
 	model_workspace => "testworkspace",
 	formulation => {
 		media => "CustomMedia",
@@ -360,7 +360,7 @@ close($fh);
 
 #Now test ability to retrieve annotated genome object from database
 my $cdmgenome = $obj->genome_to_workspace({
-	genome => "kb|g.0",
+	genome => "kb|g.1",
 	workspace => "testworkspace"
 });
 ok defined($cdmgenome), "Genome successfully imported to workspace from CDM!"; 

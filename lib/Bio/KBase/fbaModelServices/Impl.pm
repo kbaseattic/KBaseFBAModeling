@@ -20,7 +20,7 @@ use URI;
 use Bio::KBase::IDServer::Client;
 use Bio::KBase::CDMI::CDMIClient;
 use KBase::ClusterService;
-use Bio::KBase::workspaceService;
+use Bio::KBase::workspaceService::Client;
 use ModelSEED::Auth::Basic;
 use ModelSEED::Store;
 use Data::UUID;
@@ -239,7 +239,12 @@ sub _translate_genome_to_annotation {
 			}
 		}
 	}
-	$gc = $gc / $size;
+	if ($size == 0) {
+		$gc = 0.5;
+		$size = 0;
+	} else {
+		$gc = $gc / $size;
+	}
 	my $annotation = ModelSEED::MS::Annotation->new({
 	  name         => $genome->{scientific_name},
 	  mapping_uuid => "kbase/default",
@@ -331,6 +336,12 @@ sub _save_msobject {
 	my $data;
 	if (defined($obj->{_kbaseWSMeta})) {
 		delete $obj->{_kbaseWSMeta};
+	}
+	if ($type eq "Genome" && defined($obj->{contigs})) {
+		$obj->{contigs} = [];
+	}
+	if ($type eq "Model") {
+		$obj->{uuid} = $ws."/".$id;
 	}
 	if (ref($obj) eq "HASH") {
 		$data = $obj;
@@ -428,7 +439,7 @@ sub _get_msobject {
 			$obj->model($self->_get_msobject("Model",$array->[0],$array->[1],$cache));
 			my $mediauuids = $obj->mediaUUIDs();
 			foreach my $media (@{$mediauuids}) {
-				if ($obj->media_uuid() =~ m/(.+)\/(.+)/) {
+				if ($media =~ m/(.+)\/(.+)/) {
 					my $mediaobj = $self->_get_msobject("Media",$1,$2,$cache);
 					$obj->model()->biochemistry()->add("media",$mediaobj);
 				}
@@ -821,10 +832,6 @@ sub _buildGapfillObject {
 		gprHypothesis => $self->_invert_boolean($formulation->{nogprhyp}),
 		reactionAdditionHypothesis => $self->_invert_boolean($formulation->{nopathwayhyp}),
 	});
-	$gapform->{_kbaseWSMeta}->{wsid} = $id;
-	$gapform->{_kbaseWSMeta}->{ws} = $workspace;
-	$gapform->prepareFBAFormulation();
-	$gapform->fbaFormulation()->numberOfSolutions($formulation->{num_solutions});
 	foreach my $reaction (@{$formulation->{gauranteedrxns}}) {
 		my $rxnObj = $model->biochemistry()->searchForReaction($reaction);
 		if (defined($rxnObj)) {
@@ -843,6 +850,10 @@ sub _buildGapfillObject {
 			$gapform->addLinkArrayItem("allowableCompartments",$compObj);
 		}
 	}
+	$gapform->prepareFBAFormulation();
+	$gapform->{_kbaseWSMeta}->{wsid} = $id;
+	$gapform->{_kbaseWSMeta}->{ws} = $workspace;
+	$gapform->fbaFormulation()->numberOfSolutions($formulation->{num_solutions});
 	return $gapform;
 }
 
@@ -5352,18 +5363,21 @@ sub queue_gapfill_model
 	} else {
 		my $gapfill = $self->_get_msobject("GapFill",$input->{gapFill_workspace},$input->{gapFill});
 		if (!defined($gapfill->fbaFormulation()->fbaResults()->[0])) {
-			my $msg = "Gapfilling completed with no solutions found. Gapfilling failed!";
+			my $msg = "Gapfilling failed!";
 			Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'queue_gapfill_model');
 		}
 		$gapfill->parseGapfillingResults($gapfill->fbaFormulation()->fbaResults()->[0]);
+		if (!defined($gapfill->gapfillingSolutions()->[0])) {
+			my $msg = "Gapfilling completed, but no valid solutions found!";
+			Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'queue_gapfill_model');
+		}
 		if ($input->{integrate_solution} == 1) {
-			my $model = $gapfill->model();
-			$model->integrateGapfillSolution({
+			$gapfill->model()->integrateGapfillSolution({
 				gapfillingFormulation => $gapfill,
 				solutionNum => 0
 			});
-			my $modelmeta = $self->_save_msobject($model,"Model",$input->{out_workspace},$input->{out_model},"queue_gapfill_model");
 		}
+		my $modelmeta = $self->_save_msobject($gapfill->model(),"Model",$input->{out_workspace},$input->{out_model},"queue_gapfill_model");
 		$output = $self->_save_msobject($gapfill,"GapFill",$input->{gapFill_workspace},$input->{gapFill},"queue_gapfill_model");
 	}
 	$self->_clearContext();
@@ -5654,19 +5668,18 @@ sub queue_gapgen_model
 	} else {
 		my $gapgen = $self->_get_msobject("GapGen",$input->{gapGen_workspace},$input->{gapGen});
 		if (!defined($gapgen->fbaFormulation()->fbaResults())) {
-			my $msg = "Gap generation completed with no solutions found. Gap generation failed!";
+			my $msg = "Gap generation failed!";
 			Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'queue_gapgen_model');
 		}
 		$gapgen->parseGapgenResults($gapgen->fbaFormulation()->fbaResults()->[0]);
-		if ($input->{integrate_solution} == 1) {
-			my $model = $gapgen->model();
-			$model->integrateGapgenSolution({
+		if ($input->{integrate_solution} == 1 && defined($gapgen->gapgenSolutions()->[0])) {
+			$gapgen->model()->integrateGapgenSolution({
 				gapgenFormulation => $gapgen,
 				solutionNum => 0
 			});
-			my $modelmeta = $self->_save_msobject($model,"Model",$input->{out_workspace},$input->{out_model},"queue_gapgen_model");
 		}
-		$output = $self->_save_msobject($gapgen,"GapFill",$input->{gapGen_workspace},$input->{gapGen},"queue_gapgen_model");
+		my $modelmeta = $self->_save_msobject($gapgen->model(),"Model",$input->{out_workspace},$input->{out_model},"queue_gapgen_model");
+		$output = $self->_save_msobject($gapgen,"GapGen",$input->{gapGen_workspace},$input->{gapGen},"queue_gapgen_model");
 	}
 	$self->_clearContext();
     #END queue_gapgen_model
