@@ -6,7 +6,7 @@
 use strict;
 use warnings;
 use Getopt::Long::Descriptive;
-use fbaModelServicesClient;
+use Bio::KBase::fbaModelServices::Client;
 my $defaultURL = "http://kbase.us/services/fba";
 my $config = {
     url => [ "url:s", "URL to use for fbaSerices", $defaultURL, "cli" ],
@@ -42,7 +42,7 @@ my ($rtv, $options) = describe_options(
 );
 my ($workspace, $model) = @ARGV;
 die $usage unless defined $workspace && defined $model;
-my $serv = fbaModelServicesClient->new($options->{url});
+my $serv = Bio::KBase::fbaModelServices::Client->new($options->{url});
 $options = apply_defaults($options, $config);
 $options = process($options, $config);
 my $fba  = get_formulation($options, $config);

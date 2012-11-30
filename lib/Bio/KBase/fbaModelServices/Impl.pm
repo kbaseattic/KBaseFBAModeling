@@ -324,7 +324,7 @@ sub _idServer {
 sub _workspaceServices {
 	my $self = shift;
 	if (!defined($self->{_workspaceServices})) {
-		$self->{_workspaceServices} = Bio::KBase::workspaceService->new();
+		$self->{_workspaceServices} = Bio::KBase::workspaceService::Client->new();
 	}
     return $self->{_workspaceServices};
 }

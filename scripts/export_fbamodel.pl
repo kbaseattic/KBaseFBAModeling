@@ -11,9 +11,9 @@
 #===============================================================================
 use strict;
 use warnings;
-use fbaModelServicesClient;
+use Bio::KBase::fbaModelServices::Client;
 my $defaultURL = "http://kbase.us/services/fbaModelServices";
-my $serv = fbaModelServicesClient->new($defaultURL);
+my $serv = Bio::KBase::fbaModelServices::Client->new($defaultURL);
 my ($workspace, $model, $format) = @ARGV;
 my $supported = { map { $_ => 1 } qw( html sbml readable json cytoseed ) };
 my $usage = "$0 [workspace] [model] [format]\n" . 

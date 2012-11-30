@@ -1,8 +1,8 @@
 #!/usr/bin/perl 
 use strict;
 use warnings;
-use Bio::KBase::fbaModel::CLI;
-my $serv = Bio::KBase::fbaModel::CLI->new("http://kbase.us/services/fbaModelCLI");
+use Bio::KBase::fbaModelCLI::Client;
+my $serv = Bio::KBase::fbaModelCLI::Client->new("http://kbase.us/services/fbaModelCLI");
 
 my @args = @ARGV;
 unshift @args, "bio";

@@ -11,10 +11,10 @@
 use strict;
 use warnings;
 use Getopt::Long;
-use fbaModelServicesClient;
+use Bio::KBase::fbaModelServices::Client;
 use JSON;
 my $defaultURL = "http://kbase.us/services/fbaModelServices";
-my $serv = fbaModelServicesClient->new($defaultURL);
+my $serv = Bio::KBase::fbaModelServices::Client->new($defaultURL);
 my $usage = "$0 <workspace> [ < file || --file [-f] filename ]\n"; 
 my $filename;
 my $rtv = GetOptions( "file|f=s" => \$filename );
