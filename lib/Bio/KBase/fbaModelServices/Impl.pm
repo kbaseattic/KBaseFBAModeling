@@ -6477,7 +6477,6 @@ sub run_job
     	my $msg = "FBA failed with no solution returned!";
     	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'runfba');
     }
-    print $job->{queuing_command}."\t".$fba->jobDirectory()."\n";
     $self->_save_msobject($fba,"FBA",$clusterjob->{fbaws},$clusterjob->{fbaid},"run_job");
 	$output = $job;
     $self->jobs_done($input);
