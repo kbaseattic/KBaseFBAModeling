@@ -3,7 +3,7 @@ TOP_DIR = ../..
 DEPLOY_RUNTIME ?= /kb/runtime
 TARGET ?= /kb/deployment
  
-#include $(TOP_DIR)/tools/Makefile.common
+include $(TOP_DIR)/tools/Makefile.common
 
 SRC_PERL = $(wildcard scripts/*.pl)
 BIN_PERL = $(addprefix $(BIN_DIR)/,$(basename $(notdir $(SRC_PERL))))
