@@ -1499,7 +1499,7 @@ genomeTO is a reference to a hash where the following keys are defined:
 genome_id is a string
 workspace_id is a string
 bool is an int
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -1507,10 +1507,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 </pre>
 
@@ -1530,7 +1533,7 @@ genomeTO is a reference to a hash where the following keys are defined:
 genome_id is a string
 workspace_id is a string
 bool is an int
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -1538,10 +1541,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 
 =end text
@@ -1621,7 +1627,7 @@ genome_to_workspace_params is a reference to a hash where the following keys are
 genome_id is a string
 workspace_id is a string
 bool is an int
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -1629,10 +1635,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 </pre>
 
@@ -1650,7 +1659,7 @@ genome_to_workspace_params is a reference to a hash where the following keys are
 genome_id is a string
 workspace_id is a string
 bool is an int
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -1658,10 +1667,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 
 =end text
@@ -1744,7 +1756,7 @@ genome_id is a string
 workspace_id is a string
 fbamodel_id is a string
 bool is an int
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -1752,10 +1764,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 </pre>
 
@@ -1776,7 +1791,7 @@ genome_id is a string
 workspace_id is a string
 fbamodel_id is a string
 bool is an int
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -1784,10 +1799,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 
 =end text
@@ -1970,7 +1988,7 @@ addmedia_params is a reference to a hash where the following keys are defined:
 media_id is a string
 workspace_id is a string
 bool is an int
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -1978,10 +1996,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 </pre>
 
@@ -2007,7 +2028,7 @@ addmedia_params is a reference to a hash where the following keys are defined:
 media_id is a string
 workspace_id is a string
 bool is an int
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -2015,10 +2036,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 
 =end text
@@ -2238,7 +2262,7 @@ constraint is a reference to a list containing 4 items:
 	2: a reference to a list where each element is a term
 	3: a string
 fba_id is a string
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -2246,10 +2270,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 </pre>
 
@@ -2313,7 +2340,7 @@ constraint is a reference to a list containing 4 items:
 	2: a reference to a list where each element is a term
 	3: a string
 fba_id is a string
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -2321,10 +2348,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 
 =end text
@@ -2511,7 +2541,7 @@ feature_id is a string
 media_id is a string
 compound_id is a string
 bool is an int
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -2519,10 +2549,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 </pre>
 
@@ -2553,7 +2586,7 @@ feature_id is a string
 media_id is a string
 compound_id is a string
 bool is an int
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -2561,10 +2594,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 
 =end text
@@ -2688,7 +2724,7 @@ constraint is a reference to a list containing 4 items:
 	2: a reference to a list where each element is a term
 	3: a string
 phenotypeSimulationSet_id is a string
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -2696,10 +2732,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 </pre>
 
@@ -2761,7 +2800,7 @@ constraint is a reference to a list containing 4 items:
 	2: a reference to a list where each element is a term
 	3: a string
 phenotypeSimulationSet_id is a string
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -2769,10 +2808,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 
 =end text
@@ -2993,7 +3035,7 @@ constraint is a reference to a list containing 4 items:
 	2: a reference to a list where each element is a term
 	3: a string
 fba_id is a string
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -3001,10 +3043,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 </pre>
 
@@ -3069,7 +3114,7 @@ constraint is a reference to a list containing 4 items:
 	2: a reference to a list where each element is a term
 	3: a string
 fba_id is a string
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -3077,10 +3122,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 
 =end text
@@ -3231,7 +3279,7 @@ compartment_id is a string
 probabilisticAnnotation_id is a string
 phenotypeSet_id is a string
 gapfill_id is a string
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -3239,10 +3287,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 </pre>
 
@@ -3331,7 +3382,7 @@ compartment_id is a string
 probabilisticAnnotation_id is a string
 phenotypeSet_id is a string
 gapfill_id is a string
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -3339,10 +3390,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 
 =end text
@@ -3478,7 +3532,7 @@ constraint is a reference to a list containing 4 items:
 	3: a string
 phenotypeSet_id is a string
 gapgen_id is a string
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -3486,10 +3540,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 </pre>
 
@@ -3563,7 +3620,7 @@ constraint is a reference to a list containing 4 items:
 	3: a string
 phenotypeSet_id is a string
 gapgen_id is a string
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -3571,10 +3628,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 
 =end text
@@ -3649,8 +3709,9 @@ $output is an object_metadata
 wildtype_phenotype_reconciliation_params is a reference to a hash where the following keys are defined:
 	model has a value which is a fbamodel_id
 	model_workspace has a value which is a workspace_id
-	formulation has a value which is a GapfillingFormulation
-	formulation has a value which is a GapgenFormulation
+	fba_formulation has a value which is an FBAFormulation
+	gapfill_formulation has a value which is a GapfillingFormulation
+	gapgen_formulation has a value which is a GapgenFormulation
 	phenotypeSet has a value which is a phenotypeSet_id
 	phenotypeSet_workspace has a value which is a workspace_id
 	out_model has a value which is a fbamodel_id
@@ -3659,32 +3720,12 @@ wildtype_phenotype_reconciliation_params is a reference to a hash where the foll
 	gapGens has a value which is a reference to a list where each element is a gapgen_id
 	gapFill_workspace has a value which is a workspace_id
 	auth has a value which is a string
+	queueSensitivityAnalysis has a value which is a bool
+	queueReconciliationCombination has a value which is a bool
 	overwrite has a value which is a bool
 	donot_submit_job has a value which is a bool
 fbamodel_id is a string
 workspace_id is a string
-GapfillingFormulation is a reference to a hash where the following keys are defined:
-	formulation has a value which is an FBAFormulation
-	num_solutions has a value which is an int
-	nomediahyp has a value which is a bool
-	nobiomasshyp has a value which is a bool
-	nogprhyp has a value which is a bool
-	nopathwayhyp has a value which is a bool
-	allowunbalanced has a value which is a bool
-	activitybonus has a value which is a float
-	drainpen has a value which is a float
-	directionpen has a value which is a float
-	nostructpen has a value which is a float
-	unfavorablepen has a value which is a float
-	nodeltagpen has a value which is a float
-	biomasstranspen has a value which is a float
-	singletranspen has a value which is a float
-	transpen has a value which is a float
-	blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
-	gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
-	allowedcmps has a value which is a reference to a list where each element is a compartment_id
-	probabilisticAnnotation has a value which is a probabilisticAnnotation_id
-	probabilisticAnnotation_workspace has a value which is a workspace_id
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	media_workspace has a value which is a workspace_id
@@ -3722,6 +3763,28 @@ constraint is a reference to a list containing 4 items:
 	1: a string
 	2: a reference to a list where each element is a term
 	3: a string
+GapfillingFormulation is a reference to a hash where the following keys are defined:
+	formulation has a value which is an FBAFormulation
+	num_solutions has a value which is an int
+	nomediahyp has a value which is a bool
+	nobiomasshyp has a value which is a bool
+	nogprhyp has a value which is a bool
+	nopathwayhyp has a value which is a bool
+	allowunbalanced has a value which is a bool
+	activitybonus has a value which is a float
+	drainpen has a value which is a float
+	directionpen has a value which is a float
+	nostructpen has a value which is a float
+	unfavorablepen has a value which is a float
+	nodeltagpen has a value which is a float
+	biomasstranspen has a value which is a float
+	singletranspen has a value which is a float
+	transpen has a value which is a float
+	blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
+	gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
+	allowedcmps has a value which is a reference to a list where each element is a compartment_id
+	probabilisticAnnotation has a value which is a probabilisticAnnotation_id
+	probabilisticAnnotation_workspace has a value which is a workspace_id
 compartment_id is a string
 probabilisticAnnotation_id is a string
 GapgenFormulation is a reference to a hash where the following keys are defined:
@@ -3736,7 +3799,7 @@ GapgenFormulation is a reference to a hash where the following keys are defined:
 phenotypeSet_id is a string
 gapfill_id is a string
 gapgen_id is a string
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -3744,10 +3807,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 </pre>
 
@@ -3760,8 +3826,9 @@ $output is an object_metadata
 wildtype_phenotype_reconciliation_params is a reference to a hash where the following keys are defined:
 	model has a value which is a fbamodel_id
 	model_workspace has a value which is a workspace_id
-	formulation has a value which is a GapfillingFormulation
-	formulation has a value which is a GapgenFormulation
+	fba_formulation has a value which is an FBAFormulation
+	gapfill_formulation has a value which is a GapfillingFormulation
+	gapgen_formulation has a value which is a GapgenFormulation
 	phenotypeSet has a value which is a phenotypeSet_id
 	phenotypeSet_workspace has a value which is a workspace_id
 	out_model has a value which is a fbamodel_id
@@ -3770,32 +3837,12 @@ wildtype_phenotype_reconciliation_params is a reference to a hash where the foll
 	gapGens has a value which is a reference to a list where each element is a gapgen_id
 	gapFill_workspace has a value which is a workspace_id
 	auth has a value which is a string
+	queueSensitivityAnalysis has a value which is a bool
+	queueReconciliationCombination has a value which is a bool
 	overwrite has a value which is a bool
 	donot_submit_job has a value which is a bool
 fbamodel_id is a string
 workspace_id is a string
-GapfillingFormulation is a reference to a hash where the following keys are defined:
-	formulation has a value which is an FBAFormulation
-	num_solutions has a value which is an int
-	nomediahyp has a value which is a bool
-	nobiomasshyp has a value which is a bool
-	nogprhyp has a value which is a bool
-	nopathwayhyp has a value which is a bool
-	allowunbalanced has a value which is a bool
-	activitybonus has a value which is a float
-	drainpen has a value which is a float
-	directionpen has a value which is a float
-	nostructpen has a value which is a float
-	unfavorablepen has a value which is a float
-	nodeltagpen has a value which is a float
-	biomasstranspen has a value which is a float
-	singletranspen has a value which is a float
-	transpen has a value which is a float
-	blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
-	gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
-	allowedcmps has a value which is a reference to a list where each element is a compartment_id
-	probabilisticAnnotation has a value which is a probabilisticAnnotation_id
-	probabilisticAnnotation_workspace has a value which is a workspace_id
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	media_workspace has a value which is a workspace_id
@@ -3833,6 +3880,28 @@ constraint is a reference to a list containing 4 items:
 	1: a string
 	2: a reference to a list where each element is a term
 	3: a string
+GapfillingFormulation is a reference to a hash where the following keys are defined:
+	formulation has a value which is an FBAFormulation
+	num_solutions has a value which is an int
+	nomediahyp has a value which is a bool
+	nobiomasshyp has a value which is a bool
+	nogprhyp has a value which is a bool
+	nopathwayhyp has a value which is a bool
+	allowunbalanced has a value which is a bool
+	activitybonus has a value which is a float
+	drainpen has a value which is a float
+	directionpen has a value which is a float
+	nostructpen has a value which is a float
+	unfavorablepen has a value which is a float
+	nodeltagpen has a value which is a float
+	biomasstranspen has a value which is a float
+	singletranspen has a value which is a float
+	transpen has a value which is a float
+	blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
+	gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
+	allowedcmps has a value which is a reference to a list where each element is a compartment_id
+	probabilisticAnnotation has a value which is a probabilisticAnnotation_id
+	probabilisticAnnotation_workspace has a value which is a workspace_id
 compartment_id is a string
 probabilisticAnnotation_id is a string
 GapgenFormulation is a reference to a hash where the following keys are defined:
@@ -3847,7 +3916,7 @@ GapgenFormulation is a reference to a hash where the following keys are defined:
 phenotypeSet_id is a string
 gapfill_id is a string
 gapgen_id is a string
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -3855,10 +3924,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 
 =end text
@@ -3917,6 +3989,302 @@ sub queue_wildtype_phenotype_reconciliation
 
 
 
+=head2 queue_reconciliation_sensitivity_analysis
+
+  $output = $obj->queue_reconciliation_sensitivity_analysis($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a wildtype_phenotype_reconciliation_params
+$output is an object_metadata
+wildtype_phenotype_reconciliation_params is a reference to a hash where the following keys are defined:
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
+	fba_formulation has a value which is an FBAFormulation
+	gapfill_formulation has a value which is a GapfillingFormulation
+	gapgen_formulation has a value which is a GapgenFormulation
+	phenotypeSet has a value which is a phenotypeSet_id
+	phenotypeSet_workspace has a value which is a workspace_id
+	out_model has a value which is a fbamodel_id
+	out_workspace has a value which is a workspace_id
+	gapFills has a value which is a reference to a list where each element is a gapfill_id
+	gapGens has a value which is a reference to a list where each element is a gapgen_id
+	gapFill_workspace has a value which is a workspace_id
+	auth has a value which is a string
+	queueSensitivityAnalysis has a value which is a bool
+	queueReconciliationCombination has a value which is a bool
+	overwrite has a value which is a bool
+	donot_submit_job has a value which is a bool
+fbamodel_id is a string
+workspace_id is a string
+FBAFormulation is a reference to a hash where the following keys are defined:
+	media has a value which is a media_id
+	media_workspace has a value which is a workspace_id
+	objfraction has a value which is a float
+	allreversible has a value which is a bool
+	maximizeObjective has a value which is a bool
+	objectiveTerms has a value which is a reference to a list where each element is a term
+	geneko has a value which is a reference to a list where each element is a feature_id
+	rxnko has a value which is a reference to a list where each element is a reaction_id
+	bounds has a value which is a reference to a list where each element is a bound
+	constraints has a value which is a reference to a list where each element is a constraint
+	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
+	defaultmaxflux has a value which is a float
+	defaultminuptake has a value which is a float
+	defaultmaxuptake has a value which is a float
+	simplethermoconst has a value which is a bool
+	thermoconst has a value which is a bool
+	nothermoerror has a value which is a bool
+	minthermoerror has a value which is a bool
+media_id is a string
+bool is an int
+term is a reference to a list containing 3 items:
+	0: a float
+	1: a string
+	2: a string
+feature_id is a string
+reaction_id is a string
+bound is a reference to a list containing 4 items:
+	0: a float
+	1: a float
+	2: a string
+	3: a string
+constraint is a reference to a list containing 4 items:
+	0: a float
+	1: a string
+	2: a reference to a list where each element is a term
+	3: a string
+GapfillingFormulation is a reference to a hash where the following keys are defined:
+	formulation has a value which is an FBAFormulation
+	num_solutions has a value which is an int
+	nomediahyp has a value which is a bool
+	nobiomasshyp has a value which is a bool
+	nogprhyp has a value which is a bool
+	nopathwayhyp has a value which is a bool
+	allowunbalanced has a value which is a bool
+	activitybonus has a value which is a float
+	drainpen has a value which is a float
+	directionpen has a value which is a float
+	nostructpen has a value which is a float
+	unfavorablepen has a value which is a float
+	nodeltagpen has a value which is a float
+	biomasstranspen has a value which is a float
+	singletranspen has a value which is a float
+	transpen has a value which is a float
+	blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
+	gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
+	allowedcmps has a value which is a reference to a list where each element is a compartment_id
+	probabilisticAnnotation has a value which is a probabilisticAnnotation_id
+	probabilisticAnnotation_workspace has a value which is a workspace_id
+compartment_id is a string
+probabilisticAnnotation_id is a string
+GapgenFormulation is a reference to a hash where the following keys are defined:
+	formulation has a value which is an FBAFormulation
+	refmedia has a value which is a media_id
+	refmedia_workspace has a value which is a workspace_id
+	num_solutions has a value which is an int
+	nomediahyp has a value which is a bool
+	nobiomasshyp has a value which is a bool
+	nogprhyp has a value which is a bool
+	nopathwayhyp has a value which is a bool
+phenotypeSet_id is a string
+gapfill_id is a string
+gapgen_id is a string
+object_metadata is a reference to a list containing 9 items:
+	0: an object_id
+	1: an object_type
+	2: a timestamp
+	3: an int
+	4: a string
+	5: a username
+	6: a username
+	7: a workspace_id
+	8: a workspace_ref
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a wildtype_phenotype_reconciliation_params
+$output is an object_metadata
+wildtype_phenotype_reconciliation_params is a reference to a hash where the following keys are defined:
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
+	fba_formulation has a value which is an FBAFormulation
+	gapfill_formulation has a value which is a GapfillingFormulation
+	gapgen_formulation has a value which is a GapgenFormulation
+	phenotypeSet has a value which is a phenotypeSet_id
+	phenotypeSet_workspace has a value which is a workspace_id
+	out_model has a value which is a fbamodel_id
+	out_workspace has a value which is a workspace_id
+	gapFills has a value which is a reference to a list where each element is a gapfill_id
+	gapGens has a value which is a reference to a list where each element is a gapgen_id
+	gapFill_workspace has a value which is a workspace_id
+	auth has a value which is a string
+	queueSensitivityAnalysis has a value which is a bool
+	queueReconciliationCombination has a value which is a bool
+	overwrite has a value which is a bool
+	donot_submit_job has a value which is a bool
+fbamodel_id is a string
+workspace_id is a string
+FBAFormulation is a reference to a hash where the following keys are defined:
+	media has a value which is a media_id
+	media_workspace has a value which is a workspace_id
+	objfraction has a value which is a float
+	allreversible has a value which is a bool
+	maximizeObjective has a value which is a bool
+	objectiveTerms has a value which is a reference to a list where each element is a term
+	geneko has a value which is a reference to a list where each element is a feature_id
+	rxnko has a value which is a reference to a list where each element is a reaction_id
+	bounds has a value which is a reference to a list where each element is a bound
+	constraints has a value which is a reference to a list where each element is a constraint
+	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
+	defaultmaxflux has a value which is a float
+	defaultminuptake has a value which is a float
+	defaultmaxuptake has a value which is a float
+	simplethermoconst has a value which is a bool
+	thermoconst has a value which is a bool
+	nothermoerror has a value which is a bool
+	minthermoerror has a value which is a bool
+media_id is a string
+bool is an int
+term is a reference to a list containing 3 items:
+	0: a float
+	1: a string
+	2: a string
+feature_id is a string
+reaction_id is a string
+bound is a reference to a list containing 4 items:
+	0: a float
+	1: a float
+	2: a string
+	3: a string
+constraint is a reference to a list containing 4 items:
+	0: a float
+	1: a string
+	2: a reference to a list where each element is a term
+	3: a string
+GapfillingFormulation is a reference to a hash where the following keys are defined:
+	formulation has a value which is an FBAFormulation
+	num_solutions has a value which is an int
+	nomediahyp has a value which is a bool
+	nobiomasshyp has a value which is a bool
+	nogprhyp has a value which is a bool
+	nopathwayhyp has a value which is a bool
+	allowunbalanced has a value which is a bool
+	activitybonus has a value which is a float
+	drainpen has a value which is a float
+	directionpen has a value which is a float
+	nostructpen has a value which is a float
+	unfavorablepen has a value which is a float
+	nodeltagpen has a value which is a float
+	biomasstranspen has a value which is a float
+	singletranspen has a value which is a float
+	transpen has a value which is a float
+	blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
+	gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
+	allowedcmps has a value which is a reference to a list where each element is a compartment_id
+	probabilisticAnnotation has a value which is a probabilisticAnnotation_id
+	probabilisticAnnotation_workspace has a value which is a workspace_id
+compartment_id is a string
+probabilisticAnnotation_id is a string
+GapgenFormulation is a reference to a hash where the following keys are defined:
+	formulation has a value which is an FBAFormulation
+	refmedia has a value which is a media_id
+	refmedia_workspace has a value which is a workspace_id
+	num_solutions has a value which is an int
+	nomediahyp has a value which is a bool
+	nobiomasshyp has a value which is a bool
+	nogprhyp has a value which is a bool
+	nopathwayhyp has a value which is a bool
+phenotypeSet_id is a string
+gapfill_id is a string
+gapgen_id is a string
+object_metadata is a reference to a list containing 9 items:
+	0: an object_id
+	1: an object_type
+	2: a timestamp
+	3: an int
+	4: a string
+	5: a username
+	6: a username
+	7: a workspace_id
+	8: a workspace_ref
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+=item Description
+
+Queues an FBAModel reconciliation job
+
+=back
+
+=cut
+
+sub queue_reconciliation_sensitivity_analysis
+{
+    my($self, @args) = @_;
+
+# Authentication: none
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function queue_reconciliation_sensitivity_analysis (received $n, expecting 1)");
+    }
+    {
+	my($input) = @args;
+
+	my @_bad_arguments;
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to queue_reconciliation_sensitivity_analysis:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'queue_reconciliation_sensitivity_analysis');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.queue_reconciliation_sensitivity_analysis",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{code},
+					       method_name => 'queue_reconciliation_sensitivity_analysis',
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method queue_reconciliation_sensitivity_analysis",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'queue_reconciliation_sensitivity_analysis',
+				       );
+    }
+}
+
+
+
 =head2 queue_combine_wildtype_phenotype_reconciliation_params
 
   $output = $obj->queue_combine_wildtype_phenotype_reconciliation_params($input)
@@ -3953,7 +4321,7 @@ gapgen_id is a string
 phenotypeSet_id is a string
 fba_id is a string
 bool is an int
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -3961,10 +4329,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 </pre>
 
@@ -3997,7 +4368,7 @@ gapgen_id is a string
 phenotypeSet_id is a string
 fba_id is a string
 bool is an int
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -4005,10 +4376,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 
 =end text
@@ -5303,6 +5677,32 @@ a string
 
 
 
+=head2 workspace_ref
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
 =head2 object_metadata
 
 =over 4
@@ -5321,7 +5721,7 @@ a string
 =begin html
 
 <pre>
-a reference to a list containing 7 items:
+a reference to a list containing 9 items:
 0: an object_id
 1: an object_type
 2: a timestamp
@@ -5329,6 +5729,8 @@ a reference to a list containing 7 items:
 4: a string
 5: a username
 6: a username
+7: a workspace_id
+8: a workspace_ref
 
 </pre>
 
@@ -5336,7 +5738,7 @@ a reference to a list containing 7 items:
 
 =begin text
 
-a reference to a list containing 7 items:
+a reference to a list containing 9 items:
 0: an object_id
 1: an object_type
 2: a timestamp
@@ -5344,6 +5746,8 @@ a reference to a list containing 7 items:
 4: a string
 5: a username
 6: a username
+7: a workspace_id
+8: a workspace_ref
 
 
 =end text
@@ -8405,8 +8809,9 @@ donot_submit_job has a value which is a bool
 a reference to a hash where the following keys are defined:
 model has a value which is a fbamodel_id
 model_workspace has a value which is a workspace_id
-formulation has a value which is a GapfillingFormulation
-formulation has a value which is a GapgenFormulation
+fba_formulation has a value which is an FBAFormulation
+gapfill_formulation has a value which is a GapfillingFormulation
+gapgen_formulation has a value which is a GapgenFormulation
 phenotypeSet has a value which is a phenotypeSet_id
 phenotypeSet_workspace has a value which is a workspace_id
 out_model has a value which is a fbamodel_id
@@ -8415,6 +8820,8 @@ gapFills has a value which is a reference to a list where each element is a gapf
 gapGens has a value which is a reference to a list where each element is a gapgen_id
 gapFill_workspace has a value which is a workspace_id
 auth has a value which is a string
+queueSensitivityAnalysis has a value which is a bool
+queueReconciliationCombination has a value which is a bool
 overwrite has a value which is a bool
 donot_submit_job has a value which is a bool
 
@@ -8427,8 +8834,9 @@ donot_submit_job has a value which is a bool
 a reference to a hash where the following keys are defined:
 model has a value which is a fbamodel_id
 model_workspace has a value which is a workspace_id
-formulation has a value which is a GapfillingFormulation
-formulation has a value which is a GapgenFormulation
+fba_formulation has a value which is an FBAFormulation
+gapfill_formulation has a value which is a GapfillingFormulation
+gapgen_formulation has a value which is a GapgenFormulation
 phenotypeSet has a value which is a phenotypeSet_id
 phenotypeSet_workspace has a value which is a workspace_id
 out_model has a value which is a fbamodel_id
@@ -8437,6 +8845,60 @@ gapFills has a value which is a reference to a list where each element is a gapf
 gapGens has a value which is a reference to a list where each element is a gapgen_id
 gapFill_workspace has a value which is a workspace_id
 auth has a value which is a string
+queueSensitivityAnalysis has a value which is a bool
+queueReconciliationCombination has a value which is a bool
+overwrite has a value which is a bool
+donot_submit_job has a value which is a bool
+
+
+=end text
+
+=back
+
+
+
+=head2 queue_reconciliation_sensitivity_analysis_params
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+phenotypeSet has a value which is a phenotypeSet_id
+phenotypeSet_workspace has a value which is a workspace_id
+gapFills has a value which is a reference to a list where each element is a gapfill_id
+gapGens has a value which is a reference to a list where each element is a gapgen_id
+out_model has a value which is a fbamodel_id
+out_workspace has a value which is a workspace_id
+auth has a value which is a string
+queueReconciliationCombination has a value which is a bool
+overwrite has a value which is a bool
+donot_submit_job has a value which is a bool
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+phenotypeSet has a value which is a phenotypeSet_id
+phenotypeSet_workspace has a value which is a workspace_id
+gapFills has a value which is a reference to a list where each element is a gapfill_id
+gapGens has a value which is a reference to a list where each element is a gapgen_id
+out_model has a value which is a fbamodel_id
+out_workspace has a value which is a workspace_id
+auth has a value which is a string
+queueReconciliationCombination has a value which is a bool
 overwrite has a value which is a bool
 donot_submit_job has a value which is a bool
 

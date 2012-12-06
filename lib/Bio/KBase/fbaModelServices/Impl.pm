@@ -35,6 +35,7 @@ use ModelSEED::MS::GapgenFormulation;
 use ModelSEED::MS::FBAFormulation;
 use ModelSEED::MS::FBAProblem;
 use ModelSEED::MS::Metadata::Definitions;
+use ModelSEED::utilities qw( args verbose set_verbose translateArrayOptions);
 use Try::Tiny;
 use Data::Dumper;
 
@@ -196,32 +197,36 @@ sub _getUsername {
 
 sub _setContext {
 	my ($self,$context,$params) = @_;
-    if ( defined $params->{auth} ) {
-        my $token = Bio::KBase::AuthToken->new(
-            token => $params->{auth},
-        );
-        if ($token->validate()) {
-            $self->{_currentUser} = $token->user_id;
-        } else {
-            Bio::KBase::Exceptions::KBaseException->throw(error => "Invalid authorization token!",
-                method_name => 'workspaceDocument::_setContext');
-        }
+    if (!defined($params->{_internalCall})) {
+	    $self->{_contextdata}->{_context} = $context;
+	    if ( defined $params->{auth} ) {
+	        my $token = Bio::KBase::AuthToken->new(
+	            token => $params->{auth},
+	        );
+	        if ($token->validate()) {
+	        	$self->{_contextdata}->{_authentication} = $params->{auth};
+	            $self->{_contextdata}->{_currentUser} = $token->user_id;
+	        } else {
+	            Bio::KBase::Exceptions::KBaseException->throw(error => "Invalid authorization token!",
+	                method_name => 'workspaceDocument::_setContext');
+	        }
+	    }
+    } else {
+    	$self->{_contextdata}->{_internalCall} = 1;
     }
-	$self->{_authentication} = $params->{auth};
-	$self->{_context} = $context;
 }
 
 sub _getContext {
 	my ($self) = @_;
-	return $self->{_context};
+	return $self->{_contextdata}->{_context};
 }
-
 sub _clearContext {
 	my ($self) = @_;
-    delete $self->{_currentUserObj};
-    delete $self->{_currentUser};
-    delete $self->{_authentication};
-	delete $self->{_context};
+	if (!defined($self->{_contextdata}->{_internalCall})) {
+		delete $self->{_contextdata};
+	} else {
+		delete $self->{_contextdata}->{_internalCall};
+	}
 }
 
 sub _translate_genome_to_annotation {
@@ -1453,6 +1458,9 @@ sub new
     if (defined($options->{workspace})) {
     	$self->{_workspaceServices} = $options->{workspace};
     }
+    if (defined($options->{verbose})) {
+    	set_verbose(1);
+    }
     #END_CONSTRUCTOR
 
     if ($self->can('_init_instance'))
@@ -1700,13 +1708,15 @@ sub get_models
     #BEGIN get_models
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["models","workspaces"],{
-		id_type => "ModelSEED"
+		id_type => "ModelSEED",
+		biochemistry => "default",
+		mapping => "mapping"
 	});
 	#Creating cache with the biochemistry, to ensure only one is created for all models
 	my $cache = {
 		Biochemistry => {
 			kbase => {
-				"default" => $self->_get_msobject("Biochemistry","kbase","default")
+				"default" => $self->_get_msobject("Biochemistry","kbase",$input->{biochemistry})
 			}
 		}
 	};
@@ -1720,9 +1730,9 @@ sub get_models
     		workspace => $input->{workspaces}->[$i],
     		genome => $genomeArray->[1],
     		genome_workspace => $genomeArray->[0],
-    		"map" => "default",
+    		"map" => $input->{mapping},
     		map_workspace => "kbase",
-    		biochemistry => "default",
+    		biochemistry => $input->{biochemistry},
     		biochemistry_workspace => "kbase",
     		name => $model->name(),
     		type => $model->type(),
@@ -2042,13 +2052,15 @@ sub get_fbas
     #BEGIN get_fbas
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["fbas","workspaces"],{
-		id_type => "ModelSEED"
+		id_type => "ModelSEED",
+		biochemistry => "default",
+		mapping => "default"
 	});
 	#Creating cache with the biochemistry, to ensure only one is created for all models
 	my $cache = {
 		Biochemistry => {
 			kbase => {
-				"default" => $self->_get_msobject("Biochemistry","kbase","default")
+				"default" => $self->_get_msobject("Biochemistry","kbase",$input->{biochemistry})
 			}
 		}
 	};
@@ -2304,13 +2316,15 @@ sub get_gapfills
     #BEGIN get_gapfills
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["gapfills","workspaces"],{
-		id_type => "ModelSEED"
+		id_type => "ModelSEED",
+		biochemistry => "default",
+		mapping => "default"
 	});
 	#Creating cache with the biochemistry, to ensure only one is created for all models
 	my $cache = {
 		Biochemistry => {
 			kbase => {
-				"default" => $self->_get_msobject("Biochemistry","kbase","default")
+				"default" => $self->_get_msobject("Biochemistry","kbase",$input->{biochemistry})
 			}
 		}
 	};
@@ -2536,13 +2550,15 @@ sub get_gapgens
     #BEGIN get_gapgens
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["gapgens","workspaces"],{
-		id_type => "ModelSEED"
+		id_type => "ModelSEED",
+		biochemistry => "default",
+		mapping => "default"
 	});
 	#Creating cache with the biochemistry, to ensure only one is created for all models
 	my $cache = {
 		Biochemistry => {
 			kbase => {
-				"default" => $self->_get_msobject("Biochemistry","kbase","default")
+				"default" => $self->_get_msobject("Biochemistry","kbase",$input->{biochemistry})
 			}
 		}
 	};
@@ -2654,9 +2670,11 @@ sub get_reactions
     #BEGIN get_reactions
 	$self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["reactions"],{
-    	id_type => "ModelSEED"
+    	id_type => "ModelSEED",
+    	biochemistry => "default",
+		mapping => "default"
     });
-	my $biochem = $self->_get_msobject("Biochemistry","kbase","default");
+	my $biochem = $self->_get_msobject("Biochemistry","kbase",$input->{biochemistry});
 	$out_reactions = [];
 	for (my $i=0; $i < @{$input->{reactions}}; $i++) {
 		my $rxn = $input->{reactions}->[$i];
@@ -2774,9 +2792,11 @@ sub get_compounds
     #BEGIN get_compounds
 	$self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["compounds"],{
-    	id_type => "ModelSEED"
+    	id_type => "ModelSEED",
+    	biochemistry => "default",
+		mapping => "default"
     });
-	my $biochem = $self->_get_msobject("Biochemistry","kbase","default");
+	my $biochem = $self->_get_msobject("Biochemistry","kbase",$input->{biochemistry});
 	$out_compounds = [];
 	for (my $i=0; $i < @{$input->{compounds}}; $i++) {
 		my $cpd = $input->{compounds}->[$i];
@@ -2892,8 +2912,11 @@ sub get_media
     my($out_media);
     #BEGIN get_media
 	$self->_setContext($ctx,$input);
-    $input = $self->_validateargs($input,["medias","workspaces"],{});
-	my $biochem = $self->_get_msobject("Biochemistry","kbase","default");
+    $input = $self->_validateargs($input,["medias","workspaces"],{
+    	biochemistry => "default",
+		mapping => "default"
+    });
+	my $biochem = $self->_get_msobject("Biochemistry","kbase",$input->{biochemistry});
 	$out_media = [];
 	for (my $i=0; $i < @{$input->{medias}}; $i++) {
 		my $media = $input->{medias}->[$i];
@@ -3027,7 +3050,7 @@ sub get_biochemistry
 		biochemistry_workspace => "kbase",
 		id_type => "ModelSEED"
 	});
-    my $biochem = $self->_get_msobject("Biochemistry","kbase","default");
+    my $biochem = $self->_get_msobject("Biochemistry","kbase",$input->{biochemistry});
     
     my $compounds = [];
     my $reactions = [];
@@ -3135,7 +3158,7 @@ genomeTO is a reference to a hash where the following keys are defined:
 genome_id is a string
 workspace_id is a string
 bool is an int
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -3143,10 +3166,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 </pre>
 
@@ -3166,7 +3192,7 @@ genomeTO is a reference to a hash where the following keys are defined:
 genome_id is a string
 workspace_id is a string
 bool is an int
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -3174,10 +3200,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 
 =end text
@@ -3249,7 +3278,7 @@ genome_to_workspace_params is a reference to a hash where the following keys are
 genome_id is a string
 workspace_id is a string
 bool is an int
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -3257,10 +3286,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 </pre>
 
@@ -3278,7 +3310,7 @@ genome_to_workspace_params is a reference to a hash where the following keys are
 genome_id is a string
 workspace_id is a string
 bool is an int
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -3286,10 +3318,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 
 =end text
@@ -3365,7 +3400,7 @@ genome_id is a string
 workspace_id is a string
 fbamodel_id is a string
 bool is an int
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -3373,10 +3408,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 </pre>
 
@@ -3397,7 +3435,7 @@ genome_id is a string
 workspace_id is a string
 fbamodel_id is a string
 bool is an int
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -3405,10 +3443,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 
 =end text
@@ -3444,7 +3485,9 @@ sub genome_to_fbamodel
     $input = $self->_validateargs($input,["genome","genome_workspace"],{
     	model_workspace => $input->{genome_workspace},
     	model => undef,
-    	overwrite => 0
+    	overwrite => 0,
+    	biochemistry => "default",
+		mapping => "default"
     });
     #Determining model ID
     my $genome = $input->{genome};
@@ -3454,7 +3497,7 @@ sub genome_to_fbamodel
     #Retreiving genome object from workspace
     my $genome = $self->_get_msobject("Genome",$input->{genome_workspace},$input->{genome});
     #Retreiving mapping and biochemistry
-    my $mapping = $self->_get_msobject("Mapping","kbase","default");
+    my $mapping = $self->_get_msobject("Mapping","kbase",$input->{mapping});
     my $biochem = $mapping->biochemistry();    
     #Translating genome to model seed annotation
     my $annotation = $self->_translate_genome_to_annotation($genome,$mapping);
@@ -3464,7 +3507,7 @@ sub genome_to_fbamodel
 	$mdl->id($input->{model});
 	$mdl->mapping_uuid($input->{model_workspace}."/".$input->{model}.".map");
 	$mdl->mapping($mapping);
-	$mdl->biochemistry_uuid("kbase/default");
+	$mdl->biochemistry_uuid("kbase/".$input->{biochemistry});
 	$mdl->biochemistry($biochem);
 	$mdl->annotation_uuid($input->{model_workspace}."/".$input->{model}.".anno");
 	$mdl->annotation($annotation);
@@ -3603,7 +3646,7 @@ addmedia_params is a reference to a hash where the following keys are defined:
 media_id is a string
 workspace_id is a string
 bool is an int
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -3611,10 +3654,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 </pre>
 
@@ -3640,7 +3686,7 @@ addmedia_params is a reference to a hash where the following keys are defined:
 media_id is a string
 workspace_id is a string
 bool is an int
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -3648,10 +3694,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 
 =end text
@@ -3691,10 +3740,12 @@ sub addmedia
     	concentrations => [],
     	maxflux => [],
     	minflux => [],
-    	overwrite => 0
+    	overwrite => 0,
+    	biochemistry => "default",
+		mapping => "default"
     });
     #Creating the media object from the specifications
-    my $bio = $self->_get_msobject("Biochemistry","kbase","default");
+    my $bio = $self->_get_msobject("Biochemistry","kbase",$input->{biochemistry});
     my $media = ModelSEED::MS::Media->new({
     	uuid => $input->{workspace}."/".$input->{media},
     	id => $input->{media},
@@ -3818,9 +3869,12 @@ sub export_media
     my($output);
     #BEGIN export_media
     $self->_setContext($ctx,$input);
-	$input = $self->_validateargs($input,["media","workspace","format"],{});
+	$input = $self->_validateargs($input,["media","workspace","format"],{
+		biochemistry => "default",
+		mapping => "default"
+	});
     my $med;
-    my $bio = $self->_get_msobject("Biochemistry","kbase","default");
+    my $bio = $self->_get_msobject("Biochemistry","kbase",$input->{biochemistry});
     if ($input->{workspace} eq "kbasecdm") {
     	 $med = $bio->queryObject("media",{id => $input->{media}});
     	 if (!defined($med)) {
@@ -3916,7 +3970,7 @@ constraint is a reference to a list containing 4 items:
 	2: a reference to a list where each element is a term
 	3: a string
 fba_id is a string
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -3924,10 +3978,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 </pre>
 
@@ -3991,7 +4048,7 @@ constraint is a reference to a list containing 4 items:
 	2: a reference to a list where each element is a term
 	3: a string
 fba_id is a string
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -3999,10 +4056,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 
 =end text
@@ -4204,7 +4264,7 @@ feature_id is a string
 media_id is a string
 compound_id is a string
 bool is an int
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -4212,10 +4272,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 </pre>
 
@@ -4246,7 +4309,7 @@ feature_id is a string
 media_id is a string
 compound_id is a string
 bool is an int
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -4254,10 +4317,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 
 =end text
@@ -4292,14 +4358,16 @@ sub import_phenotypes
 	$input = $self->_validateargs($input,["phenotypeSet_workspace","genome","phenotypes"],{
 		phenotypeSet => undef,
 		genome_workspace => $input->{phenotypeSet_workspace},
-		ignore_errors => 0
+		ignore_errors => 0,
+		biochemistry => "default",
+		mapping => "default"
 	});
     if (!defined($input->{phenotypeSet})) {
     	$input->{phenotypeSet} = $self->_get_new_id($input->{genome}.".phenos.");
     }
     
     #Retrieving biochemistry
-    my $bio = $self->_get_msobject("Biochemistry","kbase","default");
+    my $bio = $self->_get_msobject("Biochemistry","kbase",$input->{biochemistry});
     #Retrieving specified genome
     my $genomeObj;
     if ($input->{genome_workspace} eq "kbasecdm") {
@@ -4490,7 +4558,7 @@ constraint is a reference to a list containing 4 items:
 	2: a reference to a list where each element is a term
 	3: a string
 phenotypeSimulationSet_id is a string
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -4498,10 +4566,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 </pre>
 
@@ -4563,7 +4634,7 @@ constraint is a reference to a list containing 4 items:
 	2: a reference to a list where each element is a term
 	3: a string
 phenotypeSimulationSet_id is a string
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -4571,10 +4642,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 
 =end text
@@ -4875,7 +4949,7 @@ constraint is a reference to a list containing 4 items:
 	2: a reference to a list where each element is a term
 	3: a string
 fba_id is a string
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -4883,10 +4957,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 </pre>
 
@@ -4951,7 +5028,7 @@ constraint is a reference to a list containing 4 items:
 	2: a reference to a list where each element is a term
 	3: a string
 fba_id is a string
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -4959,10 +5036,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 
 =end text
@@ -5003,7 +5083,9 @@ sub queue_runfba
 		notes => "",
 		fba_workspace => $input->{model_workspace},
 		fba => undef,
-		donot_submit_job => 0
+		donot_submit_job => 0,
+		biochemistry => "default",
+		mapping => "default"
 	});
 	if (!defined($input->{fba})) {
 		$input->{fba} = $self->_get_new_id($input->{model}.".fba.");
@@ -5032,10 +5114,10 @@ sub queue_runfba
 			mediawss => $mediaws,
 			mediainsts => $mediainst,
 			bioid => "kbase",
-			biows => "default",
+			biows => $input->{biochemistry},
 			bioinst => 0,
 			mapid => "kbase",
-			mapws => "default",
+			mapws => $input->{mapping},
 			mapinst => 0,
 			annoid => $model->annotation()->{_kbaseWSMeta}->{wsid},
 			annows => $model->annotation()->{_kbaseWSMeta}->{ws},
@@ -5163,7 +5245,7 @@ compartment_id is a string
 probabilisticAnnotation_id is a string
 phenotypeSet_id is a string
 gapfill_id is a string
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -5171,10 +5253,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 </pre>
 
@@ -5263,7 +5348,7 @@ compartment_id is a string
 probabilisticAnnotation_id is a string
 phenotypeSet_id is a string
 gapfill_id is a string
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -5271,10 +5356,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 
 =end text
@@ -5316,7 +5404,9 @@ sub queue_gapfill_model
 		gapFill => undef,
 		gapFill_workspace => $input->{model_workspace},
 		overwrite => 0,
-		donot_submit_job => 0
+		donot_submit_job => 0,
+		biochemistry => "default",
+		mapping => "default"
 	});
 	#Checking is this is a postprocessing or initialization call
 	if (!defined($input->{gapFill})) {
@@ -5347,10 +5437,10 @@ sub queue_gapfill_model
 				mediawss => $mediaws,
 				mediainsts => $mediainst,
 				bioid => "kbase",
-				biows => "default",
+				biows => $input->{biochemsitry},
 				bioinst => 0,
 				mapid => "kbase",
-				mapws => "default",
+				mapws => $input->{mapping},
 				mapinst => 0,
 				annoid => $model->annotation()->{_kbaseWSMeta}->{wsid},
 				annows => $model->annotation()->{_kbaseWSMeta}->{ws},
@@ -5483,7 +5573,7 @@ constraint is a reference to a list containing 4 items:
 	3: a string
 phenotypeSet_id is a string
 gapgen_id is a string
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -5491,10 +5581,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 </pre>
 
@@ -5568,7 +5661,7 @@ constraint is a reference to a list containing 4 items:
 	3: a string
 phenotypeSet_id is a string
 gapgen_id is a string
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -5576,10 +5669,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 
 =end text
@@ -5621,7 +5717,9 @@ sub queue_gapgen_model
 		gapGen => undef,
 		gapGen_workspace => $input->{model_workspace},
 		overwrite => 0,
-		donot_submit_job => 0
+		donot_submit_job => 0,
+		biochemistry => "default",
+		mapping => "default"
 	});
 	#Checking is this is a postprocessing or initialization call
 	if (!defined($input->{gapGen})) {
@@ -5652,10 +5750,10 @@ sub queue_gapgen_model
 				mediawss => $mediaws,
 				mediainsts => $mediainst,
 				bioid => "kbase",
-				biows => "default",
+				biows => $input->{biochemistry},
 				bioinst => 0,
 				mapid => "kbase",
-				mapws => "default",
+				mapws => $input->{mapping},
 				mapinst => 0,
 				annoid => $model->annotation()->{_kbaseWSMeta}->{wsid},
 				annows => $model->annotation()->{_kbaseWSMeta}->{ws},
@@ -5723,8 +5821,9 @@ $output is an object_metadata
 wildtype_phenotype_reconciliation_params is a reference to a hash where the following keys are defined:
 	model has a value which is a fbamodel_id
 	model_workspace has a value which is a workspace_id
-	formulation has a value which is a GapfillingFormulation
-	formulation has a value which is a GapgenFormulation
+	fba_formulation has a value which is an FBAFormulation
+	gapfill_formulation has a value which is a GapfillingFormulation
+	gapgen_formulation has a value which is a GapgenFormulation
 	phenotypeSet has a value which is a phenotypeSet_id
 	phenotypeSet_workspace has a value which is a workspace_id
 	out_model has a value which is a fbamodel_id
@@ -5733,32 +5832,12 @@ wildtype_phenotype_reconciliation_params is a reference to a hash where the foll
 	gapGens has a value which is a reference to a list where each element is a gapgen_id
 	gapFill_workspace has a value which is a workspace_id
 	auth has a value which is a string
+	queueSensitivityAnalysis has a value which is a bool
+	queueReconciliationCombination has a value which is a bool
 	overwrite has a value which is a bool
 	donot_submit_job has a value which is a bool
 fbamodel_id is a string
 workspace_id is a string
-GapfillingFormulation is a reference to a hash where the following keys are defined:
-	formulation has a value which is an FBAFormulation
-	num_solutions has a value which is an int
-	nomediahyp has a value which is a bool
-	nobiomasshyp has a value which is a bool
-	nogprhyp has a value which is a bool
-	nopathwayhyp has a value which is a bool
-	allowunbalanced has a value which is a bool
-	activitybonus has a value which is a float
-	drainpen has a value which is a float
-	directionpen has a value which is a float
-	nostructpen has a value which is a float
-	unfavorablepen has a value which is a float
-	nodeltagpen has a value which is a float
-	biomasstranspen has a value which is a float
-	singletranspen has a value which is a float
-	transpen has a value which is a float
-	blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
-	gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
-	allowedcmps has a value which is a reference to a list where each element is a compartment_id
-	probabilisticAnnotation has a value which is a probabilisticAnnotation_id
-	probabilisticAnnotation_workspace has a value which is a workspace_id
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	media_workspace has a value which is a workspace_id
@@ -5796,6 +5875,28 @@ constraint is a reference to a list containing 4 items:
 	1: a string
 	2: a reference to a list where each element is a term
 	3: a string
+GapfillingFormulation is a reference to a hash where the following keys are defined:
+	formulation has a value which is an FBAFormulation
+	num_solutions has a value which is an int
+	nomediahyp has a value which is a bool
+	nobiomasshyp has a value which is a bool
+	nogprhyp has a value which is a bool
+	nopathwayhyp has a value which is a bool
+	allowunbalanced has a value which is a bool
+	activitybonus has a value which is a float
+	drainpen has a value which is a float
+	directionpen has a value which is a float
+	nostructpen has a value which is a float
+	unfavorablepen has a value which is a float
+	nodeltagpen has a value which is a float
+	biomasstranspen has a value which is a float
+	singletranspen has a value which is a float
+	transpen has a value which is a float
+	blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
+	gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
+	allowedcmps has a value which is a reference to a list where each element is a compartment_id
+	probabilisticAnnotation has a value which is a probabilisticAnnotation_id
+	probabilisticAnnotation_workspace has a value which is a workspace_id
 compartment_id is a string
 probabilisticAnnotation_id is a string
 GapgenFormulation is a reference to a hash where the following keys are defined:
@@ -5810,7 +5911,7 @@ GapgenFormulation is a reference to a hash where the following keys are defined:
 phenotypeSet_id is a string
 gapfill_id is a string
 gapgen_id is a string
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -5818,10 +5919,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 </pre>
 
@@ -5834,8 +5938,9 @@ $output is an object_metadata
 wildtype_phenotype_reconciliation_params is a reference to a hash where the following keys are defined:
 	model has a value which is a fbamodel_id
 	model_workspace has a value which is a workspace_id
-	formulation has a value which is a GapfillingFormulation
-	formulation has a value which is a GapgenFormulation
+	fba_formulation has a value which is an FBAFormulation
+	gapfill_formulation has a value which is a GapfillingFormulation
+	gapgen_formulation has a value which is a GapgenFormulation
 	phenotypeSet has a value which is a phenotypeSet_id
 	phenotypeSet_workspace has a value which is a workspace_id
 	out_model has a value which is a fbamodel_id
@@ -5844,32 +5949,12 @@ wildtype_phenotype_reconciliation_params is a reference to a hash where the foll
 	gapGens has a value which is a reference to a list where each element is a gapgen_id
 	gapFill_workspace has a value which is a workspace_id
 	auth has a value which is a string
+	queueSensitivityAnalysis has a value which is a bool
+	queueReconciliationCombination has a value which is a bool
 	overwrite has a value which is a bool
 	donot_submit_job has a value which is a bool
 fbamodel_id is a string
 workspace_id is a string
-GapfillingFormulation is a reference to a hash where the following keys are defined:
-	formulation has a value which is an FBAFormulation
-	num_solutions has a value which is an int
-	nomediahyp has a value which is a bool
-	nobiomasshyp has a value which is a bool
-	nogprhyp has a value which is a bool
-	nopathwayhyp has a value which is a bool
-	allowunbalanced has a value which is a bool
-	activitybonus has a value which is a float
-	drainpen has a value which is a float
-	directionpen has a value which is a float
-	nostructpen has a value which is a float
-	unfavorablepen has a value which is a float
-	nodeltagpen has a value which is a float
-	biomasstranspen has a value which is a float
-	singletranspen has a value which is a float
-	transpen has a value which is a float
-	blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
-	gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
-	allowedcmps has a value which is a reference to a list where each element is a compartment_id
-	probabilisticAnnotation has a value which is a probabilisticAnnotation_id
-	probabilisticAnnotation_workspace has a value which is a workspace_id
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	media_workspace has a value which is a workspace_id
@@ -5907,6 +5992,28 @@ constraint is a reference to a list containing 4 items:
 	1: a string
 	2: a reference to a list where each element is a term
 	3: a string
+GapfillingFormulation is a reference to a hash where the following keys are defined:
+	formulation has a value which is an FBAFormulation
+	num_solutions has a value which is an int
+	nomediahyp has a value which is a bool
+	nobiomasshyp has a value which is a bool
+	nogprhyp has a value which is a bool
+	nopathwayhyp has a value which is a bool
+	allowunbalanced has a value which is a bool
+	activitybonus has a value which is a float
+	drainpen has a value which is a float
+	directionpen has a value which is a float
+	nostructpen has a value which is a float
+	unfavorablepen has a value which is a float
+	nodeltagpen has a value which is a float
+	biomasstranspen has a value which is a float
+	singletranspen has a value which is a float
+	transpen has a value which is a float
+	blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
+	gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
+	allowedcmps has a value which is a reference to a list where each element is a compartment_id
+	probabilisticAnnotation has a value which is a probabilisticAnnotation_id
+	probabilisticAnnotation_workspace has a value which is a workspace_id
 compartment_id is a string
 probabilisticAnnotation_id is a string
 GapgenFormulation is a reference to a hash where the following keys are defined:
@@ -5921,7 +6028,7 @@ GapgenFormulation is a reference to a hash where the following keys are defined:
 phenotypeSet_id is a string
 gapfill_id is a string
 gapgen_id is a string
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -5929,10 +6036,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 
 =end text
@@ -5963,6 +6073,169 @@ sub queue_wildtype_phenotype_reconciliation
     my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
     my($output);
     #BEGIN queue_wildtype_phenotype_reconciliation
+    $self->_setContext($ctx,$input);
+	$input = $self->_validateargs($input,["model","out_workspace","phenotypeSet"],{
+		out_model => $input->{model},
+		phenotypeSet => undef,
+		gapFills => undef,
+		gapGens => undef,
+		model_workspace => $input->{out_workspace},
+		phenotypeSet_workspace => $input->{out_workspace},
+		gapGen_workspace => $input->{out_workspace},
+		gapFill_workspace => $input->{out_workspace},
+		fba_formulation => undef,
+		gapfill_formulation => undef,
+		gapgen_formulation => undef,
+		phenotypeSet_workspace => $input->{out_workspace},
+		overwrite => 0,
+		donot_submit_job => 0,
+		queueSensitivityAnalysis => 0,
+		queueReconciliationCombination => 0
+	});
+	#Code to set up job
+	if (!defined($input->{gapFills}) && !defined($input->{gapGens})) {
+		#Creating formulations
+		$input->{fba_formulation} = $self->_setDefaultFBAFormulation($input->{fba_formulation});
+		$input->{gapfill_formulation} = $self->_setDefaultGapfillFormulation($input->{gapfill_formulation});
+		$input->{gapgen_formulation} = $self->_setDefaultGapGenFormulation($input->{gapgen_formulation});
+		$input->{gapfill_formulation}->{formulation} = $input->{fba_formulation};
+		$input->{gapgen_formulation}->{formulation} = $input->{fba_formulation};	
+		#Creating job object
+		my $job = $self->_create_job({
+			clusterjobs => [],
+			postprocess_command => "queue_wildtype_phenotype_reconciliation",
+			postprocess_args => [$input],
+			queuing_command => "queue_wildtype_phenotype_reconciliation",
+			workspace => $input->{out_workspace}
+		});
+		#Queing up gapfill and gapgen jobs
+		my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
+		my $input = {
+			model => $input->{model},
+			model_workspace => $input->{model_workspace},
+			phenotypeSet => $input->{phenotypeSet},
+			phenotypeSet_workspace => $input->{phenotypeSet_workspace},
+			formulation => $input->{fba_formulation},
+			overwrite => $input->{overwrite},
+			biochemistry => "default",
+			mapping => "default"
+		};
+		my $simPheno = $self->_get_msobject("PhenotypeSimulationSet",$output->[7],$output->[0]);
+		if (!defined($simPheno->{phenotypeSimulations})) {
+			my $msg = "No phenotypes simulated!";
+			Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'queue_wildtype_phenotype_reconciliation');
+		}
+		$input->{gapFills} = [];
+		$input->{gapGens} = [];
+		#Creating gapfill and gapgen jobs
+		for (my $i=0; $i < @{$simPheno->{phenotypeSimulations}};$i++) {
+			my $phenosim = $simPheno->{phenotypeSimulations}->[$i];
+			if (@{$phenosim->[0]->[0]} == 0) {
+				if ($phenosim->[3] eq "FN") {
+					my $id = $self->_get_new_id($input->{model}.".gapfill.");
+					push(@{$input->{gapFills}},$id);
+					my $gapfill = $self->_buildGapfillObject($input->{gapfill_formulation},$model,$input->{gapFill_workspace},$input->{gapFill});
+					my $fba = $gapfill->fbaFormulation();
+					my $fbameta = $self->_save_msobject($fba,"FBA",$fba->{_kbaseWSMeta}->{ws},$fba->{_kbaseWSMeta}->{wsid},"queue_wildtype_phenotype_reconciliation");
+					my $gapfillmeta = $self->_save_msobject($gapfill,"GapFill",$input->{gapFill_workspace},$id,"queue_wildtype_phenotype_reconciliation");
+					push(@{$model->unintegratedGapfilling_uuids()},$gapfill->uuid());
+					push(@{$job->{clusterjobs}},{
+						mediaids => [],
+						mediawss => [],
+						mediainsts => [],
+						bioid => "kbase",
+						biows => $input->{biochemistry},
+						bioinst => 0,
+						mapid => "kbase",
+						mapws => $input->{mapping},
+						mapinst => 0,
+						annoid => $model->annotation()->{_kbaseWSMeta}->{wsid},
+						annows => $model->annotation()->{_kbaseWSMeta}->{ws},
+						annoinst => $model->annotation()->{_kbaseWSMeta}->{wsinst},
+						modelid => $model->{_kbaseWSMeta}->{wsid},
+						modelws => $model->{_kbaseWSMeta}->{ws},
+						modelinst => $model->{_kbaseWSMeta}->{wsinst},
+						fbaid => $fba->{_kbaseWSMeta}->{wsid},
+						fbaws => $fba->{_kbaseWSMeta}->{ws},
+						fbainst => $fba->{_kbaseWSMeta}->{wsinst},
+					});
+				} elsif ($phenosim->[3] eq "FP") {
+					my $id = $self->_get_new_id($input->{model}.".gapgen.");
+					push(@{$input->{gapGens}},$id);
+					my $gapgen = $self->_buildGapGenObject($input->{gapgen_formulation},$model,$input->{gapFill_workspace},$input->{gapFill});
+					my $fba = $gapgen->fbaFormulation();
+					my $fbameta = $self->_save_msobject($fba,"FBA",$fba->{_kbaseWSMeta}->{ws},$fba->{_kbaseWSMeta}->{wsid},"queue_wildtype_phenotype_reconciliation");
+					my $gapgenmeta = $self->_save_msobject($gapgen,"GapFill",$input->{gapFill_workspace},$id,"queue_wildtype_phenotype_reconciliation");
+					push(@{$model->unintegratedGapgen_uuids()},$gapgen->uuid());
+					push(@{$job->{clusterjobs}},{
+						mediaids => [],
+						mediawss => [],
+						mediainsts => [],
+						bioid => "kbase",
+						biows => $input->{biochemistry},
+						bioinst => 0,
+						mapid => "kbase",
+						mapws => $input->{mapping},
+						mapinst => 0,
+						annoid => $model->annotation()->{_kbaseWSMeta}->{wsid},
+						annows => $model->annotation()->{_kbaseWSMeta}->{ws},
+						annoinst => $model->annotation()->{_kbaseWSMeta}->{wsinst},
+						modelid => $model->{_kbaseWSMeta}->{wsid},
+						modelws => $model->{_kbaseWSMeta}->{ws},
+						modelinst => $model->{_kbaseWSMeta}->{wsinst},
+						fbaid => $fba->{_kbaseWSMeta}->{wsid},
+						fbaws => $fba->{_kbaseWSMeta}->{ws},
+						fbainst => $fba->{_kbaseWSMeta}->{wsinst},
+					});
+				}
+			}
+		}
+		my $modelmeta = $self->_save_msobject($model,"Model",$input->{out_workspace},$input->{out_model},"queue_gapfill_model");
+		$output = $self->_save_msobject($job,"FBAJob",$job->{workspace},$job->{id},"queue_gapfill_model");
+		if ($input->{donot_submit_job} == 0) {
+			$job = $self->_submit_job($job);
+		}
+	} elsif ($input->{queueSensitivityAnalysis} == 1) {
+		#Code to post process job
+		if (defined($input->{gapFills})) {
+			foreach my $gf (@{$input->{gapFills}}) {
+				my $gapfill = $self->_get_msobject("GapFill",$input->{gapFill_workspace},$gf);
+				if (!defined($gapfill->fbaFormulation()->fbaResults())) {
+					my $msg = "Gap filling failed!";
+					Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'queue_gapgen_model');
+				}
+				$gapfill->parseGapfillResults($gapfill->fbaFormulation()->fbaResults()->[0]);
+				$output = $self->_save_msobject($gapfill,"GapFill",$input->{gapFill_workspace},$gf,"queue_gapgen_model");
+			}
+		}
+		if (defined($input->{gapGens})) {
+			foreach my $gg (@{$input->{gapGens}}) {
+				my $gapgen = $self->_get_msobject("GapGen",$input->{gapGen_workspace},$gg);
+				if (!defined($gapgen->fbaFormulation()->fbaResults())) {
+					my $msg = "Gap generation failed!";
+					Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'queue_gapgen_model');
+				}
+				$gapgen->parseGapgenResults($gapgen->fbaFormulation()->fbaResults()->[0]);
+				$output = $self->_save_msobject($gapgen,"GapGen",$input->{gapGen_workspace},$gg,"queue_gapgen_model");
+			}
+		}
+		#Queing up sensitivity analysis, the next step in the pipeline
+		if ($input->{queueSensitivityAnalysis} == 1) {
+			my $input = {
+				model => $input->{out_model},
+				out_workspace => $input->{out_workspace},
+				phenotypeSet => $input->{phenotypeSet},
+				phenotypeSet_workspace => $input->{phenotypeSet_workspace},
+				gapFills => $input->{gapFills},
+				gapGens => $input->{gapGens},
+				overwrite => $input->{overwrite},
+				donot_submit_job => $input->{donot_submit_job},
+				queueReconciliationCombination => $input->{queueReconciliationCombination}
+			};
+			return $self->queue_reconciliation_sensitivity_analysis($input);
+		}
+	}	
+    $self->_clearContext();
     #END queue_wildtype_phenotype_reconciliation
     my @_bad_returns;
     (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
@@ -5970,6 +6243,288 @@ sub queue_wildtype_phenotype_reconciliation
 	my $msg = "Invalid returns passed to queue_wildtype_phenotype_reconciliation:\n" . join("", map { "\t$_\n" } @_bad_returns);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
 							       method_name => 'queue_wildtype_phenotype_reconciliation');
+    }
+    return($output);
+}
+
+
+
+
+=head2 queue_reconciliation_sensitivity_analysis
+
+  $output = $obj->queue_reconciliation_sensitivity_analysis($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a wildtype_phenotype_reconciliation_params
+$output is an object_metadata
+wildtype_phenotype_reconciliation_params is a reference to a hash where the following keys are defined:
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
+	fba_formulation has a value which is an FBAFormulation
+	gapfill_formulation has a value which is a GapfillingFormulation
+	gapgen_formulation has a value which is a GapgenFormulation
+	phenotypeSet has a value which is a phenotypeSet_id
+	phenotypeSet_workspace has a value which is a workspace_id
+	out_model has a value which is a fbamodel_id
+	out_workspace has a value which is a workspace_id
+	gapFills has a value which is a reference to a list where each element is a gapfill_id
+	gapGens has a value which is a reference to a list where each element is a gapgen_id
+	gapFill_workspace has a value which is a workspace_id
+	auth has a value which is a string
+	queueSensitivityAnalysis has a value which is a bool
+	queueReconciliationCombination has a value which is a bool
+	overwrite has a value which is a bool
+	donot_submit_job has a value which is a bool
+fbamodel_id is a string
+workspace_id is a string
+FBAFormulation is a reference to a hash where the following keys are defined:
+	media has a value which is a media_id
+	media_workspace has a value which is a workspace_id
+	objfraction has a value which is a float
+	allreversible has a value which is a bool
+	maximizeObjective has a value which is a bool
+	objectiveTerms has a value which is a reference to a list where each element is a term
+	geneko has a value which is a reference to a list where each element is a feature_id
+	rxnko has a value which is a reference to a list where each element is a reaction_id
+	bounds has a value which is a reference to a list where each element is a bound
+	constraints has a value which is a reference to a list where each element is a constraint
+	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
+	defaultmaxflux has a value which is a float
+	defaultminuptake has a value which is a float
+	defaultmaxuptake has a value which is a float
+	simplethermoconst has a value which is a bool
+	thermoconst has a value which is a bool
+	nothermoerror has a value which is a bool
+	minthermoerror has a value which is a bool
+media_id is a string
+bool is an int
+term is a reference to a list containing 3 items:
+	0: a float
+	1: a string
+	2: a string
+feature_id is a string
+reaction_id is a string
+bound is a reference to a list containing 4 items:
+	0: a float
+	1: a float
+	2: a string
+	3: a string
+constraint is a reference to a list containing 4 items:
+	0: a float
+	1: a string
+	2: a reference to a list where each element is a term
+	3: a string
+GapfillingFormulation is a reference to a hash where the following keys are defined:
+	formulation has a value which is an FBAFormulation
+	num_solutions has a value which is an int
+	nomediahyp has a value which is a bool
+	nobiomasshyp has a value which is a bool
+	nogprhyp has a value which is a bool
+	nopathwayhyp has a value which is a bool
+	allowunbalanced has a value which is a bool
+	activitybonus has a value which is a float
+	drainpen has a value which is a float
+	directionpen has a value which is a float
+	nostructpen has a value which is a float
+	unfavorablepen has a value which is a float
+	nodeltagpen has a value which is a float
+	biomasstranspen has a value which is a float
+	singletranspen has a value which is a float
+	transpen has a value which is a float
+	blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
+	gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
+	allowedcmps has a value which is a reference to a list where each element is a compartment_id
+	probabilisticAnnotation has a value which is a probabilisticAnnotation_id
+	probabilisticAnnotation_workspace has a value which is a workspace_id
+compartment_id is a string
+probabilisticAnnotation_id is a string
+GapgenFormulation is a reference to a hash where the following keys are defined:
+	formulation has a value which is an FBAFormulation
+	refmedia has a value which is a media_id
+	refmedia_workspace has a value which is a workspace_id
+	num_solutions has a value which is an int
+	nomediahyp has a value which is a bool
+	nobiomasshyp has a value which is a bool
+	nogprhyp has a value which is a bool
+	nopathwayhyp has a value which is a bool
+phenotypeSet_id is a string
+gapfill_id is a string
+gapgen_id is a string
+object_metadata is a reference to a list containing 9 items:
+	0: an object_id
+	1: an object_type
+	2: a timestamp
+	3: an int
+	4: a string
+	5: a username
+	6: a username
+	7: a workspace_id
+	8: a workspace_ref
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a wildtype_phenotype_reconciliation_params
+$output is an object_metadata
+wildtype_phenotype_reconciliation_params is a reference to a hash where the following keys are defined:
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
+	fba_formulation has a value which is an FBAFormulation
+	gapfill_formulation has a value which is a GapfillingFormulation
+	gapgen_formulation has a value which is a GapgenFormulation
+	phenotypeSet has a value which is a phenotypeSet_id
+	phenotypeSet_workspace has a value which is a workspace_id
+	out_model has a value which is a fbamodel_id
+	out_workspace has a value which is a workspace_id
+	gapFills has a value which is a reference to a list where each element is a gapfill_id
+	gapGens has a value which is a reference to a list where each element is a gapgen_id
+	gapFill_workspace has a value which is a workspace_id
+	auth has a value which is a string
+	queueSensitivityAnalysis has a value which is a bool
+	queueReconciliationCombination has a value which is a bool
+	overwrite has a value which is a bool
+	donot_submit_job has a value which is a bool
+fbamodel_id is a string
+workspace_id is a string
+FBAFormulation is a reference to a hash where the following keys are defined:
+	media has a value which is a media_id
+	media_workspace has a value which is a workspace_id
+	objfraction has a value which is a float
+	allreversible has a value which is a bool
+	maximizeObjective has a value which is a bool
+	objectiveTerms has a value which is a reference to a list where each element is a term
+	geneko has a value which is a reference to a list where each element is a feature_id
+	rxnko has a value which is a reference to a list where each element is a reaction_id
+	bounds has a value which is a reference to a list where each element is a bound
+	constraints has a value which is a reference to a list where each element is a constraint
+	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
+	defaultmaxflux has a value which is a float
+	defaultminuptake has a value which is a float
+	defaultmaxuptake has a value which is a float
+	simplethermoconst has a value which is a bool
+	thermoconst has a value which is a bool
+	nothermoerror has a value which is a bool
+	minthermoerror has a value which is a bool
+media_id is a string
+bool is an int
+term is a reference to a list containing 3 items:
+	0: a float
+	1: a string
+	2: a string
+feature_id is a string
+reaction_id is a string
+bound is a reference to a list containing 4 items:
+	0: a float
+	1: a float
+	2: a string
+	3: a string
+constraint is a reference to a list containing 4 items:
+	0: a float
+	1: a string
+	2: a reference to a list where each element is a term
+	3: a string
+GapfillingFormulation is a reference to a hash where the following keys are defined:
+	formulation has a value which is an FBAFormulation
+	num_solutions has a value which is an int
+	nomediahyp has a value which is a bool
+	nobiomasshyp has a value which is a bool
+	nogprhyp has a value which is a bool
+	nopathwayhyp has a value which is a bool
+	allowunbalanced has a value which is a bool
+	activitybonus has a value which is a float
+	drainpen has a value which is a float
+	directionpen has a value which is a float
+	nostructpen has a value which is a float
+	unfavorablepen has a value which is a float
+	nodeltagpen has a value which is a float
+	biomasstranspen has a value which is a float
+	singletranspen has a value which is a float
+	transpen has a value which is a float
+	blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
+	gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
+	allowedcmps has a value which is a reference to a list where each element is a compartment_id
+	probabilisticAnnotation has a value which is a probabilisticAnnotation_id
+	probabilisticAnnotation_workspace has a value which is a workspace_id
+compartment_id is a string
+probabilisticAnnotation_id is a string
+GapgenFormulation is a reference to a hash where the following keys are defined:
+	formulation has a value which is an FBAFormulation
+	refmedia has a value which is a media_id
+	refmedia_workspace has a value which is a workspace_id
+	num_solutions has a value which is an int
+	nomediahyp has a value which is a bool
+	nobiomasshyp has a value which is a bool
+	nogprhyp has a value which is a bool
+	nopathwayhyp has a value which is a bool
+phenotypeSet_id is a string
+gapfill_id is a string
+gapgen_id is a string
+object_metadata is a reference to a list containing 9 items:
+	0: an object_id
+	1: an object_type
+	2: a timestamp
+	3: an int
+	4: a string
+	5: a username
+	6: a username
+	7: a workspace_id
+	8: a workspace_ref
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+
+
+=item Description
+
+Queues an FBAModel reconciliation job
+
+=back
+
+=cut
+
+sub queue_reconciliation_sensitivity_analysis
+{
+    my $self = shift;
+    my($input) = @_;
+
+    my @_bad_arguments;
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to queue_reconciliation_sensitivity_analysis:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'queue_reconciliation_sensitivity_analysis');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($output);
+    #BEGIN queue_reconciliation_sensitivity_analysis
+    #END queue_reconciliation_sensitivity_analysis
+    my @_bad_returns;
+    (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to queue_reconciliation_sensitivity_analysis:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'queue_reconciliation_sensitivity_analysis');
     }
     return($output);
 }
@@ -6013,7 +6568,7 @@ gapgen_id is a string
 phenotypeSet_id is a string
 fba_id is a string
 bool is an int
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -6021,10 +6576,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 </pre>
 
@@ -6057,7 +6615,7 @@ gapgen_id is a string
 phenotypeSet_id is a string
 fba_id is a string
 bool is an int
-object_metadata is a reference to a list containing 7 items:
+object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -6065,10 +6623,13 @@ object_metadata is a reference to a list containing 7 items:
 	4: a string
 	5: a username
 	6: a username
+	7: a workspace_id
+	8: a workspace_ref
 object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_ref is a string
 
 
 =end text
@@ -7320,6 +7881,32 @@ a string
 
 
 
+=head2 workspace_ref
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
 =head2 object_metadata
 
 =over 4
@@ -7338,7 +7925,7 @@ a string
 =begin html
 
 <pre>
-a reference to a list containing 7 items:
+a reference to a list containing 9 items:
 0: an object_id
 1: an object_type
 2: a timestamp
@@ -7346,6 +7933,8 @@ a reference to a list containing 7 items:
 4: a string
 5: a username
 6: a username
+7: a workspace_id
+8: a workspace_ref
 
 </pre>
 
@@ -7353,7 +7942,7 @@ a reference to a list containing 7 items:
 
 =begin text
 
-a reference to a list containing 7 items:
+a reference to a list containing 9 items:
 0: an object_id
 1: an object_type
 2: a timestamp
@@ -7361,6 +7950,8 @@ a reference to a list containing 7 items:
 4: a string
 5: a username
 6: a username
+7: a workspace_id
+8: a workspace_ref
 
 
 =end text
@@ -10422,8 +11013,9 @@ donot_submit_job has a value which is a bool
 a reference to a hash where the following keys are defined:
 model has a value which is a fbamodel_id
 model_workspace has a value which is a workspace_id
-formulation has a value which is a GapfillingFormulation
-formulation has a value which is a GapgenFormulation
+fba_formulation has a value which is an FBAFormulation
+gapfill_formulation has a value which is a GapfillingFormulation
+gapgen_formulation has a value which is a GapgenFormulation
 phenotypeSet has a value which is a phenotypeSet_id
 phenotypeSet_workspace has a value which is a workspace_id
 out_model has a value which is a fbamodel_id
@@ -10432,6 +11024,8 @@ gapFills has a value which is a reference to a list where each element is a gapf
 gapGens has a value which is a reference to a list where each element is a gapgen_id
 gapFill_workspace has a value which is a workspace_id
 auth has a value which is a string
+queueSensitivityAnalysis has a value which is a bool
+queueReconciliationCombination has a value which is a bool
 overwrite has a value which is a bool
 donot_submit_job has a value which is a bool
 
@@ -10444,8 +11038,9 @@ donot_submit_job has a value which is a bool
 a reference to a hash where the following keys are defined:
 model has a value which is a fbamodel_id
 model_workspace has a value which is a workspace_id
-formulation has a value which is a GapfillingFormulation
-formulation has a value which is a GapgenFormulation
+fba_formulation has a value which is an FBAFormulation
+gapfill_formulation has a value which is a GapfillingFormulation
+gapgen_formulation has a value which is a GapgenFormulation
 phenotypeSet has a value which is a phenotypeSet_id
 phenotypeSet_workspace has a value which is a workspace_id
 out_model has a value which is a fbamodel_id
@@ -10454,6 +11049,60 @@ gapFills has a value which is a reference to a list where each element is a gapf
 gapGens has a value which is a reference to a list where each element is a gapgen_id
 gapFill_workspace has a value which is a workspace_id
 auth has a value which is a string
+queueSensitivityAnalysis has a value which is a bool
+queueReconciliationCombination has a value which is a bool
+overwrite has a value which is a bool
+donot_submit_job has a value which is a bool
+
+
+=end text
+
+=back
+
+
+
+=head2 queue_reconciliation_sensitivity_analysis_params
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+phenotypeSet has a value which is a phenotypeSet_id
+phenotypeSet_workspace has a value which is a workspace_id
+gapFills has a value which is a reference to a list where each element is a gapfill_id
+gapGens has a value which is a reference to a list where each element is a gapgen_id
+out_model has a value which is a fbamodel_id
+out_workspace has a value which is a workspace_id
+auth has a value which is a string
+queueReconciliationCombination has a value which is a bool
+overwrite has a value which is a bool
+donot_submit_job has a value which is a bool
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+phenotypeSet has a value which is a phenotypeSet_id
+phenotypeSet_workspace has a value which is a workspace_id
+gapFills has a value which is a reference to a list where each element is a gapfill_id
+gapGens has a value which is a reference to a list where each element is a gapgen_id
+out_model has a value which is a fbamodel_id
+out_workspace has a value which is a workspace_id
+auth has a value which is a string
+queueReconciliationCombination has a value which is a bool
 overwrite has a value which is a bool
 donot_submit_job has a value which is a bool
 

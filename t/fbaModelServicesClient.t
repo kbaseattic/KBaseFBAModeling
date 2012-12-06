@@ -10,14 +10,28 @@ use Data::Dumper;
 use File::Temp qw(tempfile);
 my $test_count = 32;
 my $genomeObj;
+my $token;
 
+#Logging in
+my $tokenObj = Bio::KBase::AuthToken->new(
+    user_id => 'kbasetest', password => '@Suite525'
+);
+$token = $tokenObj->token();
 #Instantiating client object
-my $obj = Bio::KBase::fbaModelServices::Client->new("http://kbase.us/services/fbaModelServices");
+my $obj = Bio::KBase::fbaModelServices::Client->new("http://140.221.92.231/services/fbaServices");
+#Instantiating client workspace
+my $ws = Bio::KBase::workspaceService::Client->new("http://140.221.92.231/services/workspaceService/");
+#Checking for standard and default biochemistry
+&_prepareWorkspace($ws);
 
 #Testing biochemistry retrieval method
 my $biochemistry = $obj->get_biochemistry({});
 ok defined($biochemistry), "Successfully printed biochemistry!";
 
+my $biochemistry = $obj->get_biochemistry({biochemistry => "testdefault"});
+ok defined($biochemistry), "Successfully printed biochemistry!";
+
+exit();
 #Testing reaction retrieval method
 my $rxns = $obj->get_reactions({
 	reactions => ["rxn00001","rxn00002"]
@@ -31,7 +45,6 @@ my $cpds = $obj->get_compounds({
 ok defined($cpds->[0]), "Successfully printed compounds!";
 
 #Initializing test workspace
-my $ws = Bio::KBase::workspaceService::Client->new("http://140.221.92.150:8080");
 my $token = Bio::KBase::AuthToken->new(
     user_id => 'kbasetest', password => '@Suite525'
 );
@@ -406,3 +419,131 @@ ok defined($html), "Successfully queued gapgen job!";
 #close($fh);
 
 done_testing($test_count);
+
+sub _prepareWorkspace {
+	my ($ws) = @_;
+	#Making sure the kbase workspace exists
+	eval {
+		$ws->create_workspace({
+			workspace => "kbase",
+			default_permission => "r",
+			auth => $token
+		});
+	}
+	#Is the default biochemistry present?
+	if ($ws->has_object({
+		id => "default"
+		type => "Biochemistry",
+		workspace => "kbase",
+		auth => $token
+	}) == 0) {
+		#Add default biochemistry
+		my $url = "http://bioseed.mcs.anl.gov/~chenry/exampleObjects/defaultBiochem.json.gz";
+		my ($fh1, $compressed_filename) = tempfile();
+		my ($fh2, $uncompressed_filename) = tempfile();
+		close($fh1);
+		close($fh2);
+		my $status = getstore($url, $compressed_filename);
+		die "Unable to fetch from model_seed\n" unless($status == 200);
+		gunzip $compressed_filename => $uncompressed_filename;
+		local $/;
+		open(my $fh, "<", $uncompressed_filename) || die "$!: $@";
+		my $string = <$fh>;
+		my $data = JSON::XS->new->utf8->decode($string);
+		$data->{uuid} = "kbase/default";
+		$ws->save_object({
+			id => "default",
+			type => "Biochemistry",
+			data => $data,
+			workspace => "kbase",
+			command => "_prepareWorkspace",
+			auth => $token
+		});
+	}
+	#Is the default mapping present?
+	if ($ws->has_object({
+		id => "default"
+		type => "Mapping",
+		workspace => "kbase",
+		auth => $token
+	}) == 0) {
+		#Add default mapping
+		my $url = "http://bioseed.mcs.anl.gov/~chenry/exampleObjects/defaultMap.json.gz";
+		my ($fh1, $compressed_filename) = tempfile();
+		my ($fh2, $uncompressed_filename) = tempfile();
+		close($fh1);
+		close($fh2);
+		my $status = getstore($url, $compressed_filename);
+		die "Unable to fetch from model_seed\n" unless($status == 200);
+		gunzip $compressed_filename => $uncompressed_filename;
+		local $/;
+		open(my $fh, "<", $uncompressed_filename) || die "$!: $@";
+		my $string = <$fh>;
+		my $data = JSON::XS->new->utf8->decode($string);
+		$data->{biochemistry_uuid} = "kbase/default";
+		$data->{uuid} = "kbase/default";
+		$ws->save_object({
+			id => "default",
+			type => "Mapping",
+			data => $data,
+			workspace => "kbase",
+			command => "_prepareWorkspace",
+			auth => $token
+		});
+	}
+	#Is the test default biochemistry present?
+	if ($ws->has_object({
+		id => "testdefault"
+		type => "Biochemistry",
+		workspace => "kbase",
+		auth => $token
+	}) == 0) {
+		#Add default biochemistry
+		my $url = "http://bioseed.mcs.anl.gov/~chenry/KbaseFiles/biochemistry.test.json";
+		my ($fh2, $uncompressed_filename) = tempfile();
+		close($fh2);
+		my $status = getstore($url, $uncompressed_filename);
+		die "Unable to fetch from model_seed\n" unless($status == 200);
+		local $/;
+		open(my $fh, "<", $uncompressed_filename) || die "$!: $@";
+		my $string = <$fh>;
+		my $data = JSON::XS->new->utf8->decode($string);
+		$data->{uuid} = "kbase/testdefault";
+		$ws->save_object({
+			id => "testdefault",
+			type => "Biochemistry",
+			data => $data,
+			workspace => "kbase",
+			command => "_prepareWorkspace",
+			auth => $token
+		});
+	}
+	#Is the test default mapping present?
+	if ($ws->has_object({
+		id => "testdefault"
+		type => "Mapping",
+		workspace => "kbase",
+		auth => $token
+	}) == 0) {
+		#Add default mapping
+		my $url = "http://bioseed.mcs.anl.gov/~chenry/KbaseFiles/mapping.test.json";
+		my ($fh2, $uncompressed_filename) = tempfile();
+		close($fh2);
+		my $status = getstore($url, $uncompressed_filename);
+		die "Unable to fetch from model_seed\n" unless($status == 200);
+		local $/;
+		open(my $fh, "<", $uncompressed_filename) || die "$!: $@";
+		my $string = <$fh>;
+		my $data = JSON::XS->new->utf8->decode($string);
+		$data->{biochemistry_uuid} = "kbase/testdefault";
+		$data->{uuid} = "kbase/testdefault";
+		$ws->save_object({
+			id => "testdefault",
+			type => "Mapping",
+			data => $data,
+			workspace => "kbase",
+			command => "_prepareWorkspace",
+			auth => $token
+		});
+	}	
+}

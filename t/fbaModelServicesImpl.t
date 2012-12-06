@@ -19,7 +19,7 @@ my $genomeObj;
 
 #Initializing test workspace
 my $ws = &_initializeTestWorkspace();
-my $obj = Bio::KBase::fbaModelServices::Impl->new({workspace => $ws});
+my $obj = Bio::KBase::fbaModelServices::Impl->new({verbose => 1,workspace => $ws});
 
 #Testing biochemistry retrieval method
 my $biochemistry = $obj->get_biochemistry({});
@@ -310,11 +310,11 @@ $job = $obj->queue_gapgen_model({
 	model_workspace => "testworkspace",
 	formulation => {
 		formulation => {
-			media => "Complete",
-			media_workspace => "kbasecdm"
+			media => "CustomMedia",
+			media_workspace => "testworkspace"
 		},
-		refmedia => "CustomMedia",
-		refmedia_workspace => "testworkspace",
+		refmedia => "Complete",
+		refmedia_workspace => "kbasecdm",
 		num_solutions => 1
 	},
 	integrate_solution => 1,
@@ -358,12 +358,12 @@ open ( $fh, ">", "fba-Gapgen.html");
 print $fh $html."\n";
 close($fh);
 
-#Now test ability to retrieve annotated genome object from database
-my $cdmgenome = $obj->genome_to_workspace({
-	genome => "kb|g.1",
-	workspace => "testworkspace"
-});
-ok defined($cdmgenome), "Genome successfully imported to workspace from CDM!"; 
+##Now test ability to retrieve annotated genome object from database
+#my $cdmgenome = $obj->genome_to_workspace({
+#	genome => "kb|g.1",
+#	workspace => "testworkspace"
+#});
+#ok defined($cdmgenome), "Genome successfully imported to workspace from CDM!"; 
 
 done_testing($test_count);
 
@@ -462,8 +462,6 @@ sub _loadTestBiochemToDB {
 }
 
 sub _initializeTestWorkspace {
-	$ENV{MONGODBHOST} = "127.0.0.1";
-	$ENV{MONGODBDB} = "testWorkspace";
 	my $ws = Bio::KBase::workspaceService::Impl->new({testuser => "kbaseadmin"});
 	$ws->_clearAllWorkspaces();
 	$ws->_clearAllWorkspaceObjects();

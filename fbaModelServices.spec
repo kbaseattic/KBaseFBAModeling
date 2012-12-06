@@ -32,10 +32,11 @@ module fbaModelServices {
     typedef string compartment_id;
     typedef string expression_id;
     typedef string phenotypeSet_id;
+    typedef string workspace_ref;
     /*********************************************************************************
     Object type definition
    	*********************************************************************************/
-    typedef tuple<object_id id,object_type type,timestamp moddate,int instance,string command,username lastmodifier,username owner> object_metadata;
+    typedef tuple<object_id id,object_type type,timestamp moddate,int instance,string command,username lastmodifier,username owner,workspace_id workspace,workspace_ref ref> object_metadata;
     /*********************************************************************************
     Probabilistic Annotation type definition
    	*********************************************************************************/
@@ -710,8 +711,9 @@ module fbaModelServices {
     typedef structure {
 		fbamodel_id model;
 		workspace_id model_workspace;
-		GapfillingFormulation formulation;
-		GapgenFormulation formulation;
+		FBAFormulation fba_formulation;
+		GapfillingFormulation gapfill_formulation;
+		GapgenFormulation gapgen_formulation;
 		phenotypeSet_id phenotypeSet;
 		workspace_id phenotypeSet_workspace;
 		fbamodel_id out_model;
@@ -720,6 +722,8 @@ module fbaModelServices {
 		list<gapgen_id> gapGens;
 		workspace_id gapFill_workspace;
 		string auth;
+		bool queueSensitivityAnalysis;
+		bool queueReconciliationCombination;
 		bool overwrite;
 		bool donot_submit_job;
     } wildtype_phenotype_reconciliation_params;
@@ -727,6 +731,25 @@ module fbaModelServices {
         Queues an FBAModel reconciliation job
     */
     funcdef queue_wildtype_phenotype_reconciliation(wildtype_phenotype_reconciliation_params input) returns (object_metadata output);
+    
+    typedef structure {
+		fbamodel_id model;
+		workspace_id model_workspace;
+		phenotypeSet_id phenotypeSet;
+		workspace_id phenotypeSet_workspace;
+		list<gapfill_id> gapFills;
+		list<gapgen_id> gapGens;
+		fbamodel_id out_model;
+		workspace_id out_workspace;
+		string auth;
+		bool queueReconciliationCombination;
+		bool overwrite;
+		bool donot_submit_job;
+    } queue_reconciliation_sensitivity_analysis_params;
+    /*
+        Queues an FBAModel reconciliation job
+    */
+    funcdef queue_reconciliation_sensitivity_analysis(wildtype_phenotype_reconciliation_params input) returns (object_metadata output);
     
     typedef structure {
 		fbamodel_id model;
