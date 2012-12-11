@@ -71,12 +71,12 @@ ok defined($genome), "Successfully loaded genome object to workspace!";
 }
 
 #Now test ability to retrieve annotated genome object from database
-my $cdmgenome = $obj->genome_to_workspace({
-	genome => "kb|g.2",
-	workspace => "fbaservicestest",
-	auth => $token
-});
-ok defined($cdmgenome), "Genome successfully imported to workspace from CDM!"; 
+#my $cdmgenome = $obj->genome_to_workspace({
+#	genome => "kb|g.2",
+#	workspace => "fbaservicestest",
+#	auth => $token
+#});
+#ok defined($cdmgenome), "Genome successfully imported to workspace from CDM!"; 
 
 #Now adding media formulation to workspace
 my $media = $obj->addmedia({
