@@ -11,8 +11,10 @@ Development Deployment
 This module depends upon the following KBase modules:
 
 * kb_model_seed
+* kb_seed
 * idserver
 * workspace_service
+* auth
 
 And the following services / software:
 
