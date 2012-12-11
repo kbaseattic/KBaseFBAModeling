@@ -323,6 +323,12 @@ $job = $obj->queue_gapgen_model({
 });
 ok defined($html), "Successfully queued gapgen job!";
 
+#Now checking job retreival
+my $jobs = $ws->get_jobs({status => "done"});
+is(@{$jobs},3,"Correct number of done jobs in the job queue!");
+$jobs = $ws->get_jobs({status => "queued"});
+is(@{$jobs},1,"Correct number of queued jobs in the job queue!");
+
 #Now running queued gapfill job mannually to ensure that the job runs and postprocessing works
 $job = $obj->run_job({
 	jobid => $job->[0],
@@ -467,6 +473,7 @@ sub _initializeTestWorkspace {
 	$ws->_clearAllWorkspaceObjects();
 	$ws->_clearAllWorkspaceUsers();
 	$ws->_clearAllWorkspaceDataObjects();
+	$ws->_clearAllJobs();
 	$ws->create_workspace({
 		workspace => "kbase",
 		default_permission => "r"

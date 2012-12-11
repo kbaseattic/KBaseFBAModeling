@@ -5133,6 +5133,11 @@ sub queue_runfba
 		$job = $self->_submit_job($job);
 	}
 	$output = $self->_save_msobject($job,"FBAJob",$job->{workspace},$job->{id},"queue_runfba");
+	$self->_workspaceServices()->queue_job({
+    	jobid => $job->{id},
+    	jobws => $job->{workspace},
+    	auth => $self->_authentication()
+    });
 	$self->_clearContext();
     #END queue_runfba
     my @_bad_returns;
@@ -5456,6 +5461,11 @@ sub queue_gapfill_model
 			$job = $self->_submit_job($job);
 		}
 		$output = $self->_save_msobject($job,"FBAJob",$input->{out_workspace},$job->{id},"queue_gapfill_model");
+		$self->_workspaceServices()->queue_job({
+	    	jobid => $job->{id},
+	    	jobws => $input->{out_workspace},
+	    	auth => $self->_authentication()
+	    });
 	} else {
 		my $gapfill = $self->_get_msobject("GapFill",$input->{gapFill_workspace},$input->{gapFill});
 		if (!defined($gapfill->fbaFormulation()->fbaResults()->[0])) {
@@ -5769,6 +5779,11 @@ sub queue_gapgen_model
 			$job = $self->_submit_job($job);
 		}
 		$output = $self->_save_msobject($job,"FBAJob",$job->{workspace},$job->{id},"queue_gapgen_model");
+		$self->_workspaceServices()->queue_job({
+	    	jobid => $job->{id},
+	    	jobws => $job->{workspace},
+	    	auth => $self->_authentication()
+	    });
 	} else {
 		my $gapgen = $self->_get_msobject("GapGen",$input->{gapGen_workspace},$input->{gapGen});
 		if (!defined($gapgen->fbaFormulation()->fbaResults())) {
@@ -6190,6 +6205,11 @@ sub queue_wildtype_phenotype_reconciliation
 		if ($input->{donot_submit_job} == 0) {
 			$job = $self->_submit_job($job);
 		}
+		$self->_workspaceServices()->queue_job({
+	    	jobid => $job->{id},
+	    	jobws => $job->{workspace},
+	    	auth => $self->_authentication()
+	    });
 	} elsif ($input->{queueSensitivityAnalysis} == 1) {
 		#Code to post process job
 		if (defined($input->{gapFills})) {
@@ -6780,6 +6800,12 @@ sub jobs_done
     	my $function = $job->{postprocess_command};
     	$self->$function(@{$job->{postprocess_args}});
     }
+    $self->_workspaceServices()->set_job_status({
+    	jobid => $input->{jobid},
+    	jobws => $input->{workspace},
+    	status => "done",
+    	auth => $self->_authentication()
+    });
     $self->_save_msobject($job,"FBAJob",$input->{workspace},$input->{jobid},"jobs_done",1);
     $output = $job;
     $self->_clearContext();
@@ -7026,6 +7052,12 @@ sub run_job
     	"index" => 0,
     });
     my $job = $self->_get_msobject("FBAJob",$input->{workspace},$input->{jobid});
+    $self->_workspaceServices()->set_job_status({
+    	jobid => $input->{jobid},
+    	jobws => $input->{workspace},
+    	status => "running",
+    	auth => $self->_authentication()
+    });
     my $clusterjob = $job->{clusterjobs}->[$input->{"index"}];
     my $fba = $self->_get_msobject("FBA",$clusterjob->{fbaws},$clusterjob->{fbaid});
     my $fbaResult = $fba->runFBA();
