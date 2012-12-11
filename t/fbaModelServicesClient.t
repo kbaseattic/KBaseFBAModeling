@@ -14,25 +14,30 @@ my $genomeObj;
 my $token;
 
 #Logging in
+print "Getting token!\n";
 my $tokenObj = Bio::KBase::AuthToken->new(
     user_id => 'kbasetest', password => '@Suite525'
 );
 $token = $tokenObj->token();
 #Instantiating client workspace
+print "Instantiating workspace client!\n";
 my $ws = Bio::KBase::workspaceService::Client->new("http://140.221.92.231/services/workspaceService/");
 #Instantiating client object
 #my $obj = Bio::KBase::fbaModelServices::Client->new("http://140.221.92.231/services/fbaModelServices/");
+print "Instantiating fba client!\n";
 my $obj = Bio::KBase::fbaModelServices::Impl->new({workspace => $ws});
 #Checking for standard and default biochemistry
+print "Preparing workspace!\n";
 &_prepareWorkspace($ws);
 
+print "Getting biochemistry 1!\n";
 #Testing biochemistry retrieval method
 my $biochemistry = $obj->get_biochemistry({});
 ok defined($biochemistry), "Successfully printed biochemistry!";
-
+print "Getting biochemistry 2!\n";
 $biochemistry = $obj->get_biochemistry({biochemistry => "testdefault"});
 ok defined($biochemistry), "Successfully printed biochemistry!";
-
+print "Getting reactions!\n";
 #Testing reaction retrieval method
 my $rxns = $obj->get_reactions({
 	reactions => ["rxn00001","rxn00002"],
@@ -40,7 +45,7 @@ my $rxns = $obj->get_reactions({
 	mapping => "default"
 });
 ok defined($rxns->[0]), "Successfully printed reactions!";
-
+print "Getting compounds!\n";
 #Testing compound retrieval method
 my $cpds = $obj->get_compounds({
 	compounds => ["cpd00001","cpd00002"],
@@ -48,12 +53,7 @@ my $cpds = $obj->get_compounds({
 	mapping => "default"
 });
 ok defined($cpds->[0]), "Successfully printed compounds!";
-
-#Initializing test workspace
-$token = Bio::KBase::AuthToken->new(
-    user_id => 'kbasetest', password => '@Suite525'
-);
-$token = $token->token;
+print "Creating workspace!\n";
 eval {
 	my ($meta) = $ws->create_workspace({
 	        workspace => "fbaservicestest",
@@ -61,7 +61,7 @@ eval {
 	        auth => $token,
 	});
 };
-
+print "Uploading genome!\n";
 #Testing loading of genome object to workspace
 my ($fh, $uncompressed_filename,$genome);
 {
