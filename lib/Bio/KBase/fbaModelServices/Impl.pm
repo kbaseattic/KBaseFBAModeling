@@ -184,49 +184,41 @@ sub objectToOutput {
 
 sub _getUsername {
 	my ($self) = @_;
-	if (!defined($self->{_currentUser})) {
-		if (defined($self->{_testuser})) {
-			$self->{_currentUser} = $self->{_testuser};
-		} else {
-			$self->{_currentUser} = "public";
-		}
-		
+	if (defined($Bio::KBase::fbaModelServices::Server::CallContext->{_override}->{_currentUser})) {
+		return $Bio::KBase::fbaModelServices::Server::CallContext->{_override}->{_currentUser};
 	}
-	return $self->{_currentUser};
+	return "public";
+}
+
+
+sub _authentication {
+	my($self) = @_;
+	if (defined($Bio::KBase::fbaModelServices::Server::CallContext->{_override}->{_authentication})) {
+		return $Bio::KBase::fbaModelServices::Server::CallContext->{_override}->{_authentication};
+	}
+	return undef;
 }
 
 sub _setContext {
 	my ($self,$context,$params) = @_;
-    if (!defined($params->{_internalCall})) {
-	    $self->{_contextdata}->{_context} = $context;
-	    if ( defined $params->{auth} ) {
-	        my $token = Bio::KBase::AuthToken->new(
-	            token => $params->{auth},
-	        );
-	        if ($token->validate()) {
-	        	$self->{_contextdata}->{_authentication} = $params->{auth};
-	            $self->{_contextdata}->{_currentUser} = $token->user_id;
-	        } else {
-	            Bio::KBase::Exceptions::KBaseException->throw(error => "Invalid authorization token!",
-	                method_name => 'workspaceDocument::_setContext');
-	        }
-	    }
-    } else {
-    	$self->{_contextdata}->{_internalCall} = 1;
-    }
+	if ( defined $params->{auth} ) {
+		if (!defined($Bio::KBase::fbaModelServices::Server::CallContext->{_override}) || $Bio::KBase::fbaModelServices::Server::CallContext->{_override}->{_authentication} ne $params->{auth}) {
+			my $token = Bio::KBase::AuthToken->new(
+				token => $params->{auth},
+			);
+			if ($token->validate()) {
+				$Bio::KBase::fbaModelServices::Server::CallContext->{_override}->{_authentication} = $params->{auth};
+				$Bio::KBase::fbaModelServices::Server::CallContext->{_override}->{_currentUser} = $token->user_id;
+			} else {
+				Bio::KBase::Exceptions::KBaseException->throw(error => "Invalid authorization token!",
+				method_name => 'workspaceDocument::_setContext');
+			}
+		}
+	}
 }
 
-sub _getContext {
-	my ($self) = @_;
-	return $self->{_contextdata}->{_context};
-}
 sub _clearContext {
 	my ($self) = @_;
-	if (!defined($self->{_contextdata}->{_internalCall})) {
-		delete $self->{_contextdata};
-	} else {
-		delete $self->{_contextdata}->{_internalCall};
-	}
 }
 
 sub _translate_genome_to_annotation {
@@ -329,7 +321,7 @@ sub _idServer {
 sub _workspaceServices {
 	my $self = shift;
 	if (!defined($self->{_workspaceServices})) {
-		$self->{_workspaceServices} = Bio::KBase::workspaceService::Client->new();
+		$self->{_workspaceServices} = Bio::KBase::workspaceService::Client->new($self->{_workspace-url});
 	}
     return $self->{_workspaceServices};
 }
@@ -560,16 +552,6 @@ sub _get_genomeObj_from_CDM {
 sub _store {
 	my($self) = @_;
 	return $self->{_store};
-}
-
-sub _authentication {
-	my($self) = @_;
-	return $self->{_authentication};
-}
-
-sub _set_authentication {
-	my($self,$authentication) = @_;
-	$self->{_authentication} = $authentication;
 }
 
 sub _validateargs {
@@ -1458,6 +1440,19 @@ sub new
     if (defined($options->{workspace})) {
     	$self->{_workspaceServices} = $options->{workspace};
     }
+    my $config = "sample.ini";
+    if (defined($ENV{KB_DEPLOYMENT_CONFIG})) {
+    	$config = $ENV{KB_DEPLOYMENT_CONFIG};
+	} else {
+		warn "No deployment config specified. Using 'sample.ini' by default!\n";
+	}
+	if (!-e $config) {
+		warn "Deployment config file not found. Using default settings!\n";
+		$self->{_workspace-url} = "http://140.221.92.231/services/workspaceService/";
+	} else {
+		my $c = new Config::Simple($config);
+		$self->{_workspace-url} = $c->param("fbaModelingServices.workspace-url");
+	}
     if (defined($options->{verbose})) {
     	set_verbose(1);
     }
@@ -5460,7 +5455,7 @@ sub queue_gapfill_model
 		if ($input->{donot_submit_job} == 0) {
 			$job = $self->_submit_job($job);
 		}
-		$output = $self->_save_msobject($job,"FBAJob",$job->{workspace},$job->{id},"queue_gapfill_model");
+		$output = $self->_save_msobject($job,"FBAJob",$input->{out_workspace},$job->{id},"queue_gapfill_model");
 	} else {
 		my $gapfill = $self->_get_msobject("GapFill",$input->{gapFill_workspace},$input->{gapFill});
 		if (!defined($gapfill->fbaFormulation()->fbaResults()->[0])) {
@@ -6785,7 +6780,7 @@ sub jobs_done
     	my $function = $job->{postprocess_command};
     	$self->$function(@{$job->{postprocess_args}});
     }
-    $self->_save_msobject($job,"FBAJob",$input->{workspace},$input->{jobid},"run_job",1);
+    $self->_save_msobject($job,"FBAJob",$input->{workspace},$input->{jobid},"jobs_done",1);
     $output = $job;
     $self->_clearContext();
     #END jobs_done

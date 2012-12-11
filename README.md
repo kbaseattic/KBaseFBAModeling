@@ -10,14 +10,14 @@ Development Deployment
 
 This module depends upon the following KBase modules:
 
-* MFAToolkit
 * kb_model_seed
 * idserver
+* workspace_service
 
 And the following services / software:
 
-* Running instance of mongodb (version >= 1.9)
 * Running IDServer
+* Running workspace_service
 * GLPK ( run `which glpsol` to see if you have it)
 
 The setup commands should be run as root to allow for creation and
@@ -35,29 +35,11 @@ repository into the modules directory.
     cd modules
     git clone kbase@git.kbase.us:KBaseFBAModeling.git 
 
-### Setup MongoDB ###
-
-If the `/data/` directory does not exist on your instance,
-create it and have it point to the local disk:
-
-    mkdir /data
-    mkdir /mnt/db
-    ln -s /mnt/db /data/db
-
-Now start up the MongoDB service:
-
-    mongod 1>/var/log/mongod.log 2>&1 &
-
-Note that you will have to wait until MongoDB initializes to proceed
-to the next step. `less /var/log/mongod.log` to see when the
-setup process is done.
-
 ### Setup Services ### 
 
 To deploy a test version (with test data):
 
     cd ~/dev_container/modules
-    git clone git://github.com/ModelSEED/MFAToolkit.git 
     git clone kbase@git.kbase.us:kb_model_seed.git
     git clone kbase@git.kbase.us:idserver.git
     cd ..
@@ -82,7 +64,11 @@ missing modules.
 
 ### Service Configuration ###
 
-    cp ~/dev_container/modules/KBaseFBAModeling/config/sample.ini ~/config.ini
+Copy the sample configuration file, modifying the workspace-url to the URL
+of the current production workspace server.
+
+    cp config/sample.ini ~/config.ini
+    vi config.ini
     export KB_DEPLOYMENT_CONFIG=$HOME/config.ini
     export KB_SERVICE_NAME=fbaModelingServices
 
