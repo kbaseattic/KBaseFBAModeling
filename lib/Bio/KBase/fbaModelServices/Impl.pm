@@ -321,7 +321,7 @@ sub _idServer {
 sub _workspaceServices {
 	my $self = shift;
 	if (!defined($self->{_workspaceServices})) {
-		$self->{_workspaceServices} = Bio::KBase::workspaceService::Client->new($self->{_workspace-url});
+		$self->{_workspaceServices} = Bio::KBase::workspaceService::Client->new($self->{"_workspace-url"});
 	}
     return $self->{_workspaceServices};
 }
@@ -1448,10 +1448,10 @@ sub new
 	}
 	if (!-e $config) {
 		warn "Deployment config file not found. Using default settings!\n";
-		$self->{_workspace-url} = "http://140.221.92.231/services/workspaceService/";
+		$self->{"_workspace-url"} = "http://140.221.92.231/services/workspaceService/";
 	} else {
 		my $c = new Config::Simple($config);
-		$self->{_workspace-url} = $c->param("fbaModelingServices.workspace-url");
+		$self->{"_workspace-url"} = $c->param("fbaModelingServices.workspace-url");
 	}
     if (defined($options->{verbose})) {
     	set_verbose(1);
