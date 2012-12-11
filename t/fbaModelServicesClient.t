@@ -2,7 +2,8 @@ use strict;
 use warnings;
 use Bio::KBase::workspaceService::Client;
 use Bio::KBase::AuthToken;
-use Bio::KBase::fbaModelServices::Client;
+#use Bio::KBase::fbaModelServices::Client;
+use Bio::KBase::fbaModelServices::Impl;
 use JSON::XS;
 use Test::More;
 use Data::Dumper;
@@ -20,8 +21,8 @@ $token = $tokenObj->token();
 #Instantiating client workspace
 my $ws = Bio::KBase::workspaceService::Client->new("http://140.221.92.231/services/workspaceService/");
 #Instantiating client object
-my $obj = Bio::KBase::fbaModelServices::Client->new("http://140.221.92.231/services/fbaModelServices/");
-#my $obj = Bio::KBase::fbaModelServices::Impl->new({workspace => $ws});
+#my $obj = Bio::KBase::fbaModelServices::Client->new("http://140.221.92.231/services/fbaModelServices/");
+my $obj = Bio::KBase::fbaModelServices::Impl->new({workspace => $ws});
 #Checking for standard and default biochemistry
 &_prepareWorkspace($ws);
 
@@ -470,7 +471,7 @@ sub _prepareWorkspace {
 		workspace => "kbase",
 		auth => $token
 	}) == 0) {
-		print "Adding full biochemistry\n!";
+		print "Adding full biochemistry!\n";
 		$ws->save_object({
 			id => "default",
 			type => "Biochemistry",
@@ -491,7 +492,7 @@ sub _prepareWorkspace {
 		auth => $token
 	}) == 0) {
 		#Add default mapping
-		print "Adding full mapping\n!";
+		print "Adding full mapping!\n";
 		$ws->save_object({
 			id => "default",
 			type => "Mapping",
@@ -512,7 +513,7 @@ sub _prepareWorkspace {
 		auth => $token
 	}) == 0) {
 		#Add test biochemistry
-		print "Adding test biochemistry\n!";
+		print "Adding test biochemistry!\n";
 		$ws->save_object({
 			id => "testdefault",
 			type => "Biochemistry",
@@ -533,7 +534,7 @@ sub _prepareWorkspace {
 		auth => $token
 	}) == 0) {
 		#Add default mapping
-		print "Adding test mapping\n!";
+		print "Adding test mapping!\n";
 		$ws->save_object({
 			id => "testdefault",
 			type => "Mapping",
