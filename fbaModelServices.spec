@@ -33,6 +33,7 @@ module fbaModelServices {
     typedef string expression_id;
     typedef string phenotypeSet_id;
     typedef string workspace_ref;
+    typedef string probanno_id;
     /*********************************************************************************
     Object type definition
    	*********************************************************************************/
@@ -463,8 +464,11 @@ module fbaModelServices {
     typedef structure {
 		genome_id genome;
 		workspace_id genome_workspace;
+		probanno_id probanno;
+		workspace_id probanno_workspace;
+		float probannoThreshold;
 		fbamodel_id model;
-		workspace_id model_workspace;
+		workspace_id workspace;
 		string auth;
 		bool overwrite;
     } genome_to_fbamodel_params;
@@ -536,7 +540,7 @@ module fbaModelServices {
 		bool findminmedia;
 		string notes;
 		fba_id fba;
-		workspace_id fba_workspace;
+		workspace_id workspace;
 		string auth;
 		bool overwrite;
 		bool add_to_model;
@@ -581,7 +585,7 @@ module fbaModelServices {
     
     typedef structure {
 		phenotypeSet_id phenotypeSet;
-		workspace_id phenotypeSet_workspace;
+		workspace_id workspace;
 		genome_id genome;
 		workspace_id genome_workspace;
 		list<Phenotype> phenotypes;
@@ -601,7 +605,7 @@ module fbaModelServices {
 		FBAFormulation formulation;
 		string notes;
 		phenotypeSimulationSet_id phenotypeSimultationSet;
-		workspace_id phenotypeSimultationSet_workspace;
+		workspace_id workspace;
 		bool overwrite;
 		string auth;
     } simulate_phenotypes_params;
@@ -657,7 +661,7 @@ module fbaModelServices {
 		bool findminmedia;
 		string notes;
 		fba_id fba;
-		workspace_id fba_workspace;
+		workspace_id workspace;
 		string auth;
 		bool overwrite;
 		bool add_to_model;
@@ -676,7 +680,7 @@ module fbaModelServices {
 		workspace_id phenotypeSet_workspace;
 		bool integrate_solution;
 		fbamodel_id out_model;
-		workspace_id out_workspace;
+		workspace_id workspace;
 		gapfill_id gapFill;
 		workspace_id gapFill_workspace;
 		string auth;
@@ -696,7 +700,7 @@ module fbaModelServices {
 		workspace_id phenotypeSet_workspace;
 		bool integrate_solution;
 		fbamodel_id out_model;
-		workspace_id out_workspace;
+		workspace_id workspace;
 		gapgen_id gapGen;
 		workspace_id gapGen_workspace;
 		string auth;
@@ -717,13 +721,14 @@ module fbaModelServices {
 		phenotypeSet_id phenotypeSet;
 		workspace_id phenotypeSet_workspace;
 		fbamodel_id out_model;
-		workspace_id out_workspace;
+		workspace_id workspace;
 		list<gapfill_id> gapFills;
 		list<gapgen_id> gapGens;
 		workspace_id gapFill_workspace;
-		string auth;
+		workspace_id gapGen_workspace;
 		bool queueSensitivityAnalysis;
 		bool queueReconciliationCombination;
+		string auth;
 		bool overwrite;
 		bool donot_submit_job;
     } wildtype_phenotype_reconciliation_params;
@@ -735,14 +740,19 @@ module fbaModelServices {
     typedef structure {
 		fbamodel_id model;
 		workspace_id model_workspace;
+		FBAFormulation fba_formulation;
+		GapfillingFormulation gapfill_formulation;
+		GapgenFormulation gapgen_formulation;
 		phenotypeSet_id phenotypeSet;
 		workspace_id phenotypeSet_workspace;
+		fbamodel_id out_model;
+		workspace_id workspace;
 		list<gapfill_id> gapFills;
 		list<gapgen_id> gapGens;
-		fbamodel_id out_model;
-		workspace_id out_workspace;
-		string auth;
+		workspace_id gapFill_workspace;
+		workspace_id gapGen_workspace;
 		bool queueReconciliationCombination;
+		string auth;
 		bool overwrite;
 		bool donot_submit_job;
     } queue_reconciliation_sensitivity_analysis_params;
@@ -754,16 +764,17 @@ module fbaModelServices {
     typedef structure {
 		fbamodel_id model;
 		workspace_id model_workspace;
-		list<gapfill_id> gapFills;
-		list<gapgen_id> gapGens;
-		int num_solutions;
+		FBAFormulation fba_formulation;
+		GapfillingFormulation gapfill_formulation;
+		GapgenFormulation gapgen_formulation;
 		phenotypeSet_id phenotypeSet;
 		workspace_id phenotypeSet_workspace;
 		fbamodel_id out_model;
-		workspace_id out_workspace;
-		fba_id fba;
+		workspace_id workspace;
+		list<gapfill_id> gapFills;
+		list<gapgen_id> gapGens;
 		workspace_id gapFill_workspace;
-		bool integrate_solution;
+		workspace_id gapGen_workspace;
 		string auth;
 		bool overwrite;
 		bool donot_submit_job;

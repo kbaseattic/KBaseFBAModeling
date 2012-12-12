@@ -9,7 +9,7 @@ use Test::More;
 use Data::Dumper;
 use File::Temp qw(tempfile);
 use LWP::Simple qw(getstore);
-my $test_count = 32;
+my $test_count = 33;
 my $genomeObj;
 my $token;
 
@@ -19,7 +19,7 @@ my $tokenObj = Bio::KBase::AuthToken->new(
 );
 $token = $tokenObj->token();
 #Instantiating client workspace
-my $ws = Bio::KBase::workspaceService::Client->new("http://140.221.92.231/services/workspaceService/");
+my $ws = Bio::KBase::workspaceService::Client->new("http://140.221.92.231/services/workspace/");
 #Instantiating client object
 my $obj = Bio::KBase::fbaModelServices::Client->new("http://140.221.92.231/services/fbaModelServices/");
 #my $obj = Bio::KBase::fbaModelServices::Impl->new({workspace => $ws});
@@ -71,12 +71,15 @@ ok defined($genome), "Successfully loaded genome object to workspace!";
 }
 
 #Now test ability to retrieve annotated genome object from database
-#my $cdmgenome = $obj->genome_to_workspace({
-#	genome => "kb|g.2",
-#	workspace => "fbaservicestest",
-#	auth => $token
-#});
-#ok defined($cdmgenome), "Genome successfully imported to workspace from CDM!"; 
+my $cdmgenome;
+eval {
+	$cdmgenome = $obj->genome_to_workspace({
+		genome => "kb|g.2",
+		workspace => "fbaservicestest",
+		auth => $token
+	});
+};
+ok defined($cdmgenome), "Genome successfully imported to workspace from CDM!"; 
 
 #Now adding media formulation to workspace
 my $media = $obj->addmedia({
@@ -108,7 +111,7 @@ ok defined($medias->[0]), "Successfully printed media!";
 
 #Now test phenotype import
 my $phenos = $obj->import_phenotypes({
-	phenotypeSet_workspace => "fbaservicestest",
+	workspace => "fbaservicestest",
 	genome => $genome->[0],
 	genome_workspace => "fbaservicestest",
 	phenotypes => [
@@ -126,7 +129,7 @@ ok defined($phenos), "Successfully imported phenotypes!";
 #Now test ability to produce a metabolic model
 my $model = $obj->genome_to_fbamodel({
 	genome => $genome->[0],
-	genome_workspace => "fbaservicestest",
+	workspace => "fbaservicestest",
 	biochemistry => "testdefault",
 	mapping => "testdefault",
 	auth => $token
@@ -136,7 +139,7 @@ ok defined($model), "Model successfully constructed from input genome!";
 #Now test phenotype simulation
 my $phenosim = $obj->simulate_phenotypes({
 	model => $model->[0],
-	model_workspace => "fbaservicestest",
+	workspace => "fbaservicestest",
 	phenotypeSet => $phenos->[0],
 	phenotypeSet_workspace => "fbaservicestest",
 	formulation => {},
@@ -228,7 +231,7 @@ my $fba = $obj->runfba({
 	minimizeflux => 0,
 	findminmedia => 0,
 	notes => "",
-	fba_workspace => "fbaservicestest",
+	workspace => "fbaservicestest",
 	auth => $token
 });
 ok defined($fba), "FBA successfully run on input model!";
@@ -268,7 +271,7 @@ my $job = $obj->queue_runfba({
 	minimizeflux => 0,
 	findminmedia => 0,
 	notes => "",
-	fba_workspace => "fbaservicestest",
+	workspace => "fbaservicestest",
 	donot_submit_job => 1,
 	biochemistry => "testdefault",
 	mapping => "testdefault",
@@ -299,7 +302,7 @@ close($fh);
 #Now queuing gapfilling in complete media
 $job = $obj->queue_gapfill_model({
 	model => $model->[0],
-	model_workspace => "fbaservicestest",
+	workspace => "fbaservicestest",
 	formulation => {
 		formulation => {
 			media => "CustomMedia",
@@ -327,7 +330,7 @@ ok defined($job), "Successfully ran queued gapfill job!";
 #Now queuing gapfilling in custom media
 $job = $obj->queue_gapfill_model({
 	model => $model->[0].".gf",
-	model_workspace => "fbaservicestest",
+	workspace => "fbaservicestest",
 	formulation => {
 		formulation => {
 			media => "Complete",
@@ -365,7 +368,7 @@ $fba = $obj->runfba({
 	minimizeflux => 0,
 	findminmedia => 0,
 	notes => "",
-	fba_workspace => "fbaservicestest",
+	workspace => "fbaservicestest",
 	auth => $token
 });
 ok defined($fba), "FBA successfully run on gapfilled model!";
@@ -385,7 +388,7 @@ close($fh);
 #Now exporting queued FBA
 $job = $obj->queue_gapgen_model({
 	model => $model->[0].".gf2",
-	model_workspace => "fbaservicestest",
+	workspace => "fbaservicestest",
 	formulation => {
 		formulation => {
 			media => "CustomMedia",
@@ -425,7 +428,7 @@ $fba = $obj->runfba({
 	minimizeflux => 0,
 	findminmedia => 0,
 	notes => "",
-	fba_workspace => "fbaservicestest",
+	workspace => "fbaservicestest",
 	auth => $token
 });
 ok defined($fba), "FBA successfully run on gapgen model!";

@@ -14,7 +14,7 @@ use warnings;
 use Test::More;
 use Data::Dumper;
 use File::Temp qw(tempfile);
-my $test_count = 32;
+my $test_count = 33;
 my $genomeObj;
 
 #Initializing test workspace
@@ -67,7 +67,7 @@ ok defined($medias->[0]), "Successfully printed media!";
 
 #Now test phenotype import
 my $phenos = $obj->import_phenotypes({
-	phenotypeSet_workspace => "testworkspace",
+	workspace => "testworkspace",
 	genome => $genome->[0],
 	genome_workspace => "testworkspace",
 	phenotypes => [
@@ -82,7 +82,7 @@ ok defined($phenos), "Successfully imported phenotypes!";
 #Now test ability to produce a metabolic model
 my $model = $obj->genome_to_fbamodel({
 	genome => $genome->[0],
-	genome_workspace => "testworkspace",
+	workspace => "testworkspace",
 });
 ok defined($model), "Model successfully constructed from input genome!";
 
@@ -91,7 +91,7 @@ my $phenosim = $obj->simulate_phenotypes({
 	model => $model->[0],
 	model_workspace => "testworkspace",
 	phenotypeSet => $phenos->[0],
-	phenotypeSet_workspace => "testworkspace",
+	workspace => "testworkspace",
 	formulation => {},
 	notes => "",
 });
@@ -170,7 +170,7 @@ my $fba = $obj->runfba({
 	minimizeflux => 0,
 	findminmedia => 0,
 	notes => "",
-	fba_workspace => "testworkspace"
+	workspace => "testworkspace"
 });
 ok defined($fba), "FBA successfully run on input model!";
 
@@ -205,7 +205,7 @@ my $job = $obj->queue_runfba({
 	minimizeflux => 0,
 	findminmedia => 0,
 	notes => "",
-	fba_workspace => "testworkspace",
+	workspace => "testworkspace",
 	donot_submit_job => 1
 });
 ok defined($job), "FBA successfully queued for input model!";
@@ -231,7 +231,7 @@ close($fh);
 #Now queuing gapfilling in complete media
 $job = $obj->queue_gapfill_model({
 	model => $model->[0],
-	model_workspace => "testworkspace",
+	workspace => "testworkspace",
 	formulation => {
 		formulation => {
 			media => "CustomMedia",
@@ -255,7 +255,7 @@ ok defined($job), "Successfully ran queued gapfill job!";
 #Now queuing gapfilling in custom media
 $job = $obj->queue_gapfill_model({
 	model => $model->[0].".gf",
-	model_workspace => "testworkspace",
+	workspace => "testworkspace",
 	formulation => {
 		formulation => {
 			media => "Complete",
@@ -289,7 +289,7 @@ $fba = $obj->runfba({
 	minimizeflux => 0,
 	findminmedia => 0,
 	notes => "",
-	fba_workspace => "testworkspace"
+	workspace => "testworkspace"
 });
 ok defined($fba), "FBA successfully run on gapfilled model!";
 
@@ -307,7 +307,7 @@ close($fh);
 #Now exporting queued FBA
 $job = $obj->queue_gapgen_model({
 	model => $model->[0].".gf2",
-	model_workspace => "testworkspace",
+	workspace => "testworkspace",
 	formulation => {
 		formulation => {
 			media => "CustomMedia",
@@ -349,7 +349,7 @@ $fba = $obj->runfba({
 	minimizeflux => 0,
 	findminmedia => 0,
 	notes => "",
-	fba_workspace => "testworkspace"
+	workspace => "testworkspace"
 });
 ok defined($fba), "FBA successfully run on gapgen model!";
 

@@ -1748,12 +1748,16 @@ $modelMeta is an object_metadata
 genome_to_fbamodel_params is a reference to a hash where the following keys are defined:
 	genome has a value which is a genome_id
 	genome_workspace has a value which is a workspace_id
+	probanno has a value which is a probanno_id
+	probanno_workspace has a value which is a workspace_id
+	probannoThreshold has a value which is a float
 	model has a value which is a fbamodel_id
-	model_workspace has a value which is a workspace_id
+	workspace has a value which is a workspace_id
 	auth has a value which is a string
 	overwrite has a value which is a bool
 genome_id is a string
 workspace_id is a string
+probanno_id is a string
 fbamodel_id is a string
 bool is an int
 object_metadata is a reference to a list containing 9 items:
@@ -1783,12 +1787,16 @@ $modelMeta is an object_metadata
 genome_to_fbamodel_params is a reference to a hash where the following keys are defined:
 	genome has a value which is a genome_id
 	genome_workspace has a value which is a workspace_id
+	probanno has a value which is a probanno_id
+	probanno_workspace has a value which is a workspace_id
+	probannoThreshold has a value which is a float
 	model has a value which is a fbamodel_id
-	model_workspace has a value which is a workspace_id
+	workspace has a value which is a workspace_id
 	auth has a value which is a string
 	overwrite has a value which is a bool
 genome_id is a string
 workspace_id is a string
+probanno_id is a string
 fbamodel_id is a string
 bool is an int
 object_metadata is a reference to a list containing 9 items:
@@ -2218,7 +2226,7 @@ runfba_params is a reference to a hash where the following keys are defined:
 	findminmedia has a value which is a bool
 	notes has a value which is a string
 	fba has a value which is a fba_id
-	fba_workspace has a value which is a workspace_id
+	workspace has a value which is a workspace_id
 	auth has a value which is a string
 	overwrite has a value which is a bool
 	add_to_model has a value which is a bool
@@ -2296,7 +2304,7 @@ runfba_params is a reference to a hash where the following keys are defined:
 	findminmedia has a value which is a bool
 	notes has a value which is a string
 	fba has a value which is a fba_id
-	fba_workspace has a value which is a workspace_id
+	workspace has a value which is a workspace_id
 	auth has a value which is a string
 	overwrite has a value which is a bool
 	add_to_model has a value which is a bool
@@ -2522,7 +2530,7 @@ $input is an import_phenotypes_params
 $output is an object_metadata
 import_phenotypes_params is a reference to a hash where the following keys are defined:
 	phenotypeSet has a value which is a phenotypeSet_id
-	phenotypeSet_workspace has a value which is a workspace_id
+	workspace has a value which is a workspace_id
 	genome has a value which is a genome_id
 	genome_workspace has a value which is a workspace_id
 	phenotypes has a value which is a reference to a list where each element is a Phenotype
@@ -2567,7 +2575,7 @@ $input is an import_phenotypes_params
 $output is an object_metadata
 import_phenotypes_params is a reference to a hash where the following keys are defined:
 	phenotypeSet has a value which is a phenotypeSet_id
-	phenotypeSet_workspace has a value which is a workspace_id
+	workspace has a value which is a workspace_id
 	genome has a value which is a genome_id
 	genome_workspace has a value which is a workspace_id
 	phenotypes has a value which is a reference to a list where each element is a Phenotype
@@ -2680,7 +2688,7 @@ simulate_phenotypes_params is a reference to a hash where the following keys are
 	formulation has a value which is an FBAFormulation
 	notes has a value which is a string
 	phenotypeSimultationSet has a value which is a phenotypeSimulationSet_id
-	phenotypeSimultationSet_workspace has a value which is a workspace_id
+	workspace has a value which is a workspace_id
 	overwrite has a value which is a bool
 	auth has a value which is a string
 fbamodel_id is a string
@@ -2756,7 +2764,7 @@ simulate_phenotypes_params is a reference to a hash where the following keys are
 	formulation has a value which is an FBAFormulation
 	notes has a value which is a string
 	phenotypeSimultationSet has a value which is a phenotypeSimulationSet_id
-	phenotypeSimultationSet_workspace has a value which is a workspace_id
+	workspace has a value which is a workspace_id
 	overwrite has a value which is a bool
 	auth has a value which is a string
 fbamodel_id is a string
@@ -2990,7 +2998,7 @@ queue_runfba_params is a reference to a hash where the following keys are define
 	findminmedia has a value which is a bool
 	notes has a value which is a string
 	fba has a value which is a fba_id
-	fba_workspace has a value which is a workspace_id
+	workspace has a value which is a workspace_id
 	auth has a value which is a string
 	overwrite has a value which is a bool
 	add_to_model has a value which is a bool
@@ -3069,7 +3077,7 @@ queue_runfba_params is a reference to a hash where the following keys are define
 	findminmedia has a value which is a bool
 	notes has a value which is a string
 	fba has a value which is a fba_id
-	fba_workspace has a value which is a workspace_id
+	workspace has a value which is a workspace_id
 	auth has a value which is a string
 	overwrite has a value which is a bool
 	add_to_model has a value which is a bool
@@ -3208,7 +3216,7 @@ gapfill_model_params is a reference to a hash where the following keys are defin
 	phenotypeSet_workspace has a value which is a workspace_id
 	integrate_solution has a value which is a bool
 	out_model has a value which is a fbamodel_id
-	out_workspace has a value which is a workspace_id
+	workspace has a value which is a workspace_id
 	gapFill has a value which is a gapfill_id
 	gapFill_workspace has a value which is a workspace_id
 	auth has a value which is a string
@@ -3311,7 +3319,7 @@ gapfill_model_params is a reference to a hash where the following keys are defin
 	phenotypeSet_workspace has a value which is a workspace_id
 	integrate_solution has a value which is a bool
 	out_model has a value which is a fbamodel_id
-	out_workspace has a value which is a workspace_id
+	workspace has a value which is a workspace_id
 	gapFill has a value which is a gapfill_id
 	gapFill_workspace has a value which is a workspace_id
 	auth has a value which is a string
@@ -3476,7 +3484,7 @@ gapgen_model_params is a reference to a hash where the following keys are define
 	phenotypeSet_workspace has a value which is a workspace_id
 	integrate_solution has a value which is a bool
 	out_model has a value which is a fbamodel_id
-	out_workspace has a value which is a workspace_id
+	workspace has a value which is a workspace_id
 	gapGen has a value which is a gapgen_id
 	gapGen_workspace has a value which is a workspace_id
 	auth has a value which is a string
@@ -3564,7 +3572,7 @@ gapgen_model_params is a reference to a hash where the following keys are define
 	phenotypeSet_workspace has a value which is a workspace_id
 	integrate_solution has a value which is a bool
 	out_model has a value which is a fbamodel_id
-	out_workspace has a value which is a workspace_id
+	workspace has a value which is a workspace_id
 	gapGen has a value which is a gapgen_id
 	gapGen_workspace has a value which is a workspace_id
 	auth has a value which is a string
@@ -3715,13 +3723,14 @@ wildtype_phenotype_reconciliation_params is a reference to a hash where the foll
 	phenotypeSet has a value which is a phenotypeSet_id
 	phenotypeSet_workspace has a value which is a workspace_id
 	out_model has a value which is a fbamodel_id
-	out_workspace has a value which is a workspace_id
+	workspace has a value which is a workspace_id
 	gapFills has a value which is a reference to a list where each element is a gapfill_id
 	gapGens has a value which is a reference to a list where each element is a gapgen_id
 	gapFill_workspace has a value which is a workspace_id
-	auth has a value which is a string
+	gapGen_workspace has a value which is a workspace_id
 	queueSensitivityAnalysis has a value which is a bool
 	queueReconciliationCombination has a value which is a bool
+	auth has a value which is a string
 	overwrite has a value which is a bool
 	donot_submit_job has a value which is a bool
 fbamodel_id is a string
@@ -3832,13 +3841,14 @@ wildtype_phenotype_reconciliation_params is a reference to a hash where the foll
 	phenotypeSet has a value which is a phenotypeSet_id
 	phenotypeSet_workspace has a value which is a workspace_id
 	out_model has a value which is a fbamodel_id
-	out_workspace has a value which is a workspace_id
+	workspace has a value which is a workspace_id
 	gapFills has a value which is a reference to a list where each element is a gapfill_id
 	gapGens has a value which is a reference to a list where each element is a gapgen_id
 	gapFill_workspace has a value which is a workspace_id
-	auth has a value which is a string
+	gapGen_workspace has a value which is a workspace_id
 	queueSensitivityAnalysis has a value which is a bool
 	queueReconciliationCombination has a value which is a bool
+	auth has a value which is a string
 	overwrite has a value which is a bool
 	donot_submit_job has a value which is a bool
 fbamodel_id is a string
@@ -4011,13 +4021,14 @@ wildtype_phenotype_reconciliation_params is a reference to a hash where the foll
 	phenotypeSet has a value which is a phenotypeSet_id
 	phenotypeSet_workspace has a value which is a workspace_id
 	out_model has a value which is a fbamodel_id
-	out_workspace has a value which is a workspace_id
+	workspace has a value which is a workspace_id
 	gapFills has a value which is a reference to a list where each element is a gapfill_id
 	gapGens has a value which is a reference to a list where each element is a gapgen_id
 	gapFill_workspace has a value which is a workspace_id
-	auth has a value which is a string
+	gapGen_workspace has a value which is a workspace_id
 	queueSensitivityAnalysis has a value which is a bool
 	queueReconciliationCombination has a value which is a bool
+	auth has a value which is a string
 	overwrite has a value which is a bool
 	donot_submit_job has a value which is a bool
 fbamodel_id is a string
@@ -4128,13 +4139,14 @@ wildtype_phenotype_reconciliation_params is a reference to a hash where the foll
 	phenotypeSet has a value which is a phenotypeSet_id
 	phenotypeSet_workspace has a value which is a workspace_id
 	out_model has a value which is a fbamodel_id
-	out_workspace has a value which is a workspace_id
+	workspace has a value which is a workspace_id
 	gapFills has a value which is a reference to a list where each element is a gapfill_id
 	gapGens has a value which is a reference to a list where each element is a gapgen_id
 	gapFill_workspace has a value which is a workspace_id
-	auth has a value which is a string
+	gapGen_workspace has a value which is a workspace_id
 	queueSensitivityAnalysis has a value which is a bool
 	queueReconciliationCombination has a value which is a bool
+	auth has a value which is a string
 	overwrite has a value which is a bool
 	donot_submit_job has a value which is a bool
 fbamodel_id is a string
@@ -4301,26 +4313,95 @@ $output is an object_metadata
 combine_wildtype_phenotype_reconciliation_params is a reference to a hash where the following keys are defined:
 	model has a value which is a fbamodel_id
 	model_workspace has a value which is a workspace_id
-	gapFills has a value which is a reference to a list where each element is a gapfill_id
-	gapGens has a value which is a reference to a list where each element is a gapgen_id
-	num_solutions has a value which is an int
+	fba_formulation has a value which is an FBAFormulation
+	gapfill_formulation has a value which is a GapfillingFormulation
+	gapgen_formulation has a value which is a GapgenFormulation
 	phenotypeSet has a value which is a phenotypeSet_id
 	phenotypeSet_workspace has a value which is a workspace_id
 	out_model has a value which is a fbamodel_id
-	out_workspace has a value which is a workspace_id
-	fba has a value which is a fba_id
+	workspace has a value which is a workspace_id
+	gapFills has a value which is a reference to a list where each element is a gapfill_id
+	gapGens has a value which is a reference to a list where each element is a gapgen_id
 	gapFill_workspace has a value which is a workspace_id
-	integrate_solution has a value which is a bool
+	gapGen_workspace has a value which is a workspace_id
 	auth has a value which is a string
 	overwrite has a value which is a bool
 	donot_submit_job has a value which is a bool
 fbamodel_id is a string
 workspace_id is a string
+FBAFormulation is a reference to a hash where the following keys are defined:
+	media has a value which is a media_id
+	media_workspace has a value which is a workspace_id
+	objfraction has a value which is a float
+	allreversible has a value which is a bool
+	maximizeObjective has a value which is a bool
+	objectiveTerms has a value which is a reference to a list where each element is a term
+	geneko has a value which is a reference to a list where each element is a feature_id
+	rxnko has a value which is a reference to a list where each element is a reaction_id
+	bounds has a value which is a reference to a list where each element is a bound
+	constraints has a value which is a reference to a list where each element is a constraint
+	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
+	defaultmaxflux has a value which is a float
+	defaultminuptake has a value which is a float
+	defaultmaxuptake has a value which is a float
+	simplethermoconst has a value which is a bool
+	thermoconst has a value which is a bool
+	nothermoerror has a value which is a bool
+	minthermoerror has a value which is a bool
+media_id is a string
+bool is an int
+term is a reference to a list containing 3 items:
+	0: a float
+	1: a string
+	2: a string
+feature_id is a string
+reaction_id is a string
+bound is a reference to a list containing 4 items:
+	0: a float
+	1: a float
+	2: a string
+	3: a string
+constraint is a reference to a list containing 4 items:
+	0: a float
+	1: a string
+	2: a reference to a list where each element is a term
+	3: a string
+GapfillingFormulation is a reference to a hash where the following keys are defined:
+	formulation has a value which is an FBAFormulation
+	num_solutions has a value which is an int
+	nomediahyp has a value which is a bool
+	nobiomasshyp has a value which is a bool
+	nogprhyp has a value which is a bool
+	nopathwayhyp has a value which is a bool
+	allowunbalanced has a value which is a bool
+	activitybonus has a value which is a float
+	drainpen has a value which is a float
+	directionpen has a value which is a float
+	nostructpen has a value which is a float
+	unfavorablepen has a value which is a float
+	nodeltagpen has a value which is a float
+	biomasstranspen has a value which is a float
+	singletranspen has a value which is a float
+	transpen has a value which is a float
+	blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
+	gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
+	allowedcmps has a value which is a reference to a list where each element is a compartment_id
+	probabilisticAnnotation has a value which is a probabilisticAnnotation_id
+	probabilisticAnnotation_workspace has a value which is a workspace_id
+compartment_id is a string
+probabilisticAnnotation_id is a string
+GapgenFormulation is a reference to a hash where the following keys are defined:
+	formulation has a value which is an FBAFormulation
+	refmedia has a value which is a media_id
+	refmedia_workspace has a value which is a workspace_id
+	num_solutions has a value which is an int
+	nomediahyp has a value which is a bool
+	nobiomasshyp has a value which is a bool
+	nogprhyp has a value which is a bool
+	nopathwayhyp has a value which is a bool
+phenotypeSet_id is a string
 gapfill_id is a string
 gapgen_id is a string
-phenotypeSet_id is a string
-fba_id is a string
-bool is an int
 object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
@@ -4348,26 +4429,95 @@ $output is an object_metadata
 combine_wildtype_phenotype_reconciliation_params is a reference to a hash where the following keys are defined:
 	model has a value which is a fbamodel_id
 	model_workspace has a value which is a workspace_id
-	gapFills has a value which is a reference to a list where each element is a gapfill_id
-	gapGens has a value which is a reference to a list where each element is a gapgen_id
-	num_solutions has a value which is an int
+	fba_formulation has a value which is an FBAFormulation
+	gapfill_formulation has a value which is a GapfillingFormulation
+	gapgen_formulation has a value which is a GapgenFormulation
 	phenotypeSet has a value which is a phenotypeSet_id
 	phenotypeSet_workspace has a value which is a workspace_id
 	out_model has a value which is a fbamodel_id
-	out_workspace has a value which is a workspace_id
-	fba has a value which is a fba_id
+	workspace has a value which is a workspace_id
+	gapFills has a value which is a reference to a list where each element is a gapfill_id
+	gapGens has a value which is a reference to a list where each element is a gapgen_id
 	gapFill_workspace has a value which is a workspace_id
-	integrate_solution has a value which is a bool
+	gapGen_workspace has a value which is a workspace_id
 	auth has a value which is a string
 	overwrite has a value which is a bool
 	donot_submit_job has a value which is a bool
 fbamodel_id is a string
 workspace_id is a string
+FBAFormulation is a reference to a hash where the following keys are defined:
+	media has a value which is a media_id
+	media_workspace has a value which is a workspace_id
+	objfraction has a value which is a float
+	allreversible has a value which is a bool
+	maximizeObjective has a value which is a bool
+	objectiveTerms has a value which is a reference to a list where each element is a term
+	geneko has a value which is a reference to a list where each element is a feature_id
+	rxnko has a value which is a reference to a list where each element is a reaction_id
+	bounds has a value which is a reference to a list where each element is a bound
+	constraints has a value which is a reference to a list where each element is a constraint
+	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
+	defaultmaxflux has a value which is a float
+	defaultminuptake has a value which is a float
+	defaultmaxuptake has a value which is a float
+	simplethermoconst has a value which is a bool
+	thermoconst has a value which is a bool
+	nothermoerror has a value which is a bool
+	minthermoerror has a value which is a bool
+media_id is a string
+bool is an int
+term is a reference to a list containing 3 items:
+	0: a float
+	1: a string
+	2: a string
+feature_id is a string
+reaction_id is a string
+bound is a reference to a list containing 4 items:
+	0: a float
+	1: a float
+	2: a string
+	3: a string
+constraint is a reference to a list containing 4 items:
+	0: a float
+	1: a string
+	2: a reference to a list where each element is a term
+	3: a string
+GapfillingFormulation is a reference to a hash where the following keys are defined:
+	formulation has a value which is an FBAFormulation
+	num_solutions has a value which is an int
+	nomediahyp has a value which is a bool
+	nobiomasshyp has a value which is a bool
+	nogprhyp has a value which is a bool
+	nopathwayhyp has a value which is a bool
+	allowunbalanced has a value which is a bool
+	activitybonus has a value which is a float
+	drainpen has a value which is a float
+	directionpen has a value which is a float
+	nostructpen has a value which is a float
+	unfavorablepen has a value which is a float
+	nodeltagpen has a value which is a float
+	biomasstranspen has a value which is a float
+	singletranspen has a value which is a float
+	transpen has a value which is a float
+	blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
+	gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
+	allowedcmps has a value which is a reference to a list where each element is a compartment_id
+	probabilisticAnnotation has a value which is a probabilisticAnnotation_id
+	probabilisticAnnotation_workspace has a value which is a workspace_id
+compartment_id is a string
+probabilisticAnnotation_id is a string
+GapgenFormulation is a reference to a hash where the following keys are defined:
+	formulation has a value which is an FBAFormulation
+	refmedia has a value which is a media_id
+	refmedia_workspace has a value which is a workspace_id
+	num_solutions has a value which is an int
+	nomediahyp has a value which is a bool
+	nobiomasshyp has a value which is a bool
+	nogprhyp has a value which is a bool
+	nopathwayhyp has a value which is a bool
+phenotypeSet_id is a string
 gapfill_id is a string
 gapgen_id is a string
-phenotypeSet_id is a string
-fba_id is a string
-bool is an int
 object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
@@ -5678,6 +5828,32 @@ a string
 
 
 =head2 workspace_ref
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 probanno_id
 
 =over 4
 
@@ -7918,8 +8094,11 @@ If unspecified, this parameter will be set to the value of "in_workspace".
 a reference to a hash where the following keys are defined:
 genome has a value which is a genome_id
 genome_workspace has a value which is a workspace_id
+probanno has a value which is a probanno_id
+probanno_workspace has a value which is a workspace_id
+probannoThreshold has a value which is a float
 model has a value which is a fbamodel_id
-model_workspace has a value which is a workspace_id
+workspace has a value which is a workspace_id
 auth has a value which is a string
 overwrite has a value which is a bool
 
@@ -7932,8 +8111,11 @@ overwrite has a value which is a bool
 a reference to a hash where the following keys are defined:
 genome has a value which is a genome_id
 genome_workspace has a value which is a workspace_id
+probanno has a value which is a probanno_id
+probanno_workspace has a value which is a workspace_id
+probannoThreshold has a value which is a float
 model has a value which is a fbamodel_id
-model_workspace has a value which is a workspace_id
+workspace has a value which is a workspace_id
 auth has a value which is a string
 overwrite has a value which is a bool
 
@@ -8106,7 +8288,7 @@ minimizeflux has a value which is a bool
 findminmedia has a value which is a bool
 notes has a value which is a string
 fba has a value which is a fba_id
-fba_workspace has a value which is a workspace_id
+workspace has a value which is a workspace_id
 auth has a value which is a string
 overwrite has a value which is a bool
 add_to_model has a value which is a bool
@@ -8127,7 +8309,7 @@ minimizeflux has a value which is a bool
 findminmedia has a value which is a bool
 notes has a value which is a string
 fba has a value which is a fba_id
-fba_workspace has a value which is a workspace_id
+workspace has a value which is a workspace_id
 auth has a value which is a string
 overwrite has a value which is a bool
 add_to_model has a value which is a bool
@@ -8371,7 +8553,7 @@ phenotypeSimulations has a value which is a reference to a list where each eleme
 <pre>
 a reference to a hash where the following keys are defined:
 phenotypeSet has a value which is a phenotypeSet_id
-phenotypeSet_workspace has a value which is a workspace_id
+workspace has a value which is a workspace_id
 genome has a value which is a genome_id
 genome_workspace has a value which is a workspace_id
 phenotypes has a value which is a reference to a list where each element is a Phenotype
@@ -8386,7 +8568,7 @@ auth has a value which is a string
 
 a reference to a hash where the following keys are defined:
 phenotypeSet has a value which is a phenotypeSet_id
-phenotypeSet_workspace has a value which is a workspace_id
+workspace has a value which is a workspace_id
 genome has a value which is a genome_id
 genome_workspace has a value which is a workspace_id
 phenotypes has a value which is a reference to a list where each element is a Phenotype
@@ -8419,7 +8601,7 @@ phenotypeSet_workspace has a value which is a workspace_id
 formulation has a value which is an FBAFormulation
 notes has a value which is a string
 phenotypeSimultationSet has a value which is a phenotypeSimulationSet_id
-phenotypeSimultationSet_workspace has a value which is a workspace_id
+workspace has a value which is a workspace_id
 overwrite has a value which is a bool
 auth has a value which is a string
 
@@ -8437,7 +8619,7 @@ phenotypeSet_workspace has a value which is a workspace_id
 formulation has a value which is an FBAFormulation
 notes has a value which is a string
 phenotypeSimultationSet has a value which is a phenotypeSimulationSet_id
-phenotypeSimultationSet_workspace has a value which is a workspace_id
+workspace has a value which is a workspace_id
 overwrite has a value which is a bool
 auth has a value which is a string
 
@@ -8652,7 +8834,7 @@ minimizeflux has a value which is a bool
 findminmedia has a value which is a bool
 notes has a value which is a string
 fba has a value which is a fba_id
-fba_workspace has a value which is a workspace_id
+workspace has a value which is a workspace_id
 auth has a value which is a string
 overwrite has a value which is a bool
 add_to_model has a value which is a bool
@@ -8674,7 +8856,7 @@ minimizeflux has a value which is a bool
 findminmedia has a value which is a bool
 notes has a value which is a string
 fba has a value which is a fba_id
-fba_workspace has a value which is a workspace_id
+workspace has a value which is a workspace_id
 auth has a value which is a string
 overwrite has a value which is a bool
 add_to_model has a value which is a bool
@@ -8706,7 +8888,7 @@ phenotypeSet has a value which is a phenotypeSet_id
 phenotypeSet_workspace has a value which is a workspace_id
 integrate_solution has a value which is a bool
 out_model has a value which is a fbamodel_id
-out_workspace has a value which is a workspace_id
+workspace has a value which is a workspace_id
 gapFill has a value which is a gapfill_id
 gapFill_workspace has a value which is a workspace_id
 auth has a value which is a string
@@ -8727,7 +8909,7 @@ phenotypeSet has a value which is a phenotypeSet_id
 phenotypeSet_workspace has a value which is a workspace_id
 integrate_solution has a value which is a bool
 out_model has a value which is a fbamodel_id
-out_workspace has a value which is a workspace_id
+workspace has a value which is a workspace_id
 gapFill has a value which is a gapfill_id
 gapFill_workspace has a value which is a workspace_id
 auth has a value which is a string
@@ -8760,7 +8942,7 @@ phenotypeSet has a value which is a phenotypeSet_id
 phenotypeSet_workspace has a value which is a workspace_id
 integrate_solution has a value which is a bool
 out_model has a value which is a fbamodel_id
-out_workspace has a value which is a workspace_id
+workspace has a value which is a workspace_id
 gapGen has a value which is a gapgen_id
 gapGen_workspace has a value which is a workspace_id
 auth has a value which is a string
@@ -8781,7 +8963,7 @@ phenotypeSet has a value which is a phenotypeSet_id
 phenotypeSet_workspace has a value which is a workspace_id
 integrate_solution has a value which is a bool
 out_model has a value which is a fbamodel_id
-out_workspace has a value which is a workspace_id
+workspace has a value which is a workspace_id
 gapGen has a value which is a gapgen_id
 gapGen_workspace has a value which is a workspace_id
 auth has a value which is a string
@@ -8815,13 +8997,14 @@ gapgen_formulation has a value which is a GapgenFormulation
 phenotypeSet has a value which is a phenotypeSet_id
 phenotypeSet_workspace has a value which is a workspace_id
 out_model has a value which is a fbamodel_id
-out_workspace has a value which is a workspace_id
+workspace has a value which is a workspace_id
 gapFills has a value which is a reference to a list where each element is a gapfill_id
 gapGens has a value which is a reference to a list where each element is a gapgen_id
 gapFill_workspace has a value which is a workspace_id
-auth has a value which is a string
+gapGen_workspace has a value which is a workspace_id
 queueSensitivityAnalysis has a value which is a bool
 queueReconciliationCombination has a value which is a bool
+auth has a value which is a string
 overwrite has a value which is a bool
 donot_submit_job has a value which is a bool
 
@@ -8840,13 +9023,14 @@ gapgen_formulation has a value which is a GapgenFormulation
 phenotypeSet has a value which is a phenotypeSet_id
 phenotypeSet_workspace has a value which is a workspace_id
 out_model has a value which is a fbamodel_id
-out_workspace has a value which is a workspace_id
+workspace has a value which is a workspace_id
 gapFills has a value which is a reference to a list where each element is a gapfill_id
 gapGens has a value which is a reference to a list where each element is a gapgen_id
 gapFill_workspace has a value which is a workspace_id
-auth has a value which is a string
+gapGen_workspace has a value which is a workspace_id
 queueSensitivityAnalysis has a value which is a bool
 queueReconciliationCombination has a value which is a bool
+auth has a value which is a string
 overwrite has a value which is a bool
 donot_submit_job has a value which is a bool
 
@@ -8871,14 +9055,19 @@ donot_submit_job has a value which is a bool
 a reference to a hash where the following keys are defined:
 model has a value which is a fbamodel_id
 model_workspace has a value which is a workspace_id
+fba_formulation has a value which is an FBAFormulation
+gapfill_formulation has a value which is a GapfillingFormulation
+gapgen_formulation has a value which is a GapgenFormulation
 phenotypeSet has a value which is a phenotypeSet_id
 phenotypeSet_workspace has a value which is a workspace_id
+out_model has a value which is a fbamodel_id
+workspace has a value which is a workspace_id
 gapFills has a value which is a reference to a list where each element is a gapfill_id
 gapGens has a value which is a reference to a list where each element is a gapgen_id
-out_model has a value which is a fbamodel_id
-out_workspace has a value which is a workspace_id
-auth has a value which is a string
+gapFill_workspace has a value which is a workspace_id
+gapGen_workspace has a value which is a workspace_id
 queueReconciliationCombination has a value which is a bool
+auth has a value which is a string
 overwrite has a value which is a bool
 donot_submit_job has a value which is a bool
 
@@ -8891,14 +9080,19 @@ donot_submit_job has a value which is a bool
 a reference to a hash where the following keys are defined:
 model has a value which is a fbamodel_id
 model_workspace has a value which is a workspace_id
+fba_formulation has a value which is an FBAFormulation
+gapfill_formulation has a value which is a GapfillingFormulation
+gapgen_formulation has a value which is a GapgenFormulation
 phenotypeSet has a value which is a phenotypeSet_id
 phenotypeSet_workspace has a value which is a workspace_id
+out_model has a value which is a fbamodel_id
+workspace has a value which is a workspace_id
 gapFills has a value which is a reference to a list where each element is a gapfill_id
 gapGens has a value which is a reference to a list where each element is a gapgen_id
-out_model has a value which is a fbamodel_id
-out_workspace has a value which is a workspace_id
-auth has a value which is a string
+gapFill_workspace has a value which is a workspace_id
+gapGen_workspace has a value which is a workspace_id
 queueReconciliationCombination has a value which is a bool
+auth has a value which is a string
 overwrite has a value which is a bool
 donot_submit_job has a value which is a bool
 
@@ -8923,16 +9117,17 @@ donot_submit_job has a value which is a bool
 a reference to a hash where the following keys are defined:
 model has a value which is a fbamodel_id
 model_workspace has a value which is a workspace_id
-gapFills has a value which is a reference to a list where each element is a gapfill_id
-gapGens has a value which is a reference to a list where each element is a gapgen_id
-num_solutions has a value which is an int
+fba_formulation has a value which is an FBAFormulation
+gapfill_formulation has a value which is a GapfillingFormulation
+gapgen_formulation has a value which is a GapgenFormulation
 phenotypeSet has a value which is a phenotypeSet_id
 phenotypeSet_workspace has a value which is a workspace_id
 out_model has a value which is a fbamodel_id
-out_workspace has a value which is a workspace_id
-fba has a value which is a fba_id
+workspace has a value which is a workspace_id
+gapFills has a value which is a reference to a list where each element is a gapfill_id
+gapGens has a value which is a reference to a list where each element is a gapgen_id
 gapFill_workspace has a value which is a workspace_id
-integrate_solution has a value which is a bool
+gapGen_workspace has a value which is a workspace_id
 auth has a value which is a string
 overwrite has a value which is a bool
 donot_submit_job has a value which is a bool
@@ -8946,16 +9141,17 @@ donot_submit_job has a value which is a bool
 a reference to a hash where the following keys are defined:
 model has a value which is a fbamodel_id
 model_workspace has a value which is a workspace_id
-gapFills has a value which is a reference to a list where each element is a gapfill_id
-gapGens has a value which is a reference to a list where each element is a gapgen_id
-num_solutions has a value which is an int
+fba_formulation has a value which is an FBAFormulation
+gapfill_formulation has a value which is a GapfillingFormulation
+gapgen_formulation has a value which is a GapgenFormulation
 phenotypeSet has a value which is a phenotypeSet_id
 phenotypeSet_workspace has a value which is a workspace_id
 out_model has a value which is a fbamodel_id
-out_workspace has a value which is a workspace_id
-fba has a value which is a fba_id
+workspace has a value which is a workspace_id
+gapFills has a value which is a reference to a list where each element is a gapfill_id
+gapGens has a value which is a reference to a list where each element is a gapgen_id
 gapFill_workspace has a value which is a workspace_id
-integrate_solution has a value which is a bool
+gapGen_workspace has a value which is a workspace_id
 auth has a value which is a string
 overwrite has a value which is a bool
 donot_submit_job has a value which is a bool
