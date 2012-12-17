@@ -39,6 +39,7 @@ use ModelSEED::MS::Metadata::Definitions;
 use ModelSEED::utilities qw( args verbose set_verbose translateArrayOptions);
 use Try::Tiny;
 use Data::Dumper;
+use Config::Simple;
 
 =head2 loadObject
 

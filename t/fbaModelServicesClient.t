@@ -21,7 +21,7 @@ $token = $tokenObj->token();
 #Instantiating client workspace
 my $ws = Bio::KBase::workspaceService::Client->new("http://140.221.92.231/services/workspace/");
 #Instantiating client object
-my $obj = Bio::KBase::fbaModelServices::Client->new("http://140.221.92.231/services/fbaModelServices/");
+my $obj = Bio::KBase::fbaModelServices::Client->new("http://140.221.92.231/services/fbaServices/");
 #my $obj = Bio::KBase::fbaModelServices::Impl->new({workspace => $ws});
 #Checking for standard and default biochemistry
 &_prepareWorkspace($ws);
@@ -55,19 +55,19 @@ eval {
 #Testing loading of genome object to workspace
 my ($fh, $uncompressed_filename,$genome);
 {
-($fh, $uncompressed_filename) = tempfile();
-close($fh);
-local $/;
-my $status = getstore("http://bioseed.mcs.anl.gov/~chenry/KbaseFiles/genome.test.json", $uncompressed_filename);
-open($fh, "<", $uncompressed_filename) || die "$!: $@";
-my $string = <$fh>;
-$genomeObj = JSON::XS->new->utf8->decode($string);
-$genome = $obj->genome_object_to_workspace({
-	genomeobj => $genomeObj,
-	workspace => "fbaservicestest",
-	auth => $token
-});
-ok defined($genome), "Successfully loaded genome object to workspace!";
+	($fh, $uncompressed_filename) = tempfile();
+	close($fh);
+	local $/;
+	my $status = getstore("http://bioseed.mcs.anl.gov/~chenry/KbaseFiles/genome.test.json", $uncompressed_filename);
+	open($fh, "<", $uncompressed_filename) || die "$!: $@";
+	my $string = <$fh>;
+	$genomeObj = JSON::XS->new->utf8->decode($string);
+	$genome = $obj->genome_object_to_workspace({
+		genomeobj => $genomeObj,
+		workspace => "fbaservicestest",
+		auth => $token
+	});
+	ok defined($genome), "Successfully loaded genome object to workspace!";
 }
 
 #Now test ability to retrieve annotated genome object from database
