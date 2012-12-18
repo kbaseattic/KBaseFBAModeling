@@ -76,8 +76,7 @@ $params->{formulation} = {
 	rxnko => [],
 	bounds => [],
 	constraints => [],
-	uptakelim => {},
-	objectiveTerms => []
+	uptakelim => {}
 };
 foreach my $key (keys(%{$fbaTranslation})) {
 	if (defined($opt->{$key})) {
