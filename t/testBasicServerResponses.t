@@ -17,8 +17,8 @@ use warnings;
 
 use Data::Dumper;
 use Test::More;
-use lib "../lib/"; #make sure that the fba client is on our path
-use lib "../../kb_seed/lib/";
+use lib "lib"; #make sure that the fba client is on our path
+use lib "../kb_seed/lib/";
 
 #############################################################################
 # HERE IS A LIST OF METHODS AND PARAMETERS THAT WE WANT TO TEST ARE UP
@@ -51,13 +51,13 @@ my $n_tests = (scalar(keys %$func_calls)*2+3); # set this to be the number of fu
 #  NOTE: for initial testing, you may have to modify TreesClient.pm to also
 #        point to the legacy interface
 use_ok("JSON::RPC::Legacy::Client");
-use_ok("fbaModelServicesClient");
+use_ok("Bio::KBase::fbaModelServices::Client");
 
 # MAKE A CONNECTION
 my $fba_service_url = "http://140.221.92.77:7036"; # this was the test machine during the aug build - might still be up
 #my $tree_service_url = "localhost:7036";
-my $fbaclient = fbaModelServicesClient->new($fba_service_url);
-ok(defined($fbaclient),"instantiating fbaModelServicesClient");
+my $fbaclient = Bio::KBase::fbaModelServices::Client->new($fba_service_url);
+ok(defined($fbaclient),"instantiating Bio::KBase::fbaModelServices::Client");
 
 
 # Ok, that's cool, we can create the client.  Now forget about it for now cause the structs are too
