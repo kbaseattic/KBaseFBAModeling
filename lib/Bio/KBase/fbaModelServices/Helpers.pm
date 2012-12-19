@@ -4,7 +4,6 @@ use warnings;
 use Exporter;
 use Getopt::Long::Descriptive;
 use Text::Table;
-use JSON;
 use Bio::KBase::fbaModelServices::Client;
 use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
 use parent qw(Exporter);
@@ -52,6 +51,8 @@ sub universalFBAScriptCode {
     my $script = shift;
     my $primaryArgs = shift;
     my $translation = shift;
+    $translation->{workspace} = "workspace";
+    $translation->{auth} = "auth";
     #Setting arguments to "describe_options" function
     my $options = [];
     if (@{$primaryArgs} > 0) {

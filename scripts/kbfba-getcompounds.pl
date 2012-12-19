@@ -6,26 +6,28 @@
 ########################################################################
 use strict;
 use warnings;
+use JSON;
 use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
 use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
-my $primaryArgs = ["FBA ID","Format (html,json,readable)"];
-my $servercommand = "export_fba";
-my $script = "kbfba-exportfba";
+my $primaryArgs = ["Compound IDs (; delimiter)"];
+my $servercommand = "get_compounds";
+my $script = "kbfba-getcompounds";
 my $translation = {
-	"Format (html,json,readable)" => "format",
-	"FBA ID" => "fba"
+	idtype => "id_type"
 };
 #Defining usage and options
 my $specs = [
-    [ 'workspace|w:s', 'Workspace with FBA', { "default" => workspace() } ]
+    [ 'idtype|i:s', 'Type of ID' ],
+    [ 'pretty|p', 'Pretty print output' ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
+$params->{compounds} = [split(/;/,$opt->{"Compound IDs (; delimiter)"})];
 #Calling the server
 my $output = runFBACommand($params,$servercommand,$opt);
 #Checking output and report results
 if (!defined($output)) {
-	print "FBA export failed!\n";
+	print "Compound retreival failed!\n";
 } else {
-	print $output;
+	print to_json( $output, { utf8 => 1, pretty => $opt->{pretty} } )."\n";
 }
