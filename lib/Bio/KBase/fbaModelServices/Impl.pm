@@ -20,7 +20,7 @@ use URI;
 use Bio::KBase::IDServer::Client;
 use Bio::KBase::CDMI::CDMIClient;
 use Bio::KBase::AuthToken;
-use KBase::ClusterService;
+use Bio::KBase::ClusterService;
 use Bio::KBase::workspaceService::Client;
 use ModelSEED::Auth::Basic;
 use ModelSEED::Store;
@@ -344,7 +344,7 @@ sub _cdmi {
 sub _clusterService {
 	my $self = shift;
 	if (!defined($self->{_clusterservice})) {
-		$self->{_clusterservice} = KBase::ClusterService->new();
+		$self->{_clusterservice} = Bio::KBase::ClusterService->new();
 	}
     return $self->{_clusterservice};
 }
