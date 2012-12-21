@@ -19,9 +19,13 @@ my $tokenObj = Bio::KBase::AuthToken->new(
 );
 $token = $tokenObj->token();
 #Instantiating client workspace
-my $ws = Bio::KBase::workspaceService::Client->new("http://kbase.us/services/workspace/");
+#my $ws = Bio::KBase::workspaceService::Client->new("http://140.221.92.231/services/workspace/");
+#my $ws = Bio::KBase::workspaceService::Client->new("http://kbase.us/services/workspace/");
+my $ws = Bio::KBase::workspaceService::Client->new("http://localhost:7058");
 #Instantiating client object
-my $obj = Bio::KBase::fbaModelServices::Client->new("http://kbase.us/services/fbaServices/");
+#my $obj = Bio::KBase::fbaModelServices::Client->new("http://140.221.92.231/services/fbaServices/");
+#my $obj = Bio::KBase::fbaModelServices::Client->new("http://kbase.us/services/fbaServices/");
+my $obj = Bio::KBase::fbaModelServices::Client->new("http://localhost:7042");
 #my $obj = Bio::KBase::fbaModelServices::Impl->new({workspace => $ws});
 #Checking for standard and default biochemistry
 &_prepareWorkspace($ws);

@@ -3,6 +3,7 @@ use lib $Bin.'/../lib';
 use lib $Bin.'/../../workspace_service/lib/';
 use lib $Bin.'/../../kb_seed/lib/';
 use lib $Bin.'/../../idserver/lib/';
+use lib "/kb/deployment/lib/perl5/site_perl/5.16.0/Bio/";
 use Bio::KBase::workspaceService::Impl;
 use LWP::Simple qw(getstore);
 use IO::Compress::Gzip qw(gzip);
