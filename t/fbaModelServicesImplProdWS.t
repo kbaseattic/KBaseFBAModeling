@@ -78,10 +78,12 @@ my ($fh, $uncompressed_filename,$genome);
 	local $Bio::KBase::fbaModelServices::Server::CallContext = $ctx;
 	($fh, $uncompressed_filename) = tempfile();
 	close($fh);
-	local $/;
 	my $status = getstore("http://bioseed.mcs.anl.gov/~chenry/KbaseFiles/genome.test.json", $uncompressed_filename);
 	open($fh, "<", $uncompressed_filename) || die "$!: $@";
-	my $string = <$fh>;
+	my @lines = <$fh>;
+	close ($fh);
+	my $string = join("\n",@lines);
+	print $string."\n";
 	$genomeObj = JSON::XS->new->utf8->decode($string);
 	$genome = $obj->genome_object_to_workspace({
 		genomeobj => $genomeObj,
