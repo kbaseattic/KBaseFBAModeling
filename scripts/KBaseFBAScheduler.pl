@@ -98,9 +98,17 @@ sub monitor {
 			#Queuing jobs
 			while ($openSlots > 0 && @{$jobs} > 0) {
 				my $job = shift(@{$jobs});
-				$self->queueJob($job);
-				$openSlots--;
-			}
+				#if ($self->set_job_status({
+				#	jobid => $job->{id},
+				#	jobws => $job->{ws},
+				#	status => "running",
+				#	auth => $job->{auth}
+				#}) == 1) {
+				print $openSlots.":".$job->{ws}."/".$job->{id}."/"$job->{auth}."\n\n";
+				#	$self->queueJob($job->{ws},$job->{id},$job->{auth});
+					$openSlots--;
+				#}
+			}	
 		}
 		print "Sleeping...\n";
 		sleep(30);
