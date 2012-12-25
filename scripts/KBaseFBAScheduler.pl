@@ -9,12 +9,19 @@
 ########################################################################
 use strict;
 use warnings;
-use Bio::KBase::fbaModelServices::Impl;
-use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand universalFBAScriptCode);
+use JSON::XS;
+use Test::More;
+use Data::Dumper;
+use File::Temp qw(tempfile);
 use LWP::Simple;
 use FindBin qw($Bin);
 use lib "$Bin/../lib";
+use Bio::KBase::AuthToken;
+use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
+use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand universalFBAScriptCode);
+use Bio::KBase::fbaModelServices::Impl;
+use Bio::KBase::fbaModelServices::Server;
+
 $|=1;
 
 #Creating the error message printed whenever the user input makes no sense
