@@ -18,7 +18,6 @@ my $tokenObj = Bio::KBase::AuthToken->new(
     user_id => 'kbasetest', password => '@Suite525'
 );
 $token = $tokenObj->token();
-print $token."\n";
 #Instantiating client workspace
 my $ws = Bio::KBase::workspaceService::Client->new("http://kbase.us/services/workspace/");
 #Instantiating client object
