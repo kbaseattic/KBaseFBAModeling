@@ -95,8 +95,11 @@ sub monitor {
 	while ($continue == 1) {
 		my $runningJobs = $self->runningJobs();
 		my $runningCount = keys(%{$runningJobs});
+		print "Running:".$runningCount."\n";
+		print "Count:".$count."\n";
 		if ($runningCount < $count) {
 			my $openSlots = ($count - $runningCount);
+			print "Slots:".$openSlots."\n";
 			#Checking if outstanding queued jobs exist
 			my $jobs = $self->client()->get_jobs({
 				status => "queued",
