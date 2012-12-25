@@ -9,6 +9,7 @@
 ########################################################################
 use strict;
 use warnings;
+use Bio::KBase::fbaModelServices::Impl;
 use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
 use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand universalFBAScriptCode);
 use LWP::Simple;
