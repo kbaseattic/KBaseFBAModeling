@@ -50,7 +50,7 @@ package scheduler;
 
 sub new {
 	my ($class,$params) = @_;
-	my $self = {_directory => $params->{directory},_client => get_ws_client()};
+	my $self = {_directory => $params->{directory},_client => Bio::KBase::workspaceService::Helpers::get_ws_client()};
     return bless $self;
 }
 
