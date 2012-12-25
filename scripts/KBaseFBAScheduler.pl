@@ -100,7 +100,7 @@ sub monitor {
 			#Checking if outstanding queued jobs exist
 			my $jobs = $self->client()->get_jobs({
 				status => "queued",
-				auth => auth()
+				auth => Bio::KBase::workspaceService::Helpers::auth()
 			});
 			#Queuing jobs
 			while ($openSlots > 0 && @{$jobs} > 0) {
