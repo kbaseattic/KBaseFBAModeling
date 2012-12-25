@@ -50,7 +50,7 @@ if ($ARGV[0] eq "monitor") {
 package scheduler;
 
 sub new {
-	my ($self,$params) = @_;
+	my ($class,$params) = @_;
 	my $self = {_directory => $params->{directory},_client => get_ws_client()};
     return bless $self;
 }
