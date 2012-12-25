@@ -482,12 +482,16 @@ sub _get_msobject {
 			my $linkid = $obj->fbaFormulation_uuid();
 			my $array = [split(/\//,$linkid)];
 			$obj->fbaFormulation($self->_get_msobject("FBA",$array->[0],$array->[1],$cache));
-			$obj->model($obj->fbaFormulation()->model());
+			$linkid = $obj->model_uuid();
+			$array = [split(/\//,$linkid)];
+			$obj->model($self->_get_msobject("Model",$array->[0],$array->[1],$cache));
 		} elsif ($type eq "GapGen") {
 			my $linkid = $obj->fbaFormulation_uuid();
 			my $array = [split(/\//,$linkid)];
 			$obj->fbaFormulation($self->_get_msobject("FBA",$array->[0],$array->[1],$cache));
-			$obj->model($obj->fbaFormulation()->model());
+			$linkid = $obj->model_uuid();
+			$array = [split(/\//,$linkid)];
+			$obj->model($self->_get_msobject("Model",$array->[0],$array->[1],$cache));
 		}
 		delete $cache->{$type}->{$ws}->{$id};
 	} else {

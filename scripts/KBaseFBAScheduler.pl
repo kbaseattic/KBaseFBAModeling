@@ -101,9 +101,9 @@ sub monitor {
 			my $openSlots = ($count - $runningCount);
 			print "Slots:".$openSlots."\n";
 			#Checking if outstanding queued jobs exist
+			my $auth = Bio::KBase::workspaceService::Helpers::auth();
 			my $jobs = $self->client()->get_jobs({
-				status => "queued",
-				auth => Bio::KBase::workspaceService::Helpers::auth()
+				auth => $auth
 			});
 			#Queuing jobs
 			while ($openSlots > 0 && @{$jobs} > 0) {
@@ -133,7 +133,10 @@ sub queueJob {
 
 sub run {
 	my($self,$ws,$id,$auth) = @_;
-	my $obj = Bio::KBase::fbaModelServices::Impl->new();
+	if (!defined($auth)) {
+		$auth = Bio::KBase::workspaceService::Helpers::auth();
+	}
+	my $obj = Bio::KBase::fbaModelServices::Impl->new({workspace => $self->client()});
 	$obj->run_job({
 		jobid => $id,
 		workspace => $ws,
