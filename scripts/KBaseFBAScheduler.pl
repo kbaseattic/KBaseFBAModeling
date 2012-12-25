@@ -105,7 +105,7 @@ sub monitor {
 				#	status => "running",
 				#	auth => $job->{auth}
 				#}) == 1) {
-				print $openSlots.":".$job->{ws}."/".$job->{id}."/"$job->{auth}."\n\n";
+				print $openSlots.":".$job->{ws}."/".$job->{id}."/".$job->{auth}."\n\n";
 				#	$self->queueJob($job->{ws},$job->{id},$job->{auth});
 					$openSlots--;
 				#}
@@ -117,7 +117,7 @@ sub monitor {
 }
 
 sub queueJob {
-	my($self,$ws,$id,$auth) = @_;
+	my ($self,$ws,$id,$auth) = @_;
 	my $cmd = "qsub -l fs_scratch=100 -l arch=lx26-amd64 -b yes -e ".$self->directory()."/errors/ -o ".$self->directory()."/output/ ".$self->directory()."/scheduler.sh run ".$ws." ".$id." ".$auth;
 	system($cmd);	
 }
