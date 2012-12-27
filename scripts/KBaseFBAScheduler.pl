@@ -30,6 +30,7 @@ my $Usage = "Scheduler must be called with the following syntax:\n".
 			"kbasefbascheduler killjobs\n";
 #First checking to see if at least one argument has been provided
 my $directory = shift(@ARGV);
+$directory =~ s/\/homes\//\/home\//;
 if (!defined($ARGV[0]) || $ARGV[0] eq "help") {
     print $Usage;
 	exit(0);
