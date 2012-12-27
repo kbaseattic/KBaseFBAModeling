@@ -14,7 +14,6 @@ use Test::More;
 use Data::Dumper;
 use File::Temp qw(tempfile);
 use LWP::Simple;
-use FindBin qw($Bin);
 use Bio::KBase::AuthToken;
 use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
 use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand universalFBAScriptCode);
@@ -29,12 +28,13 @@ my $Usage = "Scheduler must be called with the following syntax:\n".
 			"kbasefbascheduler runjob <workspace> <id> <auth>\n".
 			"kbasefbascheduler addjob <workspace> <id> <auth>\n".
 			"kbasefbascheduler killjobs\n";
-my $sched = scheduler->new({directory => $Bin});
 #First checking to see if at least one argument has been provided
 if (!defined($ARGV[0]) || $ARGV[0] eq "help") {
     print $Usage;
 	exit(0);
 }
+my $directory = shift(@ARGV);
+my $sched = scheduler->new({directory => $directory});
 #Running requested functions
 if ($ARGV[0] eq "monitor") {
 	$sched->monitor($ARGV[1]);
