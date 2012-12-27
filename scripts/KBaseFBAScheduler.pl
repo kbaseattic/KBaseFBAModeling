@@ -103,6 +103,7 @@ sub monitor {
 			#Checking if outstanding queued jobs exist
 			my $auth = Bio::KBase::workspaceService::Helpers::auth();
 			my $jobs = $self->client()->get_jobs({
+				status => "queued",
 				auth => $auth
 			});
 			#Queuing jobs
@@ -128,7 +129,8 @@ sub monitor {
 sub queueJob {
 	my ($self,$ws,$id,$auth) = @_;
 	my $cmd = "qsub -l fs_scratch=100 -l arch=lx26-amd64 -b yes -e ".$self->directory()."/errors/ -o ".$self->directory()."/output/ ".$self->directory()."/scheduler.sh run ".$ws." ".$id." ".$auth;
-	system($cmd);	
+	print $cmd."\n";
+	#system($cmd);	
 }
 
 sub run {
