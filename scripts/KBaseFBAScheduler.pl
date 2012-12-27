@@ -128,6 +128,9 @@ sub monitor {
 
 sub queueJob {
 	my ($self,$ws,$id,$auth) = @_;
+	if (!defined($auth)) {
+		$auth = Bio::KBase::workspaceService::Helpers::auth();
+	}
 	my $cmd = "qsub -l fs_scratch=100 -l arch=lx26-amd64 -b yes -e ".$self->directory()."/errors/ -o ".$self->directory()."/output/ ".$self->directory()."/scheduler.sh run ".$ws." ".$id." ".$auth;
 	print $cmd."\n";
 	#system($cmd);	
