@@ -29,11 +29,11 @@ my $Usage = "Scheduler must be called with the following syntax:\n".
 			"kbasefbascheduler addjob <workspace> <id> <auth>\n".
 			"kbasefbascheduler killjobs\n";
 #First checking to see if at least one argument has been provided
+my $directory = shift(@ARGV);
 if (!defined($ARGV[0]) || $ARGV[0] eq "help") {
     print $Usage;
 	exit(0);
 }
-my $directory = shift(@ARGV);
 my $sched = scheduler->new({directory => $directory});
 #Running requested functions
 if ($ARGV[0] eq "monitor") {
@@ -131,7 +131,7 @@ sub queueJob {
 	if (!defined($auth)) {
 		$auth = Bio::KBase::workspaceService::Helpers::auth();
 	}
-	my $cmd = "qsub -l fs_scratch=100 -l arch=lx26-amd64 -b yes -e ".$self->directory()."/errors/ -o ".$self->directory()."/output/ ".$self->directory()."/scheduler.sh run ".$ws." ".$id." ".$auth;
+	my $cmd = "qsub -l fs_scratch=100 -l arch=lx26-amd64 -b yes -e ".$self->directory()."/errors/ -o ".$self->directory()."/output/ ".$self->directory()."/scheduler.sh run ".$ws." ".$id." \"".$auth."\"";
 	print $cmd."\n";
 	#system($cmd);	
 }
