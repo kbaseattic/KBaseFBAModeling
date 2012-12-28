@@ -132,7 +132,7 @@ sub queueJob {
 	if (!defined($auth)) {
 		$auth = Bio::KBase::workspaceService::Helpers::auth();
 	}
-	my ($fh, $uncompressed_filename) = tempfile(DIR => $self->directory());
+	my ($fh, $uncompressed_filename) = File::Temp::tempfile(DIR => $self->directory());
 	print $fh $auth;
 	close($fh);
 	my $cmd = "qsub -l arch=lx26-amd64 -b yes -e ".$self->directory()."/errors/ -o ".$self->directory()."/output/ ".$self->directory()."/scheduler.sh runjob ".$ws." ".$id." ".$uncompressed_filename;
