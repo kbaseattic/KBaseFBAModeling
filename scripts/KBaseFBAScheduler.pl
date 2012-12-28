@@ -35,6 +35,7 @@ if (!defined($ARGV[0]) || $ARGV[0] eq "help") {
     print $Usage;
 	exit(0);
 }
+print $directory."\n";
 my $sched = scheduler->new({directory => $directory});
 #Running requested functions
 if ($ARGV[0] eq "monitor") {
