@@ -107,7 +107,7 @@ sub monitor {
 			#Queuing jobs
 			while ($openSlots > 0 && @{$jobs} > 0) {
 				my $job = shift(@{$jobs});
-				if ($self->set_job_status({
+				if ($self->client()->set_job_status({
 					jobid => $job->{id},
 					jobws => $job->{ws},
 					status => "running",
