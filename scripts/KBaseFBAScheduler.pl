@@ -132,7 +132,10 @@ sub queueJob {
 	if (!defined($auth)) {
 		$auth = Bio::KBase::workspaceService::Helpers::auth();
 	}
-	my $cmd = "qsub -l fs_scratch=100 -l arch=lx26-amd64 -b yes -e ".$self->directory()."/errors/ -o ".$self->directory()."/output/ ".$self->directory()."/scheduler.sh runjob ".$ws." ".$id." \"".$auth."\"";
+	my ($fh, $uncompressed_filename) = tempfile(DIR => $self->directory());
+	print $fh $auth;
+	close($fh);
+	my $cmd = "qsub -l arch=lx26-amd64 -b yes -e ".$self->directory()."/errors/ -o ".$self->directory()."/output/ ".$self->directory()."/scheduler.sh runjob ".$ws." ".$id." ".$uncompressed_filename;
 	print $cmd."\n";
 	#system($cmd);	
 }
@@ -141,6 +144,11 @@ sub run {
 	my($self,$ws,$id,$auth) = @_;
 	if (!defined($auth)) {
 		$auth = Bio::KBase::workspaceService::Helpers::auth();
+	} elsif (-e $auth) {
+		open(my $fh, "<", $auth) || die "$!: $@";
+		my @lines = <$fh>;
+		close ($fh);
+		$auth = join("",@lines);
 	}
 	my $obj = Bio::KBase::fbaModelServices::Impl->new({workspace => $self->client()});
 	$obj->run_job({
