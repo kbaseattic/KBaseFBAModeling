@@ -96,11 +96,8 @@ sub monitor {
 	while ($continue == 1) {
 		my $runningJobs = $self->runningJobs();
 		my $runningCount = keys(%{$runningJobs});
-		print "Running:".$runningCount."\n";
-		print "Count:".$count."\n";
 		if ($runningCount < $count) {
 			my $openSlots = ($count - $runningCount);
-			print "Slots:".$openSlots."\n";
 			#Checking if outstanding queued jobs exist
 			my $auth = Bio::KBase::workspaceService::Helpers::auth();
 			my $jobs = $self->client()->get_jobs({
@@ -110,16 +107,15 @@ sub monitor {
 			#Queuing jobs
 			while ($openSlots > 0 && @{$jobs} > 0) {
 				my $job = shift(@{$jobs});
-				#if ($self->set_job_status({
-				#	jobid => $job->{id},
-				#	jobws => $job->{ws},
-				#	status => "running",
-				#	auth => $job->{auth}
-				#}) == 1) {
-				print $openSlots.":".$job->{ws}."/".$job->{id}."/".$job->{auth}."\n\n";
-				#	$self->queueJob($job->{ws},$job->{id},$job->{auth});
+				if ($self->set_job_status({
+					jobid => $job->{id},
+					jobws => $job->{ws},
+					status => "running",
+					auth => $job->{auth}
+				}) == 1) {
+					$self->queueJob($job->{ws},$job->{id},$job->{auth});
 					$openSlots--;
-				#}
+				}
 			}	
 		}
 		print "Sleeping...\n";
@@ -136,15 +132,16 @@ sub queueJob {
 	print $fh $auth;
 	close($fh);
 	my $cmd = "qsub -l arch=lx26-amd64 -b yes -e ".$self->directory()."/errors/ -o ".$self->directory()."/output/ ".$self->directory()."/scheduler.sh runjob ".$ws." ".$id." ".$uncompressed_filename;
-	print $cmd."\n";
-	#system($cmd);	
+	system($cmd);	
 }
 
 sub run {
 	my($self,$ws,$id,$auth) = @_;
+	my $filename;
 	if (!defined($auth)) {
 		$auth = Bio::KBase::workspaceService::Helpers::auth();
 	} elsif (-e $auth) {
+		$filename = $auth;
 		open(my $fh, "<", $auth) || die "$!: $@";
 		my @lines = <$fh>;
 		close ($fh);
@@ -157,6 +154,9 @@ sub run {
 		"index" => 0,
 		auth => $auth
 	});
+	if (-e $filename) {
+		unlink($filename);
+	}
 }
 
 sub haltalljobs {
