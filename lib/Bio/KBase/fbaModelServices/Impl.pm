@@ -20,7 +20,7 @@ use URI;
 use Bio::KBase::IDServer::Client;
 use Bio::KBase::CDMI::CDMIClient;
 use Bio::KBase::AuthToken;
-use KBase::ClusterService;
+use Bio::KBase::ClusterService;
 use Bio::KBase::workspaceService::Client;
 use ModelSEED::Auth::Basic;
 use ModelSEED::Store;
@@ -344,7 +344,7 @@ sub _cdmi {
 sub _clusterService {
 	my $self = shift;
 	if (!defined($self->{_clusterservice})) {
-		$self->{_clusterservice} = KBase::ClusterService->new();
+		$self->{_clusterservice} = Bio::KBase::ClusterService->new();
 	}
     return $self->{_clusterservice};
 }
@@ -482,12 +482,16 @@ sub _get_msobject {
 			my $linkid = $obj->fbaFormulation_uuid();
 			my $array = [split(/\//,$linkid)];
 			$obj->fbaFormulation($self->_get_msobject("FBA",$array->[0],$array->[1],$cache));
-			$obj->model($obj->fbaFormulation()->model());
+			$linkid = $obj->model_uuid();
+			$array = [split(/\//,$linkid)];
+			$obj->model($self->_get_msobject("Model",$array->[0],$array->[1],$cache));
 		} elsif ($type eq "GapGen") {
 			my $linkid = $obj->fbaFormulation_uuid();
 			my $array = [split(/\//,$linkid)];
 			$obj->fbaFormulation($self->_get_msobject("FBA",$array->[0],$array->[1],$cache));
-			$obj->model($obj->fbaFormulation()->model());
+			$linkid = $obj->model_uuid();
+			$array = [split(/\//,$linkid)];
+			$obj->model($self->_get_msobject("Model",$array->[0],$array->[1],$cache));
 		}
 		delete $cache->{$type}->{$ws}->{$id};
 	} else {
@@ -3132,7 +3136,7 @@ sub get_biochemistry
 		my $msg = "id_type ".$input->{id_type}." not found for biochemistry reactions!";
 		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'get_biochemistry');
 	}
-	my $aliases = $aliasset->aliasesByuuid();
+	$aliases = $aliasset->aliasesByuuid();
     foreach my $rxn_info (@{$biochem->_reactions}) {
         my $uuid;
         if ($rxn_info->{created} == 1) {
@@ -3535,7 +3539,6 @@ sub genome_to_fbamodel
 		mapping => "default"
     });
     #Determining model ID
-    my $genome = $input->{genome};
     if (!defined($input->{model})) {
     	$input->{model} = $self->_get_new_id($input->{genome}.".fbamdl.")
     }
@@ -4512,7 +4515,7 @@ sub import_phenotypes
 	if (length($msg) > 0 && $input->{ignore_errors} == 0) {
 		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'import_phenotypes');
 	} elsif (length($msg) > 0) {
-		$object->{importErrors} => $msg;
+		$object->{importErrors} = $msg;
 	}
     #Saving object to database
     my $objmeta = $self->_workspaceServices()->save_object({
@@ -4897,7 +4900,6 @@ sub export_phenotypeSimulationSet
     $self->_setContext($ctx,$input);
 	$input = $self->_validateargs($input,["phenotypeSimulationSet","workspace","format"],{});
 	my $obj = $self->_get_msobject("PhenotypeSimulationSet",$input->{workspace},$input->{phenotypeSimulationSet});
-	my $output;
 	if ($input->{format} eq "readable") {
 		$output = "Base media\tAdditional compounds\tGene KO\tGrowth\tSimulated growth\tSimulated growth fraction\tClass\n";
 		for (my $i=0; $i < @{$obj->{phenotypeSimulations}}; $i++) {
