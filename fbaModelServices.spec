@@ -2,42 +2,118 @@ module fbaModelServices {
     /*********************************************************************************
     Universal simple type definitions
    	*********************************************************************************/
+    /* indicates true or false values, false <= 0, true >=1 */
     typedef int bool;
+    
+    /* A string used as an ID for a workspace. Any string consisting of alphanumeric characters and "-" is acceptable  */
     typedef string workspace_id;
+	
+	/* A string indicating the "type" of an object stored in a workspace. Acceptable types are returned by the "get_types()" command in the workspace_service  */
 	typedef string object_type;
+	
+	/* ID of an object stored in the workspace. Any string consisting of alphanumeric characters and "-" is acceptable */
 	typedef string object_id;
+	
+	/* Login name of KBase useraccount to which permissions for workspaces are mapped */
 	typedef string username;
+	
+	/* Exact time for workspace operations. e.g. 2012-12-17T23:24:06 */
 	typedef string timestamp;
-    typedef string compound_id;
+	
+	/* An identifier for compounds in the KBase biochemistry database. e.g. cpd00001 */
+	typedef string compound_id;
+    
+    /* A string used to identify a particular biochemistry database object in KBase. e.g. "default" is the ID of the standard KBase biochemistry */
     typedef string biochemistry_id;
+    
+    /* A string identifier for a genome in KBase. e.g. "kb|g.0" is the ID for E. coli */
     typedef string genome_id;
+    
+    /* A string identifier for a contiguous piece of DNA in KBase, representing a chromosome or an assembled fragment */
     typedef string contig_id;
+    
+    /* A string specifying the type of genome features in KBase */
     typedef string feature_type;
+    
+    /* A string identifier used for compartments in models in KBase. Compartments could represet organelles in a eukaryotic model, or entire cells in a community model */
     typedef string modelcompartment_id;
+    
+    /* A string identifier used for compounds in models in KBase. */
     typedef string modelcompound_id;
+    
+    /* A string identifier used for a feature in a genome. */
     typedef string feature_id;
+    
+    /* A string identifier used for a reaction in a KBase biochemistry. */
     typedef string reaction_id;
+    
+    /* A string identifier used for a reaction in a model in KBase. */
     typedef string modelreaction_id;
+    
+    /* A string identifier used for a biomass reaction in a KBase model. */
     typedef string biomass_id;
+    
+    /* A string identifier used for a media condition in the KBase database. */
     typedef string media_id;
+    
+    /* A string identifier used for a flux balance analysis study in KBase. */
     typedef string fba_id;
+    
+    /* A string identifier for a gap generation study in KBase. */
     typedef string gapgen_id;
+    
+    /* A string identifier for a gap filling study in KBase. */
     typedef string gapfill_id;
+    
+    /* A string identifier for a solution from a gap generation study in KBase. */
+    typedef string gapgensolution_id;
+    
+    /* A string identifier for a solution from a gap filling study in KBase. */
+    typedef string gapfillsolution_id;
+    
+    /* A string identifier for a metabolic model in KBase. */
     typedef string fbamodel_id;
-    typedef string biochemistry_id;
+    
+    /* A string identifier for a Mapping object in KBase. */
     typedef string mapping_id;
-    typedef string media_id;
-    typedef string probabilisticAnnotation_id;
+    
+    /* A string identifier for a regulatory model in KBase. */
     typedef string regmodel_id;
+    
+    /* A string identifier for a compartment in KBase. */
     typedef string compartment_id;
+    
+    /* A string identifier for an expression dataset in KBase. */
     typedef string expression_id;
+    
+    /* A string identifier used for a set of phenotype data loaded into KBase. */
     typedef string phenotypeSet_id;
+    
+    /* A permanent reference to an object in a workspace. */
     typedef string workspace_ref;
+    
+    /* A string identifier used for a probabilistic annotation in KBase. */
     typedef string probanno_id;
+    
     /*********************************************************************************
     Object type definition
    	*********************************************************************************/
+    /* Meta data associated with an object stored in a workspace.
+	
+		object_id id - ID of the object assigned by the user or retreived from the IDserver (e.g. kb|g.0)
+		object_type type - type of the object (e.g. Genome)
+		timestamp moddate - date when the object was modified by the user (e.g. 2012-12-17T23:24:06)
+		int instance - instance of the object, which is equal to the number of times the user has overwritten the object
+		timestamp date_created - time at which the alignment was built/loaded in seconds since the epoch
+		string command - name of the command last used to modify or create the object
+		username lastmodifier - name of the user who last modified the object
+		username owner - name of the user who owns (who created) this object
+		workspace_id workspace - ID of the workspace in which the object is currently stored
+		workspace_ref ref - a 36 character ID that provides permanent undeniable access to this specific instance of this object
+	
+	*/
     typedef tuple<object_id id,object_type type,timestamp moddate,int instance,string command,username lastmodifier,username owner,workspace_id workspace,workspace_ref ref> object_metadata;
+    
     /*********************************************************************************
     Probabilistic Annotation type definition
    	*********************************************************************************/
@@ -89,6 +165,7 @@ module fbaModelServices {
 		list<contig> contigs;
 		list<feature> features;
     } GenomeObject;
+    
     /*********************************************************************************
     Biochemistry type definition
    	*********************************************************************************/
@@ -129,7 +206,8 @@ module fbaModelServices {
 		string reversibility;
 		float deltaG;
 		float deltaGErr;
-		string equation;	
+		string equation;
+		string definition;	
     } Reaction;
     /*********************************************************************************
     FBAModel type definition
@@ -155,15 +233,17 @@ module fbaModelServices {
 		string name;
 		string direction;
 		string equation;
+		string definition;
 		list<feature_id> features;
 		modelcompartment_id compartment;
     } ModelReaction;
     
-    typedef tuple<modelcompound_id modelcompound,float coefficient> BiomassCompound;
+    typedef tuple<modelcompound_id modelcompound,float coefficient,string name> BiomassCompound;
     
     typedef structure {
 		biomass_id id;
 		string name;
+		string definition;
 		list<BiomassCompound> biomass_compounds;
     } ModelBiomass;
     
@@ -199,9 +279,9 @@ module fbaModelServices {
     Flux Balance Analysis type definition
    	*********************************************************************************/
     typedef tuple<feature_id feature,float growthFraction,float growth,bool isEssential> GeneAssertion;
-    typedef tuple<modelcompound_id compound,float value,float upperBound,float lowerBound,float max,float min,string type> CompoundFlux;
-    typedef tuple<modelreaction_id reaction,float value,float upperBound,float lowerBound,float max,float min,string type> ReactionFlux;
-    typedef tuple<float maximumProduction,modelcompound_id modelcompound> MetaboliteProduction;
+    typedef tuple<modelcompound_id compound,float value,float upperBound,float lowerBound,float max,float min,string type,string name> CompoundFlux;
+    typedef tuple<modelreaction_id reaction,float value,float upperBound,float lowerBound,float max,float min,string type,string definition> ReactionFlux;
+    typedef tuple<float maximumProduction,modelcompound_id modelcompound,string name> MetaboliteProduction;
 
     typedef string compound_id;
 	    typedef structure {
@@ -215,6 +295,7 @@ module fbaModelServices {
 	
 	typedef structure {
 		media_id media;
+		list<compound_id> additionalcpds;
 		workspace_id media_workspace;
 		float objfraction;
 		bool allreversible;
@@ -271,16 +352,19 @@ module fbaModelServices {
 		list<reaction_id> blacklistedrxns;
 		list<reaction_id> gauranteedrxns;
 		list<compartment_id> allowedcmps;
-		probabilisticAnnotation_id probabilisticAnnotation;
+		probanno_id probabilisticAnnotation;
 		workspace_id probabilisticAnnotation_workspace;
     } GapfillingFormulation;
     
-    typedef tuple<reaction_id reaction,string direction> reactionAddition;
+    typedef tuple<reaction_id reaction,string direction,string compartment_id,string equation,string definition> reactionAddition;
+    typedef tuple<compound_id compound,string name> biomassRemoval;
+    typedef tuple<compound_id compound,string name> mediaAddition;
     
     typedef structure {
+    	gapfillsolution_id id;
         float objective;
-		list<modelcompound_id> biomassRemovals;
-		list<compound_id> mediaAdditions;
+		list<biomassRemoval> biomassRemovals;
+		list<mediaAddition> mediaAdditions;
 		list<reactionAddition> reactionAdditions;
     } GapFillSolution;
     
@@ -307,12 +391,15 @@ module fbaModelServices {
 		bool nopathwayhyp;
     } GapgenFormulation;
     
-    typedef tuple<modelreaction_id reaction,string direction> reactionRemoval;
+    typedef tuple<modelreaction_id reaction,string direction,string equation,string definition> reactionRemoval;
+    typedef tuple<compound_id compound,string name> biomassAddition;
+    typedef tuple<compound_id compound,string name> mediaRemoval;
     
     typedef structure {
+        gapgensolution_id id;
         float objective;
-		list<compound_id> biomassAdditions;
-		list<compound_id> mediaRemovals;
+		list<biomassAddition> biomassAdditions;
+		list<mediaRemoval> mediaRemovals;
 		list<reactionRemoval> reactionRemovals;
     } GapgenSolution;
     
@@ -442,6 +529,21 @@ module fbaModelServices {
     */
     funcdef genome_to_workspace(genome_to_workspace_params input) returns (object_metadata genomeMeta);
     
+    typedef tuple<string foreign_id,feature_id feature> translation; 
+    
+    typedef structure {
+		genome_id genome;
+		workspace_id workspace;
+		list<translation> translations;
+		string id_type;
+		string auth;
+		bool overwrite;
+    } add_feature_translation_params;
+    /*
+        Adds a new set of alternative feature IDs to the specified genome typed object
+    */
+    funcdef add_feature_translation(add_feature_translation_params input) returns (object_metadata genomeMeta);
+    
     /*
         A set of paramters for the genome_to_fbamodel method. This is a mapping
         where the keys in the map are named 'in_genome', 'in_workspace', 'out_model',
@@ -467,6 +569,7 @@ module fbaModelServices {
 		probanno_id probanno;
 		workspace_id probanno_workspace;
 		float probannoThreshold;
+		bool probannoOnly;
 		fbamodel_id model;
 		workspace_id workspace;
 		string auth;
@@ -624,6 +727,21 @@ module fbaModelServices {
         Export a PhenotypeSimulationSet for viewing
     */
     funcdef export_phenotypeSimulationSet (export_phenotypeSimulationSet_params input) returns (string output);
+    
+    typedef structure {
+		fbamodel_id model;
+		workspace_id model_workspace;
+		list<gapfillsolution_id> gapfillSolutions;
+		list<gapgensolution_id> gapgenSolutions;
+		fbamodel_id out_model;
+		workspace_id workspace;
+		string auth;
+		bool overwrite;
+    } integrate_reconciliation_solutions_params;
+    /*
+        Integrates the specified gapfill and gapgen solutions into the specified model
+    */
+    funcdef integrate_reconciliation_solutions(integrate_reconciliation_solutions_params input) returns (object_metadata modelMeta);
     
     /*********************************************************************************
     Code relating to queuing long running jobs

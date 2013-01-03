@@ -239,6 +239,26 @@ class fbaModelServices:
         else:
             raise ServerError('Unknown', 0, 'An unknown server error occurred')
 
+    def add_feature_translation(self, input):
+
+        arg_hash = { 'method': 'fbaModelServices.add_feature_translation',
+                     'params': [input],
+                     'version': '1.1'
+                     }
+
+        body = json.dumps(arg_hash)
+        ret = urllib2.urlopen(self.url, body, timeout = self.timeout)
+        if ret.code != httplib.OK:
+            raise URLError('Received bad response code from server:' + ret.code)
+        resp = json.loads(ret.read())
+
+        if 'result' in resp:
+            return resp['result'][0]
+        elif 'error' in resp:
+            raise ServerError(**resp['error'])
+        else:
+            raise ServerError('Unknown', 0, 'An unknown server error occurred')
+
     def genome_to_fbamodel(self, input):
 
         arg_hash = { 'method': 'fbaModelServices.genome_to_fbamodel',
@@ -402,6 +422,26 @@ class fbaModelServices:
     def export_phenotypeSimulationSet(self, input):
 
         arg_hash = { 'method': 'fbaModelServices.export_phenotypeSimulationSet',
+                     'params': [input],
+                     'version': '1.1'
+                     }
+
+        body = json.dumps(arg_hash)
+        ret = urllib2.urlopen(self.url, body, timeout = self.timeout)
+        if ret.code != httplib.OK:
+            raise URLError('Received bad response code from server:' + ret.code)
+        resp = json.loads(ret.read())
+
+        if 'result' in resp:
+            return resp['result'][0]
+        elif 'error' in resp:
+            raise ServerError(**resp['error'])
+        else:
+            raise ServerError('Unknown', 0, 'An unknown server error occurred')
+
+    def integrate_reconciliation_solutions(self, input):
+
+        arg_hash = { 'method': 'fbaModelServices.integrate_reconciliation_solutions',
                      'params': [input],
                      'version': '1.1'
                      }

@@ -71,6 +71,7 @@ $params->{formulation} = {
 	bounds => [],
 	constraints => [],
 	uptakelim => {},
+	additionalcpds => [],
 	objectiveTerms => []
 };
 foreach my $key (keys(%{$fbaTranslation})) {

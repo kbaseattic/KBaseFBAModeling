@@ -9,38 +9,38 @@ use warnings;
 use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
 use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
-my $primaryArgs = ["Genome"];
-my $servercommand = "genome_to_fbamodel";
-my $script = "kbfba-buildfbamodel";
+my $primaryArgs = ["Genome ID","Filename","ID type"];
+my $servercommand = "add_feature_translation";
+my $script = "kbfba-addaliases";
 my $translation = {
-	Genome => "genome",
-	genomews => "genome_workspace",
-	probanno => "probanno",
-	probannows => "probanno_workspace",
-	model => "model",
+	"Genome ID" => "genome",
+	"ID type" => "id_type",
 	workspace => "workspace",
 	auth => "auth",
 	overwrite => "overwrite",
-	probannoonly => "probannoOnly"
 };
 #Defining usage and options
 my $specs = [
-    [ 'model|m:s', 'Name to be provided for output model' ],
-    [ 'probanno|p:s', 'ID of probabilistic annotation object to use' ],
-    [ 'threshold|t:s', 'Minimum probability of annotations to be used'],
-    [ 'probannoonly|r:s', 'Only use probabilistic annotations for model reconstruction'],
     [ 'workspace|w:s', 'Reference default workspace', { "default" => workspace() } ],
-    [ 'probannows:s', 'Workspace of probabilistic annotation object' ],
-    [ 'genomews:s', 'Workspace where genome object is located' ],
     [ 'overwrite|o', 'Overwrite any existing model with same name' ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
+$params->{translations} = [];
+open(my $fh, "<", $opt->{Filename}) || return;
+while (my $line = <$fh>) {
+	chomp($line);
+	my $array = [split(/\t/,$line)];
+	if (defined($array->[1])) {
+		push(@{$params->{translations}},$array);
+	}
+}
+close($fh);
 #Calling the server
 my $output = runFBACommand($params,$servercommand,$opt);
 #Checking output and report results
 if (!defined($output)) {
-	print "Model generation failed!\n";
+	print "Alias addition failed!\n";
 } else {
-	print "Model successfully generated in workspace:\n";
+	print "Additional aliases successfully integrated:\n";
 	printObjectMeta($output);
 }

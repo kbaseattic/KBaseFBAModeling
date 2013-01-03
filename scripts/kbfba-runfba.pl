@@ -38,13 +38,15 @@ my $fbaTranslation = {
 	simplethermo => "simplethermoconst",
 	thermoconst => "thermoconst",
 	nothermoerror => "nothermoerror",
-	minthermoerror => "minthermoerror"
+	minthermoerror => "minthermoerror",
+	addlcpd => "additionalcpds"
 };
 #Defining usage and options
 my $specs = [
     [ 'fbaid:s', 'ID for FBA in workspace' ],
     [ 'media|m:s', 'Media formulation for FBA' ],
     [ 'mediaws:s', 'Workspace with media formulation' ],
+    [ 'addlcpd|c:s@', 'Additional compounds (; delimiter)' ],
     [ 'maximize:s', 'Maximize objective', { "default" => 1 } ],
 	[ 'objterms:s@', 'Objective terms' ],
 	[ 'geneko:s@', 'List of gene KO (; delimiter)' ],
@@ -76,6 +78,7 @@ $params->{formulation} = {
 	rxnko => [],
 	bounds => [],
 	constraints => [],
+	additionalcpds => [],
 	uptakelim => {}
 };
 foreach my $key (keys(%{$fbaTranslation})) {
@@ -102,6 +105,11 @@ if (defined($opt->{geneko})) {
 if (defined($opt->{rxnko})) {
 	foreach my $rxn (@{$opt->{rxnko}}) {
 		push(@{$params->{formulation}->{rxnko}},split(/;/,$rxn));
+	}
+}
+if (defined($opt->{additionalcpds})) {
+	foreach my $cpd (@{$opt->{additionalcpds}}) {
+		push(@{$params->{formulation}->{additionalcpds}},split(/;/,$cpd));
 	}
 }
 if (defined($opt->{bounds})) {

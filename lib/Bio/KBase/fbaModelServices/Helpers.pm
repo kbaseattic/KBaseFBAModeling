@@ -7,8 +7,9 @@ use Text::Table;
 use Bio::KBase::fbaModelServices::Client;
 use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
 use parent qw(Exporter);
-our @EXPORT_OK = qw( fbaURL get_fba_client printJobData runFBACommand universalFBAScriptCode );
+our @EXPORT_OK = qw( fbaURL get_fba_client printJobData runFBACommand universalFBAScriptCode fbaTranslation );
 our $defaultURL = "http://kbase.us/services/fbaServices/";
+my $CurrentURL;
 
 sub get_fba_client {
     return Bio::KBase::fbaModelServices::Client->new(fbaURL());
@@ -16,25 +17,37 @@ sub get_fba_client {
 
 sub fbaURL {
     my $set = shift;
-    my $url;
-    my $filename = "$ENV{HOME}/.kbase_fbaURL";
-    if ( defined $set ) {
-        if ($set eq "default") {
+    if (defined($set)) {
+    	if ($set eq "default") {
         	$set = $defaultURL;
         }
-       	open(my $fh, ">", $filename) || return;
-       	print $fh $set;
-       	close($fh);
-       	$url = $set;
-    } elsif( -e $filename ) {
-        open(my $fh, "<", $filename) || return;
-        $url = <$fh>;
-        chomp $url;
-        close($fh);
-    } else {
-        $url = $defaultURL;	
+    	$CurrentURL = $set;
+    	if (!defined($ENV{KB_NO_FILE_ENVIRONMENT})) {
+	    	my $filename = "$ENV{HOME}/.kbase_fbaURL";
+	    	open(my $fh, ">", $filename) || return;
+		    print $fh $CurrentURL;
+		    close($fh);
+    	} elsif ($ENV{KB_FBAURL}) {
+    		$ENV{KB_FBAURL} = $CurrentURL;
+    	}
+    } elsif (!defined($CurrentURL)) {
+    	if (!defined($ENV{KB_NO_FILE_ENVIRONMENT})) {
+	    	my $filename = "$ENV{HOME}/.kbase_fbaURL";
+	    	if( -e $filename ) {
+		   		open(my $fh, "<", $filename) || return;
+		        $CurrentURL = <$fh>;
+		        chomp $CurrentURL;
+		        close($fh);
+	    	} else {
+	    		$CurrentURL = $defaultURL;
+	    	}
+    	} elsif (defined($ENV{KB_FBAURL})) {
+	    	$CurrentURL = $ENV{KB_FBAURL};
+	    } else {
+			$CurrentURL = $defaultURL;
+    	} 
     }
-    return $url;
+    return $CurrentURL;
 }
 
 sub printJobData {

@@ -91,11 +91,13 @@ biochemistry_id is a string
 ModelBiomass is a reference to a hash where the following keys are defined:
 	id has a value which is a biomass_id
 	name has a value which is a string
+	definition has a value which is a string
 	biomass_compounds has a value which is a reference to a list where each element is a BiomassCompound
 biomass_id is a string
-BiomassCompound is a reference to a list containing 2 items:
+BiomassCompound is a reference to a list containing 3 items:
 	0: a modelcompound_id
 	1: a float
+	2: a string
 modelcompound_id is a string
 ModelCompartment is a reference to a hash where the following keys are defined:
 	id has a value which is a modelcompartment_id
@@ -110,6 +112,7 @@ ModelReaction is a reference to a hash where the following keys are defined:
 	name has a value which is a string
 	direction has a value which is a string
 	equation has a value which is a string
+	definition has a value which is a string
 	features has a value which is a reference to a list where each element is a feature_id
 	compartment has a value which is a modelcompartment_id
 modelreaction_id is a string
@@ -190,11 +193,13 @@ biochemistry_id is a string
 ModelBiomass is a reference to a hash where the following keys are defined:
 	id has a value which is a biomass_id
 	name has a value which is a string
+	definition has a value which is a string
 	biomass_compounds has a value which is a reference to a list where each element is a BiomassCompound
 biomass_id is a string
-BiomassCompound is a reference to a list containing 2 items:
+BiomassCompound is a reference to a list containing 3 items:
 	0: a modelcompound_id
 	1: a float
+	2: a string
 modelcompound_id is a string
 ModelCompartment is a reference to a hash where the following keys are defined:
 	id has a value which is a modelcompartment_id
@@ -209,6 +214,7 @@ ModelReaction is a reference to a hash where the following keys are defined:
 	name has a value which is a string
 	direction has a value which is a string
 	equation has a value which is a string
+	definition has a value which is a string
 	features has a value which is a reference to a list where each element is a feature_id
 	compartment has a value which is a modelcompartment_id
 modelreaction_id is a string
@@ -341,6 +347,7 @@ fbamodel_id is a string
 bool is an int
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
+	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -359,6 +366,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	nothermoerror has a value which is a bool
 	minthermoerror has a value which is a bool
 media_id is a string
+compound_id is a string
 term is a reference to a list containing 3 items:
 	0: a float
 	1: a string
@@ -378,12 +386,12 @@ constraint is a reference to a list containing 4 items:
 MinimalMediaPrediction is a reference to a hash where the following keys are defined:
 	optionalNutrients has a value which is a reference to a list where each element is a compound_id
 	essentialNutrients has a value which is a reference to a list where each element is a compound_id
-compound_id is a string
-MetaboliteProduction is a reference to a list containing 2 items:
+MetaboliteProduction is a reference to a list containing 3 items:
 	0: a float
 	1: a modelcompound_id
+	2: a string
 modelcompound_id is a string
-ReactionFlux is a reference to a list containing 7 items:
+ReactionFlux is a reference to a list containing 8 items:
 	0: a modelreaction_id
 	1: a float
 	2: a float
@@ -391,8 +399,9 @@ ReactionFlux is a reference to a list containing 7 items:
 	4: a float
 	5: a float
 	6: a string
+	7: a string
 modelreaction_id is a string
-CompoundFlux is a reference to a list containing 7 items:
+CompoundFlux is a reference to a list containing 8 items:
 	0: a modelcompound_id
 	1: a float
 	2: a float
@@ -400,6 +409,7 @@ CompoundFlux is a reference to a list containing 7 items:
 	4: a float
 	5: a float
 	6: a string
+	7: a string
 GeneAssertion is a reference to a list containing 4 items:
 	0: a feature_id
 	1: a float
@@ -438,6 +448,7 @@ fbamodel_id is a string
 bool is an int
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
+	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -456,6 +467,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	nothermoerror has a value which is a bool
 	minthermoerror has a value which is a bool
 media_id is a string
+compound_id is a string
 term is a reference to a list containing 3 items:
 	0: a float
 	1: a string
@@ -475,12 +487,12 @@ constraint is a reference to a list containing 4 items:
 MinimalMediaPrediction is a reference to a hash where the following keys are defined:
 	optionalNutrients has a value which is a reference to a list where each element is a compound_id
 	essentialNutrients has a value which is a reference to a list where each element is a compound_id
-compound_id is a string
-MetaboliteProduction is a reference to a list containing 2 items:
+MetaboliteProduction is a reference to a list containing 3 items:
 	0: a float
 	1: a modelcompound_id
+	2: a string
 modelcompound_id is a string
-ReactionFlux is a reference to a list containing 7 items:
+ReactionFlux is a reference to a list containing 8 items:
 	0: a modelreaction_id
 	1: a float
 	2: a float
@@ -488,8 +500,9 @@ ReactionFlux is a reference to a list containing 7 items:
 	4: a float
 	5: a float
 	6: a string
+	7: a string
 modelreaction_id is a string
-CompoundFlux is a reference to a list containing 7 items:
+CompoundFlux is a reference to a list containing 8 items:
 	0: a modelcompound_id
 	1: a float
 	2: a float
@@ -497,6 +510,7 @@ CompoundFlux is a reference to a list containing 7 items:
 	4: a float
 	5: a float
 	6: a string
+	7: a string
 GeneAssertion is a reference to a list containing 4 items:
 	0: a feature_id
 	1: a float
@@ -610,10 +624,11 @@ GapfillingFormulation is a reference to a hash where the following keys are defi
 	blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
 	gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
 	allowedcmps has a value which is a reference to a list where each element is a compartment_id
-	probabilisticAnnotation has a value which is a probabilisticAnnotation_id
+	probabilisticAnnotation has a value which is a probanno_id
 	probabilisticAnnotation_workspace has a value which is a workspace_id
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
+	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -632,6 +647,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	nothermoerror has a value which is a bool
 	minthermoerror has a value which is a bool
 media_id is a string
+compound_id is a string
 term is a reference to a list containing 3 items:
 	0: a float
 	1: a string
@@ -649,17 +665,26 @@ constraint is a reference to a list containing 4 items:
 	2: a reference to a list where each element is a term
 	3: a string
 compartment_id is a string
-probabilisticAnnotation_id is a string
+probanno_id is a string
 GapFillSolution is a reference to a hash where the following keys are defined:
+	id has a value which is a gapfillsolution_id
 	objective has a value which is a float
-	biomassRemovals has a value which is a reference to a list where each element is a modelcompound_id
-	mediaAdditions has a value which is a reference to a list where each element is a compound_id
+	biomassRemovals has a value which is a reference to a list where each element is a biomassRemoval
+	mediaAdditions has a value which is a reference to a list where each element is a mediaAddition
 	reactionAdditions has a value which is a reference to a list where each element is a reactionAddition
-modelcompound_id is a string
-compound_id is a string
-reactionAddition is a reference to a list containing 2 items:
+gapfillsolution_id is a string
+biomassRemoval is a reference to a list containing 2 items:
+	0: a compound_id
+	1: a string
+mediaAddition is a reference to a list containing 2 items:
+	0: a compound_id
+	1: a string
+reactionAddition is a reference to a list containing 5 items:
 	0: a reaction_id
 	1: a string
+	2: a string
+	3: a string
+	4: a string
 
 </pre>
 
@@ -706,10 +731,11 @@ GapfillingFormulation is a reference to a hash where the following keys are defi
 	blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
 	gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
 	allowedcmps has a value which is a reference to a list where each element is a compartment_id
-	probabilisticAnnotation has a value which is a probabilisticAnnotation_id
+	probabilisticAnnotation has a value which is a probanno_id
 	probabilisticAnnotation_workspace has a value which is a workspace_id
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
+	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -728,6 +754,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	nothermoerror has a value which is a bool
 	minthermoerror has a value which is a bool
 media_id is a string
+compound_id is a string
 term is a reference to a list containing 3 items:
 	0: a float
 	1: a string
@@ -745,17 +772,26 @@ constraint is a reference to a list containing 4 items:
 	2: a reference to a list where each element is a term
 	3: a string
 compartment_id is a string
-probabilisticAnnotation_id is a string
+probanno_id is a string
 GapFillSolution is a reference to a hash where the following keys are defined:
+	id has a value which is a gapfillsolution_id
 	objective has a value which is a float
-	biomassRemovals has a value which is a reference to a list where each element is a modelcompound_id
-	mediaAdditions has a value which is a reference to a list where each element is a compound_id
+	biomassRemovals has a value which is a reference to a list where each element is a biomassRemoval
+	mediaAdditions has a value which is a reference to a list where each element is a mediaAddition
 	reactionAdditions has a value which is a reference to a list where each element is a reactionAddition
-modelcompound_id is a string
-compound_id is a string
-reactionAddition is a reference to a list containing 2 items:
+gapfillsolution_id is a string
+biomassRemoval is a reference to a list containing 2 items:
+	0: a compound_id
+	1: a string
+mediaAddition is a reference to a list containing 2 items:
+	0: a compound_id
+	1: a string
+reactionAddition is a reference to a list containing 5 items:
 	0: a reaction_id
 	1: a string
+	2: a string
+	3: a string
+	4: a string
 
 
 =end text
@@ -855,6 +891,7 @@ GapgenFormulation is a reference to a hash where the following keys are defined:
 	nopathwayhyp has a value which is a bool
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
+	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -873,6 +910,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	nothermoerror has a value which is a bool
 	minthermoerror has a value which is a bool
 media_id is a string
+compound_id is a string
 term is a reference to a list containing 3 items:
 	0: a float
 	1: a string
@@ -890,14 +928,23 @@ constraint is a reference to a list containing 4 items:
 	2: a reference to a list where each element is a term
 	3: a string
 GapgenSolution is a reference to a hash where the following keys are defined:
+	id has a value which is a gapgensolution_id
 	objective has a value which is a float
-	biomassAdditions has a value which is a reference to a list where each element is a compound_id
-	mediaRemovals has a value which is a reference to a list where each element is a compound_id
+	biomassAdditions has a value which is a reference to a list where each element is a biomassAddition
+	mediaRemovals has a value which is a reference to a list where each element is a mediaRemoval
 	reactionRemovals has a value which is a reference to a list where each element is a reactionRemoval
-compound_id is a string
-reactionRemoval is a reference to a list containing 2 items:
+gapgensolution_id is a string
+biomassAddition is a reference to a list containing 2 items:
+	0: a compound_id
+	1: a string
+mediaRemoval is a reference to a list containing 2 items:
+	0: a compound_id
+	1: a string
+reactionRemoval is a reference to a list containing 4 items:
 	0: a modelreaction_id
 	1: a string
+	2: a string
+	3: a string
 modelreaction_id is a string
 
 </pre>
@@ -936,6 +983,7 @@ GapgenFormulation is a reference to a hash where the following keys are defined:
 	nopathwayhyp has a value which is a bool
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
+	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -954,6 +1002,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	nothermoerror has a value which is a bool
 	minthermoerror has a value which is a bool
 media_id is a string
+compound_id is a string
 term is a reference to a list containing 3 items:
 	0: a float
 	1: a string
@@ -971,14 +1020,23 @@ constraint is a reference to a list containing 4 items:
 	2: a reference to a list where each element is a term
 	3: a string
 GapgenSolution is a reference to a hash where the following keys are defined:
+	id has a value which is a gapgensolution_id
 	objective has a value which is a float
-	biomassAdditions has a value which is a reference to a list where each element is a compound_id
-	mediaRemovals has a value which is a reference to a list where each element is a compound_id
+	biomassAdditions has a value which is a reference to a list where each element is a biomassAddition
+	mediaRemovals has a value which is a reference to a list where each element is a mediaRemoval
 	reactionRemovals has a value which is a reference to a list where each element is a reactionRemoval
-compound_id is a string
-reactionRemoval is a reference to a list containing 2 items:
+gapgensolution_id is a string
+biomassAddition is a reference to a list containing 2 items:
+	0: a compound_id
+	1: a string
+mediaRemoval is a reference to a list containing 2 items:
+	0: a compound_id
+	1: a string
+reactionRemoval is a reference to a list containing 4 items:
 	0: a modelreaction_id
 	1: a string
+	2: a string
+	3: a string
 modelreaction_id is a string
 
 
@@ -1066,6 +1124,7 @@ Reaction is a reference to a hash where the following keys are defined:
 	deltaG has a value which is a float
 	deltaGErr has a value which is a float
 	equation has a value which is a string
+	definition has a value which is a string
 
 </pre>
 
@@ -1090,6 +1149,7 @@ Reaction is a reference to a hash where the following keys are defined:
 	deltaG has a value which is a float
 	deltaGErr has a value which is a float
 	equation has a value which is a string
+	definition has a value which is a string
 
 
 =end text
@@ -1732,6 +1792,144 @@ sub genome_to_workspace
 
 
 
+=head2 add_feature_translation
+
+  $genomeMeta = $obj->add_feature_translation($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is an add_feature_translation_params
+$genomeMeta is an object_metadata
+add_feature_translation_params is a reference to a hash where the following keys are defined:
+	genome has a value which is a genome_id
+	workspace has a value which is a workspace_id
+	translations has a value which is a reference to a list where each element is a translation
+	id_type has a value which is a string
+	auth has a value which is a string
+	overwrite has a value which is a bool
+genome_id is a string
+workspace_id is a string
+translation is a reference to a list containing 2 items:
+	0: a string
+	1: a feature_id
+feature_id is a string
+bool is an int
+object_metadata is a reference to a list containing 9 items:
+	0: an object_id
+	1: an object_type
+	2: a timestamp
+	3: an int
+	4: a string
+	5: a username
+	6: a username
+	7: a workspace_id
+	8: a workspace_ref
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is an add_feature_translation_params
+$genomeMeta is an object_metadata
+add_feature_translation_params is a reference to a hash where the following keys are defined:
+	genome has a value which is a genome_id
+	workspace has a value which is a workspace_id
+	translations has a value which is a reference to a list where each element is a translation
+	id_type has a value which is a string
+	auth has a value which is a string
+	overwrite has a value which is a bool
+genome_id is a string
+workspace_id is a string
+translation is a reference to a list containing 2 items:
+	0: a string
+	1: a feature_id
+feature_id is a string
+bool is an int
+object_metadata is a reference to a list containing 9 items:
+	0: an object_id
+	1: an object_type
+	2: a timestamp
+	3: an int
+	4: a string
+	5: a username
+	6: a username
+	7: a workspace_id
+	8: a workspace_ref
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+=item Description
+
+Adds a new set of alternative feature IDs to the specified genome typed object
+
+=back
+
+=cut
+
+sub add_feature_translation
+{
+    my($self, @args) = @_;
+
+# Authentication: none
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function add_feature_translation (received $n, expecting 1)");
+    }
+    {
+	my($input) = @args;
+
+	my @_bad_arguments;
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to add_feature_translation:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'add_feature_translation');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.add_feature_translation",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{code},
+					       method_name => 'add_feature_translation',
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method add_feature_translation",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'add_feature_translation',
+				       );
+    }
+}
+
+
+
 =head2 genome_to_fbamodel
 
   $modelMeta = $obj->genome_to_fbamodel($input)
@@ -1751,6 +1949,7 @@ genome_to_fbamodel_params is a reference to a hash where the following keys are 
 	probanno has a value which is a probanno_id
 	probanno_workspace has a value which is a workspace_id
 	probannoThreshold has a value which is a float
+	probanno_only has a value which is a bool
 	model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
 	auth has a value which is a string
@@ -1758,8 +1957,8 @@ genome_to_fbamodel_params is a reference to a hash where the following keys are 
 genome_id is a string
 workspace_id is a string
 probanno_id is a string
-fbamodel_id is a string
 bool is an int
+fbamodel_id is a string
 object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
@@ -1790,6 +1989,7 @@ genome_to_fbamodel_params is a reference to a hash where the following keys are 
 	probanno has a value which is a probanno_id
 	probanno_workspace has a value which is a workspace_id
 	probannoThreshold has a value which is a float
+	probanno_only has a value which is a bool
 	model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
 	auth has a value which is a string
@@ -1797,8 +1997,8 @@ genome_to_fbamodel_params is a reference to a hash where the following keys are 
 genome_id is a string
 workspace_id is a string
 probanno_id is a string
-fbamodel_id is a string
 bool is an int
+fbamodel_id is a string
 object_metadata is a reference to a list containing 9 items:
 	0: an object_id
 	1: an object_type
@@ -2234,6 +2434,7 @@ fbamodel_id is a string
 workspace_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
+	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -2252,6 +2453,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	nothermoerror has a value which is a bool
 	minthermoerror has a value which is a bool
 media_id is a string
+compound_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: a float
@@ -2312,6 +2514,7 @@ fbamodel_id is a string
 workspace_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
+	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -2330,6 +2533,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	nothermoerror has a value which is a bool
 	minthermoerror has a value which is a bool
 media_id is a string
+compound_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: a float
@@ -2696,6 +2900,7 @@ workspace_id is a string
 phenotypeSet_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
+	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -2714,6 +2919,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	nothermoerror has a value which is a bool
 	minthermoerror has a value which is a bool
 media_id is a string
+compound_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: a float
@@ -2772,6 +2978,7 @@ workspace_id is a string
 phenotypeSet_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
+	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -2790,6 +2997,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	nothermoerror has a value which is a bool
 	minthermoerror has a value which is a bool
 media_id is a string
+compound_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: a float
@@ -2975,6 +3183,144 @@ sub export_phenotypeSimulationSet
 
 
 
+=head2 integrate_reconciliation_solutions
+
+  $modelMeta = $obj->integrate_reconciliation_solutions($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is an integrate_reconciliation_solutions_params
+$modelMeta is an object_metadata
+integrate_reconciliation_solutions_params is a reference to a hash where the following keys are defined:
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
+	gapfillSolutions has a value which is a reference to a list where each element is a gapfillsolution_id
+	gapgenSolutions has a value which is a reference to a list where each element is a gapgensolution_id
+	out_model has a value which is a fbamodel_id
+	workspace has a value which is a workspace_id
+	auth has a value which is a string
+	overwrite has a value which is a bool
+fbamodel_id is a string
+workspace_id is a string
+gapfillsolution_id is a string
+gapgensolution_id is a string
+bool is an int
+object_metadata is a reference to a list containing 9 items:
+	0: an object_id
+	1: an object_type
+	2: a timestamp
+	3: an int
+	4: a string
+	5: a username
+	6: a username
+	7: a workspace_id
+	8: a workspace_ref
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is an integrate_reconciliation_solutions_params
+$modelMeta is an object_metadata
+integrate_reconciliation_solutions_params is a reference to a hash where the following keys are defined:
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
+	gapfillSolutions has a value which is a reference to a list where each element is a gapfillsolution_id
+	gapgenSolutions has a value which is a reference to a list where each element is a gapgensolution_id
+	out_model has a value which is a fbamodel_id
+	workspace has a value which is a workspace_id
+	auth has a value which is a string
+	overwrite has a value which is a bool
+fbamodel_id is a string
+workspace_id is a string
+gapfillsolution_id is a string
+gapgensolution_id is a string
+bool is an int
+object_metadata is a reference to a list containing 9 items:
+	0: an object_id
+	1: an object_type
+	2: a timestamp
+	3: an int
+	4: a string
+	5: a username
+	6: a username
+	7: a workspace_id
+	8: a workspace_ref
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+=item Description
+
+Integrates the specified gapfill and gapgen solutions into the specified model
+
+=back
+
+=cut
+
+sub integrate_reconciliation_solutions
+{
+    my($self, @args) = @_;
+
+# Authentication: none
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function integrate_reconciliation_solutions (received $n, expecting 1)");
+    }
+    {
+	my($input) = @args;
+
+	my @_bad_arguments;
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to integrate_reconciliation_solutions:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'integrate_reconciliation_solutions');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.integrate_reconciliation_solutions",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{code},
+					       method_name => 'integrate_reconciliation_solutions',
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method integrate_reconciliation_solutions",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'integrate_reconciliation_solutions',
+				       );
+    }
+}
+
+
+
 =head2 queue_runfba
 
   $output = $obj->queue_runfba($input)
@@ -3007,6 +3353,7 @@ fbamodel_id is a string
 workspace_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
+	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -3025,6 +3372,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	nothermoerror has a value which is a bool
 	minthermoerror has a value which is a bool
 media_id is a string
+compound_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: a float
@@ -3086,6 +3434,7 @@ fbamodel_id is a string
 workspace_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
+	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -3104,6 +3453,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	nothermoerror has a value which is a bool
 	minthermoerror has a value which is a bool
 media_id is a string
+compound_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: a float
@@ -3244,10 +3594,11 @@ GapfillingFormulation is a reference to a hash where the following keys are defi
 	blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
 	gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
 	allowedcmps has a value which is a reference to a list where each element is a compartment_id
-	probabilisticAnnotation has a value which is a probabilisticAnnotation_id
+	probabilisticAnnotation has a value which is a probanno_id
 	probabilisticAnnotation_workspace has a value which is a workspace_id
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
+	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -3266,6 +3617,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	nothermoerror has a value which is a bool
 	minthermoerror has a value which is a bool
 media_id is a string
+compound_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: a float
@@ -3284,7 +3636,7 @@ constraint is a reference to a list containing 4 items:
 	2: a reference to a list where each element is a term
 	3: a string
 compartment_id is a string
-probabilisticAnnotation_id is a string
+probanno_id is a string
 phenotypeSet_id is a string
 gapfill_id is a string
 object_metadata is a reference to a list containing 9 items:
@@ -3347,10 +3699,11 @@ GapfillingFormulation is a reference to a hash where the following keys are defi
 	blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
 	gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
 	allowedcmps has a value which is a reference to a list where each element is a compartment_id
-	probabilisticAnnotation has a value which is a probabilisticAnnotation_id
+	probabilisticAnnotation has a value which is a probanno_id
 	probabilisticAnnotation_workspace has a value which is a workspace_id
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
+	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -3369,6 +3722,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	nothermoerror has a value which is a bool
 	minthermoerror has a value which is a bool
 media_id is a string
+compound_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: a float
@@ -3387,7 +3741,7 @@ constraint is a reference to a list containing 4 items:
 	2: a reference to a list where each element is a term
 	3: a string
 compartment_id is a string
-probabilisticAnnotation_id is a string
+probanno_id is a string
 phenotypeSet_id is a string
 gapfill_id is a string
 object_metadata is a reference to a list containing 9 items:
@@ -3503,6 +3857,7 @@ GapgenFormulation is a reference to a hash where the following keys are defined:
 	nopathwayhyp has a value which is a bool
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
+	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -3521,6 +3876,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	nothermoerror has a value which is a bool
 	minthermoerror has a value which is a bool
 media_id is a string
+compound_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: a float
@@ -3591,6 +3947,7 @@ GapgenFormulation is a reference to a hash where the following keys are defined:
 	nopathwayhyp has a value which is a bool
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
+	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -3609,6 +3966,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	nothermoerror has a value which is a bool
 	minthermoerror has a value which is a bool
 media_id is a string
+compound_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: a float
@@ -3737,6 +4095,7 @@ fbamodel_id is a string
 workspace_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
+	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -3755,6 +4114,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	nothermoerror has a value which is a bool
 	minthermoerror has a value which is a bool
 media_id is a string
+compound_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: a float
@@ -3792,10 +4152,10 @@ GapfillingFormulation is a reference to a hash where the following keys are defi
 	blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
 	gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
 	allowedcmps has a value which is a reference to a list where each element is a compartment_id
-	probabilisticAnnotation has a value which is a probabilisticAnnotation_id
+	probabilisticAnnotation has a value which is a probanno_id
 	probabilisticAnnotation_workspace has a value which is a workspace_id
 compartment_id is a string
-probabilisticAnnotation_id is a string
+probanno_id is a string
 GapgenFormulation is a reference to a hash where the following keys are defined:
 	formulation has a value which is an FBAFormulation
 	refmedia has a value which is a media_id
@@ -3855,6 +4215,7 @@ fbamodel_id is a string
 workspace_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
+	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -3873,6 +4234,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	nothermoerror has a value which is a bool
 	minthermoerror has a value which is a bool
 media_id is a string
+compound_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: a float
@@ -3910,10 +4272,10 @@ GapfillingFormulation is a reference to a hash where the following keys are defi
 	blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
 	gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
 	allowedcmps has a value which is a reference to a list where each element is a compartment_id
-	probabilisticAnnotation has a value which is a probabilisticAnnotation_id
+	probabilisticAnnotation has a value which is a probanno_id
 	probabilisticAnnotation_workspace has a value which is a workspace_id
 compartment_id is a string
-probabilisticAnnotation_id is a string
+probanno_id is a string
 GapgenFormulation is a reference to a hash where the following keys are defined:
 	formulation has a value which is an FBAFormulation
 	refmedia has a value which is a media_id
@@ -4035,6 +4397,7 @@ fbamodel_id is a string
 workspace_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
+	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -4053,6 +4416,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	nothermoerror has a value which is a bool
 	minthermoerror has a value which is a bool
 media_id is a string
+compound_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: a float
@@ -4090,10 +4454,10 @@ GapfillingFormulation is a reference to a hash where the following keys are defi
 	blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
 	gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
 	allowedcmps has a value which is a reference to a list where each element is a compartment_id
-	probabilisticAnnotation has a value which is a probabilisticAnnotation_id
+	probabilisticAnnotation has a value which is a probanno_id
 	probabilisticAnnotation_workspace has a value which is a workspace_id
 compartment_id is a string
-probabilisticAnnotation_id is a string
+probanno_id is a string
 GapgenFormulation is a reference to a hash where the following keys are defined:
 	formulation has a value which is an FBAFormulation
 	refmedia has a value which is a media_id
@@ -4153,6 +4517,7 @@ fbamodel_id is a string
 workspace_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
+	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -4171,6 +4536,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	nothermoerror has a value which is a bool
 	minthermoerror has a value which is a bool
 media_id is a string
+compound_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: a float
@@ -4208,10 +4574,10 @@ GapfillingFormulation is a reference to a hash where the following keys are defi
 	blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
 	gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
 	allowedcmps has a value which is a reference to a list where each element is a compartment_id
-	probabilisticAnnotation has a value which is a probabilisticAnnotation_id
+	probabilisticAnnotation has a value which is a probanno_id
 	probabilisticAnnotation_workspace has a value which is a workspace_id
 compartment_id is a string
-probabilisticAnnotation_id is a string
+probanno_id is a string
 GapgenFormulation is a reference to a hash where the following keys are defined:
 	formulation has a value which is an FBAFormulation
 	refmedia has a value which is a media_id
@@ -4331,6 +4697,7 @@ fbamodel_id is a string
 workspace_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
+	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -4349,6 +4716,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	nothermoerror has a value which is a bool
 	minthermoerror has a value which is a bool
 media_id is a string
+compound_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: a float
@@ -4386,10 +4754,10 @@ GapfillingFormulation is a reference to a hash where the following keys are defi
 	blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
 	gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
 	allowedcmps has a value which is a reference to a list where each element is a compartment_id
-	probabilisticAnnotation has a value which is a probabilisticAnnotation_id
+	probabilisticAnnotation has a value which is a probanno_id
 	probabilisticAnnotation_workspace has a value which is a workspace_id
 compartment_id is a string
-probabilisticAnnotation_id is a string
+probanno_id is a string
 GapgenFormulation is a reference to a hash where the following keys are defined:
 	formulation has a value which is an FBAFormulation
 	refmedia has a value which is a media_id
@@ -4447,6 +4815,7 @@ fbamodel_id is a string
 workspace_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
+	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -4465,6 +4834,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	nothermoerror has a value which is a bool
 	minthermoerror has a value which is a bool
 media_id is a string
+compound_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: a float
@@ -4502,10 +4872,10 @@ GapfillingFormulation is a reference to a hash where the following keys are defi
 	blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
 	gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
 	allowedcmps has a value which is a reference to a list where each element is a compartment_id
-	probabilisticAnnotation has a value which is a probabilisticAnnotation_id
+	probabilisticAnnotation has a value which is a probanno_id
 	probabilisticAnnotation_workspace has a value which is a workspace_id
 compartment_id is a string
-probabilisticAnnotation_id is a string
+probanno_id is a string
 GapgenFormulation is a reference to a hash where the following keys are defined:
 	formulation has a value which is an FBAFormulation
 	refmedia has a value which is a media_id
@@ -5079,6 +5449,11 @@ an int
 
 
 
+=item Description
+
+A string used as an ID for a workspace. Any string consisting of alphanumeric characters and "-" is acceptable
+
+
 =item Definition
 
 =begin html
@@ -5103,6 +5478,11 @@ a string
 
 =over 4
 
+
+
+=item Description
+
+A string indicating the "type" of an object stored in a workspace. Acceptable types are returned by the "get_types()" command in the workspace_service
 
 
 =item Definition
@@ -5131,6 +5511,11 @@ a string
 
 
 
+=item Description
+
+ID of an object stored in the workspace. Any string consisting of alphanumeric characters and "-" is acceptable
+
+
 =item Definition
 
 =begin html
@@ -5155,6 +5540,11 @@ a string
 
 =over 4
 
+
+
+=item Description
+
+Login name of KBase useraccount to which permissions for workspaces are mapped
 
 
 =item Definition
@@ -5183,6 +5573,11 @@ a string
 
 
 
+=item Description
+
+Exact time for workspace operations. e.g. 2012-12-17T23:24:06
+
+
 =item Definition
 
 =begin html
@@ -5209,6 +5604,11 @@ a string
 
 
 
+=item Description
+
+An identifier for compounds in the KBase biochemistry database. e.g. cpd00001
+
+
 =item Definition
 
 =begin html
@@ -5233,6 +5633,11 @@ a string
 
 =over 4
 
+
+
+=item Description
+
+A string used to identify a particular biochemistry database object in KBase. e.g. "default" is the ID of the standard KBase biochemistry
 
 
 =item Definition
@@ -5261,6 +5666,11 @@ a string
 
 
 
+=item Description
+
+A string identifier for a genome in KBase. e.g. "kb|g.0" is the ID for E. coli
+
+
 =item Definition
 
 =begin html
@@ -5285,6 +5695,11 @@ a string
 
 =over 4
 
+
+
+=item Description
+
+A string identifier for a contiguous piece of DNA in KBase, representing a chromosome or an assembled fragment
 
 
 =item Definition
@@ -5313,6 +5728,11 @@ a string
 
 
 
+=item Description
+
+A string specifying the type of genome features in KBase
+
+
 =item Definition
 
 =begin html
@@ -5337,6 +5757,11 @@ a string
 
 =over 4
 
+
+
+=item Description
+
+A string identifier used for compartments in models in KBase. Compartments could represet organelles in a eukaryotic model, or entire cells in a community model
 
 
 =item Definition
@@ -5365,6 +5790,11 @@ a string
 
 
 
+=item Description
+
+A string identifier used for compounds in models in KBase.
+
+
 =item Definition
 
 =begin html
@@ -5389,6 +5819,11 @@ a string
 
 =over 4
 
+
+
+=item Description
+
+A string identifier used for a feature in a genome.
 
 
 =item Definition
@@ -5417,6 +5852,11 @@ a string
 
 
 
+=item Description
+
+A string identifier used for a reaction in a KBase biochemistry.
+
+
 =item Definition
 
 =begin html
@@ -5441,6 +5881,11 @@ a string
 
 =over 4
 
+
+
+=item Description
+
+A string identifier used for a reaction in a model in KBase.
 
 
 =item Definition
@@ -5469,6 +5914,11 @@ a string
 
 
 
+=item Description
+
+A string identifier used for a biomass reaction in a KBase model.
+
+
 =item Definition
 
 =begin html
@@ -5493,6 +5943,11 @@ a string
 
 =over 4
 
+
+
+=item Description
+
+A string identifier used for a media condition in the KBase database.
 
 
 =item Definition
@@ -5521,6 +5976,11 @@ a string
 
 
 
+=item Description
+
+A string identifier used for a flux balance analysis study in KBase.
+
+
 =item Definition
 
 =begin html
@@ -5545,6 +6005,11 @@ a string
 
 =over 4
 
+
+
+=item Description
+
+A string identifier for a gap generation study in KBase.
 
 
 =item Definition
@@ -5573,6 +6038,73 @@ a string
 
 
 
+=item Description
+
+A string identifier for a gap filling study in KBase.
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 gapgensolution_id
+
+=over 4
+
+
+
+=item Description
+
+A string identifier for a solution from a gap generation study in KBase.
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 gapfillsolution_id
+
+=over 4
+
+
+
+=item Description
+
+A string identifier for a solution from a gap filling study in KBase.
+
+
 =item Definition
 
 =begin html
@@ -5599,30 +6131,9 @@ a string
 
 
 
-=item Definition
+=item Description
 
-=begin html
-
-<pre>
-a string
-</pre>
-
-=end html
-
-=begin text
-
-a string
-
-=end text
-
-=back
-
-
-
-=head2 biochemistry_id
-
-=over 4
-
+A string identifier for a metabolic model in KBase.
 
 
 =item Definition
@@ -5651,56 +6162,9 @@ a string
 
 
 
-=item Definition
+=item Description
 
-=begin html
-
-<pre>
-a string
-</pre>
-
-=end html
-
-=begin text
-
-a string
-
-=end text
-
-=back
-
-
-
-=head2 media_id
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a string
-</pre>
-
-=end html
-
-=begin text
-
-a string
-
-=end text
-
-=back
-
-
-
-=head2 probabilisticAnnotation_id
-
-=over 4
-
+A string identifier for a Mapping object in KBase.
 
 
 =item Definition
@@ -5729,6 +6193,11 @@ a string
 
 
 
+=item Description
+
+A string identifier for a regulatory model in KBase.
+
+
 =item Definition
 
 =begin html
@@ -5753,6 +6222,11 @@ a string
 
 =over 4
 
+
+
+=item Description
+
+A string identifier for a compartment in KBase.
 
 
 =item Definition
@@ -5781,6 +6255,11 @@ a string
 
 
 
+=item Description
+
+A string identifier for an expression dataset in KBase.
+
+
 =item Definition
 
 =begin html
@@ -5805,6 +6284,11 @@ a string
 
 =over 4
 
+
+
+=item Description
+
+A string identifier used for a set of phenotype data loaded into KBase.
 
 
 =item Definition
@@ -5833,6 +6317,11 @@ a string
 
 
 
+=item Description
+
+A permanent reference to an object in a workspace.
+
+
 =item Definition
 
 =begin html
@@ -5857,6 +6346,11 @@ a string
 
 =over 4
 
+
+
+=item Description
+
+A string identifier used for a probabilistic annotation in KBase.
 
 
 =item Definition
@@ -6441,6 +6935,7 @@ reversibility has a value which is a string
 deltaG has a value which is a float
 deltaGErr has a value which is a float
 equation has a value which is a string
+definition has a value which is a string
 
 </pre>
 
@@ -6458,6 +6953,7 @@ reversibility has a value which is a string
 deltaG has a value which is a float
 deltaGErr has a value which is a float
 equation has a value which is a string
+definition has a value which is a string
 
 
 =end text
@@ -6564,6 +7060,7 @@ reaction has a value which is a reaction_id
 name has a value which is a string
 direction has a value which is a string
 equation has a value which is a string
+definition has a value which is a string
 features has a value which is a reference to a list where each element is a feature_id
 compartment has a value which is a modelcompartment_id
 
@@ -6579,6 +7076,7 @@ reaction has a value which is a reaction_id
 name has a value which is a string
 direction has a value which is a string
 equation has a value which is a string
+definition has a value which is a string
 features has a value which is a reference to a list where each element is a feature_id
 compartment has a value which is a modelcompartment_id
 
@@ -6600,9 +7098,10 @@ compartment has a value which is a modelcompartment_id
 =begin html
 
 <pre>
-a reference to a list containing 2 items:
+a reference to a list containing 3 items:
 0: a modelcompound_id
 1: a float
+2: a string
 
 </pre>
 
@@ -6610,9 +7109,10 @@ a reference to a list containing 2 items:
 
 =begin text
 
-a reference to a list containing 2 items:
+a reference to a list containing 3 items:
 0: a modelcompound_id
 1: a float
+2: a string
 
 
 =end text
@@ -6635,6 +7135,7 @@ a reference to a list containing 2 items:
 a reference to a hash where the following keys are defined:
 id has a value which is a biomass_id
 name has a value which is a string
+definition has a value which is a string
 biomass_compounds has a value which is a reference to a list where each element is a BiomassCompound
 
 </pre>
@@ -6646,6 +7147,7 @@ biomass_compounds has a value which is a reference to a list where each element 
 a reference to a hash where the following keys are defined:
 id has a value which is a biomass_id
 name has a value which is a string
+definition has a value which is a string
 biomass_compounds has a value which is a reference to a list where each element is a BiomassCompound
 
 
@@ -6897,7 +7399,7 @@ a reference to a list containing 4 items:
 =begin html
 
 <pre>
-a reference to a list containing 7 items:
+a reference to a list containing 8 items:
 0: a modelcompound_id
 1: a float
 2: a float
@@ -6905,6 +7407,7 @@ a reference to a list containing 7 items:
 4: a float
 5: a float
 6: a string
+7: a string
 
 </pre>
 
@@ -6912,7 +7415,7 @@ a reference to a list containing 7 items:
 
 =begin text
 
-a reference to a list containing 7 items:
+a reference to a list containing 8 items:
 0: a modelcompound_id
 1: a float
 2: a float
@@ -6920,6 +7423,7 @@ a reference to a list containing 7 items:
 4: a float
 5: a float
 6: a string
+7: a string
 
 
 =end text
@@ -6939,7 +7443,7 @@ a reference to a list containing 7 items:
 =begin html
 
 <pre>
-a reference to a list containing 7 items:
+a reference to a list containing 8 items:
 0: a modelreaction_id
 1: a float
 2: a float
@@ -6947,6 +7451,7 @@ a reference to a list containing 7 items:
 4: a float
 5: a float
 6: a string
+7: a string
 
 </pre>
 
@@ -6954,7 +7459,7 @@ a reference to a list containing 7 items:
 
 =begin text
 
-a reference to a list containing 7 items:
+a reference to a list containing 8 items:
 0: a modelreaction_id
 1: a float
 2: a float
@@ -6962,6 +7467,7 @@ a reference to a list containing 7 items:
 4: a float
 5: a float
 6: a string
+7: a string
 
 
 =end text
@@ -6981,9 +7487,10 @@ a reference to a list containing 7 items:
 =begin html
 
 <pre>
-a reference to a list containing 2 items:
+a reference to a list containing 3 items:
 0: a float
 1: a modelcompound_id
+2: a string
 
 </pre>
 
@@ -6991,9 +7498,10 @@ a reference to a list containing 2 items:
 
 =begin text
 
-a reference to a list containing 2 items:
+a reference to a list containing 3 items:
 0: a float
 1: a modelcompound_id
+2: a string
 
 
 =end text
@@ -7179,6 +7687,7 @@ a reference to a list containing 4 items:
 <pre>
 a reference to a hash where the following keys are defined:
 media has a value which is a media_id
+additionalcpds has a value which is a reference to a list where each element is a compound_id
 media_workspace has a value which is a workspace_id
 objfraction has a value which is a float
 allreversible has a value which is a bool
@@ -7205,6 +7714,7 @@ minthermoerror has a value which is a bool
 
 a reference to a hash where the following keys are defined:
 media has a value which is a media_id
+additionalcpds has a value which is a reference to a list where each element is a compound_id
 media_workspace has a value which is a workspace_id
 objfraction has a value which is a float
 allreversible has a value which is a bool
@@ -7320,7 +7830,7 @@ transpen has a value which is a float
 blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
 gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
 allowedcmps has a value which is a reference to a list where each element is a compartment_id
-probabilisticAnnotation has a value which is a probabilisticAnnotation_id
+probabilisticAnnotation has a value which is a probanno_id
 probabilisticAnnotation_workspace has a value which is a workspace_id
 
 </pre>
@@ -7349,7 +7859,7 @@ transpen has a value which is a float
 blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
 gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
 allowedcmps has a value which is a reference to a list where each element is a compartment_id
-probabilisticAnnotation has a value which is a probabilisticAnnotation_id
+probabilisticAnnotation has a value which is a probanno_id
 probabilisticAnnotation_workspace has a value which is a workspace_id
 
 
@@ -7370,8 +7880,46 @@ probabilisticAnnotation_workspace has a value which is a workspace_id
 =begin html
 
 <pre>
-a reference to a list containing 2 items:
+a reference to a list containing 5 items:
 0: a reaction_id
+1: a string
+2: a string
+3: a string
+4: a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a list containing 5 items:
+0: a reaction_id
+1: a string
+2: a string
+3: a string
+4: a string
+
+
+=end text
+
+=back
+
+
+
+=head2 biomassRemoval
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a list containing 2 items:
+0: a compound_id
 1: a string
 
 </pre>
@@ -7381,7 +7929,39 @@ a reference to a list containing 2 items:
 =begin text
 
 a reference to a list containing 2 items:
-0: a reaction_id
+0: a compound_id
+1: a string
+
+
+=end text
+
+=back
+
+
+
+=head2 mediaAddition
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a list containing 2 items:
+0: a compound_id
+1: a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a list containing 2 items:
+0: a compound_id
 1: a string
 
 
@@ -7403,9 +7983,10 @@ a reference to a list containing 2 items:
 
 <pre>
 a reference to a hash where the following keys are defined:
+id has a value which is a gapfillsolution_id
 objective has a value which is a float
-biomassRemovals has a value which is a reference to a list where each element is a modelcompound_id
-mediaAdditions has a value which is a reference to a list where each element is a compound_id
+biomassRemovals has a value which is a reference to a list where each element is a biomassRemoval
+mediaAdditions has a value which is a reference to a list where each element is a mediaAddition
 reactionAdditions has a value which is a reference to a list where each element is a reactionAddition
 
 </pre>
@@ -7415,9 +7996,10 @@ reactionAdditions has a value which is a reference to a list where each element 
 =begin text
 
 a reference to a hash where the following keys are defined:
+id has a value which is a gapfillsolution_id
 objective has a value which is a float
-biomassRemovals has a value which is a reference to a list where each element is a modelcompound_id
-mediaAdditions has a value which is a reference to a list where each element is a compound_id
+biomassRemovals has a value which is a reference to a list where each element is a biomassRemoval
+mediaAdditions has a value which is a reference to a list where each element is a mediaAddition
 reactionAdditions has a value which is a reference to a list where each element is a reactionAddition
 
 
@@ -7531,8 +8113,44 @@ nopathwayhyp has a value which is a bool
 =begin html
 
 <pre>
-a reference to a list containing 2 items:
+a reference to a list containing 4 items:
 0: a modelreaction_id
+1: a string
+2: a string
+3: a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a list containing 4 items:
+0: a modelreaction_id
+1: a string
+2: a string
+3: a string
+
+
+=end text
+
+=back
+
+
+
+=head2 biomassAddition
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a list containing 2 items:
+0: a compound_id
 1: a string
 
 </pre>
@@ -7542,7 +8160,39 @@ a reference to a list containing 2 items:
 =begin text
 
 a reference to a list containing 2 items:
-0: a modelreaction_id
+0: a compound_id
+1: a string
+
+
+=end text
+
+=back
+
+
+
+=head2 mediaRemoval
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a list containing 2 items:
+0: a compound_id
+1: a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a list containing 2 items:
+0: a compound_id
 1: a string
 
 
@@ -7564,9 +8214,10 @@ a reference to a list containing 2 items:
 
 <pre>
 a reference to a hash where the following keys are defined:
+id has a value which is a gapgensolution_id
 objective has a value which is a float
-biomassAdditions has a value which is a reference to a list where each element is a compound_id
-mediaRemovals has a value which is a reference to a list where each element is a compound_id
+biomassAdditions has a value which is a reference to a list where each element is a biomassAddition
+mediaRemovals has a value which is a reference to a list where each element is a mediaRemoval
 reactionRemovals has a value which is a reference to a list where each element is a reactionRemoval
 
 </pre>
@@ -7576,9 +8227,10 @@ reactionRemovals has a value which is a reference to a list where each element i
 =begin text
 
 a reference to a hash where the following keys are defined:
+id has a value which is a gapgensolution_id
 objective has a value which is a float
-biomassAdditions has a value which is a reference to a list where each element is a compound_id
-mediaRemovals has a value which is a reference to a list where each element is a compound_id
+biomassAdditions has a value which is a reference to a list where each element is a biomassAddition
+mediaRemovals has a value which is a reference to a list where each element is a mediaRemoval
 reactionRemovals has a value which is a reference to a list where each element is a reactionRemoval
 
 
@@ -8059,6 +8711,78 @@ overwrite has a value which is a bool
 
 
 
+=head2 translation
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a list containing 2 items:
+0: a string
+1: a feature_id
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a list containing 2 items:
+0: a string
+1: a feature_id
+
+
+=end text
+
+=back
+
+
+
+=head2 add_feature_translation_params
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+genome has a value which is a genome_id
+workspace has a value which is a workspace_id
+translations has a value which is a reference to a list where each element is a translation
+id_type has a value which is a string
+auth has a value which is a string
+overwrite has a value which is a bool
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+genome has a value which is a genome_id
+workspace has a value which is a workspace_id
+translations has a value which is a reference to a list where each element is a translation
+id_type has a value which is a string
+auth has a value which is a string
+overwrite has a value which is a bool
+
+
+=end text
+
+=back
+
+
+
 =head2 genome_to_fbamodel_params
 
 =over 4
@@ -8097,6 +8821,7 @@ genome_workspace has a value which is a workspace_id
 probanno has a value which is a probanno_id
 probanno_workspace has a value which is a workspace_id
 probannoThreshold has a value which is a float
+probanno_only has a value which is a bool
 model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
 auth has a value which is a string
@@ -8114,6 +8839,7 @@ genome_workspace has a value which is a workspace_id
 probanno has a value which is a probanno_id
 probanno_workspace has a value which is a workspace_id
 probannoThreshold has a value which is a float
+probanno_only has a value which is a bool
 model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
 auth has a value which is a string
@@ -8658,6 +9384,50 @@ phenotypeSimulationSet has a value which is a phenotypeSimulationSet_id
 workspace has a value which is a workspace_id
 format has a value which is a string
 auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 integrate_reconciliation_solutions_params
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+gapfillSolutions has a value which is a reference to a list where each element is a gapfillsolution_id
+gapgenSolutions has a value which is a reference to a list where each element is a gapgensolution_id
+out_model has a value which is a fbamodel_id
+workspace has a value which is a workspace_id
+auth has a value which is a string
+overwrite has a value which is a bool
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+gapfillSolutions has a value which is a reference to a list where each element is a gapfillsolution_id
+gapgenSolutions has a value which is a reference to a list where each element is a gapgensolution_id
+out_model has a value which is a fbamodel_id
+workspace has a value which is a workspace_id
+auth has a value which is a string
+overwrite has a value which is a bool
 
 
 =end text

@@ -45,7 +45,8 @@ my $fbaTranslation = {
 	simplethermo => "simplethermoconst",
 	thermoconst => "thermoconst",
 	nothermoerror => "nothermoerror",
-	minthermoerror => "minthermoerror"
+	minthermoerror => "minthermoerror",
+	addlcpd => "additionalcpds"
 };
 #Defining usage and options
 my $specs = [
@@ -53,6 +54,7 @@ my $specs = [
     [ 'intsol', 'Automatically integrate solution', { "default" => 0 } ],
     [ 'media|m:s', 'Media formulation for FBA' ],
     [ 'mediaws:s', 'Workspace with media formulation' ],
+    [ 'addlcpd|c:s@', 'Additional compounds (; delimiter)' ],
     [ 'refmedia|r:s', 'Media formulation for FBA' ],
     [ 'refmediaws:s', 'Workspace with media formulation' ],
     [ 'numsol:i', 'Number of solutions desired', {"default" => 1} ],
@@ -94,6 +96,7 @@ $params->{formulation}->{formulation} = {
 	bounds => [],
 	constraints => [],
 	uptakelim => {},
+	additionalcpds => [],
 	objectiveTerms => []
 };
 foreach my $key (keys(%{$fbaTranslation})) {
@@ -120,6 +123,11 @@ if (defined($opt->{geneko})) {
 if (defined($opt->{rxnko})) {
 	foreach my $rxn (@{$opt->{rxnko}}) {
 		push(@{$params->{formulation}->{formulation}->{rxnko}},split(/;/,$rxn));
+	}
+}
+if (defined($opt->{additionalcpds})) {
+	foreach my $cpd (@{$opt->{additionalcpds}}) {
+		push(@{$params->{formulation}->{formulation}->{additionalcpds}},split(/;/,$cpd));
 	}
 }
 if (defined($opt->{bounds})) {

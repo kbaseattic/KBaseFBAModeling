@@ -27,21 +27,18 @@ my $obj = Bio::KBase::fbaModelServices::Impl->new({workspace => $ws});
 
 #Testing biochemistry retrieval method
 {
-	my $ctx = Bio::KBase::fbaModelServices::ServerContext->new(client_ip => "127.0.0.1");
-	local $Bio::KBase::fbaModelServices::Server::CallContext = $ctx;
+	local $Bio::KBase::fbaModelServices::Server::CallContext = {};
 	my $biochemistry = $obj->get_biochemistry({});
 	ok defined($biochemistry), "Successfully printed biochemistry!";
 }
 {
-	my $ctx = Bio::KBase::fbaModelServices::ServerContext->new(client_ip => "127.0.0.1");
-	local $Bio::KBase::fbaModelServices::Server::CallContext = $ctx;
+	local $Bio::KBase::fbaModelServices::Server::CallContext = {};
 	my $biochemistry = $obj->get_biochemistry({biochemistry => "testdefault"});
 	ok defined($biochemistry), "Successfully printed biochemistry!";
 }
 #Testing reaction retrieval method
 {
-	my $ctx = Bio::KBase::fbaModelServices::ServerContext->new(client_ip => "127.0.0.1");
-	local $Bio::KBase::fbaModelServices::Server::CallContext = $ctx;
+	local $Bio::KBase::fbaModelServices::Server::CallContext = {};
 	my $rxns = $obj->get_reactions({
 		reactions => ["rxn00001","rxn00002"],
 		biochemistry => "default",
@@ -51,8 +48,7 @@ my $obj = Bio::KBase::fbaModelServices::Impl->new({workspace => $ws});
 }
 #Testing compound retrieval method
 {
-	my $ctx = Bio::KBase::fbaModelServices::ServerContext->new(client_ip => "127.0.0.1");
-	local $Bio::KBase::fbaModelServices::Server::CallContext = $ctx;
+	local $Bio::KBase::fbaModelServices::Server::CallContext = {};
 	my $cpds = $obj->get_compounds({
 		compounds => ["cpd00001","cpd00002"],
 		biochemistry => "default",
@@ -61,8 +57,7 @@ my $obj = Bio::KBase::fbaModelServices::Impl->new({workspace => $ws});
 	ok defined($cpds->[0]), "Successfully printed compounds!";
 }
 {
-	my $ctx = Bio::KBase::fbaModelServices::ServerContext->new(client_ip => "127.0.0.1");
-	local $Bio::KBase::fbaModelServices::Server::CallContext = $ctx;
+	local $Bio::KBase::fbaModelServices::Server::CallContext = {};
 	eval {
 		my ($meta) = $ws->create_workspace({
 		        workspace => "fbaservicestest",
@@ -74,8 +69,7 @@ my $obj = Bio::KBase::fbaModelServices::Impl->new({workspace => $ws});
 #Testing loading of genome object to workspace
 my ($fh, $uncompressed_filename,$genome);
 {
-	my $ctx = Bio::KBase::fbaModelServices::ServerContext->new(client_ip => "127.0.0.1");
-	local $Bio::KBase::fbaModelServices::Server::CallContext = $ctx;
+	local $Bio::KBase::fbaModelServices::Server::CallContext = {};
 	($fh, $uncompressed_filename) = tempfile();
 	close($fh);
 	my $status = getstore("http://bioseed.mcs.anl.gov/~chenry/KbaseFiles/genome.test.json", $uncompressed_filename);
@@ -95,8 +89,7 @@ my ($fh, $uncompressed_filename,$genome);
 }
 #Now test ability to retrieve annotated genome object from database
 {
-	my $ctx = Bio::KBase::fbaModelServices::ServerContext->new(client_ip => "127.0.0.1");
-	local $Bio::KBase::fbaModelServices::Server::CallContext = $ctx;
+	local $Bio::KBase::fbaModelServices::Server::CallContext = {};
 	my $cdmgenome;
 	eval {
 		$cdmgenome = $obj->genome_to_workspace({
@@ -110,8 +103,7 @@ my ($fh, $uncompressed_filename,$genome);
 #Now adding media formulation to workspace
 my $media;
 {
-	my $ctx = Bio::KBase::fbaModelServices::ServerContext->new(client_ip => "127.0.0.1");
-	local $Bio::KBase::fbaModelServices::Server::CallContext = $ctx;
+	local $Bio::KBase::fbaModelServices::Server::CallContext = {};
 	$media = $obj->addmedia({
 		media => "CustomMedia",
 		workspace => "fbaservicestest",
@@ -131,8 +123,7 @@ my $media;
 }
 #Testing media retrieval method
 {
-	my $ctx = Bio::KBase::fbaModelServices::ServerContext->new(client_ip => "127.0.0.1");
-	local $Bio::KBase::fbaModelServices::Server::CallContext = $ctx;
+	local $Bio::KBase::fbaModelServices::Server::CallContext = {};
 	my $medias = $obj->get_media({
 		medias => ["Media1","CustomMedia"],
 		workspaces => ["kbasecdm","fbaservicestest"],
@@ -145,8 +136,7 @@ my $media;
 #Now test phenotype import
 my $phenos;
 {
-	my $ctx = Bio::KBase::fbaModelServices::ServerContext->new(client_ip => "127.0.0.1");
-	local $Bio::KBase::fbaModelServices::Server::CallContext = $ctx;
+	local $Bio::KBase::fbaModelServices::Server::CallContext = {};
 	$phenos = $obj->import_phenotypes({
 		workspace => "fbaservicestest",
 		genome => $genome->[0],
@@ -166,8 +156,7 @@ my $phenos;
 #Now test ability to produce a metabolic model
 my $model;
 {
-	my $ctx = Bio::KBase::fbaModelServices::ServerContext->new(client_ip => "127.0.0.1");
-	local $Bio::KBase::fbaModelServices::Server::CallContext = $ctx;
+	local $Bio::KBase::fbaModelServices::Server::CallContext = {};
 	$model = $obj->genome_to_fbamodel({
 		genome => $genome->[0],
 		workspace => "fbaservicestest",
@@ -180,8 +169,7 @@ my $model;
 #Now test phenotype simulation
 my $phenosim;
 {
-	my $ctx = Bio::KBase::fbaModelServices::ServerContext->new(client_ip => "127.0.0.1");
-	local $Bio::KBase::fbaModelServices::Server::CallContext = $ctx;
+	local $Bio::KBase::fbaModelServices::Server::CallContext = {};
 	$phenosim = $obj->simulate_phenotypes({
 		model => $model->[0],
 		workspace => "fbaservicestest",
@@ -195,8 +183,7 @@ my $phenosim;
 }
 #Now test phenotype simulation export
 {
-	my $ctx = Bio::KBase::fbaModelServices::ServerContext->new(client_ip => "127.0.0.1");
-	local $Bio::KBase::fbaModelServices::Server::CallContext = $ctx;
+	local $Bio::KBase::fbaModelServices::Server::CallContext = {};
 	my $html = $obj->export_phenotypeSimulationSet({
 		phenotypeSimulationSet => $phenosim->[0],
 		workspace => "fbaservicestest",
@@ -210,8 +197,7 @@ my $phenosim;
 }
 #Testing model export
 {
-	my $ctx = Bio::KBase::fbaModelServices::ServerContext->new(client_ip => "127.0.0.1");
-	local $Bio::KBase::fbaModelServices::Server::CallContext = $ctx;
+	local $Bio::KBase::fbaModelServices::Server::CallContext = {};
 	my $cytoseed = $obj->export_fbamodel({
 		model => $model->[0],
 		workspace => "fbaservicestest",
@@ -224,8 +210,7 @@ my $phenosim;
 	close($fh);
 }
 {
-	my $ctx = Bio::KBase::fbaModelServices::ServerContext->new(client_ip => "127.0.0.1");
-	local $Bio::KBase::fbaModelServices::Server::CallContext = $ctx;
+	local $Bio::KBase::fbaModelServices::Server::CallContext = {};
 	my $html = $obj->export_fbamodel({
 		model => $model->[0],
 		workspace => "fbaservicestest",
@@ -238,8 +223,7 @@ my $phenosim;
 	close($fh);
 }
 {
-	my $ctx = Bio::KBase::fbaModelServices::ServerContext->new(client_ip => "127.0.0.1");
-	local $Bio::KBase::fbaModelServices::Server::CallContext = $ctx;
+	local $Bio::KBase::fbaModelServices::Server::CallContext = {};
 	my $sbml = $obj->export_fbamodel({
 		model => $model->[0],
 		workspace => "fbaservicestest",
@@ -253,8 +237,7 @@ my $phenosim;
 }
 #Testing model retrieval method
 {
-	my $ctx = Bio::KBase::fbaModelServices::ServerContext->new(client_ip => "127.0.0.1");
-	local $Bio::KBase::fbaModelServices::Server::CallContext = $ctx;
+	local $Bio::KBase::fbaModelServices::Server::CallContext = {};
 	my $mdls = $obj->get_models({
 		models => [$model->[0]],
 		workspaces => ["fbaservicestest"],
@@ -266,8 +249,7 @@ my $phenosim;
 }
 #Now exporting media formulation
 {
-	my $ctx = Bio::KBase::fbaModelServices::ServerContext->new(client_ip => "127.0.0.1");
-	local $Bio::KBase::fbaModelServices::Server::CallContext = $ctx;
+	local $Bio::KBase::fbaModelServices::Server::CallContext = {};
 	my $html = $obj->export_media({
 		media => $media->[0],
 		workspace => "fbaservicestest",
@@ -284,8 +266,7 @@ my $phenosim;
 #Now test flux balance analysis
 my $fba;
 {
-	my $ctx = Bio::KBase::fbaModelServices::ServerContext->new(client_ip => "127.0.0.1");
-	local $Bio::KBase::fbaModelServices::Server::CallContext = $ctx;
+	local $Bio::KBase::fbaModelServices::Server::CallContext = {};
 	$fba = $obj->runfba({
 		model => $model->[0],
 		model_workspace => "fbaservicestest",
@@ -305,8 +286,7 @@ my $fba;
 }
 #Testing fba retrieval method
 {
-	my $ctx = Bio::KBase::fbaModelServices::ServerContext->new(client_ip => "127.0.0.1");
-	local $Bio::KBase::fbaModelServices::Server::CallContext = $ctx;
+	local $Bio::KBase::fbaModelServices::Server::CallContext = {};
 	my $fbas = $obj->get_fbas({
 		fbas => [$fba->[0]],
 		workspaces => ["fbaservicestest"],
@@ -318,8 +298,7 @@ my $fba;
 }
 #Now test flux balance analysis export
 {
-	my $ctx = Bio::KBase::fbaModelServices::ServerContext->new(client_ip => "127.0.0.1");
-	local $Bio::KBase::fbaModelServices::Server::CallContext = $ctx;
+	local $Bio::KBase::fbaModelServices::Server::CallContext = {};
 	my $html = $obj->export_fba({
 		fba => $fba->[0],
 		workspace => "fbaservicestest",
@@ -334,8 +313,7 @@ my $fba;
 #Now test the queue fba function, without submitting the job to the cluster
 my $job;
 {
-	my $ctx = Bio::KBase::fbaModelServices::ServerContext->new(client_ip => "127.0.0.1");
-	local $Bio::KBase::fbaModelServices::Server::CallContext = $ctx;
+	local $Bio::KBase::fbaModelServices::Server::CallContext = {};
 	$job = $obj->queue_runfba({
 		model => $model->[0],
 		model_workspace => "fbaservicestest",
@@ -358,8 +336,7 @@ my $job;
 }
 #Now running queued FBA job mannually to ensure that the job runs and postprocessing works
 {
-	my $ctx = Bio::KBase::fbaModelServices::ServerContext->new(client_ip => "127.0.0.1");
-	local $Bio::KBase::fbaModelServices::Server::CallContext = $ctx;
+	local $Bio::KBase::fbaModelServices::Server::CallContext = {};
 	$job = $obj->run_job({
 		jobid => $job->[0],
 		workspace => "fbaservicestest",
@@ -369,8 +346,7 @@ my $job;
 }
 #Now exporting queued FBA
 {
-	my $ctx = Bio::KBase::fbaModelServices::ServerContext->new(client_ip => "127.0.0.1");
-	local $Bio::KBase::fbaModelServices::Server::CallContext = $ctx;
+	local $Bio::KBase::fbaModelServices::Server::CallContext = {};
 	my $html = $obj->export_fba({
 		fba => $job->{clusterjobs}->[0]->{fbaid},
 		workspace => "fbaservicestest",
@@ -384,8 +360,7 @@ my $job;
 }
 #Now queuing gapfilling in complete media
 {
-	my $ctx = Bio::KBase::fbaModelServices::ServerContext->new(client_ip => "127.0.0.1");
-	local $Bio::KBase::fbaModelServices::Server::CallContext = $ctx;
+	local $Bio::KBase::fbaModelServices::Server::CallContext = {};
 	$job = $obj->queue_gapfill_model({
 		model => $model->[0],
 		workspace => "fbaservicestest",
@@ -407,8 +382,7 @@ my $job;
 }
 #Now running queued gapfill job mannually to ensure that the job runs and postprocessing works
 {
-	my $ctx = Bio::KBase::fbaModelServices::ServerContext->new(client_ip => "127.0.0.1");
-	local $Bio::KBase::fbaModelServices::Server::CallContext = $ctx;
+	local $Bio::KBase::fbaModelServices::Server::CallContext = {};
 	$job = $obj->run_job({
 		jobid => $job->[0],
 		workspace => "fbaservicestest",
@@ -418,8 +392,7 @@ my $job;
 }
 #Now queuing gapfilling in custom media
 {
-	my $ctx = Bio::KBase::fbaModelServices::ServerContext->new(client_ip => "127.0.0.1");
-	local $Bio::KBase::fbaModelServices::Server::CallContext = $ctx;
+	local $Bio::KBase::fbaModelServices::Server::CallContext = {};
 	$job = $obj->queue_gapfill_model({
 		model => $model->[0].".gf",
 		workspace => "fbaservicestest",
@@ -441,8 +414,7 @@ my $job;
 }
 #Now running queued gapfill job mannually to ensure that the job runs and postprocessing works
 {
-	my $ctx = Bio::KBase::fbaModelServices::ServerContext->new(client_ip => "127.0.0.1");
-	local $Bio::KBase::fbaModelServices::Server::CallContext = $ctx;
+	local $Bio::KBase::fbaModelServices::Server::CallContext = {};
 	$job = $obj->run_job({
 		jobid => $job->[0],
 		workspace => "fbaservicestest",
@@ -452,8 +424,7 @@ my $job;
 }
 #Now test flux balance analysis
 {
-	my $ctx = Bio::KBase::fbaModelServices::ServerContext->new(client_ip => "127.0.0.1");
-	local $Bio::KBase::fbaModelServices::Server::CallContext = $ctx;
+	local $Bio::KBase::fbaModelServices::Server::CallContext = {};
 	$fba = $obj->runfba({
 		model => $model->[0].".gf2",
 		model_workspace => "fbaservicestest",
@@ -473,8 +444,7 @@ my $job;
 }
 #Now exporting queued FBA
 {
-	my $ctx = Bio::KBase::fbaModelServices::ServerContext->new(client_ip => "127.0.0.1");
-	local $Bio::KBase::fbaModelServices::Server::CallContext = $ctx;
+	local $Bio::KBase::fbaModelServices::Server::CallContext = {};
 	my $html = $obj->export_fba({
 		fba => $fba->[0],
 		workspace => "fbaservicestest",
@@ -488,8 +458,7 @@ my $job;
 }
 #Now exporting queued FBA
 {
-	my $ctx = Bio::KBase::fbaModelServices::ServerContext->new(client_ip => "127.0.0.1");
-	local $Bio::KBase::fbaModelServices::Server::CallContext = $ctx;
+	local $Bio::KBase::fbaModelServices::Server::CallContext = {};
 	$job = $obj->queue_gapgen_model({
 		model => $model->[0].".gf2",
 		workspace => "fbaservicestest",
@@ -513,8 +482,7 @@ my $job;
 }
 #Now running queued gapfill job mannually to ensure that the job runs and postprocessing works
 {
-	my $ctx = Bio::KBase::fbaModelServices::ServerContext->new(client_ip => "127.0.0.1");
-	local $Bio::KBase::fbaModelServices::Server::CallContext = $ctx;
+	local $Bio::KBase::fbaModelServices::Server::CallContext = {};
 	$job = $obj->run_job({
 		jobid => $job->[0],
 		workspace => "fbaservicestest",
@@ -524,8 +492,7 @@ my $job;
 }
 #Now test flux balance analysis
 {
-	my $ctx = Bio::KBase::fbaModelServices::ServerContext->new(client_ip => "127.0.0.1");
-	local $Bio::KBase::fbaModelServices::Server::CallContext = $ctx;
+	local $Bio::KBase::fbaModelServices::Server::CallContext = {};
 	$fba = $obj->runfba({
 		model => $model->[0].".gg",
 		model_workspace => "fbaservicestest",
@@ -545,8 +512,7 @@ my $job;
 }
 #Now exporting queued FBA
 {
-	my $ctx = Bio::KBase::fbaModelServices::ServerContext->new(client_ip => "127.0.0.1");
-	local $Bio::KBase::fbaModelServices::Server::CallContext = $ctx;
+	local $Bio::KBase::fbaModelServices::Server::CallContext = {};
 	my $html = $obj->export_fba({
 		fba => $fba->[0],
 		workspace => "fbaservicestest",
