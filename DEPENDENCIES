@@ -4,4 +4,4 @@ workspace_service
 auth
 cluster_service
 idserver
-kb_modelseed
+kb_model_seed
