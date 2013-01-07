@@ -32,6 +32,9 @@ all: bin server
 
 bin: $(BIN_PERL)
 
+server:
+	echo "server target does nothing"
+
 $(BIN_DIR)/%: scripts/%.pl 
 	$(TOOLS_DIR)/wrap_perl '$$KB_TOP/modules/$(CURRENT_DIR)/$<' $@
 
@@ -46,7 +49,7 @@ test-client:
 		fi \
 	done
 
-deploy: deploy-client
+deploy: deploy-client deploy-service
 deploy-all: deploy-client deploy-service
 
 deploy-service: deploy-dir deploy-libs deploy-scripts deploy-services
