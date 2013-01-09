@@ -11,7 +11,51 @@ fbaModelServices
 
 =head1 DESCRIPTION
 
+=head1 fbaModelServices
 
+=head2 SYNOPSIS
+
+The FBA Model Services include support related to the reconstruction, curation,
+reconciliation, and analysis of metabolic models. This includes commands to:
+
+1.) Load genome typed objects into a workspace
+
+2.) Build a model from a genome typed object and curate the model
+
+3.) Analyze a model with flux balance analysis
+
+4.) Simulate and reconcile a model to an imported set of growth phenotype data
+
+=head2 EXAMPLE OF API USE IN PERL
+
+To use the API, first you need to instantiate a fbaModelServices client object:
+
+my $client = Bio::KBase::fbaModelServices::Client->new;
+   
+Next, you can run API commands on the client object:
+   
+my $objmeta = $client->genome_to_workspace({
+        genome => "kb|g.0",
+        workspace => "myWorkspace"
+});
+my $objmeta = $client->genome_to_fbamodel({
+        model => "myModel"
+        workspace => "myWorkspace"
+});
+
+=head2 AUTHENTICATION
+
+Each and every function in this service takes a hash reference as
+its single argument. This hash reference may contain a key
+C<auth> whose value is a bearer token for the user making
+the request. If this is not provided a default user "public" is assumed.
+
+=head2 WORKSPACE
+
+A workspace is a named collection of objects owned by a specific
+user, that may be viewable or editable by other users.Functions that operate
+on workspaces take a C<workspace_id>, which is an alphanumeric string that
+uniquely identifies a workspace among all workspaces.
 
 =cut
 
@@ -1585,7 +1629,7 @@ sub new
 	}
 	if (!-e $config) {
 		warn "Deployment config file not found. Using default settings!\n";
-		$self->{"_workspace-url"} = "http://140.221.92.231/services/workspaceService/";
+		$self->{"_workspace-url"} = "http://bio-data-1.mcs.anl.gov/services/fba_gapfill";
 	} else {
 		my $c = new Config::Simple($config);
 		$self->{"_workspace-url"} = $c->param("fbaModelingServices.workspace-url");
@@ -3344,16 +3388,55 @@ sub get_biochemistry
 $input is a genome_object_to_workspace_params
 $genomeMeta is an object_metadata
 genome_object_to_workspace_params is a reference to a hash where the following keys are defined:
-	genomeobj has a value which is a genomeTO
+	genomeobj has a value which is a GenomeObject
 	workspace has a value which is a workspace_id
 	auth has a value which is a string
 	overwrite has a value which is a bool
-genomeTO is a reference to a hash where the following keys are defined:
+GenomeObject is a reference to a hash where the following keys are defined:
 	id has a value which is a genome_id
+	scientific_name has a value which is a string
+	domain has a value which is a string
+	genetic_code has a value which is an int
+	source has a value which is a string
+	source_id has a value which is a string
+	contigs has a value which is a reference to a list where each element is a contig
+	features has a value which is a reference to a list where each element is a feature
 genome_id is a string
+contig is a reference to a hash where the following keys are defined:
+	id has a value which is a contig_id
+	dna has a value which is a string
+contig_id is a string
+feature is a reference to a hash where the following keys are defined:
+	id has a value which is a feature_id
+	location has a value which is a location
+	type has a value which is a feature_type
+	function has a value which is a string
+	alternative_functions has a value which is a reference to a list where each element is an alt_func
+	protein_translation has a value which is a string
+	aliases has a value which is a reference to a list where each element is a string
+	annotations has a value which is a reference to a list where each element is an annotation
+feature_id is a string
+location is a reference to a list where each element is a region_of_dna
+region_of_dna is a reference to a list containing 4 items:
+	0: a contig_id
+	1: an int
+	2: a string
+	3: an int
+feature_type is a string
+alt_func is a reference to a list containing 3 items:
+	0: a string
+	1: a float
+	2: a reference to a list where each element is a gene_hit
+gene_hit is a reference to a list containing 2 items:
+	0: a feature_id
+	1: a float
+annotation is a reference to a list containing 3 items:
+	0: a string
+	1: a string
+	2: an int
 workspace_id is a string
 bool is an int
-object_metadata is a reference to a list containing 9 items:
+object_metadata is a reference to a list containing 11 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -3363,6 +3446,8 @@ object_metadata is a reference to a list containing 9 items:
 	6: a username
 	7: a workspace_id
 	8: a workspace_ref
+	9: a string
+	10: a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -3378,16 +3463,55 @@ workspace_ref is a string
 $input is a genome_object_to_workspace_params
 $genomeMeta is an object_metadata
 genome_object_to_workspace_params is a reference to a hash where the following keys are defined:
-	genomeobj has a value which is a genomeTO
+	genomeobj has a value which is a GenomeObject
 	workspace has a value which is a workspace_id
 	auth has a value which is a string
 	overwrite has a value which is a bool
-genomeTO is a reference to a hash where the following keys are defined:
+GenomeObject is a reference to a hash where the following keys are defined:
 	id has a value which is a genome_id
+	scientific_name has a value which is a string
+	domain has a value which is a string
+	genetic_code has a value which is an int
+	source has a value which is a string
+	source_id has a value which is a string
+	contigs has a value which is a reference to a list where each element is a contig
+	features has a value which is a reference to a list where each element is a feature
 genome_id is a string
+contig is a reference to a hash where the following keys are defined:
+	id has a value which is a contig_id
+	dna has a value which is a string
+contig_id is a string
+feature is a reference to a hash where the following keys are defined:
+	id has a value which is a feature_id
+	location has a value which is a location
+	type has a value which is a feature_type
+	function has a value which is a string
+	alternative_functions has a value which is a reference to a list where each element is an alt_func
+	protein_translation has a value which is a string
+	aliases has a value which is a reference to a list where each element is a string
+	annotations has a value which is a reference to a list where each element is an annotation
+feature_id is a string
+location is a reference to a list where each element is a region_of_dna
+region_of_dna is a reference to a list containing 4 items:
+	0: a contig_id
+	1: an int
+	2: a string
+	3: an int
+feature_type is a string
+alt_func is a reference to a list containing 3 items:
+	0: a string
+	1: a float
+	2: a reference to a list where each element is a gene_hit
+gene_hit is a reference to a list containing 2 items:
+	0: a feature_id
+	1: a float
+annotation is a reference to a list containing 3 items:
+	0: a string
+	1: a string
+	2: an int
 workspace_id is a string
 bool is an int
-object_metadata is a reference to a list containing 9 items:
+object_metadata is a reference to a list containing 11 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -3397,6 +3521,8 @@ object_metadata is a reference to a list containing 9 items:
 	6: a username
 	7: a workspace_id
 	8: a workspace_ref
+	9: a string
+	10: a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -3473,7 +3599,7 @@ genome_to_workspace_params is a reference to a hash where the following keys are
 genome_id is a string
 workspace_id is a string
 bool is an int
-object_metadata is a reference to a list containing 9 items:
+object_metadata is a reference to a list containing 11 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -3483,6 +3609,8 @@ object_metadata is a reference to a list containing 9 items:
 	6: a username
 	7: a workspace_id
 	8: a workspace_ref
+	9: a string
+	10: a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -3505,7 +3633,7 @@ genome_to_workspace_params is a reference to a hash where the following keys are
 genome_id is a string
 workspace_id is a string
 bool is an int
-object_metadata is a reference to a list containing 9 items:
+object_metadata is a reference to a list containing 11 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -3515,6 +3643,8 @@ object_metadata is a reference to a list containing 9 items:
 	6: a username
 	7: a workspace_id
 	8: a workspace_ref
+	9: a string
+	10: a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -3598,7 +3728,7 @@ translation is a reference to a list containing 2 items:
 	1: a feature_id
 feature_id is a string
 bool is an int
-object_metadata is a reference to a list containing 9 items:
+object_metadata is a reference to a list containing 11 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -3608,6 +3738,8 @@ object_metadata is a reference to a list containing 9 items:
 	6: a username
 	7: a workspace_id
 	8: a workspace_ref
+	9: a string
+	10: a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -3636,7 +3768,7 @@ translation is a reference to a list containing 2 items:
 	1: a feature_id
 feature_id is a string
 bool is an int
-object_metadata is a reference to a list containing 9 items:
+object_metadata is a reference to a list containing 11 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -3646,6 +3778,8 @@ object_metadata is a reference to a list containing 9 items:
 	6: a username
 	7: a workspace_id
 	8: a workspace_ref
+	9: a string
+	10: a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -3741,7 +3875,7 @@ genome_to_fbamodel_params is a reference to a hash where the following keys are 
 	probanno has a value which is a probanno_id
 	probanno_workspace has a value which is a workspace_id
 	probannoThreshold has a value which is a float
-	probanno_only has a value which is a bool
+	probannoOnly has a value which is a bool
 	model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
 	auth has a value which is a string
@@ -3751,7 +3885,7 @@ workspace_id is a string
 probanno_id is a string
 bool is an int
 fbamodel_id is a string
-object_metadata is a reference to a list containing 9 items:
+object_metadata is a reference to a list containing 11 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -3761,6 +3895,8 @@ object_metadata is a reference to a list containing 9 items:
 	6: a username
 	7: a workspace_id
 	8: a workspace_ref
+	9: a string
+	10: a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -3781,7 +3917,7 @@ genome_to_fbamodel_params is a reference to a hash where the following keys are 
 	probanno has a value which is a probanno_id
 	probanno_workspace has a value which is a workspace_id
 	probannoThreshold has a value which is a float
-	probanno_only has a value which is a bool
+	probannoOnly has a value which is a bool
 	model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
 	auth has a value which is a string
@@ -3791,7 +3927,7 @@ workspace_id is a string
 probanno_id is a string
 bool is an int
 fbamodel_id is a string
-object_metadata is a reference to a list containing 9 items:
+object_metadata is a reference to a list containing 11 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -3801,6 +3937,8 @@ object_metadata is a reference to a list containing 9 items:
 	6: a username
 	7: a workspace_id
 	8: a workspace_ref
+	9: a string
+	10: a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -3814,8 +3952,7 @@ workspace_ref is a string
 
 =item Description
 
-This function accepts a genome_to_fbamodel_params as input, building a new FBAModel for the genome specified by genome_id.
-The function returns a genome_to_fbamodel_params as output, specifying the ID of the model generated in the model_id parameter.
+Build a genome-scale metabolic model based on annotations in an input genome typed object
 
 =back
 
@@ -3981,6 +4118,314 @@ sub export_fbamodel
 
 
 
+=head2 adjust_model_reaction
+
+  $modelMeta = $obj->adjust_model_reaction($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is an adjust_model_reaction_params
+$modelMeta is an object_metadata
+adjust_model_reaction_params is a reference to a hash where the following keys are defined:
+	model has a value which is a fbamodel_id
+	workspace has a value which is a workspace_id
+	reaction has a value which is a reaction_id
+	direction has a value which is a string
+	compartment has a value which is a compartment_id
+	compartmentIndex has a value which is an int
+	gpr has a value which is a reference to a list where each element is a reference to a list where each element is a reference to a list where each element is a feature_id
+	removeReaction has a value which is a bool
+	addReaction has a value which is a bool
+	overwrite has a value which is a bool
+	auth has a value which is a string
+fbamodel_id is a string
+workspace_id is a string
+reaction_id is a string
+compartment_id is a string
+feature_id is a string
+bool is an int
+object_metadata is a reference to a list containing 11 items:
+	0: an object_id
+	1: an object_type
+	2: a timestamp
+	3: an int
+	4: a string
+	5: a username
+	6: a username
+	7: a workspace_id
+	8: a workspace_ref
+	9: a string
+	10: a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is an adjust_model_reaction_params
+$modelMeta is an object_metadata
+adjust_model_reaction_params is a reference to a hash where the following keys are defined:
+	model has a value which is a fbamodel_id
+	workspace has a value which is a workspace_id
+	reaction has a value which is a reaction_id
+	direction has a value which is a string
+	compartment has a value which is a compartment_id
+	compartmentIndex has a value which is an int
+	gpr has a value which is a reference to a list where each element is a reference to a list where each element is a reference to a list where each element is a feature_id
+	removeReaction has a value which is a bool
+	addReaction has a value which is a bool
+	overwrite has a value which is a bool
+	auth has a value which is a string
+fbamodel_id is a string
+workspace_id is a string
+reaction_id is a string
+compartment_id is a string
+feature_id is a string
+bool is an int
+object_metadata is a reference to a list containing 11 items:
+	0: an object_id
+	1: an object_type
+	2: a timestamp
+	3: an int
+	4: a string
+	5: a username
+	6: a username
+	7: a workspace_id
+	8: a workspace_ref
+	9: a string
+	10: a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+
+
+=item Description
+
+Enables the manual addition of a reaction to model
+
+=back
+
+=cut
+
+sub adjust_model_reaction
+{
+    my $self = shift;
+    my($input) = @_;
+
+    my @_bad_arguments;
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to adjust_model_reaction:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'adjust_model_reaction');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($modelMeta);
+    #BEGIN adjust_model_reaction
+    $self->_setContext($ctx,$input);
+    $input = $self->_validateargs($input,["reaction","model","workspace"],{
+    	direction => undef,
+    	compartment => "c",
+    	compartmentIndex => 0,
+    	gpr => [],
+    	removeReaction => 0,
+    	addReaction => 0,
+    	overwrite => 0
+    });
+    my $model = $self->_get_msobject("Model",$input->{workspace},$input->{model});
+    $model->adjustModelReaction({
+    	reaction => $input->{reaction},
+    	direction => $input->{direction},
+    	compartment => $input->{compartment},
+    	compartmentIndex => $input->{compartmentIndex},
+    	gpr => $input->{gpr},
+    	removeReaction => $input->{removeReaction},
+    	addReaction => $input->{addReaction}
+    });
+	$modelMeta = $self->_save_msobject($model,"Model",$input->{workspace},$input->{model},$input->{overwrite});
+    $self->_clearContext();
+    #END adjust_model_reaction
+    my @_bad_returns;
+    (ref($modelMeta) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"modelMeta\" (value was \"$modelMeta\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to adjust_model_reaction:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'adjust_model_reaction');
+    }
+    return($modelMeta);
+}
+
+
+
+
+=head2 adjust_biomass_reaction
+
+  $modelMeta = $obj->adjust_biomass_reaction($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is an adjust_biomass_reaction_params
+$modelMeta is an object_metadata
+adjust_biomass_reaction_params is a reference to a hash where the following keys are defined:
+	model has a value which is a fbamodel_id
+	workspace has a value which is a workspace_id
+	biomass has a value which is a biomass_id
+	coefficient has a value which is a float
+	compound has a value which is a compound_id
+	compartment has a value which is a compartment_id
+	compartmentIndex has a value which is an int
+	overwrite has a value which is a bool
+	auth has a value which is a string
+fbamodel_id is a string
+workspace_id is a string
+biomass_id is a string
+compound_id is a string
+compartment_id is a string
+bool is an int
+object_metadata is a reference to a list containing 11 items:
+	0: an object_id
+	1: an object_type
+	2: a timestamp
+	3: an int
+	4: a string
+	5: a username
+	6: a username
+	7: a workspace_id
+	8: a workspace_ref
+	9: a string
+	10: a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is an adjust_biomass_reaction_params
+$modelMeta is an object_metadata
+adjust_biomass_reaction_params is a reference to a hash where the following keys are defined:
+	model has a value which is a fbamodel_id
+	workspace has a value which is a workspace_id
+	biomass has a value which is a biomass_id
+	coefficient has a value which is a float
+	compound has a value which is a compound_id
+	compartment has a value which is a compartment_id
+	compartmentIndex has a value which is an int
+	overwrite has a value which is a bool
+	auth has a value which is a string
+fbamodel_id is a string
+workspace_id is a string
+biomass_id is a string
+compound_id is a string
+compartment_id is a string
+bool is an int
+object_metadata is a reference to a list containing 11 items:
+	0: an object_id
+	1: an object_type
+	2: a timestamp
+	3: an int
+	4: a string
+	5: a username
+	6: a username
+	7: a workspace_id
+	8: a workspace_ref
+	9: a string
+	10: a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+
+
+=item Description
+
+Enables the manual adjustment of model biomass reaction
+
+=back
+
+=cut
+
+sub adjust_biomass_reaction
+{
+    my $self = shift;
+    my($input) = @_;
+
+    my @_bad_arguments;
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to adjust_biomass_reaction:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'adjust_biomass_reaction');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($modelMeta);
+    #BEGIN adjust_biomass_reaction
+    $self->_setContext($ctx,$input);
+    $input = $self->_validateargs($input,["compound","model","workspace"],{
+    	biomass => "bio1",
+    	coefficient => 1,
+    	compartment => "c",
+    	"index" => 0
+    	overwrite => 0
+    });
+	my $model = $self->_get_msobject("Model",$input->{workspace},$input->{model});
+	$model->adjustBiomassReaction({
+		compound => $input->{compound},
+		coefficient => $input->{coefficient},
+    	biomass => $input->{biomass},
+    	compartment => $input->{compartment},
+    	"index" => $input->{"index"}
+    });
+	$modelMeta = $self->_save_msobject($model,"Model",$input->{workspace},$input->{model},$input->{overwrite});
+    $self->_clearContext();
+    #END adjust_biomass_reaction
+    my @_bad_returns;
+    (ref($modelMeta) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"modelMeta\" (value was \"$modelMeta\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to adjust_biomass_reaction:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'adjust_biomass_reaction');
+    }
+    return($modelMeta);
+}
+
+
+
+
 =head2 addmedia
 
   $mediaMeta = $obj->addmedia($input)
@@ -4010,7 +4455,7 @@ addmedia_params is a reference to a hash where the following keys are defined:
 media_id is a string
 workspace_id is a string
 bool is an int
-object_metadata is a reference to a list containing 9 items:
+object_metadata is a reference to a list containing 11 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -4020,6 +4465,8 @@ object_metadata is a reference to a list containing 9 items:
 	6: a username
 	7: a workspace_id
 	8: a workspace_ref
+	9: a string
+	10: a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -4050,7 +4497,7 @@ addmedia_params is a reference to a hash where the following keys are defined:
 media_id is a string
 workspace_id is a string
 bool is an int
-object_metadata is a reference to a list containing 9 items:
+object_metadata is a reference to a list containing 11 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -4060,6 +4507,8 @@ object_metadata is a reference to a list containing 9 items:
 	6: a username
 	7: a workspace_id
 	8: a workspace_ref
+	9: a string
+	10: a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -4336,7 +4785,7 @@ constraint is a reference to a list containing 4 items:
 	2: a reference to a list where each element is a term
 	3: a string
 fba_id is a string
-object_metadata is a reference to a list containing 9 items:
+object_metadata is a reference to a list containing 11 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -4346,6 +4795,8 @@ object_metadata is a reference to a list containing 9 items:
 	6: a username
 	7: a workspace_id
 	8: a workspace_ref
+	9: a string
+	10: a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -4416,7 +4867,7 @@ constraint is a reference to a list containing 4 items:
 	2: a reference to a list where each element is a term
 	3: a string
 fba_id is a string
-object_metadata is a reference to a list containing 9 items:
+object_metadata is a reference to a list containing 11 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -4426,6 +4877,8 @@ object_metadata is a reference to a list containing 9 items:
 	6: a username
 	7: a workspace_id
 	8: a workspace_ref
+	9: a string
+	10: a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -4632,7 +5085,7 @@ feature_id is a string
 media_id is a string
 compound_id is a string
 bool is an int
-object_metadata is a reference to a list containing 9 items:
+object_metadata is a reference to a list containing 11 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -4642,6 +5095,8 @@ object_metadata is a reference to a list containing 9 items:
 	6: a username
 	7: a workspace_id
 	8: a workspace_ref
+	9: a string
+	10: a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -4677,7 +5132,7 @@ feature_id is a string
 media_id is a string
 compound_id is a string
 bool is an int
-object_metadata is a reference to a list containing 9 items:
+object_metadata is a reference to a list containing 11 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -4687,6 +5142,8 @@ object_metadata is a reference to a list containing 9 items:
 	6: a username
 	7: a workspace_id
 	8: a workspace_ref
+	9: a string
+	10: a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -4928,7 +5385,7 @@ constraint is a reference to a list containing 4 items:
 	2: a reference to a list where each element is a term
 	3: a string
 phenotypeSimulationSet_id is a string
-object_metadata is a reference to a list containing 9 items:
+object_metadata is a reference to a list containing 11 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -4938,6 +5395,8 @@ object_metadata is a reference to a list containing 9 items:
 	6: a username
 	7: a workspace_id
 	8: a workspace_ref
+	9: a string
+	10: a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -5006,7 +5465,7 @@ constraint is a reference to a list containing 4 items:
 	2: a reference to a list where each element is a term
 	3: a string
 phenotypeSimulationSet_id is a string
-object_metadata is a reference to a list containing 9 items:
+object_metadata is a reference to a list containing 11 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -5016,6 +5475,8 @@ object_metadata is a reference to a list containing 9 items:
 	6: a username
 	7: a workspace_id
 	8: a workspace_ref
+	9: a string
+	10: a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -5279,7 +5740,7 @@ workspace_id is a string
 gapfillsolution_id is a string
 gapgensolution_id is a string
 bool is an int
-object_metadata is a reference to a list containing 9 items:
+object_metadata is a reference to a list containing 11 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -5289,6 +5750,8 @@ object_metadata is a reference to a list containing 9 items:
 	6: a username
 	7: a workspace_id
 	8: a workspace_ref
+	9: a string
+	10: a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -5317,7 +5780,7 @@ workspace_id is a string
 gapfillsolution_id is a string
 gapgensolution_id is a string
 bool is an int
-object_metadata is a reference to a list containing 9 items:
+object_metadata is a reference to a list containing 11 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -5327,6 +5790,8 @@ object_metadata is a reference to a list containing 9 items:
 	6: a username
 	7: a workspace_id
 	8: a workspace_ref
+	9: a string
+	10: a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -5487,7 +5952,7 @@ constraint is a reference to a list containing 4 items:
 	2: a reference to a list where each element is a term
 	3: a string
 fba_id is a string
-object_metadata is a reference to a list containing 9 items:
+object_metadata is a reference to a list containing 11 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -5497,6 +5962,8 @@ object_metadata is a reference to a list containing 9 items:
 	6: a username
 	7: a workspace_id
 	8: a workspace_ref
+	9: a string
+	10: a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -5568,7 +6035,7 @@ constraint is a reference to a list containing 4 items:
 	2: a reference to a list where each element is a term
 	3: a string
 fba_id is a string
-object_metadata is a reference to a list containing 9 items:
+object_metadata is a reference to a list containing 11 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -5578,6 +6045,8 @@ object_metadata is a reference to a list containing 9 items:
 	6: a username
 	7: a workspace_id
 	8: a workspace_ref
+	9: a string
+	10: a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -5792,7 +6261,7 @@ compartment_id is a string
 probanno_id is a string
 phenotypeSet_id is a string
 gapfill_id is a string
-object_metadata is a reference to a list containing 9 items:
+object_metadata is a reference to a list containing 11 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -5802,6 +6271,8 @@ object_metadata is a reference to a list containing 9 items:
 	6: a username
 	7: a workspace_id
 	8: a workspace_ref
+	9: a string
+	10: a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -5897,7 +6368,7 @@ compartment_id is a string
 probanno_id is a string
 phenotypeSet_id is a string
 gapfill_id is a string
-object_metadata is a reference to a list containing 9 items:
+object_metadata is a reference to a list containing 11 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -5907,6 +6378,8 @@ object_metadata is a reference to a list containing 9 items:
 	6: a username
 	7: a workspace_id
 	8: a workspace_ref
+	9: a string
+	10: a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -6129,7 +6602,7 @@ constraint is a reference to a list containing 4 items:
 	3: a string
 phenotypeSet_id is a string
 gapgen_id is a string
-object_metadata is a reference to a list containing 9 items:
+object_metadata is a reference to a list containing 11 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -6139,6 +6612,8 @@ object_metadata is a reference to a list containing 9 items:
 	6: a username
 	7: a workspace_id
 	8: a workspace_ref
+	9: a string
+	10: a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -6219,7 +6694,7 @@ constraint is a reference to a list containing 4 items:
 	3: a string
 phenotypeSet_id is a string
 gapgen_id is a string
-object_metadata is a reference to a list containing 9 items:
+object_metadata is a reference to a list containing 11 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -6229,6 +6704,8 @@ object_metadata is a reference to a list containing 9 items:
 	6: a username
 	7: a workspace_id
 	8: a workspace_ref
+	9: a string
+	10: a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -6477,7 +6954,7 @@ GapgenFormulation is a reference to a hash where the following keys are defined:
 phenotypeSet_id is a string
 gapfill_id is a string
 gapgen_id is a string
-object_metadata is a reference to a list containing 9 items:
+object_metadata is a reference to a list containing 11 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -6487,6 +6964,8 @@ object_metadata is a reference to a list containing 9 items:
 	6: a username
 	7: a workspace_id
 	8: a workspace_ref
+	9: a string
+	10: a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -6597,7 +7076,7 @@ GapgenFormulation is a reference to a hash where the following keys are defined:
 phenotypeSet_id is a string
 gapfill_id is a string
 gapgen_id is a string
-object_metadata is a reference to a list containing 9 items:
+object_metadata is a reference to a list containing 11 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -6607,6 +7086,8 @@ object_metadata is a reference to a list containing 9 items:
 	6: a username
 	7: a workspace_id
 	8: a workspace_ref
+	9: a string
+	10: a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -6932,7 +7413,7 @@ GapgenFormulation is a reference to a hash where the following keys are defined:
 phenotypeSet_id is a string
 gapfill_id is a string
 gapgen_id is a string
-object_metadata is a reference to a list containing 9 items:
+object_metadata is a reference to a list containing 11 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -6942,6 +7423,8 @@ object_metadata is a reference to a list containing 9 items:
 	6: a username
 	7: a workspace_id
 	8: a workspace_ref
+	9: a string
+	10: a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -7052,7 +7535,7 @@ GapgenFormulation is a reference to a hash where the following keys are defined:
 phenotypeSet_id is a string
 gapfill_id is a string
 gapgen_id is a string
-object_metadata is a reference to a list containing 9 items:
+object_metadata is a reference to a list containing 11 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -7062,6 +7545,8 @@ object_metadata is a reference to a list containing 9 items:
 	6: a username
 	7: a workspace_id
 	8: a workspace_ref
+	9: a string
+	10: a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -7111,9 +7596,9 @@ sub queue_reconciliation_sensitivity_analysis
 
 
 
-=head2 queue_combine_wildtype_phenotype_reconciliation_params
+=head2 queue_combine_wildtype_phenotype_reconciliation
 
-  $output = $obj->queue_combine_wildtype_phenotype_reconciliation_params($input)
+  $output = $obj->queue_combine_wildtype_phenotype_reconciliation($input)
 
 =over 4
 
@@ -7218,7 +7703,7 @@ GapgenFormulation is a reference to a hash where the following keys are defined:
 phenotypeSet_id is a string
 gapfill_id is a string
 gapgen_id is a string
-object_metadata is a reference to a list containing 9 items:
+object_metadata is a reference to a list containing 11 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -7228,6 +7713,8 @@ object_metadata is a reference to a list containing 9 items:
 	6: a username
 	7: a workspace_id
 	8: a workspace_ref
+	9: a string
+	10: a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -7336,7 +7823,7 @@ GapgenFormulation is a reference to a hash where the following keys are defined:
 phenotypeSet_id is a string
 gapfill_id is a string
 gapgen_id is a string
-object_metadata is a reference to a list containing 9 items:
+object_metadata is a reference to a list containing 11 items:
 	0: an object_id
 	1: an object_type
 	2: a timestamp
@@ -7346,6 +7833,8 @@ object_metadata is a reference to a list containing 9 items:
 	6: a username
 	7: a workspace_id
 	8: a workspace_ref
+	9: a string
+	10: a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -7365,7 +7854,7 @@ Queues an FBAModel reconciliation job
 
 =cut
 
-sub queue_combine_wildtype_phenotype_reconciliation_params
+sub queue_combine_wildtype_phenotype_reconciliation
 {
     my $self = shift;
     my($input) = @_;
@@ -7373,21 +7862,21 @@ sub queue_combine_wildtype_phenotype_reconciliation_params
     my @_bad_arguments;
     (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
     if (@_bad_arguments) {
-	my $msg = "Invalid arguments passed to queue_combine_wildtype_phenotype_reconciliation_params:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	my $msg = "Invalid arguments passed to queue_combine_wildtype_phenotype_reconciliation:\n" . join("", map { "\t$_\n" } @_bad_arguments);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'queue_combine_wildtype_phenotype_reconciliation_params');
+							       method_name => 'queue_combine_wildtype_phenotype_reconciliation');
     }
 
     my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
     my($output);
-    #BEGIN queue_combine_wildtype_phenotype_reconciliation_params
-    #END queue_combine_wildtype_phenotype_reconciliation_params
+    #BEGIN queue_combine_wildtype_phenotype_reconciliation
+    #END queue_combine_wildtype_phenotype_reconciliation
     my @_bad_returns;
     (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
     if (@_bad_returns) {
-	my $msg = "Invalid returns passed to queue_combine_wildtype_phenotype_reconciliation_params:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	my $msg = "Invalid returns passed to queue_combine_wildtype_phenotype_reconciliation:\n" . join("", map { "\t$_\n" } @_bad_returns);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'queue_combine_wildtype_phenotype_reconciliation_params');
+							       method_name => 'queue_combine_wildtype_phenotype_reconciliation');
     }
     return($output);
 }
@@ -8808,7 +9297,7 @@ a string
 =begin html
 
 <pre>
-a reference to a list containing 9 items:
+a reference to a list containing 11 items:
 0: an object_id
 1: an object_type
 2: a timestamp
@@ -8818,6 +9307,8 @@ a reference to a list containing 9 items:
 6: a username
 7: a workspace_id
 8: a workspace_ref
+9: a string
+10: a reference to a hash where the key is a string and the value is a string
 
 </pre>
 
@@ -8825,7 +9316,7 @@ a reference to a list containing 9 items:
 
 =begin text
 
-a reference to a list containing 9 items:
+a reference to a list containing 11 items:
 0: an object_id
 1: an object_type
 2: a timestamp
@@ -8835,6 +9326,8 @@ a reference to a list containing 9 items:
 6: a username
 7: a workspace_id
 8: a workspace_ref
+9: a string
+10: a reference to a hash where the key is a string and the value is a string
 
 
 =end text
@@ -9253,6 +9746,18 @@ media has a value which is a reference to a list where each element is a media_i
 
 
 
+=item Description
+
+Data structures for media formulation
+
+media_id id - ID of media formulation
+string name - name of media formulaiton
+list<compound_id> compounds - list of compounds in media formulation
+list<float> concentrations - list of compound concentrations
+float pH - pH of media condition
+float temperature - temperature of media condition
+
+
 =item Definition
 
 =begin html
@@ -9291,6 +9796,20 @@ temperature has a value which is a float
 
 =over 4
 
+
+
+=item Description
+
+Data structures for media formulation
+
+compound_id id - ID of compound
+string abbrev - abbreviated name of compound
+string name - primary name of compound
+list<string> aliases - list of aliases for compound
+float charge - molecular charge of compound
+float deltaG - estimated compound delta G
+float deltaGErr - uncertainty in estimated compound delta G
+string formula - molecular formula of compound
 
 
 =item Definition
@@ -9335,6 +9854,22 @@ formula has a value which is a string
 
 =over 4
 
+
+
+=item Description
+
+Data structures for media formulation
+
+reaction_id id - ID of reaction
+string name - primary name of reaction
+string abbrev - abbreviated name of reaction
+list<string> enzymes - list of EC numbers for reaction
+string direction - directionality of reaction
+string reversibility - reversibility of reaction
+float deltaG - estimated delta G of reaction
+float deltaGErr - uncertainty in estimated delta G of reaction
+string equation - reaction equation in terms of compound IDs
+string definition - reaction equation in terms of compound names
 
 
 =item Definition
@@ -9430,6 +9965,16 @@ index has a value which is an int
 
 
 
+=item Description
+
+Data structures for a compound in a model
+
+modelcompound_id id - ID of the specific instance of the compound in the model
+compound_id compound - ID of the compound associated with the model compound
+string name - name of the compound associated with the model compound
+modelcompartment_id compartment - ID of the compartment containing the compound
+
+
 =item Definition
 
 =begin html
@@ -9464,6 +10009,20 @@ compartment has a value which is a modelcompartment_id
 
 =over 4
 
+
+
+=item Description
+
+Data structures for a reaction in a model
+
+modelreaction_id id - ID of the specific instance of the reaction in the model
+reaction_id reaction - ID of the reaction
+string name - name of the reaction
+string direction - directionality of the reaction
+string equation - stoichiometric equation of the reaction in terms of compound IDs
+string definition - stoichiometric equation of the reaction in terms of compound names
+list<feature_id> features - list of features associated with the reaction
+modelcompartment_id compartment - ID of the compartment containing the reaction
 
 
 =item Definition
@@ -9510,6 +10069,15 @@ compartment has a value which is a modelcompartment_id
 
 
 
+=item Description
+
+Data structures for a reaction in a model
+
+modelcompound_id modelcompound - ID of model compound in biomass reaction
+float coefficient - coefficient of compound in biomass reaction
+string name - name of compound in biomass reaction
+
+
 =item Definition
 
 =begin html
@@ -9542,6 +10110,16 @@ a reference to a list containing 3 items:
 
 =over 4
 
+
+
+=item Description
+
+Data structures for a reaction in a model
+
+biomass_id id - ID of biomass reaction
+string name - name of biomass reaction
+string definition - stoichiometric equation of biomass reaction in terms of compound names
+list<BiomassCompound> biomass_compounds - list of compounds in biomass reaction
 
 
 =item Definition
@@ -9578,6 +10156,18 @@ biomass_compounds has a value which is a reference to a list where each element 
 
 =over 4
 
+
+
+=item Description
+
+Data structures for a reaction in a model
+
+fba_id id - ID of the FBA object
+workspace_id workspace - ID of the workspace containing the FBA object
+media_id media - ID of the media the FBA was performed in
+workspace_id media_workspace - ID of the workspace containing the media formulation
+float objective - optimized objective value of the FBA study
+list<feature_id> ko - list of genes knocked out in the FBA study
 
 
 =item Definition
@@ -9620,6 +10210,18 @@ a reference to a list containing 6 items:
 
 
 
+=item Description
+
+Metadata object providing a summary of a gapgen simulation
+
+gapgen_id id - ID of gapgen study object
+workspace_id workspace - workspace containing gapgen study
+media_id media - media formulation for gapgen study
+workspace_id media_workspace - ID of the workspace containing the media formulation
+bool done - boolean indicating if gapgen study is complete
+list<feature_id> ko - list of genes knocked out in gapgen study
+
+
 =item Definition
 
 =begin html
@@ -9660,6 +10262,18 @@ a reference to a list containing 6 items:
 
 
 
+=item Description
+
+Metadata object providing a summary of a gapfilling simulation
+
+gapfill_id id - ID of gapfill study object
+workspace_id workspace - workspace containing gapfill study
+media_id media - media formulation for gapfill study
+workspace_id media_workspace - ID of the workspace containing the media formulation
+bool done - boolean indicating if gapfill study is complete
+list<feature_id> ko - list of genes knocked out in gapfill study
+
+
 =item Definition
 
 =begin html
@@ -9698,6 +10312,32 @@ a reference to a list containing 6 items:
 
 =over 4
 
+
+
+=item Description
+
+Data structure holding data for metabolic model
+
+fbamodel_id id - ID of model
+workspace_id workspace - workspace containing model
+genome_id genome - ID of associated genome
+workspace_id genome_workspace - workspace with associated genome
+mapping_id map - ID of associated mapping database
+workspace_id map_workspace - workspace with associated mapping database
+biochemistry_id biochemistry - ID of associated biochemistry database
+workspace_id biochemistry_workspace - workspace with associated biochemistry database
+string name - name of the model
+string type - type of model (e.g. single genome, community)
+string status - status of model (e.g. under construction)
+list<ModelBiomass> biomasses - list of biomass reactions in model
+list<ModelCompartment> compartments - list of compartments in model
+list<ModelReaction> reactions - list of reactions in model
+list<ModelCompound> compounds - list of compounds in model
+list<FBAMeta> fbas - list of flux balance analysis studies for model
+list<GapFillMeta> integrated_gapfillings - list of integrated gapfilling solutions
+list<GapFillMeta> unintegrated_gapfillings - list of unintegrated gapfilling solutions
+list<GapGenMeta> integrated_gapgenerations - list of integrated gapgen solutions
+list<GapGenMeta> unintegrated_gapgenerations - list of unintegrated gapgen solutions
 
 
 =item Definition
@@ -9811,6 +10451,20 @@ a reference to a list containing 4 items:
 
 
 
+=item Description
+
+Compound variable in FBA solution
+
+modelcompound_id compound - ID of compound in model in FBA solution
+float value - flux uptake of compound in FBA solution
+float upperBound - maximum uptake of compoundin FBA simulation
+float lowerBound - minimum uptake of compoundin FBA simulation
+float max - maximum uptake of compoundin FBA simulation
+float min - minimum uptake of compoundin FBA simulation
+string type - type of compound variable
+string name - name of compound
+
+
 =item Definition
 
 =begin html
@@ -9853,6 +10507,20 @@ a reference to a list containing 8 items:
 
 =over 4
 
+
+
+=item Description
+
+Reaction variable in FBA solution
+
+modelreaction_id reaction - ID of reaction in model in FBA solution
+float value - flux through reaction in FBA solution
+float upperBound - maximum flux through reaction in FBA simulation
+float lowerBound -  minimum flux through reaction in FBA simulation
+float max - maximum flux through reaction in FBA simulation
+float min - minimum flux through reaction in FBA simulation
+string type - type of reaction variable
+string definition - stoichiometry of solution reaction in terms of compound names
 
 
 =item Definition
@@ -9899,6 +10567,15 @@ a reference to a list containing 8 items:
 
 
 
+=item Description
+
+Maximum production of compound in FBA simulation
+
+float maximumProduction - maximum production of compound
+modelcompound_id modelcompound - ID of compound with production maximized
+string name - name of compound with simulated production
+
+
 =item Definition
 
 =begin html
@@ -9920,32 +10597,6 @@ a reference to a list containing 3 items:
 1: a modelcompound_id
 2: a string
 
-
-=end text
-
-=back
-
-
-
-=head2 compound_id
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a string
-</pre>
-
-=end html
-
-=begin text
-
-a string
 
 =end text
 
@@ -9957,6 +10608,14 @@ a string
 
 =over 4
 
+
+
+=item Description
+
+Data structures for gapfilling solution
+
+list<compound_id> optionalNutrients - list of optional nutrients
+list<compound_id> essentialNutrients - list of essential nutrients
 
 
 =item Definition
@@ -9989,6 +10648,16 @@ essentialNutrients has a value which is a reference to a list where each element
 
 =over 4
 
+
+
+=item Description
+
+Term of constraint or objective in FBA simulation
+
+float min - minimum value of custom bound
+float max - maximum value of custom bound
+string varType - type of variable for custom bound
+string variable - variable ID for custom bound
 
 
 =item Definition
@@ -10027,6 +10696,15 @@ a reference to a list containing 4 items:
 
 
 
+=item Description
+
+Term of constraint or objective in FBA simulation
+
+float coefficient - coefficient of term in objective or constraint
+string varType - type of variable for term in objective or constraint
+string variable - variable ID for term in objective or constraint
+
+
 =item Definition
 
 =begin html
@@ -10059,6 +10737,16 @@ a reference to a list containing 3 items:
 
 =over 4
 
+
+
+=item Description
+
+Custom constraint in FBA simulation
+
+float rhs - right hand side of custom constraint
+string sign - sign of custom constraint (e.g. <, >)
+list<term> terms - terms in custom constraint
+string name - name of custom constraint
 
 
 =item Definition
@@ -10095,6 +10783,31 @@ a reference to a list containing 4 items:
 
 =over 4
 
+
+
+=item Description
+
+Data structures for gapfilling solution
+
+media_id media - ID of media formulation to be used
+list<compound_id> additionalcpds - list of additional compounds to allow update
+workspace_id media_workspace - workspace containing media for FBA study
+float objfraction - fraction of objective to use for constraints
+bool allreversible - flag indicating if all reactions should be reversible
+bool maximizeObjective - flag indicating if objective should be maximized
+list<term> objectiveTerms - list of terms of objective function
+list<feature_id> geneko - list of gene knockouts
+list<reaction_id> rxnko - list of reaction knockouts
+list<bound> bounds - list of custom bounds
+list<constraint> constraints - list of custom constraints
+mapping<string,float> uptakelim - hash of maximum uptake for elements
+float defaultmaxflux - default maximum intracellular flux
+float defaultminuptake - default minimum nutrient uptake
+float defaultmaxuptake - default maximum nutrient uptake
+bool simplethermoconst - flag indicating if simple thermodynamic constraints should be used
+bool thermoconst - flag indicating if thermodynamic constraints should be used
+bool nothermoerror - flag indicating if no error should be allowed in thermodynamic constraints
+bool minthermoerror - flag indicating if error should be minimized in thermodynamic constraints
 
 
 =item Definition
@@ -10161,6 +10874,24 @@ minthermoerror has a value which is a bool
 
 =over 4
 
+
+
+=item Description
+
+Data structures for gapfilling solution
+
+fba_id id - ID of FBA study
+workspace_id workspace - workspace containing FBA study
+        fbamodel_id model - ID of model FBA was run on
+        workspace_id model_workspace - workspace with FBA model
+        float objective - objective value of FBA study
+        bool isComplete - flag indicating if job is complete
+FBAFormulation formulation - specs for FBA study
+list<MinimalMediaPrediction> minimalMediaPredictions - list of minimal media formulation
+list<MetaboliteProduction> metaboliteProductions - list of biomass component production
+list<ReactionFlux> reactionFluxes - list of reaction fluxes
+list<CompoundFlux> compoundFluxes - list of compound uptake fluxes
+list<GeneAssertion> geneAssertions - list of gene assertions
 
 
 =item Definition
@@ -10292,6 +11023,16 @@ probabilisticAnnotation_workspace has a value which is a workspace_id
 
 
 
+=item Description
+
+Reactions removed in gapgen solution
+
+modelreaction_id reaction - ID of the removed reaction
+string direction - direction of reaction removed in gapgen solution
+string equation - stoichiometry of removed reaction in terms of compound IDs
+string definition - stoichiometry of removed reaction in terms of compound names
+
+
 =item Definition
 
 =begin html
@@ -10330,6 +11071,14 @@ a reference to a list containing 5 items:
 
 
 
+=item Description
+
+Biomass component removed in gapfill solution
+
+compound_id compound - ID of biomass component removed
+string name - name of biomass component removed
+
+
 =item Definition
 
 =begin html
@@ -10362,6 +11111,14 @@ a reference to a list containing 2 items:
 
 
 
+=item Description
+
+Media component added in gapfill solution
+
+compound_id compound - ID of media component added
+string name - name of media component added
+
+
 =item Definition
 
 =begin html
@@ -10392,6 +11149,17 @@ a reference to a list containing 2 items:
 
 =over 4
 
+
+
+=item Description
+
+Data structures for gapfilling solution
+
+gapfillsolution_id id - ID of gapfilling solution
+        float objective - cost of gapfilling solution
+list<biomassRemoval> biomassRemovals - list of biomass components being removed
+list<mediaAddition> mediaAdditions - list of media components being added
+list<reactionAddition> reactionAdditions - list of reactions being added
 
 
 =item Definition
@@ -10430,6 +11198,19 @@ reactionAdditions has a value which is a reference to a list where each element 
 
 =over 4
 
+
+
+=item Description
+
+Data structures for gapfilling analysis
+
+gapfill_id id - ID of gapfill analysis
+workspace_id workspace - workspace containing gapfill analysis
+fbamodel_id model - ID of model being gapfilled
+        workspace_id model_workspace - workspace containing model
+        bool isComplete - indicates if gapfilling is complete
+GapfillingFormulation formulation - formulation of gapfilling analysis
+list<GapFillSolution> solutions - list of gapfilling solutions
 
 
 =item Definition
@@ -10525,6 +11306,16 @@ nopathwayhyp has a value which is a bool
 
 
 
+=item Description
+
+Reactions removed in gapgen solution
+
+modelreaction_id reaction - ID of the removed reaction
+string direction - direction of reaction removed in gapgen solution
+string equation - stoichiometry of removed reaction in terms of compound IDs
+string definition - stoichiometry of removed reaction in terms of compound names
+
+
 =item Definition
 
 =begin html
@@ -10561,6 +11352,14 @@ a reference to a list containing 4 items:
 
 
 
+=item Description
+
+Compounds added to biomass in gapgen solution
+
+compound_id compound - ID of biomass compound added
+string name - name of biomass compound added
+
+
 =item Definition
 
 =begin html
@@ -10593,6 +11392,14 @@ a reference to a list containing 2 items:
 
 
 
+=item Description
+
+Media components removed in gapgen solution
+
+compound_id compound - ID of media component removed
+string name - name of media component removed
+
+
 =item Definition
 
 =begin html
@@ -10623,6 +11430,17 @@ a reference to a list containing 2 items:
 
 =over 4
 
+
+
+=item Description
+
+Data structures for gap generation solution
+
+gapgensolution_id id - ID of gapgen solution
+        float objective - cost of gapgen solution
+list<biomassAddition> biomassAdditions - list of components added to biomass
+list<mediaRemoval> mediaRemovals - list of media components removed
+list<reactionRemoval> reactionRemovals - list of reactions removed
 
 
 =item Definition
@@ -10663,6 +11481,19 @@ reactionRemovals has a value which is a reference to a list where each element i
 
 
 
+=item Description
+
+Data structures for gap generation analysis
+
+gapgen_id id - ID of gapgen object
+workspace_id workspace - workspace containing gapgen object
+fbamodel_id model - ID of model being gap generated
+        workspace_id model_workspace - workspace containing model
+        bool isComplete - flag indicating if gap generation is complete
+GapgenFormulation formulation - formulation of gap generation analysis
+list<GapgenSolution> solutions - list of gap generation solutions
+
+
 =item Definition
 
 =begin html
@@ -10691,6 +11522,402 @@ model_workspace has a value which is a workspace_id
 isComplete has a value which is a bool
 formulation has a value which is a GapgenFormulation
 solutions has a value which is a reference to a list where each element is a GapgenSolution
+
+
+=end text
+
+=back
+
+
+
+=head2 Phenotype
+
+=over 4
+
+
+
+=item Description
+
+********************************************************************************
+    Phenotype type definitions
+   	********************************************************************************
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a list containing 5 items:
+0: a reference to a list where each element is a feature_id
+1: a media_id
+2: a workspace_id
+3: a reference to a list where each element is a compound_id
+4: a float
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a list containing 5 items:
+0: a reference to a list where each element is a feature_id
+1: a media_id
+2: a workspace_id
+3: a reference to a list where each element is a compound_id
+4: a float
+
+
+=end text
+
+=back
+
+
+
+=head2 PhenotypeSet
+
+=over 4
+
+
+
+=item Description
+
+Data structures for set of growth phenotype observations
+
+phenotypeSet_id id - ID of the phenotype set
+genome_id genome - ID of the genome for the strain used with the growth phenotypes
+workspace_id genome_workspace - workspace containing the genome object
+list<Phenotype> phenotypes - list of phenotypes included in the phenotype set
+string importErrors - list of errors encountered during the import of the phenotype set
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+id has a value which is a phenotypeSet_id
+genome has a value which is a genome_id
+genome_workspace has a value which is a workspace_id
+phenotypes has a value which is a reference to a list where each element is a Phenotype
+importErrors has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+id has a value which is a phenotypeSet_id
+genome has a value which is a genome_id
+genome_workspace has a value which is a workspace_id
+phenotypes has a value which is a reference to a list where each element is a Phenotype
+importErrors has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 phenotypeSimulationSet_id
+
+=over 4
+
+
+
+=item Description
+
+ID of the phenotype simulation object
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 PhenotypeSimulation
+
+=over 4
+
+
+
+=item Description
+
+Data structures for a phenotype simulation
+
+Phenotype phenotypeData - actual phenotype data simulated
+float simulatedGrowth - actual simulated growth rate
+float simulatedGrowthFraction - fraction of wildtype simulated growth rate
+string class - class of the phenotype simulation (i.e. 'CP' - correct positive, 'CN' - correct negative, 'FP' - false positive, 'FN' - false negative)
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a list containing 4 items:
+0: a Phenotype
+1: a float
+2: a float
+3: a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a list containing 4 items:
+0: a Phenotype
+1: a float
+2: a float
+3: a string
+
+
+=end text
+
+=back
+
+
+
+=head2 PhenotypeSimulationSet
+
+=over 4
+
+
+
+=item Description
+
+Data structures for phenotype simulations of a set of phenotype data
+
+phenotypeSimulationSet_id id - ID for the phenotype simulation set object
+fbamodel_id model - ID of the model used to simulate all phenotypes
+workspace_id model_workspace - workspace containing the model used for the simulation
+phenotypeSet_id phenotypeSet - set of observed phenotypes that were simulated
+list<PhenotypeSimulation> phenotypeSimulations - list of simulated phenotypes
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+id has a value which is a phenotypeSimulationSet_id
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+phenotypeSet has a value which is a phenotypeSet_id
+phenotypeSimulations has a value which is a reference to a list where each element is a PhenotypeSimulation
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+id has a value which is a phenotypeSimulationSet_id
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+phenotypeSet has a value which is a phenotypeSet_id
+phenotypeSimulations has a value which is a reference to a list where each element is a PhenotypeSimulation
+
+
+=end text
+
+=back
+
+
+
+=head2 job_id
+
+=over 4
+
+
+
+=item Description
+
+********************************************************************************
+    Job object type definitions
+   	********************************************************************************
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 CommandArguments
+
+=over 4
+
+
+
+=item Description
+
+Object to hold the arguments to be submitted to the post process command
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 clusterjob
+
+=over 4
+
+
+
+=item Description
+
+Object to hold data required to run cluster job
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 JobObject
+
+=over 4
+
+
+
+=item Description
+
+Data structures for an FBA job object
+
+job_id id - ID of the job object
+workspace_id workspace - workspace containing job object
+list<clusterjob> clusterjobs - list of data related to cluster jobs
+string postprocess_command - command to be run after the job is complete
+list<CommandArguments> postprocess_args - arguments to be submitted to the postprocess job
+string queuing_command - command used to queue job
+float clustermem - maximum memmory expected to be consumed by the job
+int clustertime - maximum time to spent running the job
+string clustertoken - token for submitted cluster job
+string queuetime - time when the job was queued
+string completetime - time when the job was completed
+bool complete - flag indicating if job is complete
+string owner - username of the user that queued the job
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+id has a value which is a job_id
+workspace has a value which is a workspace_id
+clusterjobs has a value which is a reference to a list where each element is a clusterjob
+postprocess_command has a value which is a string
+postprocess_args has a value which is a reference to a list where each element is a CommandArguments
+queuing_command has a value which is a string
+clustermem has a value which is a float
+clustertime has a value which is an int
+clustertoken has a value which is a string
+queuetime has a value which is a string
+completetime has a value which is a string
+complete has a value which is a bool
+owner has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+id has a value which is a job_id
+workspace has a value which is a workspace_id
+clusterjobs has a value which is a reference to a list where each element is a clusterjob
+postprocess_command has a value which is a string
+postprocess_args has a value which is a reference to a list where each element is a CommandArguments
+queuing_command has a value which is a string
+clustermem has a value which is a float
+clustertime has a value which is an int
+clustertoken has a value which is a string
+queuetime has a value which is a string
+completetime has a value which is a string
+complete has a value which is a bool
+owner has a value which is a string
 
 
 =end text
@@ -10748,6 +11975,16 @@ id_type has a value which is a string
 
 
 
+=item Description
+
+Input parameters for the "get_fbas" function.
+
+        list<fba_id> fbas - a list of the FBA study IDs for the FBA studies to be returned (a required argument)
+        list<workspace_id> workspaces - a list of the workspaces contianing the FBA studies to be returned (a required argument)
+string id_type - the type of ID that should be used in the output data (a optional argument; default is 'ModelSEED')
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+
+
 =item Definition
 
 =begin html
@@ -10782,6 +12019,16 @@ id_type has a value which is a string
 
 =over 4
 
+
+
+=item Description
+
+Input parameters for the "get_gapfills" function.
+
+        list<gapfill_id> gapfills - a list of the gapfill study IDs for the gapfill studies to be returned (a required argument)
+        list<workspace_id> workspaces - a list of the workspaces contianing the gapfill studies to be returned (a required argument)
+string id_type - the type of ID that should be used in the output data (a optional argument; default is 'ModelSEED')
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
 
 =item Definition
@@ -10820,6 +12067,16 @@ id_type has a value which is a string
 
 
 
+=item Description
+
+Input parameters for the "get_gapgens" function.
+
+        list<gapgen_id> gapgens - a list of the gapgen study IDs for the gapgen studies to be returned (a required argument)
+        list<workspace_id> workspaces - a list of the workspaces contianing the gapgen studies to be returned (a required argument)
+string id_type - the type of ID that should be used in the output data (a optional argument; default is 'ModelSEED')
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+
+
 =item Definition
 
 =begin html
@@ -10856,6 +12113,15 @@ id_type has a value which is a string
 
 
 
+=item Description
+
+Input parameters for the "get_reactions" function.
+
+        list<reaction_id> reactions - a list of the reaction IDs for the reactions to be returned (a required argument)
+        string id_type - the type of ID that should be used in the output data (a optional argument; default is 'ModelSEED')
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+
+
 =item Definition
 
 =begin html
@@ -10888,6 +12154,15 @@ id_type has a value which is a string
 
 =over 4
 
+
+
+=item Description
+
+Input parameters for the "get_compounds" function.
+
+        list<compound_id> compounds - a list of the compound IDs for the compounds to be returned (a required argument)
+        string id_type - the type of ID that should be used in the output data (a optional argument; default is 'ModelSEED')
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
 
 =item Definition
@@ -10926,7 +12201,11 @@ id_type has a value which is a string
 
 =item Description
 
-This function returns media data for input ids
+Input parameters for the "get_media" function.
+
+        list<media_id> medias - a list of the media IDs for the media to be returned (a required argument)
+        string id_type - the type of ID that should be used in the output data (a optional argument; default is 'ModelSEED')
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
 
 =item Definition
@@ -10963,6 +12242,16 @@ auth has a value which is a string
 
 
 
+=item Description
+
+Input parameters for the "get_biochemistry" function.
+
+        biochemistry_id biochemistry - ID of the biochemistry database to be returned (a required argument)
+        workspace_id biochemistry_workspace - workspace containing the biochemistry database to be returned (a required argument)
+        string id_type - the type of ID that should be used in the output data (a optional argument; default is 'ModelSEED')
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+
+
 =item Definition
 
 =begin html
@@ -10993,7 +12282,7 @@ auth has a value which is a string
 
 
 
-=head2 workspace_id
+=head2 genome_object_to_workspace_params
 
 =over 4
 
@@ -11011,64 +12300,8 @@ auth has a value which is a string
 =begin html
 
 <pre>
-a string
-</pre>
-
-=end html
-
-=begin text
-
-a string
-
-=end text
-
-=back
-
-
-
-=head2 genomeTO
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
 a reference to a hash where the following keys are defined:
-id has a value which is a genome_id
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-id has a value which is a genome_id
-
-
-=end text
-
-=back
-
-
-
-=head2 genome_object_to_workspace_params
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-genomeobj has a value which is a genomeTO
+genomeobj has a value which is a GenomeObject
 workspace has a value which is a workspace_id
 auth has a value which is a string
 overwrite has a value which is a bool
@@ -11080,7 +12313,7 @@ overwrite has a value which is a bool
 =begin text
 
 a reference to a hash where the following keys are defined:
-genomeobj has a value which is a genomeTO
+genomeobj has a value which is a GenomeObject
 workspace has a value which is a workspace_id
 auth has a value which is a string
 overwrite has a value which is a bool
@@ -11096,6 +12329,15 @@ overwrite has a value which is a bool
 
 =over 4
 
+
+
+=item Description
+
+Input parameters for the "genome_to_workspace" function.
+
+        genome_id genome - ID of the CDM genome that is to be loaded into the workspace (a required argument)
+        workspace_id workspace - ID of the workspace into which the genome typed object is to be loaded (a required argument)
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
 
 =item Definition
@@ -11134,6 +12376,14 @@ overwrite has a value which is a bool
 
 
 
+=item Description
+
+A link between a KBase gene ID and the ID for the same gene in another database
+
+        string foreign_id - ID of the gene in another database
+        feature_id feature - ID of the gene in KBase
+
+
 =item Definition
 
 =begin html
@@ -11164,6 +12414,17 @@ a reference to a list containing 2 items:
 
 =over 4
 
+
+
+=item Description
+
+Input parameters for the "add_feature_translation" function.
+
+        genome_id genome - ID of the genome into which the new aliases are to be loaded (a required argument)
+        workspace_id workspace - ID of the workspace containing the target genome (a required argument)
+        list<translation> translations - list of translations between KBase gene IDs and gene IDs in another database (a required argument)
+        string id_type - type of the IDs being loaded (e.g. KEGG, NCBI) (a required argument)
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
 
 =item Definition
@@ -11208,23 +12469,17 @@ overwrite has a value which is a bool
 
 =item Description
 
-A set of paramters for the genome_to_fbamodel method. This is a mapping
-where the keys in the map are named 'in_genome', 'in_workspace', 'out_model',
-and 'out_workspace'. Values for each are described below.
-    
-genome_id in_genome
-This parameter specifies the ID of the genome for which a model is to be built. This parameter is required.
-    
-workspace_id in_workspace
-This parameter specifies the ID of the workspace containing the specified genome object. This parameter is also required.
-    
-fbamodel_id out_model
-This parameter specifies the ID to which the generated model should be save. This is optional.
-If unspecified, a new KBase model ID will be checked out for the model.
-    
-workspace_id out_workspace
-This parameter specifies the ID of the workspace where the model should be save. This is optional.
-If unspecified, this parameter will be set to the value of "in_workspace".
+Input parameters for the "genome_to_fbamodel" function.
+
+        genome_id genome - ID of the genome for which a model is to be built (a required argument)
+        workspace_id genome_workspace - ID of the workspace containing the target genome (an optional argument; default is the workspace argument)
+        probanno_id probanno - ID of the probabilistic annotation to be used in building the model (an optional argument; default is 'undef')
+        workspace_id probanno_workspace - ID of the workspace containing the probabilistic annotation (an optional argument; default is the workspace argument)
+        float probannoThreshold - a threshold of the probability required for a probabilistic annotation to be accepted (an optional argument; default is '1')
+        bool probannoOnly - a boolean indicating if only the probabilistic annotation should be used in building the model (an optional argument; default is '0')
+        fbamodel_id model - ID that should be used for the newly constructed model (an optional argument; default is 'undef')
+        workspace_id workspace - ID of the workspace where the newly developed model will be stored; also the default assumed workspace for input objects (a required argument)
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
 
 =item Definition
@@ -11238,7 +12493,7 @@ genome_workspace has a value which is a workspace_id
 probanno has a value which is a probanno_id
 probanno_workspace has a value which is a workspace_id
 probannoThreshold has a value which is a float
-probanno_only has a value which is a bool
+probannoOnly has a value which is a bool
 model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
 auth has a value which is a string
@@ -11256,7 +12511,7 @@ genome_workspace has a value which is a workspace_id
 probanno has a value which is a probanno_id
 probanno_workspace has a value which is a workspace_id
 probannoThreshold has a value which is a float
-probanno_only has a value which is a bool
+probannoOnly has a value which is a bool
 model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
 auth has a value which is a string
@@ -11277,7 +12532,12 @@ overwrite has a value which is a bool
 
 =item Description
 
-NEED DOCUMENTATION
+Input parameters for the "export_fbamodel" function.
+
+        fbamodel_id model - ID of the model to be exported (a required argument)
+        workspace_id workspace - workspace containing the model to be exported (a required argument)
+        string format - format to which the model should be exported (sbml, html, json, readable, cytoseed) (a required argument)
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
 
 =item Definition
@@ -11301,6 +12561,132 @@ a reference to a hash where the following keys are defined:
 model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
 format has a value which is a string
+auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 adjust_model_reaction_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "adjust_model_reaction" function.
+
+        fbamodel_id model - ID of model to be adjusted
+        workspace_id workspace - workspace containing model to be adjusted
+        reaction_id reaction - ID of reaction to be added, removed, or adjusted
+        string direction - direction to set for reaction being added or adjusted
+        compartment_id compartment - ID of compartment containing reaction being added or adjusted
+        int compartmentIndex - index of compartment containing reaction being altered or adjusted
+        list<list<list<feature_id>>> gpr - array specifying gene-protein-reaction associations
+        bool removeReaction - boolean indicating reaction should be removed
+        bool addReaction - boolean indicating reaction should be added
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+model has a value which is a fbamodel_id
+workspace has a value which is a workspace_id
+reaction has a value which is a reaction_id
+direction has a value which is a string
+compartment has a value which is a compartment_id
+compartmentIndex has a value which is an int
+gpr has a value which is a reference to a list where each element is a reference to a list where each element is a reference to a list where each element is a feature_id
+removeReaction has a value which is a bool
+addReaction has a value which is a bool
+overwrite has a value which is a bool
+auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+model has a value which is a fbamodel_id
+workspace has a value which is a workspace_id
+reaction has a value which is a reaction_id
+direction has a value which is a string
+compartment has a value which is a compartment_id
+compartmentIndex has a value which is an int
+gpr has a value which is a reference to a list where each element is a reference to a list where each element is a reference to a list where each element is a feature_id
+removeReaction has a value which is a bool
+addReaction has a value which is a bool
+overwrite has a value which is a bool
+auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 adjust_biomass_reaction_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "adjust_biomass_reaction" function.
+
+        fbamodel_id model - ID of model to be adjusted
+        workspace_id workspace - workspace containing model to be adjusted
+        biomass_id biomass - ID of biomass reaction to adjust
+        float coefficient - coefficient of biomass compound
+        compound_id compound - ID of biomass compound to adjust in biomass
+        compartment_id compartment - ID of compartment containing compound to adjust in biomass
+        int compartmentIndex - index of compartment containing compound to adjust in biomass
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+model has a value which is a fbamodel_id
+workspace has a value which is a workspace_id
+biomass has a value which is a biomass_id
+coefficient has a value which is a float
+compound has a value which is a compound_id
+compartment has a value which is a compartment_id
+compartmentIndex has a value which is an int
+overwrite has a value which is a bool
+auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+model has a value which is a fbamodel_id
+workspace has a value which is a workspace_id
+biomass has a value which is a biomass_id
+coefficient has a value which is a float
+compound has a value which is a compound_id
+compartment has a value which is a compartment_id
+compartmentIndex has a value which is an int
+overwrite has a value which is a bool
 auth has a value which is a string
 
 
@@ -11375,6 +12761,16 @@ auth has a value which is a string
 
 
 
+=item Description
+
+Input parameters for the "export_media" function.
+
+        media_id media - ID of the media to be exported (a required argument)
+        workspace_id workspace - workspace containing the media to be exported (a required argument)
+        string format - format to which the media should be exported (html, json, readable) (a required argument)
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+
+
 =item Definition
 
 =begin html
@@ -11413,7 +12809,20 @@ auth has a value which is a string
 
 =item Description
 
-NEED DOCUMENTATION
+Input parameters for the "addmedia" function.
+
+        fbamodel_id model - ID of the model that FBA should be run on (a required argument)
+        workspace_id model_workspace - workspace where model for FBA should be run (an optional argument; default is the value of the workspace argument)
+        FBAFormulation formulation - a hash specifying the parameters for the FBA study (an optional argument)
+        bool fva - a flag indicating if flux variability should be run (an optional argument: default is '0')
+        bool simulateko - a flag indicating if flux variability should be run (an optional argument: default is '0')
+        bool minimizeflux - a flag indicating if flux variability should be run (an optional argument: default is '0')
+        bool findminmedia - a flag indicating if flux variability should be run (an optional argument: default is '0')
+        string notes - a string of notes to attach to the FBA study (an optional argument; defaul is '')
+        fba_id fba - ID under which the FBA results should be saved (an optional argument; defaul is 'undef')
+        workspace_id workspace - workspace where FBA results will be saved (a required argument)
+        bool add_to_model - a flag indicating if the FBA study should be attached to the model to support viewing results (an optional argument: default is '0')
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
 
 =item Definition
@@ -11470,85 +12879,14 @@ add_to_model has a value which is a bool
 
 
 
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-fba has a value which is a fba_id
-workspace has a value which is a workspace_id
-format has a value which is a string
-auth has a value which is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-fba has a value which is a fba_id
-workspace has a value which is a workspace_id
-format has a value which is a string
-auth has a value which is a string
-
-
-=end text
-
-=back
-
-
-
-=head2 Phenotype
-
-=over 4
-
-
-
 =item Description
 
-********************************************************************************
-    Code relating to phenotype simulation and reconciliation
-   	********************************************************************************
+Input parameters for the "addmedia" function.
 
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a list containing 5 items:
-0: a reference to a list where each element is a feature_id
-1: a media_id
-2: a workspace_id
-3: a reference to a list where each element is a compound_id
-4: a float
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a list containing 5 items:
-0: a reference to a list where each element is a feature_id
-1: a media_id
-2: a workspace_id
-3: a reference to a list where each element is a compound_id
-4: a float
-
-
-=end text
-
-=back
-
-
-
-=head2 PhenotypeSet
-
-=over 4
-
+        fba_id fba - ID of the FBA study to be exported (a required argument)
+        workspace_id workspace - workspace where FBA study is stored (a required argument)
+        string format - format to which the FBA study should be exported (i.e. html, json, readable) (a required argument)
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
 
 =item Definition
@@ -11557,11 +12895,10 @@ a reference to a list containing 5 items:
 
 <pre>
 a reference to a hash where the following keys are defined:
-id has a value which is a phenotypeSet_id
-genome has a value which is a genome_id
-genome_workspace has a value which is a workspace_id
-phenotypes has a value which is a reference to a list where each element is a Phenotype
-importErrors has a value which is a string
+fba has a value which is a fba_id
+workspace has a value which is a workspace_id
+format has a value which is a string
+auth has a value which is a string
 
 </pre>
 
@@ -11570,111 +12907,10 @@ importErrors has a value which is a string
 =begin text
 
 a reference to a hash where the following keys are defined:
-id has a value which is a phenotypeSet_id
-genome has a value which is a genome_id
-genome_workspace has a value which is a workspace_id
-phenotypes has a value which is a reference to a list where each element is a Phenotype
-importErrors has a value which is a string
-
-
-=end text
-
-=back
-
-
-
-=head2 phenotypeSimulationSet_id
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a string
-</pre>
-
-=end html
-
-=begin text
-
-a string
-
-=end text
-
-=back
-
-
-
-=head2 PhenotypeSimulation
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a list containing 4 items:
-0: a Phenotype
-1: a float
-2: a float
-3: a string
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a list containing 4 items:
-0: a Phenotype
-1: a float
-2: a float
-3: a string
-
-
-=end text
-
-=back
-
-
-
-=head2 PhenotypeSimulationSet
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-id has a value which is a phenotypeSimulationSet_id
-model has a value which is a fbamodel_id
-model_workspace has a value which is a workspace_id
-phenotypeSet has a value which is a phenotypeSet_id
-phenotypeSimulations has a value which is a reference to a list where each element is a PhenotypeSimulation
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-id has a value which is a phenotypeSimulationSet_id
-model has a value which is a fbamodel_id
-model_workspace has a value which is a workspace_id
-phenotypeSet has a value which is a phenotypeSet_id
-phenotypeSimulations has a value which is a reference to a list where each element is a PhenotypeSimulation
+fba has a value which is a fba_id
+workspace has a value which is a workspace_id
+format has a value which is a string
+auth has a value which is a string
 
 
 =end text
@@ -11687,6 +12923,13 @@ phenotypeSimulations has a value which is a reference to a list where each eleme
 
 =over 4
 
+
+
+=item Description
+
+********************************************************************************
+    Code relating to phenotype simulation and reconciliation
+   	********************************************************************************
 
 
 =item Definition
@@ -11729,6 +12972,21 @@ auth has a value which is a string
 
 =over 4
 
+
+
+=item Description
+
+Input parameters for the "simulate_phenotypes" function.
+
+        fbamodel_id model - ID of the model to be used for the simulation (a required argument)
+        workspace_id model_workspace - workspace containing the model for the simulation (an optional argument: default is value of workspace argument)
+        phenotypeSet_id phenotypeSet - ID of the phenotypes set to be simulated (a required argument)
+        workspace_id phenotypeSet_workspace - workspace containing the phenotype set to be simulated (an optional argument: default is value of workspace argument)
+        FBAFormulation formulation - parameters for the simulation flux balance analysis (an optional argument: default is 'undef')
+        string notes - string of notes to associate with the phenotype simulation (an optional argument: default is '')
+        phenotypeSimulationSet_id phenotypeSimultationSet - ID of the phenotype simulation set to be generated (an optional argument: default is 'undef')
+        workspace_id workspace - workspace where the phenotype simulation set should be saved (a required argument)
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
 
 =item Definition
@@ -11779,6 +13037,16 @@ auth has a value which is a string
 
 
 
+=item Description
+
+Input parameters for the "export_phenotypeSimulationSet" function.
+
+        phenotypeSimulationSet_id phenotypeSimultationSet - ID of the phenotype simulation set to be exported (a required argument)
+        workspace_id workspace - workspace where the phenotype simulation set is stored (a required argument)
+        string format - format to which phenotype simulation set should be exported (html, json)
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+
+
 =item Definition
 
 =begin html
@@ -11815,81 +13083,17 @@ auth has a value which is a string
 
 
 
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-model has a value which is a fbamodel_id
-model_workspace has a value which is a workspace_id
-gapfillSolutions has a value which is a reference to a list where each element is a gapfillsolution_id
-gapgenSolutions has a value which is a reference to a list where each element is a gapgensolution_id
-out_model has a value which is a fbamodel_id
-workspace has a value which is a workspace_id
-auth has a value which is a string
-overwrite has a value which is a bool
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-model has a value which is a fbamodel_id
-model_workspace has a value which is a workspace_id
-gapfillSolutions has a value which is a reference to a list where each element is a gapfillsolution_id
-gapgenSolutions has a value which is a reference to a list where each element is a gapgensolution_id
-out_model has a value which is a fbamodel_id
-workspace has a value which is a workspace_id
-auth has a value which is a string
-overwrite has a value which is a bool
-
-
-=end text
-
-=back
-
-
-
-=head2 job_id
-
-=over 4
-
-
-
 =item Description
 
-********************************************************************************
-    Code relating to queuing long running jobs
-   	********************************************************************************
+Input parameters for the "integrate_reconciliation_solutions" function.
 
-
-=item Definition
-
-=begin html
-
-<pre>
-a string
-</pre>
-
-=end html
-
-=begin text
-
-a string
-
-=end text
-
-=back
-
-
-
-=head2 CommandArguments
-
-=over 4
-
+        fbamodel_id model - ID of model for which reconciliation solutions should be integrated (a required argument)
+        workspace_id model_workspace - workspace containing model for which solutions should be integrated (an optional argument: default is value of workspace argument)
+        list<gapfillsolution_id> gapfillSolutions - list of gapfill solutions to be integrated (a required argument)
+        list<gapgensolution_id> gapgenSolutions - list of gapgen solutions to be integrated (a required argument)
+        fbamodel_id out_model - ID to which modified model should be saved (an optional argument: default is value of workspace argument)
+        workspace_id workspace - workspace where modified model should be saved (a required argument)
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
 
 =item Definition
@@ -11898,79 +13102,14 @@ a string
 
 <pre>
 a reference to a hash where the following keys are defined:
-auth has a value which is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-auth has a value which is a string
-
-
-=end text
-
-=back
-
-
-
-=head2 clusterjob
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-auth has a value which is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-auth has a value which is a string
-
-
-=end text
-
-=back
-
-
-
-=head2 JobObject
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-id has a value which is a job_id
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+gapfillSolutions has a value which is a reference to a list where each element is a gapfillsolution_id
+gapgenSolutions has a value which is a reference to a list where each element is a gapgensolution_id
+out_model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
-clusterjobs has a value which is a reference to a list where each element is a clusterjob
-postprocess_command has a value which is a string
-postprocess_args has a value which is a reference to a list where each element is a CommandArguments
-queuing_command has a value which is a string
-clustermem has a value which is a float
-clustertime has a value which is an int
-clustertoken has a value which is a string
-queuetime has a value which is a string
-completetime has a value which is a string
-complete has a value which is a bool
-owner has a value which is a string
+auth has a value which is a string
+overwrite has a value which is a bool
 
 </pre>
 
@@ -11979,19 +13118,14 @@ owner has a value which is a string
 =begin text
 
 a reference to a hash where the following keys are defined:
-id has a value which is a job_id
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+gapfillSolutions has a value which is a reference to a list where each element is a gapfillsolution_id
+gapgenSolutions has a value which is a reference to a list where each element is a gapgensolution_id
+out_model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
-clusterjobs has a value which is a reference to a list where each element is a clusterjob
-postprocess_command has a value which is a string
-postprocess_args has a value which is a reference to a list where each element is a CommandArguments
-queuing_command has a value which is a string
-clustermem has a value which is a float
-clustertime has a value which is an int
-clustertoken has a value which is a string
-queuetime has a value which is a string
-completetime has a value which is a string
-complete has a value which is a bool
-owner has a value which is a string
+auth has a value which is a string
+overwrite has a value which is a bool
 
 
 =end text
@@ -12004,6 +13138,13 @@ owner has a value which is a string
 
 =over 4
 
+
+
+=item Description
+
+********************************************************************************
+    Code relating to queuing long running jobs
+   	********************************************************************************
 
 
 =item Definition
@@ -12062,6 +13203,24 @@ donot_submit_job has a value which is a bool
 
 
 
+=item Description
+
+Input parameters for the "queue_gapfill_model" function.
+
+        fbamodel_id model - ID of the model that gapfill should be run on (a required argument)
+        workspace_id model_workspace - workspace where model for gapfill should be run (an optional argument; default is the value of the workspace argument)
+        GapfillingFormulation formulation - a hash specifying the parameters for the gapfill study (an optional argument)
+        phenotypeSet_id phenotypeSet - ID of a phenotype set against which gapfilled model should be simulated (an optional argument: default is 'undef')
+        workspace_id phenotypeSet_workspace - workspace containing phenotype set to be simulated (an optional argument; default is the value of the workspace argument)
+        bool integrate_solution - a flag indicating if the first solution should be integrated in the model (an optional argument: default is '0')
+        fbamodel_id out_model - ID where the gapfilled model will be saved (an optional argument: default is 'undef')
+        gapfill_id gapFill - ID to which gapfill solution will be saved (an optional argument: default is 'undef')
+        workspace_id gapFill_workspace - workspace where gapfill solution will be saved (an optional argument; default is the value of the workspace argument)
+        workspace_id workspace - workspace where gapfill results will be saved (a required argument)
+        bool donot_submit_job - a flag indicating if the job should be submitted to the cluster (an optional argument: default is '0')
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+
+
 =item Definition
 
 =begin html
@@ -12116,6 +13275,24 @@ donot_submit_job has a value which is a bool
 
 
 
+=item Description
+
+Input parameters for the "queue_gapfill_model" function.
+
+        fbamodel_id model - ID of the model that gapgen should be run on (a required argument)
+        workspace_id model_workspace - workspace where model for gapgen should be run (an optional argument; default is the value of the workspace argument)
+        GapgenFormulation formulation - a hash specifying the parameters for the gapgen study (an optional argument)
+        phenotypeSet_id phenotypeSet - ID of a phenotype set against which gapgened model should be simulated (an optional argument: default is 'undef')
+        workspace_id phenotypeSet_workspace - workspace containing phenotype set to be simulated (an optional argument; default is the value of the workspace argument)
+        bool integrate_solution - a flag indicating if the first solution should be integrated in the model (an optional argument: default is '0')
+        fbamodel_id out_model - ID where the gapgened model will be saved (an optional argument: default is 'undef')
+        gapgen_id gapGen - ID to which gapgen solution will be saved (an optional argument: default is 'undef')
+        workspace_id gapGen_workspace - workspace where gapgen solution will be saved (an optional argument; default is the value of the workspace argument)
+        workspace_id workspace - workspace where gapgen results will be saved (a required argument)
+        bool donot_submit_job - a flag indicating if the job should be submitted to the cluster (an optional argument: default is '0')
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+
+
 =item Definition
 
 =begin html
@@ -12168,6 +13345,29 @@ donot_submit_job has a value which is a bool
 
 =over 4
 
+
+
+=item Description
+
+Input parameters for the "queue_wildtype_phenotype_reconciliation" function.
+
+        fbamodel_id model - ID of the model that reconciliation should be run on (a required argument)
+        workspace_id model_workspace - workspace where model for reconciliation should be run (an optional argument; default is the value of the workspace argument)
+        FBAFormulation formulation - a hash specifying the parameters for the reconciliation study (an optional argument)
+        GapfillingFormulation gapfill_formulation - a hash specifying the parameters for the gapfill study (an optional argument)
+        GapgenFormulation gapgen_formulation - a hash specifying the parameters for the gapgen study (an optional argument)
+        phenotypeSet_id phenotypeSet - ID of a phenotype set against which reconciled model should be simulated (an optional argument: default is 'undef')
+        workspace_id phenotypeSet_workspace - workspace containing phenotype set to be simulated (an optional argument; default is the value of the workspace argument)
+        fbamodel_id out_model - ID where the reconciled model will be saved (an optional argument: default is 'undef')
+        list<gapgen_id> gapGens - IDs of gapgen solutions (an optional argument: default is 'undef')
+        workspace_id gapGen_workspace - workspace where gapgen solutions will be saved (an optional argument; default is the value of the workspace argument)
+        list<gapfill_id> gapFills - IDs of gapfill solutions (an optional argument: default is 'undef')
+        workspace_id gapFill_workspace - workspace where gapfill solutions will be saved (an optional argument; default is the value of the workspace argument)
+        bool queueSensitivityAnalysis - flag indicating if sensitivity analysis should be queued to run on solutions (an optional argument: default is '0')
+        bool queueReconciliationCombination - flag indicating if reconcilication combination should be queued to run on solutions (an optional argument: default is '0')
+        workspace_id workspace - workspace where reconciliation results will be saved (a required argument)
+        bool donot_submit_job - a flag indicating if the job should be submitted to the cluster (an optional argument: default is '0')
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
 
 =item Definition
@@ -12234,6 +13434,28 @@ donot_submit_job has a value which is a bool
 
 
 
+=item Description
+
+Input parameters for the "queue_reconciliation_sensitivity_analysis" function.
+
+        fbamodel_id model - ID of the model that sensitivity analysis should be run on (a required argument)
+        workspace_id model_workspace - workspace where model for sensitivity analysis should be run (an optional argument; default is the value of the workspace argument)
+        FBAFormulation formulation - a hash specifying the parameters for the sensitivity analysis study (an optional argument)
+        GapfillingFormulation gapfill_formulation - a hash specifying the parameters for the gapfill study (an optional argument)
+        GapgenFormulation gapgen_formulation - a hash specifying the parameters for the gapgen study (an optional argument)
+        phenotypeSet_id phenotypeSet - ID of a phenotype set against which sensitivity analysis model should be simulated (an optional argument: default is 'undef')
+        workspace_id phenotypeSet_workspace - workspace containing phenotype set to be simulated (an optional argument; default is the value of the workspace argument)
+        fbamodel_id out_model - ID where the sensitivity analysis model will be saved (an optional argument: default is 'undef')
+        list<gapgen_id> gapGens - IDs of gapgen solutions (an optional argument: default is 'undef')
+        workspace_id gapGen_workspace - workspace where gapgen solutions will be saved (an optional argument; default is the value of the workspace argument)
+        list<gapfill_id> gapFills - IDs of gapfill solutions (an optional argument: default is 'undef')
+        workspace_id gapFill_workspace - workspace where gapfill solutions will be saved (an optional argument; default is the value of the workspace argument)
+        bool queueReconciliationCombination - flag indicating if sensitivity analysis combination should be queued to run on solutions (an optional argument: default is '0')
+        workspace_id workspace - workspace where sensitivity analysis results will be saved (a required argument)
+        bool donot_submit_job - a flag indicating if the job should be submitted to the cluster (an optional argument: default is '0')
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+
+
 =item Definition
 
 =begin html
@@ -12296,6 +13518,27 @@ donot_submit_job has a value which is a bool
 
 
 
+=item Description
+
+Input parameters for the "queue_combine_wildtype_phenotype_reconciliation" function.
+
+        fbamodel_id model - ID of the model that solution combination should be run on (a required argument)
+        workspace_id model_workspace - workspace where model for solution combination should be run (an optional argument; default is the value of the workspace argument)
+        FBAFormulation formulation - a hash specifying the parameters for the solution combination study (an optional argument)
+        GapfillingFormulation gapfill_formulation - a hash specifying the parameters for the gapfill study (an optional argument)
+        GapgenFormulation gapgen_formulation - a hash specifying the parameters for the gapgen study (an optional argument)
+        phenotypeSet_id phenotypeSet - ID of a phenotype set against which solution combination model should be simulated (an optional argument: default is 'undef')
+        workspace_id phenotypeSet_workspace - workspace containing phenotype set to be simulated (an optional argument; default is the value of the workspace argument)
+        fbamodel_id out_model - ID where the solution combination model will be saved (an optional argument: default is 'undef')
+        list<gapgen_id> gapGens - IDs of gapgen solutions (an optional argument: default is 'undef')
+        workspace_id gapGen_workspace - workspace where gapgen solutions will be saved (an optional argument; default is the value of the workspace argument)
+        list<gapfill_id> gapFills - IDs of gapfill solutions (an optional argument: default is 'undef')
+        workspace_id gapFill_workspace - workspace where gapfill solutions will be saved (an optional argument; default is the value of the workspace argument)
+        workspace_id workspace - workspace where solution combination results will be saved (a required argument)
+        bool donot_submit_job - a flag indicating if the job should be submitted to the cluster (an optional argument: default is '0')
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+
+
 =item Definition
 
 =begin html
@@ -12343,32 +13586,6 @@ auth has a value which is a string
 overwrite has a value which is a bool
 donot_submit_job has a value which is a bool
 
-
-=end text
-
-=back
-
-
-
-=head2 job_id
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a string
-</pre>
-
-=end html
-
-=begin text
-
-a string
 
 =end text
 
@@ -12380,6 +13597,15 @@ a string
 
 =over 4
 
+
+
+=item Description
+
+Input parameters for the "jobs_done" function.
+
+        job_id jobid - ID of the job object (a required argument)
+        workspace_id workspace - workspace where job object is saved (a required argument)
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
 
 =item Definition
@@ -12416,6 +13642,15 @@ auth has a value which is a string
 
 
 
+=item Description
+
+Input parameters for the "check_job" function.
+
+        job_id jobid - ID of the job object (a required argument)
+        workspace_id workspace - workspace where job object is saved (a required argument)
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+
+
 =item Definition
 
 =begin html
@@ -12448,6 +13683,16 @@ auth has a value which is a string
 
 =over 4
 
+
+
+=item Description
+
+Input parameters for the "run_job" function.
+
+        job_id jobid - ID of the job object (a required argument)
+        workspace_id workspace - workspace where job object is saved (a required argument)
+        int index - index of subobject to be run (an optional argument; default is '0')
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
 
 =item Definition
