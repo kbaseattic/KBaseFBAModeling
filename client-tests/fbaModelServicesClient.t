@@ -3,7 +3,6 @@ use warnings;
 use Bio::KBase::workspaceService::Client;
 use Bio::KBase::AuthToken;
 use Bio::KBase::fbaModelServices::Client;
-#use Bio::KBase::fbaModelServices::Impl;
 use JSON::XS;
 use Test::More;
 use Data::Dumper;
@@ -19,14 +18,9 @@ my $tokenObj = Bio::KBase::AuthToken->new(
 );
 $token = $tokenObj->token();
 #Instantiating client workspace
-#my $ws = Bio::KBase::workspaceService::Client->new("http://140.221.92.231/services/workspace/");
-#my $ws = Bio::KBase::workspaceService::Client->new("http://kbase.us/services/workspace/");
 my $ws = Bio::KBase::workspaceService::Client->new("http://localhost:7058");
 #Instantiating client object
-#my $obj = Bio::KBase::fbaModelServices::Client->new("http://140.221.92.231/services/fbaServices/");
-#my $obj = Bio::KBase::fbaModelServices::Client->new("http://kbase.us/services/fbaServices/");
-my $obj = Bio::KBase::fbaModelServices::Client->new("http://localhost:7042");
-#my $obj = Bio::KBase::fbaModelServices::Impl->new({workspace => $ws});
+my $obj = Bio::KBase::fbaModelServices::Client->new("http://localhost:7036");
 #Checking for standard and default biochemistry
 &_prepareWorkspace($ws);
 
@@ -37,14 +31,14 @@ $biochemistry = $obj->get_biochemistry({biochemistry => "testdefault"});
 ok defined($biochemistry), "Successfully printed biochemistry!";
 #Testing reaction retrieval method
 my $rxns = $obj->get_reactions({
-	reactions => ["rxn00001","rxn00002"],
+	reactions => ["rxn1","rxn2"],
 	biochemistry => "default",
 	mapping => "default"
 });
 ok defined($rxns->[0]), "Successfully printed reactions!";
 #Testing compound retrieval method
 my $cpds = $obj->get_compounds({
-	compounds => ["cpd00001","cpd00002"],
+	compounds => ["A","B"],
 	biochemistry => "default",
 	mapping => "default"
 });
@@ -160,9 +154,9 @@ my $html = $obj->export_phenotypeSimulationSet({
 	auth => $token
 });
 ok defined($html), "Successfully exported phenotype simulations to html format!";
-open ($fh, ">", "PhenotypeSim.html");
-print $fh $html."\n";
-close($fh);
+#open ($fh, ">", "PhenotypeSim.html");
+#print $fh $html."\n";
+#close($fh);
 
 #Testing model export
 my $cytoseed = $obj->export_fbamodel({
@@ -172,9 +166,9 @@ my $cytoseed = $obj->export_fbamodel({
 	auth => $token
 });
 ok defined($cytoseed), "Successfully exported model to cytoseed format!";
-open ( $fh, ">", "model.cytoseed");
-print $fh $cytoseed."\n";
-close($fh);
+#open ( $fh, ">", "model.cytoseed");
+#print $fh $cytoseed."\n";
+#close($fh);
 
 $html = $obj->export_fbamodel({
 	model => $model->[0],
@@ -183,9 +177,9 @@ $html = $obj->export_fbamodel({
 	auth => $token
 });
 ok defined($html), "Successfully exported model to html format!";
-open ( $fh, ">", "model.html");
-print $fh $html."\n";
-close($fh);
+#open ( $fh, ">", "model.html");
+#print $fh $html."\n";
+#close($fh);
 
 my $sbml = $obj->export_fbamodel({
 	model => $model->[0],
@@ -194,9 +188,9 @@ my $sbml = $obj->export_fbamodel({
 	auth => $token
 });
 ok defined($sbml), "Successfully exported model to sml format!";
-open ( $fh, ">", "model.sbml");
-print $fh $sbml."\n";
-close($fh);
+#open ( $fh, ">", "model.sbml");
+#print $fh $sbml."\n";
+#close($fh);
 
 #Testing model retrieval method
 my $mdls = $obj->get_models({
@@ -218,9 +212,9 @@ $html = $obj->export_media({
 	auth => $token
 });
 ok defined($html), "Successfully exported media to html format!";
-open ( $fh, ">", "media.html");
-print $fh $html."\n";
-close($fh);
+#open ( $fh, ">", "media.html");
+#print $fh $html."\n";
+#close($fh);
 
 #Now test flux balance analysis
 my $fba = $obj->runfba({
@@ -258,9 +252,9 @@ $html = $obj->export_fba({
 	auth => $token
 });
 ok defined($html), "Successfully exported FBA to html format!";
-open ( $fh, ">", "fba.html");
-print $fh $html."\n";
-close($fh);
+#open ( $fh, ">", "fba.html");
+#print $fh $html."\n";
+#close($fh);
 
 #Now test the queue fba function, without submitting the job to the cluster
 my $job = $obj->queue_runfba({
@@ -299,9 +293,9 @@ $html = $obj->export_fba({
 	auth => $token
 });
 ok defined($html), "Successfully exported FBA to html format!";
-open ( $fh, ">", "fba2.html");
-print $fh $html."\n";
-close($fh);
+#open ( $fh, ">", "fba2.html");
+#print $fh $html."\n";
+#close($fh);
 
 #Now queuing gapfilling in complete media
 $job = $obj->queue_gapfill_model({
@@ -385,9 +379,9 @@ $html = $obj->export_fba({
 	auth => $token
 });
 ok defined($html), "Successfully exported FBA to html format!";
-open ( $fh, ">", "fba-GapFill.html");
-print $fh $html."\n";
-close($fh);
+#open ( $fh, ">", "fba-GapFill.html");
+#print $fh $html."\n";
+#close($fh);
 
 #Now exporting queued FBA
 $job = $obj->queue_gapgen_model({
@@ -445,9 +439,9 @@ $html = $obj->export_fba({
 	auth => $token
 });
 ok defined($html), "Successfully exported FBA to html format!";
-open ( $fh, ">", "fba-Gapgen.html");
-print $fh $html."\n";
-close($fh);
+#open ( $fh, ">", "fba-Gapgen.html");
+#print $fh $html."\n";
+#close($fh);
 
 done_testing($test_count);
 

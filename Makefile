@@ -26,8 +26,6 @@ SERV_TPAGE = $(KB_RUNTIME)/bin/perl $(KB_RUNTIME)/bin/tpage
 SERV_TPAGE_ARGS = --define kb_top=$(TARGET) --define kb_runtime=$(KB_RUNTIME) --define kb_service_name=$(SERV_SERVICE) \
 	--define kb_service_port=$(SERV_SERVICE_PORT) --define kb_service_psgi=$(SERV_PSGI_PATH)
 
-CLIENT_TESTS = $(wildcard t/*.t)
-
 all: bin server
 
 bin: $(BIN_PERL)
@@ -38,14 +36,40 @@ server:
 $(BIN_DIR)/%: scripts/%.pl 
 	$(TOOLS_DIR)/wrap_perl '$$KB_TOP/modules/$(CURRENT_DIR)/$<' $@
 
-test: test-client
+CLIENT_TESTS = $(wildcard client-tests/*.t)
+SCRIPT_TESTS = $(wildcard script-tests/*.sh)
+SERVER_TESTS = $(wildcard server-tests/*.t)
+
+test: test-service test-scripts test-client
+	@echo "running server, script and client tests"
+
+test-service:
+	for t in $(SERVER_TESTS) ; do \
+		if [ -f $$t ] ; then \
+			$(DEPLOY_RUNTIME)/bin/prove $$t ; \
+			if [ $$? -ne 0 ] ; then \
+				exit 1 ; \
+			fi \
+		fi \
+	done
+
+test-scripts:
+	for t in $(SCRIPT_TESTS) ; do \
+		if [ -f $$t ] ; then \
+			/bin/sh $$t ; \
+			if [ $$? -ne 0 ] ; then \
+				exit 1 ; \
+			fi \
+		fi \
+	done
 
 test-client:
 	for t in $(CLIENT_TESTS) ; do \
-		echo $$t ; \
-		$(DEPLOY_RUNTIME)/bin/perl $$t ; \
-		if [ $$? -ne 0 ] ; then \
-			exit 1 ; \
+		if [ -f $$t ] ; then \
+			$(DEPLOY_RUNTIME)/bin/prove $$t ; \
+			if [ $$? -ne 0 ] ; then \
+				exit 1 ; \
+			fi \
 		fi \
 	done
 
@@ -80,7 +104,8 @@ deploy-services:
 	tpage $(SERV_TPAGE_ARGS) service/stop_service.tt > $(TARGET)/services/$(SERV_SERVICE)/stop_service; \
 	chmod +x $(TARGET)/services/$(SERV_SERVICE)/stop_service; \
 	tpage $(SERV_TPAGE_ARGS) service/process.tt > $(TARGET)/services/$(SERV_SERVICE)/process.$(SERV_SERVICE); \
-	chmod +x $(TARGET)/services/$(SERV_SERVICE)/process.$(SERV_SERVICE); 
+	chmod +x $(TARGET)/services/$(SERV_SERVICE)/process.$(SERV_SERVICE); \
+	echo "{\"MFATK_BIN\":\"$(TARGET)/bin/mfatoolkit\"}" > $(TARGET)/services/$(SERV_SERVICE)/config.json;
 
 deploy-docs:
 	if [ ! -d doc ] ; then mkdir doc ; fi

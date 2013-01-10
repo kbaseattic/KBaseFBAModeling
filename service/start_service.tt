@@ -2,11 +2,11 @@
 export KB_TOP=[% kb_top %]
 export KB_RUNTIME=[% kb_runtime %]
 export PATH=$KB_TOP/bin:$KB_RUNTIME/bin:$PATH
-export PERL5LIB=$KB_TOP/lib:$KB_TOP/lib/perl5
+export PERL5LIB=$KB_TOP/lib:$KB_TOP/lib/perl5:$KB_TOP/lib/perl5/site_perl/5.16.1
 export KB_SERVICE_DIR=$KB_TOP/services/[% kb_service_name %]
 export MODELSEED_CONF=$KB_SERVICE_DIR/config.json
 
 kb_service_psgi=[% kb_service_psgi %]
 pid_file=$KB_SERVICE_DIR/service.pid
 
-exec $KB_RUNTIME/bin/starman -D --listen :[% kb_service_port %] --pid $pid_file $KB_TOP/$kb_service_psgi
+exec $KB_RUNTIME/bin/starman -D --listen :[% kb_service_port %] --pid $pid_file $KB_TOP/$kb_service_psgi   --error-log $KB_SERVICE_DIR/error.log

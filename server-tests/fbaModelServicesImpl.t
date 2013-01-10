@@ -4,6 +4,7 @@ use lib $Bin.'/../../workspace_service/lib/';
 use lib $Bin.'/../../kb_seed/lib/';
 use lib $Bin.'/../../idserver/lib/';
 use lib "/kb/deployment/lib/perl5/site_perl/5.16.0/Bio/";
+use lib "/kb/deployment/lib/perl5/site_perl/5.16.1/";
 use Bio::KBase::workspaceService::Impl;
 use LWP::Simple qw(getstore);
 use IO::Compress::Gzip qw(gzip);
@@ -105,9 +106,9 @@ my $html = $obj->export_phenotypeSimulationSet({
 	format => "html"
 });
 ok defined($html), "Successfully exported phenotype simulations to html format!";
-open ( my $fh, ">", "PhenotypeSim.html");
-print $fh $html."\n";
-close($fh);
+#open ( my $fh, ">", "PhenotypeSim.html");
+#print $fh $html."\n";
+#close($fh);
 
 #Testing model export
 my $cytoseed = $obj->export_fbamodel({
@@ -116,9 +117,9 @@ my $cytoseed = $obj->export_fbamodel({
 	format => "cytoseed"
 });
 ok defined($cytoseed), "Successfully exported model to cytoseed format!";
-open ( $fh, ">", "model.cytoseed");
-print $fh $cytoseed."\n";
-close($fh);
+#open ( $fh, ">", "model.cytoseed");
+#print $fh $cytoseed."\n";
+#close($fh);
 
 $html = $obj->export_fbamodel({
 	model => $model->[0],
@@ -126,9 +127,9 @@ $html = $obj->export_fbamodel({
 	format => "html"
 });
 ok defined($html), "Successfully exported model to html format!";
-open ( $fh, ">", "model.html");
-print $fh $html."\n";
-close($fh);
+#open ( $fh, ">", "model.html");
+#print $fh $html."\n";
+#close($fh);
 
 my $sbml = $obj->export_fbamodel({
 	model => $model->[0],
@@ -136,9 +137,9 @@ my $sbml = $obj->export_fbamodel({
 	format => "sbml"
 });
 ok defined($sbml), "Successfully exported model to sml format!";
-open ( $fh, ">", "model.sbml");
-print $fh $sbml."\n";
-close($fh);
+#open ( $fh, ">", "model.sbml");
+#print $fh $sbml."\n";
+#close($fh);
 
 #Testing model retrieval method
 my $mdls = $obj->get_models({
@@ -154,9 +155,9 @@ $html = $obj->export_media({
 	format => "html"
 });
 ok defined($html), "Successfully exported media to html format!";
-open ( $fh, ">", "media.html");
-print $fh $html."\n";
-close($fh);
+#open ( $fh, ">", "media.html");
+#print $fh $html."\n";
+#close($fh);
 
 #Now test flux balance analysis
 my $fba = $obj->runfba({
@@ -189,9 +190,9 @@ $html = $obj->export_fba({
 	format => "html"
 });
 ok defined($html), "Successfully exported FBA to html format!";
-open ( $fh, ">", "fba.html");
-print $fh $html."\n";
-close($fh);
+#open ( $fh, ">", "fba.html");
+#print $fh $html."\n";
+#close($fh);
 
 #Now test the queue fba function, without submitting the job to the cluster
 my $job = $obj->queue_runfba({
@@ -225,9 +226,9 @@ $html = $obj->export_fba({
 	format => "html"
 });
 ok defined($html), "Successfully exported FBA to html format!";
-open ( $fh, ">", "fba2.html");
-print $fh $html."\n";
-close($fh);
+#open ( $fh, ">", "fba2.html");
+#print $fh $html."\n";
+#close($fh);
 
 #Now queuing gapfilling in complete media
 $job = $obj->queue_gapfill_model({
@@ -301,9 +302,9 @@ $html = $obj->export_fba({
 	format => "html"
 });
 ok defined($html), "Successfully exported FBA to html format!";
-open ( $fh, ">", "fba-GapFill.html");
-print $fh $html."\n";
-close($fh);
+#open ( $fh, ">", "fba-GapFill.html");
+#print $fh $html."\n";
+#close($fh);
 
 #Now exporting queued FBA
 $job = $obj->queue_gapgen_model({
@@ -361,9 +362,9 @@ $html = $obj->export_fba({
 	format => "html"
 });
 ok defined($html), "Successfully exported FBA to html format!";
-open ( $fh, ">", "fba-Gapgen.html");
-print $fh $html."\n";
-close($fh);
+#open ( $fh, ">", "fba-Gapgen.html");
+#print $fh $html."\n";
+#close($fh);
 
 ##Now test ability to retrieve annotated genome object from database
 #my $cdmgenome = $obj->genome_to_workspace({
@@ -469,7 +470,7 @@ sub _loadTestBiochemToDB {
 }
 
 sub _initializeTestWorkspace {
-	my $ws = Bio::KBase::workspaceService::Impl->new({testuser => "kbaseadmin"});
+	my $ws = Bio::KBase::workspaceService::Impl->new({testuser => "kbasetest"});
 	$ws->_clearAllWorkspaces();
 	$ws->_clearAllWorkspaceObjects();
 	$ws->_clearAllWorkspaceUsers();

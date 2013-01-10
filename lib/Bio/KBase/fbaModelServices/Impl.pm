@@ -1621,19 +1621,33 @@ sub new
     if (defined($options->{workspace})) {
     	$self->{_workspaceServices} = $options->{workspace};
     }
-    my $config = "sample.ini";
-    if (defined($ENV{KB_DEPLOYMENT_CONFIG})) {
-    	$config = $ENV{KB_DEPLOYMENT_CONFIG};
-	} else {
-		warn "No deployment config specified. Using 'sample.ini' by default!\n";
+
+    my %params;
+    if ((my $e = $ENV{KB_DEPLOYMENT_CONFIG}) && -e $ENV{KB_DEPLOYMENT_CONFIG})
+    {
+	my $service = $ENV{KB_SERVICE_NAME};
+	my $c = Config::Simple->new();
+	$c->read($e);
+	my @params = qw(workspace-url);
+	for my $p (@params)
+	{
+	    my $v = $c->param("$service.$p");
+
+	    if ($v)
+	    {
+		$params{$p} = $v;
+	    }
 	}
-	if (!-e $config) {
-		warn "Deployment config file not found. Using default settings!\n";
-		$self->{"_workspace-url"} = "http://bio-data-1.mcs.anl.gov/services/fba_gapfill";
-	} else {
-		my $c = new Config::Simple($config);
-		$self->{"_workspace-url"} = $c->param("fbaModelingServices.workspace-url");
-	}
+    }
+
+    if (defined $params{"workspace-url"}) {
+	$self->{"_workspace-url"} = $params{"workspace-url"};
+    }
+    else {
+	print STDERR "workspace-url configuration not found, using 'localhost'\n";
+	$self->{"_workspace-url"} = "http://localhost:7058";
+    }
+
     if (defined($options->{verbose})) {
     	set_verbose(1);
     }
@@ -4399,7 +4413,7 @@ sub adjust_biomass_reaction
     	biomass => "bio1",
     	coefficient => 1,
     	compartment => "c",
-    	"index" => 0
+    	"index" => 0,
     	overwrite => 0
     });
 	my $model = $self->_get_msobject("Model",$input->{workspace},$input->{model});

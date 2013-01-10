@@ -54,8 +54,8 @@ use_ok("JSON::RPC::Legacy::Client");
 use_ok("Bio::KBase::fbaModelServices::Client");
 
 # MAKE A CONNECTION
-my $fba_service_url = "http://140.221.92.77:7036"; # this was the test machine during the aug build - might still be up
-#my $tree_service_url = "localhost:7036";
+my $fba_service_url = "http://localhost:7036"; 
+
 my $fbaclient = Bio::KBase::fbaModelServices::Client->new($fba_service_url);
 ok(defined($fbaclient),"instantiating Bio::KBase::fbaModelServices::Client");
 
