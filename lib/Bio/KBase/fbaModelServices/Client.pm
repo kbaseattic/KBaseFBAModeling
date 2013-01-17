@@ -1580,6 +1580,156 @@ sub get_biochemistry
 
 
 
+=head2 import_probanno
+
+  $probannoMeta = $obj->import_probanno($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is an import_probanno_params
+$probannoMeta is an object_metadata
+import_probanno_params is a reference to a hash where the following keys are defined:
+	probanno has a value which is a probanno_id
+	workspace has a value which is a workspace_id
+	genome has a value which is a genome_id
+	genome_workspace has a value which is a workspace_id
+	annotationProbabilities has a value which is a reference to a list where each element is an annotationProbability
+	ignore_errors has a value which is a bool
+	auth has a value which is a string
+	overwrite has a value which is a bool
+probanno_id is a string
+workspace_id is a string
+genome_id is a string
+annotationProbability is a reference to a list containing 3 items:
+	0: a feature_id
+	1: a string
+	2: a float
+feature_id is a string
+bool is an int
+object_metadata is a reference to a list containing 11 items:
+	0: an object_id
+	1: an object_type
+	2: a timestamp
+	3: an int
+	4: a string
+	5: a username
+	6: a username
+	7: a workspace_id
+	8: a workspace_ref
+	9: a string
+	10: a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is an import_probanno_params
+$probannoMeta is an object_metadata
+import_probanno_params is a reference to a hash where the following keys are defined:
+	probanno has a value which is a probanno_id
+	workspace has a value which is a workspace_id
+	genome has a value which is a genome_id
+	genome_workspace has a value which is a workspace_id
+	annotationProbabilities has a value which is a reference to a list where each element is an annotationProbability
+	ignore_errors has a value which is a bool
+	auth has a value which is a string
+	overwrite has a value which is a bool
+probanno_id is a string
+workspace_id is a string
+genome_id is a string
+annotationProbability is a reference to a list containing 3 items:
+	0: a feature_id
+	1: a string
+	2: a float
+feature_id is a string
+bool is an int
+object_metadata is a reference to a list containing 11 items:
+	0: an object_id
+	1: an object_type
+	2: a timestamp
+	3: an int
+	4: a string
+	5: a username
+	6: a username
+	7: a workspace_id
+	8: a workspace_ref
+	9: a string
+	10: a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+=item Description
+
+Loads an input genome object into the workspace.
+
+=back
+
+=cut
+
+sub import_probanno
+{
+    my($self, @args) = @_;
+
+# Authentication: none
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function import_probanno (received $n, expecting 1)");
+    }
+    {
+	my($input) = @args;
+
+	my @_bad_arguments;
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to import_probanno:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'import_probanno');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.import_probanno",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{code},
+					       method_name => 'import_probanno',
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method import_probanno",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'import_probanno',
+				       );
+    }
+}
+
+
+
 =head2 genome_object_to_workspace
 
   $genomeMeta = $obj->genome_object_to_workspace($input)
@@ -7266,6 +7416,49 @@ features has a value which is a reference to a list where each element is a feat
 
 
 
+=head2 annotationProbability
+
+=over 4
+
+
+
+=item Description
+
+Data structures to hold a single annotation probability for a single gene
+
+feature_id feature - feature the annotation is associated with
+string function - the name of the functional role being annotated to the feature
+float probability - the probability that the functional role is associated with the feature
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a list containing 3 items:
+0: a feature_id
+1: a string
+2: a float
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a list containing 3 items:
+0: a feature_id
+1: a string
+2: a float
+
+
+=end text
+
+=back
+
+
+
 =head2 Biochemistry
 
 =over 4
@@ -9853,7 +10046,7 @@ auth has a value which is a string
 
 
 
-=head2 genome_object_to_workspace_params
+=head2 import_probanno_params
 
 =over 4
 
@@ -9864,6 +10057,59 @@ auth has a value which is a string
 ********************************************************************************
     Code relating to reconstruction of metabolic models
    	********************************************************************************
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+probanno has a value which is a probanno_id
+workspace has a value which is a workspace_id
+genome has a value which is a genome_id
+genome_workspace has a value which is a workspace_id
+annotationProbabilities has a value which is a reference to a list where each element is an annotationProbability
+ignore_errors has a value which is a bool
+auth has a value which is a string
+overwrite has a value which is a bool
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+probanno has a value which is a probanno_id
+workspace has a value which is a workspace_id
+genome has a value which is a genome_id
+genome_workspace has a value which is a workspace_id
+annotationProbabilities has a value which is a reference to a list where each element is an annotationProbability
+ignore_errors has a value which is a bool
+auth has a value which is a string
+overwrite has a value which is a bool
+
+
+=end text
+
+=back
+
+
+
+=head2 genome_object_to_workspace_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "genome_object_to_workspace" function.
+
+        GenomeObject genomeobj - full genome typed object to be loaded into the workspace (a required argument)
+        workspace_id workspace - ID of the workspace into which the genome typed object is to be loaded (a required argument)
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
 
 =item Definition

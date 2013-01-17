@@ -17,34 +17,62 @@ use Test::More;
 use Data::Dumper;
 use File::Temp qw(tempfile);
 my $test_count = 33;
-my $genomeObj;
 
-#Initializing test workspace
-my $ws = &_initializeTestWorkspace();
-my $obj = Bio::KBase::fbaModelServices::Impl->new({verbose => 1,workspace => $ws});
-
+################################################################################
+#Test intiailization: setting test config, instantiating Impl, getting auth token
+################################################################################
+$ENV{KB_SERVICE_NAME}="fbaModelServices";
+$ENV{KB_DEPLOYMENT_CONFIG}=$Bin."/../configs/test.cfg";
+my $obj = Bio::KBase::fbaModelServices::Impl->new();
+eval {
+	$obj->_workspaceServices()->delete_workspace({
+		workspace => "testworkspace",
+	});
+	$obj->_workspaceServices()->create_workspace({
+		workspace => "testworkspace",
+		default_permission => "n"
+	});
+};
+################################################################################
+#Tests 1-3: retrieving a biochemistry object and reaction and compound data
+################################################################################
 #Testing biochemistry retrieval method
 my $biochemistry = $obj->get_biochemistry({});
 ok defined($biochemistry), "Successfully printed biochemistry!";
 
 #Testing reaction retrieval method
 my $rxns = $obj->get_reactions({
-	reactions => ["rxn1","rxn2"]
+	reactions => ["rxn1","rxn2"],
+	biochemistry => "testdefault"
 });
 ok defined($rxns->[0]), "Successfully printed reactions!";
 
 #Testing compound retrieval method
 my $cpds = $obj->get_compounds({
-	compounds => ["A","B"]
+	compounds => ["A","B"],
+	biochemistry => "testdefault"
 });
 ok defined($cpds->[0]), "Successfully printed compounds!";
 
+################################################################################
+#Tests 4: adding a genome object to the database
+################################################################################
+my $url = "http://bioseed.mcs.anl.gov/~chenry/KbaseFiles/genome.test.json";
+my ($fh, $uncompressed_filename) = tempfile();
+my $status = getstore($url, $uncompressed_filename);
+open($fh, "<", $uncompressed_filename) || die "$!: $@";
+my @strings = <$fh>;
+my $genomeObj = JSON::XS->new->utf8->decode(join("",@strings));
 my $genome = $obj->genome_object_to_workspace({
 	genomeobj => $genomeObj,
-	workspace => "testworkspace"
+	workspace => "testworkspace",
+	mapping => "testdefault",
+	mapping_workspace => "kbase"
 });
 ok defined($cpds->[0]), "Successfully loaded genome object to workspace!";
-
+################################################################################
+#Tests 5-7: adding and retrieving a media formulation
+################################################################################
 #Now adding media formulation to workspace
 my $media = $obj->addmedia({
 	media => "CustomMedia",
@@ -56,60 +84,39 @@ my $media = $obj->addmedia({
 	compounds => ["C name","D name","B name"],
 	concentrations => [0.001,0.001,0.001],
 	maxflux => [1000,1000,1000],
-	minflux => [-1000,-1000,-1000]
+	minflux => [-1000,-1000,-1000],
+	biochemistry => "testdefault"
 });
 ok defined($media), "Media successfully added to workspace!";
+
+#Now exporting media formulation
+my $html = $obj->export_media({
+	media => $media->[0],
+	workspace => "testworkspace",
+	format => "html",
+	biochemistry => "testdefault"
+});
+ok defined($html), "Successfully exported media to html format!";
+#open ( $fh, ">", "media.html");
+#print $fh $html."\n";
+#close($fh);
 
 #Testing media retrieval method
 my $medias = $obj->get_media({
 	medias => ["Media1","CustomMedia"],
-	workspaces => ["kbasecdm","testworkspace"]
+	workspaces => ["kbasecdm","testworkspace"],
+	biochemistry => "testdefault"
 });
 ok defined($medias->[0]), "Successfully printed media!";
-
-#Now test phenotype import
-my $phenos = $obj->import_phenotypes({
-	workspace => "testworkspace",
-	genome => $genome->[0],
-	genome_workspace => "testworkspace",
-	phenotypes => [
-		[[],"CustomMedia","testworkspace",["D name"],1],
-		[[],"Media1","kbasecdm",["A name"],1],
-		[["kb|g.0.peg.1","kb|g.0.peg.2"],"Media2","kbasecdm",[],1]
-	],
-	notes => "",
-});
-ok defined($phenos), "Successfully imported phenotypes!";
-
+################################################################################
+#Test 8-12: building and exporting an metabolic model
+################################################################################
 #Now test ability to produce a metabolic model
 my $model = $obj->genome_to_fbamodel({
 	genome => $genome->[0],
 	workspace => "testworkspace",
 });
 ok defined($model), "Model successfully constructed from input genome!";
-
-#Now test phenotype simulation
-my $phenosim = $obj->simulate_phenotypes({
-	model => $model->[0],
-	model_workspace => "testworkspace",
-	phenotypeSet => $phenos->[0],
-	workspace => "testworkspace",
-	formulation => {},
-	notes => "",
-});
-ok defined($phenosim), "Successfully simulated phenotypes!";
-
-#Now test phenotype simulation export
-my $html = $obj->export_phenotypeSimulationSet({
-	phenotypeSimulationSet => $phenosim->[0],
-	workspace => "testworkspace",
-	format => "html"
-});
-ok defined($html), "Successfully exported phenotype simulations to html format!";
-#open ( my $fh, ">", "PhenotypeSim.html");
-#print $fh $html."\n";
-#close($fh);
-
 #Testing model export
 my $cytoseed = $obj->export_fbamodel({
 	model => $model->[0],
@@ -148,17 +155,49 @@ my $mdls = $obj->get_models({
 });
 ok defined($mdls->[0]), "Successfully printed model data!";
 
-#Now exporting media formulation
-$html = $obj->export_media({
-	media => $media->[0],
+################################################################################
+#Test 13-15: importing a phenotypes set, simulating phenotypes, and export simulation results
+################################################################################
+#Now test phenotype import
+my $phenos = $obj->import_phenotypes({
+	workspace => "testworkspace",
+	genome => $genome->[0],
+	genome_workspace => "testworkspace",
+	phenotypes => [
+		[[],"CustomMedia","testworkspace",["D name"],1],
+		[[],"Media1","kbasecdm",["A name"],1],
+		[["kb|g.0.peg.1","kb|g.0.peg.2"],"Media2","kbasecdm",[],1]
+	],
+	notes => "",
+	biochemistry => "testdefault"
+});
+ok defined($phenos), "Successfully imported phenotypes!";
+
+#Now test phenotype simulation
+my $phenosim = $obj->simulate_phenotypes({
+	model => $model->[0],
+	model_workspace => "testworkspace",
+	phenotypeSet => $phenos->[0],
+	workspace => "testworkspace",
+	formulation => {},
+	notes => "",
+});
+ok defined($phenosim), "Successfully simulated phenotypes!";
+
+#Now test phenotype simulation export
+$html = $obj->export_phenotypeSimulationSet({
+	phenotypeSimulationSet => $phenosim->[0],
 	workspace => "testworkspace",
 	format => "html"
 });
-ok defined($html), "Successfully exported media to html format!";
-#open ( $fh, ">", "media.html");
+ok defined($html), "Successfully exported phenotype simulations to html format!";
+#open ( my $fh, ">", "PhenotypeSim.html");
 #print $fh $html."\n";
 #close($fh);
 
+################################################################################
+#Test 6: runfba, gapfill, and gapgen
+################################################################################
 #Now test flux balance analysis
 my $fba = $obj->runfba({
 	model => $model->[0],
@@ -326,9 +365,9 @@ $job = $obj->queue_gapgen_model({
 ok defined($html), "Successfully queued gapgen job!";
 
 #Now checking job retreival
-my $jobs = $ws->get_jobs({status => "done"});
+my $jobs = $obj->_workspaceServices()->get_jobs({status => "done"});
 is(@{$jobs},3,"Correct number of done jobs in the job queue!");
-$jobs = $ws->get_jobs({status => "queued"});
+$jobs = $obj->_workspaceServices()->get_jobs({status => "queued"});
 is(@{$jobs},1,"Correct number of queued jobs in the job queue!");
 
 #Now running queued gapfill job mannually to ensure that the job runs and postprocessing works

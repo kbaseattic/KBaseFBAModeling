@@ -284,23 +284,85 @@ sub _clearContext {
 	my ($self) = @_;
 }
 
+sub _modify_annotation_from_probanno {
+	my ($self,$input) = @_;
+    $input = $self->_validateargs($input,["probanno","annotation"],{
+		threshold => 0,
+		probannoonly => 0,
+	});
+    my $probanno = $input->{probanno};
+    my $annotation = $input->{annotation};
+    my $mapping = $annotation->mapping();
+    if (defined($probanno->{featureAlternativeFunctions})) {
+		if ($input->{probannoonly} == 1) {
+			my $ftrs = $annotation->features();
+			for (my $i=0; $i < @{$ftrs}; $i++) {
+				my $ftr = $ftrs->[$i];
+				my $roles = $ftr->featureroles();
+				for (my $j=0; $j < @{$roles}; $j++) {
+					$ftr->remove($roles->[$j]);
+				}
+			}	
+		}
+		for (my $i=0; $i < @{$probanno->{featureAlternativeFunctions}}; $i++) {
+			my $feature = $probanno->{featureAlternativeFunctions}->[$i];
+			my $ftrObj = $annotation->query_object("features",{id => $feature->{id}});
+			if (defined($ftrObj) && defined($feature->{alternative_functions})) {
+				for (my $j=0; $j < @{$feature->{alternative_functions}}; $j++) {
+					my $anno = $feature->{alternative_functions}->[$j];
+					if ($anno->[1] >= $input->{threshold}) {
+						my $role = $mapping->queryObject( "roles",{
+							name => $anno->[0]
+						});
+						if ( !defined($role) ) {
+							$role = $mapping->add( "roles",{
+								name => $anno->[0]
+							});
+						}
+						my $roles = $feature->featureroles();
+						my $found = 0;
+						for (my $k=0; $k < @{$roles}; $k++) {
+							if ($roles->[$k]->role()->uuid() eq $role->uuid()) {
+								$found = 1;
+							}
+						}
+						if ($found == 0) {
+							$ftrObj->add("featureroles",{
+								 role_uuid   => $role->uuid(),
+								 compartment => "u",
+								 delimiter   => ";",
+								 comment     => "Added from probabilistic annotation with probability ".$anno->[1]
+							});
+						}
+					} 
+				}
+			}
+		}
+	}
+    return ($annotation,$mapping);
+}
+
 sub _translate_genome_to_annotation {
-	my $self = shift;
-    my($genome,$mapping,$probanno,$threshold,$probannoOnly) = @_;
+    my($self,$genome,$mapping) = @_;
    	if (!defined($genome->{gc}) || !defined($genome->{size})) {
    		$genome->{gc} = 0.5;
    		$genome->{size} = 0;
+   		my $contigs = [];
    		if (defined($genome->{contigs})) {
-   			for ( my $i = 0 ; $i < @{ $genome->{contigs} } ; $i++ ) {
-				my $dna = $genome->{contigs}->[$i]->{dna};
-				$genome->{size} += length($dna);
-				for ( my $j = 0 ; $j < length($dna) ; $j++ ) {
-					if ( substr( $dna, $j, 1 ) =~ m/[gcGC]/ ) {
-						$genome->{gc}++;
-					}
+   			$contigs = $genome->{contigs};
+   		} elsif (defined($genome->{contigs_uuid})) {
+   			my $obj = $self->_get_msobject("GenomeContigs","NO_WORKSPACE",$genome->{contigs_uuid});
+   			$contigs = $obj->{contigs};
+   		}
+   		for ( my $i = 0 ; $i < @{ $contigs } ; $i++ ) {
+			my $dna = $contigs->[$i]->{dna};
+			$genome->{size} += length($dna);
+			for ( my $j = 0 ; $j < length($dna) ; $j++ ) {
+				if ( substr( $dna, $j, 1 ) =~ m/[gcGC]/ ) {
+					$genome->{gc}++;
 				}
 			}
-   		}
+		}
    	}
     #Creating the annotation from the input genome object
 	my $annotation = ModelSEED::MS::Annotation->new({
@@ -332,67 +394,28 @@ sub _translate_genome_to_annotation {
 			 contig    => $ftr->{location}->[0]->[0],
 			 direction => $ftr->{location}->[0]->[2],
 		});
-		if ($probannoOnly == 0) {
-			my $output = ModelSEED::MS::Utilities::GlobalFunctions::functionToRoles(
-				$ftr->{function}
-			);
-			if ( defined( $output->{roles} ) ) {
-				for ( my $j = 0 ; $j < @{ $output->{roles} } ; $j++ ) {
-					my $role = $mapping->queryObject( "roles",{
+		my $output = ModelSEED::MS::Utilities::GlobalFunctions::functionToRoles(
+			$ftr->{function}
+		);
+		if ( defined( $output->{roles} ) ) {
+			for ( my $j = 0 ; $j < @{ $output->{roles} } ; $j++ ) {
+				my $role = $mapping->queryObject( "roles",{
+					name => $output->{roles}->[$j]
+				});
+				if ( !defined($role) ) {
+					$role = $mapping->add( "roles",{
 						name => $output->{roles}->[$j]
 					});
-					if ( !defined($role) ) {
-						$role = $mapping->add( "roles",{
-							name => $output->{roles}->[$j]
-						});
-					}
-					$newftr->add("featureroles",{
-						 role_uuid   => $role->uuid(),
-						 compartment => $output->{compartments}->[0],
-						 delimiter   => $output->{delimiter},
-						 comment     => $output->{comment}
-					});
 				}
+				$newftr->add("featureroles",{
+					 role_uuid   => $role->uuid(),
+					 compartment => $output->{compartments}->[0],
+					 delimiter   => $output->{delimiter},
+					 comment     => $output->{comment}
+				});
 			}
 		}
 	}
-	if (defined($probanno) && defined($probanno->{featureAlternativeFunctions})) {
-		for (my $i=0; $i < @{$probanno->{featureAlternativeFunctions}}; $i++) {
-			my $feature = $probanno->{featureAlternativeFunctions}->[$i];
-			my $ftrObj = $annotation->query_object("features",{id => $feature->{id}});
-			if (defined($ftrObj) && defined($feature->{alternative_functions})) {
-				for (my $j=0; $j < @{$feature->{alternative_functions}}; $j++) {
-					my $anno = $feature->{alternative_functions}->[$j];
-					if ($anno->[1] >= $threshold) {
-						my $role = $mapping->queryObject( "roles",{
-							name => $anno->[0]
-						});
-						if ( !defined($role) ) {
-							$role = $mapping->add( "roles",{
-								name => $anno->[0]
-							});
-						}
-						my $roles = $feature->featureroles();
-						my $found = 0;
-						for (my $k=0; $k < @{$roles}; $k++) {
-							if ($roles->[$k]->role()->uuid() eq $role->uuid()) {
-								$found = 1;
-							}
-						}
-						if ($found == 0) {
-							$ftrObj->add("featureroles",{
-								 role_uuid   => $role->uuid(),
-								 compartment => "u",
-								 delimiter   => ";",
-								 comment     => "Added from probabilistic annotation with probability ".$anno->[1]
-							});
-						}
-					} 
-				}
-			}
-		}
-	}
-	
 	return $annotation;
 }
 
@@ -434,16 +457,10 @@ sub _save_msobject {
 	if (defined($obj->{_kbaseWSMeta})) {
 		delete $obj->{_kbaseWSMeta};
 	}
-	if ($type eq "Genome" && defined($obj->{contigs})) {
-		$obj->{contigs} = [];
-	}
-	if ($type eq "Model") {
-		$obj->{uuid} = $ws."/".$id;
-	}
-	if (ref($obj) eq "HASH") {
-		$data = $obj;
-	} else {
+	if (ref($obj) =~ m/ModelSEED::MS::/) {
 		$data = $obj->serializeToDB();
+	} else {
+		$data = $obj;
 	}
 	my $objmeta = $self->_workspaceServices()->save_object({
 		id => $id,
@@ -461,6 +478,9 @@ sub _save_msobject {
 	$obj->{_kbaseWSMeta}->{wsid} = $id;
 	$obj->{_kbaseWSMeta}->{ws} = $ws;
 	$obj->{_kbaseWSMeta}->{wsinst} = $objmeta->[3];	
+	if ($type eq "Model" || $type eq "Mapping" || $type eq "Annotation" || $type eq "Biochemistry") {
+		$obj->uuid($objmeta->[8]);
+	}
 	return $objmeta;
 }
 
@@ -469,12 +489,20 @@ sub _get_msobject {
 	if (defined($cache->{$type}->{$ws}->{$id})) {
 		return $cache->{$type}->{$ws}->{$id};
 	}
-	my $output = $self->_workspaceServices()->get_object({
-		id => $id,
-		type => $type,
-		workspace => $ws,
-		auth => $self->_authentication()
-	});
+	my $output;
+	if ($ws eq "NO_WORKSPACE") {
+		$output = $self->_workspaceServices()->get_object_by_ref({
+			reference => $id,
+			auth => $self->_authentication()
+		});
+	} else {
+		$output = $self->_workspaceServices()->get_object({
+			id => $id,
+			type => $type,
+			workspace => $ws,
+			auth => $self->_authentication()
+		});
+	}
 	if (!defined($output->{data})) {
 		my $msg = "Unable to retrieve object:".$type."/".$ws."/".$id;
 		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => '_get_msobject');
@@ -496,9 +524,8 @@ sub _get_msobject {
 		$obj = $class->new($output->{data});
 		$cache->{$type}->{$ws}->{$id} = $obj;
 		if ($type eq "Model") {
-			my $linkid = $obj->annotation_uuid();
-			my $array = [split(/\//,$linkid)];
-			$obj->annotation($self->_get_msobject("Annotation",$array->[0],$array->[1],$cache));
+			my $anno = $self->_get_object_by_uuid("Annotation",$obj->annotation_uuid(),$cache);
+			$obj->annotation($anno);
 			$obj->mapping($obj->annotation()->mapping());
 			$obj->biochemistry($obj->mapping()->biochemistry());
 			my $subobjs = {
@@ -513,27 +540,26 @@ sub _get_msobject {
 				my $linkType = $subobjs->{$attribute}->[1];
 				my $array = [];
 				for (my $i=0; $i < @{$obj->$attribute()}; $i++) {
-					my $linkid = $obj->$attribute()->[$i];
-					my $array = [split(/\//,$linkid)];
-					my $object = $self->_get_msobject($linkType,$array->[0],$array->[1],$cache);
-					$array->[$i] = $object;
+					$array->[$i] = $self->_get_object_by_uuid($linkType,$obj->$attribute()->[$i],$cache);
 				}
 				if (@{$array} > 0) {
 					$obj->$link($array);
 				}
 			}
+			$obj->uuid($self->_set_uuid_by_idws($id,$ws));
 		} elsif ($type eq "Annotation") {
-			my $linkid = $obj->mapping_uuid();
-			my $array = [split(/\//,$linkid)];
-			$obj->mapping($self->_get_msobject("Mapping",$array->[0],$array->[1],$cache));
+			my $map = $self->_get_object_by_uuid("Mapping",$obj->mapping_uuid(),$cache);
+			$obj->mapping($map);
+			$obj->uuid($self->_set_uuid_by_idws($id,$ws));
 		} elsif ($type eq "Mapping") {
-			my $linkid = $obj->biochemistry_uuid();
-			my $array = [split(/\//,$linkid)];
-			$obj->biochemistry($self->_get_msobject("Biochemistry",$array->[0],$array->[1],$cache));
+			my $bio = $self->_get_object_by_uuid("Biochemistry",$obj->biochemistry_uuid(),$cache);
+			$obj->biochemistry($bio);
+			$obj->uuid($self->_set_uuid_by_idws($id,$ws));
+		} elsif ($type eq "Biochemistry") {
+			$obj->uuid($self->_set_uuid_by_idws($id,$ws));
 		} elsif ($type eq "FBA") {
-			my $linkid = $obj->model_uuid();
-			my $array = [split(/\//,$linkid)];
-			$obj->model($self->_get_msobject("Model",$array->[0],$array->[1],$cache));
+			my $mod = $self->_get_object_by_uuid("Model",$obj->model_uuid(),$cache);
+			$obj->model($mod);
 			my $mediauuids = $obj->mediaUUIDs();
 			foreach my $media (@{$mediauuids}) {
 				if ($media =~ m/(.+)\/(.+)/) {
@@ -542,28 +568,50 @@ sub _get_msobject {
 				}
 			}
 		} elsif ($type eq "GapFill") {
-			my $linkid = $obj->fbaFormulation_uuid();
-			my $array = [split(/\//,$linkid)];
-			$obj->fbaFormulation($self->_get_msobject("FBA",$array->[0],$array->[1],$cache));
-			$linkid = $obj->model_uuid();
-			$array = [split(/\//,$linkid)];
-			$obj->model($self->_get_msobject("Model",$array->[0],$array->[1],$cache));
+			my $fba = $self->_get_object_by_uuid("FBA",$obj->fbaFormulation_uuid(),$cache);
+			$obj->fbaFormulation($fba);
+			my $mod = $self->_get_object_by_uuid("Model",$obj->model_uuid(),$cache);
+			$obj->model($mod);
 		} elsif ($type eq "GapGen") {
-			my $linkid = $obj->fbaFormulation_uuid();
-			my $array = [split(/\//,$linkid)];
-			$obj->fbaFormulation($self->_get_msobject("FBA",$array->[0],$array->[1],$cache));
-			$linkid = $obj->model_uuid();
-			$array = [split(/\//,$linkid)];
-			$obj->model($self->_get_msobject("Model",$array->[0],$array->[1],$cache));
+			my $fba = $self->_get_object_by_uuid("FBA",$obj->fbaFormulation_uuid(),$cache);
+			$obj->fbaFormulation($fba);
+			my $mod = $self->_get_object_by_uuid("Model",$obj->model_uuid(),$cache);
+			$obj->model($mod);
 		}
 		delete $cache->{$type}->{$ws}->{$id};
 	} else {
 		$obj = $output->{data};
 	}
-	$obj->{_kbaseWSMeta}->{wsid} = $id;
-	$obj->{_kbaseWSMeta}->{ws} = $ws;
-	$obj->{_kbaseWSMeta}->{wsinst} = $output->{metadata}->[3];	
+	#Processing genomes to automatically have an annotation object
+	if ($type eq "Genome") {
+		if (!defined($obj->{annotation_uuid})) {
+			my $mapping = $self->_get_msobject("Mapping","kbase","default");
+			($obj,my $annotation,$mapping,my $contigs) = $self->_processGenomeObject($obj,$mapping,"get_genome_object");
+			my $meta = $self->_save_msobject($obj,"Genome",$ws,$id,1);
+		}
+	}
+	$obj->{_kbaseWSMeta}->{wsid} = $output->{metadata}->[0];
+	$obj->{_kbaseWSMeta}->{ws} = $output->{metadata}->[7];
+	$obj->{_kbaseWSMeta}->{wsinst} = $output->{metadata}->[3];
+	$obj->{_kbaseWSMeta}->{wsref} = $output->{metadata}->[8];	
 	return $obj;
+}
+
+
+sub _set_uuid_by_idws {
+	my($self,$id,$ws) = @_;
+	if ($ws eq "NO_WORKSPACE") {
+		return $id;
+	}
+	return $ws."/".$id;
+}
+
+sub _get_object_by_uuid {
+	my($self,$type,$uuid,$cache) = @_;
+	if ($uuid =~ m/(.+)\/([^\/]+)$/) {
+		return $self->_get_msobject($type,$1,$2,$cache);
+	}
+	return $self->_get_msobject($type,"NO_WORKSPACE",$uuid,$cache);
 }
 
 sub _get_genomeObj_from_CDM {
@@ -653,6 +701,20 @@ sub _get_genomeObj_from_CDM {
 	$genomeObj->{gc} = $gc;
 	$genomeObj->{size} = $size;
 	return $genomeObj;
+}
+
+sub _processGenomeObject {
+	my($self,$genome,$mapping,$command) = @_;
+	my $anno = $self->_translate_genome_to_annotation($genome,$mapping);
+	my $meta = $self->_save_msobject($mapping,"Mapping","NO_WORKSPACE",$genome->{id}.".anno.mapping",$command);
+	$anno->mapping_uuid($meta->[8]);
+	$meta = $self->_save_msobject($anno,"Annotation","NO_WORKSPACE",$genome->{id}.".anno",$command);
+	$genome->{annotation_uuid} = $meta->[8];
+	my $contigObj = {contigs => $genome->{contigs}};
+	$meta = $self->_save_msobject($contigObj,"GenomeContigs","NO_WORKSPACE",$genome->{id}.".contigs",$command);
+	$genome->{contigs_uuid} = $meta->[8];
+	delete $genome->{contigs};
+	return ($genome,$anno,$mapping,$contigObj);
 }
 
 sub _store {
@@ -1631,7 +1693,7 @@ sub new
 	my @params = qw(workspace-url);
 	for my $p (@params)
 	{
-	    my $v = $c->param("$service.$p");
+	  	my $v = $c->param("$service.$p");
 
 	    if ($v)
 	    {
@@ -3388,6 +3450,248 @@ sub get_biochemistry
 
 
 
+=head2 import_probanno
+
+  $probannoMeta = $obj->import_probanno($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is an import_probanno_params
+$probannoMeta is an object_metadata
+import_probanno_params is a reference to a hash where the following keys are defined:
+	probanno has a value which is a probanno_id
+	workspace has a value which is a workspace_id
+	genome has a value which is a genome_id
+	genome_workspace has a value which is a workspace_id
+	annotationProbabilities has a value which is a reference to a list where each element is an annotationProbability
+	ignore_errors has a value which is a bool
+	auth has a value which is a string
+	overwrite has a value which is a bool
+probanno_id is a string
+workspace_id is a string
+genome_id is a string
+annotationProbability is a reference to a list containing 3 items:
+	0: a feature_id
+	1: a string
+	2: a float
+feature_id is a string
+bool is an int
+object_metadata is a reference to a list containing 11 items:
+	0: an object_id
+	1: an object_type
+	2: a timestamp
+	3: an int
+	4: a string
+	5: a username
+	6: a username
+	7: a workspace_id
+	8: a workspace_ref
+	9: a string
+	10: a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is an import_probanno_params
+$probannoMeta is an object_metadata
+import_probanno_params is a reference to a hash where the following keys are defined:
+	probanno has a value which is a probanno_id
+	workspace has a value which is a workspace_id
+	genome has a value which is a genome_id
+	genome_workspace has a value which is a workspace_id
+	annotationProbabilities has a value which is a reference to a list where each element is an annotationProbability
+	ignore_errors has a value which is a bool
+	auth has a value which is a string
+	overwrite has a value which is a bool
+probanno_id is a string
+workspace_id is a string
+genome_id is a string
+annotationProbability is a reference to a list containing 3 items:
+	0: a feature_id
+	1: a string
+	2: a float
+feature_id is a string
+bool is an int
+object_metadata is a reference to a list containing 11 items:
+	0: an object_id
+	1: an object_type
+	2: a timestamp
+	3: an int
+	4: a string
+	5: a username
+	6: a username
+	7: a workspace_id
+	8: a workspace_ref
+	9: a string
+	10: a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+
+
+=item Description
+
+Loads an input genome object into the workspace.
+
+=back
+
+=cut
+
+sub import_probanno
+{
+    my $self = shift;
+    my($input) = @_;
+
+    my @_bad_arguments;
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to import_probanno:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'import_probanno');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($probannoMeta);
+    #BEGIN import_probanno
+    $self->_setContext($ctx,$input);
+	$input = $self->_validateargs($input,["workspace","annotationProbabilities","genome"],{
+		probanno => undef,
+		genome_workspace => $input->{workspace},
+		ignore_errors => 0
+	});
+    if (!defined($input->{probanno})) {
+    	$input->{probanno} = $self->_get_new_id($input->{genome}.".probanno.");
+    }
+    #Retrieving specified genome
+    my $genomeObj = $self->_get_msobject("Genome",$input->{genome_workspace},$input->{genome});
+    if (!defined($genomeObj)) {
+    	my $msg = "Failed to retrieve genome ".$input->{genome_workspace}."/".$input->{genome};
+    	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'import_phenotypes');
+    }
+    #Retrieving the annotation object
+    my $annotation = $self->_get_msobject("Annotation","NO_WORKSPACE",$genomeObj->{annotation_uuid});
+    if (!defined($annotation)) {
+    	my $msg = "Failed to retrieve annotation ".$input->{genome_workspace}."/".$input->{genome};
+    	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'import_phenotypes');
+    }
+    #Retrieving the mapping object
+    my $map = $annotation->mapping();
+    #Building a hash for all gene aliases mapped to gene IDs
+    my $genehash = {};
+    for (my $i=0; $i < @{$genomeObj->{features}}; $i++) {
+    	my $ftr = $genomeObj->{features}->[$i];
+    	$genehash->{$ftr->{id}} = $ftr->{id};
+    	if (defined($ftr->{aliases})) {
+    		for (my $j=0; $j < @{$ftr->{aliases}}; $j++) {
+    			$genehash->{$ftr->{aliases}->[$j]} = $ftr->{id};
+    		}
+    	}
+    }
+    #Instantiating probabilistic annotation object
+    my $object = {
+    	id => $input->{probanno},
+    	genome => $input->{genome},
+    	genome_uuid => $genomeObj->{_kbaseWSMeta}->{wsref},
+    	featureAlternativeFunctions => [],
+    };
+    #Validating media, genes, and compounds
+    my $missingGenes = [];
+    my $missingRoles = [];
+    my $featureHash;
+    my $allfound = 1;
+    for (my $i=0; $i < @{$input->{annotationProbabilities}}; $i++) {
+    	my $annoprob = $input->{annotationProbabilities}->[$i];
+    	if (!defined($genehash->{$annoprob->[0]})) {
+    		push(@{$missingGenes},$annoprob->[0]);
+    		$allfound = 0;
+    	} else {
+    		$annoprob->[0] = $genehash->{$annoprob->[0]};
+    		my $searchName = ModelSEED::MS::Utilities::GlobalFunctions::convertRoleToSearchRole($annoprob->[1]);
+			my $roleObj = $map->queryObject("roles",{searchname => $searchName});
+    		if (defined($roleObj)) {
+    			if (defined($featureHash->{$annoprob->[0]})) {
+		    		push(@{$featureHash->{$annoprob->[0]}->{alternative_functions}},[
+		    			$annoprob->[1],
+		    			$annoprob->[2]
+		    		]);
+		    	} else {
+		    		$featureHash->{$annoprob->[0]} = {
+		    			id => $annoprob->[0],
+		    			alternative_functions => [
+		    				[
+		    					$annoprob->[1],
+		    					$annoprob->[2]
+		    				]
+		    			]
+		    		};
+		    	}
+    		} else {
+    			push(@{$missingRoles},$annoprob->[1]);
+    			$allfound = 0;
+    		}
+    	} 
+    }
+    #Adding fuction annotation array to structure
+    foreach my $key (keys(%{$featureHash})) {
+    	push(@{$object->{featureAlternativeFunctions}},$featureHash->{$key});
+    }
+    #Printing error if any entities could not be validated
+    my $msg = "";
+    if (@{$missingGenes} > 0) {
+    	$msg = "Could not find genes:".join(";",@{$missingGenes})."\n";
+    }
+    if (@{$missingRoles} > 0) {
+    	$msg = "Could not find role:".join(";",@{$missingRoles})."\n";
+    }
+    my $meta = {};
+	if (length($msg) > 0 && $input->{ignore_errors} == 0) {
+		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'import_phenotypes');
+	} elsif (length($msg) > 0) {
+		$object->{importErrors} = $msg;
+	}
+    #Saving object to database
+    $probannoMeta = $self->_workspaceServices()->save_object({
+		id => $input->{probanno},
+		type => "ProbAnno",
+		data => $object,
+		workspace => $input->{workspace},
+		command => "import_probanno",
+		auth => $self->_authentication()
+	});
+	$self->_clearContext();
+    #END import_probanno
+    my @_bad_returns;
+    (ref($probannoMeta) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"probannoMeta\" (value was \"$probannoMeta\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to import_probanno:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'import_probanno');
+    }
+    return($probannoMeta);
+}
+
+
+
+
 =head2 genome_object_to_workspace
 
   $genomeMeta = $obj->genome_object_to_workspace($input)
@@ -3574,8 +3878,13 @@ sub genome_object_to_workspace
     #BEGIN genome_object_to_workspace
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["genomeobj","workspace"],{
+    	mapping_workspace => "kbase",
+    	mapping => "default",
     	overwrite => 0
     });
+    #Processing genome object
+    my $mapping = $self->_get_msobject("Mapping",$input->{mapping_workspace},$input->{mapping});
+    ($input->{genomeobj},my $anno,$mapping,my $contigObj) = $self->_processGenomeObject($input->{genomeobj},$mapping,"genome_object_to_workspace");
     $genomeMeta = $self->_save_msobject($input->{genomeobj},"Genome",$input->{workspace},$input->{genomeobj}->{id},$input->{overwrite});
 	$self->_clearContext();
     #END genome_object_to_workspace
@@ -3696,9 +4005,13 @@ sub genome_to_workspace
     #BEGIN genome_to_workspace
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["genome","workspace"],{
-    	overwrite => 0
+    	overwrite => 0,
+    	mapping_workspace => "kbase",
+    	mapping => "default",
     });
+    my $mapping = $self->_get_msobject("Mapping",$input->{mapping_workspace},$input->{mapping});
     my $genomeObj = $self->_get_genomeObj_from_CDM($input->{genome});
+    ($genomeObj,my $anno,$mapping,my $contigObj) = $self->_processGenomeObject($genomeObj,$mapping,"genome_to_workspace");
     $genomeMeta = $self->_save_msobject($genomeObj,"Genome",$input->{workspace},$genomeObj->{id},$input->{overwrite});
 	$self->_clearContext();
     #END genome_to_workspace
@@ -3996,42 +4309,35 @@ sub genome_to_fbamodel
     	probanno_workspace => $input->{workspace},
     	genome_workspace => $input->{workspace},
     	model => undef,
-    	overwrite => 0,
-    	biochemistry => "default",
-		mapping => "default"
+    	overwrite => 0
     });
     #Determining model ID
     if (!defined($input->{model})) {
-    	$input->{model} = $self->_get_new_id($input->{genome}.".fbamdl.")
+    	$input->{model} = $self->_get_new_id($input->{genome}.".fbamdl.");
     }
     #Retreiving genome object from workspace
     my $genome = $self->_get_msobject("Genome",$input->{genome_workspace},$input->{genome});
-	#Retreiving probabilistic annotation
-    my $probanno;
+    #Retrieving annotation and mapping
+	my $annotation = $self->_get_msobject("Annotation","NO_WORKSPACE",$genome->{annotation_uuid});
+    #Retreiving probabilistic annotation
     if (defined($input->{probanno})) {
-    	$probanno = $self->_get_msobject("ProbAnno",$input->{probanno_workspace},$input->{probanno});
+    	my $probanno = $self->_get_msobject("ProbAnno",$input->{probanno_workspace},$input->{probanno});
+    	($annotation,my $mapping) = $self->_modify_annotation_from_probanno({
+    		probanno => $probanno,
+    		annotation => $annotation,
+    		threshold => $input->{probannoThreshold},
+    		probannoonly => $input->{probannoOnly}
+    	});
+    	my $meta = $self->_save_msobject($mapping,"Mapping","NO_WORKSPACE",$input->{probanno}.".anno.map",1);
+    	$annotation->mapping_uuid($meta->[8]);
+    	#TODO: annotation should probably link to the probanno
+    	$meta = $self->_save_msobject($annotation,"Annotation","NO_WORKSPACE",$input->{probanno}.".anno",1);
     }
-    #Retreiving mapping and biochemistry
-    my $mapping = $self->_get_msobject("Mapping","kbase",$input->{mapping});
-    my $biochem = $mapping->biochemistry();    
-    #Translating genome to model seed annotation
-    my $annotation = $self->_translate_genome_to_annotation($genome,$mapping,$probanno,$input->{probannoThreshold},$input->{probannoOnly});
+    #Building the FBA model
     my $mdl = $annotation->createStandardFBAModel( { prefix => "Kbase", } );
-    #If no output model ID is provided, one is retreived from KBase
-	$mdl->uuid($input->{workspace}."/".$input->{model});
-	$mdl->id($input->{model});
-	$mdl->mapping_uuid($input->{workspace}."/".$input->{model}.".map");
-	$mdl->mapping($mapping);
-	$mdl->biochemistry_uuid("kbase/".$input->{biochemistry});
-	$mdl->biochemistry($biochem);
-	$mdl->annotation_uuid($input->{workspace}."/".$input->{model}.".anno");
-	$mdl->annotation($annotation);
 	$mdl->defaultNameSpace("KBase");
-	$annotation->mapping_uuid($input->{workspace}."/".$input->{model}.".map");
-	$annotation->mapping($mapping);
-	$modelMeta= $self->_save_msobject($mdl,"Model",$input->{workspace},$input->{model},$input->{overwrite});
-	$self->_save_msobject($annotation,"Annotation",$input->{workspace},$input->{model}.".anno",$input->{overwrite});
-	$self->_save_msobject($mapping,"Mapping",$input->{workspace},$input->{model}.".map",$input->{overwrite});
+	#Model uuid and model id will be set to WS values during save
+	$modelMeta = $self->_save_msobject($mdl,"Model",$input->{workspace},$input->{model},$input->{overwrite});
     $self->_clearContext();
     #END genome_to_fbamodel
     my @_bad_returns;
@@ -4568,8 +4874,7 @@ sub addmedia
     	maxflux => [],
     	minflux => [],
     	overwrite => 0,
-    	biochemistry => "default",
-		mapping => "default"
+    	biochemistry => "default"
     });
     #Creating the media object from the specifications
     my $bio = $self->_get_msobject("Biochemistry","kbase",$input->{biochemistry});
@@ -4605,7 +4910,6 @@ sub addmedia
     	} else {
     		push(@{$missing},$input->{compounds}->[$i]);
     	}
-    	
     }
     #Checking that all compounds specified for media were found
 	if (defined($missing->[0])) {
@@ -4962,6 +5266,7 @@ sub runfba
     	$model->addLinkArrayItem("fbaFormulations",$fba);
     	$self->_save_msobject($model,"Model",$input->{model_workspace},$input->{model},"runfba");
     }
+    $fba->model_uuid($model->uuid());
 	$fbaMeta = $self->_save_msobject($fba,"FBA",$input->{workspace},$input->{fba},"runfba",$input->{overwrite});
     $self->_clearContext();
     #END runfba
@@ -5198,8 +5503,7 @@ sub import_phenotypes
 		phenotypeSet => undef,
 		genome_workspace => $input->{workspace},
 		ignore_errors => 0,
-		biochemistry => "default",
-		mapping => "default"
+		biochemistry => "default"
 	});
     if (!defined($input->{phenotypeSet})) {
     	$input->{phenotypeSet} = $self->_get_new_id($input->{genome}.".phenos.");
@@ -6107,8 +6411,6 @@ sub queue_runfba
 		model_workspace => $input->{workspace},
 		fba => undef,
 		donot_submit_job => 0,
-		biochemistry => "default",
-		mapping => "default"
 	});
 	if (!defined($input->{fba})) {
 		$input->{fba} = $self->_get_new_id($input->{model}.".fba.");
@@ -6136,21 +6438,12 @@ sub queue_runfba
 			mediaids => $mediaids,
 			mediawss => $mediaws,
 			mediainsts => $mediainst,
-			bioid => "kbase",
-			biows => $input->{biochemistry},
-			bioinst => 0,
-			mapid => "kbase",
-			mapws => $input->{mapping},
-			mapinst => 0,
-			annoid => $model->annotation()->{_kbaseWSMeta}->{wsid},
-			annows => $model->annotation()->{_kbaseWSMeta}->{ws},
-			annoinst => $model->annotation()->{_kbaseWSMeta}->{wsinst},
-			modelid => $model->{_kbaseWSMeta}->{wsid},
-			modelws => $model->{_kbaseWSMeta}->{ws},
-			modelinst => $model->{_kbaseWSMeta}->{wsinst},
-			fbaid => $fba->{_kbaseWSMeta}->{wsid},
-			fbaws => $fba->{_kbaseWSMeta}->{ws},
-			fbainst => $fba->{_kbaseWSMeta}->{wsinst},
+			bioref => $model->biochemistry_uuid(),
+			mapref => $model->mapping_uuid(),
+			annoref => $model->annotation_uuid(),
+			modelref => $model->uuid(),
+			fbaref => $fbameta->[8],
+			fbaid => $input->{fba}
 		}],
 		postprocess_command => undef,
 		postprocess_args => undef,
@@ -6441,19 +6734,21 @@ sub queue_gapfill_model
 		gapFill_workspace => $input->{workspace},
 		overwrite => 0,
 		donot_submit_job => 0,
-		biochemistry => "default",
-		mapping => "default"
 	});
 	#Checking is this is a postprocessing or initialization call
 	if (!defined($input->{gapFill})) {
 		$input->{gapFill} = $self->_get_new_id($input->{model}.".gapfill.");
 		$input->{formulation} = $self->_setDefaultGapfillFormulation($input->{formulation});
+		#TODO: This block should be in a "safe save" block to prevent race conditions
 		my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
 		my $gapfill = $self->_buildGapfillObject($input->{formulation},$model,$input->{gapFill_workspace},$input->{gapFill});
-		my $fbameta = $self->_save_msobject($gapfill->fbaFormulation(),"FBA",$gapfill->fbaFormulation()->{_kbaseWSMeta}->{ws},$gapfill->fbaFormulation()->{_kbaseWSMeta}->{wsid},"queue_gapfill_model");
-		my $gapfillmeta = $self->_save_msobject($gapfill,"GapFill",$input->{gapFill_workspace},$input->{gapFill},"queue_gapfill_model");
 		push(@{$model->unintegratedGapfilling_uuids()},$gapfill->uuid());
 		my $modelmeta = $self->_save_msobject($model,"Model",$input->{workspace},$input->{out_model},"queue_gapfill_model");
+		#End "safe save" block
+		$gapfill->fbaFormulation()->model_uuid($model->uuid());
+		my $fbameta = $self->_save_msobject($gapfill->fbaFormulation(),"FBA",$gapfill->fbaFormulation()->{_kbaseWSMeta}->{ws},$gapfill->fbaFormulation()->{_kbaseWSMeta}->{wsid},"queue_gapfill_model");
+		$gapfill->model_uuid($model->uuid());
+		my $gapfillmeta = $self->_save_msobject($gapfill,"GapFill",$input->{gapFill_workspace},$input->{gapFill},"queue_gapfill_model");
 		my $fba = $gapfill->fbaFormulation();
 		my $mediaids = [];
 		my $mediaws = [];
@@ -6472,21 +6767,12 @@ sub queue_gapfill_model
 				mediaids => $mediaids,
 				mediawss => $mediaws,
 				mediainsts => $mediainst,
-				bioid => "kbase",
-				biows => $input->{biochemsitry},
-				bioinst => 0,
-				mapid => "kbase",
-				mapws => $input->{mapping},
-				mapinst => 0,
-				annoid => $model->annotation()->{_kbaseWSMeta}->{wsid},
-				annows => $model->annotation()->{_kbaseWSMeta}->{ws},
-				annoinst => $model->annotation()->{_kbaseWSMeta}->{wsinst},
-				modelid => $model->{_kbaseWSMeta}->{wsid},
-				modelws => $model->{_kbaseWSMeta}->{ws},
-				modelinst => $model->{_kbaseWSMeta}->{wsinst},
-				fbaid => $fba->{_kbaseWSMeta}->{wsid},
-				fbaws => $fba->{_kbaseWSMeta}->{ws},
-				fbainst => $fba->{_kbaseWSMeta}->{wsinst},
+				bioref => $model->biochemistry_uuid(),
+				mapref => $model->mapping_uuid(),
+				annoref => $model->annotation_uuid(),
+				modelref => $model->uuid(),
+				fbaref => $fbameta->[8],
+				fbaid => $gapfill->fbaFormulation()->{_kbaseWSMeta}->{wsid}
 			}],
 			postprocess_command => "queue_gapfill_model",
 			postprocess_args => [$input],
@@ -6514,12 +6800,15 @@ sub queue_gapfill_model
 			Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'queue_gapfill_model');
 		}
 		if ($input->{integrate_solution} == 1) {
-			$gapfill->model()->integrateGapfillSolution({
+			#TODO: This block should be in a "safe save" block to prevent race conditions
+			my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
+			$model->integrateGapfillSolution({
 				gapfillingFormulation => $gapfill,
 				solutionNum => 0
 			});
+			my $modelmeta = $self->_save_msobject($model,"Model",$input->{workspace},$input->{out_model},"queue_gapfill_model");
+			#End "safe save" block
 		}
-		my $modelmeta = $self->_save_msobject($gapfill->model(),"Model",$input->{workspace},$input->{out_model},"queue_gapfill_model");
 		$output = $self->_save_msobject($gapfill,"GapFill",$input->{gapFill_workspace},$input->{gapFill},"queue_gapfill_model");
 	}
 	$self->_clearContext();
@@ -6767,19 +7056,21 @@ sub queue_gapgen_model
 		gapGen_workspace => $input->{workspace},
 		overwrite => 0,
 		donot_submit_job => 0,
-		biochemistry => "default",
-		mapping => "default"
 	});
 	#Checking is this is a postprocessing or initialization call
 	if (!defined($input->{gapGen})) {
 		$input->{gapGen} = $self->_get_new_id($input->{model}.".gapGen.");
 		$input->{formulation} = $self->_setDefaultGapGenFormulation($input->{formulation});
+		#TODO: This block should be in a "safe save" block to prevent race conditions
 		my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
-		my $gapgen = $self->_buildGapGenObject($input->{formulation},$model,$input->{gapGen_workspace},$input->{gapGen});
-		my $fbameta = $self->_save_msobject($gapgen->fbaFormulation(),"FBA",$gapgen->fbaFormulation()->{_kbaseWSMeta}->{ws},$gapgen->fbaFormulation()->{_kbaseWSMeta}->{wsid},"queue_gapgen_model");
-		my $gapgenmeta = $self->_save_msobject($gapgen,"GapGen",$input->{gapGen_workspace},$input->{gapGen},"queue_gapgen_model");
+		my $gapgen = $self->_buildGapGenObject($input->{formulation},$model,$input->{gapGen_workspace},$input->{gapGen});	
 		push(@{$model->unintegratedGapgen_uuids()},$gapgen->uuid());
 		my $modelmeta = $self->_save_msobject($model,"Model",$input->{workspace},$input->{out_model},"queue_gapgen_model");
+		#End "safe save" block
+		$gapgen->fbaFormulation()->model_uuid($model->uuid());
+		my $fbameta = $self->_save_msobject($gapgen->fbaFormulation(),"FBA",$gapgen->fbaFormulation()->{_kbaseWSMeta}->{ws},$gapgen->fbaFormulation()->{_kbaseWSMeta}->{wsid},"queue_gapgen_model");
+		$gapgen->model_uuid($model->uuid());
+		my $gapgenmeta = $self->_save_msobject($gapgen,"GapGen",$input->{gapGen_workspace},$input->{gapGen},"queue_gapgen_model");
 		my $fba = $gapgen->fbaFormulation();
 		my $mediaids = [];
 		my $mediaws = [];
@@ -6798,21 +7089,12 @@ sub queue_gapgen_model
 				mediaids => $mediaids,
 				mediawss => $mediaws,
 				mediainsts => $mediainst,
-				bioid => "kbase",
-				biows => $input->{biochemistry},
-				bioinst => 0,
-				mapid => "kbase",
-				mapws => $input->{mapping},
-				mapinst => 0,
-				annoid => $model->annotation()->{_kbaseWSMeta}->{wsid},
-				annows => $model->annotation()->{_kbaseWSMeta}->{ws},
-				annoinst => $model->annotation()->{_kbaseWSMeta}->{wsinst},
-				modelid => $model->{_kbaseWSMeta}->{wsid},
-				modelws => $model->{_kbaseWSMeta}->{ws},
-				modelinst => $model->{_kbaseWSMeta}->{wsinst},
-				fbaid => $fba->{_kbaseWSMeta}->{wsid},
-				fbaws => $fba->{_kbaseWSMeta}->{ws},
-				fbainst => $fba->{_kbaseWSMeta}->{wsinst},
+				bioref => $model->biochemistry_uuid(),
+				mapref => $model->mapping_uuid(),
+				annoref => $model->annotation_uuid(),
+				modelref => $model->uuid(),
+				fbaref => $fbameta->[8],
+				fbaid => $gapgen->fbaFormulation()->{_kbaseWSMeta}->{wsid}
 			}],
 			postprocess_command => "queue_gapgen_model",
 			postprocess_args => [$input],
@@ -6836,12 +7118,15 @@ sub queue_gapgen_model
 		}
 		$gapgen->parseGapgenResults($gapgen->fbaFormulation()->fbaResults()->[0]);
 		if ($input->{integrate_solution} == 1 && defined($gapgen->gapgenSolutions()->[0])) {
-			$gapgen->model()->integrateGapgenSolution({
+			#TODO: This block should be in a "safe save" block to prevent race conditions
+			my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
+			$model->integrateGapgenSolution({
 				gapgenFormulation => $gapgen,
 				solutionNum => 0
 			});
+			my $modelmeta = $self->_save_msobject($model,"Model",$input->{workspace},$input->{out_model},"queue_gapgen_model");			
+			#End "safe save" block
 		}
-		my $modelmeta = $self->_save_msobject($gapgen->model(),"Model",$input->{workspace},$input->{out_model},"queue_gapgen_model");
 		$output = $self->_save_msobject($gapgen,"GapGen",$input->{gapGen_workspace},$input->{gapGen},"queue_gapgen_model");
 	}
 	$self->_clearContext();
@@ -7171,7 +7456,14 @@ sub queue_wildtype_phenotype_reconciliation
 			queuing_command => "queue_wildtype_phenotype_reconciliation",
 			workspace => $input->{workspace}
 		});
+		#Getting the simulated phenotype set to be reconciled
+		my $simPheno = $self->_get_msobject("PhenotypeSimulationSet",$input->{phenotypeSet_workspace},$input->{phenotypeSet});
+		if (!defined($simPheno->{phenotypeSimulations})) {
+			my $msg = "No phenotypes simulated!";
+			Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'queue_wildtype_phenotype_reconciliation');
+		}
 		#Queing up gapfill and gapgen jobs
+		#TODO: This block should be in a "safe save" block to prevent race conditions
 		my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
 		my $input = {
 			model => $input->{model},
@@ -7180,80 +7472,66 @@ sub queue_wildtype_phenotype_reconciliation
 			phenotypeSet_workspace => $input->{phenotypeSet_workspace},
 			formulation => $input->{fba_formulation},
 			overwrite => $input->{overwrite},
-			biochemistry => "default",
-			mapping => "default"
+			gapFills => [],
+			gapGens => []
 		};
-		my $simPheno = $self->_get_msobject("PhenotypeSimulationSet",$output->[7],$output->[0]);
-		if (!defined($simPheno->{phenotypeSimulations})) {
-			my $msg = "No phenotypes simulated!";
-			Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'queue_wildtype_phenotype_reconciliation');
-		}
-		$input->{gapFills} = [];
-		$input->{gapGens} = [];
 		#Creating gapfill and gapgen jobs
+		my $gapgenObjs = [];
+		my $gapfillObjs = [];
 		for (my $i=0; $i < @{$simPheno->{phenotypeSimulations}};$i++) {
 			my $phenosim = $simPheno->{phenotypeSimulations}->[$i];
 			if (@{$phenosim->[0]->[0]} == 0) {
 				if ($phenosim->[3] eq "FN") {
 					my $id = $self->_get_new_id($input->{model}.".gapfill.");
 					push(@{$input->{gapFills}},$id);
-					my $gapfill = $self->_buildGapfillObject($input->{gapfill_formulation},$model,$input->{gapFill_workspace},$input->{gapFill});
-					my $fba = $gapfill->fbaFormulation();
-					my $fbameta = $self->_save_msobject($fba,"FBA",$fba->{_kbaseWSMeta}->{ws},$fba->{_kbaseWSMeta}->{wsid},"queue_wildtype_phenotype_reconciliation");
-					my $gapfillmeta = $self->_save_msobject($gapfill,"GapFill",$input->{gapFill_workspace},$id,"queue_wildtype_phenotype_reconciliation");
+					my $gapfill = $self->_buildGapfillObject($input->{gapfill_formulation},$model,$input->{gapFill_workspace},$id);
+					push(@{$gapfillObjs},$gapfill);
 					push(@{$model->unintegratedGapfilling_uuids()},$gapfill->uuid());
-					push(@{$job->{clusterjobs}},{
-						mediaids => [],
-						mediawss => [],
-						mediainsts => [],
-						bioid => "kbase",
-						biows => $input->{biochemistry},
-						bioinst => 0,
-						mapid => "kbase",
-						mapws => $input->{mapping},
-						mapinst => 0,
-						annoid => $model->annotation()->{_kbaseWSMeta}->{wsid},
-						annows => $model->annotation()->{_kbaseWSMeta}->{ws},
-						annoinst => $model->annotation()->{_kbaseWSMeta}->{wsinst},
-						modelid => $model->{_kbaseWSMeta}->{wsid},
-						modelws => $model->{_kbaseWSMeta}->{ws},
-						modelinst => $model->{_kbaseWSMeta}->{wsinst},
-						fbaid => $fba->{_kbaseWSMeta}->{wsid},
-						fbaws => $fba->{_kbaseWSMeta}->{ws},
-						fbainst => $fba->{_kbaseWSMeta}->{wsinst},
-					});
 				} elsif ($phenosim->[3] eq "FP") {
 					my $id = $self->_get_new_id($input->{model}.".gapgen.");
 					push(@{$input->{gapGens}},$id);
-					my $gapgen = $self->_buildGapGenObject($input->{gapgen_formulation},$model,$input->{gapFill_workspace},$input->{gapFill});
-					my $fba = $gapgen->fbaFormulation();
-					my $fbameta = $self->_save_msobject($fba,"FBA",$fba->{_kbaseWSMeta}->{ws},$fba->{_kbaseWSMeta}->{wsid},"queue_wildtype_phenotype_reconciliation");
-					my $gapgenmeta = $self->_save_msobject($gapgen,"GapFill",$input->{gapFill_workspace},$id,"queue_wildtype_phenotype_reconciliation");
+					my $gapgen = $self->_buildGapGenObject($input->{gapgen_formulation},$model,$input->{gapGen_workspace},$id);
+					push(@{$gapgenObjs},$gapgen);
 					push(@{$model->unintegratedGapgen_uuids()},$gapgen->uuid());
-					push(@{$job->{clusterjobs}},{
-						mediaids => [],
-						mediawss => [],
-						mediainsts => [],
-						bioid => "kbase",
-						biows => $input->{biochemistry},
-						bioinst => 0,
-						mapid => "kbase",
-						mapws => $input->{mapping},
-						mapinst => 0,
-						annoid => $model->annotation()->{_kbaseWSMeta}->{wsid},
-						annows => $model->annotation()->{_kbaseWSMeta}->{ws},
-						annoinst => $model->annotation()->{_kbaseWSMeta}->{wsinst},
-						modelid => $model->{_kbaseWSMeta}->{wsid},
-						modelws => $model->{_kbaseWSMeta}->{ws},
-						modelinst => $model->{_kbaseWSMeta}->{wsinst},
-						fbaid => $fba->{_kbaseWSMeta}->{wsid},
-						fbaws => $fba->{_kbaseWSMeta}->{ws},
-						fbainst => $fba->{_kbaseWSMeta}->{wsinst},
-					});
 				}
 			}
 		}
-		my $modelmeta = $self->_save_msobject($model,"Model",$input->{workspace},$input->{out_model},"queue_gapfill_model");
+		my $modelmeta = $self->_save_msobject($model,"Model",$input->{workspace},$input->{out_model},"queue_wildtype_phenotype_reconciliation");
+		#End "safe save" block
+		foreach my $gapgenObj (@{$gapgenObjs}) {
+			$gapgenObj->fbaFormulation()->model_uuid($model->uuid());
+			my $fbameta = $self->_save_msobject($gapgenObj->fbaFormulation(),"FBA",$gapgenObj->fbaFormulation()->{_kbaseWSMeta}->{ws},$gapgenObj->fbaFormulation()->{_kbaseWSMeta}->{wsid},"queue_wildtype_phenotype_reconciliation");
+			$gapgenObj->model_uuid($model->uuid());
+			my $gapgenmeta = $self->_save_msobject($gapgenObj,"GapGen",$input->{gapGen_workspace},$gapgenObj->{_kbaseWSMeta}->{wsid},"queue_wildtype_phenotype_reconciliation");
+			push(@{$job->{clusterjobs}},{
+				mediaids => [],
+				mediawss => [],
+				mediainsts => [],
+				bioref => $model->biochemistry_uuid(),
+				mapref => $model->mapping_uuid(),
+				annoref => $model->annotation_uuid(),
+				modelref => $model->uuid(),
+				fbaref => $fbameta->[8],
+				fbaid => $gapgenObj->fbaFormulation()->{_kbaseWSMeta}->{wsid}
+			});
+		}
+		foreach my $gapfillObj (@{$gapfillObjs}) {
+			$gapfillObj->fbaFormulation()->model_uuid($model->uuid());
+			my $fbameta = $self->_save_msobject($gapfillObj->fbaFormulation(),"FBA",$gapfillObj->fbaFormulation()->{_kbaseWSMeta}->{ws},$gapfillObj->fbaFormulation()->{_kbaseWSMeta}->{wsid},"queue_wildtype_phenotype_reconciliation");
+			$gapfillObj->model_uuid($model->uuid());
+			my $gapfillmeta = $self->_save_msobject($gapfillObj,"GapFill",$input->{gapFill_workspace},$gapfillObj->{_kbaseWSMeta}->{wsid},"queue_wildtype_phenotype_reconciliation");
+			push(@{$job->{clusterjobs}},{
+				mediaids => [],
+				mediawss => [],
+				mediainsts => [],
+				bioref => $model->biochemistry_uuid(),
+				mapref => $model->mapping_uuid(),
+				annoref => $model->annotation_uuid(),
+				modelref => $model->uuid(),
+				fbaref => $fbameta->[8],
+				fbaid => $gapfillObj->fbaFormulation()->{_kbaseWSMeta}->{wsid}
+			});
+		}
 		$output = $self->_save_msobject($job,"FBAJob",$job->{workspace},$job->{id},"queue_gapfill_model");
 		if ($input->{donot_submit_job} == 0) {
 			$job = $self->_submit_job($job);
@@ -8268,13 +8546,13 @@ sub run_job
     	auth => $self->_authentication()
     });
     my $clusterjob = $job->{clusterjobs}->[$input->{"index"}];
-    my $fba = $self->_get_msobject("FBA",$clusterjob->{fbaws},$clusterjob->{fbaid});
+    my $fba = $self->_get_msobject("FBA","NO_WORKSPACE",$clusterjob->{fbaref});
     my $fbaResult = $fba->runFBA();
     if (!defined($fbaResult)) {
     	my $msg = "FBA failed with no solution returned!";
     	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'runfba');
     }
-    $self->_save_msobject($fba,"FBA",$clusterjob->{fbaws},$clusterjob->{fbaid},"run_job");
+    $self->_save_msobject($fba,"FBA",$fba->{_kbaseWSMeta}->{ws},$fba->{_kbaseWSMeta}->{wsid},"run_job");
 	$output = $job;
     $self->jobs_done($input);
     $self->_clearContext();
@@ -9701,6 +9979,49 @@ source has a value which is a string
 source_id has a value which is a string
 contigs has a value which is a reference to a list where each element is a contig
 features has a value which is a reference to a list where each element is a feature
+
+
+=end text
+
+=back
+
+
+
+=head2 annotationProbability
+
+=over 4
+
+
+
+=item Description
+
+Data structures to hold a single annotation probability for a single gene
+
+feature_id feature - feature the annotation is associated with
+string function - the name of the functional role being annotated to the feature
+float probability - the probability that the functional role is associated with the feature
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a list containing 3 items:
+0: a feature_id
+1: a string
+2: a float
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a list containing 3 items:
+0: a feature_id
+1: a string
+2: a float
 
 
 =end text
@@ -12296,7 +12617,7 @@ auth has a value which is a string
 
 
 
-=head2 genome_object_to_workspace_params
+=head2 import_probanno_params
 
 =over 4
 
@@ -12307,6 +12628,59 @@ auth has a value which is a string
 ********************************************************************************
     Code relating to reconstruction of metabolic models
    	********************************************************************************
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+probanno has a value which is a probanno_id
+workspace has a value which is a workspace_id
+genome has a value which is a genome_id
+genome_workspace has a value which is a workspace_id
+annotationProbabilities has a value which is a reference to a list where each element is an annotationProbability
+ignore_errors has a value which is a bool
+auth has a value which is a string
+overwrite has a value which is a bool
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+probanno has a value which is a probanno_id
+workspace has a value which is a workspace_id
+genome has a value which is a genome_id
+genome_workspace has a value which is a workspace_id
+annotationProbabilities has a value which is a reference to a list where each element is an annotationProbability
+ignore_errors has a value which is a bool
+auth has a value which is a string
+overwrite has a value which is a bool
+
+
+=end text
+
+=back
+
+
+
+=head2 genome_object_to_workspace_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "genome_object_to_workspace" function.
+
+        GenomeObject genomeobj - full genome typed object to be loaded into the workspace (a required argument)
+        workspace_id workspace - ID of the workspace into which the genome typed object is to be loaded (a required argument)
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
 
 =item Definition

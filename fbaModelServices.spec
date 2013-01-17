@@ -215,6 +215,51 @@ module fbaModelServices {
 		list<contig> contigs;
 		list<feature> features;
     } GenomeObject;
+        
+    /* Data structures to hold a single annotation probability for a single gene
+		
+		feature_id feature - feature the annotation is associated with
+		string function - the name of the functional role being annotated to the feature
+		float probability - the probability that the functional role is associated with the feature
+
+	*/
+    typedef tuple<feature_id feature, string function,float probability> annotationProbability; 
+    
+    typedef string probanno_id;
+    typedef tuple<string function, float probability> alt_func;
+    
+    /*
+        Object to carry alternative functions for each feature
+    
+        feature_id id
+        ID of the feature. Required.
+    
+        string function
+        Primary annotated function of the feature in the genome annotation. Required.
+    
+        list<alt_func> alternative_functions
+        List of tuples containing alternative functions and probabilities. Required.
+    */
+    typedef structure {
+		feature_id id;
+		list<alt_func> alternative_functions;
+    } ProbAnnoFeature;
+    
+    /* Object to carry alternative functions and probabilities for genes in a genome
+    
+        probanno_id id - ID of the probabilistic annotation object. Required.    
+        genome_id genome - ID of the genome the probabilistic annotation was built for. Required.
+        workspace_ref genome_uuid - Reference to retrieve genome from workspace service. Required.
+        list<ProbAnnoFeature> featureAlternativeFunctions - List of ProbAnnoFeature objects holding alternative functions for features. Required.
+    
+    */
+    typedef structure {
+		probanno_id id;
+		genome_id genome;
+		workspace_ref genome_uuid;
+		list<ProbAnnoFeature> featureAlternativeFunctions;
+    } ProbabilisticAnnotation;
+    
     /*********************************************************************************
     Biochemistry type definition
    	*********************************************************************************/
@@ -1099,6 +1144,32 @@ module fbaModelServices {
 	/*********************************************************************************
     Code relating to reconstruction of metabolic models
    	*********************************************************************************/
+    /* Input parameters for the "import_probanno" function.
+	
+		probanno_id probanno - id of the probabilistic annotation to be created (an optional parameter; default is 'undef')
+		workspace_id workspace - id of the workspace where the probabilistic annotation will be stored (an essential parameter)
+		genome_id genome - id of the genome that the probabilistic annotation will be associated with (an essential parameter)
+		workspace_id genome_workspace - workspace containing the genome for the probabilistic annotation (an optional parameter; default is 'workspace' parameter)
+		list<annotationProbability> annotationProbabilities - a list of the probabilistic annotations for all genes to be part of the prababilistic annotations (an essential parameter)
+		bool ignore_errors - a flag indicating that even if errors are encountered, the probabilistic annotation should still be imported (an optional parameter; default is '0')
+		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+		
+	*/
+    typedef structure {
+		probanno_id probanno;
+		workspace_id workspace;		
+		genome_id genome;
+		workspace_id genome_workspace;
+		list<annotationProbability> annotationProbabilities;
+		bool ignore_errors;
+		string auth;
+		bool overwrite;
+    } import_probanno_params;
+    /*
+        Loads an input genome object into the workspace.
+    */
+    funcdef import_probanno(import_probanno_params input) returns (object_metadata probannoMeta);
+    
     /* Input parameters for the "genome_object_to_workspace" function.
 	
 		GenomeObject genomeobj - full genome typed object to be loaded into the workspace (a required argument)
