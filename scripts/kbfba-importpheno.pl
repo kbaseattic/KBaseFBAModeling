@@ -35,8 +35,8 @@ if (!-e $opt->{"Phenotype filename"}) {
 	print "Could not find input phenotype file!\n";
 	exit();
 }
-open(my $fh, "<", $opt->{metadata}) || return;
-$params->{metadata} = "";
+open(my $fh, "<", $opt->{"Phenotype filename"}) || return;
+$opt->{"Phenotype filename"} = "";
 my $headingline = <$fh>;
 chomp($headingline);
 my $headings = [split(/\t/,$headingline)];
@@ -61,7 +61,11 @@ foreach my $pheno (@{$data}) {
 		];
 		if (defined($headingColums->{geneko})) {
 			if (defined($pheno->[$headingColums->{geneko}])) {
-				$phenoobj->[0] = [split(/\;/,$pheno->[$headingColums->{geneko}])];
+				if ($pheno->[$headingColums->{geneko}] eq "none") {
+					$phenoobj->[0] = [];
+				} else {
+					$phenoobj->[0] = [split(/\;/,$pheno->[$headingColums->{geneko}])];
+				}
 			}
 		}
 		if (defined($headingColums->{addtlCpd})) {

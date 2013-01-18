@@ -366,9 +366,9 @@ ok defined($html), "Successfully queued gapgen job!";
 
 #Now checking job retreival
 my $jobs = $obj->_workspaceServices()->get_jobs({status => "done"});
-is(@{$jobs},3,"Correct number of done jobs in the job queue!");
+ok @{$jobs} >= 3,"Correct number of done jobs in the job queue!";
 $jobs = $obj->_workspaceServices()->get_jobs({status => "queued"});
-is(@{$jobs},1,"Correct number of queued jobs in the job queue!");
+ok @{$jobs} >= 1,"Correct number of queued jobs in the job queue!";
 
 #Now running queued gapfill job mannually to ensure that the job runs and postprocessing works
 $job = $obj->run_job({

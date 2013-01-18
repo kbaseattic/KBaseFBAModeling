@@ -108,16 +108,9 @@ deploy-services:
 	echo "{\"MFATK_BIN\":\"$(TARGET)/bin/mfatoolkit\"}" > $(TARGET)/services/$(SERV_SERVICE)/config.json;
 
 deploy-docs:
-	if [ ! -d doc ] ; then mkdir doc ; fi
-	cd lib/Bio/KBase; \
-	for f in fbaModel*/*.pm ; do \
-		dirname=`dirname $$f`; \
-		basename=`basename $$f .pm`; \
-		name="$$dirname::$$basename"; \
-		echo $$name; \
-		$(KB_RUNTIME)/bin/pod2html -t "$$name" $$f > "../../../doc/$$name.html"; \
-	done
-	cp doc/*html $(SERV_SERVICE_DIR)/webroot/.
+	if [ ! -d docs ] ; then mkdir -p docs ; fi
+	$(KB_RUNTIME)/bin/pod2html -t "fbaModelServices" lib/Bio/KBase/fbaModelServices/Client.pm > docs/fbaModelServices.html
+	cp docs/*html $(SERV_SERVICE_DIR)/webroot/.
 
 compile-typespec:
 	compile_typespec \
