@@ -466,6 +466,11 @@ module fbaModelServices {
 	*/
     typedef tuple<gapfill_id id,workspace_id workspace,media_id media,workspace_id media_workspace,bool done,list<feature_id> ko> GapFillMeta;
     
+    typedef structure {
+		string name;
+		list<feature_id> feature;
+    } Subsystem;
+    
     /* Data structure holding data for metabolic model
 		
 		fbamodel_id id - ID of model
@@ -513,6 +518,7 @@ module fbaModelServices {
 		list<GapFillMeta> unintegrated_gapfillings;
 		list<GapGenMeta> integrated_gapgenerations;
 		list<GapGenMeta> unintegrated_gapgenerations;
+		list<Subsystem> modelSubsystems;
     } FBAModel;
     /*********************************************************************************
     Flux Balance Analysis type definition
@@ -993,6 +999,25 @@ module fbaModelServices {
 		bool complete;
 		string owner;		
     } JobObject;
+	/*********************************************************************************
+    ETC object type definitions
+   	*********************************************************************************/
+    typedef structure {
+		string resp;
+		int y;
+		int x;
+		int width;
+		int height;
+		string shape;
+		string label;
+    } ETCNodes;
+    
+    typedef structure {
+		list<ETCNodes> nodes;
+		string media;
+		string growth;
+		string organism;
+    } ETCDiagramSpecs;
     /*********************************************************************************
     Function definitions relating to data retrieval for Model Objects
    	*********************************************************************************/
@@ -1141,6 +1166,28 @@ module fbaModelServices {
     	Returns biochemistry object
     */
     funcdef get_biochemistry(get_biochemistry_params input) returns (Biochemistry out_biochemistry);
+	
+	/* Input parameters for the "genome_to_fbamodel" function.
+	
+		model_id model - ID of the model to retrieve ETC for
+		workspace_id workspace - ID of the workspace containing the model 
+		media_id media - ID of the media to retrieve ETC for
+		workspace_id mediaws - workpace containing the specified media
+		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+				
+	*/
+    typedef structure {
+		fbamodel_id model;
+		workspace_id workspace;
+		media_id media;
+		workspace_id mediaws;
+		string auth;
+    } get_ETCDiagram_params;
+    /*
+        This function retrieves an ETC diagram for the input model operating in the input media condition
+    	The model must grow on the specified media in order to return a working ETC diagram
+    */
+    funcdef get_ETCDiagram (get_ETCDiagram_params input) returns (ETCDiagramSpecs output);
 	/*********************************************************************************
     Code relating to reconstruction of metabolic models
    	*********************************************************************************/
@@ -1245,6 +1292,7 @@ module fbaModelServices {
 		float probannoThreshold - a threshold of the probability required for a probabilistic annotation to be accepted (an optional argument; default is '1')
 		bool probannoOnly - a boolean indicating if only the probabilistic annotation should be used in building the model (an optional argument; default is '0')
 		fbamodel_id model - ID that should be used for the newly constructed model (an optional argument; default is 'undef')
+		bool coremodel - indicates that a core model should be constructed instead of a genome scale model (an optional argument; default is '0')
 		workspace_id workspace - ID of the workspace where the newly developed model will be stored; also the default assumed workspace for input objects (a required argument)
 		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 		
@@ -1257,6 +1305,7 @@ module fbaModelServices {
 		float probannoThreshold;
 		bool probannoOnly;
 		fbamodel_id model;
+		bool coremodel;
 		workspace_id workspace;
 		string auth;
 		bool overwrite;
@@ -1265,7 +1314,7 @@ module fbaModelServices {
         Build a genome-scale metabolic model based on annotations in an input genome typed object
     */
     funcdef genome_to_fbamodel (genome_to_fbamodel_params input) returns (object_metadata modelMeta);
-    
+	
     /* Input parameters for the "export_fbamodel" function.
 	
 		fbamodel_id model - ID of the model to be exported (a required argument)
@@ -1610,7 +1659,6 @@ module fbaModelServices {
 		bool integrate_solution - a flag indicating if the first solution should be integrated in the model (an optional argument: default is '0')
 		fbamodel_id out_model - ID where the gapfilled model will be saved (an optional argument: default is 'undef')
 		gapfill_id gapFill - ID to which gapfill solution will be saved (an optional argument: default is 'undef')
-		workspace_id gapFill_workspace - workspace where gapfill solution will be saved (an optional argument; default is the value of the workspace argument)
 		workspace_id workspace - workspace where gapfill results will be saved (a required argument)
 		bool donot_submit_job - a flag indicating if the job should be submitted to the cluster (an optional argument: default is '0')
 		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
@@ -1626,7 +1674,6 @@ module fbaModelServices {
 		fbamodel_id out_model;
 		workspace_id workspace;
 		gapfill_id gapFill;
-		workspace_id gapFill_workspace;
 		string auth;
 		bool overwrite;
 		bool donot_submit_job;
@@ -1646,7 +1693,6 @@ module fbaModelServices {
 		bool integrate_solution - a flag indicating if the first solution should be integrated in the model (an optional argument: default is '0')
 		fbamodel_id out_model - ID where the gapgened model will be saved (an optional argument: default is 'undef')
 		gapgen_id gapGen - ID to which gapgen solution will be saved (an optional argument: default is 'undef')
-		workspace_id gapGen_workspace - workspace where gapgen solution will be saved (an optional argument; default is the value of the workspace argument)
 		workspace_id workspace - workspace where gapgen results will be saved (a required argument)
 		bool donot_submit_job - a flag indicating if the job should be submitted to the cluster (an optional argument: default is '0')
 		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
@@ -1662,7 +1708,6 @@ module fbaModelServices {
 		fbamodel_id out_model;
 		workspace_id workspace;
 		gapgen_id gapGen;
-		workspace_id gapGen_workspace;
 		string auth;
 		bool overwrite;
 		bool donot_submit_job;
@@ -1683,9 +1728,7 @@ module fbaModelServices {
 		workspace_id phenotypeSet_workspace - workspace containing phenotype set to be simulated (an optional argument; default is the value of the workspace argument)
 		fbamodel_id out_model - ID where the reconciled model will be saved (an optional argument: default is 'undef')
 		list<gapgen_id> gapGens - IDs of gapgen solutions (an optional argument: default is 'undef')
-		workspace_id gapGen_workspace - workspace where gapgen solutions will be saved (an optional argument; default is the value of the workspace argument)
 		list<gapfill_id> gapFills - IDs of gapfill solutions (an optional argument: default is 'undef')
-		workspace_id gapFill_workspace - workspace where gapfill solutions will be saved (an optional argument; default is the value of the workspace argument)
 		bool queueSensitivityAnalysis - flag indicating if sensitivity analysis should be queued to run on solutions (an optional argument: default is '0')
 		bool queueReconciliationCombination - flag indicating if reconcilication combination should be queued to run on solutions (an optional argument: default is '0')
 		workspace_id workspace - workspace where reconciliation results will be saved (a required argument)
@@ -1705,8 +1748,6 @@ module fbaModelServices {
 		workspace_id workspace;
 		list<gapfill_id> gapFills;
 		list<gapgen_id> gapGens;
-		workspace_id gapFill_workspace;
-		workspace_id gapGen_workspace;
 		bool queueSensitivityAnalysis;
 		bool queueReconciliationCombination;
 		string auth;
@@ -1729,9 +1770,7 @@ module fbaModelServices {
 		workspace_id phenotypeSet_workspace - workspace containing phenotype set to be simulated (an optional argument; default is the value of the workspace argument)
 		fbamodel_id out_model - ID where the sensitivity analysis model will be saved (an optional argument: default is 'undef')
 		list<gapgen_id> gapGens - IDs of gapgen solutions (an optional argument: default is 'undef')
-		workspace_id gapGen_workspace - workspace where gapgen solutions will be saved (an optional argument; default is the value of the workspace argument)
 		list<gapfill_id> gapFills - IDs of gapfill solutions (an optional argument: default is 'undef')
-		workspace_id gapFill_workspace - workspace where gapfill solutions will be saved (an optional argument; default is the value of the workspace argument)
 		bool queueReconciliationCombination - flag indicating if sensitivity analysis combination should be queued to run on solutions (an optional argument: default is '0')
 		workspace_id workspace - workspace where sensitivity analysis results will be saved (a required argument)
 		bool donot_submit_job - a flag indicating if the job should be submitted to the cluster (an optional argument: default is '0')
@@ -1750,8 +1789,6 @@ module fbaModelServices {
 		workspace_id workspace;
 		list<gapfill_id> gapFills;
 		list<gapgen_id> gapGens;
-		workspace_id gapFill_workspace;
-		workspace_id gapGen_workspace;
 		bool queueReconciliationCombination;
 		string auth;
 		bool overwrite;
@@ -1773,9 +1810,7 @@ module fbaModelServices {
 		workspace_id phenotypeSet_workspace - workspace containing phenotype set to be simulated (an optional argument; default is the value of the workspace argument)
 		fbamodel_id out_model - ID where the solution combination model will be saved (an optional argument: default is 'undef')
 		list<gapgen_id> gapGens - IDs of gapgen solutions (an optional argument: default is 'undef')
-		workspace_id gapGen_workspace - workspace where gapgen solutions will be saved (an optional argument; default is the value of the workspace argument)
 		list<gapfill_id> gapFills - IDs of gapfill solutions (an optional argument: default is 'undef')
-		workspace_id gapFill_workspace - workspace where gapfill solutions will be saved (an optional argument; default is the value of the workspace argument)
 		workspace_id workspace - workspace where solution combination results will be saved (a required argument)
 		bool donot_submit_job - a flag indicating if the job should be submitted to the cluster (an optional argument: default is '0')
 		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
@@ -1793,8 +1828,6 @@ module fbaModelServices {
 		workspace_id workspace;
 		list<gapfill_id> gapFills;
 		list<gapgen_id> gapGens;
-		workspace_id gapFill_workspace;
-		workspace_id gapGen_workspace;
 		string auth;
 		bool overwrite;
 		bool donot_submit_job;
@@ -1807,13 +1840,11 @@ module fbaModelServices {
     /* Input parameters for the "jobs_done" function.
 	
 		job_id jobid - ID of the job object (a required argument)
-		workspace_id workspace - workspace where job object is saved (a required argument)
 		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 		
 	*/
 	typedef structure {
 		job_id jobid;
-		workspace_id workspace;
 		string auth;
     } jobs_done_params;
 	/*
@@ -1824,13 +1855,11 @@ module fbaModelServices {
 	/* Input parameters for the "check_job" function.
 	
 		job_id jobid - ID of the job object (a required argument)
-		workspace_id workspace - workspace where job object is saved (a required argument)
 		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 		
 	*/
 	typedef structure {
 		job_id jobid;
-		workspace_id workspace;
 		string auth;
     } check_job_params;
     /*
@@ -1841,14 +1870,12 @@ module fbaModelServices {
 	/* Input parameters for the "run_job" function.
 	
 		job_id jobid - ID of the job object (a required argument)
-		workspace_id workspace - workspace where job object is saved (a required argument)
 		int index - index of subobject to be run (an optional argument; default is '0')
 		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 		
 	*/
 	typedef structure {
 		job_id jobid;
-		workspace_id workspace;
 		int index;
 		string auth;
     } run_job_params;

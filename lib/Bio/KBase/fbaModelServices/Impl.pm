@@ -367,7 +367,7 @@ sub _translate_genome_to_annotation {
     #Creating the annotation from the input genome object
 	my $annotation = ModelSEED::MS::Annotation->new({
 	  name         => $genome->{scientific_name},
-	  mapping_uuid => "kbase/default",
+	  mapping_uuid => $mapping->uuid(),
 	  mapping      => $mapping,
 	  genomes      => [{
 		 name => $genome->{scientific_name},
@@ -452,7 +452,7 @@ sub _workspaceServices {
 }
 
 sub _save_msobject {
-	my($self,$obj,$type,$ws,$id,$command,$overwrite) = @_;
+	my($self,$obj,$type,$ws,$id,$command,$overwrite,$reference) = @_;
 	my $data;
 	if (defined($obj->{_kbaseWSMeta})) {
 		delete $obj->{_kbaseWSMeta};
@@ -462,15 +462,28 @@ sub _save_msobject {
 	} else {
 		$data = $obj;
 	}
-	my $objmeta = $self->_workspaceServices()->save_object({
-		id => $id,
-		type => $type,
-		data => $data,
-		workspace => $ws,
-		command => $command,
-		auth => $self->_authentication(),
-		overwrite => $overwrite
-	});
+	my $objmeta;
+	if ($ws eq "NO_WORKSPACE") {
+		$objmeta = $self->_workspaceServices()->save_object_by_ref({
+			reference => $reference,
+			id => $id,
+			type => $type,
+			data => $data,
+			command => $command,
+			auth => $self->_authentication(),
+			replace => $overwrite
+		});
+	} else {
+		$objmeta = $self->_workspaceServices()->save_object({
+			id => $id,
+			type => $type,
+			data => $data,
+			workspace => $ws,
+			command => $command,
+			auth => $self->_authentication(),
+			overwrite => $overwrite
+		});
+	}
 	if (!defined($objmeta)) {
 		my $msg = "Unable to save object:".$type."/".$ws."/".$id;
 		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => '_get_msobject');
@@ -806,9 +819,13 @@ sub _buildFBAObject {
 		}
 		$media = $mediaObj->uuid();
 	}
+	my $fbaid = $workspace."/".$id;
+	if ($workspace eq "NO_WORKSPACE") {
+		$fbaid = $id;
+	}
 	#Building FBAFormulation object
 	my $form = ModelSEED::MS::FBAFormulation->new({
-		uuid => $workspace."/".$id,
+		uuid => $fbaid,
 		model_uuid => $model->uuid(),
 		model => $model,
 		media_uuid => $media,
@@ -983,14 +1000,14 @@ rxn10088 rxn11921 rxn11922 rxn10200 rxn11923 rxn05029 )],
 }
 
 sub _buildGapfillObject {
-	my ($self,$formulation,$model,$workspace,$id) = @_;
-	my $fbaid = $self->_get_new_id($id.".fba.");
+	my ($self,$formulation,$model) = @_;
+	my $fbaid = Data::UUID->new()->create_str();
 	my $gapform = ModelSEED::MS::GapfillingFormulation->new({
-		uuid => $workspace."/".$id,
+		uuid => Data::UUID->new()->create_str(),
 		model_uuid => $model->uuid(),
 		model => $model,
-		fbaFormulation_uuid => $workspace."/".$fbaid,
-		fbaFormulation => $self->_buildFBAObject($formulation->{formulation},$model,$workspace,$fbaid),
+		fbaFormulation_uuid => $fbaid,
+		fbaFormulation => $self->_buildFBAObject($formulation->{formulation},$model,"NO_WORKSPACE",$fbaid),
 		balancedReactionsOnly => $self->_invert_boolean($formulation->{allowunbalanced}),
 		reactionActivationBonus => $formulation->{activitybonus},
 		drainFluxMultiplier => $formulation->{drainpen},
@@ -1025,8 +1042,8 @@ sub _buildGapfillObject {
 		}
 	}
 	$gapform->prepareFBAFormulation();
-	$gapform->{_kbaseWSMeta}->{wsid} = $id;
-	$gapform->{_kbaseWSMeta}->{ws} = $workspace;
+	$gapform->{_kbaseWSMeta}->{wsid} = $gapform->uuid();
+	$gapform->{_kbaseWSMeta}->{ws} = "NO_WORKSPACE";
 	$gapform->fbaFormulation()->numberOfSolutions($formulation->{num_solutions});
 	return $gapform;
 }
@@ -1051,7 +1068,7 @@ sub _setDefaultGapGenFormulation {
 }
 
 sub _buildGapGenObject {
-	my ($self,$formulation,$model,$workspace,$id) = @_;
+	my ($self,$formulation,$model) = @_;
 	#Parsing media
 	my $media;
 	my $mediaobj;
@@ -1069,13 +1086,13 @@ sub _buildGapGenObject {
 		}
 		$media = $mediaobj->uuid();
 	}
-	my $fbaid = $self->_get_new_id($id.".fba.");
+	my $fbaid = Data::UUID->new()->create_str();
 	my $gapform = ModelSEED::MS::GapgenFormulation->new({
-		uuid => $workspace."/".$id,
+		uuid => Data::UUID->new()->create_str(),
 		model_uuid => $model->uuid(),
 		model => $model,
-		fbaFormulation_uuid => $workspace."/".$fbaid,
-		fbaFormulation => $self->_buildFBAObject($formulation->{formulation},$model,$workspace,$fbaid),
+		fbaFormulation_uuid => $fbaid,
+		fbaFormulation => $self->_buildFBAObject($formulation->{formulation},$model,"NO_WORKSPACE",$fbaid),
 		mediaHypothesis => $self->_invert_boolean($formulation->{nomediahyp}),
 		biomassHypothesis => $self->_invert_boolean($formulation->{nobiomasshyp}),
 		gprHypothesis => $self->_invert_boolean($formulation->{nogprhyp}),
@@ -1083,8 +1100,8 @@ sub _buildGapGenObject {
 		referenceMedia_uuid => $media,
 		referenceMedia => $mediaobj
 	});
-	$gapform->{_kbaseWSMeta}->{wsid} = $id;
-	$gapform->{_kbaseWSMeta}->{ws} = $workspace;
+	$gapform->{_kbaseWSMeta}->{wsid} = $gapform->uuid();
+	$gapform->{_kbaseWSMeta}->{ws} = "NO_WORKSPACE";
 	$gapform->prepareFBAFormulation();
 	$gapform->fbaFormulation()->numberOfSolutions($formulation->{num_solutions});
 	return $gapform;
@@ -1205,7 +1222,10 @@ sub _check_job {
 
 sub _get_new_id {
 	my ($self,$prefix) = @_;
-	my $id = $self->_idServer()->allocate_id_range( $prefix, 1 );
+	my $id;
+	eval {
+		$id = $self->_idServer()->allocate_id_range( $prefix, 1 );
+	};
 	if (!defined($id) || $id eq "") {
     	$id = "0";
     }
@@ -1767,6 +1787,7 @@ FBAModel is a reference to a hash where the following keys are defined:
 	unintegrated_gapfillings has a value which is a reference to a list where each element is a GapFillMeta
 	integrated_gapgenerations has a value which is a reference to a list where each element is a GapGenMeta
 	unintegrated_gapgenerations has a value which is a reference to a list where each element is a GapGenMeta
+	modelSubsystems has a value which is a reference to a list where each element is a Subsystem
 genome_id is a string
 mapping_id is a string
 biochemistry_id is a string
@@ -1832,6 +1853,9 @@ GapGenMeta is a reference to a list containing 6 items:
 	4: a bool
 	5: a reference to a list where each element is a feature_id
 gapgen_id is a string
+Subsystem is a reference to a hash where the following keys are defined:
+	name has a value which is a string
+	feature has a value which is a reference to a list where each element is a feature_id
 
 </pre>
 
@@ -1869,6 +1893,7 @@ FBAModel is a reference to a hash where the following keys are defined:
 	unintegrated_gapfillings has a value which is a reference to a list where each element is a GapFillMeta
 	integrated_gapgenerations has a value which is a reference to a list where each element is a GapGenMeta
 	unintegrated_gapgenerations has a value which is a reference to a list where each element is a GapGenMeta
+	modelSubsystems has a value which is a reference to a list where each element is a Subsystem
 genome_id is a string
 mapping_id is a string
 biochemistry_id is a string
@@ -1934,6 +1959,9 @@ GapGenMeta is a reference to a list containing 6 items:
 	4: a bool
 	5: a reference to a list where each element is a feature_id
 gapgen_id is a string
+Subsystem is a reference to a hash where the following keys are defined:
+	name has a value which is a string
+	feature has a value which is a reference to a list where each element is a feature_id
 
 
 =end text
@@ -3450,6 +3478,136 @@ sub get_biochemistry
 
 
 
+=head2 get_ETCDiagram
+
+  $output = $obj->get_ETCDiagram($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a get_ETCDiagram_params
+$output is an ETCDiagramSpecs
+get_ETCDiagram_params is a reference to a hash where the following keys are defined:
+	model has a value which is a fbamodel_id
+	workspace has a value which is a workspace_id
+	media has a value which is a media_id
+	mediaws has a value which is a workspace_id
+	auth has a value which is a string
+fbamodel_id is a string
+workspace_id is a string
+media_id is a string
+ETCDiagramSpecs is a reference to a hash where the following keys are defined:
+	nodes has a value which is a reference to a list where each element is an ETCNodes
+	media has a value which is a string
+	growth has a value which is a string
+	organism has a value which is a string
+ETCNodes is a reference to a hash where the following keys are defined:
+	resp has a value which is a string
+	y has a value which is an int
+	x has a value which is an int
+	width has a value which is an int
+	height has a value which is an int
+	shape has a value which is a string
+	label has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a get_ETCDiagram_params
+$output is an ETCDiagramSpecs
+get_ETCDiagram_params is a reference to a hash where the following keys are defined:
+	model has a value which is a fbamodel_id
+	workspace has a value which is a workspace_id
+	media has a value which is a media_id
+	mediaws has a value which is a workspace_id
+	auth has a value which is a string
+fbamodel_id is a string
+workspace_id is a string
+media_id is a string
+ETCDiagramSpecs is a reference to a hash where the following keys are defined:
+	nodes has a value which is a reference to a list where each element is an ETCNodes
+	media has a value which is a string
+	growth has a value which is a string
+	organism has a value which is a string
+ETCNodes is a reference to a hash where the following keys are defined:
+	resp has a value which is a string
+	y has a value which is an int
+	x has a value which is an int
+	width has a value which is an int
+	height has a value which is an int
+	shape has a value which is a string
+	label has a value which is a string
+
+
+=end text
+
+
+
+=item Description
+
+This function retrieves an ETC diagram for the input model operating in the input media condition
+    The model must grow on the specified media in order to return a working ETC diagram
+
+=back
+
+=cut
+
+sub get_ETCDiagram
+{
+    my $self = shift;
+    my($input) = @_;
+
+    my @_bad_arguments;
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to get_ETCDiagram:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'get_ETCDiagram');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($output);
+    #BEGIN get_ETCDiagram
+    $self->_setContext($ctx,$input);
+	$input = $self->_validateargs($input,["model","workspace","media"],{
+		mediaws => $input->{workspace}
+	});
+    #
+    my $model = $self->_get_msobject("Model",$input->{workspace},$input->{model});
+    if (!defined($model)) {
+    	my $msg = "Failed to retrieve model ".$input->{workspace}."/".$input->{model};
+    	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'get_ETCDiagram');
+    }
+    my $formulation = $self->_setDefaultFBAFormulation({
+    	media => $input->{media},
+    	mediaws => $input->{mediaws}
+    });
+	my $fba = $self->_buildFBAObject($input->{formulation},$model,"NO_WORKSPACE","none");
+	my $fbaResult = $fba->runFBA();
+    my $etcDiagram;
+    $output = $etcDiagram;
+	$self->_clearContext();
+    #END get_ETCDiagram
+    my @_bad_returns;
+    (ref($output) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to get_ETCDiagram:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'get_ETCDiagram');
+    }
+    return($output);
+}
+
+
+
+
 =head2 import_probanno
 
   $probannoMeta = $obj->import_probanno($input)
@@ -3741,10 +3899,9 @@ region_of_dna is a reference to a list containing 4 items:
 	2: a string
 	3: an int
 feature_type is a string
-alt_func is a reference to a list containing 3 items:
+alt_func is a reference to a list containing 2 items:
 	0: a string
 	1: a float
-	2: a reference to a list where each element is a gene_hit
 gene_hit is a reference to a list containing 2 items:
 	0: a feature_id
 	1: a float
@@ -3816,10 +3973,9 @@ region_of_dna is a reference to a list containing 4 items:
 	2: a string
 	3: an int
 feature_type is a string
-alt_func is a reference to a list containing 3 items:
+alt_func is a reference to a list containing 2 items:
 	0: a string
 	1: a float
-	2: a reference to a list where each element is a gene_hit
 gene_hit is a reference to a list containing 2 items:
 	0: a feature_id
 	1: a float
@@ -4204,6 +4360,7 @@ genome_to_fbamodel_params is a reference to a hash where the following keys are 
 	probannoThreshold has a value which is a float
 	probannoOnly has a value which is a bool
 	model has a value which is a fbamodel_id
+	coremodel has a value which is a bool
 	workspace has a value which is a workspace_id
 	auth has a value which is a string
 	overwrite has a value which is a bool
@@ -4246,6 +4403,7 @@ genome_to_fbamodel_params is a reference to a hash where the following keys are 
 	probannoThreshold has a value which is a float
 	probannoOnly has a value which is a bool
 	model has a value which is a fbamodel_id
+	coremodel has a value which is a bool
 	workspace has a value which is a workspace_id
 	auth has a value which is a string
 	overwrite has a value which is a bool
@@ -4318,7 +4476,7 @@ sub genome_to_fbamodel
     #Retreiving genome object from workspace
     my $genome = $self->_get_msobject("Genome",$input->{genome_workspace},$input->{genome});
     #Retrieving annotation and mapping
-	my $annotation = $self->_get_msobject("Annotation","NO_WORKSPACE",$genome->{annotation_uuid});
+    my $annotation = $self->_get_msobject("Annotation","NO_WORKSPACE",$genome->{annotation_uuid});
     #Retreiving probabilistic annotation
     if (defined($input->{probanno})) {
     	my $probanno = $self->_get_msobject("ProbAnno",$input->{probanno_workspace},$input->{probanno});
@@ -5845,7 +6003,7 @@ sub simulate_phenotypes
 	my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
 	#Creating FBAFormulation Object
 	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
-	my $fba = $self->_buildFBAObject($input->{formulation},$model,$input->{model_workspace},$input->{model}.".fba");
+	my $fba = $self->_buildFBAObject($input->{formulation},$model,"NO_WORKSPACE",Data::UUID->new()->create_str());
 	#Translating phenotypes to fbaformulation
 	my $bio = $model->biochemistry();
 	for (my $i=0; $i < @{$pheno->{phenotypes}};$i++) {
@@ -6453,10 +6611,9 @@ sub queue_runfba
 	if ($input->{donot_submit_job} == 0) {
 		$job = $self->_submit_job($job);
 	}
-	$output = $self->_save_msobject($job,"FBAJob",$job->{workspace},$job->{id},"queue_runfba");
+	$output = $self->_save_msobject($job,"FBAJob","NO_WORKSPACE",$job->{id},"queue_runfba",0,$job->{id});
 	$self->_workspaceServices()->queue_job({
     	jobid => $job->{id},
-    	jobws => $job->{workspace},
     	auth => $self->_authentication()
     });
 	$self->_clearContext();
@@ -6497,7 +6654,6 @@ gapfill_model_params is a reference to a hash where the following keys are defin
 	out_model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
 	gapFill has a value which is a gapfill_id
-	gapFill_workspace has a value which is a workspace_id
 	auth has a value which is a string
 	overwrite has a value which is a bool
 	donot_submit_job has a value which is a bool
@@ -6604,7 +6760,6 @@ gapfill_model_params is a reference to a hash where the following keys are defin
 	out_model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
 	gapFill has a value which is a gapfill_id
-	gapFill_workspace has a value which is a workspace_id
 	auth has a value which is a string
 	overwrite has a value which is a bool
 	donot_submit_job has a value which is a bool
@@ -6737,18 +6892,19 @@ sub queue_gapfill_model
 	});
 	#Checking is this is a postprocessing or initialization call
 	if (!defined($input->{gapFill})) {
-		$input->{gapFill} = $self->_get_new_id($input->{model}.".gapfill.");
+		$self->_get_new_id($input->{model}.".gapfill.");
 		$input->{formulation} = $self->_setDefaultGapfillFormulation($input->{formulation});
 		#TODO: This block should be in a "safe save" block to prevent race conditions
 		my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
-		my $gapfill = $self->_buildGapfillObject($input->{formulation},$model,$input->{gapFill_workspace},$input->{gapFill});
+		my $gapfill = $self->_buildGapfillObject($input->{formulation},$model);
+		$input->{gapFill} = $gapfill->uuid();
 		push(@{$model->unintegratedGapfilling_uuids()},$gapfill->uuid());
 		my $modelmeta = $self->_save_msobject($model,"Model",$input->{workspace},$input->{out_model},"queue_gapfill_model");
 		#End "safe save" block
 		$gapfill->fbaFormulation()->model_uuid($model->uuid());
-		my $fbameta = $self->_save_msobject($gapfill->fbaFormulation(),"FBA",$gapfill->fbaFormulation()->{_kbaseWSMeta}->{ws},$gapfill->fbaFormulation()->{_kbaseWSMeta}->{wsid},"queue_gapfill_model");
+		my $fbameta = $self->_save_msobject($gapfill->fbaFormulation(),"FBA","NO_WORKSPACE",$gapfill->fbaFormulation()->uuid(),"queue_gapfill_model",0,$gapfill->fbaFormulation()->uuid());
 		$gapfill->model_uuid($model->uuid());
-		my $gapfillmeta = $self->_save_msobject($gapfill,"GapFill",$input->{gapFill_workspace},$input->{gapFill},"queue_gapfill_model");
+		my $gapfillmeta = $self->_save_msobject($gapfill,"GapFill","NO_WORKSPACE",$gapfill->uuid(),"queue_gapfill_model",0,$gapfill->uuid());
 		my $fba = $gapfill->fbaFormulation();
 		my $mediaids = [];
 		my $mediaws = [];
@@ -6771,8 +6927,8 @@ sub queue_gapfill_model
 				mapref => $model->mapping_uuid(),
 				annoref => $model->annotation_uuid(),
 				modelref => $model->uuid(),
-				fbaref => $fbameta->[8],
-				fbaid => $gapfill->fbaFormulation()->{_kbaseWSMeta}->{wsid}
+				fbaref => $gapfill->fbaFormulation()->uuid(),
+				fbaid => $gapfill->fbaFormulation()->uuid()
 			}],
 			postprocess_command => "queue_gapfill_model",
 			postprocess_args => [$input],
@@ -6782,14 +6938,13 @@ sub queue_gapfill_model
 		if ($input->{donot_submit_job} == 0) {
 			$job = $self->_submit_job($job);
 		}
-		$output = $self->_save_msobject($job,"FBAJob",$input->{workspace},$job->{id},"queue_gapfill_model");
+		$output = $self->_save_msobject($job,"FBAJob","NO_WORKSPACE",$job->{id},"queue_gapfill_model",0,$job->{id});
 		$self->_workspaceServices()->queue_job({
 	    	jobid => $job->{id},
-	    	jobws => $input->{workspace},
 	    	auth => $self->_authentication()
 	    });
 	} else {
-		my $gapfill = $self->_get_msobject("GapFill",$input->{gapFill_workspace},$input->{gapFill});
+		my $gapfill = $self->_get_msobject("GapFill","NO_WORKSPACE",$input->{gapFill});
 		if (!defined($gapfill->fbaFormulation()->fbaResults()->[0])) {
 			my $msg = "Gapfilling failed!";
 			Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'queue_gapfill_model');
@@ -6809,7 +6964,7 @@ sub queue_gapfill_model
 			my $modelmeta = $self->_save_msobject($model,"Model",$input->{workspace},$input->{out_model},"queue_gapfill_model");
 			#End "safe save" block
 		}
-		$output = $self->_save_msobject($gapfill,"GapFill",$input->{gapFill_workspace},$input->{gapFill},"queue_gapfill_model");
+		$output = $self->_save_msobject($gapfill,"GapFill","NO_WORKSPACE",$gapfill->uuid(),"queue_gapfill_model",1,$gapfill->uuid());
 	}
 	$self->_clearContext();
     #END queue_gapfill_model
@@ -6849,7 +7004,6 @@ gapgen_model_params is a reference to a hash where the following keys are define
 	out_model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
 	gapGen has a value which is a gapgen_id
-	gapGen_workspace has a value which is a workspace_id
 	auth has a value which is a string
 	overwrite has a value which is a bool
 	donot_submit_job has a value which is a bool
@@ -6941,7 +7095,6 @@ gapgen_model_params is a reference to a hash where the following keys are define
 	out_model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
 	gapGen has a value which is a gapgen_id
-	gapGen_workspace has a value which is a workspace_id
 	auth has a value which is a string
 	overwrite has a value which is a bool
 	donot_submit_job has a value which is a bool
@@ -7053,24 +7206,23 @@ sub queue_gapgen_model
 		integrate_solution => 0,
 		out_model => $input->{model},
 		gapGen => undef,
-		gapGen_workspace => $input->{workspace},
 		overwrite => 0,
 		donot_submit_job => 0,
 	});
 	#Checking is this is a postprocessing or initialization call
 	if (!defined($input->{gapGen})) {
-		$input->{gapGen} = $self->_get_new_id($input->{model}.".gapGen.");
 		$input->{formulation} = $self->_setDefaultGapGenFormulation($input->{formulation});
 		#TODO: This block should be in a "safe save" block to prevent race conditions
 		my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
-		my $gapgen = $self->_buildGapGenObject($input->{formulation},$model,$input->{gapGen_workspace},$input->{gapGen});	
+		my $gapgen = $self->_buildGapGenObject($input->{formulation},$model);	
+		$input->{gapgen} = $gapgen->uuid();
 		push(@{$model->unintegratedGapgen_uuids()},$gapgen->uuid());
 		my $modelmeta = $self->_save_msobject($model,"Model",$input->{workspace},$input->{out_model},"queue_gapgen_model");
 		#End "safe save" block
 		$gapgen->fbaFormulation()->model_uuid($model->uuid());
-		my $fbameta = $self->_save_msobject($gapgen->fbaFormulation(),"FBA",$gapgen->fbaFormulation()->{_kbaseWSMeta}->{ws},$gapgen->fbaFormulation()->{_kbaseWSMeta}->{wsid},"queue_gapgen_model");
+		my $fbameta = $self->_save_msobject($gapgen->fbaFormulation(),"FBA","NO_WORKSPACE",$gapgen->fbaFormulation()->uuid(),"queue_gapgen_model",0,$gapgen->fbaFormulation()->uuid());
 		$gapgen->model_uuid($model->uuid());
-		my $gapgenmeta = $self->_save_msobject($gapgen,"GapGen",$input->{gapGen_workspace},$input->{gapGen},"queue_gapgen_model");
+		my $gapgenmeta = $self->_save_msobject($gapgen,"GapGen","NO_WORKSPACE",$gapgen->uuid(),"queue_gapgen_model",0,$gapgen->uuid());
 		my $fba = $gapgen->fbaFormulation();
 		my $mediaids = [];
 		my $mediaws = [];
@@ -7093,8 +7245,8 @@ sub queue_gapgen_model
 				mapref => $model->mapping_uuid(),
 				annoref => $model->annotation_uuid(),
 				modelref => $model->uuid(),
-				fbaref => $fbameta->[8],
-				fbaid => $gapgen->fbaFormulation()->{_kbaseWSMeta}->{wsid}
+				fbaref => $gapgen->fbaFormulation()->uuid(),
+				fbaid => $gapgen->fbaFormulation()->uuid()
 			}],
 			postprocess_command => "queue_gapgen_model",
 			postprocess_args => [$input],
@@ -7104,14 +7256,13 @@ sub queue_gapgen_model
 		if ($input->{donot_submit_job} == 0) {
 			$job = $self->_submit_job($job);
 		}
-		$output = $self->_save_msobject($job,"FBAJob",$job->{workspace},$job->{id},"queue_gapgen_model");
+		$output = $self->_save_msobject($job,"FBAJob","NO_WORKSPACE",$job->{id},"queue_gapgen_model",0,$job->{id});
 		$self->_workspaceServices()->queue_job({
 	    	jobid => $job->{id},
-	    	jobws => $job->{workspace},
 	    	auth => $self->_authentication()
 	    });
 	} else {
-		my $gapgen = $self->_get_msobject("GapGen",$input->{gapGen_workspace},$input->{gapGen});
+		my $gapgen = $self->_get_msobject("GapGen","NO_WORKSPACE",$input->{gapGen});
 		if (!defined($gapgen->fbaFormulation()->fbaResults())) {
 			my $msg = "Gap generation failed!";
 			Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'queue_gapgen_model');
@@ -7127,7 +7278,7 @@ sub queue_gapgen_model
 			my $modelmeta = $self->_save_msobject($model,"Model",$input->{workspace},$input->{out_model},"queue_gapgen_model");			
 			#End "safe save" block
 		}
-		$output = $self->_save_msobject($gapgen,"GapGen",$input->{gapGen_workspace},$input->{gapGen},"queue_gapgen_model");
+		$output = $self->_save_msobject($gapgen,"GapGen","NO_WORKSPACE",$gapgen->uuid(),"queue_gapgen_model",1,$gapgen->uuid());
 	}
 	$self->_clearContext();
     #END queue_gapgen_model
@@ -7169,8 +7320,6 @@ wildtype_phenotype_reconciliation_params is a reference to a hash where the foll
 	workspace has a value which is a workspace_id
 	gapFills has a value which is a reference to a list where each element is a gapfill_id
 	gapGens has a value which is a reference to a list where each element is a gapgen_id
-	gapFill_workspace has a value which is a workspace_id
-	gapGen_workspace has a value which is a workspace_id
 	queueSensitivityAnalysis has a value which is a bool
 	queueReconciliationCombination has a value which is a bool
 	auth has a value which is a string
@@ -7291,8 +7440,6 @@ wildtype_phenotype_reconciliation_params is a reference to a hash where the foll
 	workspace has a value which is a workspace_id
 	gapFills has a value which is a reference to a list where each element is a gapfill_id
 	gapGens has a value which is a reference to a list where each element is a gapgen_id
-	gapFill_workspace has a value which is a workspace_id
-	gapGen_workspace has a value which is a workspace_id
 	queueSensitivityAnalysis has a value which is a bool
 	queueReconciliationCombination has a value which is a bool
 	auth has a value which is a string
@@ -7621,8 +7768,6 @@ wildtype_phenotype_reconciliation_params is a reference to a hash where the foll
 	workspace has a value which is a workspace_id
 	gapFills has a value which is a reference to a list where each element is a gapfill_id
 	gapGens has a value which is a reference to a list where each element is a gapgen_id
-	gapFill_workspace has a value which is a workspace_id
-	gapGen_workspace has a value which is a workspace_id
 	queueSensitivityAnalysis has a value which is a bool
 	queueReconciliationCombination has a value which is a bool
 	auth has a value which is a string
@@ -7743,8 +7888,6 @@ wildtype_phenotype_reconciliation_params is a reference to a hash where the foll
 	workspace has a value which is a workspace_id
 	gapFills has a value which is a reference to a list where each element is a gapfill_id
 	gapGens has a value which is a reference to a list where each element is a gapgen_id
-	gapFill_workspace has a value which is a workspace_id
-	gapGen_workspace has a value which is a workspace_id
 	queueSensitivityAnalysis has a value which is a bool
 	queueReconciliationCombination has a value which is a bool
 	auth has a value which is a string
@@ -7913,8 +8056,6 @@ combine_wildtype_phenotype_reconciliation_params is a reference to a hash where 
 	workspace has a value which is a workspace_id
 	gapFills has a value which is a reference to a list where each element is a gapfill_id
 	gapGens has a value which is a reference to a list where each element is a gapgen_id
-	gapFill_workspace has a value which is a workspace_id
-	gapGen_workspace has a value which is a workspace_id
 	auth has a value which is a string
 	overwrite has a value which is a bool
 	donot_submit_job has a value which is a bool
@@ -8033,8 +8174,6 @@ combine_wildtype_phenotype_reconciliation_params is a reference to a hash where 
 	workspace has a value which is a workspace_id
 	gapFills has a value which is a reference to a list where each element is a gapfill_id
 	gapGens has a value which is a reference to a list where each element is a gapgen_id
-	gapFill_workspace has a value which is a workspace_id
-	gapGen_workspace has a value which is a workspace_id
 	auth has a value which is a string
 	overwrite has a value which is a bool
 	donot_submit_job has a value which is a bool
@@ -8191,10 +8330,8 @@ $input is a jobs_done_params
 $output is a JobObject
 jobs_done_params is a reference to a hash where the following keys are defined:
 	jobid has a value which is a job_id
-	workspace has a value which is a workspace_id
 	auth has a value which is a string
 job_id is a string
-workspace_id is a string
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
 	workspace has a value which is a workspace_id
@@ -8209,6 +8346,7 @@ JobObject is a reference to a hash where the following keys are defined:
 	completetime has a value which is a string
 	complete has a value which is a bool
 	owner has a value which is a string
+workspace_id is a string
 clusterjob is a reference to a hash where the following keys are defined:
 	auth has a value which is a string
 CommandArguments is a reference to a hash where the following keys are defined:
@@ -8225,10 +8363,8 @@ $input is a jobs_done_params
 $output is a JobObject
 jobs_done_params is a reference to a hash where the following keys are defined:
 	jobid has a value which is a job_id
-	workspace has a value which is a workspace_id
 	auth has a value which is a string
 job_id is a string
-workspace_id is a string
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
 	workspace has a value which is a workspace_id
@@ -8243,6 +8379,7 @@ JobObject is a reference to a hash where the following keys are defined:
 	completetime has a value which is a string
 	complete has a value which is a bool
 	owner has a value which is a string
+workspace_id is a string
 clusterjob is a reference to a hash where the following keys are defined:
 	auth has a value which is a string
 CommandArguments is a reference to a hash where the following keys are defined:
@@ -8279,21 +8416,20 @@ sub jobs_done
     my($output);
     #BEGIN jobs_done
     $self->_setContext($ctx,$input);
-    $input = $self->_validateargs($input,["jobid","workspace"],{});
-    my $job = $self->_get_msobject("FBAJob",$input->{workspace},$input->{jobid});
+    $input = $self->_validateargs($input,["jobid"],{});
+    my $job = $self->_get_msobject("FBAJob","NO_WORKSPACE",$input->{jobid});
     $job->{complete} = 1;
-    $job->{completetime} = Data::UUID->new()->create_str();
+    $job->{completetime} = DateTime->now()->datetime();
     if (defined($job->{postprocess_command})) {
     	my $function = $job->{postprocess_command};
     	$self->$function(@{$job->{postprocess_args}});
     }
     $self->_workspaceServices()->set_job_status({
     	jobid => $input->{jobid},
-    	jobws => $input->{workspace},
     	status => "done",
     	auth => $self->_authentication()
     });
-    $self->_save_msobject($job,"FBAJob",$input->{workspace},$input->{jobid},"jobs_done",1);
+    $self->_save_msobject($job,"FBAJob","NO_WORKSPACE",$input->{jobid},"jobs_done",1,$input->{jobid});
     $output = $job;
     $self->_clearContext();
     #END jobs_done
@@ -8325,10 +8461,8 @@ $input is a check_job_params
 $output is a JobObject
 check_job_params is a reference to a hash where the following keys are defined:
 	jobid has a value which is a job_id
-	workspace has a value which is a workspace_id
 	auth has a value which is a string
 job_id is a string
-workspace_id is a string
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
 	workspace has a value which is a workspace_id
@@ -8343,6 +8477,7 @@ JobObject is a reference to a hash where the following keys are defined:
 	completetime has a value which is a string
 	complete has a value which is a bool
 	owner has a value which is a string
+workspace_id is a string
 clusterjob is a reference to a hash where the following keys are defined:
 	auth has a value which is a string
 CommandArguments is a reference to a hash where the following keys are defined:
@@ -8359,10 +8494,8 @@ $input is a check_job_params
 $output is a JobObject
 check_job_params is a reference to a hash where the following keys are defined:
 	jobid has a value which is a job_id
-	workspace has a value which is a workspace_id
 	auth has a value which is a string
 job_id is a string
-workspace_id is a string
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
 	workspace has a value which is a workspace_id
@@ -8377,6 +8510,7 @@ JobObject is a reference to a hash where the following keys are defined:
 	completetime has a value which is a string
 	complete has a value which is a bool
 	owner has a value which is a string
+workspace_id is a string
 clusterjob is a reference to a hash where the following keys are defined:
 	auth has a value which is a string
 CommandArguments is a reference to a hash where the following keys are defined:
@@ -8413,8 +8547,8 @@ sub check_job
     my($output);
     #BEGIN check_job
     $self->_setContext($ctx,$input);
-    $input = $self->_validateargs($input,["jobid","workspace"],{});
-    $output = $self->_get_msobject("FBAJob",$input->{workspace},$input->{jobid});
+    $input = $self->_validateargs($input,["jobid"],{});
+    $output = $self->_get_msobject("FBAJob","NO_WORKSPACE",$input->{jobid});
     $self->_clearContext();
     #END check_job
     my @_bad_returns;
@@ -8445,11 +8579,9 @@ $input is a run_job_params
 $output is a JobObject
 run_job_params is a reference to a hash where the following keys are defined:
 	jobid has a value which is a job_id
-	workspace has a value which is a workspace_id
 	index has a value which is an int
 	auth has a value which is a string
 job_id is a string
-workspace_id is a string
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
 	workspace has a value which is a workspace_id
@@ -8464,6 +8596,7 @@ JobObject is a reference to a hash where the following keys are defined:
 	completetime has a value which is a string
 	complete has a value which is a bool
 	owner has a value which is a string
+workspace_id is a string
 clusterjob is a reference to a hash where the following keys are defined:
 	auth has a value which is a string
 CommandArguments is a reference to a hash where the following keys are defined:
@@ -8480,11 +8613,9 @@ $input is a run_job_params
 $output is a JobObject
 run_job_params is a reference to a hash where the following keys are defined:
 	jobid has a value which is a job_id
-	workspace has a value which is a workspace_id
 	index has a value which is an int
 	auth has a value which is a string
 job_id is a string
-workspace_id is a string
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
 	workspace has a value which is a workspace_id
@@ -8499,6 +8630,7 @@ JobObject is a reference to a hash where the following keys are defined:
 	completetime has a value which is a string
 	complete has a value which is a bool
 	owner has a value which is a string
+workspace_id is a string
 clusterjob is a reference to a hash where the following keys are defined:
 	auth has a value which is a string
 CommandArguments is a reference to a hash where the following keys are defined:
@@ -8535,13 +8667,12 @@ sub run_job
     my($output);
     #BEGIN run_job
     $self->_setContext($ctx,$input);
-    $input = $self->_validateargs($input,["jobid","workspace"],{
+    $input = $self->_validateargs($input,["jobid"],{
     	"index" => 0,
     });
-    my $job = $self->_get_msobject("FBAJob",$input->{workspace},$input->{jobid});
+    my $job = $self->_get_msobject("FBAJob","NO_WORKSPACE",$input->{jobid});
     $self->_workspaceServices()->set_job_status({
     	jobid => $input->{jobid},
-    	jobws => $input->{workspace},
     	status => "running",
     	auth => $self->_authentication()
     });
@@ -8552,7 +8683,8 @@ sub run_job
     	my $msg = "FBA failed with no solution returned!";
     	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'runfba');
     }
-    $self->_save_msobject($fba,"FBA",$fba->{_kbaseWSMeta}->{ws},$fba->{_kbaseWSMeta}->{wsid},"run_job");
+    #Saving the FBA by reference, overwriting the same object in the workspace
+    $self->_save_msobject($fba,"FBA","NO_WORKSPACE",$fba->{_kbaseWSMeta}->{wsid},"run_job",1,$clusterjob->{fbaref});
 	$output = $job;
     $self->jobs_done($input);
     $self->_clearContext();
@@ -10030,6 +10162,156 @@ a reference to a list containing 3 items:
 
 
 
+=head2 probanno_id
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 alt_func
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a list containing 2 items:
+0: a string
+1: a float
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a list containing 2 items:
+0: a string
+1: a float
+
+
+=end text
+
+=back
+
+
+
+=head2 ProbAnnoFeature
+
+=over 4
+
+
+
+=item Description
+
+Object to carry alternative functions for each feature
+    
+feature_id id
+ID of the feature. Required.
+    
+string function
+Primary annotated function of the feature in the genome annotation. Required.
+    
+list<alt_func> alternative_functions
+List of tuples containing alternative functions and probabilities. Required.
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+id has a value which is a feature_id
+alternative_functions has a value which is a reference to a list where each element is an alt_func
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+id has a value which is a feature_id
+alternative_functions has a value which is a reference to a list where each element is an alt_func
+
+
+=end text
+
+=back
+
+
+
+=head2 ProbabilisticAnnotation
+
+=over 4
+
+
+
+=item Description
+
+Object to carry alternative functions and probabilities for genes in a genome
+
+    probanno_id id - ID of the probabilistic annotation object. Required.    
+    genome_id genome - ID of the genome the probabilistic annotation was built for. Required.
+    workspace_ref genome_uuid - Reference to retrieve genome from workspace service. Required.
+    list<ProbAnnoFeature> featureAlternativeFunctions - List of ProbAnnoFeature objects holding alternative functions for features. Required.
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+id has a value which is a probanno_id
+genome has a value which is a genome_id
+genome_uuid has a value which is a workspace_ref
+featureAlternativeFunctions has a value which is a reference to a list where each element is a ProbAnnoFeature
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+id has a value which is a probanno_id
+genome has a value which is a genome_id
+genome_uuid has a value which is a workspace_ref
+featureAlternativeFunctions has a value which is a reference to a list where each element is a ProbAnnoFeature
+
+
+=end text
+
+=back
+
+
+
 =head2 Biochemistry
 
 =over 4
@@ -10643,6 +10925,38 @@ a reference to a list containing 6 items:
 
 
 
+=head2 Subsystem
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+name has a value which is a string
+feature has a value which is a reference to a list where each element is a feature_id
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+name has a value which is a string
+feature has a value which is a reference to a list where each element is a feature_id
+
+
+=end text
+
+=back
+
+
+
 =head2 FBAModel
 
 =over 4
@@ -10701,6 +11015,7 @@ integrated_gapfillings has a value which is a reference to a list where each ele
 unintegrated_gapfillings has a value which is a reference to a list where each element is a GapFillMeta
 integrated_gapgenerations has a value which is a reference to a list where each element is a GapGenMeta
 unintegrated_gapgenerations has a value which is a reference to a list where each element is a GapGenMeta
+modelSubsystems has a value which is a reference to a list where each element is a Subsystem
 
 </pre>
 
@@ -10729,6 +11044,7 @@ integrated_gapfillings has a value which is a reference to a list where each ele
 unintegrated_gapfillings has a value which is a reference to a list where each element is a GapFillMeta
 integrated_gapgenerations has a value which is a reference to a list where each element is a GapGenMeta
 unintegrated_gapgenerations has a value which is a reference to a list where each element is a GapGenMeta
+modelSubsystems has a value which is a reference to a list where each element is a Subsystem
 
 
 =end text
@@ -12261,6 +12577,91 @@ owner has a value which is a string
 
 
 
+=head2 ETCNodes
+
+=over 4
+
+
+
+=item Description
+
+********************************************************************************
+    ETC object type definitions
+   	********************************************************************************
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+resp has a value which is a string
+y has a value which is an int
+x has a value which is an int
+width has a value which is an int
+height has a value which is an int
+shape has a value which is a string
+label has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+resp has a value which is a string
+y has a value which is an int
+x has a value which is an int
+width has a value which is an int
+height has a value which is an int
+shape has a value which is a string
+label has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 ETCDiagramSpecs
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+nodes has a value which is a reference to a list where each element is an ETCNodes
+media has a value which is a string
+growth has a value which is a string
+organism has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+nodes has a value which is a reference to a list where each element is an ETCNodes
+media has a value which is a string
+growth has a value which is a string
+organism has a value which is a string
+
+
+=end text
+
+=back
+
+
+
 =head2 get_models_params
 
 =over 4
@@ -12617,6 +13018,55 @@ auth has a value which is a string
 
 
 
+=head2 get_ETCDiagram_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "genome_to_fbamodel" function.
+
+        model_id model - ID of the model to retrieve ETC for
+        workspace_id workspace - ID of the workspace containing the model 
+        media_id media - ID of the media to retrieve ETC for
+        workspace_id mediaws - workpace containing the specified media
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+model has a value which is a fbamodel_id
+workspace has a value which is a workspace_id
+media has a value which is a media_id
+mediaws has a value which is a workspace_id
+auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+model has a value which is a fbamodel_id
+workspace has a value which is a workspace_id
+media has a value which is a media_id
+mediaws has a value which is a workspace_id
+auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
 =head2 import_probanno_params
 
 =over 4
@@ -12866,6 +13316,7 @@ Input parameters for the "genome_to_fbamodel" function.
         float probannoThreshold - a threshold of the probability required for a probabilistic annotation to be accepted (an optional argument; default is '1')
         bool probannoOnly - a boolean indicating if only the probabilistic annotation should be used in building the model (an optional argument; default is '0')
         fbamodel_id model - ID that should be used for the newly constructed model (an optional argument; default is 'undef')
+        bool coremodel - indicates that a core model should be constructed instead of a genome scale model (an optional argument; default is '0')
         workspace_id workspace - ID of the workspace where the newly developed model will be stored; also the default assumed workspace for input objects (a required argument)
         string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
@@ -12883,6 +13334,7 @@ probanno_workspace has a value which is a workspace_id
 probannoThreshold has a value which is a float
 probannoOnly has a value which is a bool
 model has a value which is a fbamodel_id
+coremodel has a value which is a bool
 workspace has a value which is a workspace_id
 auth has a value which is a string
 overwrite has a value which is a bool
@@ -12901,6 +13353,7 @@ probanno_workspace has a value which is a workspace_id
 probannoThreshold has a value which is a float
 probannoOnly has a value which is a bool
 model has a value which is a fbamodel_id
+coremodel has a value which is a bool
 workspace has a value which is a workspace_id
 auth has a value which is a string
 overwrite has a value which is a bool
@@ -13603,7 +14056,6 @@ Input parameters for the "queue_gapfill_model" function.
         bool integrate_solution - a flag indicating if the first solution should be integrated in the model (an optional argument: default is '0')
         fbamodel_id out_model - ID where the gapfilled model will be saved (an optional argument: default is 'undef')
         gapfill_id gapFill - ID to which gapfill solution will be saved (an optional argument: default is 'undef')
-        workspace_id gapFill_workspace - workspace where gapfill solution will be saved (an optional argument; default is the value of the workspace argument)
         workspace_id workspace - workspace where gapfill results will be saved (a required argument)
         bool donot_submit_job - a flag indicating if the job should be submitted to the cluster (an optional argument: default is '0')
         string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
@@ -13624,7 +14076,6 @@ integrate_solution has a value which is a bool
 out_model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
 gapFill has a value which is a gapfill_id
-gapFill_workspace has a value which is a workspace_id
 auth has a value which is a string
 overwrite has a value which is a bool
 donot_submit_job has a value which is a bool
@@ -13645,7 +14096,6 @@ integrate_solution has a value which is a bool
 out_model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
 gapFill has a value which is a gapfill_id
-gapFill_workspace has a value which is a workspace_id
 auth has a value which is a string
 overwrite has a value which is a bool
 donot_submit_job has a value which is a bool
@@ -13675,7 +14125,6 @@ Input parameters for the "queue_gapfill_model" function.
         bool integrate_solution - a flag indicating if the first solution should be integrated in the model (an optional argument: default is '0')
         fbamodel_id out_model - ID where the gapgened model will be saved (an optional argument: default is 'undef')
         gapgen_id gapGen - ID to which gapgen solution will be saved (an optional argument: default is 'undef')
-        workspace_id gapGen_workspace - workspace where gapgen solution will be saved (an optional argument; default is the value of the workspace argument)
         workspace_id workspace - workspace where gapgen results will be saved (a required argument)
         bool donot_submit_job - a flag indicating if the job should be submitted to the cluster (an optional argument: default is '0')
         string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
@@ -13696,7 +14145,6 @@ integrate_solution has a value which is a bool
 out_model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
 gapGen has a value which is a gapgen_id
-gapGen_workspace has a value which is a workspace_id
 auth has a value which is a string
 overwrite has a value which is a bool
 donot_submit_job has a value which is a bool
@@ -13717,7 +14165,6 @@ integrate_solution has a value which is a bool
 out_model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
 gapGen has a value which is a gapgen_id
-gapGen_workspace has a value which is a workspace_id
 auth has a value which is a string
 overwrite has a value which is a bool
 donot_submit_job has a value which is a bool
@@ -13748,9 +14195,7 @@ Input parameters for the "queue_wildtype_phenotype_reconciliation" function.
         workspace_id phenotypeSet_workspace - workspace containing phenotype set to be simulated (an optional argument; default is the value of the workspace argument)
         fbamodel_id out_model - ID where the reconciled model will be saved (an optional argument: default is 'undef')
         list<gapgen_id> gapGens - IDs of gapgen solutions (an optional argument: default is 'undef')
-        workspace_id gapGen_workspace - workspace where gapgen solutions will be saved (an optional argument; default is the value of the workspace argument)
         list<gapfill_id> gapFills - IDs of gapfill solutions (an optional argument: default is 'undef')
-        workspace_id gapFill_workspace - workspace where gapfill solutions will be saved (an optional argument; default is the value of the workspace argument)
         bool queueSensitivityAnalysis - flag indicating if sensitivity analysis should be queued to run on solutions (an optional argument: default is '0')
         bool queueReconciliationCombination - flag indicating if reconcilication combination should be queued to run on solutions (an optional argument: default is '0')
         workspace_id workspace - workspace where reconciliation results will be saved (a required argument)
@@ -13775,8 +14220,6 @@ out_model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
 gapFills has a value which is a reference to a list where each element is a gapfill_id
 gapGens has a value which is a reference to a list where each element is a gapgen_id
-gapFill_workspace has a value which is a workspace_id
-gapGen_workspace has a value which is a workspace_id
 queueSensitivityAnalysis has a value which is a bool
 queueReconciliationCombination has a value which is a bool
 auth has a value which is a string
@@ -13801,8 +14244,6 @@ out_model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
 gapFills has a value which is a reference to a list where each element is a gapfill_id
 gapGens has a value which is a reference to a list where each element is a gapgen_id
-gapFill_workspace has a value which is a workspace_id
-gapGen_workspace has a value which is a workspace_id
 queueSensitivityAnalysis has a value which is a bool
 queueReconciliationCombination has a value which is a bool
 auth has a value which is a string
@@ -13835,9 +14276,7 @@ Input parameters for the "queue_reconciliation_sensitivity_analysis" function.
         workspace_id phenotypeSet_workspace - workspace containing phenotype set to be simulated (an optional argument; default is the value of the workspace argument)
         fbamodel_id out_model - ID where the sensitivity analysis model will be saved (an optional argument: default is 'undef')
         list<gapgen_id> gapGens - IDs of gapgen solutions (an optional argument: default is 'undef')
-        workspace_id gapGen_workspace - workspace where gapgen solutions will be saved (an optional argument; default is the value of the workspace argument)
         list<gapfill_id> gapFills - IDs of gapfill solutions (an optional argument: default is 'undef')
-        workspace_id gapFill_workspace - workspace where gapfill solutions will be saved (an optional argument; default is the value of the workspace argument)
         bool queueReconciliationCombination - flag indicating if sensitivity analysis combination should be queued to run on solutions (an optional argument: default is '0')
         workspace_id workspace - workspace where sensitivity analysis results will be saved (a required argument)
         bool donot_submit_job - a flag indicating if the job should be submitted to the cluster (an optional argument: default is '0')
@@ -13861,8 +14300,6 @@ out_model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
 gapFills has a value which is a reference to a list where each element is a gapfill_id
 gapGens has a value which is a reference to a list where each element is a gapgen_id
-gapFill_workspace has a value which is a workspace_id
-gapGen_workspace has a value which is a workspace_id
 queueReconciliationCombination has a value which is a bool
 auth has a value which is a string
 overwrite has a value which is a bool
@@ -13886,8 +14323,6 @@ out_model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
 gapFills has a value which is a reference to a list where each element is a gapfill_id
 gapGens has a value which is a reference to a list where each element is a gapgen_id
-gapFill_workspace has a value which is a workspace_id
-gapGen_workspace has a value which is a workspace_id
 queueReconciliationCombination has a value which is a bool
 auth has a value which is a string
 overwrite has a value which is a bool
@@ -13919,9 +14354,7 @@ Input parameters for the "queue_combine_wildtype_phenotype_reconciliation" funct
         workspace_id phenotypeSet_workspace - workspace containing phenotype set to be simulated (an optional argument; default is the value of the workspace argument)
         fbamodel_id out_model - ID where the solution combination model will be saved (an optional argument: default is 'undef')
         list<gapgen_id> gapGens - IDs of gapgen solutions (an optional argument: default is 'undef')
-        workspace_id gapGen_workspace - workspace where gapgen solutions will be saved (an optional argument; default is the value of the workspace argument)
         list<gapfill_id> gapFills - IDs of gapfill solutions (an optional argument: default is 'undef')
-        workspace_id gapFill_workspace - workspace where gapfill solutions will be saved (an optional argument; default is the value of the workspace argument)
         workspace_id workspace - workspace where solution combination results will be saved (a required argument)
         bool donot_submit_job - a flag indicating if the job should be submitted to the cluster (an optional argument: default is '0')
         string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
@@ -13944,8 +14377,6 @@ out_model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
 gapFills has a value which is a reference to a list where each element is a gapfill_id
 gapGens has a value which is a reference to a list where each element is a gapgen_id
-gapFill_workspace has a value which is a workspace_id
-gapGen_workspace has a value which is a workspace_id
 auth has a value which is a string
 overwrite has a value which is a bool
 donot_submit_job has a value which is a bool
@@ -13968,8 +14399,6 @@ out_model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
 gapFills has a value which is a reference to a list where each element is a gapfill_id
 gapGens has a value which is a reference to a list where each element is a gapgen_id
-gapFill_workspace has a value which is a workspace_id
-gapGen_workspace has a value which is a workspace_id
 auth has a value which is a string
 overwrite has a value which is a bool
 donot_submit_job has a value which is a bool
@@ -13992,7 +14421,6 @@ donot_submit_job has a value which is a bool
 Input parameters for the "jobs_done" function.
 
         job_id jobid - ID of the job object (a required argument)
-        workspace_id workspace - workspace where job object is saved (a required argument)
         string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
 
@@ -14003,7 +14431,6 @@ Input parameters for the "jobs_done" function.
 <pre>
 a reference to a hash where the following keys are defined:
 jobid has a value which is a job_id
-workspace has a value which is a workspace_id
 auth has a value which is a string
 
 </pre>
@@ -14014,7 +14441,6 @@ auth has a value which is a string
 
 a reference to a hash where the following keys are defined:
 jobid has a value which is a job_id
-workspace has a value which is a workspace_id
 auth has a value which is a string
 
 
@@ -14035,7 +14461,6 @@ auth has a value which is a string
 Input parameters for the "check_job" function.
 
         job_id jobid - ID of the job object (a required argument)
-        workspace_id workspace - workspace where job object is saved (a required argument)
         string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
 
@@ -14046,7 +14471,6 @@ Input parameters for the "check_job" function.
 <pre>
 a reference to a hash where the following keys are defined:
 jobid has a value which is a job_id
-workspace has a value which is a workspace_id
 auth has a value which is a string
 
 </pre>
@@ -14057,7 +14481,6 @@ auth has a value which is a string
 
 a reference to a hash where the following keys are defined:
 jobid has a value which is a job_id
-workspace has a value which is a workspace_id
 auth has a value which is a string
 
 
@@ -14078,7 +14501,6 @@ auth has a value which is a string
 Input parameters for the "run_job" function.
 
         job_id jobid - ID of the job object (a required argument)
-        workspace_id workspace - workspace where job object is saved (a required argument)
         int index - index of subobject to be run (an optional argument; default is '0')
         string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
@@ -14090,7 +14512,6 @@ Input parameters for the "run_job" function.
 <pre>
 a reference to a hash where the following keys are defined:
 jobid has a value which is a job_id
-workspace has a value which is a workspace_id
 index has a value which is an int
 auth has a value which is a string
 
@@ -14102,7 +14523,6 @@ auth has a value which is a string
 
 a reference to a hash where the following keys are defined:
 jobid has a value which is a job_id
-workspace has a value which is a workspace_id
 index has a value which is an int
 auth has a value which is a string
 

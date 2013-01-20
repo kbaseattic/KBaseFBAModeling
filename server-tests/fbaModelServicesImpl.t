@@ -21,18 +21,24 @@ my $test_count = 33;
 ################################################################################
 #Test intiailization: setting test config, instantiating Impl, getting auth token
 ################################################################################
+$ENV{KB_SERVICE_NAME}="workspaceService";
+$ENV{KB_DEPLOYMENT_CONFIG}=$Bin."/../configs/test.cfg";
+my $ws = Bio::KBase::workspaceService::Impl->new();
+$ws->_clearAllWorkspaces();
+$ws->_clearAllWorkspaceObjects();
+$ws->_clearAllWorkspaceUsers();
+$ws->_clearAllWorkspaceDataObjects();
+$ws->_initializeWorkspace();
+$ws->create_workspace({
+	workspace => "testworkspace",
+	default_permission => "n"
+});
+my $output = $ws->list_workspace_objects({
+	workspace => "kbase"
+});
 $ENV{KB_SERVICE_NAME}="fbaModelServices";
 $ENV{KB_DEPLOYMENT_CONFIG}=$Bin."/../configs/test.cfg";
-my $obj = Bio::KBase::fbaModelServices::Impl->new();
-eval {
-	$obj->_workspaceServices()->delete_workspace({
-		workspace => "testworkspace",
-	});
-	$obj->_workspaceServices()->create_workspace({
-		workspace => "testworkspace",
-		default_permission => "n"
-	});
-};
+my $obj = Bio::KBase::fbaModelServices::Impl->new({workspace => $ws});
 ################################################################################
 #Tests 1-3: retrieving a biochemistry object and reaction and compound data
 ################################################################################
