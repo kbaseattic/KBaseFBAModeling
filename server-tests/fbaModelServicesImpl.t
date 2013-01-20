@@ -33,9 +33,6 @@ $ws->create_workspace({
 	workspace => "testworkspace",
 	default_permission => "n"
 });
-my $output = $ws->list_workspace_objects({
-	workspace => "kbase"
-});
 $ENV{KB_SERVICE_NAME}="fbaModelServices";
 $ENV{KB_DEPLOYMENT_CONFIG}=$Bin."/../configs/test.cfg";
 my $obj = Bio::KBase::fbaModelServices::Impl->new({workspace => $ws});
