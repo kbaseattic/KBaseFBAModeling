@@ -126,37 +126,50 @@ sub monitor {
 
 sub queueJob {
 	my ($self,$ws,$id,$auth) = @_;
-	if (!defined($auth)) {
-		$auth = Bio::KBase::workspaceService::Helpers::auth();
+	#if (!defined($auth)) {
+	#	$auth = Bio::KBase::workspaceService::Helpers::auth();
+	#}
+	my $authcmd = "none";
+	if (defined($auth)) {
+		my ($fh, $uncompressed_filename) = File::Temp::tempfile(DIR => $self->directory()."/authFiles/");
+		print $fh $auth;
+		close($fh);
+		$authcmd = $uncompressed_filename;
 	}
-	my ($fh, $uncompressed_filename) = File::Temp::tempfile(DIR => $self->directory()."/authFiles/");
-	print $fh $auth;
-	close($fh);
-	my $cmd = "qsub -l arch=lx26-amd64 -b yes -e ".$self->directory()."/errors/ -o ".$self->directory()."/output/ ".$self->directory()."/scheduler.sh runjob ".$ws." ".$id." ".$uncompressed_filename;
+	my $cmd = "qsub -l arch=lx26-amd64 -b yes -e ".$self->directory()."/errors/ -o ".$self->directory()."/output/ ".$self->directory()."/scheduler.sh runjob ".$ws." ".$id." ".$authcmd;
 	system($cmd);	
 }
 
 sub run {
 	my($self,$ws,$id,$auth) = @_;
 	my $filename;
-	if (!defined($auth)) {
-		$auth = Bio::KBase::workspaceService::Helpers::auth();
-	} elsif (-e $auth) {
+	#if (!defined($auth)) {
+	#	$auth = Bio::KBase::workspaceService::Helpers::auth();
+	#} elsif (-e $auth) {
+	if (defined($auth) && $auth ne "none" && -e $auth) {
 		$filename = $auth;
 		open(my $fh, "<", $auth) || die "$!: $@";
 		my @lines = <$fh>;
 		close ($fh);
 		$auth = join("",@lines);
+		if (-e $filename) {
+			unlink($filename);
+		}
 	}
 	my $obj = Bio::KBase::fbaModelServices::Impl->new({workspace => $self->client()});
-	$obj->run_job({
-		jobid => $id,
-		workspace => $ws,
-		"index" => 0,
-		auth => $auth
-	});
-	if (-e $filename) {
-		unlink($filename);
+	if ($auth ne "none") {
+		$obj->run_job({
+			jobid => $id,
+			workspace => $ws,
+			"index" => 0,
+			auth => $auth
+		});
+	} else {
+		$obj->run_job({
+			jobid => $id,
+			workspace => $ws,
+			"index" => 0
+		});
 	}
 }
 
