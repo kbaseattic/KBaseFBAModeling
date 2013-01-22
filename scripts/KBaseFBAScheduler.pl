@@ -25,8 +25,8 @@ $|=1;
 #Creating the error message printed whenever the user input makes no sense
 my $Usage = "Scheduler must be called with the following syntax:\n".
 			"kbasefbascheduler monitor <process count>\n".
-			"kbasefbascheduler runjob <workspace> <id> <auth>\n".
-			"kbasefbascheduler addjob <workspace> <id> <auth>\n".
+			"kbasefbascheduler runjob <id> <auth>\n".
+			"kbasefbascheduler addjob <id> <auth>\n".
 			"kbasefbascheduler killjobs\n";
 #First checking to see if at least one argument has been provided
 my $directory = shift(@ARGV);
@@ -41,9 +41,9 @@ my $sched = scheduler->new({directory => $directory});
 if ($ARGV[0] eq "monitor") {
 	$sched->monitor($ARGV[1]);
 } elsif ($ARGV[0] eq "runjob") {
-	$sched->run($ARGV[1],$ARGV[2],$ARGV[3]);
+	$sched->run($ARGV[1],$ARGV[2]);
 } elsif ($ARGV[0] eq "addjob") {
-	$sched->queueJob($ARGV[1],$ARGV[2],$ARGV[3]);
+	$sched->queueJob($ARGV[1],$ARGV[2]);
 } elsif ($ARGV[0] eq "killjobs") {
 	$sched->haltalljobs();
 }
@@ -110,11 +110,10 @@ sub monitor {
 				my $job = shift(@{$jobs});
 				if ($self->client()->set_job_status({
 					jobid => $job->{id},
-					jobws => $job->{ws},
 					status => "running",
 					auth => $job->{auth}
 				}) == 1) {
-					$self->queueJob($job->{ws},$job->{id},$job->{auth});
+					$self->queueJob($job->{id},$job->{auth});
 					$openSlots--;
 				}
 			}	
@@ -125,7 +124,7 @@ sub monitor {
 }
 
 sub queueJob {
-	my ($self,$ws,$id,$auth) = @_;
+	my ($self,$id,$auth) = @_;
 	#if (!defined($auth)) {
 	#	$auth = Bio::KBase::workspaceService::Helpers::auth();
 	#}
@@ -136,12 +135,12 @@ sub queueJob {
 		close($fh);
 		$authcmd = $uncompressed_filename;
 	}
-	my $cmd = "qsub -l arch=lx26-amd64 -b yes -e ".$self->directory()."/errors/ -o ".$self->directory()."/output/ bash ".$self->directory()."/scheduler.sh runjob ".$ws." ".$id." ".$authcmd;
+	my $cmd = "qsub -l arch=lx26-amd64 -b yes -e ".$self->directory()."/errors/ -o ".$self->directory()."/output/ bash ".$self->directory()."/scheduler.sh runjob ".$id." ".$authcmd;
 	system($cmd);	
 }
 
 sub run {
-	my($self,$ws,$id,$auth) = @_;
+	my($self,$id,$auth) = @_;
 	my $filename;
 	#if (!defined($auth)) {
 	#	$auth = Bio::KBase::workspaceService::Helpers::auth();
@@ -160,14 +159,12 @@ sub run {
 	if ($auth ne "none") {
 		$obj->run_job({
 			jobid => $id,
-			workspace => $ws,
 			"index" => 0,
 			auth => $auth
 		});
 	} else {
 		$obj->run_job({
 			jobid => $id,
-			workspace => $ws,
 			"index" => 0
 		});
 	}
