@@ -77,6 +77,9 @@ module fbaModelServices {
     /* A string identifier for a genome in KBase. e.g. "kb|g.0" is the ID for E. coli */
     typedef string genome_id;
     
+    /* A string identifier for a prommodel in KBase. */
+    typedef string prommodel_id;
+    
     /* A string identifier for a contiguous piece of DNA in KBase, representing a chromosome or an assembled fragment */
     typedef string contig_id;
     
@@ -614,6 +617,8 @@ module fbaModelServices {
 		
 		media_id media - ID of media formulation to be used
 		list<compound_id> additionalcpds - list of additional compounds to allow update
+		prommodel_id prommodel - ID of prommodel
+		workspace_id prommodel_workspace - workspace containing prommodel
 		workspace_id media_workspace - workspace containing media for FBA study
 		float objfraction - fraction of objective to use for constraints
 		bool allreversible - flag indicating if all reactions should be reversible
@@ -636,6 +641,8 @@ module fbaModelServices {
 	typedef structure {
 		media_id media;
 		list<compound_id> additionalcpds;
+		prommodel_id prommodel;
+		workspace_id prommodel_workspace;
 		workspace_id media_workspace;
 		float objfraction;
 		bool allreversible;
@@ -1314,6 +1321,31 @@ module fbaModelServices {
         Build a genome-scale metabolic model based on annotations in an input genome typed object
     */
     funcdef genome_to_fbamodel (genome_to_fbamodel_params input) returns (object_metadata modelMeta);
+	
+	/* Input parameters for the "genome_to_fbamodel" function.
+	
+		genome_id genome - ID of the genome for which a model is to be built (a required argument)
+		workspace_id genome_workspace - ID of the workspace containing the target genome (an optional argument; default is the workspace argument)
+		probanno_id probanno - ID of the probabilistic annotation to be used in building the model (an optional argument; default is 'undef')
+		workspace_id probanno_workspace - ID of the workspace containing the probabilistic annotation (an optional argument; default is the workspace argument)
+		fbamodel_id model - ID that should be used for the newly constructed model (an optional argument; default is 'undef')
+		workspace_id workspace - ID of the workspace where the newly developed model will be stored; also the default assumed workspace for input objects (a required argument)
+		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+		
+	*/
+    typedef structure {
+		genome_id genome;
+		workspace_id genome_workspace;
+		probanno_id probanno;
+		workspace_id probanno_workspace;
+		fbamodel_id model;
+		workspace_id workspace;
+		string auth;
+    } genome_to_probfbamodel_params;
+    /*
+        Build a probabilistic genome-scale metabolic model based on annotations in an input genome and probabilistic annotation
+    */
+    funcdef genome_to_probfbamodel (genome_to_probfbamodel_params input) returns (object_metadata modelMeta);
 	
     /* Input parameters for the "export_fbamodel" function.
 	
