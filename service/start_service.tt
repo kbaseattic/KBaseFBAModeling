@@ -4,6 +4,7 @@ export KB_DEPLOYMENT_CONFIG=$KB_TOP/deployment.cfg
 export KB_RUNTIME=[% kb_runtime %]
 export PATH=$KB_TOP/bin:$KB_RUNTIME/bin:$PATH
 export PERL5LIB=$KB_TOP/lib:$KB_TOP/lib/perl5:$KB_TOP/lib/perl5/site_perl/5.16.1
+export KB_SERVICE_NAME=[% kb_service_name %]
 export KB_SERVICE_DIR=$KB_TOP/services/[% kb_service_name %]
 export MODELSEED_CONF=$KB_SERVICE_DIR/config.json
 
