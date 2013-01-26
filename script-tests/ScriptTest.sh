@@ -1,4 +1,4 @@
-kbws-url "http://bio-data-1.mcs.anl.gov/services/fba_gapfill"
+kbws-url "http://kbase.us/services/workspace"
 kbws-login kbasetest -p "@Suite525"
 kbws-deletews scripttest n
 kbws-createws scripttest n
