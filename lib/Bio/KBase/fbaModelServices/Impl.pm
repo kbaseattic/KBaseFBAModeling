@@ -8963,6 +8963,7 @@ sub jobs_done
     $job->{completetime} = DateTime->now()->datetime();
     if (defined($job->{postprocess_command})) {
     	my $function = $job->{postprocess_command};
+    	$job->{postprocess_args}->[0]->{auth} = $self->_authentication();
     	$self->$function(@{$job->{postprocess_args}});
     }
     $self->_workspaceServices()->set_job_status({
