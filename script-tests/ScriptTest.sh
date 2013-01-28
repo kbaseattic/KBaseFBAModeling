@@ -1,5 +1,6 @@
 kbws-url "http://kbase.us/services/workspace"
 kbws-login kbasetest -p "@Suite525"
+kbws-workspace default
 kbws-deletews scripttest n
 kbws-createws scripttest n
 kbws-workspace scripttest
