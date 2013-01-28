@@ -135,8 +135,8 @@ sub queueJob {
 		close($fh);
 		$authcmd = $uncompressed_filename;
 	}
-	my $cmd = "qsub -l arch=lx26-amd64 -b yes -e ".$self->directory()."/errors/ -o ".$self->directory()."/output/ bash ".$self->directory()."/scheduler.sh runjob ".$id." ".$authcmd;
-	system($cmd);	
+	my $cmd = "qsub -l arch=lx26-amd64 -m aes -M \"chenry@mcs.anl.gov\" -b yes -e ".$self->directory()."/errors/ -o ".$self->directory()."/output/ bash ".$self->directory()."/scheduler.sh runjob ".$id." ".$authcmd;
+	system($cmd);
 }
 
 sub run {
