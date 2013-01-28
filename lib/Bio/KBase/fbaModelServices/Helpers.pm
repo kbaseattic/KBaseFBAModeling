@@ -12,6 +12,10 @@ our $defaultURL = "http://kbase.us/services/fbaServices/";
 my $CurrentURL;
 
 sub get_fba_client {
+	if (fbaURL() eq "impl") {
+		require "Bio/KBase/fbaModelServices/Impl.pm";
+		return Bio::KBase::fbaModelServices::Impl->new({workspace => get_ws_client()});
+	}
     return Bio::KBase::fbaModelServices::Client->new(fbaURL());
 }
 

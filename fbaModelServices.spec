@@ -1326,6 +1326,32 @@ module fbaModelServices {
 	
 		genome_id genome - ID of the genome for which a model is to be built (a required argument)
 		workspace_id genome_workspace - ID of the workspace containing the target genome (an optional argument; default is the workspace argument)
+		string biomass - biomass equation for model (an essential argument)
+		list<tuple<string id,string direction,string compartment,string gpr> reactions - list of reactions to appear in imported model (an essential argument)
+		fbamodel_id model - ID that should be used for the newly imported model (an optional argument; default is 'undef')
+		workspace_id workspace - ID of the workspace where the newly developed model will be stored; also the default assumed workspace for input objects (a required argument)
+		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+		
+	*/
+    typedef structure {
+		genome_id genome;
+		workspace_id genome_workspace;
+		string biomass;
+		list<tuple<string id,string direction,string compartment,string gpr>> reactions;
+		fbamodel_id model;
+		workspace_id workspace;
+		string auth;
+		bool overwrite;
+    } import_fbamodel_params;
+    /*
+        Import a model from an input table of model and gene IDs
+    */
+    funcdef import_fbamodel(import_fbamodel_params input) returns (object_metadata modelMeta);
+	
+	/* Input parameters for the "genome_to_fbamodel" function.
+	
+		genome_id genome - ID of the genome for which a model is to be built (a required argument)
+		workspace_id genome_workspace - ID of the workspace containing the target genome (an optional argument; default is the workspace argument)
 		probanno_id probanno - ID of the probabilistic annotation to be used in building the model (an optional argument; default is 'undef')
 		workspace_id probanno_workspace - ID of the workspace containing the probabilistic annotation (an optional argument; default is the workspace argument)
 		fbamodel_id model - ID that should be used for the newly constructed model (an optional argument; default is 'undef')

@@ -66,8 +66,7 @@ use Bio::KBase::CDMI::CDMIClient;
 use Bio::KBase::AuthToken;
 use Bio::KBase::ClusterService;
 use Bio::KBase::workspaceService::Client;
-use ModelSEED::Auth::Basic;
-use ModelSEED::Store;
+use ModelSEED::KBaseStore;
 use Data::UUID;
 use ModelSEED::MS::Biochemistry;
 use ModelSEED::MS::Mapping;
@@ -84,149 +83,6 @@ use ModelSEED::utilities qw( args verbose set_verbose translateArrayOptions);
 use Try::Tiny;
 use Data::Dumper;
 use Config::Simple;
-
-=head2 loadObject
-
-  $output_object = $obj->loadObject($input_data,$type)
-
-=over 4
-
-=item Parameter and return types
-
-=begin html
-
-<pre>
-
-$input_data is a JSON object formulation
-$type is the type of the object
-$output_object is a ModelSEED::MS::$type object
-
-</pre>
-
-=end html
-
-=begin text
-
-$input_data is a JSON object formulation
-$type is the type of the object
-$output_object is a ModelSEED::MS::$type object
-
-=end text
-
-=item Description
-
-This function converts the input data into a ModelSEED::MS::$type object.
-
-=back
-
-=cut
-
-sub loadObject {
-	my $self = shift;
-    my($input_data) = @_;
-   	
-   	my @_bad_arguments;
-    (ref($input_data) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input_data\" (value was \"$input_data\")");
-    if (@_bad_arguments) {
-		my $msg = "Invalid arguments passed to runfba:\n" . join("", map { "\t$_\n" } @_bad_arguments);
-		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'loadObject');
-    }
-    #Pulling the type form the input data hash
-    if (!defined($input_data->{objectType})) {
-    	my $msg = "Type must be specified before objects can be retreived.";
-    	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'loadObject');
-    }
-    my $type = $input_data->{objectType};
-    my $output_object;
-    #Checking if the input data is a provenance object and includes only an ID or UUID
-    my $provenanceObjs = {Model=>1,Biochemistry=>1,Annotation=>1,Mapping=>1};
-    if (defined($provenanceObjs->{$type}) &&  keys(%{$input_data}) <= 3) {
-    	if (defined($input_data->{id})) {
-    		$output_object = $self->{_store}->get_object(lc($type)."/kbase/".$input_data->{id});
-    	} elsif (defined($input_data->{uuid})) {
-    		$output_object = $self->{_store}->get_object(lc($type)."/".$input_data->{uuid});
-    	} else {
-    		my $msg = "Insufficient data provided to load model. Must provide either an id or uuid.";
-    		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'loadObject');
-    	}
-    	if (!defined($output_object)) {
-    		my $msg = "Could not generate object from input data.";
-    		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'loadObject');
-    	}
-    	$output_object->parent($self->{_store});
-    } else {
-    	my $class = "ModelSEED::MS::".$type;
-    	$output_object = $class->new($input_data);
-    	if (!defined($output_object)) {
-    		my $msg = "Could not generate object from input data.";
-    		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'loadObject');
-    	}
-    	if (defined($provenanceObjs->{$type})) {
-    		$output_object->parent($self->{_store});
-    	} elsif (defined($provenanceObjs->{parentUUID})) {
-    		my $objects = ModelSEED::MS::Metadata::Definitions::objectDefinitions();
-    		my $parentType = $objects->{$type}->{parents}->[0];
-    		my $parent = $self->loadObject({uuid => $provenanceObjs->{parentUUID},objectType => $parentType});
-    		if (!defined($parent)) {
-    			my $msg = "Could not find parent for input data object.";
-    			Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'loadObject');
-    		}
-    		$output_object->parent($parent);
-    	}
-	}
-	if (!defined($output_object)) {
-		my $msg = "Input ".$type." not valid.";
-    	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'loadObject');
-	}
-	return $output_object;
-}
-
-=head2 objectToOutput
-
-  $output_data = $obj->objectToOutput($input_object)
-
-=over 4
-
-=item Parameter and return types
-
-=begin html
-
-<pre>
-
-$input_object is a ModelSEED::MS::? object
-$output_data is a perl data structure
-
-</pre>
-
-=end html
-
-=begin text
-
-$input_object is a ModelSEED::MS::? object
-$output_data is a perl data structure
-
-=end text
-
-=item Description
-
-This function converts the input data object into a serialized data structure ready for output to KBase.
-
-=back
-
-=cut
-
-sub objectToOutput {
-	my $self = shift;
-    my($input_object) = @_;
-    #Serializing the object
-	my $output_data = $input_object->serializeToDB();
-    $output_data->{objectType} = $input_object->_type();
-	#Setting the parent uuid
-	if (defined($input_object->parent())  && ref($input_object->parent()) ne "ModelSEED::Store" && defined($input_object->parent()->uuid())) {
-    	$output_data->{parentUUID} = $input_object->parent()->uuid();
-    }
-	return $output_data;
-}
 
 sub _authentication {
 	my($self) = @_;
@@ -249,8 +105,60 @@ sub _getUsername {
 	return $self->_getContext->{_override}->{_currentUser};
 }
 
+sub _cachedBiochemistry {
+	my ($self,$biochemistry) = @_;
+	if (defined($biochemistry)) {
+		$self->{_cachedbiochemistry} = $biochemistry;
+		$self->{_initialBiochemistryCounts}->{Media} = @{$biochemistry->media()};
+		$self->{_initialBiochemistryCounts}->{Compounds} = @{$biochemistry->compounds()};
+		$self->{_initialBiochemistryCounts}->{Reactions} = @{$biochemistry->reactions()};
+	}
+	return $self->{_cachedbiochemistry};
+}
+
+sub _resetCachedBiochemistry {
+	my ($self) = @_;
+	if (defined($self->_cachedBiochemistry())) {
+		if (@{$self->_cachedBiochemistry()->media()} >= $self->_cachedBiochemistry()) {
+			for (my $i=@{$self->_cachedBiochemistry()->media()}; $i >= $self->{_initialBiochemistryCounts}->{Media}; $i--) {
+				$self->_cachedBiochemistry()->remove("media",$self->_cachedBiochemistry()->media()->[$i]);
+			}
+		}
+		if (@{$self->_cachedBiochemistry()->compounds()} >= $self->_cachedBiochemistry()) {
+			for (my $i=@{$self->_cachedBiochemistry()->compounds()}; $i >= $self->{_initialBiochemistryCounts}->{Compounds}; $i--) {
+				$self->_cachedBiochemistry()->remove("compounds",$self->_cachedBiochemistry()->compounds()->[$i]);
+			}
+		}
+		if (@{$self->_cachedBiochemistry()->reactions()} >= $self->_cachedBiochemistry()) {
+			for (my $i=@{$self->_cachedBiochemistry()->reactions()}; $i >= $self->{_initialBiochemistryCounts}->{Reactions}; $i--) {
+				$self->_cachedBiochemistry()->remove("reactions",$self->_cachedBiochemistry()->reactions()->[$i]);
+			}
+		}
+	}
+}
+
+sub _resetKBaseStore {
+	my ($self) = @_;
+	delete $self->{_kbasestore};
+	$self->{_kbasestore} = ModelSEED::KBaseStore->new({
+		auth => "",
+		workspace => $self->_workspaceServices()
+	});
+	if (defined($self->_cachedBiochemistry())) {
+		$self->_resetCachedBiochemistry();
+		$self->{_kbasestore}->cache()->{Biochemistry}->{"kbase/default"} = $self->_cachedBiochemistry();
+	}
+}
+
+sub _KBaseStore {
+	my ($self) = @_;
+	return $self->{_kbasestore};
+}
+
 sub _setContext {
 	my ($self,$context,$params) = @_;
+	#Clearing the existing kbasestore and initializing a new one
+	$self->_resetKBaseStore();
 	if ( defined $params->{auth} ) {
 		if (!defined($self->_getContext()->{_override}) || $self->_getContext()->{_override}->{_authentication} ne $params->{auth}) {
 			if ($params->{auth} eq m/^IRIS-/ ) {
@@ -263,6 +171,7 @@ sub _setContext {
 				if ($token->validate()) {
 					$self->_getContext()->{_override}->{_authentication} = $params->{auth};
 					$self->_getContext()->{_override}->{_currentUser} = $token->user_id;
+					$self->_KBaseStore()->auth($params->{auth});
 				} else {
 					Bio::KBase::Exceptions::KBaseException->throw(error => "Invalid authorization token!",
 					method_name => '_setContext');
@@ -499,109 +408,13 @@ sub _save_msobject {
 
 sub _get_msobject {
 	my($self,$type,$ws,$id,$cache) = @_;
-	if (defined($cache->{$type}->{$ws}->{$id})) {
-		return $cache->{$type}->{$ws}->{$id};
-	}
-	my $output;
+	my $ref = $ws."/".$id;
 	if ($ws eq "NO_WORKSPACE") {
-		$output = $self->_workspaceServices()->get_object_by_ref({
-			reference => $id,
-			auth => $self->_authentication()
-		});
-	} else {
-		$output = $self->_workspaceServices()->get_object({
-			id => $id,
-			type => $type,
-			workspace => $ws,
-			auth => $self->_authentication()
-		});
+		$ref = $id;
 	}
-	if (!defined($output->{data})) {
-		my $msg = "Unable to retrieve object:".$type."/".$ws."/".$id;
-		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => '_get_msobject');
-	}
-	my $msProvTypes = {
-		Biochemistry => "Biochemistry",
-		Model => "Model",
-		Annotation => "Annotation",
-		Mapping => "Mapping",
-		FBA => "FBAFormulation",
-		Media => "Media",
-		GapFill => "GapfillingFormulation",
-		GapGen => "GapgenFormulation",
-		PROMModel => "PROMModel"
-	};
-	my $obj;
-	if (defined($msProvTypes->{$type})) {
-		my $class = "ModelSEED::MS::".$msProvTypes->{$type};
-		$obj = $class->new($output->{data});
-		$cache->{$type}->{$ws}->{$id} = $obj;
-		if ($type eq "Model") {
-			my $anno = $self->_get_object_by_uuid("Annotation",$obj->annotation_uuid(),$cache);
-			$obj->annotation($anno);
-			$obj->mapping($obj->annotation()->mapping());
-			$obj->biochemistry($obj->mapping()->biochemistry());
-			my $subobjs = {
-				fbaFormulation_uuids => ["fbaFormulations","FBA"],
-				unintegratedGapfilling_uuids => ["unintegratedGapfillings","GapFill"],
-				integratedGapfilling_uuids => ["integratedGapfillings","GapFill"],
-				unintegratedGapgen_uuids => ["unintegratedGapgens","GapGen"],
-				integratedGapgen_uuids => ["integratedGapgens","GapGen"]
-			};
-			foreach my $attribute (keys(%{$subobjs})) {
-				my $link = $subobjs->{$attribute}->[0];
-				my $linkType = $subobjs->{$attribute}->[1];
-				my $array = [];
-				for (my $i=0; $i < @{$obj->$attribute()}; $i++) {
-					$array->[$i] = $self->_get_object_by_uuid($linkType,$obj->$attribute()->[$i],$cache);
-				}
-				if (@{$array} > 0) {
-					$obj->$link($array);
-				}
-			}
-			$obj->uuid($self->_set_uuid_by_idws($id,$ws));
-		} elsif ($type eq "Annotation") {
-			my $map = $self->_get_object_by_uuid("Mapping",$obj->mapping_uuid(),$cache);
-			$obj->mapping($map);
-			$obj->uuid($self->_set_uuid_by_idws($id,$ws));
-		} elsif ($type eq "Mapping") {
-			my $bio = $self->_get_object_by_uuid("Biochemistry",$obj->biochemistry_uuid(),$cache);
-			$obj->biochemistry($bio);
-			$obj->uuid($self->_set_uuid_by_idws($id,$ws));
-		} elsif ($type eq "Biochemistry") {
-			$obj->uuid($self->_set_uuid_by_idws($id,$ws));
-		} elsif ($type eq "PROMModel") {
-			my $anno = $self->_get_object_by_uuid("Annotation",$obj->annotation_uuid(),$cache);
-			$obj->annotation($anno);
-			$obj->uuid($output->{metadata}->[8]);
-		} elsif ($type eq "FBA") {
-			my $mod = $self->_get_object_by_uuid("Model",$obj->model_uuid(),$cache);
-			$obj->model($mod);
-			my $mediauuids = $obj->mediaUUIDs();
-			foreach my $media (@{$mediauuids}) {
-				if ($media =~ m/(.+)\/(.+)/) {
-					my $mediaobj = $self->_get_msobject("Media",$1,$2,$cache);
-					$obj->model()->biochemistry()->add("media",$mediaobj);
-				}
-			}
-			if (defined($obj->promModel_uuid())) {
-				my $prommod = $self->_get_object_by_uuid("PROMModel",$obj->promModel_uuid(),$cache);
-				$obj->promModel($prommod);
-			}
-		} elsif ($type eq "GapFill") {
-			my $fba = $self->_get_object_by_uuid("FBA",$obj->fbaFormulation_uuid(),$cache);
-			$obj->fbaFormulation($fba);
-			my $mod = $self->_get_object_by_uuid("Model",$obj->model_uuid(),$cache);
-			$obj->model($mod);
-		} elsif ($type eq "GapGen") {
-			my $fba = $self->_get_object_by_uuid("FBA",$obj->fbaFormulation_uuid(),$cache);
-			$obj->fbaFormulation($fba);
-			my $mod = $self->_get_object_by_uuid("Model",$obj->model_uuid(),$cache);
-			$obj->model($mod);
-		}
-		delete $cache->{$type}->{$ws}->{$id};
-	} else {
-		$obj = $output->{data};
+	my $obj = $self->_KBaseStore()->get_object($type,$ref);
+	if (!defined($self->_cachedBiochemistry()) && $type eq "Biochemistry" && $id eq "default" && $ws eq "kbase") {
+		$self->_cachedBiochemistry($obj);
 	}
 	#Processing genomes to automatically have an annotation object
 	if ($type eq "Genome") {
@@ -611,10 +424,6 @@ sub _get_msobject {
 			my $meta = $self->_save_msobject($obj,"Genome",$ws,$id,1);
 		}
 	}
-	$obj->{_kbaseWSMeta}->{wsid} = $output->{metadata}->[0];
-	$obj->{_kbaseWSMeta}->{ws} = $output->{metadata}->[7];
-	$obj->{_kbaseWSMeta}->{wsinst} = $output->{metadata}->[3];
-	$obj->{_kbaseWSMeta}->{wsref} = $output->{metadata}->[8];	
 	return $obj;
 }
 
@@ -736,11 +545,6 @@ sub _processGenomeObject {
 	$genome->{contigs_uuid} = $meta->[8];
 	delete $genome->{contigs};
 	return ($genome,$anno,$mapping,$contigObj);
-}
-
-sub _store {
-	my($self) = @_;
-	return $self->{_store};
 }
 
 sub _validateargs {
@@ -1707,6 +1511,225 @@ sub _GapGen_to_GapGenData {
     return $data;
 }
 
+=head3 parseGPR
+
+Definition:
+	{}:Logic hash = ModelSEED::MS::Factories::SBMLFactory->parseGPR();
+Description:
+	Parses GPR string into a hash where each key is a node ID,
+	and each node ID points to a logical expression of genes or other
+	node IDs. 
+	
+	Logical expressions only have one form of logic, either "or" or "and".
+
+	Every hash returned has a root node called "root", and this is
+	where the gene protein reaction boolean rule starts.
+Example:
+	GPR string "(A and B) or (C and D)" is translated into:
+	{
+		root => "node1|node2",
+		node1 => "A+B",
+		node2 => "C+D"
+	}
+	
+=cut
+
+sub _parseGPR {
+	my $self = shift;
+	my $gpr = shift;
+	$gpr =~ s/\s+and\s+/;/g;
+	$gpr =~ s/\s+or\s+/:/g;
+	$gpr =~ s/\s+\)/)/g;
+	$gpr =~ s/\)\s+/)/g;
+	$gpr =~ s/\s+\(/(/g;
+	$gpr =~ s/\(\s+/(/g;
+	my $index = 1;
+	my $gprHash = {_baseGPR => $gpr};
+	while ($gpr =~ m/\(([^\)^\(]+)\)/) {
+		my $node = $1;
+		my $text = "\\(".$node."\\)";
+		if ($node !~ m/;/ && $node !~ m/:/) {
+			$gpr =~ s/$text/$node/g;
+		} else {
+			my $nodeid = "node".$index;
+			$index++;
+			$gpr =~ s/$text/$nodeid/g;
+			$gprHash->{$nodeid} = $node;
+		}
+	}
+	$gprHash->{root} = $gpr;
+	$index = 0;
+	my $nodelist = ["root"];
+	while (defined($nodelist->[$index])) {
+		my $currentNode = $nodelist->[$index];
+		my $data = $gprHash->{$currentNode};
+		my $delim = "";
+		if ($data =~ m/;/) {
+			$delim = ";";
+		} elsif ($data =~ m/:/) {
+			$delim = ":";
+		}
+		if (length($delim) > 0) {
+			my $split = [split(/$delim/,$data)];
+			foreach my $item (@{$split}) {
+				if (defined($gprHash->{$item})) {
+					my $newdata = $gprHash->{$item};
+					if ($newdata =~ m/$delim/) {
+						$gprHash->{$currentNode} =~ s/$item/$newdata/g;
+						delete $gprHash->{$item};
+						$index--;
+					} else {
+						push(@{$nodelist},$item);
+					}
+				}
+			}
+		} elsif (defined($gprHash->{$data})) {
+			push(@{$nodelist},$data);
+		}
+		$index++;
+	}
+	foreach my $item (keys(%{$gprHash})) {
+		$gprHash->{$item} =~ s/;/+/g;
+		$gprHash->{$item} =~ s/:/|/g;
+	}
+	return $gprHash;
+}
+
+=head3 _translateGPRHash
+
+Definition:
+	[[[]]]:Protein subunit gene array = ModelSEED::MS::Factories::SBMLFactory->translateGPRHash({}:GPR hash);
+Description:
+	Translates the GPR hash generated by "parseGPR" into a three level array ref.
+	The three level array ref represents the three levels of GPR rules in the ModelSEED.
+	The outermost array represents proteins (with 'or' logic).
+	The next level array represents subunits (with 'and' logic).
+	The innermost array represents gene homologs (with 'or' logic).
+	In order to be parsed into this form, the input GPR hash must include logic
+	of the forms: "or(and(or))" or "or(and)" or "and" or "or"
+	
+Example:
+	GPR hash:
+	{
+		root => "node1|node2",
+		node1 => "A+B",
+		node2 => "C+D"
+	}
+	Is translated into the array:
+	[
+		[
+			["A"],
+			["B"]
+		],
+		[
+			["C"],
+			["D"]
+		]
+	]
+
+=cut
+
+sub _translateGPRHash {
+	my $self = shift;
+	my $gprHash = shift;
+	my $root = $gprHash->{root};
+	my $proteins = [];
+	if ($root =~ m/\|/) {
+		my $proteinItems = [split(/\|/,$root)];
+		my $found = 0;
+		foreach my $item (@{$proteinItems}) {
+			if (defined($gprHash->{$item})) {
+				$found = 1;
+				last;
+			}
+		}
+		if ($found == 0) {
+			$proteins->[0]->[0] = $proteinItems
+		} else {
+			foreach my $item (@{$proteinItems}) {
+				push(@{$proteins},$self->_parseSingleProtein($item,$gprHash));
+			}
+		}
+	} elsif ($root =~ m/\+/) {
+		$proteins->[0] = $self->_parseSingleProtein($root,$gprHash);
+	} elsif (defined($gprHash->{$root})) {
+		$gprHash->{root} = $gprHash->{$root};
+		return $self->_translateGPRHash($gprHash);
+	} else {
+		$proteins->[0]->[0]->[0] = $root;
+	}
+	return $proteins;
+}
+
+=head3 _parseSingleProtein
+
+Definition:
+	[[]]:Subunit gene array = ModelSEED::MS::Factories::SBMLFactory->parseSingleProtein({}:GPR hash);
+Description:
+	Translates the GPR hash generated by "parseGPR" into a two level array ref.
+	The two level array ref represents the two levels of GPR rules in the ModelSEED.
+	The outermost array represents subunits (with 'and' logic).
+	The innermost array represents gene homologs (with 'or' logic).
+	In order to be parsed into this form, the input GPR hash must include logic
+	of the forms: "and(or)" or "and" or "or"
+	
+Example:
+	GPR hash:
+	{
+		root => "A+B",
+	}
+	Is translated into the array:
+	[
+		["A"],
+		["B"]
+	]
+
+=cut
+
+sub _parseSingleProtein {
+	my $self = shift;
+	my $node = shift;
+	my $gprHash = shift;
+	my $subunits = [];
+	if ($node =~ m/\+/) {
+		my $items = [split(/\+/,$node)];
+		my $index = 0;
+		foreach my $item (@{$items}) {
+			if (defined($gprHash->{$item})) {
+				my $subunitNode = $gprHash->{$item};
+				if ($subunitNode =~ m/\|/) {
+					my $suitems = [split(/\|/,$subunitNode)];
+					my $found = 0;
+					foreach my $suitem (@{$suitems}) {
+						if (defined($gprHash->{$item})) {
+							$found = 1;
+						}
+					}
+					if ($found == 0) {
+						$subunits->[$index] = $suitems;
+						$index++;
+					} else {
+						print "Incompatible GPR:".$gprHash->{_baseGPR}."\n";
+					}
+				} elsif ($subunitNode =~ m/\+/) {
+					print "Incompatible GPR:".$gprHash->{_baseGPR}."\n";
+				} else {
+					$subunits->[$index]->[0] = $subunitNode;
+					$index++;
+				}
+			} else {
+				$subunits->[$index]->[0] = $item;
+				$index++;
+			}
+		}
+	} elsif (defined($gprHash->{$node})) {
+		return $self->_parseSingleProtein($gprHash->{$node},$gprHash)
+	} else {
+		$subunits->[0]->[0] = $node;
+	}
+	return $subunits;
+}
+
 #END_HEADER
 
 sub new
@@ -1720,7 +1743,7 @@ sub new
     if (defined($options->{workspace})) {
     	$self->{_workspaceServices} = $options->{workspace};
     }
-
+	$ENV{KB_NO_FILE_ENVIRONMENT} = 1;
     my %params;
     if ((my $e = $ENV{KB_DEPLOYMENT_CONFIG}) && -e $ENV{KB_DEPLOYMENT_CONFIG})
     {
@@ -4350,8 +4373,7 @@ sub add_feature_translation
     		$existingAliases->{$alias} = 1;
     	}
     	if (defined($aliases->{$ftr->{id}})) {
-    		my $hash = $aliases->{$ftr->{id}};
-    		foreach my $alias (keys(%{$hash})) {
+    		foreach my $alias (keys(%{$aliases->{$ftr->{id}}})) {
     			if (!defined($existingAliases->{$alias})) {
     				push(@{$ftr->{aliases}},$alias);
     			}
@@ -4546,6 +4568,250 @@ sub genome_to_fbamodel
 
 
 
+=head2 import_fbamodel
+
+  $modelMeta = $obj->import_fbamodel($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is an import_fbamodel_params
+$modelMeta is an object_metadata
+import_fbamodel_params is a reference to a hash where the following keys are defined:
+	genome has a value which is a genome_id
+	genome_workspace has a value which is a workspace_id
+	biomassEquation has a value which is a string
+	reactions has a value which is a reference to a list where each element is a reference to a list containing 4 items:
+	0: a string
+	1: a string
+	2: a string
+	3: a string
+
+	model has a value which is a fbamodel_id
+	workspace has a value which is a workspace_id
+	auth has a value which is a string
+	overwrite has a value which is a bool
+genome_id is a string
+workspace_id is a string
+fbamodel_id is a string
+bool is an int
+object_metadata is a reference to a list containing 11 items:
+	0: an object_id
+	1: an object_type
+	2: a timestamp
+	3: an int
+	4: a string
+	5: a username
+	6: a username
+	7: a workspace_id
+	8: a workspace_ref
+	9: a string
+	10: a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is an import_fbamodel_params
+$modelMeta is an object_metadata
+import_fbamodel_params is a reference to a hash where the following keys are defined:
+	genome has a value which is a genome_id
+	genome_workspace has a value which is a workspace_id
+	biomassEquation has a value which is a string
+	reactions has a value which is a reference to a list where each element is a reference to a list containing 4 items:
+	0: a string
+	1: a string
+	2: a string
+	3: a string
+
+	model has a value which is a fbamodel_id
+	workspace has a value which is a workspace_id
+	auth has a value which is a string
+	overwrite has a value which is a bool
+genome_id is a string
+workspace_id is a string
+fbamodel_id is a string
+bool is an int
+object_metadata is a reference to a list containing 11 items:
+	0: an object_id
+	1: an object_type
+	2: a timestamp
+	3: an int
+	4: a string
+	5: a username
+	6: a username
+	7: a workspace_id
+	8: a workspace_ref
+	9: a string
+	10: a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+
+
+=item Description
+
+Import a model from an input table of model and gene IDs
+
+=back
+
+=cut
+
+sub import_fbamodel
+{
+    my $self = shift;
+    my($input) = @_;
+
+    my @_bad_arguments;
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to import_fbamodel:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'import_fbamodel');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($modelMeta);
+    #BEGIN import_fbamodel
+    $self->_setContext($ctx,$input);
+    $input = $self->_validateargs($input,["genome","workspace","reactions","biomass"],{
+    	genome_workspace => $input->{workspace},
+    	model => undef,
+    	overwrite => 0
+    });
+    #Determining model ID
+    if (!defined($input->{model})) {
+    	$input->{model} = $self->_get_new_id($input->{genome}.".fbamdl.");
+    }
+    #Retreiving genome object from workspace
+    my $genome = $self->_get_msobject("Genome",$input->{genome_workspace},$input->{genome});
+    my $geneAliases = {};
+    foreach my $ftr (@{$genome->{features}}) {
+    	$geneAliases->{$ftr->{id}} = $ftr->{id};
+    	foreach my $alias (@{$ftr->{aliases}}) {
+    		$geneAliases->{$alias} = $ftr->{id};
+    	}
+    }
+    #Retrieving annotation and mapping
+    my $annotation = $self->_get_msobject("Annotation","NO_WORKSPACE",$genome->{annotation_uuid});
+    #Retreiving biochemistry
+    my $bio = $annotation->mapping()->biochemistry();
+    #Creating empty model
+    my $model = ModelSEED::MS::Model->new({
+		id => $input->{model},
+		name => $input->{model},
+		version => 1,
+		type => "Imported",
+		status => "Model imported",
+		growth => 0,
+		current => 1,
+		mapping_uuid => $annotation->mapping()->uuid(),
+		mapping => $annotation->mapping(),
+		biochemistry_uuid => $bio->uuid(),
+		biochemistry => $bio,
+		annotation_uuid => $annotation->uuid(),
+		annotation => $annotation
+	});
+    #Loading reactions to model
+	my $reactionsNotFound = [];
+	my $missingGenes = {};
+	for (my  $i=0; $i < @{$input->{reactions}}; $i++) {
+		my $rxnrow = $input->{reactions}->[$i];
+		my $rxn = $bio->searchForReaction($rxnrow->[0]);
+		if (!defined($rxn)) {
+			push(@{$reactionsNotFound},$rxnrow->[0]);
+		} else {
+			my $direction = "=";
+			if ($rxnrow->[1] eq "=>") {
+				$direction = ">";
+			} elsif ($rxnrow->[1] eq "<=") {
+				$direction = "<";
+			}
+			my $mdlrxn = $model->addReactionToModel({
+				reaction => $rxn,
+				direction => $direction
+			});
+			my $gpr = $self->_translateGPRHash($self->_parseGPR($rxnrow->[3]));
+			for (my $m=0; $m < @{$gpr}; $m++) {
+				my $protObj = $mdlrxn->add("modelReactionProteins",{
+					complex_uuid => "00000000-0000-0000-0000-000000000000",
+					note => "Imported GPR"
+				});
+				for (my $j=0; $j < @{$gpr->[$m]}; $j++) {
+					my $subObj = $protObj->add("modelReactionProteinSubunits",{
+						role_uuid => "00000000-0000-0000-0000-000000000000",
+						note => "Imported GPR"
+					});
+					for (my $k=0; $k < @{$gpr->[$m]->[$j]}; $k++) {
+						my $ftrID = $gpr->[$m]->[$j]->[$k];
+						if (defined($geneAliases->{$ftrID})) {
+							$ftrID = $geneAliases->{$ftrID};
+							my $ftrObj = $annotation->queryObject("features",{id => $ftrID});
+							if (!defined($ftrObj)) {
+								$missingGenes->{$ftrID} = 1;
+							} else {
+								my $ftr = $subObj->add("modelReactionProteinSubunitGenes",{
+									feature_uuid => $ftrObj->uuid()
+								});
+							}
+						} else {
+							$missingGenes->{$ftrID} = 1;
+						}
+					}
+				}
+			}
+		}
+	}
+	#Adding biomass reaction
+	my $bioobj = $model->add("biomasses",{id => "bio1",name => "bio1"});
+	my $missingCpd = $bioobj->loadFromEquation({equation => $input->{biomass},addMissingCompounds=>0});
+	my $msg = "";
+	if (@{$reactionsNotFound} > 0) {
+		$msg .= "Missing reactions:".join(";",@{$reactionsNotFound})."\n";
+	}
+	if (@{$missingCpd} > 0) {
+		$msg .= "Missing biomass compounds:".join(";",@{$missingCpd})."\n";
+	}
+	if (keys(%{$missingGenes}) > 0) {
+		$msg .= "Missing genes:".join(";",keys(%{$missingGenes}))."\n";
+	}
+	if (length($msg) > 0) {
+		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'import_fbamodel');
+	}
+	#Saving imported model
+	$modelMeta = $self->_save_msobject($model,"Model",$input->{workspace},$input->{model},$input->{overwrite});
+    $self->_clearContext();
+    #END import_fbamodel
+    my @_bad_returns;
+    (ref($modelMeta) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"modelMeta\" (value was \"$modelMeta\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to import_fbamodel:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'import_fbamodel');
+    }
+    return($modelMeta);
+}
+
+
+
+
 =head2 genome_to_probfbamodel
 
   $modelMeta = $obj->genome_to_probfbamodel($input)
@@ -4564,17 +4830,12 @@ genome_to_probfbamodel_params is a reference to a hash where the following keys 
 	genome_workspace has a value which is a workspace_id
 	probanno has a value which is a probanno_id
 	probanno_workspace has a value which is a workspace_id
-	probannoThreshold has a value which is a float
-	probannoOnly has a value which is a bool
 	model has a value which is a fbamodel_id
-	coremodel has a value which is a bool
 	workspace has a value which is a workspace_id
 	auth has a value which is a string
-	overwrite has a value which is a bool
 genome_id is a string
 workspace_id is a string
 probanno_id is a string
-bool is an int
 fbamodel_id is a string
 object_metadata is a reference to a list containing 11 items:
 	0: an object_id
@@ -4607,17 +4868,12 @@ genome_to_probfbamodel_params is a reference to a hash where the following keys 
 	genome_workspace has a value which is a workspace_id
 	probanno has a value which is a probanno_id
 	probanno_workspace has a value which is a workspace_id
-	probannoThreshold has a value which is a float
-	probannoOnly has a value which is a bool
 	model has a value which is a fbamodel_id
-	coremodel has a value which is a bool
 	workspace has a value which is a workspace_id
 	auth has a value which is a string
-	overwrite has a value which is a bool
 genome_id is a string
 workspace_id is a string
 probanno_id is a string
-bool is an int
 fbamodel_id is a string
 object_metadata is a reference to a list containing 11 items:
 	0: an object_id
@@ -4644,7 +4900,7 @@ workspace_ref is a string
 
 =item Description
 
-Build a genome-scale metabolic model based on annotations in an input genome typed object
+Build a probabilistic genome-scale metabolic model based on annotations in an input genome and probabilistic annotation
 
 =back
 
@@ -13687,6 +13943,73 @@ overwrite has a value which is a bool
 
 
 
+=head2 import_fbamodel_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "genome_to_fbamodel" function.
+
+        genome_id genome - ID of the genome for which a model is to be built (a required argument)
+        workspace_id genome_workspace - ID of the workspace containing the target genome (an optional argument; default is the workspace argument)
+        string biomassEquation - biomass equation for model (an essential argument)
+        list<tuple<string id,string direction,string compartment,string gpr> reactions - list of reactions to appear in imported model (an essential argument)
+        fbamodel_id model - ID that should be used for the newly imported model (an optional argument; default is 'undef')
+        workspace_id workspace - ID of the workspace where the newly developed model will be stored; also the default assumed workspace for input objects (a required argument)
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+genome has a value which is a genome_id
+genome_workspace has a value which is a workspace_id
+biomassEquation has a value which is a string
+reactions has a value which is a reference to a list where each element is a reference to a list containing 4 items:
+0: a string
+1: a string
+2: a string
+3: a string
+
+model has a value which is a fbamodel_id
+workspace has a value which is a workspace_id
+auth has a value which is a string
+overwrite has a value which is a bool
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+genome has a value which is a genome_id
+genome_workspace has a value which is a workspace_id
+biomassEquation has a value which is a string
+reactions has a value which is a reference to a list where each element is a reference to a list containing 4 items:
+0: a string
+1: a string
+2: a string
+3: a string
+
+model has a value which is a fbamodel_id
+workspace has a value which is a workspace_id
+auth has a value which is a string
+overwrite has a value which is a bool
+
+
+=end text
+
+=back
+
+
+
 =head2 genome_to_probfbamodel_params
 
 =over 4
@@ -13701,10 +14024,7 @@ Input parameters for the "genome_to_fbamodel" function.
         workspace_id genome_workspace - ID of the workspace containing the target genome (an optional argument; default is the workspace argument)
         probanno_id probanno - ID of the probabilistic annotation to be used in building the model (an optional argument; default is 'undef')
         workspace_id probanno_workspace - ID of the workspace containing the probabilistic annotation (an optional argument; default is the workspace argument)
-        float probannoThreshold - a threshold of the probability required for a probabilistic annotation to be accepted (an optional argument; default is '1')
-        bool probannoOnly - a boolean indicating if only the probabilistic annotation should be used in building the model (an optional argument; default is '0')
         fbamodel_id model - ID that should be used for the newly constructed model (an optional argument; default is 'undef')
-        bool coremodel - indicates that a core model should be constructed instead of a genome scale model (an optional argument; default is '0')
         workspace_id workspace - ID of the workspace where the newly developed model will be stored; also the default assumed workspace for input objects (a required argument)
         string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
@@ -13719,13 +14039,9 @@ genome has a value which is a genome_id
 genome_workspace has a value which is a workspace_id
 probanno has a value which is a probanno_id
 probanno_workspace has a value which is a workspace_id
-probannoThreshold has a value which is a float
-probannoOnly has a value which is a bool
 model has a value which is a fbamodel_id
-coremodel has a value which is a bool
 workspace has a value which is a workspace_id
 auth has a value which is a string
-overwrite has a value which is a bool
 
 </pre>
 
@@ -13738,13 +14054,9 @@ genome has a value which is a genome_id
 genome_workspace has a value which is a workspace_id
 probanno has a value which is a probanno_id
 probanno_workspace has a value which is a workspace_id
-probannoThreshold has a value which is a float
-probannoOnly has a value which is a bool
 model has a value which is a fbamodel_id
-coremodel has a value which is a bool
 workspace has a value which is a workspace_id
 auth has a value which is a string
-overwrite has a value which is a bool
 
 
 =end text

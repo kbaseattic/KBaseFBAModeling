@@ -319,6 +319,26 @@ class fbaModelServices:
         else:
             raise ServerError('Unknown', 0, 'An unknown server error occurred')
 
+    def import_fbamodel(self, input):
+
+        arg_hash = { 'method': 'fbaModelServices.import_fbamodel',
+                     'params': [input],
+                     'version': '1.1'
+                     }
+
+        body = json.dumps(arg_hash)
+        ret = urllib2.urlopen(self.url, body, timeout = self.timeout)
+        if ret.code != httplib.OK:
+            raise URLError('Received bad response code from server:' + ret.code)
+        resp = json.loads(ret.read())
+
+        if 'result' in resp:
+            return resp['result'][0]
+        elif 'error' in resp:
+            raise ServerError(**resp['error'])
+        else:
+            raise ServerError('Unknown', 0, 'An unknown server error occurred')
+
     def genome_to_probfbamodel(self, input):
 
         arg_hash = { 'method': 'fbaModelServices.genome_to_probfbamodel',
