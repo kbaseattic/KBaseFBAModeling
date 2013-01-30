@@ -26,7 +26,7 @@ my $specs = [
     [ 'gapgensols|g:s@', 'IDs of gapgen solutions to integrate (; delimiter)'],
     [ 'outmodel|i:s', 'ID to save new model as'],
     [ 'workspace|w:s', 'Reference default workspace', { "default" => workspace() } ],
-    [ 'modelws:m', 'Workspace for input FBA model' ],
+    [ 'modelws:s', 'Workspace for input FBA model' ],
     [ 'overwrite|o', 'Overwrite any existing model with same name' ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);

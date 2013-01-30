@@ -2107,6 +2107,9 @@ $genomeMeta is an object_metadata
 genome_to_workspace_params is a reference to a hash where the following keys are defined:
 	genome has a value which is a genome_id
 	workspace has a value which is a workspace_id
+	sourceLogin has a value which is a string
+	sourcePassword has a value which is a string
+	source has a value which is a string
 	auth has a value which is a string
 	overwrite has a value which is a bool
 genome_id is a string
@@ -2141,6 +2144,9 @@ $genomeMeta is an object_metadata
 genome_to_workspace_params is a reference to a hash where the following keys are defined:
 	genome has a value which is a genome_id
 	workspace has a value which is a workspace_id
+	sourceLogin has a value which is a string
+	sourcePassword has a value which is a string
+	source has a value which is a string
 	auth has a value which is a string
 	overwrite has a value which is a bool
 genome_id is a string
@@ -2527,7 +2533,7 @@ $modelMeta is an object_metadata
 import_fbamodel_params is a reference to a hash where the following keys are defined:
 	genome has a value which is a genome_id
 	genome_workspace has a value which is a workspace_id
-	biomassEquation has a value which is a string
+	biomass has a value which is a string
 	reactions has a value which is a reference to a list where each element is a reference to a list containing 4 items:
 	0: a string
 	1: a string
@@ -2571,7 +2577,7 @@ $modelMeta is an object_metadata
 import_fbamodel_params is a reference to a hash where the following keys are defined:
 	genome has a value which is a genome_id
 	genome_workspace has a value which is a workspace_id
-	biomassEquation has a value which is a string
+	biomass has a value which is a string
 	reactions has a value which is a reference to a list where each element is a reference to a list containing 4 items:
 	0: a string
 	1: a string
@@ -10973,6 +10979,9 @@ overwrite has a value which is a bool
 Input parameters for the "genome_to_workspace" function.
 
         genome_id genome - ID of the CDM genome that is to be loaded into the workspace (a required argument)
+        string sourceLogin - login to pull private genome from source database
+        string sourcePassword - password to pull private genome from source database
+        string source - Source database for genome (i.e. seed, rast, kbase)
         workspace_id workspace - ID of the workspace into which the genome typed object is to be loaded (a required argument)
         string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
@@ -10985,6 +10994,9 @@ Input parameters for the "genome_to_workspace" function.
 a reference to a hash where the following keys are defined:
 genome has a value which is a genome_id
 workspace has a value which is a workspace_id
+sourceLogin has a value which is a string
+sourcePassword has a value which is a string
+source has a value which is a string
 auth has a value which is a string
 overwrite has a value which is a bool
 
@@ -10997,6 +11009,9 @@ overwrite has a value which is a bool
 a reference to a hash where the following keys are defined:
 genome has a value which is a genome_id
 workspace has a value which is a workspace_id
+sourceLogin has a value which is a string
+sourcePassword has a value which is a string
+source has a value which is a string
 auth has a value which is a string
 overwrite has a value which is a bool
 
@@ -11176,7 +11191,7 @@ Input parameters for the "genome_to_fbamodel" function.
 
         genome_id genome - ID of the genome for which a model is to be built (a required argument)
         workspace_id genome_workspace - ID of the workspace containing the target genome (an optional argument; default is the workspace argument)
-        string biomassEquation - biomass equation for model (an essential argument)
+        string biomass - biomass equation for model (an essential argument)
         list<tuple<string id,string direction,string compartment,string gpr> reactions - list of reactions to appear in imported model (an essential argument)
         fbamodel_id model - ID that should be used for the newly imported model (an optional argument; default is 'undef')
         workspace_id workspace - ID of the workspace where the newly developed model will be stored; also the default assumed workspace for input objects (a required argument)
@@ -11191,7 +11206,7 @@ Input parameters for the "genome_to_fbamodel" function.
 a reference to a hash where the following keys are defined:
 genome has a value which is a genome_id
 genome_workspace has a value which is a workspace_id
-biomassEquation has a value which is a string
+biomass has a value which is a string
 reactions has a value which is a reference to a list where each element is a reference to a list containing 4 items:
 0: a string
 1: a string
@@ -11212,7 +11227,7 @@ overwrite has a value which is a bool
 a reference to a hash where the following keys are defined:
 genome has a value which is a genome_id
 genome_workspace has a value which is a workspace_id
-biomassEquation has a value which is a string
+biomass has a value which is a string
 reactions has a value which is a reference to a list where each element is a reference to a list containing 4 items:
 0: a string
 1: a string

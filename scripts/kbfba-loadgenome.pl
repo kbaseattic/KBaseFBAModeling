@@ -17,16 +17,28 @@ my $translation = {
 	workspace => "workspace",
 	auth => "auth",
 	overwrite => "overwrite",
+	login => "sourceLogin",
+	password => "sourcePassword"
 };
 #Defining usage and options
 my $specs = [
 	[ 'fromfile|f', 'Load genome object from file', {"default" => 0} ],
+	[ 'seed|s', 'Load genome from SEED', {"default" => 0} ],
+	[ 'rast|r', 'Load genome from RAST', {"default" => 0} ],
+	[ 'login|l:s', 'Login for genome source (e.g. RAST)' ],
+	[ 'password|p:s', 'Password for genome source (e.g. RAST)'],
     [ 'workspace|w:s', 'Workspace to load genome into', { "default" => workspace() } ],
     [ 'overwrite|o', 'Overwrite existing genome with same name' ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
 #Calling the server
 my $output;
+$params->{source} = "kbase";
+if ($opt->{seed} == 1) {
+	$params->{source} = "seed";
+} elsif ($opt->{rast} == 1) {
+	$params->{source} = "rast";
+}
 if ($opt->{fromfile} == 1) {
 	if (!-e $params->{genome}) {
 		print "Cannot find genome object file!\n";

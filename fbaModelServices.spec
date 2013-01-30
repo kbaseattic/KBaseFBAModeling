@@ -1245,6 +1245,9 @@ module fbaModelServices {
     /* Input parameters for the "genome_to_workspace" function.
 	
 		genome_id genome - ID of the CDM genome that is to be loaded into the workspace (a required argument)
+		string sourceLogin - login to pull private genome from source database
+		string sourcePassword - password to pull private genome from source database
+		string source - Source database for genome (i.e. seed, rast, kbase)
 		workspace_id workspace - ID of the workspace into which the genome typed object is to be loaded (a required argument)
 		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
@@ -1252,6 +1255,9 @@ module fbaModelServices {
     typedef structure {
 		genome_id genome;
 		workspace_id workspace;
+		string sourceLogin;
+		string sourcePassword;
+		string source;
 		string auth;
 		bool overwrite;
     } genome_to_workspace_params;

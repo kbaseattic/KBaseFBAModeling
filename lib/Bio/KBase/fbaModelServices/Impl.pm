@@ -79,6 +79,7 @@ use ModelSEED::MS::GapgenFormulation;
 use ModelSEED::MS::FBAFormulation;
 use ModelSEED::MS::FBAProblem;
 use ModelSEED::MS::Metadata::Definitions;
+use ModelSEED::Client::MSSeedSupport;
 use ModelSEED::utilities qw( args verbose set_verbose translateArrayOptions);
 use Try::Tiny;
 use Data::Dumper;
@@ -530,6 +531,165 @@ sub _get_genomeObj_from_CDM {
 	}
 	$genomeObj->{gc} = $gc;
 	$genomeObj->{size} = $size;
+	return $genomeObj;
+}
+
+sub _get_genomeObj_from_SEED {
+	my($self,$id) = @_;
+	my $sapsvr = ModelSEED::Client::SAP->new();;
+	my $data = $sapsvr->genome_data({
+		-ids => [$id],
+		-data => [qw(gc-content dna-size name taxonomy domain genetic-code)]
+	});
+	if (!defined($data->{$id})) {
+    	my $msg = "Could not load data for PubSEED genome!";
+		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => '_get_genomeObj_from_SEED');
+	}
+	my $genomeObj = {
+		id => $id,
+		scientific_name => $data->{$id}->[2],
+		genetic_code => $data->{$id}->[5],
+		domain => $data->{$id}->[4],
+		size => $data->{$id}->[1],
+		gc => $data->{$id}->[0],
+		taxonomy => $data->{$id}->[3],
+		source => "PubSEED",
+		source_id => $id,
+		contigs => [],
+		features => []
+    };
+	my $featureHash = $sapsvr->all_features({-ids => $id});
+	if (!defined($featureHash->{$id})) {
+		die "Could not load features for pubseed genome: $id";
+	}
+	my $genomeHash = $sapsvr->genome_contigs({
+		-ids => [$id]
+	});
+	my $featureList = $featureHash->{$id};
+	my $contigList = $genomeHash->{$id};
+	my $functions = $sapsvr->ids_to_functions({-ids => $featureList});
+	my $locations = $sapsvr->fid_locations({-ids => $featureList});
+	my $sequences = $sapsvr->fids_to_proteins({-ids => $featureList,-sequence => 1});
+	my $contigHash = $sapsvr->contig_sequences({
+		-ids => $contigList
+	});
+	foreach my $key (keys(%{$contigHash})) {
+		push(@{$genomeObj->{contigs}},{
+			id => $key,
+	    	dna => $contigHash->{$key}
+		});
+	}
+	for (my $i=0; $i < @{$featureList}; $i++) {
+		my $feature = {
+  			id => $featureList->[$i],
+  			location => undef,
+  			function => undef,
+  			aliases => [],
+  			annotations => []
+  		};
+  		if (defined($locations->{$featureList->[$i]}->[0])) {
+			for (my $j=0; $j < @{$locations->{$featureList->[$i]}}; $j++) {
+				my $loc = $locations->{$featureList->[$i]}->[$j];
+				if ($loc =~ m/^(.+)_(\d+)([\+\-])(\d+)$/) {
+					my $array = [split(/:/,$1)];
+					if ($3 eq "-" || $3 eq "+") {
+						$feature->{location}->[$j] = [$array->[1],$2,$3,$4];
+					} elsif ($2 > $4) {
+						$feature->{location}->[$j] = [$array->[1],$2,"-",($2-$4)];
+					} else {
+						$feature->{location}->[$j] = [$array->[1],$2,"+",($4-$2)];
+					}
+				}
+			}
+			
+		}
+		if (defined($functions->{$featureList->[$i]})) {
+			$feature->{function} = $functions->{$featureList->[$i]};
+		}
+		if (defined($sequences->{$featureList->[$i]})) {
+			$feature->{protein_translation} = $sequences->{$featureList->[$i]};
+		}
+  		push(@{$genomeObj->{features}},$feature);	
+	}
+	return $genomeObj;
+}
+
+sub _get_genomeObj_from_RAST {
+	my($self,$id,$username,$password) = @_;
+	my $mssvr = ModelSEED::Client::MSSeedSupport->new();
+	my $data = $mssvr->genomeData({
+		ids      => [ $id ],
+		username => $username,
+		password => $password,
+		withSequences => 1
+	});
+    $data = $data->{$id};
+    if (!defined($data->{features})) {
+    	my $msg = "Could not load data for rast genome!";
+		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => '_buildFBAObject');
+	}
+	my $genomeObj = {
+		id => $id,
+		scientific_name => $data->{name},
+		genetic_code => "11",#TODO
+		domain => $data->{taxonomy},#TODO
+		size => $data->{size},
+		gc => 0,
+		source => "RAST",
+		source_id => $id,
+		contigs => [],
+		features => []
+    };
+    if (defined($data->{sequence})) {
+    	for (my $i=0; $i < @{$data->{sequence}}; $i++) {
+    		push(@{$genomeObj->{contigs}},{
+    			id => $id.".contig.".$i,
+	    		dna => $data->{sequence}->[$i]
+    		});
+    	}
+    	my $size = 0;
+    	for ( my $i = 0 ; $i < @{ $genomeObj->{contigs} } ; $i++ ) {
+			my $dna = $genomeObj->{contigs}->[$i]->{dna};
+			$size += length($dna);
+			for ( my $j = 0 ; $j < length($dna) ; $j++ ) {
+				if ( substr( $dna, $j, 1 ) =~ m/[gcGC]/ ) {
+					$genomeObj->{gc}++;
+				}
+			}
+		}
+		if ($size > 0) {
+			$genomeObj->{gc} = $genomeObj->{gc}/$size;
+		} else {
+			$genomeObj->{gc} = 0.5;
+		}
+    }
+	for (my $i=0; $i < @{$data->{features}}; $i++) {
+		my $ftr = $data->{features}->[$i];
+		my $feature = {
+  			id => $ftr->{ID},
+  			location => "",
+  			function => "",
+  			aliases => [],
+  			annotations => []
+  		};
+  		if (defined($ftr->{LOCATION}) && $ftr->{LOCATION} =~ m/^(.+)_(\d+)([\+\-_])(\d+)$/) {
+			my $contigData = $1;
+			if ($3 eq "-" || $3 eq "+") {
+				$feature->{location} = [[$contigData,$2,$3,$4]];
+			} elsif ($2 > $4) {
+				$feature->{location} = [[$contigData,$2,"-",($2-$4)]];
+			} else {
+				$feature->{location} = [[$contigData,$2,"+",($4-$2)]];
+			}
+		}
+  		if (defined($ftr->{SEQUENCE})) {
+			$feature->{protein_translation} = $ftr->{SEQUENCE}->[0];
+		}
+		if (defined($ftr->{FUNCTION})) {
+			$feature->{function} = $ftr->{FUNCTION};
+		}
+  		push(@{$genomeObj->{features}},$feature);
+	}
 	return $genomeObj;
 }
 
@@ -4131,6 +4291,9 @@ $genomeMeta is an object_metadata
 genome_to_workspace_params is a reference to a hash where the following keys are defined:
 	genome has a value which is a genome_id
 	workspace has a value which is a workspace_id
+	sourceLogin has a value which is a string
+	sourcePassword has a value which is a string
+	source has a value which is a string
 	auth has a value which is a string
 	overwrite has a value which is a bool
 genome_id is a string
@@ -4165,6 +4328,9 @@ $genomeMeta is an object_metadata
 genome_to_workspace_params is a reference to a hash where the following keys are defined:
 	genome has a value which is a genome_id
 	workspace has a value which is a workspace_id
+	sourceLogin has a value which is a string
+	sourcePassword has a value which is a string
+	source has a value which is a string
 	auth has a value which is a string
 	overwrite has a value which is a bool
 genome_id is a string
@@ -4222,9 +4388,19 @@ sub genome_to_workspace
     	overwrite => 0,
     	mapping_workspace => "kbase",
     	mapping => "default",
+    	sourceLogin => undef,
+    	sourcePassword => undef,
+    	source => "kbase",
     });
     my $mapping = $self->_get_msobject("Mapping",$input->{mapping_workspace},$input->{mapping});
-    my $genomeObj = $self->_get_genomeObj_from_CDM($input->{genome});
+    my $genomeObj;
+    if ($input->{source} eq "kbase") {
+    	$genomeObj = $self->_get_genomeObj_from_CDM($input->{genome});
+    } elsif ($input->{source} eq "seed") {
+    	$genomeObj = $self->_get_genomeObj_from_SEED($input->{genome});
+    } elsif ($input->{source} eq "rast") {
+    	$genomeObj = $self->_get_genomeObj_from_RAST($input->{genome},$input->{sourceLogin},$input->{sourcePassword});
+    }
     ($genomeObj,my $anno,$mapping,my $contigObj) = $self->_processGenomeObject($genomeObj,$mapping,"genome_to_workspace");
     $genomeMeta = $self->_save_msobject($genomeObj,"Genome",$input->{workspace},$genomeObj->{id},$input->{overwrite});
 	$self->_clearContext();
@@ -4584,7 +4760,7 @@ $modelMeta is an object_metadata
 import_fbamodel_params is a reference to a hash where the following keys are defined:
 	genome has a value which is a genome_id
 	genome_workspace has a value which is a workspace_id
-	biomassEquation has a value which is a string
+	biomass has a value which is a string
 	reactions has a value which is a reference to a list where each element is a reference to a list containing 4 items:
 	0: a string
 	1: a string
@@ -4628,7 +4804,7 @@ $modelMeta is an object_metadata
 import_fbamodel_params is a reference to a hash where the following keys are defined:
 	genome has a value which is a genome_id
 	genome_workspace has a value which is a workspace_id
-	biomassEquation has a value which is a string
+	biomass has a value which is a string
 	reactions has a value which is a reference to a list where each element is a reference to a list containing 4 items:
 	0: a string
 	1: a string
@@ -6821,13 +6997,13 @@ sub integrate_reconciliation_solutions
     		my $solid = $2;
     		my $gfs = $model->unintegratedGapfillings();
     		foreach my $gf (@{$gfs}) {
-    			if (index($gf->uuid(),$gfid) > 0) {
+    			if ($gf->uuid() eq $gfid) {
 	    			$model->integrateGapfillSolution({
 						gapfillingFormulation => $gf,
 						solutionNum => $solid
 					});
+					last;
     			}
-    			last;
     		}
     	}
     }
@@ -6837,13 +7013,13 @@ sub integrate_reconciliation_solutions
     		my $solid = $2;
     		my $ggs = $model->unintegratedGapgens();
     		foreach my $gg (@{$ggs}) {
-    			if (index($gg->uuid(),$ggid) > 0) {
+    			if ($gg->uuid() eq $ggid) {
 	    			$model->integrateGapgenSolution({
 						gapgenFormulation => $gg,
 						solutionNum => $solid
 					});
+    				last;
     			}
-				last;
     		}
     	}
     }
@@ -13753,6 +13929,9 @@ overwrite has a value which is a bool
 Input parameters for the "genome_to_workspace" function.
 
         genome_id genome - ID of the CDM genome that is to be loaded into the workspace (a required argument)
+        string sourceLogin - login to pull private genome from source database
+        string sourcePassword - password to pull private genome from source database
+        string source - Source database for genome (i.e. seed, rast, kbase)
         workspace_id workspace - ID of the workspace into which the genome typed object is to be loaded (a required argument)
         string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
@@ -13765,6 +13944,9 @@ Input parameters for the "genome_to_workspace" function.
 a reference to a hash where the following keys are defined:
 genome has a value which is a genome_id
 workspace has a value which is a workspace_id
+sourceLogin has a value which is a string
+sourcePassword has a value which is a string
+source has a value which is a string
 auth has a value which is a string
 overwrite has a value which is a bool
 
@@ -13777,6 +13959,9 @@ overwrite has a value which is a bool
 a reference to a hash where the following keys are defined:
 genome has a value which is a genome_id
 workspace has a value which is a workspace_id
+sourceLogin has a value which is a string
+sourcePassword has a value which is a string
+source has a value which is a string
 auth has a value which is a string
 overwrite has a value which is a bool
 
@@ -13956,7 +14141,7 @@ Input parameters for the "genome_to_fbamodel" function.
 
         genome_id genome - ID of the genome for which a model is to be built (a required argument)
         workspace_id genome_workspace - ID of the workspace containing the target genome (an optional argument; default is the workspace argument)
-        string biomassEquation - biomass equation for model (an essential argument)
+        string biomass - biomass equation for model (an essential argument)
         list<tuple<string id,string direction,string compartment,string gpr> reactions - list of reactions to appear in imported model (an essential argument)
         fbamodel_id model - ID that should be used for the newly imported model (an optional argument; default is 'undef')
         workspace_id workspace - ID of the workspace where the newly developed model will be stored; also the default assumed workspace for input objects (a required argument)
@@ -13971,7 +14156,7 @@ Input parameters for the "genome_to_fbamodel" function.
 a reference to a hash where the following keys are defined:
 genome has a value which is a genome_id
 genome_workspace has a value which is a workspace_id
-biomassEquation has a value which is a string
+biomass has a value which is a string
 reactions has a value which is a reference to a list where each element is a reference to a list containing 4 items:
 0: a string
 1: a string
@@ -13992,7 +14177,7 @@ overwrite has a value which is a bool
 a reference to a hash where the following keys are defined:
 genome has a value which is a genome_id
 genome_workspace has a value which is a workspace_id
-biomassEquation has a value which is a string
+biomass has a value which is a string
 reactions has a value which is a reference to a list where each element is a reference to a list containing 4 items:
 0: a string
 1: a string

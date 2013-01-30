@@ -7,19 +7,17 @@
 use strict;
 use warnings;
 use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::Helpers qw(printJobData get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client printJobData runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Job ID"];
-my $servercommand = "run_job";
-my $script = "kbfba-runjob";
+my $servercommand = "jobs_done";
+my $script = "kbfba-jobdone";
 my $translation = {
 	"Job ID" => "jobid",
-	"index" => "index",
-	workspace => "workspace",
 	auth => "auth",
 };
+#Defining usage and options
 my $specs = [
-	[ 'index|i:i', 'Index of subjob to run', { "default" => 0 } ],
     [ 'workspace|w:s', 'Workspace containing job object', { "default" => workspace() } ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
@@ -27,8 +25,7 @@ my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translat
 my $output = runFBACommand($params,$servercommand,$opt);
 #Checking output and report results
 if (!defined($output)) {
-	print "Job run failed!\n";
+	print "Job done failed!\n";
 } else {
-	print "Successfully ran job:\n";
-	printJobData($output);
+	print "Job done succeeded!\n";
 }
