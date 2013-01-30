@@ -69,7 +69,9 @@ foreach my $pheno (@{$data}) {
 			}
 		}
 		if (defined($headingColums->{addtlCpd})) {
-			if (defined($pheno->[$headingColums->{addtlCpd}])) {
+			if (!defined($pheno->[$headingColums->{addtlCpd}]) || $pheno->[$headingColums->{addtlCpd}] eq "none") {
+				$phenoobj->[3] = [];
+			} else {
 				$phenoobj->[3] = [split(/\;/,$pheno->[$headingColums->{addtlCpd}])];
 			}
 		}

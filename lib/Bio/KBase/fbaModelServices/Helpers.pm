@@ -26,7 +26,7 @@ sub fbaURL {
         	$set = $defaultURL;
         }
     	$CurrentURL = $set;
-    	if (!defined($ENV{KB_NO_FILE_ENVIRONMENT})) {
+    	if (!defined($ENV{KB_RUNNING_IN_IRIS})) {
 	    	my $filename = "$ENV{HOME}/.kbase_fbaURL";
 	    	open(my $fh, ">", $filename) || return;
 		    print $fh $CurrentURL;
@@ -35,7 +35,7 @@ sub fbaURL {
     		$ENV{KB_FBAURL} = $CurrentURL;
     	}
     } elsif (!defined($CurrentURL)) {
-    	if (!defined($ENV{KB_NO_FILE_ENVIRONMENT})) {
+    	if (!defined($ENV{KB_RUNNING_IN_IRIS})) {
 	    	my $filename = "$ENV{HOME}/.kbase_fbaURL";
 	    	if( -e $filename ) {
 		   		open(my $fh, "<", $filename) || return;
@@ -48,8 +48,9 @@ sub fbaURL {
     	} elsif (defined($ENV{KB_FBAURL})) {
 	    	$CurrentURL = $ENV{KB_FBAURL};
 	    } else {
-			$CurrentURL = $defaultURL;
-    	} 
+			$CurrentURL = "http://bio-data-1.mcs.anl.gov/services/fba";
+    		#$CurrentURL = $defaultURL;
+    	}
     }
     return $CurrentURL;
 }

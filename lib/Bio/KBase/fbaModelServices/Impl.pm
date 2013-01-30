@@ -6396,15 +6396,18 @@ sub import_phenotypes
     		my $media = $bio->queryObject("media",{id => $phenotype->[1]});
     		if (!defined($media)) {
     			push(@{$missingMedia},$phenotype->[1]);
-    			next;
+    			$allfound = 0;
     		}
     	} else {
     		try {
     			my $media = $self->_get_msobject("Media",$phenotype->[2],$phenotype->[1]);
 	    	} catch {
 	    		push(@{$missingMedia},$phenotype->[1]);
-	    		next;
+	    		$allfound = 0;
 	    	};
+    	}
+    	if ($allfound == 0) {
+    		next;
     	}
     	#Validating compounds
     	$allfound = 1;
@@ -6426,13 +6429,13 @@ sub import_phenotypes
     #Printing error if any entities could not be validated
     my $msg = "";
     if (@{$missingCompounds} > 0) {
-    	$msg = "Could not find compounds:".join(";",@{$missingCompounds})."\n";
+    	$msg .= "Could not find compounds:".join(";",@{$missingCompounds})."\n";
     }
     if (@{$missingGenes} > 0) {
-    	$msg = "Could not find genes:".join(";",@{$missingGenes})."\n";
+    	$msg .= "Could not find genes:".join(";",@{$missingGenes})."\n";
     }
     if (@{$missingMedia} > 0) {
-    	$msg = "Could not find media:".join(";",@{$missingMedia})."\n";
+    	$msg .= "Could not find media:".join(";",@{$missingMedia})."\n";
     }
     my $meta = {};
 	if (length($msg) > 0 && $input->{ignore_errors} == 0) {
