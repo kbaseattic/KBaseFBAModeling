@@ -35,6 +35,7 @@ $ws->create_workspace({
 });
 $ENV{KB_SERVICE_NAME}="fbaModelServices";
 $ENV{KB_DEPLOYMENT_CONFIG}=$Bin."/../configs/test.cfg";
+$ENV{MODELSEED_CONF}=$Bin."../configs/testconfig.json";
 my $obj = Bio::KBase::fbaModelServices::Impl->new({workspace => $ws});
 ################################################################################
 #Tests 1-3: retrieving a biochemistry object and reaction and compound data
