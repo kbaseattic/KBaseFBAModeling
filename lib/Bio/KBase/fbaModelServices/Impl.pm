@@ -1181,19 +1181,19 @@ sub _submit_job {
 		target => "jesup",
 		jobs => $job->{clusterjobs}
 	});
-	$job->{csjob} = $clusterJob;
+	#$job->{csjob} = $clusterJob;
 	$job->{clustertoken} = $clusterJob->{ID};
 	return $job;
 };
 
 sub _cancel_job {
 	my ($self,$job) = @_;
-	return $job->{csjob}->Cancel();
+	return 0; # TBD: $job->{csjob}->Cancel();
 };
 
 sub _check_job {
 	my ($self,$job) = @_;
-	return $job->{csjob}->Done();
+	return 0; # TBD: $job->{csjob}->Done();
 };
 
 sub _get_new_id {
