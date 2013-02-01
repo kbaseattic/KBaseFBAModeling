@@ -1188,12 +1188,12 @@ sub _submit_job {
 
 sub _cancel_job {
 	my ($self,$job) = @_;
-	return $job->{csjob}->Cancel($clusterjob);
+	return $job->{csjob}->Cancel();
 };
 
 sub _check_job {
 	my ($self,$job) = @_;
-	return $job->{csjob}->Done($clusterjob);
+	return $job->{csjob}->Done();
 };
 
 sub _get_new_id {
