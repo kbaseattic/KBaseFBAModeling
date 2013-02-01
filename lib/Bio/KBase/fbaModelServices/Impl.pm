@@ -337,14 +337,6 @@ sub _cdmi {
     return $self->{_cdmi};
 }
 
-sub _clusterService {
-	my $self = shift;
-	if (!defined($self->{_clusterservice})) {
-		$self->{_clusterservice} = Bio::KBase::ClusterService->new();
-	}
-    return $self->{_clusterservice};
-}
-
 sub _idServer {
 	my $self = shift;
 	if (!defined($self->{_idserver})) {
@@ -1177,28 +1169,31 @@ sub _create_job {
 
 sub _submit_job {
 	my ($self,$job) = @_;
-	my $clusterJob = $self->_clusterService()->Submit({
+
+	my $cs=Bio::KBase::ClusterService::new({ token => $job->{token}});
+        
+	my $clusterJob = $cs->Submit({
 		mem => $job->{clustermem},
 		"time" => $job->{clustertime},
 		jobid => $job->{id},
 		auth => $self->_authentication(),
 		application => "fba",
+		target => "jesup",
 		jobs => $job->{clusterjobs}
 	});
+	$job->{csjob} = $clusterJob;
 	$job->{clustertoken} = $clusterJob->{ID};
 	return $job;
 };
 
 sub _cancel_job {
 	my ($self,$job) = @_;
-	my $clusterjob = $self->_clusterService()->Job($job->{clustertoken},$self->_clusterService());
-	return $self->_clusterService()->Cancel($clusterjob);
+	return $job->{csjob}->Cancel($clusterjob);
 };
 
 sub _check_job {
 	my ($self,$job) = @_;
-	my $clusterjob = $self->_clusterService()->Job($job->{clustertoken},$self->_clusterService());
-	return $self->_clusterService()->Done($clusterjob);
+	return $job->{csjob}->Done($clusterjob);
 };
 
 sub _get_new_id {
@@ -7298,6 +7293,7 @@ sub queue_runfba
 		queuing_command => "queue_runfba",
 		workspace => $input->{workspace}
 	});
+	$job->{token} = $input->{auth};
 	if ($input->{donot_submit_job} == 0) {
 		$job = $self->_submit_job($job);
 	}
@@ -7631,6 +7627,7 @@ sub queue_gapfill_model
 			queuing_command => "queue_gapfill_model",
 			workspace => $input->{workspace}
 		});
+	        $job->{token} = $input->{auth};
 		if ($input->{donot_submit_job} == 0) {
 			$job = $self->_submit_job($job);
 		}
@@ -7955,6 +7952,7 @@ sub queue_gapgen_model
 			queuing_command => "queue_gapgen_model",
 			workspace => $input->{workspace}
 		});
+	        $job->{token} = $input->{auth};
 		if ($input->{donot_submit_job} == 0) {
 			$job = $self->_submit_job($job);
 		}
@@ -8388,6 +8386,7 @@ sub queue_wildtype_phenotype_reconciliation
 			});
 		}
 		$output = $self->_save_msobject($job,"FBAJob",$job->{workspace},$job->{id},"queue_gapfill_model");
+	        $job->{token} = $input->{auth};
 		if ($input->{donot_submit_job} == 0) {
 			$job = $self->_submit_job($job);
 		}
