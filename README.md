@@ -4,9 +4,10 @@ KBaseFBAModeling
 This is the repository for the KBase module containing the web
 services for FBA modeling in KBase.
 
-
 Development Deployment
 ----------------------
+
+NOTE: deploy on a server with at least 8 gb RAM
 
 This module depends upon the following KBase modules:
 
@@ -56,6 +57,8 @@ missing modules.
 
 ### Setup Test-Data ###
 
+Note: requires a local MongoDB
+
     export PATH=$PATH:/kb/deployment/bin
     export PERL5LIB=$PERL5LIB:/kb/deployment/lib/perl5
     ms createuser kbase   # use the password 'kbase' when prompted
@@ -64,21 +67,20 @@ missing modules.
     ms import biochemistry default
     ms import mapping default -b default
 
-### Service Configuration ###
-
-Copy the sample configuration file, modifying the workspace-url to the URL
-of the current production workspace server.
-
-    cp config/sample.ini ~/config.ini
-    vi config.ini
-    export KB_DEPLOYMENT_CONFIG=$HOME/config.ini
-    export KB_SERVICE_NAME=fbaModelingServices
-
 ### Start Service ###
+
+Note: copy the contents of deploy.cfg into /kb/deployment/deployment.cfg
 
     cd /kb/deployment/services/fbaModelServices
     ./start_service
 
-### Run Commands ###
+Note: check /kb/deployment/services/fbaModelServices/error.log to verify 
+the service is running properly
 
-See `modules/KBaseFBAModeling/scripts` for scripts to run.
+### Testing ###
+
+server-tests: see configs/test.cfg for default settings for server-tests
+client-tests: configured to run against a workspace service on the localhost.
+	      Either change to the production workspace service, or restart
+	      the fbaModelService on localhost with local workspace service
+	      (see /kb/deployment/deployment.cfg).
