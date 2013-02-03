@@ -70,7 +70,7 @@ my $specs = [
     [ 'findminmedia', 'Find minimal media' ],
     [ 'addtomodel', 'Add FBA to model' ],
     [ 'notes:s', 'Notes for flux balance analysis' ],
-    [ 'nosubmit', 'Do not submit job to cluster', { "default" => 1 } ],
+    [ 'nosubmit', 'Do not submit job to cluster', { "default" => 0 } ],
     [ 'workspace|w:s', 'Workspace to save FBA results', { "default" => workspace() } ],
     [ 'overwrite|o', 'Overwrite any existing FBA with same name' ],
 ];
