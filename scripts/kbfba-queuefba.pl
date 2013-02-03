@@ -75,6 +75,9 @@ my $specs = [
     [ 'overwrite|o', 'Overwrite any existing FBA with same name' ],
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
+if (!defined($opt->{mediaws})) {
+	$opt->{mediaws} = $opt->{workspace};
+}
 $params->{formulation} = {
 	geneko => [],
 	rxnko => [],

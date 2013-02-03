@@ -414,7 +414,7 @@ sub _get_msobject {
 		if (!defined($obj->{annotation_uuid})) {
 			my $mapping = $self->_get_msobject("Mapping","kbase","default");
 			($obj,my $annotation,$mapping,my $contigs) = $self->_processGenomeObject($obj,$mapping,"get_genome_object");
-			my $meta = $self->_save_msobject($obj,"Genome",$ws,$id,1);
+			my $meta = $self->_save_msobject($obj,"Genome",$ws,$id,"get_genome_object");
 		}
 	}
 	return $obj;
@@ -741,7 +741,7 @@ sub _setDefaultFBAFormulation {
 	}
 	$fbaFormulation = $self->_validateargs($fbaFormulation,[],{
 		media => "Complete",
-		media_workspace => "kbasecdm",
+		media_workspace => "NO_WORKSPACE",
 		objfraction => 0.1,
 		allreversible => 0,
 		maximizeObjective => 1,
@@ -771,7 +771,7 @@ sub _buildFBAObject {
 	my ($self,$fbaFormulation,$model,$workspace,$id) = @_;
 	#Parsing media
 	my $media;
-	if ($fbaFormulation->{media_workspace} ne "kbasecdm") {
+	if ($fbaFormulation->{media_workspace} ne "NO_WORKSPACE") {
 		my $mediaobj = $self->_get_msobject("Media",$fbaFormulation->{media_workspace},$fbaFormulation->{media});
 		$model->biochemistry()->add("media",$mediaobj);
 		$media = $fbaFormulation->{media_workspace}."/".$fbaFormulation->{media};
@@ -1029,7 +1029,7 @@ sub _setDefaultGapGenFormulation {
 	$formulation = $self->_validateargs($formulation,[],{
 		formulation => undef,
 		refmedia => "Carbon-D-Glucose",
-		refmedia_workspace => "kbasecdm",
+		refmedia_workspace => "KBaseMedia",
 		num_solutions => 1,
 		nomediahyp => 0,
 		nobiomasshyp => 0,
@@ -1045,7 +1045,7 @@ sub _buildGapGenObject {
 	#Parsing media
 	my $media;
 	my $mediaobj;
-	if ($formulation->{refmedia_workspace} ne "kbasecdm") {
+	if ($formulation->{refmedia_workspace} ne "NO_WORKSPACE") {
 		$mediaobj = $self->_get_msobject("Media",$formulation->{refmedia_workspace},$formulation->{refmedia});
 		$model->biochemistry()->add("media",$mediaobj);
 		$media = $formulation->{refmedia_workspace}."/".$formulation->{refmedia};
@@ -1317,7 +1317,7 @@ sub _generate_fbameta {
 		$mediaws = $1;
 		$mediaid = $2;
 	} else {
-		$mediaws = "kbasecdm";
+		$mediaws = "NO_WORKSPACE";
 		$mediaid = $obj->media()->id();
 	}
 	my $kos = [];
@@ -1348,7 +1348,7 @@ sub _generate_gapmeta {
 		$mediaws = $1;
 		$mediaid = $2;
 	} else {
-		$mediaws = "kbasecdm";
+		$mediaws = "NO_WORKSPACE";
 		$mediaid = $obj->fbaFormulation()->media()->id();
 	}
 	my $kos = [];
@@ -1368,7 +1368,7 @@ sub _generate_gapmeta {
 sub _FBA_to_FBAFormulation {
 	my ($self,$obj) = @_;
 	my $media;
-	my $media_workspace = "kbasecdm";
+	my $media_workspace = "NO_WORKSPACE";
 	if ($obj->media_uuid() =~ m/(.+)\/(.+)/) {
 		$media_workspace = $1;
 		$media = $2;
@@ -3478,7 +3478,7 @@ sub get_media
 		my $media = $input->{medias}->[$i];
 		my $workspace = $input->{workspaces}->[$i];
 		my $obj;
-		if (!defined($workspace) || $workspace eq "kbasecdm") {
+		if (!defined($workspace) || $workspace eq "NO_WORKSPACE") {
 			$obj = $biochem->queryObject("media",{id => $media});
 		} else {
 			$obj = $self->_get_msobject("Media",$workspace,$media);
@@ -4259,7 +4259,7 @@ sub genome_object_to_workspace
     #Processing genome object
     my $mapping = $self->_get_msobject("Mapping",$input->{mapping_workspace},$input->{mapping});
     ($input->{genomeobj},my $anno,$mapping,my $contigObj) = $self->_processGenomeObject($input->{genomeobj},$mapping,"genome_object_to_workspace");
-    $genomeMeta = $self->_save_msobject($input->{genomeobj},"Genome",$input->{workspace},$input->{genomeobj}->{id},$input->{overwrite});
+    $genomeMeta = $self->_save_msobject($input->{genomeobj},"Genome",$input->{workspace},$input->{genomeobj}->{id},"genome_object_to_workspace",$input->{overwrite});
 	$self->_clearContext();
     #END genome_object_to_workspace
     my @_bad_returns;
@@ -4402,7 +4402,7 @@ sub genome_to_workspace
     	$genomeObj = $self->_get_genomeObj_from_RAST($input->{genome},$input->{sourceLogin},$input->{sourcePassword});
     }
     ($genomeObj,my $anno,$mapping,my $contigObj) = $self->_processGenomeObject($genomeObj,$mapping,"genome_to_workspace");
-    $genomeMeta = $self->_save_msobject($genomeObj,"Genome",$input->{workspace},$genomeObj->{id},$input->{overwrite});
+    $genomeMeta = $self->_save_msobject($genomeObj,"Genome",$input->{workspace},$genomeObj->{id},"genome_to_workspace",$input->{overwrite});
 	$self->_clearContext();
     #END genome_to_workspace
     my @_bad_returns;
@@ -4556,7 +4556,7 @@ sub add_feature_translation
     		}
     	}
     }
-    $genomeMeta = $self->_save_msobject($genome,"Genome",$input->{workspace},$input->{genome},$input->{overwrite});
+    $genomeMeta = $self->_save_msobject($genome,"Genome",$input->{workspace},$input->{genome},"add_feature_translation",$input->{overwrite});
     $self->_clearContext();
     #END add_feature_translation
     my @_bad_returns;
@@ -4719,16 +4719,16 @@ sub genome_to_fbamodel
     		threshold => $input->{probannoThreshold},
     		probannoonly => $input->{probannoOnly}
     	});
-    	my $meta = $self->_save_msobject($mapping,"Mapping","NO_WORKSPACE",$input->{probanno}.".anno.map",1);
+    	my $meta = $self->_save_msobject($mapping,"Mapping","NO_WORKSPACE",$input->{probanno}.".anno.map","genome_to_fbamodel",1);
     	$annotation->mapping_uuid($meta->[8]);
     	#TODO: annotation should probably link to the probanno
-    	$meta = $self->_save_msobject($annotation,"Annotation","NO_WORKSPACE",$input->{probanno}.".anno",1);
+    	$meta = $self->_save_msobject($annotation,"Annotation","NO_WORKSPACE",$input->{probanno}.".anno","genome_to_fbamodel",1);
     }
     #Building the FBA model
     my $mdl = $annotation->createStandardFBAModel( { prefix => "Kbase", } );
 	$mdl->defaultNameSpace("KBase");
 	#Model uuid and model id will be set to WS values during save
-	$modelMeta = $self->_save_msobject($mdl,"Model",$input->{workspace},$input->{model},$input->{overwrite});
+	$modelMeta = $self->_save_msobject($mdl,"Model",$input->{workspace},$input->{model},"genome_to_fbamodel",$input->{overwrite});
     $self->_clearContext();
     #END genome_to_fbamodel
     my @_bad_returns;
@@ -4769,6 +4769,7 @@ import_fbamodel_params is a reference to a hash where the following keys are def
 
 	model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
+	ignore_errors has a value which is a bool
 	auth has a value which is a string
 	overwrite has a value which is a bool
 genome_id is a string
@@ -4813,6 +4814,7 @@ import_fbamodel_params is a reference to a hash where the following keys are def
 
 	model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
+	ignore_errors has a value which is a bool
 	auth has a value which is a string
 	overwrite has a value which is a bool
 genome_id is a string
@@ -4870,7 +4872,8 @@ sub import_fbamodel
     $input = $self->_validateargs($input,["genome","workspace","reactions","biomass"],{
     	genome_workspace => $input->{workspace},
     	model => undef,
-    	overwrite => 0
+    	overwrite => 0,
+    	ignore_errors => 0
     });
     #Determining model ID
     if (!defined($input->{model})) {
@@ -4968,11 +4971,11 @@ sub import_fbamodel
 	if (keys(%{$missingGenes}) > 0) {
 		$msg .= "Missing genes:".join(";",keys(%{$missingGenes}))."\n";
 	}
-	if (length($msg) > 0) {
+	if (length($msg) > 0 && $input->{ignore_errors} == 0) {
 		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'import_fbamodel');
 	}
 	#Saving imported model
-	$modelMeta = $self->_save_msobject($model,"Model",$input->{workspace},$input->{model},$input->{overwrite});
+	$modelMeta = $self->_save_msobject($model,"Model",$input->{workspace},$input->{model},"import_fbamodel",$input->{overwrite});
     $self->_clearContext();
     #END import_fbamodel
     my @_bad_returns;
@@ -5164,7 +5167,7 @@ sub genome_to_probfbamodel
 	});
 	$mdl->defaultNameSpace("KBase");
 	#Model uuid and model id will be set to WS values during save
-	$modelMeta = $self->_save_msobject($mdl,"Model",$input->{workspace},$input->{model},$input->{overwrite});
+	$modelMeta = $self->_save_msobject($mdl,"Model",$input->{workspace},$input->{model},"genome_to_probfbamodel",$input->{overwrite});
     $self->_clearContext();
     #END genome_to_probfbamodel
     my @_bad_returns;
@@ -5493,7 +5496,7 @@ sub adjust_model_reaction
     	removeReaction => $input->{removeReaction},
     	addReaction => $input->{addReaction}
     });
-	$modelMeta = $self->_save_msobject($model,"Model",$input->{workspace},$input->{model},$input->{overwrite});
+	$modelMeta = $self->_save_msobject($model,"Model",$input->{workspace},$input->{model},"adjust_model_reaction",$input->{overwrite});
     $self->_clearContext();
     #END adjust_model_reaction
     my @_bad_returns;
@@ -5643,7 +5646,7 @@ sub adjust_biomass_reaction
     	compartment => $input->{compartment},
     	"index" => $input->{"index"}
     });
-	$modelMeta = $self->_save_msobject($model,"Model",$input->{workspace},$input->{model},$input->{overwrite});
+	$modelMeta = $self->_save_msobject($model,"Model",$input->{workspace},$input->{model},"adjust_biomass_reaction",$input->{overwrite});
     $self->_clearContext();
     #END adjust_biomass_reaction
     my @_bad_returns;
@@ -5919,7 +5922,7 @@ sub export_media
 	});
     my $med;
     my $bio = $self->_get_msobject("Biochemistry","kbase",$input->{biochemistry});
-    if ($input->{workspace} eq "kbasecdm") {
+    if ($input->{workspace} eq "NO_WORKSPACE") {
     	 $med = $bio->queryObject("media",{id => $input->{media}});
     	 if (!defined($med)) {
     	 	my $msg = "Media ".$input->{media}." not found in base biochemistry!";
@@ -6432,7 +6435,7 @@ sub import_phenotypes
     my $bio = $self->_get_msobject("Biochemistry","kbase",$input->{biochemistry});
     #Retrieving specified genome
     my $genomeObj;
-    if ($input->{genome_workspace} eq "kbasecdm") {
+    if ($input->{genome_workspace} eq "NO_WORKSPACE") {
     	$genomeObj = $self->_get_genomeObj_from_CDM($input->{genome},0);
     } else {
     	$genomeObj = $self->_get_msobject("Genome",$input->{genome_workspace},$input->{genome});
@@ -6478,7 +6481,7 @@ sub import_phenotypes
     		next;
     	}
     	#Validating media
-    	if ($phenotype->[2] eq "kbasecdm") {
+    	if ($phenotype->[2] eq "NO_WORKSPACE") {
     		my $media = $bio->queryObject("media",{id => $phenotype->[1]});
     		if (!defined($media)) {
     			push(@{$missingMedia},$phenotype->[1]);
@@ -6778,7 +6781,7 @@ sub simulate_phenotypes
 	my $bio = $model->biochemistry();
 	for (my $i=0; $i < @{$pheno->{phenotypes}};$i++) {
 		my $media = $pheno->{phenotypes}->[$i]->[2]."/".$pheno->{phenotypes}->[$i]->[1]; 
-		if ($pheno->{phenotypes}->[$i]->[2] eq "kbasecdm") {
+		if ($pheno->{phenotypes}->[$i]->[2] eq "NO_WORKSPACE") {
 			my $mediaobj = $bio->queryObject("media",{id => $pheno->{phenotypes}->[$i]->[1]});
 			$media = $mediaobj->uuid();
 		} else {
@@ -7112,7 +7115,7 @@ sub integrate_reconciliation_solutions
     		}
     	}
     }
-    $modelMeta = $self->_save_msobject($model,"Model",$input->{workspace},$input->{out_model},$input->{overwrite});
+    $modelMeta = $self->_save_msobject($model,"Model",$input->{workspace},$input->{out_model},"integrate_reconciliation_solutions",$input->{overwrite});
     $self->_clearContext();
     #END integrate_reconciliation_solutions
     my @_bad_returns;
@@ -14238,6 +14241,7 @@ Input parameters for the "genome_to_fbamodel" function.
         list<tuple<string id,string direction,string compartment,string gpr> reactions - list of reactions to appear in imported model (an essential argument)
         fbamodel_id model - ID that should be used for the newly imported model (an optional argument; default is 'undef')
         workspace_id workspace - ID of the workspace where the newly developed model will be stored; also the default assumed workspace for input objects (a required argument)
+        bool ignore_errors - ignores missing genes or reactions and imports model anyway
         string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
 
@@ -14258,6 +14262,7 @@ reactions has a value which is a reference to a list where each element is a ref
 
 model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
+ignore_errors has a value which is a bool
 auth has a value which is a string
 overwrite has a value which is a bool
 
@@ -14279,6 +14284,7 @@ reactions has a value which is a reference to a list where each element is a ref
 
 model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
+ignore_errors has a value which is a bool
 auth has a value which is a string
 overwrite has a value which is a bool
 

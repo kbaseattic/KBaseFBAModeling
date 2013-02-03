@@ -19,12 +19,14 @@ my $translation = {
 	modelid => "model",
 	workspace => "workspace",
 	auth => "auth",
+	ignoreerrors => "ignore_errors",
 	overwrite => "overwrite"
 };
 #Defining usage and options
 my $specs = [
     [ 'modelid|m:s', 'ID for imported model in workspace' ],
     [ 'genomews:s', 'Workspace with genome object' ],
+    [ 'ignoreerrors|i', 'Ignore errors encountered during load' ],
     [ 'workspace|w:s', 'Workspace to save imported model in', { "default" => workspace() } ],
     [ 'overwrite|o', 'Overwrite any existing phenotypes with same name' ]
 ];

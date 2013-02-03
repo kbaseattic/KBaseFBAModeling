@@ -84,6 +84,12 @@ my $specs = [
     [ 'overwrite|o', 'Overwrite any existing FBA with same name' ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
+if (!defined($opt->{mediaws})) {
+	$opt->{mediaws} = $opt->{workspace};
+}
+if (!defined($opt->{refmediaws})) {
+	$opt->{refmediaws} = $opt->{workspace};
+}
 $params->{formulation} = {};
 foreach my $key (keys(%{$ggTranslation})) {
 	if (defined($opt->{$key})) {

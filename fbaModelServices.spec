@@ -1336,6 +1336,7 @@ module fbaModelServices {
 		list<tuple<string id,string direction,string compartment,string gpr> reactions - list of reactions to appear in imported model (an essential argument)
 		fbamodel_id model - ID that should be used for the newly imported model (an optional argument; default is 'undef')
 		workspace_id workspace - ID of the workspace where the newly developed model will be stored; also the default assumed workspace for input objects (a required argument)
+		bool ignore_errors - ignores missing genes or reactions and imports model anyway
 		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 		
 	*/
@@ -1346,6 +1347,7 @@ module fbaModelServices {
 		list<tuple<string id,string direction,string compartment,string gpr>> reactions;
 		fbamodel_id model;
 		workspace_id workspace;
+		bool ignore_errors;
 		string auth;
 		bool overwrite;
     } import_fbamodel_params;

@@ -2542,6 +2542,7 @@ import_fbamodel_params is a reference to a hash where the following keys are def
 
 	model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
+	ignore_errors has a value which is a bool
 	auth has a value which is a string
 	overwrite has a value which is a bool
 genome_id is a string
@@ -2586,6 +2587,7 @@ import_fbamodel_params is a reference to a hash where the following keys are def
 
 	model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
+	ignore_errors has a value which is a bool
 	auth has a value which is a string
 	overwrite has a value which is a bool
 genome_id is a string
@@ -11289,6 +11291,7 @@ Input parameters for the "genome_to_fbamodel" function.
         list<tuple<string id,string direction,string compartment,string gpr> reactions - list of reactions to appear in imported model (an essential argument)
         fbamodel_id model - ID that should be used for the newly imported model (an optional argument; default is 'undef')
         workspace_id workspace - ID of the workspace where the newly developed model will be stored; also the default assumed workspace for input objects (a required argument)
+        bool ignore_errors - ignores missing genes or reactions and imports model anyway
         string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
 
@@ -11309,6 +11312,7 @@ reactions has a value which is a reference to a list where each element is a ref
 
 model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
+ignore_errors has a value which is a bool
 auth has a value which is a string
 overwrite has a value which is a bool
 
@@ -11330,6 +11334,7 @@ reactions has a value which is a reference to a list where each element is a ref
 
 model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
+ignore_errors has a value which is a bool
 auth has a value which is a string
 overwrite has a value which is a bool
 

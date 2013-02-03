@@ -109,6 +109,9 @@ my $specs = [
     [ 'overwrite|o', 'Overwrite any existing FBA with same name' ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
+if (!defined($opt->{mediaws})) {
+	$opt->{mediaws} = $opt->{workspace};
+}
 $params->{formulation} = {
 	blacklistedrxns => [qw(
 rxn12985 rxn00238 rxn07058 rxn05305 rxn00154 rxn09037 rxn10643
