@@ -3989,11 +3989,13 @@ sub import_probanno
     	genome_uuid => $genomeObj->{_kbaseWSMeta}->{wsref},
     	featureAlternativeFunctions => [],
     };
-    #Validating media, genes, and compounds
+    #Validating roles and genes
     my $missingGenes = [];
     my $missingRoles = [];
     my $featureHash;
     my $allfound = 1;
+    my $found = 0;
+    my $missing = 0;
     for (my $i=0; $i < @{$input->{annotationProbabilities}}; $i++) {
     	my $annoprob = $input->{annotationProbabilities}->[$i];
     	if (!defined($genehash->{$annoprob->[0]})) {
@@ -4001,9 +4003,11 @@ sub import_probanno
     		$allfound = 0;
     	} else {
     		$annoprob->[0] = $genehash->{$annoprob->[0]};
+    		
     		my $searchName = ModelSEED::MS::Utilities::GlobalFunctions::convertRoleToSearchRole($annoprob->[1]);
 			my $roleObj = $map->queryObject("roles",{searchname => $searchName});
     		if (defined($roleObj)) {
+    			$found++;
     			if (defined($featureHash->{$annoprob->[0]})) {
 		    		push(@{$featureHash->{$annoprob->[0]}->{alternative_functions}},[
 		    			$annoprob->[1],
@@ -4021,6 +4025,7 @@ sub import_probanno
 		    		};
 		    	}
     		} else {
+    			$missing++;
     			push(@{$missingRoles},$annoprob->[1]);
     			$allfound = 0;
     		}
@@ -5258,6 +5263,92 @@ sub export_fbamodel
 	my $msg = "Invalid returns passed to export_fbamodel:\n" . join("", map { "\t$_\n" } @_bad_returns);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
 							       method_name => 'export_fbamodel');
+    }
+    return($output);
+}
+
+
+
+
+=head2 export_genome
+
+  $output = $obj->export_genome($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is an export_genome_params
+$output is a string
+export_genome_params is a reference to a hash where the following keys are defined:
+	genome has a value which is a genome_id
+	workspace has a value which is a workspace_id
+	format has a value which is a string
+	auth has a value which is a string
+genome_id is a string
+workspace_id is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is an export_genome_params
+$output is a string
+export_genome_params is a reference to a hash where the following keys are defined:
+	genome has a value which is a genome_id
+	workspace has a value which is a workspace_id
+	format has a value which is a string
+	auth has a value which is a string
+genome_id is a string
+workspace_id is a string
+
+
+=end text
+
+
+
+=item Description
+
+This function exports the specified FBAModel to a specified format (sbml,html)
+
+=back
+
+=cut
+
+sub export_genome
+{
+    my $self = shift;
+    my($input) = @_;
+
+    my @_bad_arguments;
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to export_genome:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'export_genome');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($output);
+    #BEGIN export_genome
+    $self->_setContext($ctx,$input);
+    $input = $self->_validateargs($input,["genome","workspace","format"],{});
+    my $genome = $self->_get_msobject("Genome",$input->{workspace},$input->{genome});
+    my $annotation = $self->_get_msobject("Annotation","NO_WORKSPACE",$genome->{annotation_uuid});
+    $output = $annotation->export({format => $input->{format}});
+    $self->_clearContext();
+    #END export_genome
+    my @_bad_returns;
+    (!ref($output)) or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to export_genome:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'export_genome');
     }
     return($output);
 }
@@ -14289,6 +14380,52 @@ auth has a value which is a string
 
 a reference to a hash where the following keys are defined:
 model has a value which is a fbamodel_id
+workspace has a value which is a workspace_id
+format has a value which is a string
+auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 export_genome_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "export_genome" function.
+
+        genome_id genome - ID of the genome to be exported (a required argument)
+        workspace_id workspace - workspace containing the model to be exported (a required argument)
+        string format - format to which the model should be exported (sbml, html, json, readable, cytoseed) (a required argument)
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+genome has a value which is a genome_id
+workspace has a value which is a workspace_id
+format has a value which is a string
+auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+genome has a value which is a genome_id
 workspace has a value which is a workspace_id
 format has a value which is a string
 auth has a value which is a string

@@ -1398,6 +1398,25 @@ module fbaModelServices {
     */
     funcdef export_fbamodel(export_fbamodel_params input) returns (string output);
 
+	/* Input parameters for the "export_genome" function.
+	
+		genome_id genome - ID of the genome to be exported (a required argument)
+		workspace_id workspace - workspace containing the model to be exported (a required argument)
+		string format - format to which the model should be exported (sbml, html, json, readable, cytoseed) (a required argument)
+		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+		
+	*/
+    typedef structure {
+		genome_id genome;
+		workspace_id workspace;
+		string format;
+		string auth;
+    } export_genome_params;
+    /*
+        This function exports the specified FBAModel to a specified format (sbml,html)
+    */
+    funcdef export_genome(export_genome_params input) returns (string output);
+
     /* Input parameters for the "adjust_model_reaction" function.
 	
 		fbamodel_id model - ID of model to be adjusted

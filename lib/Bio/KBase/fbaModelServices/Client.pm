@@ -2899,6 +2899,100 @@ sub export_fbamodel
 
 
 
+=head2 export_genome
+
+  $output = $obj->export_genome($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is an export_genome_params
+$output is a string
+export_genome_params is a reference to a hash where the following keys are defined:
+	genome has a value which is a genome_id
+	workspace has a value which is a workspace_id
+	format has a value which is a string
+	auth has a value which is a string
+genome_id is a string
+workspace_id is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is an export_genome_params
+$output is a string
+export_genome_params is a reference to a hash where the following keys are defined:
+	genome has a value which is a genome_id
+	workspace has a value which is a workspace_id
+	format has a value which is a string
+	auth has a value which is a string
+genome_id is a string
+workspace_id is a string
+
+
+=end text
+
+=item Description
+
+This function exports the specified FBAModel to a specified format (sbml,html)
+
+=back
+
+=cut
+
+sub export_genome
+{
+    my($self, @args) = @_;
+
+# Authentication: none
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function export_genome (received $n, expecting 1)");
+    }
+    {
+	my($input) = @args;
+
+	my @_bad_arguments;
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to export_genome:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'export_genome');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.export_genome",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{code},
+					       method_name => 'export_genome',
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method export_genome",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'export_genome',
+				       );
+    }
+}
+
+
+
 =head2 adjust_model_reaction
 
   $modelMeta = $obj->adjust_model_reaction($input)
@@ -11336,6 +11430,52 @@ auth has a value which is a string
 
 a reference to a hash where the following keys are defined:
 model has a value which is a fbamodel_id
+workspace has a value which is a workspace_id
+format has a value which is a string
+auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 export_genome_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "export_genome" function.
+
+        genome_id genome - ID of the genome to be exported (a required argument)
+        workspace_id workspace - workspace containing the model to be exported (a required argument)
+        string format - format to which the model should be exported (sbml, html, json, readable, cytoseed) (a required argument)
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+genome has a value which is a genome_id
+workspace has a value which is a workspace_id
+format has a value which is a string
+auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+genome has a value which is a genome_id
 workspace has a value which is a workspace_id
 format has a value which is a string
 auth has a value which is a string
