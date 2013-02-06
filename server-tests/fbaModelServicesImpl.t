@@ -426,11 +426,18 @@ ok defined($html), "Successfully exported FBA to html format!";
 
 }; # end eval
 
-die $@ if $@; # errors from tests
+my $return = $@;
 
 if (!defined($ENV{NO_TEST_MONGO})) {
 	&mongo_down;
 }
+
+# check for error messages from tests
+if ($return) {
+   print $return;
+   exit(100);
+}
+
 
 done_testing($test_count);
 
