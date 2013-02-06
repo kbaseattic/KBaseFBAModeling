@@ -20,7 +20,7 @@ my $test_count = 33;
 
 if (!defined($ENV{NO_TEST_MONGO})) {
 	&mongo_up;
-	sleep 30; # mongod can take a lot of time to spin up
+	sleep 300; # mongod can take a lot of time to spin up
 }
 
 my $genomeObj;
