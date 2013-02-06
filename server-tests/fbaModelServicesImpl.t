@@ -18,6 +18,8 @@ use Data::Dumper;
 use File::Temp qw(tempfile);
 my $test_count = 33;
 
+mongo_up;
+
 ################################################################################
 #Test intiailization: setting test config, instantiating Impl, getting auth token
 ################################################################################
@@ -416,6 +418,8 @@ ok defined($html), "Successfully exported FBA to html format!";
 #});
 #ok defined($cdmgenome), "Genome successfully imported to workspace from CDM!"; 
 
+mongo_down;
+
 done_testing($test_count);
 
 sub _loadBiochemToDB {
@@ -546,20 +550,38 @@ sub prettyPrintKBaseGenome {
 	close($fh);
 }
 
-#Old 'real' test media formulation
-#compounds => [qw(
-#	Oxaloacetate Co2+ Cl- H+ Ca2+ Cu2+ Sulfate Zn2+ Mn2+ NH3
-#	Phosphate H2O O2 K+ Mg Na+ Fe2+ fe3 Molybdate Ni2+ D-Glucose
-#)],
-#concentrations => [
-#	0.001,0.001,0.001,0.001,0.001,0.001,0.001,0.001,0.001,0.001,
-#	0.001,0.001,0.001,0.001,0.001,0.001,0.001,0.001,0.001,0.001
-#],
-#maxflux => [
-#	1000,1000,1000,1000,1000,1000,1000,1000,1000,1000,
-#	1000,1000,1000,1000,1000,1000,1000,1000,1000,1000
-#],
-#minflux => [
-#	-1000,-1000,-1000,-1000,-1000,-1000,-1000,-1000,-1000,-1000,
-#	-1000,-1000,-1000,-1000,-1000,-1000,-1000,-1000,-1000,-1000
-#]
+sub mongo_up {
+	unless(-e "/data") {
+		mkdir "/data" or die "can not mkdir data for mongo";
+	}
+	unless(-e "/data/db") {
+		mkdir "/data/db" or die "can not mkdir for mongo";
+	}
+	unless (system("$ENV{KB_RUNTIME}/bin/mongod", 
+		"--pidfilepath=/tmp/mongo.$$.pid",
+		"--logpath=/tmp/mongo.$$.log",
+		"--fork") == 0 ) {
+		die "could not start mongod";
+	} 
+}
+
+sub mongo_down {
+	my $pid = `cat /tmp/mongo.$$.pid`;
+	chomp $pid;
+	unless (system("kill",  "-9", "$pid") == 0 ) {
+		die "could not stop mongod with pid=$pid";
+	}
+	unlink "/tmp/mongo.$$.pid";
+	unlink "/tmp/mongo.$$.log";
+}
+
+sub workspace_up {
+	if (-e $ENV{TARGET}."/services/workspaceService/service.pid") {
+		system($ENV{TARGET}."/services/workspaceService/stop_service");
+	}
+	system($ENV{TARGET}."/services/workspaceService/start_service"); 
+}
+
+sub workspace_down {
+	system($ENV{TARGET}."/services/workspaceService/stop_service");
+}

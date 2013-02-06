@@ -41,13 +41,15 @@ my $fbaTranslation = {
 	minthermoerror => "minthermoerror",
 	addlcpd => "additionalcpds",
 	prommodel => "prommodel",
-	prommodelws => "prommodel_workspace"
+	prommodelws => "prommodel_workspace",
+	modelws => "model_workspace"
 };
 #Defining usage and options
 my $specs = [
     [ 'fbaid:s', 'ID for FBA in workspace' ],
     [ 'media|m:s', 'Media formulation for FBA' ],
     [ 'mediaws:s', 'Workspace with media formulation' ],
+    [ 'modelws:s', 'Workspace with model' ],
     [ 'addlcpd|c:s@', 'Additional compounds (; delimiter)' ],
     [ 'maximize:s', 'Maximize objective', { "default" => 1 } ],
 	[ 'objterms:s@', 'Objective terms' ],
