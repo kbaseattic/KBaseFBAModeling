@@ -113,7 +113,7 @@ ok defined($html), "Successfully exported media to html format!";
 #Testing media retrieval method
 my $medias = $obj->get_media({
 	medias => ["Media1","CustomMedia"],
-	workspaces => ["kbasecdm","testworkspace"],
+	workspaces => ["NO_WORKSPACE","testworkspace"],
 	biochemistry => "testdefault"
 });
 ok defined($medias->[0]), "Successfully printed media!";
@@ -174,8 +174,8 @@ my $phenos = $obj->import_phenotypes({
 	genome_workspace => "testworkspace",
 	phenotypes => [
 		[[],"CustomMedia","testworkspace",["D name"],1],
-		[[],"Media1","kbasecdm",["A name"],1],
-		[["kb|g.0.peg.1","kb|g.0.peg.2"],"Media2","kbasecdm",[],1]
+		[[],"Media1","NO_WORKSPACE",["A name"],1],
+		[["kb|g.0.peg.1","kb|g.0.peg.2"],"Media2","NO_WORKSPACE",[],1]
 	],
 	notes => "",
 	biochemistry => "testdefault"
@@ -309,7 +309,7 @@ $job = $obj->queue_gapfill_model({
 	formulation => {
 		formulation => {
 			media => "Complete",
-			media_workspace => "kbasecdm"
+			media_workspace => "NO_WORKSPACE"
 		},
 		num_solutions => 1
 	},
@@ -364,7 +364,7 @@ $job = $obj->queue_gapgen_model({
 			media_workspace => "testworkspace"
 		},
 		refmedia => "Complete",
-		refmedia_workspace => "kbasecdm",
+		refmedia_workspace => "NO_WORKSPACE",
 		num_solutions => 1
 	},
 	integrate_solution => 1,
