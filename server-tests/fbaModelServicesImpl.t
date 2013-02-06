@@ -572,12 +572,14 @@ sub mongo_up {
 
 sub mongo_down {
 	my $pid = `cat /tmp/mongo.$$.pid`;
-	chomp $pid;
-	unless (system("kill",  "-9", "$pid") == 0 ) {
-		die "could not stop mongod with pid=$pid";
+	if (length($pid) > 0) {
+		chomp $pid;
+		unless (system("kill",  "-9", "$pid") == 0 ) {
+			die "could not stop mongod with pid=$pid";
+		}
+		unlink "/tmp/mongo.$$.pid";
+		unlink "/tmp/mongo.$$.log";
 	}
-	unlink "/tmp/mongo.$$.pid";
-	unlink "/tmp/mongo.$$.log";
 }
 
 sub workspace_up {
