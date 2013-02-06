@@ -18,7 +18,9 @@ use Data::Dumper;
 use File::Temp qw(tempfile);
 my $test_count = 33;
 
-mongo_up;
+if (!defined($ENV{NO_TEST_MONGO})) {
+	&mongo_up;
+}
 
 ################################################################################
 #Test intiailization: setting test config, instantiating Impl, getting auth token
@@ -418,7 +420,9 @@ ok defined($html), "Successfully exported FBA to html format!";
 #});
 #ok defined($cdmgenome), "Genome successfully imported to workspace from CDM!"; 
 
-mongo_down;
+if (!defined($ENV{NO_TEST_MONGO})) {
+	&mongo_down;
+}
 
 done_testing($test_count);
 
