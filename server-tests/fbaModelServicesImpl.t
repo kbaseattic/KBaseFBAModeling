@@ -20,8 +20,11 @@ my $test_count = 33;
 
 if (!defined($ENV{NO_TEST_MONGO})) {
 	&mongo_up;
-	sleep 60;
+	sleep 300; # mongod can take a lot of time to spin up
 }
+
+my $genomeObj;
+eval {
 
 ################################################################################
 #Test intiailization: setting test config, instantiating Impl, getting auth token
@@ -71,7 +74,7 @@ my ($fh, $uncompressed_filename) = tempfile();
 my $status = getstore($url, $uncompressed_filename);
 open($fh, "<", $uncompressed_filename) || die "$!: $@";
 my @strings = <$fh>;
-my $genomeObj = JSON::XS->new->utf8->decode(join("",@strings));
+$genomeObj = JSON::XS->new->utf8->decode(join("",@strings));
 my $genome = $obj->genome_object_to_workspace({
 	genomeobj => $genomeObj,
 	workspace => "testworkspace",
@@ -421,9 +424,20 @@ ok defined($html), "Successfully exported FBA to html format!";
 #});
 #ok defined($cdmgenome), "Genome successfully imported to workspace from CDM!"; 
 
+}; # end eval
+
+my $return = $@;
+
 if (!defined($ENV{NO_TEST_MONGO})) {
 	&mongo_down;
 }
+
+# check for error messages from tests
+if ($return) {
+   print $return;
+   exit(100);
+}
+
 
 done_testing($test_count);
 
@@ -557,12 +571,16 @@ sub prettyPrintKBaseGenome {
 
 sub mongo_up {
 	unless(-e "/data") {
-		mkdir "/data" or die "can not mkdir data for mongo";
+		mkdir "/data" or die "cannot mkdir /data for mongo";
+	}
+	unless(-e "/mnt/db") {
+		mkdir "/mnt/db" or die "cannot mkdir /mnt/db for mongo";
 	}
 	unless(-e "/data/db") {
-		mkdir "/data/db" or die "can not mkdir for mongo";
+		symlink("/mnt/db","/data/db") or die "cannot symlink to /data/db for mongo";
 	}
 	unless (system("$ENV{KB_RUNTIME}/bin/mongod", 
+	        "--dbpath=/data/db",
 		"--pidfilepath=/tmp/mongo.$$.pid",
 		"--logpath=/tmp/mongo.$$.log",
 		"--fork") == 0 ) {
