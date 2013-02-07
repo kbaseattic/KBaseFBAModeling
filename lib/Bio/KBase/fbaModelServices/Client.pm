@@ -2901,6 +2901,96 @@ sub export_fbamodel
 
 
 
+=head2 export_object
+
+  $output = $obj->export_object($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is an export_object_params
+$output is a string
+export_object_params is a reference to a hash where the following keys are defined:
+	reference has a value which is a workspace_ref
+	type has a value which is a string
+	format has a value which is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is an export_object_params
+$output is a string
+export_object_params is a reference to a hash where the following keys are defined:
+	reference has a value which is a workspace_ref
+	type has a value which is a string
+	format has a value which is a string
+workspace_ref is a string
+
+
+=end text
+
+=item Description
+
+This function prints the object pointed to by the input reference in the specified format
+
+=back
+
+=cut
+
+sub export_object
+{
+    my($self, @args) = @_;
+
+# Authentication: none
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function export_object (received $n, expecting 1)");
+    }
+    {
+	my($input) = @args;
+
+	my @_bad_arguments;
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to export_object:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'export_object');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.export_object",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{code},
+					       method_name => 'export_object',
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method export_object",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'export_object',
+				       );
+    }
+}
+
+
+
 =head2 export_genome
 
   $output = $obj->export_genome($input)
@@ -11438,6 +11528,49 @@ model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
 format has a value which is a string
 auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 export_object_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "export_object" function.
+
+        workspace_ref reference - reference of object to print in html (a required argument)
+        string type - type of the object to be exported (a required argument)
+        string format - format to which data should be exported (an optional argument; default is html)
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+reference has a value which is a workspace_ref
+type has a value which is a string
+format has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+reference has a value which is a workspace_ref
+type has a value which is a string
+format has a value which is a string
 
 
 =end text

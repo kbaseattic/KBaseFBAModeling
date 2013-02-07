@@ -75,7 +75,7 @@ my $specs = [
     [ 'overwrite|o', 'Overwrite any existing FBA with same name' ],
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
-if (!defined($opt->{mediaws})) {
+if (!defined($opt->{mediaws}) && defined($opt->{media})) {
 	$opt->{mediaws} = $opt->{workspace};
 }
 $params->{formulation} = {

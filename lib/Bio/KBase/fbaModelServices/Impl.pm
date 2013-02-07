@@ -5268,6 +5268,107 @@ sub export_fbamodel
 
 
 
+=head2 export_object
+
+  $output = $obj->export_object($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is an export_object_params
+$output is a string
+export_object_params is a reference to a hash where the following keys are defined:
+	reference has a value which is a workspace_ref
+	type has a value which is a string
+	format has a value which is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is an export_object_params
+$output is a string
+export_object_params is a reference to a hash where the following keys are defined:
+	reference has a value which is a workspace_ref
+	type has a value which is a string
+	format has a value which is a string
+workspace_ref is a string
+
+
+=end text
+
+
+
+=item Description
+
+This function prints the object pointed to by the input reference in the specified format
+
+=back
+
+=cut
+
+sub export_object
+{
+    my $self = shift;
+    my($input) = @_;
+
+    my @_bad_arguments;
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to export_object:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'export_object');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($output);
+    #BEGIN export_object
+    $self->_setContext($ctx,$input);
+    $input = $self->_validateargs($input,["reference","type"],{
+    	format => "html"
+    });
+    my $obj = $self->_KBaseStore()->get_object($input->{type},$input->{reference});
+	my $msobject = {
+		Mapping => 1,
+		Model => 1,
+		Media => 1,
+		Annotation => 1,
+		Biochemistry => 1,
+		FBA => 1
+	};
+	if ($input->{type} eq "Genome") {
+		$obj = $self->_KBaseStore()->get_object("Annotation",$obj->{annotation_uuid});
+		$output = $obj->export({format => $input->{format}});
+	} elsif (defined($msobject->{$input->{type}})) {
+		$output = $obj->export({format => $input->{format}});
+	} elsif (ref($obj) eq "HASH") {
+		my $JSON = JSON::XS->new->utf8(1);
+    	$output = $JSON->encode($obj);
+	} else {
+		$output = $obj;
+	}
+    $self->_clearContext();
+    #END export_object
+    my @_bad_returns;
+    (!ref($output)) or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to export_object:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'export_object');
+    }
+    return($output);
+}
+
+
+
+
 =head2 export_genome
 
   $output = $obj->export_genome($input)
@@ -5481,13 +5582,13 @@ sub adjust_model_reaction
     	direction => undef,
     	compartment => "c",
     	compartmentIndex => 0,
-    	gpr => [],
+    	gpr => undef,
     	removeReaction => 0,
     	addReaction => 0,
     	overwrite => 0
     });
     my $model = $self->_get_msobject("Model",$input->{workspace},$input->{model});
-    $model->adjustModelReaction({
+    $model->manualReactionAdjustment({
     	reaction => $input->{reaction},
     	direction => $input->{direction},
     	compartment => $input->{compartment},
@@ -14388,6 +14489,49 @@ model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
 format has a value which is a string
 auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 export_object_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "export_object" function.
+
+        workspace_ref reference - reference of object to print in html (a required argument)
+        string type - type of the object to be exported (a required argument)
+        string format - format to which data should be exported (an optional argument; default is html)
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+reference has a value which is a workspace_ref
+type has a value which is a string
+format has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+reference has a value which is a workspace_ref
+type has a value which is a string
+format has a value which is a string
 
 
 =end text

@@ -1399,6 +1399,25 @@ module fbaModelServices {
         This function exports the specified FBAModel to a specified format (sbml,html)
     */
     funcdef export_fbamodel(export_fbamodel_params input) returns (string output);
+    
+    /* Input parameters for the "export_object" function.
+	
+		workspace_ref reference - reference of object to print in html (a required argument)
+		string type - type of the object to be exported (a required argument)
+		string format - format to which data should be exported (an optional argument; default is html)
+		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+		
+	*/
+    typedef structure {
+		workspace_ref reference;
+		string type;
+		string format;
+    	string auth;
+    } export_object_params;
+    /*
+        This function prints the object pointed to by the input reference in the specified format
+    */
+    funcdef export_object(export_object_params input) returns (string output);
 
 	/* Input parameters for the "export_genome" function.
 	
@@ -1440,7 +1459,7 @@ module fbaModelServices {
 		string direction;
 		compartment_id compartment;
 		int compartmentIndex;
-		list<list<list<feature_id>>> gpr;
+		string gpr;
 		bool removeReaction;
 		bool addReaction;
 		bool overwrite;
