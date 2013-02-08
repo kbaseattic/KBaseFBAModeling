@@ -7203,6 +7203,7 @@ sub integrate_reconciliation_solutions
 						gapfillingFormulation => $gf,
 						solutionNum => $solid
 					});
+					$self->_save_msobject($gf,"GapFill","NO_WORKSPACE",$gf->uuid(),"integrate_reconciliation_solutions",1,$gf->uuid());
 					last;
     			}
     		}
@@ -7219,6 +7220,7 @@ sub integrate_reconciliation_solutions
 						gapgenFormulation => $gg,
 						solutionNum => $solid
 					});
+					$self->_save_msobject($gg,"GapGen","NO_WORKSPACE",$gg->uuid(),"integrate_reconciliation_solutions",1,$gg->uuid());
     				last;
     			}
     		}
