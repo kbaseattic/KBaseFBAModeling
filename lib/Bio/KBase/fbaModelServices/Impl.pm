@@ -896,6 +896,8 @@ sub _setDefaultGapfillFormulation {
 		$formulation = {};
 	}
 	$formulation = $self->_validateargs($formulation,[],{
+		timePerSolution => 3600,
+		totalTimeLimit => 18000,
 		formulation => undef,
 		num_solutions => 1,
 		nomediahyp => 0,
@@ -995,6 +997,8 @@ sub _buildGapfillObject {
 		biomassHypothesis => $self->_invert_boolean($formulation->{nobiomasshyp}),
 		gprHypothesis => $self->_invert_boolean($formulation->{nogprhyp}),
 		reactionAdditionHypothesis => $self->_invert_boolean($formulation->{nopathwayhyp}),
+		timePerSolution => $formulation->{timePerSolution},
+		totalTimeLimit => $formulation->{totalTimeLimit},
 	});
 	foreach my $reaction (@{$formulation->{gauranteedrxns}}) {
 		my $rxnObj = $model->biochemistry()->searchForReaction($reaction);
@@ -1030,6 +1034,8 @@ sub _setDefaultGapGenFormulation {
 		formulation => undef,
 		refmedia => "Carbon-D-Glucose",
 		refmedia_workspace => "KBaseMedia",
+		timePerSolution => 3600,
+		totalTimeLimit => 18000,
 		num_solutions => 1,
 		nomediahyp => 0,
 		nobiomasshyp => 0,
@@ -1071,7 +1077,9 @@ sub _buildGapGenObject {
 		gprHypothesis => $self->_invert_boolean($formulation->{nogprhyp}),
 		reactionAdditionHypothesis => $self->_invert_boolean($formulation->{nopathwayhyp}),
 		referenceMedia_uuid => $media,
-		referenceMedia => $mediaobj
+		referenceMedia => $mediaobj,
+		timePerSolution => $formulation->{timePerSolution},
+		totalTimeLimit => $formulation->{totalTimeLimit},
 	});
 	$gapform->{_kbaseWSMeta}->{wsid} = $gapform->uuid();
 	$gapform->{_kbaseWSMeta}->{ws} = "NO_WORKSPACE";
@@ -7776,7 +7784,11 @@ sub queue_gapfill_model
 		gapFill_workspace => $input->{workspace},
 		overwrite => 0,
 		donot_submit_job => 0,
+		timePerSolution => 3600,
+		totalTimeLimit => 18000
 	});
+	$input->{formulation}->{timePerSolution} = $input->{timePerSolution};
+	$input->{formulation}->{totalTimeLimit} = $input->{totalTimeLimit};
 	#Checking is this is a postprocessing or initialization call
 	if (!defined($input->{gapFill})) {
 		$self->_get_new_id($input->{model}.".gapfill.");
@@ -8103,6 +8115,8 @@ sub queue_gapgen_model
 		overwrite => 0,
 		donot_submit_job => 0,
 	});
+	$input->{formulation}->{timePerSolution} = $input->{timePerSolution};
+	$input->{formulation}->{totalTimeLimit} = $input->{totalTimeLimit};
 	#Checking is this is a postprocessing or initialization call
 	if (!defined($input->{gapGen})) {
 		$input->{formulation} = $self->_setDefaultGapGenFormulation($input->{formulation});

@@ -1765,6 +1765,8 @@ module fbaModelServices {
 		gapfill_id gapFill - ID to which gapfill solution will be saved (an optional argument: default is 'undef')
 		workspace_id workspace - workspace where gapfill results will be saved (a required argument)
 		bool donot_submit_job - a flag indicating if the job should be submitted to the cluster (an optional argument: default is '0')
+		int timePerSolution - maximum time to spend to obtain each solution
+		int totalTimeLimit - maximum time to spend to obtain all solutions
 		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 		
 	*/
@@ -1778,6 +1780,8 @@ module fbaModelServices {
 		fbamodel_id out_model;
 		workspace_id workspace;
 		gapfill_id gapFill;
+		int timePerSolution;
+		int totalTimeLimit;
 		string auth;
 		bool overwrite;
 		bool donot_submit_job;
@@ -1798,6 +1802,8 @@ module fbaModelServices {
 		fbamodel_id out_model - ID where the gapgened model will be saved (an optional argument: default is 'undef')
 		gapgen_id gapGen - ID to which gapgen solution will be saved (an optional argument: default is 'undef')
 		workspace_id workspace - workspace where gapgen results will be saved (a required argument)
+		int timePerSolution - maximum time to spend to obtain each solution
+		int totalTimeLimit - maximum time to spend to obtain all solutions
 		bool donot_submit_job - a flag indicating if the job should be submitted to the cluster (an optional argument: default is '0')
 		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 		
@@ -1813,6 +1819,8 @@ module fbaModelServices {
 		workspace_id workspace;
 		gapgen_id gapGen;
 		string auth;
+		int timePerSolution;
+		int totalTimeLimit;
 		bool overwrite;
 		bool donot_submit_job;
     } gapgen_model_params;

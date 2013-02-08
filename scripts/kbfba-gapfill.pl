@@ -25,6 +25,8 @@ my $translation = {
 	intsol => "integrate_solution",
 	phenows => "phenotypeSet_workspace",
 	phenoid => "phenotypeSet",
+	timepersol => "timePerSolution",
+	timelimit => "totalTimeLimit",
 };
 my $gfTranslation = {
 	numsol => "num_solutions",
@@ -64,6 +66,8 @@ my $fbaTranslation = {
 my $specs = [
     [ 'modelout:s', 'ID for output model in workspace' ],
     [ 'intsol', 'Automatically integrate solution', { "default" => 0 } ],
+    [ 'timepersol:s', 'Maximum time spent per solution' ],
+    [ 'timelimit:s', 'Maximum toal time' ],
     [ 'media|m:s', 'Media formulation for FBA' ],
     [ 'mediaws:s', 'Workspace with media formulation' ],
     [ 'addlcpd|c:s@', 'Additional compounds (; delimiter)' ],
