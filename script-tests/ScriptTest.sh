@@ -1,4 +1,4 @@
-kbws-url "http://kbase.us/services/workspace"
+kbws-url "http://localhost:7058"
 kbws-login kbasetest -p "@Suite525"
 kbws-workspace default
 kbws-deletews scripttest n
