@@ -40,7 +40,9 @@ my $fbaTranslation = {
 	thermoconst => "thermoconst",
 	nothermoerror => "nothermoerror",
 	minthermoerror => "minthermoerror",
-	addlcpd => "additionalcpds"
+	addlcpd => "additionalcpds",
+	prommodel => "prommodel",
+	prommodelws => "prommodel_workspace"
 };
 #Defining usage and options
 my $specs = [
@@ -54,6 +56,8 @@ my $specs = [
 	[ 'rxnko:s@', 'List of reaction KO (; delimiter)' ],
     [ 'bounds:s@', 'Custom bounds' ],
     [ 'constraints:s@', 'Custom constraints' ],
+    [ 'prommodel|p:s', 'ID of PROMModel' ],
+    [ 'prommodelws:s', 'Workspace with PROMModel', { "default" => workspace() } ],
     [ 'defaultmaxflux:s', 'Default maximum reaction flux' ],
     [ 'defaultminuptake:s', 'Default minimum nutrient uptake' ],
     [ 'defaultmaxuptake:s', 'Default maximum nutrient uptake' ],
