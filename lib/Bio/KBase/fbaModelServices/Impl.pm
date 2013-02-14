@@ -835,6 +835,7 @@ sub _buildFBAObject {
 		parameters => {},
 		numberOfSolutions => 1,
 	});
+	$form->parent($self->_KBaseStore());
 	if (defined($fbaFormulation->{prommodel}) && defined($fbaFormulation->{prommodel_workspace})) {
 		my $promobj = $self->_get_msobject("PROMModel",$fbaFormulation->{prommodel_workspace},$fbaFormulation->{prommodel});
 		if (defined($promobj)) {
