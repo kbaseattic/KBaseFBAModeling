@@ -41,9 +41,9 @@ my $sched = scheduler->new({directory => $directory});
 if ($ARGV[0] eq "monitor") {
 	$sched->monitor($ARGV[1]);
 } elsif ($ARGV[0] eq "runjob") {
-	$sched->run($ARGV[1],$ARGV[2]);
+	$sched->run($ARGV[1],$ARGV[3],$ARGV[2]);
 } elsif ($ARGV[0] eq "addjob") {
-	$sched->queueJob($ARGV[1],$ARGV[2]);
+	$sched->queueJob($ARGV[1],$ARGV[3],$ARGV[2]);
 } elsif ($ARGV[0] eq "killjobs") {
 	$sched->haltalljobs();
 }
@@ -108,13 +108,19 @@ sub monitor {
 			#Queuing jobs
 			while ($openSlots > 0 && @{$jobs} > 0) {
 				my $job = shift(@{$jobs});
+				my $output = $self->client()->get_object_by_ref({
+					reference => $job->{id},
+					auth => $job->{auth}
+				});
 				if ($self->client()->set_job_status({
 					jobid => $job->{id},
 					status => "running",
 					auth => $job->{auth}
 				}) == 1) {
-					$self->queueJob($job->{id},$job->{auth});
-					$openSlots--;
+					for (my $i=0; $i < @{$output->{data}->{clusterjobs}}; $i++) {
+						$self->queueJob($job->{id},$job->{auth},$i);
+						$openSlots--;
+					}
 				}
 			}	
 		}
@@ -124,7 +130,7 @@ sub monitor {
 }
 
 sub queueJob {
-	my ($self,$id,$auth) = @_;
+	my ($self,$id,$auth,$index) = @_;
 	#if (!defined($auth)) {
 	#	$auth = Bio::KBase::workspaceService::Helpers::auth();
 	#}
@@ -135,12 +141,12 @@ sub queueJob {
 		close($fh);
 		$authcmd = $uncompressed_filename;
 	}
-	my $cmd = "qsub -l arch=lx26-amd64 -m aes -M \"chenry\@mcs.anl.gov\" -b yes -e ".$self->directory()."/errors/ -o ".$self->directory()."/output/ bash ".$self->directory()."/scheduler.sh runjob ".$id." ".$authcmd;
+	my $cmd = "qsub -l arch=lx26-amd64 -m aes -M \"chenry\@mcs.anl.gov\" -b yes -e ".$self->directory()."/errors/ -o ".$self->directory()."/output/ bash ".$self->directory()."/scheduler.sh runjob ".$id." ".$index." ".$authcmd;
 	system($cmd);
 }
 
 sub run {
-	my($self,$id,$auth) = @_;
+	my($self,$id,$auth,$index) = @_;
 	my $filename;
 	#if (!defined($auth)) {
 	#	$auth = Bio::KBase::workspaceService::Helpers::auth();
@@ -159,13 +165,13 @@ sub run {
 	if ($auth ne "none") {
 		$obj->run_job({
 			jobid => $id,
-			"index" => 0,
+			"index" => $index,
 			auth => $auth
 		});
 	} else {
 		$obj->run_job({
 			jobid => $id,
-			"index" => 0
+			"index" => $index
 		});
 	}
 }

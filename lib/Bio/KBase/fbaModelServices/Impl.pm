@@ -159,6 +159,9 @@ sub _KBaseStore {
 sub _setContext {
 	my ($self,$context,$params) = @_;
 	#Clearing the existing kbasestore and initializing a new one
+	if (defined($params->{wsurl})) {
+		$self->_getContext()->{_override}->{_wsurl} = $params->{wsurl};
+	}	
 	$self->_resetKBaseStore();
 	if ( defined $params->{auth} ) {
 		if (!defined($self->_getContext()->{_override}) || $self->_getContext()->{_override}->{_authentication} ne $params->{auth}) {
@@ -347,10 +350,23 @@ sub _idServer {
 
 sub _workspaceServices {
 	my $self = shift;
-	if (!defined($self->{_workspaceServices})) {
-		$self->{_workspaceServices} = Bio::KBase::workspaceService::Client->new($self->{"_workspace-url"});
+	if (!defined($self->{_workspaceServices}->{$self->_workspaceURL()})) {
+		$self->{_workspaceServices}->{$self->_workspaceURL()} = Bio::KBase::workspaceService::Client->new($self->_workspaceURL());
 	}
-    return $self->{_workspaceServices};
+    return $self->{_workspaceServices}->{$self->_workspaceURL()};
+}
+
+sub _workspaceURL {
+	my $self = shift;
+	if (defined($self->_getContext()->{_override}->{_wsurl})) {
+		return $self->_getContext()->{_override}->{_wsurl};
+	}
+	return $self->{"_workspace-url"};
+}
+
+sub _myURL {
+	my $self = shift;
+	return "http://bio-data-1.mcs.anl.gov/services/fba";
 }
 
 sub _save_msobject {
@@ -1000,6 +1016,7 @@ sub _buildGapfillObject {
 		timePerSolution => $formulation->{timePerSolution},
 		totalTimeLimit => $formulation->{totalTimeLimit},
 	});
+	$gapform->parent($self->_KBaseStore());
 	foreach my $reaction (@{$formulation->{gauranteedrxns}}) {
 		my $rxnObj = $model->biochemistry()->searchForReaction($reaction);
 		if (defined($rxnObj)) {
@@ -1081,6 +1098,7 @@ sub _buildGapGenObject {
 		timePerSolution => $formulation->{timePerSolution},
 		totalTimeLimit => $formulation->{totalTimeLimit},
 	});
+	$gapform->parent($self->_KBaseStore());
 	$gapform->{_kbaseWSMeta}->{wsid} = $gapform->uuid();
 	$gapform->{_kbaseWSMeta}->{ws} = "NO_WORKSPACE";
 	$gapform->prepareFBAFormulation();
@@ -1153,8 +1171,8 @@ sub _parseBound {
 sub _create_job {
 	my ($self,$args) = @_;
 	$args = $self->_validateargs($args,["queuing_command","clusterjobs","workspace"],{
-		clustermem => 2000,
-		clustertime => 14400,
+		clustermem => 1200,
+		clustertime => 19800,
 		postprocess_command => undef,
 		postprocess_args => undef
 	});
@@ -1172,6 +1190,8 @@ sub _create_job {
 		postprocess_args => $args->{postprocess_args},
 		owner => $self->_getUsername(),
 		queuing_command => $args->{queuing_command},
+		workspaceURL => $self->_workspaceURL(),
+		fbaURL => $self->_myURL()
 	};
 }
 
@@ -1187,7 +1207,8 @@ sub _submit_job {
 		auth => $self->_authentication(),
 		application => "fba",
 		target => "jesup",
-		jobs => $job->{clusterjobs}
+		jobs => $job->{clusterjobs},
+		workspace_url => $job->{workspaceURL}
 	});
 	#$job->{csjob} = $clusterJob;
 	$job->{clustertoken} = $clusterJob->{ID};
@@ -1903,9 +1924,6 @@ sub new
     bless $self, $class;
     #BEGIN_CONSTRUCTOR
     my $options = $args[0];
-    if (defined($options->{workspace})) {
-    	$self->{_workspaceServices} = $options->{workspace};
-    }
 	$ENV{KB_NO_FILE_ENVIRONMENT} = 1;
     my %params;
     if ((my $e = $ENV{KB_DEPLOYMENT_CONFIG}) && -e $ENV{KB_DEPLOYMENT_CONFIG})
@@ -1926,13 +1944,14 @@ sub new
     }
 
     if (defined $params{"workspace-url"}) {
-	$self->{"_workspace-url"} = $params{"workspace-url"};
+		$self->{"_workspace-url"} = $params{"workspace-url"};
+    } else {
+		print STDERR "workspace-url configuration not found, using 'localhost'\n";
+		$self->{"_workspace-url"} = "http://localhost:7058";
     }
-    else {
-	print STDERR "workspace-url configuration not found, using 'localhost'\n";
-	$self->{"_workspace-url"} = "http://localhost:7058";
+	if (defined($options->{workspace})) {
+    	$self->{_workspaceServices}->{$self->{"_workspace-url"}} = $options->{workspace};
     }
-
     if (defined($options->{verbose})) {
     	set_verbose(1);
     }
@@ -5349,7 +5368,8 @@ sub export_object
 		Media => 1,
 		Annotation => 1,
 		Biochemistry => 1,
-		FBA => 1
+		FBA => 1,
+		PromConstraints => 1
 	};
 	if ($input->{type} eq "Genome") {
 		$obj = $self->_KBaseStore()->get_object("Annotation",$obj->{annotation_uuid});
@@ -7499,13 +7519,16 @@ sub queue_runfba
 		workspace => $input->{workspace}
 	});
 	$job->{token} = $input->{auth};
+	my $state = "queued";
 	if ($input->{donot_submit_job} == 0) {
 		$job = $self->_submit_job($job);
+		$state = "nersc";
 	}
 	$output = $self->_save_msobject($job,"FBAJob","NO_WORKSPACE",$job->{id},"queue_runfba",0,$job->{id});
 	$self->_workspaceServices()->queue_job({
     	jobid => $job->{id},
-    	auth => $self->_authentication()
+    	auth => $self->_authentication(),
+    	"state" => $state
     });
 	$self->_clearContext();
     #END queue_runfba
@@ -7836,14 +7859,17 @@ sub queue_gapfill_model
 			queuing_command => "queue_gapfill_model",
 			workspace => $input->{workspace}
 		});
-	        $job->{token} = $input->{auth};
+		$job->{token} = $input->{auth};
+		my $state = "queued";
 		if ($input->{donot_submit_job} == 0) {
 			$job = $self->_submit_job($job);
+			$state = "nersc";
 		}
 		$output = $self->_save_msobject($job,"FBAJob","NO_WORKSPACE",$job->{id},"queue_gapfill_model",0,$job->{id});
 		$self->_workspaceServices()->queue_job({
 	    	jobid => $job->{id},
-	    	auth => $self->_authentication()
+	    	auth => $self->_authentication(),
+	    	"state" => $state
 	    });
 	} else {
 		my $gapfill = $self->_get_msobject("GapFill","NO_WORKSPACE",$input->{gapFill});
@@ -8163,14 +8189,17 @@ sub queue_gapgen_model
 			queuing_command => "queue_gapgen_model",
 			workspace => $input->{workspace}
 		});
-	        $job->{token} = $input->{auth};
+		$job->{token} = $input->{auth};
+		my $state = "queued";
 		if ($input->{donot_submit_job} == 0) {
 			$job = $self->_submit_job($job);
+			$state = "nersc";
 		}
 		$output = $self->_save_msobject($job,"FBAJob","NO_WORKSPACE",$job->{id},"queue_gapgen_model",0,$job->{id});
 		$self->_workspaceServices()->queue_job({
 	    	jobid => $job->{id},
-	    	auth => $self->_authentication()
+	    	auth => $self->_authentication(),
+	    	"state" => $state
 	    });
 	} else {
 		my $gapgen = $self->_get_msobject("GapGen","NO_WORKSPACE",$input->{gapGen});
@@ -8597,14 +8626,16 @@ sub queue_wildtype_phenotype_reconciliation
 			});
 		}
 		$output = $self->_save_msobject($job,"FBAJob",$job->{workspace},$job->{id},"queue_gapfill_model");
-	        $job->{token} = $input->{auth};
+		$job->{token} = $input->{auth};
+		my $state = "queued";
 		if ($input->{donot_submit_job} == 0) {
 			$job = $self->_submit_job($job);
+			$state = "nersc";
 		}
 		$self->_workspaceServices()->queue_job({
 	    	jobid => $job->{id},
-	    	jobws => $job->{workspace},
-	    	auth => $self->_authentication()
+	    	auth => $self->_authentication(),
+	    	"state" => $state
 	    });
 	} elsif ($input->{queueSensitivityAnalysis} == 1) {
 		#Code to post process job
@@ -8941,6 +8972,225 @@ sub queue_reconciliation_sensitivity_analysis
     my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
     my($output);
     #BEGIN queue_reconciliation_sensitivity_analysis
+    $self->_setContext($ctx,$input);
+	$input = $self->_validateargs($input,["model","workspace","phenotypeSet"],{
+		fba_formulation => undef,
+		phenotypeSet_workspace => $input->{workspace},
+		model_workspace => $input->{workspace},
+		out_model => $input->{model},
+		gapFills => undef,
+		gapGens => undef,
+		queueReconciliationCombination => 0,
+		donot_submit_job => 0,
+		overwrite => 0,
+		fbaid => undef
+	});
+	#Retreiving model
+	my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
+	if (!defined($input->{fbaid})) {
+		#Identifying gapfills and gapgens to assess
+		if (!defined($input->{gapFills})) {
+			$input->{gapFills} = [];
+			for (my $i=0; $i < @{$model->unintegratedGapfillings()}; $i++) {
+				push(@{$input->{gapFills}},$model->unintegratedGapfillings()->[$i]->uuid());
+			}
+		}
+		if (!defined($input->{gapGens})) {
+			$input->{gapGens} = [];
+			for (my $i=0; $i < @{$model->unintegratedGapgens()}; $i++) {
+				push(@{$input->{gapGens}},$model->unintegratedGapgens()->[$i]->uuid());
+			}
+		}
+		#Retreiving phenotype set
+		my $pheno = $self->_get_msobject("PhenotypeSet",$input->{phenotypeSet_workspace},$input->{phenotypeSet});
+		#Creating FBAFormulation Object
+		$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
+		my $fba = $self->_buildFBAObject($input->{formulation},$model,"NO_WORKSPACE",Data::UUID->new()->create_str());
+		#Translating phenotypes to fbaformulation
+		my $bio = $model->biochemistry();
+		for (my $i=0; $i < @{$pheno->{phenotypes}};$i++) {
+			my $media = $pheno->{phenotypes}->[$i]->[2]."/".$pheno->{phenotypes}->[$i]->[1]; 
+			if ($pheno->{phenotypes}->[$i]->[2] eq "NO_WORKSPACE") {
+				my $mediaobj = $bio->queryObject("media",{id => $pheno->{phenotypes}->[$i]->[1]});
+				$media = $mediaobj->uuid();
+			} else {
+				my $mediaobj = $self->_get_msobject("Media",$pheno->{phenotypes}->[$i]->[2],$pheno->{phenotypes}->[$i]->[1]);
+				$bio->add("media",$mediaobj);
+			}
+			my $genekos = [];
+			foreach my $gene (@{$pheno->{phenotypes}->[$i]->[0]}) {
+				my $geneObj = $model->annotation()->queryObject("features",{id => $gene});
+				push(@{$genekos},$geneObj->uuid());
+			}
+			my $addnlcpds = [];
+			foreach my $addnlcpd (@{$pheno->{phenotypes}->[$i]->[3]}) {
+				my $cpdObj = $model->biochemistry()->searchForCompound($addnlcpd);
+				push(@{$addnlcpds},$cpdObj->uuid());
+			}
+			my $newpheno = {
+				label => $i,
+				media_uuid => $media,
+				geneKO_uuids => $genekos,
+				reactionKO_uuids => [],
+				additionalCpd_uuids => $addnlcpds,
+				pH => 7,
+				temperature => 303,
+				observedGrowthFraction => $pheno->{phenotypes}->[$i]->[4]
+			};
+			$fba->add("fbaPhenotypeSimulations",$newpheno);
+		}
+		#Creating job object
+		my $job = $self->_create_job({
+			clusterjobs => [],
+			postprocess_command => "queue_reconciliation_sensitivity_analysis",
+			postprocess_args => [$input],
+			queuing_command => "queue_reconciliation_sensitivity_analysis",
+			workspace => $input->{workspace}
+		});
+		#Queuing up sensitivity analysis of gapfilling solutions
+		for (my $i=0;$i<@{$input->{gapFills}};$i++) {
+			my $gf;
+			for (my $j=0;$j<@{$model->unintegratedGapfillings()};$j++) {
+				if ($model->unintegratedGapfillings()->[$j]->uuid() eq $input->{gapFills}->[$i]) {
+					$gf = $model->unintegratedGapfillings()->[$j];
+					last;
+				}
+			}
+			if (defined($gf)) {
+				for (my $j=0;$j<@{$gf->gapfillingSolutions()};$j++) {
+					my $newmod = $model->cloneObject();
+					$newmod->parent($self->_KBaseStore());
+					$newmod->integrateGapfillSolution({
+						solutionNum => $j,
+						gapfillingFormulation => $gf
+					});
+					$newmod->uuid(Data::UUID->new()->create_str());
+					$fba->uuid(Data::UUID->new()->create_str());
+					$fba->model($newmod);
+					$fba->model_uuid($newmod->uuid());
+					$fba->notes("GF:".$gf->uuid().".".$j);
+					$output = $self->_save_msobject($newmod,"Model","NO_WORKSPACE",$newmod->uuid(),"queue_reconciliation_sensitivity_analysis",1,$newmod->uuid());
+					$output = $self->_save_msobject($fba,"FBA","NO_WORKSPACE",$fba->uuid(),"queue_reconciliation_sensitivity_analysis",1,$fba->uuid());
+					push(@{$job->{clusterjobs}},{
+						mediaids => [],
+						mediawss => [],
+						mediainsts => [],
+						bioref => $newmod->biochemistry_uuid(),
+						mapref => $newmod->mapping_uuid(),
+						annoref => $newmod->annotation_uuid(),
+						modelref => $newmod->uuid(),
+						fbaref => $fba->uuid(),
+						fbaid => $fba->uuid(),
+						postprocess_args => [{
+							model => $input->{model},
+							workspace => $input->{workspace},
+							phenotypeSet => $input->{phenotypeSet},
+							model_workspace => $input->{model_workspace},
+							phenotypeSet_workspace => $input->{phenotypeSet_workspace},
+							gapFills => $input->{gapFills},
+							gapGens => $input->{gapGens},
+							fbaid => $fba->uuid()
+						}]
+					});
+				}
+			}
+		}
+		#Queuing up sensitivity analysis of gapgen solutions
+		for (my $i=0;$i<@{$input->{gapGens}};$i++) {
+			my $gg;
+			for (my $j=0;$j<@{$model->unintegratedGapgens()};$j++) {
+				if ($model->unintegratedGapgens()->[$j]->uuid() eq $input->{gapGens}->[$i]) {
+					$gg = $model->unintegratedGapgens()->[$j];
+					last;
+				}
+			}
+			if (defined($gg)) {
+				for (my $j=0;$j<@{$gg->gapgenSolutions()};$j++) {
+					my $newmod = $model->cloneObject();
+					$newmod->parent($self->_KBaseStore());
+					$newmod->integrateGapgenSolution({
+						solutionNum => $j,
+						gapgenFormulation => $gg
+					});
+					$newmod->uuid(Data::UUID->new()->create_str());
+					$fba->uuid(Data::UUID->new()->create_str());
+					$fba->model($newmod);
+					$fba->model_uuid($newmod->uuid());
+					$fba->notes("GG:".$gg->uuid().".".$j);
+					$output = $self->_save_msobject($newmod,"Model","NO_WORKSPACE",$newmod->uuid(),"queue_reconciliation_sensitivity_analysis",1,$newmod->uuid());
+					$output = $self->_save_msobject($fba,"FBA","NO_WORKSPACE",$fba->uuid(),"queue_reconciliation_sensitivity_analysis",1,$fba->uuid());
+					push(@{$job->{clusterjobs}},{
+						mediaids => [],
+						mediawss => [],
+						mediainsts => [],
+						bioref => $newmod->biochemistry_uuid(),
+						mapref => $newmod->mapping_uuid(),
+						annoref => $newmod->annotation_uuid(),
+						modelref => $newmod->uuid(),
+						fbaref => $fba->uuid(),
+						fbaid => $fba->uuid(),
+						postprocess_args => [{
+							model => $input->{model},
+							workspace => $input->{workspace},
+							phenotypeSet => $input->{phenotypeSet},
+							model_workspace => $input->{model_workspace},
+							phenotypeSet_workspace => $input->{phenotypeSet_workspace},
+							gapFills => $input->{gapFills},
+							gapGens => $input->{gapGens},
+							fbaid => $fba->uuid()
+						}]
+					});
+				}
+			}
+		}    
+		#Saving job object
+		$output = $self->_save_msobject($job,"FBAJob","NO_WORKSPACE",$job->{id},"queue_reconciliation_sensitivity_analysis",0,$job->{id});
+		#Queuing job
+		$job->{token} = $input->{auth};
+		my $state = "queued";
+		if ($input->{donot_submit_job} == 0) {
+			$job = $self->_submit_job($job);
+			$state = "nersc";
+		}
+		$self->_workspaceServices()->queue_job({
+	    	jobid => $job->{id},
+	    	auth => $self->_authentication(),
+	    	"state" => $state
+	    });
+	} else {
+		my $fba = $self->_get_msobject("FBA","NO_WORKSPACE",$input->{fbaid});
+		if ($fba->notes() =~ m/(G[GF]):(.+)\.(\d+)/) {
+			my $type = $1;
+			my $id = $2;
+			my $sol = $3;
+			if ($type eq "GG") {
+				$type = "GapGen";
+			} elsif ($type eq "GF") {
+				$type = "GapFill";
+			}
+			if (@{$fba->fbaResults()} > 0) {
+				my $g = $self->_get_msobject($type,"NO_WORKSPACE",$id);
+				$fba->fbaResults()->[0]->notes("Solution.".$sol.".".$input->{phenotypeSet_workspace}."/".$input->{phenotypeSet});
+				for (my $i=0; $i<@{$g->fbaFormulation()->fbaResults()};$i++) {
+					if ($g->fbaFormulation()->fbaResults()->[$i]->notes() eq "Solution.".$sol.".".$input->{phenotypeSet_workspace}."/".$input->{phenotypeSet}) {
+						$g->fbaFormulation()->remove("fbaResults",$g->fbaFormulation()->fbaResults()->[$i]);
+					}
+				}
+				$g->fbaFormulation()->add("fbaResults",$fba->fbaResults()->[0]);
+				$output = $self->_save_msobject($g,$type,"NO_WORKSPACE",$id,"queue_reconciliation_sensitivity_analysis",1,$id);
+			}
+			$self->_workspaceServices()->delete_object_permanently({
+				type => "Model",
+				id => $fba->model_uuid(),
+				workspace => "NO_WORKSPACE"
+			});
+			$self->_workspaceServices()->delete_object_permanently({
+				type => "FBA",
+				id => $fba->uuid(),
+				workspace => "NO_WORKSPACE"
+			});
+		}
+	}
     #END queue_reconciliation_sensitivity_analysis
     my @_bad_returns;
     (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
@@ -9346,20 +9596,34 @@ sub jobs_done
     my($output);
     #BEGIN jobs_done
     $self->_setContext($ctx,$input);
-    $input = $self->_validateargs($input,["jobid"],{});
+    $input = $self->_validateargs($input,["jobid"],{
+    	"index" => 0
+    });
     my $job = $self->_get_msobject("FBAJob","NO_WORKSPACE",$input->{jobid});
+    my $clusterjob = $job->{clusterjobs}->[$input->{"index"}];
     $job->{complete} = 1;
     $job->{completetime} = DateTime->now()->datetime();
     if (defined($job->{postprocess_command})) {
     	my $function = $job->{postprocess_command};
-    	$job->{postprocess_args}->[0]->{auth} = $self->_authentication();
-    	$self->$function(@{$job->{postprocess_args}});
+    	my $args;
+    	if (defined($clusterjob->{postprocess_args})) {
+    		$args = $clusterjob->{postprocess_args};
+    	} else {
+    		$args = $job->{postprocess_args};
+    	}
+    	$args->[0]->{auth} = $self->_authentication();
+    	$self->$function(@{$args});
     }
-    $self->_workspaceServices()->set_job_status({
-    	jobid => $input->{jobid},
-    	status => "done",
-    	auth => $self->_authentication()
-    });
+    my $jobCount = @{$job->{clusterjobs}};
+    $jobCount--;
+    if ($input->{"index"} == $jobCount) {
+	    $self->_workspaceServices()->set_job_status({
+	    	jobid => $input->{jobid},
+	    	status => "done",
+	    	auth => $self->_authentication(),
+	    	currentStatus => "running"
+	    });
+    }
     $self->_save_msobject($job,"FBAJob","NO_WORKSPACE",$input->{jobid},"jobs_done",1,$input->{jobid});
     $output = $job;
     $self->_clearContext();
@@ -9602,11 +9866,18 @@ sub run_job
     	"index" => 0,
     });
     my $job = $self->_get_msobject("FBAJob","NO_WORKSPACE",$input->{jobid});
-    $self->_workspaceServices()->set_job_status({
-    	jobid => $input->{jobid},
-    	status => "running",
-    	auth => $self->_authentication()
-    });
+    if ($input->{"index"} == 0) {
+	    my $currentState = "queued";
+	    if (defined($job->{clustertoken})) {
+	    	$currentState = "nersc";
+	    }
+	    $self->_workspaceServices()->set_job_status({
+	    	jobid => $input->{jobid},
+	    	status => "running",
+	    	auth => $self->_authentication(),
+	    	currentStatus => $currentState
+	    });
+    }
     my $clusterjob = $job->{clusterjobs}->[$input->{"index"}];
     my $fba = $self->_get_msobject("FBA","NO_WORKSPACE",$clusterjob->{fbaref});
     my $fbaResult = $fba->runFBA();

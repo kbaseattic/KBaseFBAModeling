@@ -1891,14 +1891,13 @@ module fbaModelServices {
 	*/
     typedef structure {
 		fbamodel_id model;
-		workspace_id model_workspace;
-		FBAFormulation fba_formulation;
-		GapfillingFormulation gapfill_formulation;
-		GapgenFormulation gapgen_formulation;
-		phenotypeSet_id phenotypeSet;
-		workspace_id phenotypeSet_workspace;
-		fbamodel_id out_model;
 		workspace_id workspace;
+		phenotypeSet_id phenotypeSet;
+		
+		FBAFormulation fba_formulation;
+		workspace_id model_workspace;
+		workspace_id phenotypeSet_workspace;
+		
 		list<gapfill_id> gapFills;
 		list<gapgen_id> gapGens;
 		bool queueReconciliationCombination;
