@@ -78,6 +78,7 @@ use ModelSEED::MS::GapfillingFormulation;
 use ModelSEED::MS::GapgenFormulation;
 use ModelSEED::MS::FBAFormulation;
 use ModelSEED::MS::FBAProblem;
+use ModelSEED::MS::PROMModel;;
 use ModelSEED::MS::Metadata::Definitions;
 use ModelSEED::Client::MSSeedSupport;
 use ModelSEED::utilities qw( args verbose set_verbose translateArrayOptions);
