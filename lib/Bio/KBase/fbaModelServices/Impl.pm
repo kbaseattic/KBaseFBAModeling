@@ -9572,6 +9572,7 @@ sub queue_combine_wildtype_phenotype_reconciliation
 	}
 	if (!defined($input->{fbaid})) {
 		my $origerrors = [];
+		my $errorCount = 0;
 		for (my $i=0; $i < @{$phenoSense->{wildtypePhenotypeSimulations}};$i++) {
 			$origerrors->[$i] = $classTrans->{$phenoSense->{wildtypePhenotypeSimulations}->[$i]->[2]};
 			if ($classTrans->{$phenoSense->{wildtypePhenotypeSimulations}->[$i]->[2]} eq "FP" || $classTrans->{$phenoSense->{wildtypePhenotypeSimulations}->[$i]->[2]} eq "FN") {
@@ -9597,7 +9598,7 @@ sub queue_combine_wildtype_phenotype_reconciliation
 				$rxns .= $phenoSense->{reconciliationSolutionSimulations}->[$i]->[3]->[$j]->[1];
 			}
 			my $solutionArray = [$phenoSense->{reconciliationSolutionSimulations}->[$i]->[1],$phenoSense->{reconciliationSolutionSimulations}->[$i]->[2],"",$rxns,""];
-			my $errorCount = 0;
+			$errorCount = 0;
 			for (my $j=0; $j < @{$phenoSense->{reconciliationSolutionSimulations}->[$i]->[5]}; $j++) {
 				push(@{$solutionArray},$classTrans->{$phenoSense->{reconciliationSolutionSimulations}->[$i]->[5]->[$j]});
 				if ($classTrans->{$phenoSense->{reconciliationSolutionSimulations}->[$i]->[5]->[$j]} eq "FP" || $classTrans->{$phenoSense->{reconciliationSolutionSimulations}->[$i]->[5]->[$j]} eq "FN") {
