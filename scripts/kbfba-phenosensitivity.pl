@@ -20,7 +20,7 @@ my $translation = {
 	workspace => "workspace",
 	auth => "auth",
 	overwrite => "overwrite",
-	nosubmit => "donot_submit_job"
+	nosubmit => "donot_submit_job",
 };
 my $fbaTranslation = {
 	objfraction => "objfraction",

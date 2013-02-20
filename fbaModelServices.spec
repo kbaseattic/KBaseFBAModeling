@@ -958,6 +958,37 @@ module fbaModelServices {
 		list<PhenotypeSimulation> phenotypeSimulations;
     } PhenotypeSimulationSet;
     
+    
+    
+    /* Data structure for holding gapfill or gapgen solution reaction information
+		
+		string direction - direction of gapfilled or gapgen reaction
+		string reactionID - ID of gapfilled or gapgen reaction
+							
+	*/
+    typedef tuple<string direction,string reactionID> reactionSpecification;
+    
+    /* Data structure for holding results from PhenotypeSensitivityAnalysis
+		
+		phenotypeSet_id phenotypeSet - ID of phenotype set analyzed
+    	workspace_id phenotypeSet_workspace - workspace containing phenotype set analyzed
+		fbamodel_id model - ID of model used to analyze phenotypes
+		workspace_id model_workspace - workspace containing model used to analyze phenotypes
+		list<Phenotype> phenotypes - list of phenotypes simulated
+		list<tuple<float simulatedGrowth,float simulatedGrowthFraction,string class>> wildtypePhenotypeSimulations - results from simulating phenotypes with original model
+		list<string type,string id,string solutionIndex,list<reactionSpecification> reactionList,list<string compound> biomassEdits,list<tuple<float simulatedGrowth,float simulatedGrowthFraction,string class>> PhenotypeSimulations> reconciliationSolutionSimulations - results from simulating reconciliation solutions
+					
+	*/
+    typedef structure {
+    	phenotypeSet_id phenotypeSet;
+    	workspace_id phenotypeSet_workspace;
+		fbamodel_id model;
+		workspace_id model_workspace;
+		list<Phenotype> phenotypes;
+		list<tuple<float simulatedGrowth,float simulatedGrowthFraction,string class>> wildtypePhenotypeSimulations;
+		list<string id,string solutionIndex,list<reactionSpecification> reactionList,list<string compound> biomassEdits,list<tuple<float simulatedGrowth,float simulatedGrowthFraction,string class>> PhenotypeSimulations> reconciliationSolutionSimulations;
+    } PhenotypeSensitivityAnalysis;
+    
     /*********************************************************************************
     Job object type definitions
    	*********************************************************************************/
@@ -1923,6 +1954,8 @@ module fbaModelServices {
 		list<gapgen_id> gapGens - IDs of gapgen solutions (an optional argument: default is 'undef')
 		list<gapfill_id> gapFills - IDs of gapfill solutions (an optional argument: default is 'undef')
 		workspace_id workspace - workspace where solution combination results will be saved (a required argument)
+		int timePerSolution - maximum time spent per solution
+		int totalTimeLimit - maximum time allowed to work on problem
 		bool donot_submit_job - a flag indicating if the job should be submitted to the cluster (an optional argument: default is '0')
 		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 		

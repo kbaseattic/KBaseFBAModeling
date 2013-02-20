@@ -84,6 +84,7 @@ use ModelSEED::utilities qw( args verbose set_verbose translateArrayOptions);
 use Try::Tiny;
 use Data::Dumper;
 use Config::Simple;
+use POSIX;
 
 sub _authentication {
 	my($self) = @_;
@@ -1913,6 +1914,77 @@ sub _parseSingleProtein {
 		$subunits->[0]->[0] = $node;
 	}
 	return $subunits;
+}
+
+=head3 _prepPhenotypeSimultationFBA
+
+Definition:
+	 = $self->_prepPhenotypeSimultationFBA(ModelSEED::MS::Model,PhenotypeSet);
+Description:
+	Translate an input Model and PhenotypeSet into a loaded FBA problem object.
+	
+=cut
+
+sub _prepPhenotypeSimultationFBA {
+	my($self,$model,$pheno,$fba) = @_;
+	my $ftrs = $model->features();
+	my $ftrhash = {};
+	for (my $i=0; $i < @{$ftrs}; $i++) {
+		$ftrhash->{$ftrs->[$i]} = 1;
+	}
+	#Translating phenotypes to fbaformulation
+	my $bio = $model->biochemistry();
+	my $mediaChecked = {};
+	my $existingPhenos = {};
+	my $phenokeys = [];
+	for (my $i=0; $i < @{$pheno->{phenotypes}};$i++) {
+		my $media = $pheno->{phenotypes}->[$i]->[2]."/".$pheno->{phenotypes}->[$i]->[1]; 
+		if (!defined($mediaChecked->{$media})) {
+			$mediaChecked->{$media} = 1;
+			if ($pheno->{phenotypes}->[$i]->[2] eq "NO_WORKSPACE") {
+				my $mediaobj = $bio->queryObject("media",{id => $pheno->{phenotypes}->[$i]->[1]});
+				$media = $mediaobj->uuid();
+			} else {
+				my $mediaobj = $self->_get_msobject("Media",$pheno->{phenotypes}->[$i]->[2],$pheno->{phenotypes}->[$i]->[1]);
+				$bio->add("media",$mediaobj);
+			}
+		}
+		my $genekos = [];
+		foreach my $gene (@{$pheno->{phenotypes}->[$i]->[0]}) {
+			my $geneObj = $model->annotation()->queryObject("features",{id => $gene});
+			if (defined($ftrhash->{$geneObj->uuid()})) {
+				push(@{$genekos},$geneObj->uuid());
+			}
+		}
+		my $addnlcpds = [];
+		foreach my $addnlcpd (@{$pheno->{phenotypes}->[$i]->[3]}) {
+			my $cpdObj = $model->biochemistry()->searchForCompound($addnlcpd);
+			push(@{$addnlcpds},$cpdObj->uuid());
+		}
+		my $phenokey = $media."|".join(";",sort(@{$genekos}))."|".join(";",sort(@{$addnlcpds}));
+		if (!defined($existingPhenos->{$phenokey})) {
+			push(@{$phenokeys},$phenokey);
+			my $newpheno = {
+				label => $i,
+				media_uuid => $media,
+				geneKO_uuids => $genekos,
+				reactionKO_uuids => [],
+				additionalCpd_uuids => $addnlcpds,
+				pH => 7,
+				temperature => 303,
+				observedGrowthFraction => $pheno->{phenotypes}->[$i]->[4]
+			};
+			$fba->add("fbaPhenotypeSimulations",$newpheno);
+			$existingPhenos->{$phenokey} = [$i];
+		} else {
+			push(@{$existingPhenos->{$phenokey}},$i);
+		}
+		if ($i/1000 eq floor($i/1000)) {
+			#print $i."\n";
+		}
+	}
+	#print "Unique phenos:".keys(%{$existingPhenos})."\n";
+	return ($fba,$existingPhenos,$phenokeys);
 }
 
 #END_HEADER
@@ -6595,35 +6667,44 @@ sub import_phenotypes
     my $missingMedia = [];
     my $missingGenes = [];
     my $missingCompounds = [];
+    my $mediaChecked = {};
+    my $cpdChecked = {};
+    my $geneChecked = {};
     for (my $i=0; $i < @{$input->{phenotypes}}; $i++) {
     	my $phenotype = $input->{phenotypes}->[$i];
     	#Validating gene IDs
     	my $allfound = 1;
     	for (my $j=0;$j < @{$phenotype->[0]};$j++) {
-    		if (!defined($genehash->{$phenotype->[0]->[$j]})) {
-    			push(@{$missingGenes},$phenotype->[0]->[$j]);
-    			$allfound = 0;
-    		} else {
-    			$phenotype->[0]->[$j] = $genehash->{$phenotype->[0]->[$j]};
+    		if (!defined($geneChecked->{$phenotype->[0]->[$j]})) {
+	    		$geneChecked->{$phenotype->[0]->[$j]} = 1;
+	    		if (!defined($genehash->{$phenotype->[0]->[$j]})) {
+	    			push(@{$missingGenes},$phenotype->[0]->[$j]);
+	    			$allfound = 0;
+	    		} else {
+	    			$phenotype->[0]->[$j] = $genehash->{$phenotype->[0]->[$j]};
+	    		}
     		}
     	}
     	if ($allfound == 0) {
     		next;
     	}
     	#Validating media
-    	if ($phenotype->[2] eq "NO_WORKSPACE") {
-    		my $media = $bio->queryObject("media",{id => $phenotype->[1]});
-    		if (!defined($media)) {
-    			push(@{$missingMedia},$phenotype->[1]);
-    			$allfound = 0;
-    		}
-    	} else {
-    		try {
-    			my $media = $self->_get_msobject("Media",$phenotype->[2],$phenotype->[1]);
-	    	} catch {
-	    		push(@{$missingMedia},$phenotype->[1]);
-	    		$allfound = 0;
-	    	};
+    	if (!defined($mediaChecked->{$phenotype->[2]}->{$phenotype->[1]})) {
+	    	$mediaChecked->{$phenotype->[2]}->{$phenotype->[1]} = 1;
+	    	if ($phenotype->[2] eq "NO_WORKSPACE") {
+	    		my $media = $bio->queryObject("media",{id => $phenotype->[1]});
+	    		if (!defined($media)) {
+	    			push(@{$missingMedia},$phenotype->[1]);
+	    			$allfound = 0;
+	    		}
+	    	} else {
+	    		try {
+	    			my $media = $self->_get_msobject("Media",$phenotype->[2],$phenotype->[1]);
+		    	} catch {
+		    		push(@{$missingMedia},$phenotype->[1]);
+		    		$allfound = 0;
+		    	};
+	    	}
     	}
     	if ($allfound == 0) {
     		next;
@@ -6631,12 +6712,15 @@ sub import_phenotypes
     	#Validating compounds
     	$allfound = 1;
     	for (my $j=0;$j < @{$phenotype->[3]};$j++) {
-    		my $cpd = $bio->searchForCompound($phenotype->[3]->[$j]);
-    		if (!defined($cpd)) {
-    			push(@{$missingCompounds},$phenotype->[3]->[$j]);
-    			$allfound = 0;
-    		} else {
-    			$phenotype->[3]->[$j] = $cpd->id();
+    		if (!defined($cpdChecked->{$phenotype->[3]->[$j]})) {
+	    		$cpdChecked->{$phenotype->[3]->[$j]} = 1;
+	    		my $cpd = $bio->searchForCompound($phenotype->[3]->[$j]);
+	    		if (!defined($cpd)) {
+	    			push(@{$missingCompounds},$phenotype->[3]->[$j]);
+	    			$allfound = 0;
+	    		} else {
+	    			$phenotype->[3]->[$j] = $cpd->id();
+	    		}
     		}
     	}
     	if ($allfound == 0) {
@@ -6907,39 +6991,8 @@ sub simulate_phenotypes
 	#Creating FBAFormulation Object
 	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
 	my $fba = $self->_buildFBAObject($input->{formulation},$model,"NO_WORKSPACE",Data::UUID->new()->create_str());
-	#Translating phenotypes to fbaformulation
-	my $bio = $model->biochemistry();
-	for (my $i=0; $i < @{$pheno->{phenotypes}};$i++) {
-		my $media = $pheno->{phenotypes}->[$i]->[2]."/".$pheno->{phenotypes}->[$i]->[1]; 
-		if ($pheno->{phenotypes}->[$i]->[2] eq "NO_WORKSPACE") {
-			my $mediaobj = $bio->queryObject("media",{id => $pheno->{phenotypes}->[$i]->[1]});
-			$media = $mediaobj->uuid();
-		} else {
-			my $mediaobj = $self->_get_msobject("Media",$pheno->{phenotypes}->[$i]->[2],$pheno->{phenotypes}->[$i]->[1]);
-			$bio->add("media",$mediaobj);
-		}
-		my $genekos = [];
-		foreach my $gene (@{$pheno->{phenotypes}->[$i]->[0]}) {
-			my $geneObj = $model->annotation()->queryObject("features",{id => $gene});
-			push(@{$genekos},$geneObj->uuid());
-		}
-		my $addnlcpds = [];
-		foreach my $addnlcpd (@{$pheno->{phenotypes}->[$i]->[3]}) {
-			my $cpdObj = $model->biochemistry()->searchForCompound($addnlcpd);
-			push(@{$addnlcpds},$cpdObj->uuid());
-		}
-		my $newpheno = {
-			label => $i,
-			media_uuid => $media,
-			geneKO_uuids => $genekos,
-			reactionKO_uuids => [],
-			additionalCpd_uuids => $addnlcpds,
-			pH => 7,
-			temperature => 303,
-			observedGrowthFraction => $pheno->{phenotypes}->[$i]->[4]
-		};
-		$fba->add("fbaPhenotypeSimulations",$newpheno);
-	}
+	#Constructing FBA simulation object from 
+	($fba,my $existingPhenos,my $phenokeys) = $self->_prepPhenotypeSimultationFBA($model,$pheno,$fba);
 	#Running FBA
 	my $fbaResult = $fba->runFBA();
 	if (!defined($fbaResult) || @{$fbaResult->fbaPhenotypeSimultationResults()} == 0) {
@@ -6949,18 +7002,21 @@ sub simulate_phenotypes
 	#Converting FBA results into simulated phenotype
     my $object = {
     	id => $input->{phenotypeSimultationSet},
+    	phenotypeSet_workspace => $input->{phenotypeSet_workspace},
+    	phenotypeSet => $input->{phenotypeSet},
     	model => $input->{model},
     	model_workspace => $input->{model_workspace},
     	phenotypeSimulations => []
     };
     my $phenoresults = $fbaResult->fbaPhenotypeSimultationResults();
-    for (my $i=0; $i < @{$pheno->{phenotypes}};$i++) {
+    for (my $i=0; $i < @{$phenoresults};$i++) {
     	my $phenoResult = $phenoresults->[$i];
     	my $phenosim = [
-    		$pheno->{phenotypes}->[$i],
+    		$pheno->{phenotypes}->[$existingPhenos->{$phenokeys->[$i]}->[0]],
     		$phenoResult->simulatedGrowth(),
     		$phenoResult->simulatedGrowthFraction(),
-    		$phenoResult->class()
+    		$phenoResult->class(),
+    		$existingPhenos->{$phenokeys->[$i]}
     	];
     	push(@{$object->{phenotypeSimulations}},$phenosim);
     }
@@ -8978,17 +9034,67 @@ sub queue_reconciliation_sensitivity_analysis
 		fba_formulation => undef,
 		phenotypeSet_workspace => $input->{workspace},
 		model_workspace => $input->{workspace},
-		out_model => $input->{model},
 		gapFills => undef,
 		gapGens => undef,
 		queueReconciliationCombination => 0,
-		donot_submit_job => 0,
+		donot_submit_job => 1,
 		overwrite => 0,
-		fbaid => undef
+		simPhenoID => undef
 	});
 	#Retreiving model
 	my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
-	if (!defined($input->{fbaid})) {
+	if (!defined($input->{simPhenoID})) {
+		#Retrieving phenotypes
+		my $pheno = $self->_get_msobject("PhenotypeSet",$input->{phenotypeSet_workspace},$input->{phenotypeSet});
+		#Creating FBAFormulation Object
+		$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
+		my $fba = $self->_buildFBAObject($input->{formulation},$model,"NO_WORKSPACE",Data::UUID->new()->create_str());
+		#Constructing FBA simulation object from 
+		($fba,my $existingPhenos,my $phenokeys) = $self->_prepPhenotypeSimultationFBA($model,$pheno,$fba);
+		$fba->uuid(Data::UUID->new()->create_str());
+		$fba->model($model);
+		$fba->model_uuid($model->uuid());
+		$fba->notes("WT");
+		$output = $self->_save_msobject($fba,"FBA","NO_WORKSPACE",$fba->uuid(),"queue_reconciliation_sensitivity_analysis",1,$fba->uuid());
+		#Creating PhenotypeSensitivityAnalysis object
+		my $phenoSenseAnalysis = {
+			id => $self->_get_new_id($input->{model}.".phenosens."),
+			phenotypeSet => $input->{phenotypeSet},
+			phenotypeSet_workspace => $input->{phenotypeSet_workspace},
+			model => $input->{model},
+			model_workspace => $input->{model_workspace},
+			phenotypes => [],
+			wildtypePhenotypeSimulations => [],
+			reconciliationSolutionSimulations => [],
+			fbaids => [$fba->uuid()]
+		};
+		#Creating job object
+		my $job = $self->_create_job({
+			clusterjobs => [{
+			mediaids => [],
+			mediawss => [],
+			mediainsts => [],
+			bioref => $model->biochemistry_uuid(),
+			mapref => $model->mapping_uuid(),
+			annoref => $model->annotation_uuid(),
+			modelref => $model->uuid(),
+			fbaref => $fba->uuid(),
+			fbaid => $fba->uuid()
+		}],
+			postprocess_command => "queue_reconciliation_sensitivity_analysis",
+			postprocess_args => [{
+				model => $input->{model},
+				workspace => $input->{workspace},
+				phenotypeSet => $input->{phenotypeSet},
+				model_workspace => $input->{model_workspace},
+				phenotypeSet_workspace => $input->{phenotypeSet_workspace},
+				gapFills => $input->{gapFills},
+				gapGens => $input->{gapGens},
+				simPhenoID => $phenoSenseAnalysis->{id}
+			}],
+			queuing_command => "queue_reconciliation_sensitivity_analysis",
+			workspace => $input->{workspace}
+		});
 		#Identifying gapfills and gapgens to assess
 		if (!defined($input->{gapFills})) {
 			$input->{gapFills} = [];
@@ -9002,54 +9108,10 @@ sub queue_reconciliation_sensitivity_analysis
 				push(@{$input->{gapGens}},$model->unintegratedGapgens()->[$i]->uuid());
 			}
 		}
-		#Retreiving phenotype set
-		my $pheno = $self->_get_msobject("PhenotypeSet",$input->{phenotypeSet_workspace},$input->{phenotypeSet});
-		#Creating FBAFormulation Object
-		$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
-		my $fba = $self->_buildFBAObject($input->{formulation},$model,"NO_WORKSPACE",Data::UUID->new()->create_str());
-		#Translating phenotypes to fbaformulation
-		my $bio = $model->biochemistry();
-		for (my $i=0; $i < @{$pheno->{phenotypes}};$i++) {
-			my $media = $pheno->{phenotypes}->[$i]->[2]."/".$pheno->{phenotypes}->[$i]->[1]; 
-			if ($pheno->{phenotypes}->[$i]->[2] eq "NO_WORKSPACE") {
-				my $mediaobj = $bio->queryObject("media",{id => $pheno->{phenotypes}->[$i]->[1]});
-				$media = $mediaobj->uuid();
-			} else {
-				my $mediaobj = $self->_get_msobject("Media",$pheno->{phenotypes}->[$i]->[2],$pheno->{phenotypes}->[$i]->[1]);
-				$bio->add("media",$mediaobj);
-			}
-			my $genekos = [];
-			foreach my $gene (@{$pheno->{phenotypes}->[$i]->[0]}) {
-				my $geneObj = $model->annotation()->queryObject("features",{id => $gene});
-				push(@{$genekos},$geneObj->uuid());
-			}
-			my $addnlcpds = [];
-			foreach my $addnlcpd (@{$pheno->{phenotypes}->[$i]->[3]}) {
-				my $cpdObj = $model->biochemistry()->searchForCompound($addnlcpd);
-				push(@{$addnlcpds},$cpdObj->uuid());
-			}
-			my $newpheno = {
-				label => $i,
-				media_uuid => $media,
-				geneKO_uuids => $genekos,
-				reactionKO_uuids => [],
-				additionalCpd_uuids => $addnlcpds,
-				pH => 7,
-				temperature => 303,
-				observedGrowthFraction => $pheno->{phenotypes}->[$i]->[4]
-			};
-			$fba->add("fbaPhenotypeSimulations",$newpheno);
-		}
-		#Creating job object
-		my $job = $self->_create_job({
-			clusterjobs => [],
-			postprocess_command => "queue_reconciliation_sensitivity_analysis",
-			postprocess_args => [$input],
-			queuing_command => "queue_reconciliation_sensitivity_analysis",
-			workspace => $input->{workspace}
-		});
 		#Queuing up sensitivity analysis of gapfilling solutions
+		my $solIndex = 0;
 		for (my $i=0;$i<@{$input->{gapFills}};$i++) {
+			#print $input->{gapFills}->[$i]."\n";
 			my $gf;
 			for (my $j=0;$j<@{$model->unintegratedGapfillings()};$j++) {
 				if ($model->unintegratedGapfillings()->[$j]->uuid() eq $input->{gapFills}->[$i]) {
@@ -9058,7 +9120,9 @@ sub queue_reconciliation_sensitivity_analysis
 				}
 			}
 			if (defined($gf)) {
+				#for (my $j=0;$j<2;$j++) {
 				for (my $j=0;$j<@{$gf->gapfillingSolutions()};$j++) {
+					#print "Integrating ".$input->{gapFills}->[$i].".".$j."\n";
 					my $newmod = $model->cloneObject();
 					$newmod->parent($self->_KBaseStore());
 					$newmod->integrateGapfillSolution({
@@ -9069,9 +9133,11 @@ sub queue_reconciliation_sensitivity_analysis
 					$fba->uuid(Data::UUID->new()->create_str());
 					$fba->model($newmod);
 					$fba->model_uuid($newmod->uuid());
-					$fba->notes("GF:".$gf->uuid().".".$j);
+					$fba->notes($solIndex);
 					$output = $self->_save_msobject($newmod,"Model","NO_WORKSPACE",$newmod->uuid(),"queue_reconciliation_sensitivity_analysis",1,$newmod->uuid());
 					$output = $self->_save_msobject($fba,"FBA","NO_WORKSPACE",$fba->uuid(),"queue_reconciliation_sensitivity_analysis",1,$fba->uuid());
+					push(@{$phenoSenseAnalysis->{fbaids}},$fba->uuid());
+					push(@{$phenoSenseAnalysis->{reconciliationSolutionSimulations}},["GF",$gf->uuid(),$j,$gf->gapfillingSolutions()->[$j]->solrxn(),$gf->gapfillingSolutions()->[$j]->biocpd(),[]]);
 					push(@{$job->{clusterjobs}},{
 						mediaids => [],
 						mediawss => [],
@@ -9082,20 +9148,11 @@ sub queue_reconciliation_sensitivity_analysis
 						modelref => $newmod->uuid(),
 						fbaref => $fba->uuid(),
 						fbaid => $fba->uuid(),
-						postprocess_args => [{
-							model => $input->{model},
-							workspace => $input->{workspace},
-							phenotypeSet => $input->{phenotypeSet},
-							model_workspace => $input->{model_workspace},
-							phenotypeSet_workspace => $input->{phenotypeSet_workspace},
-							gapFills => $input->{gapFills},
-							gapGens => $input->{gapGens},
-							fbaid => $fba->uuid()
-						}]
 					});
 				}
 			}
-		}
+			$solIndex++;
+		}		
 		#Queuing up sensitivity analysis of gapgen solutions
 		for (my $i=0;$i<@{$input->{gapGens}};$i++) {
 			my $gg;
@@ -9117,9 +9174,11 @@ sub queue_reconciliation_sensitivity_analysis
 					$fba->uuid(Data::UUID->new()->create_str());
 					$fba->model($newmod);
 					$fba->model_uuid($newmod->uuid());
-					$fba->notes("GG:".$gg->uuid().".".$j);
+					$fba->notes($solIndex);
 					$output = $self->_save_msobject($newmod,"Model","NO_WORKSPACE",$newmod->uuid(),"queue_reconciliation_sensitivity_analysis",1,$newmod->uuid());
 					$output = $self->_save_msobject($fba,"FBA","NO_WORKSPACE",$fba->uuid(),"queue_reconciliation_sensitivity_analysis",1,$fba->uuid());
+					push(@{$phenoSenseAnalysis->{fbaids}},$fba->uuid());
+					push(@{$phenoSenseAnalysis->{reconciliationSolutionSimulations}},["GG",$gg->uuid(),$j,$gg->gapgenSolutions()->[$j]->solrxn(),$gg->gapgenSolutions()->[$j]->biocpd(),[]]);
 					push(@{$job->{clusterjobs}},{
 						mediaids => [],
 						mediawss => [],
@@ -9129,26 +9188,20 @@ sub queue_reconciliation_sensitivity_analysis
 						annoref => $newmod->annotation_uuid(),
 						modelref => $newmod->uuid(),
 						fbaref => $fba->uuid(),
-						fbaid => $fba->uuid(),
-						postprocess_args => [{
-							model => $input->{model},
-							workspace => $input->{workspace},
-							phenotypeSet => $input->{phenotypeSet},
-							model_workspace => $input->{model_workspace},
-							phenotypeSet_workspace => $input->{phenotypeSet_workspace},
-							gapFills => $input->{gapFills},
-							gapGens => $input->{gapGens},
-							fbaid => $fba->uuid()
-						}]
+						fbaid => $fba->uuid()
 					});
 				}
 			}
+			$solIndex++;
 		}    
 		#Saving job object
+		#print "Saving!\n";
+		#print join("\n",@{$phenoSenseAnalysis->{fbaids}})."\n";
+		$output = $self->_save_msobject($phenoSenseAnalysis,"PhenoSenseAnalysis",$input->{workspace},$phenoSenseAnalysis->{id},"queue_reconciliation_sensitivity_analysis");
 		$output = $self->_save_msobject($job,"FBAJob","NO_WORKSPACE",$job->{id},"queue_reconciliation_sensitivity_analysis",0,$job->{id});
 		#Queuing job
 		$job->{token} = $input->{auth};
-		my $state = "queued";
+		my $state = "test";
 		if ($input->{donot_submit_job} == 0) {
 			$job = $self->_submit_job($job);
 			$state = "nersc";
@@ -9159,37 +9212,48 @@ sub queue_reconciliation_sensitivity_analysis
 	    	"state" => $state
 	    });
 	} else {
-		my $fba = $self->_get_msobject("FBA","NO_WORKSPACE",$input->{fbaid});
-		if ($fba->notes() =~ m/(G[GF]):(.+)\.(\d+)/) {
-			my $type = $1;
-			my $id = $2;
-			my $sol = $3;
-			if ($type eq "GG") {
-				$type = "GapGen";
-			} elsif ($type eq "GF") {
-				$type = "GapFill";
+		my $phenoSense = $self->_get_msobject("PhenoSenseAnalysis",$input->{workspace},$input->{simPhenoID});
+		my $allJobsComplete = 1;
+		foreach my $fbaid (@{$phenoSense->{fbaids}}) {
+			my $fba = $self->_get_msobject("FBA","NO_WORKSPACE",$fbaid);
+			if (!defined($fba->fbaResults()->[0])) {
+				$allJobsComplete = 0;
 			}
-			if (@{$fba->fbaResults()} > 0) {
-				my $g = $self->_get_msobject($type,"NO_WORKSPACE",$id);
-				$fba->fbaResults()->[0]->notes("Solution.".$sol.".".$input->{phenotypeSet_workspace}."/".$input->{phenotypeSet});
-				for (my $i=0; $i<@{$g->fbaFormulation()->fbaResults()};$i++) {
-					if ($g->fbaFormulation()->fbaResults()->[$i]->notes() eq "Solution.".$sol.".".$input->{phenotypeSet_workspace}."/".$input->{phenotypeSet}) {
-						$g->fbaFormulation()->remove("fbaResults",$g->fbaFormulation()->fbaResults()->[$i]);
+		}
+		if ($allJobsComplete == 1) {
+			#print "All complete!\n";
+			foreach my $fbaid (@{$phenoSense->{fbaids}}) {
+				my $fba = $self->_get_msobject("FBA","NO_WORKSPACE",$fbaid);
+				my $result = $fba->fbaResults()->[0];
+				if ($fba->notes() eq "WT") {
+					$phenoSense->{wildtypePhenotypeSimulations} = [];
+					for (my $i=0; $i < @{$result->fbaPhenotypeSimultationResults()};$i++) {
+						my $simResult = $result->fbaPhenotypeSimultationResults()->[$i];
+						push(@{$phenoSense->{wildtypePhenotypeSimulations}},[$simResult->simulatedGrowth(),$simResult->simulatedGrowthFraction(),$simResult->class()]);
 					}
+				} else {
+					my $index = $fba->notes();
+					$phenoSense->{reconciliationSolutionSimulations}->[$index]->[5] = [];
+					for (my $i=0; $i < @{$result->fbaPhenotypeSimultationResults()};$i++) {
+						my $simResult = $result->fbaPhenotypeSimultationResults()->[$i];
+						push(@{$phenoSense->{reconciliationSolutionSimulations}->[$index]->[5]},[$simResult->simulatedGrowth(),$simResult->simulatedGrowthFraction(),$simResult->class()]);
+					}
+#					$self->_workspaceServices()->delete_object_permanently({
+#						type => "Model",
+#						id => $fba->model_uuid(),
+#						workspace => "NO_WORKSPACE"
+#					});
+#					$self->_workspaceServices()->delete_object_permanently({
+#						type => "FBA",
+#						id => $fba->uuid(),
+#						workspace => "NO_WORKSPACE"
+#					});
 				}
-				$g->fbaFormulation()->add("fbaResults",$fba->fbaResults()->[0]);
-				$output = $self->_save_msobject($g,$type,"NO_WORKSPACE",$id,"queue_reconciliation_sensitivity_analysis",1,$id);
 			}
-			$self->_workspaceServices()->delete_object_permanently({
-				type => "Model",
-				id => $fba->model_uuid(),
-				workspace => "NO_WORKSPACE"
-			});
-			$self->_workspaceServices()->delete_object_permanently({
-				type => "FBA",
-				id => $fba->uuid(),
-				workspace => "NO_WORKSPACE"
-			});
+			#delete $phenoSense->{fbaids};
+			$output = $self->_save_msobject($phenoSense,"PhenoSenseAnalysis",$input->{workspace},$input->{simPhenoID},"queue_reconciliation_sensitivity_analysis");
+		} else {
+			$output = $phenoSense->{_kbaseWSMeta}->{wsmeta};
 		}
 	}
     #END queue_reconciliation_sensitivity_analysis
@@ -9482,6 +9546,115 @@ sub queue_combine_wildtype_phenotype_reconciliation
     my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
     my($output);
     #BEGIN queue_combine_wildtype_phenotype_reconciliation
+    #CombinedReconciliation
+    $self->_setContext($ctx,$input);
+	$input = $self->_validateargs($input,["PhenoSensitivityAnalysis","workspace"],{
+		out_model => undef,
+		numsolutions => 1,
+		intsolution => 1,
+		timePerSolution => 3600,
+		totalTimeLimit => 18000,
+		donot_submit_job => 0,
+		overwrite => 0,
+		fbaid =>undef
+	});
+	my $classTrans = {
+		"CP" => 0,
+		"CN" => 1,
+		"FP" => 2,
+		"FN" => 3
+	};
+	my $phenoSense = $self->_get_msobject("PhenoSenseAnalysis",$input->{workspace},$input->{PhenoSensitivityAnalysis});
+	my $model = $self->_get_msobject("Model",$phenoSense->{model_workspace},$phenoSense->{model});
+	if (!defined($input->{out_model})) {
+		$input->{out_model} = $phenoSense->{model};
+	}
+	if (!defined($input->{fbaid})) {
+		my $origerrors = [];
+		for (my $i=0; $i < @{$phenoSense->{wildtypePhenotypeSimulations}};$i++) {
+			$origerrors->[$i] = $classTrans->{$phenoSense->{wildtypePhenotypeSimulations}->[$i]->[2]};
+			if ($classTrans->{$phenoSense->{reconciliationSolutionSimulations}->[$i]->[5]->[$j]} eq "FP" || $classTrans->{$phenoSense->{reconciliationSolutionSimulations}->[$i]->[5]->[$j]} eq "FN") {
+				$errorCount++;
+			}		
+		}
+		my $formulation = $self->_setDefaultFBAFormulation({});
+		my $fba = $self->_buildFBAObject($formulation,$model,"NO_WORKSPACE",Data::UUID->new()->create_str());
+		$fba->inputfiles()->{"OPEM.txt"} = [join(";",@{$origerrors})];
+		my $ggem = [];
+		my $gfem = [];
+		for (my $i=0; $i < @{$phenoSense->{reconciliationSolutionSimulations}}; $i++) {
+			my $rxns = "";
+			for (my $j=0; $j < @{$phenoSense->{reconciliationSolutionSimulations}->[$i]->[3]}; $j++) {
+				if (length($rxns) > 0) {
+					$rxns .= ",";
+				}
+				if ($phenoSense->{reconciliationSolutionSimulations}->[$i]->[3]->[$j]->[0] eq "<") {
+					$rxns .= "-";
+				} elsif ($phenoSense->{reconciliationSolutionSimulations}->[$i]->[3]->[$j]->[0] eq ">") {
+					$rxns .= "+";
+				}
+				$rxns .= $phenoSense->{reconciliationSolutionSimulations}->[$i]->[3]->[$j]->[1];
+			}
+			my $solutionArray = [$phenoSense->{reconciliationSolutionSimulations}->[$i]->[1],$phenoSense->{reconciliationSolutionSimulations}->[$i]->[2],"",$rxns,""];
+			my $errorCount = 0;
+			for (my $j=0; $j < @{$phenoSense->{reconciliationSolutionSimulations}->[$i]->[5]}; $j++) {
+				push(@{$solutionArray},$classTrans->{$phenoSense->{reconciliationSolutionSimulations}->[$i]->[5]->[$j]});
+				if ($classTrans->{$phenoSense->{reconciliationSolutionSimulations}->[$i]->[5]->[$j]} eq "FP" || $classTrans->{$phenoSense->{reconciliationSolutionSimulations}->[$i]->[5]->[$j]} eq "FN") {
+					$errorCount++;
+				}
+			}
+			$solutionArray->[4] = $errorCount."/".@{$phenoSense->{reconciliationSolutionSimulations}->[$i]->[5]};
+			if ($phenoSense->{reconciliationSolutionSimulations}->[$i]->[0] eq "GG") {
+				push(@{$ggem},join(";",@{$solutionArray}));
+			} else {
+				push(@{$gfem},join(";",@{$solutionArray}));
+			}
+		}
+		$fba->inputfiles()->{"GGEM.txt"} = [join("\n",@{$ggem})];
+		$fba->inputfiles()->{"GFEM.txt"} = [join("\n",@{$gfem})];
+		$fba->parameters()->{"Perform solution reconciliation"} = 1;
+		$fba->outputfiles()->[0] = "ReconciliationSolutions.txt";
+		$self->_save_msobject($fba,"FBA","NO_WORKSPACE",$fba->uuid(),"queue_combine_wildtype_phenotype_reconciliation",1,$fba->uuid());
+		my $job = $self->_create_job({
+			clusterjobs => [{
+				mediaids => [],
+				mediawss => [],
+				mediainsts => [],
+				bioref => $model->biochemistry_uuid(),
+				mapref => $model->mapping_uuid(),
+				annoref => $model->annotation_uuid(),
+				modelref => $model->uuid(),
+				fbaref => $fba->uuid(),
+				fbaid => $fba->uuid()
+			}],
+			postprocess_command => "queue_combine_wildtype_phenotype_reconciliation",
+			postprocess_args => [{
+				fbaid => $fba->uuid(),
+				PhenoSensitivityAnalysis => $input->{PhenoSensitivityAnalysis},
+				out_model => $input->{out_model},
+				workspace => $input->{workspace},
+			}],
+			queuing_command => "queue_combine_wildtype_phenotype_reconciliation",
+			workspace => $input->{workspace}
+		});
+		$job->{token} = $input->{auth};
+		my $state = "test";
+		if ($input->{donot_submit_job} == 0) {
+			$job = $self->_submit_job($job);
+			$state = "nersc";
+		}
+		$output = $self->_save_msobject($job,"FBAJob","NO_WORKSPACE",$job->{id},"queue_runfba",0,$job->{id});
+		$self->_workspaceServices()->queue_job({
+	    	jobid => $job->{id},
+	    	auth => $self->_authentication(),
+	    	"state" => $state
+	    });
+	} else {
+		my $fba = $self->_get_msobject("FBA","NO_WORKSPACE",$input->{fbaid});
+		my $data;
+		#$output = $self->_save_msobject($data,"CombinedReconciliation",$input->{workspace},$data->{id},"queue_combine_wildtype_phenotype_reconciliation");
+	}
+	$self->_clearContext();
     #END queue_combine_wildtype_phenotype_reconciliation
     my @_bad_returns;
     (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");

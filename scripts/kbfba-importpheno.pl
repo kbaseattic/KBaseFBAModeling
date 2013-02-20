@@ -38,9 +38,16 @@ if (!-e $opt->{"Phenotype filename"}) {
 open(my $fh, "<", $opt->{"Phenotype filename"}) || return;
 $opt->{"Phenotype filename"} = "";
 my $headingline = <$fh>;
+my $array = [split("\r",$headingline)];
+if (@{$array} > 1) {
+	$headingline = shift(@{$array});
+}
 chomp($headingline);
-my $headings = [split(/\t/,$headingline)];
 my $data = [];
+for (my $i=0;$i < @{$array}; $i++) {
+	push(@{$data},[split(/\t/,$array->[$i])]);
+}
+my $headings = [split(/\t/,$headingline)];
 while (my $line = <$fh>) {
 	chomp($line);
 	push(@{$data},[split(/\t/,$line)]);
