@@ -9574,7 +9574,7 @@ sub queue_combine_wildtype_phenotype_reconciliation
 		my $origerrors = [];
 		for (my $i=0; $i < @{$phenoSense->{wildtypePhenotypeSimulations}};$i++) {
 			$origerrors->[$i] = $classTrans->{$phenoSense->{wildtypePhenotypeSimulations}->[$i]->[2]};
-			if ($classTrans->{$phenoSense->{reconciliationSolutionSimulations}->[$i]->[5]->[$j]} eq "FP" || $classTrans->{$phenoSense->{reconciliationSolutionSimulations}->[$i]->[5]->[$j]} eq "FN") {
+			if ($classTrans->{$phenoSense->{wildtypePhenotypeSimulations}->[$i]->[2]} eq "FP" || $classTrans->{$phenoSense->{wildtypePhenotypeSimulations}->[$i]->[2]} eq "FN") {
 				$errorCount++;
 			}		
 		}
