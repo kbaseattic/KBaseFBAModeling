@@ -173,9 +173,11 @@ sub run {
 		};
 		if ($@) {
 			my $errmsg = $@;
+			my $cmd = "";
+			my $error = "";
 			if ($errmsg =~ /\smethod\s\"(.+)\"\sfailed.+\>[\s]+(.+)\n/) {
-				my $cmd = $1;
-				my $error = $2;
+				$cmd = $1;
+				$error = $2;
 			}
 			$self->client()->set_job_status({
 				jobid => $id,
@@ -193,9 +195,11 @@ sub run {
 		};
 		if ($@) {
 			my $errmsg = $@;
+			my $cmd = "";
+			my $error = "";
 			if ($errmsg =~ /\smethod\s\"(.+)\"\sfailed.+\>[\s]+(.+)\n/) {
-				my $cmd = $1;
-				my $error = $2;
+				$cmd = $1;
+				$error = $2;
 			}
 			$self->client()->set_job_status({
 				jobid => $id,
