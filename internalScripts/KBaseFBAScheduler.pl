@@ -163,16 +163,45 @@ sub run {
 	}
 	my $obj = Bio::KBase::fbaModelServices::Impl->new({workspace => $self->client()});
 	if ($auth ne "none") {
-		$obj->run_job({
-			jobid => $id,
-			"index" => $index,
-			auth => $auth
-		});
+		local $Bio::KBase::workspaceService::Server::CallContext = {};
+		eval {
+			$obj->run_job({
+				jobid => $id,
+				"index" => $index,
+				auth => $auth
+			});
+		};
+		if ($@) {
+			my $errmsg = $@;
+			if ($errmsg =~ /\smethod\s\"(.+)\"\sfailed.+\>[\s]+(.+)\n/) {
+				my $cmd = $1;
+				my $error = $2;
+			}
+			$self->client()->set_job_status({
+				jobid => $id,
+				status => "error:".$cmd.":".$error,
+				auth => $auth
+			});
+		}
 	} else {
-		$obj->run_job({
-			jobid => $id,
-			"index" => $index
-		});
+		local $Bio::KBase::workspaceService::Server::CallContext = {};
+		eval {
+			$obj->run_job({
+				jobid => $id,
+				"index" => $index,
+			});
+		};
+		if ($@) {
+			my $errmsg = $@;
+			if ($errmsg =~ /\smethod\s\"(.+)\"\sfailed.+\>[\s]+(.+)\n/) {
+				my $cmd = $1;
+				my $error = $2;
+			}
+			$self->client()->set_job_status({
+				jobid => $id,
+				status => "error:".$cmd.":".$error,
+			});
+		}
 	}
 }
 

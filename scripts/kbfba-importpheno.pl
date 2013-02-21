@@ -39,9 +39,7 @@ open(my $fh, "<", $opt->{"Phenotype filename"}) || return;
 $opt->{"Phenotype filename"} = "";
 my $headingline = <$fh>;
 my $array = [split("\r",$headingline)];
-if (@{$array} > 1) {
-	$headingline = shift(@{$array});
-}
+$headingline = shift(@{$array});
 chomp($headingline);
 my $data = [];
 for (my $i=0;$i < @{$array}; $i++) {

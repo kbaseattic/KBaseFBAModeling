@@ -9787,7 +9787,7 @@ sub jobs_done
     	} else {
     		$args = $job->{postprocess_args};
     	}
-    	$args->[0]->{auth} = $self->_authentication();
+    	#$args->[0]->{auth} = $self->_authentication();
     	$self->$function(@{$args});
     }
     my $jobCount = @{$job->{clusterjobs}};
@@ -10064,6 +10064,7 @@ sub run_job
     #Saving the FBA by reference, overwriting the same object in the workspace
     $self->_save_msobject($fba,"FBA","NO_WORKSPACE",$fba->{_kbaseWSMeta}->{wsid},"run_job",1,$clusterjob->{fbaref});
 	$output = $job;
+	delete $input->{auth};
     $self->jobs_done($input);
     $self->_clearContext();
     #END run_job
