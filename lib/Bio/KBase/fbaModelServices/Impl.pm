@@ -143,10 +143,17 @@ sub _resetCachedBiochemistry {
 sub _resetKBaseStore {
 	my ($self) = @_;
 	delete $self->{_kbasestore};
-	$self->{_kbasestore} = ModelSEED::KBaseStore->new({
-		auth => "",
-		workspace => $self->_workspaceServices()
-	});
+	if (defined($self->_authentication())) {
+		$self->{_kbasestore} = ModelSEED::KBaseStore->new({
+			auth => $self->_authentication(),
+			workspace => $self->_workspaceServices()
+		});
+	} else {
+		$self->{_kbasestore} = ModelSEED::KBaseStore->new({
+			auth => "",
+			workspace => $self->_workspaceServices()
+		});
+	}
 	if (defined($self->_cachedBiochemistry())) {
 		$self->_resetCachedBiochemistry();
 		$self->{_kbasestore}->cache()->{Biochemistry}->{"kbase/default"} = $self->_cachedBiochemistry();
