@@ -1361,7 +1361,9 @@ sub _generate_fbameta {
 	}
 	my $kos = [];
 	foreach my $gene ($obj->geneKOs()) {
-		push(@{$kos},$gene->id());
+		if (defined($gene) && ref($gene) eq "ModelSEED::MS::Feature") {
+			push(@{$kos},$gene->id());
+		}
 	}
 	return [
 		$idarray->[1],
@@ -1392,7 +1394,9 @@ sub _generate_gapmeta {
 	}
 	my $kos = [];
 	foreach my $gene ($obj->fbaFormulation()->geneKOs()) {
-		push(@{$kos},$gene->id());
+		if (defined($gene) && ref($gene) eq "ModelSEED::MS::Feature") {
+			push(@{$kos},$gene->id());
+		}
 	}
 	return [
 		$idarray->[1],
