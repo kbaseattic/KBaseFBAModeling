@@ -1735,6 +1735,7 @@ Example:
 sub _parseGPR {
 	my $self = shift;
 	my $gpr = shift;
+	$gpr =~ s/\|/___/g;
 	$gpr =~ s/\s+and\s+/;/g;
 	$gpr =~ s/\s+or\s+/:/g;
 	$gpr =~ s/\s+\)/)/g;
@@ -1788,6 +1789,7 @@ sub _parseGPR {
 	}
 	foreach my $item (keys(%{$gprHash})) {
 		$gprHash->{$item} =~ s/;/+/g;
+		$gprHash->{$item} =~ s/___/\|/g;
 	}
 	return $gprHash;
 }
@@ -1898,7 +1900,7 @@ sub _parseSingleProtein {
 					my $suitems = [split(/:/,$subunitNode)];
 					my $found = 0;
 					foreach my $suitem (@{$suitems}) {
-						if (defined($gprHash->{$item})) {
+						if (defined($gprHash->{$suitem})) {
 							$found = 1;
 						}
 					}
