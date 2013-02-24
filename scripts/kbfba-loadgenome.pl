@@ -30,7 +30,7 @@ my $specs = [
 	[ 'login|l:s', 'Login for genome source (e.g. RAST)' ],
 	[ 'password|p:s', 'Password for genome source (e.g. RAST)'],
 	[ 'mapping|m:s', 'Mapping to be used with loaded genome'],
-	[ 'mappingws|:s', 'Workspace of mapping to be used with loaded genome'],
+	[ 'mappingws:s', 'Workspace of mapping to be used with loaded genome'],
     [ 'workspace|w:s', 'Workspace to load genome into', { "default" => workspace() } ],
     [ 'overwrite|o', 'Overwrite existing genome with same name' ]
 ];
