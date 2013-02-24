@@ -1788,7 +1788,6 @@ sub _parseGPR {
 	}
 	foreach my $item (keys(%{$gprHash})) {
 		$gprHash->{$item} =~ s/;/+/g;
-		$gprHash->{$item} =~ s/:/|/g;
 	}
 	return $gprHash;
 }
@@ -1832,8 +1831,8 @@ sub _translateGPRHash {
 	my $gprHash = shift;
 	my $root = $gprHash->{root};
 	my $proteins = [];
-	if ($root =~ m/\|/) {
-		my $proteinItems = [split(/\|/,$root)];
+	if ($root =~ m/:/) {
+		my $proteinItems = [split(/:/,$root)];
 		my $found = 0;
 		foreach my $item (@{$proteinItems}) {
 			if (defined($gprHash->{$item})) {
@@ -1895,8 +1894,8 @@ sub _parseSingleProtein {
 		foreach my $item (@{$items}) {
 			if (defined($gprHash->{$item})) {
 				my $subunitNode = $gprHash->{$item};
-				if ($subunitNode =~ m/\|/) {
-					my $suitems = [split(/\|/,$subunitNode)];
+				if ($subunitNode =~ m/:/) {
+					my $suitems = [split(/:/,$subunitNode)];
 					my $found = 0;
 					foreach my $suitem (@{$suitems}) {
 						if (defined($gprHash->{$item})) {
@@ -5701,6 +5700,9 @@ sub adjust_model_reaction
     	overwrite => 0
     });
     my $model = $self->_get_msobject("Model",$input->{workspace},$input->{model});
+    if (defined($input->{gpr})) {
+    	$input->{gpr} = $self->_translateGPRHash($self->_parseGPR($input->{gpr}))
+    }
     $model->manualReactionAdjustment({
     	reaction => $input->{reaction},
     	direction => $input->{direction},
