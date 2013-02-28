@@ -1,6 +1,7 @@
 use Bio::KBase::fbaModelServices::Impl;
 
 use Bio::KBase::fbaModelServices::Server;
+use Plack::Middleware::CrossOrigin;
 
 
 
@@ -18,4 +19,4 @@ my $server = Bio::KBase::fbaModelServices::Server->new(instance_dispatch => { @d
 
 my $handler = sub { $server->handle_input(@_) };
 
-$handler;
+$handler = Plack::Middleware::CrossOrigin->wrap( $handler, origins => "*", headers => "*");

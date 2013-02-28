@@ -51,6 +51,7 @@ our %return_counts = (
         'jobs_done' => 1,
         'check_job' => 1,
         'run_job' => 1,
+        'find_reaction_synonyms' => 1,
         'version' => 1,
 );
 
@@ -98,6 +99,7 @@ sub _build_valid_methods
         'jobs_done' => 1,
         'check_job' => 1,
         'run_job' => 1,
+        'find_reaction_synonyms' => 1,
         'version' => 1,
     };
     return $methods;
@@ -217,7 +219,7 @@ is available via $context->client_ip.
 
 use base 'Class::Accessor';
 
-__PACKAGE__->mk_accessors(qw(user_id client_ip authenticated));
+__PACKAGE__->mk_accessors(qw(user_id client_ip authenticated token));
 
 sub new
 {

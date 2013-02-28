@@ -146,6 +146,9 @@ module fbaModelServices {
     /* A string identifier used for a probabilistic annotation in KBase. */
     typedef string probanno_id;
     
+    /* A string identifier for a reaction synonyms in KBase. */
+    typedef string reaction_synonyms_id;
+    
     /*********************************************************************************
     Object type definition
    	*********************************************************************************/
@@ -1056,6 +1059,36 @@ module fbaModelServices {
 		string growth;
 		string organism;
     } ETCDiagramSpecs;
+
+    /*********************************************************************************
+	  AutoRecon type definitions
+   	*********************************************************************************/
+	
+    /* Reaction synonyms
+    
+    	reaction_id id - ID of reaction
+    	list<reaction_id> synonyms - list of synonym reactions to the reaction
+    	
+    */
+    typedef structure {
+    	reaction_id id;
+    	list<reaction_id> synonyms;
+    } ReactionSynonyms;
+
+	/* Reaction synonyms object
+	
+		int version - version number of object
+		biochemistry_id biochemistry - ID of associated biochemistry database
+		workspace_id biochemistry_workspace - workspace with associated biochemistry database
+		list<ReactionSynonyms> synonym_list - list of all reaction synonyms from a biochemistry database
+	*/
+	typedef structure {
+		int version;
+		biochemistry_id biochemistry;
+		workspace_id biochemistry_workspace;
+		list<ReactionSynonyms> synonyms_list;
+	} ReactionSynonymsObject;
+	
     /*********************************************************************************
     Function definitions relating to data retrieval for Model Objects
    	*********************************************************************************/
@@ -1387,7 +1420,7 @@ module fbaModelServices {
     */
     funcdef import_fbamodel(import_fbamodel_params input) returns (object_metadata modelMeta);
 	
-	/* Input parameters for the "genome_to_fbamodel" function.
+	/* Input parameters for the "genome_to_probfbamodel" function.
 	
 		genome_id genome - ID of the genome for which a model is to be built (a required argument)
 		workspace_id genome_workspace - ID of the workspace containing the target genome (an optional argument; default is the workspace argument)
@@ -2027,4 +2060,26 @@ module fbaModelServices {
         Runs specified job
     */
 	funcdef run_job(run_job_params input) returns (JobObject output);
+	
+	/* Input parameters for the "find_reaction_synonyms" function.
+	
+		reaction_synonyms - ID of reaction synonyms object (required argument)
+		workspace_id workspace - ID of workspace for storing objects (optional argument, default is current workspace)
+		biochemistry_id biochemistry - ID of the biochemistry database (optional argument, default is default)
+		workspace_id biochemistry_workspace - ID of workspace containing biochemistry database (optional argument, default is kbase)
+		overwrite - True to overwrite existing object (optional argument, default is false)
+		string auth - the authentication token of the KBase account (optional argument, default user is "public")
+		
+	 */
+	typedef structure {
+		reaction_synonyms_id reaction_synonyms;
+		workspace_id workspace;
+		biochemistry_id biochemistry;
+		workspace_id biochemistry_workspace;
+		bool overwrite;
+		string auth;
+	} find_reaction_synonyms_params;
+
+	funcdef find_reaction_synonyms(find_reaction_synonyms_params input) returns (object_metadata output);	
+	
 };
