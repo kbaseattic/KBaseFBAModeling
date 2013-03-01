@@ -52,6 +52,7 @@ our %return_counts = (
         'check_job' => 1,
         'run_job' => 1,
         'find_reaction_synonyms' => 1,
+        'find_paths' => 1,
         'version' => 1,
 );
 
@@ -100,6 +101,7 @@ sub _build_valid_methods
         'check_job' => 1,
         'run_job' => 1,
         'find_reaction_synonyms' => 1,
+        'find_paths' => 1,
         'version' => 1,
     };
     return $methods;

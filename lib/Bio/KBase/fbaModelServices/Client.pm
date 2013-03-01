@@ -6794,6 +6794,156 @@ sub find_reaction_synonyms
 
 
 
+=head2 find_paths
+
+  $output = $obj->find_paths($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a find_paths_params
+$output is an object_metadata
+find_paths_params is a reference to a hash where the following keys are defined:
+	reaction_synonyms has a value which is a reaction_synonyms_id
+	media has a value which is a media_id
+	input_model has a value which is a fbamodel_id
+	output_model has a value which is a fbamodel_id
+	iterations has a value which is an int
+	workspace has a value which is a workspace_id
+	media_workspace has a value which is a workspace_id
+	biochemistry has a value which is a biochemistry_id
+	biochemistry_workspace has a value which is a workspace_id
+	overwrite has a value which is a bool
+	auth has a value which is a string
+reaction_synonyms_id is a string
+media_id is a string
+fbamodel_id is a string
+workspace_id is a string
+biochemistry_id is a string
+bool is an int
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a find_paths_params
+$output is an object_metadata
+find_paths_params is a reference to a hash where the following keys are defined:
+	reaction_synonyms has a value which is a reaction_synonyms_id
+	media has a value which is a media_id
+	input_model has a value which is a fbamodel_id
+	output_model has a value which is a fbamodel_id
+	iterations has a value which is an int
+	workspace has a value which is a workspace_id
+	media_workspace has a value which is a workspace_id
+	biochemistry has a value which is a biochemistry_id
+	biochemistry_workspace has a value which is a workspace_id
+	overwrite has a value which is a bool
+	auth has a value which is a string
+reaction_synonyms_id is a string
+media_id is a string
+fbamodel_id is a string
+workspace_id is a string
+biochemistry_id is a string
+bool is an int
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+=item Description
+
+
+
+=back
+
+=cut
+
+sub find_paths
+{
+    my($self, @args) = @_;
+
+# Authentication: none
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function find_paths (received $n, expecting 1)");
+    }
+    {
+	my($input) = @args;
+
+	my @_bad_arguments;
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to find_paths:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'find_paths');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.find_paths",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{code},
+					       method_name => 'find_paths',
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method find_paths",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'find_paths',
+				       );
+    }
+}
+
+
+
 sub version {
     my ($self) = @_;
     my $result = $self->{client}->call($self->{url}, {
@@ -6805,16 +6955,16 @@ sub version {
             Bio::KBase::Exceptions::JSONRPC->throw(
                 error => $result->error_message,
                 code => $result->content->{code},
-                method_name => 'find_reaction_synonyms',
+                method_name => 'find_paths',
             );
         } else {
             return wantarray ? @{$result->result} : $result->result->[0];
         }
     } else {
         Bio::KBase::Exceptions::HTTP->throw(
-            error => "Error invoking method find_reaction_synonyms",
+            error => "Error invoking method find_paths",
             status_line => $self->{client}->status_line,
-            method_name => 'find_reaction_synonyms',
+            method_name => 'find_paths',
         );
     }
 }
@@ -11782,7 +11932,7 @@ overwrite has a value which is a bool
 
 =item Description
 
-Input parameters for the "genome_to_fbamodel" function.
+Input parameters for the "import_fbamodel" function.
 
         genome_id genome - ID of the genome for which a model is to be built (a required argument)
         workspace_id genome_workspace - ID of the workspace containing the target genome (an optional argument; default is the workspace argument)
@@ -11856,9 +12006,9 @@ Input parameters for the "genome_to_probfbamodel" function.
 
         genome_id genome - ID of the genome for which a model is to be built (a required argument)
         workspace_id genome_workspace - ID of the workspace containing the target genome (an optional argument; default is the workspace argument)
-        fbamodel_id model - ID that should be used for the newly constructed model (an optional argument; default is 'undef')
-        workspace_id workspace - ID of the workspace where the newly developed model will be stored; also the default assumed workspace for input objects (a required argument)
-        list<reactionProbability> reaction_probs - list of reactions and the reaction probability to be put in model
+        fbamodel_id model - ID of the output model (an optional argument; default is 'undef')
+        workspace_id workspace - ID of the workspace where the output model will be stored; also the default assumed workspace for input objects (a required argument)
+        list<reactionProbability> reaction_probs - list of reactions and the reaction probability to be put in output model
         float default_prob - default probability for reactions not associated with a complex (an optional argument, default is 0.0)
         string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
@@ -13209,6 +13359,73 @@ auth has a value which is a string
 a reference to a hash where the following keys are defined:
 reaction_synonyms has a value which is a reaction_synonyms_id
 workspace has a value which is a workspace_id
+biochemistry has a value which is a biochemistry_id
+biochemistry_workspace has a value which is a workspace_id
+overwrite has a value which is a bool
+auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 find_paths_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "find_paths" function.
+
+        reaction_synonyms_id reaction_synonyms - ID of the reaction synonyms object to use (required argument)
+        media_id media - ID of media to use (required argument)
+        fbamodel_id input_model - ID of input metabolic model (required argument)
+        fbamodel_id output_model - ID of output metabolic model (required argument)
+        int iterations - number of times to run FBA to find paths (optional argument, default is 1)
+        workspace_id workspace - ID of workspace containing objects (optional argument, default is current workspace)
+        workspace_id media_workspace - ID of workspace containing media object (optional argument, default is current workspace)
+        biochemistry_id biochemistry - ID of the biochemistry database (optional argument, default is default)
+        workspace_id biochemistry_workspace - ID of workspace containing biochemistry database (optional argument, default is kbase)
+        overwrite - true to overwrite existing output metabolic model (optional argument, default is false)
+        string auth - the authentication token of the KBase account (optional argument, user is "public" if auth is not provided)
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+reaction_synonyms has a value which is a reaction_synonyms_id
+media has a value which is a media_id
+input_model has a value which is a fbamodel_id
+output_model has a value which is a fbamodel_id
+iterations has a value which is an int
+workspace has a value which is a workspace_id
+media_workspace has a value which is a workspace_id
+biochemistry has a value which is a biochemistry_id
+biochemistry_workspace has a value which is a workspace_id
+overwrite has a value which is a bool
+auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+reaction_synonyms has a value which is a reaction_synonyms_id
+media has a value which is a media_id
+input_model has a value which is a fbamodel_id
+output_model has a value which is a fbamodel_id
+iterations has a value which is an int
+workspace has a value which is a workspace_id
+media_workspace has a value which is a workspace_id
 biochemistry has a value which is a biochemistry_id
 biochemistry_workspace has a value which is a workspace_id
 overwrite has a value which is a bool
