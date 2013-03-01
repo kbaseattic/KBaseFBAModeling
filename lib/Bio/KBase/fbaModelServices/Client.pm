@@ -2686,15 +2686,21 @@ $modelMeta is an object_metadata
 genome_to_probfbamodel_params is a reference to a hash where the following keys are defined:
 	genome has a value which is a genome_id
 	genome_workspace has a value which is a workspace_id
-	probanno has a value which is a probanno_id
-	probanno_workspace has a value which is a workspace_id
 	model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
+	reaction_probs has a value which is a reference to a list where each element is a ReactionProbability
+	default_prob has a value which is a float
 	auth has a value which is a string
+	overwrite has a value which is a bool
 genome_id is a string
 workspace_id is a string
-probanno_id is a string
 fbamodel_id is a string
+ReactionProbability is a reference to a list containing 3 items:
+	0: (reaction) a reaction_id
+	1: (probability) a float
+	2: (gene_list) a string
+reaction_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -2724,15 +2730,21 @@ $modelMeta is an object_metadata
 genome_to_probfbamodel_params is a reference to a hash where the following keys are defined:
 	genome has a value which is a genome_id
 	genome_workspace has a value which is a workspace_id
-	probanno has a value which is a probanno_id
-	probanno_workspace has a value which is a workspace_id
 	model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
+	reaction_probs has a value which is a reference to a list where each element is a ReactionProbability
+	default_prob has a value which is a float
 	auth has a value which is a string
+	overwrite has a value which is a bool
 genome_id is a string
 workspace_id is a string
-probanno_id is a string
 fbamodel_id is a string
+ReactionProbability is a reference to a list containing 3 items:
+	0: (reaction) a reaction_id
+	1: (probability) a float
+	2: (gene_list) a string
+reaction_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -8473,6 +8485,49 @@ featureAlternativeFunctions has a value which is a reference to a list where eac
 
 
 
+=head2 ReactionProbability
+
+=over 4
+
+
+
+=item Description
+
+Data structure to hold probability of a reaction
+
+        reaction_id reaction - ID of the reaction
+        float probability - Probability of the reaction
+        string gene_list - List of genes most likely to be attached to reaction
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a list containing 3 items:
+0: (reaction) a reaction_id
+1: (probability) a float
+2: (gene_list) a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a list containing 3 items:
+0: (reaction) a reaction_id
+1: (probability) a float
+2: (gene_list) a string
+
+
+=end text
+
+=back
+
+
+
 =head2 Biochemistry
 
 =over 4
@@ -10568,6 +10623,99 @@ phenotypeSimulations has a value which is a reference to a list where each eleme
 
 
 
+=head2 reactionSpecification
+
+=over 4
+
+
+
+=item Description
+
+Data structure for holding gapfill or gapgen solution reaction information
+
+string direction - direction of gapfilled or gapgen reaction
+string reactionID - ID of gapfilled or gapgen reaction
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a list containing 2 items:
+0: (direction) a string
+1: (reactionID) a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a list containing 2 items:
+0: (direction) a string
+1: (reactionID) a string
+
+
+=end text
+
+=back
+
+
+
+=head2 PhenotypeSensitivityAnalysis
+
+=over 4
+
+
+
+=item Description
+
+list<string id, string solutionIndex, list<reactionSpecification> reactionList, list<string> biomassEdits,list<tuple<float simulatedGrowth,float simulatedGrowthFraction,string class>> PhenotypeSimulations> reconciliationSolutionSimulations;
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+phenotypeSet has a value which is a phenotypeSet_id
+phenotypeSet_workspace has a value which is a workspace_id
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+phenotypes has a value which is a reference to a list where each element is a Phenotype
+wildtypePhenotypeSimulations has a value which is a reference to a list where each element is a reference to a list containing 3 items:
+0: (simulatedGrowth) a float
+1: (simulatedGrowthFraction) a float
+2: (class) a string
+
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+phenotypeSet has a value which is a phenotypeSet_id
+phenotypeSet_workspace has a value which is a workspace_id
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+phenotypes has a value which is a reference to a list where each element is a Phenotype
+wildtypePhenotypeSimulations has a value which is a reference to a list where each element is a reference to a list containing 3 items:
+0: (simulatedGrowth) a float
+1: (simulatedGrowthFraction) a float
+2: (class) a string
+
+
+
+=end text
+
+=back
+
+
+
 =head2 job_id
 
 =over 4
@@ -10878,8 +11026,10 @@ synonyms has a value which is a reference to a list where each element is a reac
 
 Reaction synonyms object
 
-        version - Version number of object
-        synonym_list - list of all reaction synonyms from a biochemistry database
+        int version - version number of object
+        biochemistry_id biochemistry - ID of associated biochemistry database
+        workspace_id biochemistry_workspace - workspace with associated biochemistry database
+        list<ReactionSynonyms> synonym_list - list of all reaction synonyms from a biochemistry database
 
 
 =item Definition
@@ -10889,6 +11039,8 @@ Reaction synonyms object
 <pre>
 a reference to a hash where the following keys are defined:
 version has a value which is an int
+biochemistry has a value which is a biochemistry_id
+biochemistry_workspace has a value which is a workspace_id
 synonyms_list has a value which is a reference to a list where each element is a ReactionSynonyms
 
 </pre>
@@ -10899,6 +11051,8 @@ synonyms_list has a value which is a reference to a list where each element is a
 
 a reference to a hash where the following keys are defined:
 version has a value which is an int
+biochemistry has a value which is a biochemistry_id
+biochemistry_workspace has a value which is a workspace_id
 synonyms_list has a value which is a reference to a list where each element is a ReactionSynonyms
 
 
@@ -11702,10 +11856,10 @@ Input parameters for the "genome_to_probfbamodel" function.
 
         genome_id genome - ID of the genome for which a model is to be built (a required argument)
         workspace_id genome_workspace - ID of the workspace containing the target genome (an optional argument; default is the workspace argument)
-        probanno_id probanno - ID of the probabilistic annotation to be used in building the model (an optional argument; default is 'undef')
-        workspace_id probanno_workspace - ID of the workspace containing the probabilistic annotation (an optional argument; default is the workspace argument)
         fbamodel_id model - ID that should be used for the newly constructed model (an optional argument; default is 'undef')
         workspace_id workspace - ID of the workspace where the newly developed model will be stored; also the default assumed workspace for input objects (a required argument)
+        list<reactionProbability> reaction_probs - list of reactions and the reaction probability to be put in model
+        float default_prob - default probability for reactions not associated with a complex (an optional argument, default is 0.0)
         string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
 
@@ -11717,11 +11871,12 @@ Input parameters for the "genome_to_probfbamodel" function.
 a reference to a hash where the following keys are defined:
 genome has a value which is a genome_id
 genome_workspace has a value which is a workspace_id
-probanno has a value which is a probanno_id
-probanno_workspace has a value which is a workspace_id
 model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
+reaction_probs has a value which is a reference to a list where each element is a ReactionProbability
+default_prob has a value which is a float
 auth has a value which is a string
+overwrite has a value which is a bool
 
 </pre>
 
@@ -11732,11 +11887,12 @@ auth has a value which is a string
 a reference to a hash where the following keys are defined:
 genome has a value which is a genome_id
 genome_workspace has a value which is a workspace_id
-probanno has a value which is a probanno_id
-probanno_workspace has a value which is a workspace_id
 model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
+reaction_probs has a value which is a reference to a list where each element is a ReactionProbability
+default_prob has a value which is a float
 auth has a value which is a string
+overwrite has a value which is a bool
 
 
 =end text
@@ -12774,14 +12930,11 @@ Input parameters for the "queue_reconciliation_sensitivity_analysis" function.
 <pre>
 a reference to a hash where the following keys are defined:
 model has a value which is a fbamodel_id
-model_workspace has a value which is a workspace_id
-fba_formulation has a value which is an FBAFormulation
-gapfill_formulation has a value which is a GapfillingFormulation
-gapgen_formulation has a value which is a GapgenFormulation
-phenotypeSet has a value which is a phenotypeSet_id
-phenotypeSet_workspace has a value which is a workspace_id
-out_model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
+phenotypeSet has a value which is a phenotypeSet_id
+fba_formulation has a value which is an FBAFormulation
+model_workspace has a value which is a workspace_id
+phenotypeSet_workspace has a value which is a workspace_id
 gapFills has a value which is a reference to a list where each element is a gapfill_id
 gapGens has a value which is a reference to a list where each element is a gapgen_id
 queueReconciliationCombination has a value which is a bool
@@ -12797,14 +12950,11 @@ donot_submit_job has a value which is a bool
 
 a reference to a hash where the following keys are defined:
 model has a value which is a fbamodel_id
-model_workspace has a value which is a workspace_id
-fba_formulation has a value which is an FBAFormulation
-gapfill_formulation has a value which is a GapfillingFormulation
-gapgen_formulation has a value which is a GapgenFormulation
-phenotypeSet has a value which is a phenotypeSet_id
-phenotypeSet_workspace has a value which is a workspace_id
-out_model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
+phenotypeSet has a value which is a phenotypeSet_id
+fba_formulation has a value which is an FBAFormulation
+model_workspace has a value which is a workspace_id
+phenotypeSet_workspace has a value which is a workspace_id
 gapFills has a value which is a reference to a list where each element is a gapfill_id
 gapGens has a value which is a reference to a list where each element is a gapgen_id
 queueReconciliationCombination has a value which is a bool
@@ -12840,6 +12990,8 @@ Input parameters for the "queue_combine_wildtype_phenotype_reconciliation" funct
         list<gapgen_id> gapGens - IDs of gapgen solutions (an optional argument: default is 'undef')
         list<gapfill_id> gapFills - IDs of gapfill solutions (an optional argument: default is 'undef')
         workspace_id workspace - workspace where solution combination results will be saved (a required argument)
+        int timePerSolution - maximum time spent per solution
+        int totalTimeLimit - maximum time allowed to work on problem
         bool donot_submit_job - a flag indicating if the job should be submitted to the cluster (an optional argument: default is '0')
         string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 

@@ -266,6 +266,15 @@ module fbaModelServices {
 		list<ProbAnnoFeature> featureAlternativeFunctions;
     } ProbabilisticAnnotation;
     
+    /* Data structure to hold probability of a reaction
+    
+    	reaction_id reaction - ID of the reaction
+    	float probability - Probability of the reaction
+    	string gene_list - List of genes most likely to be attached to reaction
+    	
+    */
+    typedef tuple<reaction_id reaction, float probability, string gene_list> ReactionProbability;
+    
     /*********************************************************************************
     Biochemistry type definition
    	*********************************************************************************/
@@ -989,7 +998,7 @@ module fbaModelServices {
 		workspace_id model_workspace;
 		list<Phenotype> phenotypes;
 		list<tuple<float simulatedGrowth,float simulatedGrowthFraction,string class>> wildtypePhenotypeSimulations;
-		list<string id,string solutionIndex,list<reactionSpecification> reactionList,list<string compound> biomassEdits,list<tuple<float simulatedGrowth,float simulatedGrowthFraction,string class>> PhenotypeSimulations> reconciliationSolutionSimulations;
+/*		list<string id, string solutionIndex, list<reactionSpecification> reactionList, list<string> biomassEdits,list<tuple<float simulatedGrowth,float simulatedGrowthFraction,string class>> PhenotypeSimulations> reconciliationSolutionSimulations; */
     } PhenotypeSensitivityAnalysis;
     
     /*********************************************************************************
@@ -1392,7 +1401,7 @@ module fbaModelServices {
     */
     funcdef genome_to_fbamodel (genome_to_fbamodel_params input) returns (object_metadata modelMeta);
 	
-	/* Input parameters for the "genome_to_fbamodel" function.
+	/* Input parameters for the "import_fbamodel" function.
 	
 		genome_id genome - ID of the genome for which a model is to be built (a required argument)
 		workspace_id genome_workspace - ID of the workspace containing the target genome (an optional argument; default is the workspace argument)
@@ -1424,21 +1433,22 @@ module fbaModelServices {
 	
 		genome_id genome - ID of the genome for which a model is to be built (a required argument)
 		workspace_id genome_workspace - ID of the workspace containing the target genome (an optional argument; default is the workspace argument)
-		probanno_id probanno - ID of the probabilistic annotation to be used in building the model (an optional argument; default is 'undef')
-		workspace_id probanno_workspace - ID of the workspace containing the probabilistic annotation (an optional argument; default is the workspace argument)
-		fbamodel_id model - ID that should be used for the newly constructed model (an optional argument; default is 'undef')
-		workspace_id workspace - ID of the workspace where the newly developed model will be stored; also the default assumed workspace for input objects (a required argument)
+		fbamodel_id model - ID of the output model (an optional argument; default is 'undef')
+		workspace_id workspace - ID of the workspace where the output model will be stored; also the default assumed workspace for input objects (a required argument)
+		list<reactionProbability> reaction_probs - list of reactions and the reaction probability to be put in output model
+		float default_prob - default probability for reactions not associated with a complex (an optional argument, default is 0.0)
 		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 		
 	*/
     typedef structure {
 		genome_id genome;
 		workspace_id genome_workspace;
-		probanno_id probanno;
-		workspace_id probanno_workspace;
 		fbamodel_id model;
 		workspace_id workspace;
+		list<ReactionProbability> reaction_probs;
+		float default_prob;
 		string auth;
+		bool overwrite;
     } genome_to_probfbamodel_params;
     /*
         Build a probabilistic genome-scale metabolic model based on annotations in an input genome and probabilistic annotation
