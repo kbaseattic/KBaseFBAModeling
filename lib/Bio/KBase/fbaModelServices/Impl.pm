@@ -425,7 +425,7 @@ sub _save_msobject {
 }
 
 sub _get_msobject {
-	my($self,$type,$ws,$id,$cache) = @_;
+	my($self,$type,$ws,$id) = @_;
 	my $ref = $ws."/".$id;
 	if ($ws eq "NO_WORKSPACE") {
 		$ref = $id;
@@ -455,11 +455,11 @@ sub _set_uuid_by_idws {
 }
 
 sub _get_object_by_uuid {
-	my($self,$type,$uuid,$cache) = @_;
+	my($self,$type,$uuid) = @_;
 	if ($uuid =~ m/(.+)\/([^\/]+)$/) {
-		return $self->_get_msobject($type,$1,$2,$cache);
+		return $self->_get_msobject($type,$1,$2);
 	}
-	return $self->_get_msobject($type,"NO_WORKSPACE",$uuid,$cache);
+	return $self->_get_msobject($type,"NO_WORKSPACE",$uuid);
 }
 
 sub _get_genomeObj_from_CDM {
@@ -1612,7 +1612,7 @@ sub _GapFill_to_GapFillData {
     	formulation => $self->_GapFill_to_GapFillFormulation($obj),
     	solutions => []
 	};
-	my $solutions = $obj->fbaFormulation()->gapfillingSolutions();
+	my $solutions = $obj->gapfillingSolutions();
     if (defined($solutions->[0])) {
 		$data->{isComplete} = 1;
 		for (my $i=0; $i < @{$solutions}; $i++) {
@@ -1624,25 +1624,25 @@ sub _GapFill_to_GapFillData {
 				mediaAdditions => [],
 				reactionAdditions => []
 			};
-			for (my $j=0; $j < @{$solutions->biomassRemovals()}; $j++) {
+			for (my $j=0; $j < @{$solution->biomassRemovals()}; $j++) {
 				push(@{$solData->{biomassRemovals}},[
-					$solutions->biomassRemovals()->[$j]->id(),
-					$solutions->biomassRemovals()->[$j]->name()
+					$solution->biomassRemovals()->[$j]->id(),
+					$solution->biomassRemovals()->[$j]->name()
 				]);
 			}
-			for (my $j=0; $j < @{$solutions->mediaSupplements()}; $j++) {
+			for (my $j=0; $j < @{$solution->mediaSupplements()}; $j++) {
 				push(@{$solData->{mediaAdditions}},[
-					$solutions->mediaSupplements()->[$j]->id(),
-					$solutions->mediaSupplements()->[$j]->name()
+					$solution->mediaSupplements()->[$j]->id(),
+					$solution->mediaSupplements()->[$j]->name()
 				]);
 			}
-			for (my $j=0; $j < @{$solutions->gapfillingSolutionReactions()}; $j++) {
+			for (my $j=0; $j < @{$solution->gapfillingSolutionReactions()}; $j++) {
 				push(@{$solData->{reactionAdditions}},[
-					$solutions->gapfillingSolutionReactions()->[$j]->reaction()->id(),
-					$solutions->gapfillingSolutionReactions()->[$j]->reaction()->direction(),
+					$solution->gapfillingSolutionReactions()->[$j]->reaction()->id(),
+					$solution->gapfillingSolutionReactions()->[$j]->reaction()->direction(),
 					"c",
-					$solutions->gapfillingSolutionReactions()->[$j]->reaction()->equation(),
-					$solutions->gapfillingSolutionReactions()->[$j]->reaction()->definition()
+					$solution->gapfillingSolutionReactions()->[$j]->reaction()->equation(),
+					$solution->gapfillingSolutionReactions()->[$j]->reaction()->definition()
 				]);
 			}
 			$data->{solutions}->[$i] = $solData;
@@ -1670,7 +1670,7 @@ sub _GapGen_to_GapGenData {
     	},
     	solutions => []
 	};
-    my $solutions = $obj->fbaFormulation()->gapfillingSolutions();
+    my $solutions = $obj->gapgenSolutions();
     if (defined($solutions->[0])) {
 		$data->{isComplete} = 1;
 		for (my $i=0; $i < @{$solutions}; $i++) {
@@ -2317,7 +2317,7 @@ sub get_models
     for (my $i=0; $i < @{$input->{models}}; $i++) {
     	my $id = $input->{models}->[$i];
     	my $ws = $input->{workspaces}->[$i];
-    	my $model = $self->_get_msobject("Model",$input->{workspaces}->[$i],$input->{models}->[$i],$cache);
+    	my $model = $self->_get_msobject("Model",$input->{workspaces}->[$i],$input->{models}->[$i]);
     	my $genomeArray = [split(/\//,$model->{annotation_uuid})];
     	my $mdldata = {
     		id => $input->{models}->[$i],
@@ -2677,7 +2677,7 @@ sub get_fbas
     for (my $i=0; $i < @{$input->{fbas}}; $i++) {
     	my $id = $input->{fbas}->[$i];
     	my $ws = $input->{workspaces}->[$i];
-    	my $fba = $self->_get_msobject("FBA",$ws,$id,$cache);
+    	my $fba = $self->_get_msobject("FBA",$ws,$id);
     	my $fbadata = $self->_FBA_to_FBAdata($fba);
     	$cache->{FBA}->{$ws}->{$id} = $fba;
     	$cache->{Model}->{$fbadata->{model_workspace}}->{$fbadata->{model}} = $fba->model();
@@ -2958,21 +2958,12 @@ sub get_gapfills
 		biochemistry => "default",
 		mapping => "default"
 	});
-	#Creating cache with the biochemistry, to ensure only one is created for all models
-	my $cache = {
-		Biochemistry => {
-			kbase => {
-				"default" => $self->_get_msobject("Biochemistry","kbase",$input->{biochemistry})
-			}
-		}
-	};
+	
     for (my $i=0; $i < @{$input->{gapfills}}; $i++) {
     	my $id = $input->{gapfills}->[$i];
     	my $ws = $input->{workspaces}->[$i];
-    	my $obj = $self->_get_msobject("GapFill",$ws,$id,$cache);
+    	my $obj = $self->_get_msobject("GapFill",$ws,$id);
     	my $data = $self->_GapFill_to_GapFillData($obj);
-    	$cache->{GapFill}->{$ws}->{$id} = $obj;
-    	$cache->{Model}->{$data->{model_workspace}}->{$data->{model}} = $obj->model();
     	push(@{$out_gapfills},$data);
     }
 	$self->_clearContext();
@@ -3231,7 +3222,7 @@ sub get_gapgens
     for (my $i=0; $i < @{$input->{gapgens}}; $i++) {
     	my $id = $input->{gapgens}->[$i];
     	my $ws = $input->{workspaces}->[$i];
-    	my $obj = $self->_get_msobject("GapGen",$ws,$id,$cache);
+    	my $obj = $self->_get_msobject("GapGen",$ws,$id);
     	my $data = $self->_GapGen_to_GapGenData($obj);
     	$cache->{GapGen}->{$ws}->{$id} = $obj;
     	$cache->{Model}->{$data->{model_workspace}}->{$data->{model}} = $obj->model();
