@@ -10277,6 +10277,7 @@ sub find_reaction_synonyms
 	
 	# Iterate over the list of reactions and identify the net reaction for each one.
 	my $netReactions = { };
+	my $excludedReactions = [ ];
 	my $reactionList = $biochem->reactions();
 	foreach my $rxn (@{$reactionList}) {
 		my $nonCofactorCompounds = [ ];
@@ -10296,8 +10297,11 @@ sub find_reaction_synonyms
 		my $numcpds = @$nonCofactorCompounds;
 		if ($numcpds > 0) {
 			$netReactions->{$rxn->id()} = $nonCofactorCompounds;
+		} else {
+			push(@$excludedReactions, $rxn->id());	
 		}
 	}
+	my $numExcluded = @$excludedReactions;
 	
 	# Iterate over the list of reactions and identify the reaction synonyms.
 	# Two reactions are synonyms if the net reaction compound lists are the same.
@@ -10318,17 +10322,19 @@ sub find_reaction_synonyms
 		}
 		push(@$reactionSynonyms, $rxnsyn);
 	}
-	my $numReactions = @$reactionSynonyms;
+	my $numSynonyms = @$reactionSynonyms;
 	
 	# Create the reaction synonyms object and save it to the workspace.
 	my $object = { 
 		version => 1,
 		biochemistry => $input->{biochemistry},
 		biochemistry_workspace => $input->{biochemistry_workspace},
-		synonym_list => $reactionSynonyms
+		synonym_list => $reactionSynonyms,
+		excluded_list => $excludedReactions
 	};
 	my $metadata = {
-		number_reactions => $numReactions,
+		number_synonyms => $numSynonyms,
+		number_excluded => $numExcluded,
 		biochemistry_uuid => $biochem->uuid()
 	};
 	$output = $self->_workspaceServices()->save_object({
@@ -10498,6 +10504,7 @@ sub find_paths
 	# Get the input model object from the workspace.
 	my $inputModel = $self->_get_msobject("Model", $input->{workspace}, $input->{input_model});
 	
+	# MBM Why do we need to do Step 1?
 	# Step 1 - Compute a list of target metabolite/compartment pairs from the biomass equations.
 	my $targetList = [ ];
 	
@@ -10525,7 +10532,8 @@ sub find_paths
 	# Lets talk about this next week.
 	my $reactionList = $inputModel->modelreactions();
 	foreach my $rxn (@{$reactionList}) {
-		print STDERR "reaction ".$rxn->name()." has probability ".$rxn->probability()."\n";
+		my $cost = 1.0 - $rxn->probability();
+		print STDERR "reaction ".$rxn->name()." has probability ".$rxn->probability()." and cost ".$cost."\n";
 	}
 
 	# Generate a name for the fba formulation
@@ -10537,6 +10545,8 @@ sub find_paths
 	my $formulation = $self->_setDefaultFBAFormulation({});
 	#Creating FBAFormulation Object
 	my $fba = $self->_buildFBAObject($formulation,$inputModel,$input->{workspace},$fbaname);
+	# print arrays of FBAObjectiveTerm, FBAConstraint, FBAReactionBound, FBACompoundBound
+	
 #	$fba->fva($input->{fva});
 #	$fba->comboDeletions($input->{simulateko});
 #	$fba->fluxMinimization($input->{minimizeflux});
@@ -14785,6 +14795,7 @@ Reaction synonyms object
         biochemistry_id biochemistry - ID of associated biochemistry database
         workspace_id biochemistry_workspace - workspace with associated biochemistry database
         list<ReactionSynonyms> synonym_list - list of all reaction synonyms from a biochemistry database
+        list<reaction_id> excluded_list - list of reactions excluded because all compounds are cofactors
 
 
 =item Definition
@@ -14797,6 +14808,7 @@ version has a value which is an int
 biochemistry has a value which is a biochemistry_id
 biochemistry_workspace has a value which is a workspace_id
 synonyms_list has a value which is a reference to a list where each element is a ReactionSynonyms
+excluded_list has a value which is a reference to a list where each element is a reaction_id
 
 </pre>
 
@@ -14809,6 +14821,7 @@ version has a value which is an int
 biochemistry has a value which is a biochemistry_id
 biochemistry_workspace has a value which is a workspace_id
 synonyms_list has a value which is a reference to a list where each element is a ReactionSynonyms
+excluded_list has a value which is a reference to a list where each element is a reaction_id
 
 
 =end text

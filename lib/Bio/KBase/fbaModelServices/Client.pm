@@ -11180,6 +11180,7 @@ Reaction synonyms object
         biochemistry_id biochemistry - ID of associated biochemistry database
         workspace_id biochemistry_workspace - workspace with associated biochemistry database
         list<ReactionSynonyms> synonym_list - list of all reaction synonyms from a biochemistry database
+        list<reaction_id> excluded_list - list of reactions excluded because all compounds are cofactors
 
 
 =item Definition
@@ -11192,6 +11193,7 @@ version has a value which is an int
 biochemistry has a value which is a biochemistry_id
 biochemistry_workspace has a value which is a workspace_id
 synonyms_list has a value which is a reference to a list where each element is a ReactionSynonyms
+excluded_list has a value which is a reference to a list where each element is a reaction_id
 
 </pre>
 
@@ -11204,6 +11206,7 @@ version has a value which is an int
 biochemistry has a value which is a biochemistry_id
 biochemistry_workspace has a value which is a workspace_id
 synonyms_list has a value which is a reference to a list where each element is a ReactionSynonyms
+excluded_list has a value which is a reference to a list where each element is a reaction_id
 
 
 =end text

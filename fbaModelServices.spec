@@ -1090,12 +1090,14 @@ module fbaModelServices {
 		biochemistry_id biochemistry - ID of associated biochemistry database
 		workspace_id biochemistry_workspace - workspace with associated biochemistry database
 		list<ReactionSynonyms> synonym_list - list of all reaction synonyms from a biochemistry database
+		list<reaction_id> excluded_list - list of reactions excluded because all compounds are cofactors
 	*/
 	typedef structure {
 		int version;
 		biochemistry_id biochemistry;
 		workspace_id biochemistry_workspace;
 		list<ReactionSynonyms> synonyms_list;
+		list<reaction_id> excluded_list;
 	} ReactionSynonymsObject;
 	
     /*********************************************************************************
