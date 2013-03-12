@@ -10153,6 +10153,154 @@ sub run_job
 
 
 
+=head2 set_cofactors
+
+  $output = $obj->set_cofactors($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a set_cofactors_params
+$output is an object_metadata
+set_cofactors_params is a reference to a hash where the following keys are defined:
+	cofactors has a value which is a reference to a list where each element is a compound_id
+	biochemistry has a value which is a biochemistry_id
+	biochemistry_workspace has a value which is a workspace_id
+	reset has a value which is a bool
+	overwrite has a value which is a bool
+	auth has a value which is a string
+compound_id is a string
+biochemistry_id is a string
+workspace_id is a string
+bool is an int
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a set_cofactors_params
+$output is an object_metadata
+set_cofactors_params is a reference to a hash where the following keys are defined:
+	cofactors has a value which is a reference to a list where each element is a compound_id
+	biochemistry has a value which is a biochemistry_id
+	biochemistry_workspace has a value which is a workspace_id
+	reset has a value which is a bool
+	overwrite has a value which is a bool
+	auth has a value which is a string
+compound_id is a string
+biochemistry_id is a string
+workspace_id is a string
+bool is an int
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+
+
+=item Description
+
+
+
+=back
+
+=cut
+
+sub set_cofactors
+{
+    my $self = shift;
+    my($input) = @_;
+
+    my @_bad_arguments;
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to set_cofactors:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'set_cofactors');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($output);
+    #BEGIN set_cofactors
+    $self->_setContext($ctx,$input);
+
+	# Get the biochemistry from the workspace.
+	my $biochem = $self->_get_msobject("Biochemistry", $input->{biochemistry_workspace}, $input->{biochemistry});
+	
+	# Set the value for the isCofactor flag.
+	my $value = 1;
+	if ($input->{reset}) {
+		$value = 0;
+	}
+	
+	# Find each compound and set the isCofactor flag.
+	foreach my $cpdid (@{$input->{cofactors}}) {
+		my $cpd = $biochem->searchForCompound($cpdid);
+		if (defined($cpd)) {
+			$cpd->isCofactor($value);
+		} else {
+			my $msg = "Compound ".$cpdid." was not found in biochemistry database ".$input->{biochemistry_workspace}."/".$input->{biochemistry};
+			Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg, method_name => 'set_cofactors');
+		}
+	}
+	
+	# Save the updated biochemistry to the workspace.
+   	$output = $self->_save_msobject($biochem,"Biochemistry",$input->{biochemistry_workspace},$input->{biochemistry},"setcofactors",$input->{overwrite});
+	
+    $self->_clearContext();
+    #END set_cofactors
+    my @_bad_returns;
+    (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to set_cofactors:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'set_cofactors');
+    }
+    return($output);
+}
+
+
+
+
 =head2 find_reaction_synonyms
 
   $output = $obj->find_reaction_synonyms($input)
@@ -10274,14 +10422,26 @@ sub find_reaction_synonyms
 			$cofactors->{$cpd->id()} = 1;
 		}
 	}
+	foreach my $key (keys %$cofactors) {
+		print STDERR "Biochem cofactor compound ".$key."\n";
+	}
 	
 	# Iterate over the list of reactions and identify the net reaction for each one.
 	my $netReactions = { };
 	my $excludedReactions = [ ];
 	my $reactionList = $biochem->reactions();
+	my $moreCofactors = { };
 	foreach my $rxn (@{$reactionList}) {
 		my $nonCofactorCompounds = [ ];
+		my $numReagents = @{$rxn->reagents()};
+		if ($numReagents == 0) {
+			print STDERR "reaction ".$rxn->id()." - ".$rxn->name()." has no reagents\n";
+		}
 		foreach my $reagent (@{$rxn->reagents()}) {
+			if ($reagent->isCofactor()) {
+				$moreCofactors->{$reagent->compound()->id()} = 1;
+			}
+			
 			# Skip if compound is a cofactor within reaction.
 			next if ($reagent->isCofactor());
 	
@@ -10298,10 +10458,15 @@ sub find_reaction_synonyms
 		if ($numcpds > 0) {
 			$netReactions->{$rxn->id()} = $nonCofactorCompounds;
 		} else {
-			push(@$excludedReactions, $rxn->id());	
+			my $excludedrxn = { id => $rxn->id(), name => $rxn->name, equation => $rxn->createEquation( { format => "formula" } ) };
+			push(@$excludedReactions, $excludedrxn);	
 		}
 	}
 	my $numExcluded = @$excludedReactions;
+	foreach my $key (keys %$moreCofactors) {
+		my $cpd = $moreCofactors->{$key};
+		print STDERR "cofactor compound ".$cpd->id()." - ".$cpd->name()."\n";
+	}
 	
 	# Iterate over the list of reactions and identify the reaction synonyms.
 	# Two reactions are synonyms if the net reaction compound lists are the same.
@@ -10546,17 +10711,20 @@ sub find_paths
 	#Creating FBAFormulation Object
 	my $fba = $self->_buildFBAObject($formulation,$inputModel,$input->{workspace},$fbaname);
 	# print arrays of FBAObjectiveTerm, FBAConstraint, FBAReactionBound, FBACompoundBound
+	foreach my $objterm (@$fba->fbaObjectiveTerms()) {
+		print STDERR $objterm."\n";
+	}
 	
 #	$fba->fva($input->{fva});
 #	$fba->comboDeletions($input->{simulateko});
 #	$fba->fluxMinimization($input->{minimizeflux});
 #	$fba->findMinimalMedia($input->{findminmedia});
     #Running FBA
-    my $fbaResult = $fba->runFBA();
-    if (!defined($fbaResult)) {
-    	my $msg = "FBA failed with no solution returned!";
-    	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'runfba');
-    }
+#    my $fbaResult = $fba->runFBA();
+#    if (!defined($fbaResult)) {
+#    	my $msg = "FBA failed with no solution returned!";
+#    	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'runfba');
+#    }
 #    if ($input->{add_to_model} == 1) {
 #    	$model->addLinkArrayItem("fbaFormulations",$fba);
 #    	$self->_save_msobject($model,"Model",$input->{model_workspace},$input->{model},"runfba");
@@ -16928,6 +17096,58 @@ auth has a value which is a string
 a reference to a hash where the following keys are defined:
 jobid has a value which is a job_id
 index has a value which is an int
+auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 set_cofactors_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "set_cofactors" function.
+
+        list<compound_id> cofactors - list of compounds that are universal cofactors (required)
+        biochemistry_id biochemistry - ID of input biochemistry database (optional, default is "default") 
+        workspace_id biochemistry_workspace - ID of workspace containing biochemistry database (optional, default is current workspace)
+        bool reset - true to reset (turn off) compounds as universal cofactors (optional, default is false)
+        bool overwrite - true to overwrite existing object (optional, default is false)
+        string auth - the authentication token of the KBase account (optional, default user is "public")
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+cofactors has a value which is a reference to a list where each element is a compound_id
+biochemistry has a value which is a biochemistry_id
+biochemistry_workspace has a value which is a workspace_id
+reset has a value which is a bool
+overwrite has a value which is a bool
+auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+cofactors has a value which is a reference to a list where each element is a compound_id
+biochemistry has a value which is a biochemistry_id
+biochemistry_workspace has a value which is a workspace_id
+reset has a value which is a bool
+overwrite has a value which is a bool
 auth has a value which is a string
 
 

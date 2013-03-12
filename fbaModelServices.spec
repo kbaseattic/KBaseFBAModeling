@@ -2073,6 +2073,27 @@ module fbaModelServices {
     */
 	funcdef run_job(run_job_params input) returns (JobObject output);
 	
+	/* Input parameters for the "set_cofactors" function.
+	
+		list<compound_id> cofactors - list of compounds that are universal cofactors (required)
+		biochemistry_id biochemistry - ID of biochemistry database (optional, default is "default") 
+		workspace_id biochemistry_workspace - ID of workspace containing biochemistry database (optional, default is current workspace)
+		bool reset - true to reset (turn off) compounds as universal cofactors (optional, default is false)
+		bool overwrite - true to overwrite existing object (optional, default is false)
+		string auth - the authentication token of the KBase account (optional, default user is "public")
+	
+	*/
+	typedef structure {
+		list<compound_id> cofactors;
+		biochemistry_id biochemistry;
+		workspace_id biochemistry_workspace;
+		bool reset;
+		bool overwrite;
+		string auth;
+	} set_cofactors_params;
+		
+	funcdef set_cofactors(set_cofactors_params input) returns (object_metadata output);
+	
 	/* Input parameters for the "find_reaction_synonyms" function.
 	
 		reaction_synonyms - ID of reaction synonyms object (required argument)

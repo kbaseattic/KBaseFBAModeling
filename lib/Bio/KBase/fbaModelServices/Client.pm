@@ -6658,6 +6658,142 @@ sub run_job
 
 
 
+=head2 set_cofactors
+
+  $output = $obj->set_cofactors($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a set_cofactors_params
+$output is an object_metadata
+set_cofactors_params is a reference to a hash where the following keys are defined:
+	cofactors has a value which is a reference to a list where each element is a compound_id
+	biochemistry has a value which is a biochemistry_id
+	biochemistry_workspace has a value which is a workspace_id
+	reset has a value which is a bool
+	overwrite has a value which is a bool
+	auth has a value which is a string
+compound_id is a string
+biochemistry_id is a string
+workspace_id is a string
+bool is an int
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a set_cofactors_params
+$output is an object_metadata
+set_cofactors_params is a reference to a hash where the following keys are defined:
+	cofactors has a value which is a reference to a list where each element is a compound_id
+	biochemistry has a value which is a biochemistry_id
+	biochemistry_workspace has a value which is a workspace_id
+	reset has a value which is a bool
+	overwrite has a value which is a bool
+	auth has a value which is a string
+compound_id is a string
+biochemistry_id is a string
+workspace_id is a string
+bool is an int
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+=item Description
+
+
+
+=back
+
+=cut
+
+sub set_cofactors
+{
+    my($self, @args) = @_;
+
+# Authentication: none
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function set_cofactors (received $n, expecting 1)");
+    }
+    {
+	my($input) = @args;
+
+	my @_bad_arguments;
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to set_cofactors:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'set_cofactors');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.set_cofactors",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{code},
+					       method_name => 'set_cofactors',
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method set_cofactors",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'set_cofactors',
+				       );
+    }
+}
+
+
+
 =head2 find_reaction_synonyms
 
   $output = $obj->find_reaction_synonyms($input)
@@ -13313,6 +13449,58 @@ auth has a value which is a string
 a reference to a hash where the following keys are defined:
 jobid has a value which is a job_id
 index has a value which is an int
+auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 set_cofactors_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "set_cofactors" function.
+
+        list<compound_id> cofactors - list of compounds that are universal cofactors (required)
+        biochemistry_id biochemistry - ID of input biochemistry database (optional, default is "default") 
+        workspace_id biochemistry_workspace - ID of workspace containing biochemistry database (optional, default is current workspace)
+        bool reset - true to reset (turn off) compounds as universal cofactors (optional, default is false)
+        bool overwrite - true to overwrite existing object (optional, default is false)
+        string auth - the authentication token of the KBase account (optional, default user is "public")
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+cofactors has a value which is a reference to a list where each element is a compound_id
+biochemistry has a value which is a biochemistry_id
+biochemistry_workspace has a value which is a workspace_id
+reset has a value which is a bool
+overwrite has a value which is a bool
+auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+cofactors has a value which is a reference to a list where each element is a compound_id
+biochemistry has a value which is a biochemistry_id
+biochemistry_workspace has a value which is a workspace_id
+reset has a value which is a bool
+overwrite has a value which is a bool
 auth has a value which is a string
 
 
