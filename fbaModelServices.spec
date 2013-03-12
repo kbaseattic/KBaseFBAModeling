@@ -1073,15 +1073,28 @@ module fbaModelServices {
 	  AutoRecon type definitions
    	*********************************************************************************/
 	
+	/* Reaction definition
+	
+		reaction_id id - ID of reaction
+		string name - name of reaction
+		string definition - stoichiometric equation of reaction in terms of compound names
+		
+	*/
+	typedef structure {
+		reaction_id id;
+		string name;
+		string definition;
+	} ReactionDefinition;
+	 
     /* Reaction synonyms
     
-    	reaction_id id - ID of reaction
-    	list<reaction_id> synonyms - list of synonym reactions to the reaction
+    	reaction_id primary - ID of primary reaction
+    	list<ReactionDefinition> synonyms - list of synonym reactions to the primary reaction (including itself)
     	
     */
     typedef structure {
-    	reaction_id id;
-    	list<reaction_id> synonyms;
+    	reaction_id primary;
+    	list<ReactionDefinition> synonyms;
     } ReactionSynonyms;
 
 	/* Reaction synonyms object
@@ -1090,14 +1103,15 @@ module fbaModelServices {
 		biochemistry_id biochemistry - ID of associated biochemistry database
 		workspace_id biochemistry_workspace - workspace with associated biochemistry database
 		list<ReactionSynonyms> synonym_list - list of all reaction synonyms from a biochemistry database
-		list<reaction_id> excluded_list - list of reactions excluded because all compounds are cofactors
+		list<ReactionDefinition> excluded_list - list of reactions excluded because all compounds are cofactors
+		
 	*/
 	typedef structure {
 		int version;
 		biochemistry_id biochemistry;
 		workspace_id biochemistry_workspace;
 		list<ReactionSynonyms> synonyms_list;
-		list<reaction_id> excluded_list;
+		list<ReactionDefinition> excluded_list;
 	} ReactionSynonymsObject;
 	
     /*********************************************************************************

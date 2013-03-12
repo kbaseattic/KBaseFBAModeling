@@ -11263,7 +11263,7 @@ organism has a value which is a string
 
 
 
-=head2 ReactionSynonyms
+=head2 ReactionDefinition
 
 =over 4
 
@@ -11283,7 +11283,8 @@ organism has a value which is a string
 <pre>
 a reference to a hash where the following keys are defined:
 id has a value which is a reaction_id
-synonyms has a value which is a reference to a list where each element is a reaction_id
+name has a value which is a string
+definition has a value which is a string
 
 </pre>
 
@@ -11293,7 +11294,48 @@ synonyms has a value which is a reference to a list where each element is a reac
 
 a reference to a hash where the following keys are defined:
 id has a value which is a reaction_id
-synonyms has a value which is a reference to a list where each element is a reaction_id
+name has a value which is a string
+definition has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 ReactionSynonyms
+
+=over 4
+
+
+
+=item Description
+
+Reaction synonyms
+
+        reaction_id primary - ID of primary reaction
+        list<ReactionDefinition> synonyms - list of synonym reactions to the primary reaction (including itself)
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+primary has a value which is a reaction_id
+synonyms has a value which is a reference to a list where each element is a ReactionDefinition
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+primary has a value which is a reaction_id
+synonyms has a value which is a reference to a list where each element is a ReactionDefinition
 
 
 =end text
@@ -11316,7 +11358,7 @@ Reaction synonyms object
         biochemistry_id biochemistry - ID of associated biochemistry database
         workspace_id biochemistry_workspace - workspace with associated biochemistry database
         list<ReactionSynonyms> synonym_list - list of all reaction synonyms from a biochemistry database
-        list<reaction_id> excluded_list - list of reactions excluded because all compounds are cofactors
+        list<ReactionDefinition> excluded_list - list of reactions excluded because all compounds are cofactors
 
 
 =item Definition
@@ -11329,7 +11371,7 @@ version has a value which is an int
 biochemistry has a value which is a biochemistry_id
 biochemistry_workspace has a value which is a workspace_id
 synonyms_list has a value which is a reference to a list where each element is a ReactionSynonyms
-excluded_list has a value which is a reference to a list where each element is a reaction_id
+excluded_list has a value which is a reference to a list where each element is a ReactionDefinition
 
 </pre>
 
@@ -11342,7 +11384,7 @@ version has a value which is an int
 biochemistry has a value which is a biochemistry_id
 biochemistry_workspace has a value which is a workspace_id
 synonyms_list has a value which is a reference to a list where each element is a ReactionSynonyms
-excluded_list has a value which is a reference to a list where each element is a reaction_id
+excluded_list has a value which is a reference to a list where each element is a ReactionDefinition
 
 
 =end text
@@ -13469,7 +13511,7 @@ auth has a value which is a string
 Input parameters for the "set_cofactors" function.
 
         list<compound_id> cofactors - list of compounds that are universal cofactors (required)
-        biochemistry_id biochemistry - ID of input biochemistry database (optional, default is "default") 
+        biochemistry_id biochemistry - ID of biochemistry database (optional, default is "default") 
         workspace_id biochemistry_workspace - ID of workspace containing biochemistry database (optional, default is current workspace)
         bool reset - true to reset (turn off) compounds as universal cofactors (optional, default is false)
         bool overwrite - true to overwrite existing object (optional, default is false)

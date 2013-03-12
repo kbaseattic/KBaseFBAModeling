@@ -10422,9 +10422,6 @@ sub find_reaction_synonyms
 			$cofactors->{$cpd->id()} = 1;
 		}
 	}
-	foreach my $key (keys %$cofactors) {
-		print STDERR "Biochem cofactor compound ".$key."\n";
-	}
 	
 	# Iterate over the list of reactions and identify the net reaction for each one.
 	my $netReactions = { };
@@ -10434,14 +10431,7 @@ sub find_reaction_synonyms
 	foreach my $rxn (@{$reactionList}) {
 		my $nonCofactorCompounds = [ ];
 		my $numReagents = @{$rxn->reagents()};
-		if ($numReagents == 0) {
-			print STDERR "reaction ".$rxn->id()." - ".$rxn->name()." has no reagents\n";
-		}
 		foreach my $reagent (@{$rxn->reagents()}) {
-			if ($reagent->isCofactor()) {
-				$moreCofactors->{$reagent->compound()->id()} = 1;
-			}
-			
 			# Skip if compound is a cofactor within reaction.
 			next if ($reagent->isCofactor());
 	
@@ -10456,33 +10446,31 @@ sub find_reaction_synonyms
 		# Only add to the net reaction hash if there is at least one non-cofactor compound.
 		my $numcpds = @$nonCofactorCompounds;
 		if ($numcpds > 0) {
-			$netReactions->{$rxn->id()} = $nonCofactorCompounds;
+			$netReactions->{$rxn->id()} = { compounds => $nonCofactorCompounds, reaction => $rxn };
 		} else {
-			my $excludedrxn = { id => $rxn->id(), name => $rxn->name, equation => $rxn->createEquation( { format => "formula" } ) };
+			my $excludedrxn = { id => $rxn->id(), name => $rxn->name, definition => $rxn->createEquation( { format => "formula" } ) };
 			push(@$excludedReactions, $excludedrxn);	
 		}
 	}
 	my $numExcluded = @$excludedReactions;
-	foreach my $key (keys %$moreCofactors) {
-		my $cpd = $moreCofactors->{$key};
-		print STDERR "cofactor compound ".$cpd->id()." - ".$cpd->name()."\n";
-	}
 	
 	# Iterate over the list of reactions and identify the reaction synonyms.
 	# Two reactions are synonyms if the net reaction compound lists are the same.
 	my $reactionSynonyms = [ ];
 	foreach my $rxn (@{$reactionList}) {
 		# Skip if reaction is not in the net reaction hash.
-		my $found = $netReactions->{$rxn->id()};
+		my $found = $netReactions->{$rxn->id()}->{compounds};
 		next if (!defined($found));
 		
 		# Check each net reaction and see if the compound list matches this reaction.
 		# The synonyms will at least include this reaction.  Maybe should exclude the same reaction from the list???
-		my $rxnsyn = { id => $rxn->id(), synonyms => [] };	
-		foreach my $netrxn (%$netReactions) {
-			my $cpds = $netReactions->{$netrxn};
+		my $rxnsyn = { primary => $rxn->id(), synonyms => [] };	
+		foreach my $key (keys %$netReactions) {
+			my $cpds = $netReactions->{$key}->{compounds};
 			if (@$cpds ~~ @$found) {
-				push(@{$rxnsyn->{synonyms}}, $netrxn);
+				my $synrxn = $netReactions->{$key}->{reaction};
+				my $rxndef = { id => $synrxn->id(), name => $synrxn->name, definition => $synrxn->createEquation( { format => "formula" } ) };
+				push(@{$rxnsyn->{synonyms}}, $rxndef);
 			}
 		}
 		push(@$reactionSynonyms, $rxnsyn);
@@ -10698,7 +10686,6 @@ sub find_paths
 	my $reactionList = $inputModel->modelreactions();
 	foreach my $rxn (@{$reactionList}) {
 		my $cost = 1.0 - $rxn->probability();
-		print STDERR "reaction ".$rxn->name()." has probability ".$rxn->probability()." and cost ".$cost."\n";
 	}
 
 	# Generate a name for the fba formulation
@@ -10711,8 +10698,9 @@ sub find_paths
 	#Creating FBAFormulation Object
 	my $fba = $self->_buildFBAObject($formulation,$inputModel,$input->{workspace},$fbaname);
 	# print arrays of FBAObjectiveTerm, FBAConstraint, FBAReactionBound, FBACompoundBound
-	foreach my $objterm (@$fba->fbaObjectiveTerms()) {
-		print STDERR $objterm."\n";
+	my $objectiveTerms = $fba->fbaObjectiveTerms();
+	foreach my $objterm (@{$objectiveTerms}) {
+		print STDERR $objterm->toReadableString()."\n";
 	}
 	
 #	$fba->fva($input->{fva});
@@ -14910,7 +14898,7 @@ organism has a value which is a string
 
 
 
-=head2 ReactionSynonyms
+=head2 ReactionDefinition
 
 =over 4
 
@@ -14930,7 +14918,8 @@ organism has a value which is a string
 <pre>
 a reference to a hash where the following keys are defined:
 id has a value which is a reaction_id
-synonyms has a value which is a reference to a list where each element is a reaction_id
+name has a value which is a string
+definition has a value which is a string
 
 </pre>
 
@@ -14940,7 +14929,48 @@ synonyms has a value which is a reference to a list where each element is a reac
 
 a reference to a hash where the following keys are defined:
 id has a value which is a reaction_id
-synonyms has a value which is a reference to a list where each element is a reaction_id
+name has a value which is a string
+definition has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 ReactionSynonyms
+
+=over 4
+
+
+
+=item Description
+
+Reaction synonyms
+
+        reaction_id primary - ID of primary reaction
+        list<ReactionDefinition> synonyms - list of synonym reactions to the primary reaction (including itself)
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+primary has a value which is a reaction_id
+synonyms has a value which is a reference to a list where each element is a ReactionDefinition
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+primary has a value which is a reaction_id
+synonyms has a value which is a reference to a list where each element is a ReactionDefinition
 
 
 =end text
@@ -14963,7 +14993,7 @@ Reaction synonyms object
         biochemistry_id biochemistry - ID of associated biochemistry database
         workspace_id biochemistry_workspace - workspace with associated biochemistry database
         list<ReactionSynonyms> synonym_list - list of all reaction synonyms from a biochemistry database
-        list<reaction_id> excluded_list - list of reactions excluded because all compounds are cofactors
+        list<ReactionDefinition> excluded_list - list of reactions excluded because all compounds are cofactors
 
 
 =item Definition
@@ -14976,7 +15006,7 @@ version has a value which is an int
 biochemistry has a value which is a biochemistry_id
 biochemistry_workspace has a value which is a workspace_id
 synonyms_list has a value which is a reference to a list where each element is a ReactionSynonyms
-excluded_list has a value which is a reference to a list where each element is a reaction_id
+excluded_list has a value which is a reference to a list where each element is a ReactionDefinition
 
 </pre>
 
@@ -14989,7 +15019,7 @@ version has a value which is an int
 biochemistry has a value which is a biochemistry_id
 biochemistry_workspace has a value which is a workspace_id
 synonyms_list has a value which is a reference to a list where each element is a ReactionSynonyms
-excluded_list has a value which is a reference to a list where each element is a reaction_id
+excluded_list has a value which is a reference to a list where each element is a ReactionDefinition
 
 
 =end text
@@ -17116,7 +17146,7 @@ auth has a value which is a string
 Input parameters for the "set_cofactors" function.
 
         list<compound_id> cofactors - list of compounds that are universal cofactors (required)
-        biochemistry_id biochemistry - ID of input biochemistry database (optional, default is "default") 
+        biochemistry_id biochemistry - ID of biochemistry database (optional, default is "default") 
         workspace_id biochemistry_workspace - ID of workspace containing biochemistry database (optional, default is current workspace)
         bool reset - true to reset (turn off) compounds as universal cofactors (optional, default is false)
         bool overwrite - true to overwrite existing object (optional, default is false)
