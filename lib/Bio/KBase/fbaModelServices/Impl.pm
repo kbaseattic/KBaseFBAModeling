@@ -2000,6 +2000,21 @@ sub _prepPhenotypeSimultationFBA {
 	return ($fba,$existingPhenos,$phenokeys);
 }
 
+=head3 _buildCoreModel
+
+Definition:
+	 = $self->_buildCoreModel();
+Description:
+	Builds a core model
+	
+=cut
+
+sub _buildCoreModel {
+	my($self) = @_;
+	
+	return ();
+}
+
 #END_HEADER
 
 sub new
@@ -6012,6 +6027,7 @@ sub addmedia
     	type => $input->{type},
     });
     my $missing = [];
+    my $found = [];
     for (my $i=0; $i < @{$input->{compounds}}; $i++) {
     	my $name = $input->{compounds}->[$i];
     	my $cpdobj = $bio->searchForCompound($name);
@@ -6031,11 +6047,17 @@ sub addmedia
 	    	if (defined($input->{minflux}->[$i])) {
 	    		$data->{minFlux} = $input->{minflux}->[$i];
 	    	}
-	    	$media->add("mediacompounds",$data);
+	    	#$media->add("mediacompounds",$data);
+	    	print $i." of ".@{$input->{compounds}}."\n";
+	    	push(@{$found},$cpdobj->id());
     	} else {
     		push(@{$missing},$input->{compounds}->[$i]);
     	}
     }
+    print "Found:".@{$found}."\n";
+    print "Missing:".@{$missing}."\n";
+    print "Found:".join(";",@{$found})."\n";
+    print "Missing:".join(";",@{$missing})."\n";
     #Checking that all compounds specified for media were found
 	if (defined($missing->[0])) {
 		my $msg = "Compounds specified for media not found: ".join(";",@{$missing});

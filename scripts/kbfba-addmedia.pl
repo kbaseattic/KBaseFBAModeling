@@ -35,9 +35,9 @@ my $arrayparams = {
 #Defining usage and options
 my $specs = [
     [ 'name:s', 'Media name' ],
-    [ 'concentrations:s', 'Compound concentrations (; delimiter)' ],
-    [ 'minflux:s', 'Compound minimum fluxes (; delimiter)' ],
-    [ 'maxflux:s', 'Compound maximum fluxes (; delimiter)' ],
+    [ 'concentrations=s', 'Compound concentrations (; delimiter)' ],
+    [ 'minflux=s', 'Compound minimum fluxes (; delimiter)' ],
+    [ 'maxflux=s', 'Compound maximum fluxes (; delimiter)' ],
     [ 'type|t=s', 'Type of media', { "default" => "unspecified" } ],
     [ 'defined|d', 'Media is defined', { "default" => 0 } ],
     [ 'minimal|m', 'Media is minimal', { "default" => 0 } ],

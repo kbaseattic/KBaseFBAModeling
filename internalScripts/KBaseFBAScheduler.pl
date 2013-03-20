@@ -101,28 +101,33 @@ sub monitor {
 			my $openSlots = ($count - $runningCount);
 			#Checking if outstanding queued jobs exist
 			my $auth = Bio::KBase::workspaceService::Helpers::auth();
-			my $jobs = $self->client()->get_jobs({
-				status => "queued",
-				auth => $auth
-			});
-			#Queuing jobs
-			while ($openSlots > 0 && @{$jobs} > 0) {
-				my $job = shift(@{$jobs});
-				my $output = $self->client()->get_object_by_ref({
-					reference => $job->{id},
-					auth => $job->{auth}
+			local $Bio::KBase::workspaceService::Server::CallContext = {};
+			my $jobs;
+			eval {
+				$jobs = $self->client()->get_jobs({
+					status => "queued",
+					auth => $auth
 				});
-				if ($self->client()->set_job_status({
-					jobid => $job->{id},
-					status => "running",
-					auth => $job->{auth}
-				}) == 1) {
-					for (my $i=0; $i < @{$output->{data}->{clusterjobs}}; $i++) {
-						$self->queueJob($job->{id},$job->{auth},$i);
-						$openSlots--;
+			};
+			if (defined($jobs)) {
+				#Queuing jobs
+				while ($openSlots > 0 && @{$jobs} > 0) {
+					my $job = shift(@{$jobs});
+					my $output;
+					eval {
+						$output = $self->client()->get_object_by_ref({
+							reference => $job->{id},
+							auth => $job->{auth}
+						});
+					};
+					if (defined($output)) {
+						for (my $i=0; $i < @{$output->{data}->{clusterjobs}}; $i++) {
+							$self->queueJob($job->{id},$job->{auth},$i);
+							$openSlots--;
+						}
 					}
 				}
-			}	
+			}
 		}
 		print "Sleeping...\n";
 		sleep(30);
@@ -131,9 +136,6 @@ sub monitor {
 
 sub queueJob {
 	my ($self,$id,$auth,$index) = @_;
-	#if (!defined($auth)) {
-	#	$auth = Bio::KBase::workspaceService::Helpers::auth();
-	#}
 	my $authcmd = "none";
 	if (defined($auth)) {
 		my ($fh, $uncompressed_filename) = File::Temp::tempfile(DIR => $self->directory()."/authFiles/");
@@ -141,16 +143,30 @@ sub queueJob {
 		close($fh);
 		$authcmd = $uncompressed_filename;
 	}
-	my $cmd = "qsub -l arch=lx26-amd64 -m aes -M \"chenry\@mcs.anl.gov\" -b yes -e ".$self->directory()."/errors/ -o ".$self->directory()."/output/ bash ".$self->directory()."/scheduler.sh runjob ".$id." ".$index." ".$authcmd;
-	system($cmd);
+	my $cmd = "qsub -l arch=lx26-amd64 -m aes -M \"chenry\@mcs.anl.gov\" -b yes -e ".$self->directory()."/errors/ -o ".$self->directory()."/output/ bash ".$self->directory()."/scheduler.sh runjob ".$id." ".$index." ".$authcmd;	
+	my $execOut = $self->runexecutable($cmd);
+	if (defined($execOut)) {
+		foreach my $line (@{$output}) {
+			if ($line =~ m/Your\sjob\s(\d+)\s/) {
+				my $newID = ($1+1-1);
+				eval {
+					my $status = $self->client()->set_job_status({
+						jobid => $job->{id},
+						status => "running",
+						auth => $job->{auth},
+						jobdata => {
+							qsubid => $newID
+						}
+					});
+				};
+			}
+		}
+	}
 }
 
 sub run {
 	my($self,$id,$auth,$index) = @_;
 	my $filename;
-	#if (!defined($auth)) {
-	#	$auth = Bio::KBase::workspaceService::Helpers::auth();
-	#} elsif (-e $auth) {
 	if (defined($auth) && $auth ne "none" && -e $auth) {
 		$filename = $auth;
 		open(my $fh, "<", $auth) || die "$!: $@";
@@ -163,49 +179,16 @@ sub run {
 	}
 	my $obj = Bio::KBase::fbaModelServices::Impl->new({workspace => $self->client()});
 	if ($auth ne "none") {
-		local $Bio::KBase::workspaceService::Server::CallContext = {};
-		eval {
-			$obj->run_job({
-				jobid => $id,
-				"index" => $index,
-				auth => $auth
-			});
-		};
-		if ($@) {
-			my $errmsg = $@;
-			my $cmd = "";
-			my $error = "";
-			if ($errmsg =~ /\smethod\s\"(.+)\"\sfailed.+\>[\s]+(.+)\n/) {
-				$cmd = $1;
-				$error = $2;
-			}
-			$self->client()->set_job_status({
-				jobid => $id,
-				status => "error:".$cmd.":".$error,
-				auth => $auth
-			});
-		}
+		$obj->run_job({
+			jobid => $id,
+			"index" => $index,
+			auth => $auth
+		});
 	} else {
-		local $Bio::KBase::workspaceService::Server::CallContext = {};
-		eval {
-			$obj->run_job({
-				jobid => $id,
-				"index" => $index,
-			});
-		};
-		if ($@) {
-			my $errmsg = $@;
-			my $cmd = "";
-			my $error = "";
-			if ($errmsg =~ /\smethod\s\"(.+)\"\sfailed.+\>[\s]+(.+)\n/) {
-				$cmd = $1;
-				$error = $2;
-			}
-			$self->client()->set_job_status({
-				jobid => $id,
-				status => "error:".$cmd.":".$error,
-			});
-		}
+		$obj->run_job({
+			jobid => $id,
+			"index" => $index,
+		});
 	}
 }
 
