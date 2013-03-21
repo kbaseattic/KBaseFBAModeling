@@ -146,19 +146,20 @@ sub queueJob {
 	my $cmd = "qsub -l arch=lx26-amd64 -m aes -M \"chenry\@mcs.anl.gov\" -b yes -e ".$self->directory()."/errors/ -o ".$self->directory()."/output/ bash ".$self->directory()."/scheduler.sh runjob ".$id." ".$index." ".$authcmd;	
 	my $execOut = $self->runexecutable($cmd);
 	if (defined($execOut)) {
-		foreach my $line (@{$output}) {
+		foreach my $line (@{$execOut}) {
 			if ($line =~ m/Your\sjob\s(\d+)\s/) {
 				my $newID = ($1+1-1);
 				eval {
 					my $status = $self->client()->set_job_status({
-						jobid => $job->{id},
+						jobid => $id,
 						status => "running",
-						auth => $job->{auth},
+						auth => $auth,
 						jobdata => {
 							qsubid => $newID
 						}
 					});
 				};
+				last;
 			}
 		}
 	}
