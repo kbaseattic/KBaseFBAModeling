@@ -101,9 +101,47 @@ sub monitor {
 			my $openSlots = ($count - $runningCount);
 			#Checking if outstanding queued jobs exist
 			my $auth = Bio::KBase::workspaceService::Helpers::auth();
-			local $Bio::KBase::workspaceService::Server::CallContext = {};
 			my $jobs;
 			eval {
+				local $Bio::KBase::workspaceService::Server::CallContext = {};
+				$jobs = $self->client()->get_jobs({
+					status => "running",
+					auth => $auth
+				});
+			};
+			if (defined($jobs)) {
+				for (my $i=0; $i < @{$jobs}; $i++) {
+					my $job = $jobs->[$i];
+					if (defined($job->{jobdata}->{qsubid})) {
+						my $id = $job->{jobdata}->{qsubid};
+						if (!defined($runningJobs->{$id})) {
+							my $input = {
+								jobid => $job->{jobid},
+								status => "error",
+								auth => $auth
+							};
+							my $filename = "/homes/chenry/kbase/deploy/errors/bash.e".$id;
+							if (-e $filename) {
+								my $error = "";
+								open (INPUT, "<", $filename);
+							    while (my $Line = <INPUT>) {
+							        chomp($Line);
+							        $Line =~ s/\r//;
+									$error .= $Line."\n";
+							    }
+							    close(INPUT);
+								$input->{jobdata}->{error} = $error;
+							}
+							eval {
+								local $Bio::KBase::workspaceService::Server::CallContext = {};
+								my $status = $self->client()->set_job_status($input);
+							};
+						}
+					}
+				}
+			}
+			eval {
+				local $Bio::KBase::workspaceService::Server::CallContext = {};
 				$jobs = $self->client()->get_jobs({
 					status => "queued",
 					auth => $auth
@@ -115,6 +153,7 @@ sub monitor {
 					my $job = shift(@{$jobs});
 					my $output;
 					eval {
+						local $Bio::KBase::workspaceService::Server::CallContext = {};
 						$output = $self->client()->get_object_by_ref({
 							reference => $job->{id},
 							auth => $job->{auth}
@@ -150,6 +189,7 @@ sub queueJob {
 			if ($line =~ m/Your\sjob\s(\d+)\s/) {
 				my $newID = ($1+1-1);
 				eval {
+					local $Bio::KBase::workspaceService::Server::CallContext = {};
 					my $status = $self->client()->set_job_status({
 						jobid => $id,
 						status => "running",
@@ -180,12 +220,14 @@ sub run {
 	}
 	my $obj = Bio::KBase::fbaModelServices::Impl->new({workspace => $self->client()});
 	if ($auth ne "none") {
+		local $Bio::KBase::workspaceService::Server::CallContext = {};
 		$obj->run_job({
 			jobid => $id,
 			"index" => $index,
 			auth => $auth
 		});
 	} else {
+		local $Bio::KBase::workspaceService::Server::CallContext = {};
 		$obj->run_job({
 			jobid => $id,
 			"index" => $index,
