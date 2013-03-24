@@ -137,11 +137,14 @@ sub monitor {
 							    close(INPUT);
 								$input->{jobdata}->{error} = $error;
 							}
-							eval {
-								local $Bio::KBase::workspaceService::Server::CallContext = {};
-								print $job->{id}." setting error status!\n";
-								my $status = $self->client()->set_job_status($input);
-							};
+							local $Bio::KBase::workspaceService::Server::CallContext = {};
+							print $job->{id}." setting error status!\n";
+							my $status = $self->client()->set_job_status($input);
+							#eval {
+							#	local $Bio::KBase::workspaceService::Server::CallContext = {};
+							#	print $job->{id}." setting error status!\n";
+							#	my $status = $self->client()->set_job_status($input);
+							#};
 						}
 					}
 				}
