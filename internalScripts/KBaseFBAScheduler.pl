@@ -109,24 +109,20 @@ sub monitor {
 					auth => $auth
 				});
 			};
-			print @{$jobs}." are running!\n";
 			if (defined($jobs)) {
 				for (my $i=0; $i < @{$jobs}; $i++) {
 					my $job = $jobs->[$i];
-					print $job->{id}." has running status!\n";
 					if (defined($job->{jobdata}->{qsubid})) {
-						print $job->{id}." has qsub!\n";
 						my $id = $job->{jobdata}->{qsubid};
 						if (!defined($runningJobs->{$id})) {
-							print $job->{id}." not actgually running!\n";
 							my $input = {
 								jobid => $job->{id},
 								status => "error",
-								auth => $auth
+								auth => $auth,
+								currentStatus => "running"
 							};
 							my $filename = "/homes/chenry/kbase/deploy/errors/bash.e".$id;
 							if (-e $filename) {
-								print $job->{id}." error file found!\n";
 								my $error = "";
 								open (INPUT, "<", $filename);
 							    while (my $Line = <INPUT>) {
@@ -137,14 +133,10 @@ sub monitor {
 							    close(INPUT);
 								$input->{jobdata}->{error} = $error;
 							}
-							local $Bio::KBase::workspaceService::Server::CallContext = {};
-							print $job->{id}." setting error status!\n";
-							my $status = $self->client()->set_job_status($input);
-							#eval {
-							#	local $Bio::KBase::workspaceService::Server::CallContext = {};
-							#	print $job->{id}." setting error status!\n";
-							#	my $status = $self->client()->set_job_status($input);
-							#};
+							eval {
+								local $Bio::KBase::workspaceService::Server::CallContext = {};
+								my $status = $self->client()->set_job_status($input);
+							};
 						}
 					}
 				}
