@@ -111,6 +111,7 @@ sub monitor {
 			my $jobs;
 			eval {
 				local $Bio::KBase::workspaceService::Server::CallContext = {};
+				print "AUTH:".$auth."\n";
 				$jobs = $self->client()->get_jobs({
 					status => "running",
 					auth => $auth
