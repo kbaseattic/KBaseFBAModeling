@@ -59,7 +59,7 @@ package scheduler;
 
 sub new {
 	my ($class,$params) = @_;
-	my $self = {_directory => $params->{directory},_client => Bio::KBase::workspaceService::Helpers::get_ws_client()};
+	my $self = {_directory => $params->{directory}};
     return bless $self;
 }
 
@@ -116,6 +116,7 @@ sub monitor {
 					status => "running",
 					auth => $auth
 				});
+				print "JOBS:".@{$jobs}."\n";
 			};
 			if (defined($jobs)) {
 				for (my $i=0; $i < @{$jobs}; $i++) {
@@ -274,6 +275,7 @@ sub readconfig {
 	$ENV{KB_WORKSPACEURL} = $c->param("workspace.url");
 	$ENV{KB_FBAURL} = $c->param("fba.url");
 	$ENV{KB_AUTH_TOKEN} = $c->param("workspace.auth");
+	$self->{_client} = Bio::KBase::workspaceService::Helpers::get_ws_client();
 }
 
 1;
