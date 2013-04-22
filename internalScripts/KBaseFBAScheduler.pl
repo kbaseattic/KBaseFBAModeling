@@ -14,6 +14,7 @@ use Test::More;
 use Data::Dumper;
 use File::Temp qw(tempfile);
 use LWP::Simple;
+use Config::Simple;
 use Bio::KBase::AuthToken;
 use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
 use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand universalFBAScriptCode);
@@ -24,9 +25,9 @@ $|=1;
 
 #Creating the error message printed whenever the user input makes no sense
 my $Usage = "Scheduler must be called with the following syntax:\n".
-			"kbasefbascheduler monitor <process count>\n".
-			"kbasefbascheduler runjob <id> <auth>\n".
-			"kbasefbascheduler addjob <id> <auth>\n".
+			"kbasefbascheduler monitor <process count> <config file>\n".
+			"kbasefbascheduler runjob <id> <index> <auth> <config file>\n".
+			"kbasefbascheduler addjob <id> <index> <auth> <config file>\n".
 			"kbasefbascheduler killjobs\n";
 #First checking to see if at least one argument has been provided
 my $directory = shift(@ARGV);
@@ -39,10 +40,16 @@ print $directory."\n";
 my $sched = scheduler->new({directory => $directory});
 #Running requested functions
 if ($ARGV[0] eq "monitor") {
+	$sched->setConfigFile($ARGV[2]);
+	$sched->readconfig();
 	$sched->monitor($ARGV[1]);
 } elsif ($ARGV[0] eq "runjob") {
+	$sched->setConfigFile($ARGV[4]);
+	$sched->readconfig();
 	$sched->run($ARGV[1],$ARGV[3],$ARGV[2]);
 } elsif ($ARGV[0] eq "addjob") {
+	$sched->setConfigFile($ARGV[4]);
+	$sched->readconfig();
 	$sched->queueJob($ARGV[1],$ARGV[3],$ARGV[2]);
 } elsif ($ARGV[0] eq "killjobs") {
 	$sched->haltalljobs();
@@ -183,7 +190,7 @@ sub queueJob {
 		close($fh);
 		$authcmd = $uncompressed_filename;
 	}
-	my $cmd = "qsub -l arch=lx26-amd64 -m aes -M \"chenry\@mcs.anl.gov\" -b yes -e ".$self->directory()."/errors/ -o ".$self->directory()."/output/ bash ".$self->directory()."/scheduler.sh runjob ".$id." ".$index." ".$authcmd;	
+	my $cmd = "qsub -l arch=lx26-amd64 -m aes -M \"chenry\@mcs.anl.gov\" -b yes -e ".$self->directory()."/errors/ -o ".$self->directory()."/output/ bash ".$self->directory()."/scheduler.sh runjob ".$id." ".$index." ".$authcmd." ".$self->configfile();	
 	my $execOut = $self->runexecutable($cmd);
 	if (defined($execOut)) {
 		foreach my $line (@{$execOut}) {
@@ -246,6 +253,26 @@ sub haltalljobs {
 			}
 		}
 	}
+}
+
+sub setConfigFile {
+    my($self,$filename) = @_; 
+	$self->{_configfile} = $filename;
+}
+
+sub configfile {
+    my($self) = @_; 
+	return $self->{_configfile};
+}
+
+sub readconfig {
+    my($self) = @_; 
+	my $c = Config::Simple->new();
+	$c->read($self->configfile());
+	$ENV{KB_RUNNING_IN_IRIS} = 1;
+	$ENV{KB_WORKSPACEURL} = $c->param("workspace.url");
+	$ENV{KB_FBAURL} = $c->param("fba.url");
+	$ENV{KB_AUTH_TOKEN} = $c->param("workspace.auth");
 }
 
 1;

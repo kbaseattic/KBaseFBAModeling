@@ -884,8 +884,12 @@ sub _buildFBAObject {
 	#Parse bounds
 	foreach my $bound (@{$fbaFormulation->{bounds}}) {
 		my $bound = $self->_parseBound($bound);
+		my $uuid = "modelreaction_uuid";
+		if ($bound->{boundtype} eq "fbaCompoundBounds") {
+			$uuid = "modelcompound_uuid";
+		}
 		$form->add($bound->{boundtype},{
-			modelreaction_uuid => $bound->{uuid},
+			$uuid => $bound->{uuid},
 			variableType => $bound->{vartype},
 			upperBound => $bound->{upperbound},
 			lowerBound => $bound->{lowerbound}
