@@ -165,6 +165,14 @@ sub _KBaseStore {
 	return $self->{_kbasestore};
 }
 
+sub _accountType {
+	my ($self) = @_;
+	if (!defined($self->{_accounttype})) {
+		$self->{_accounttype} = "kbase";
+	}
+	return $self->{_accounttype};	
+}
+
 sub _authenticate {
 	my ($self,$auth) = @_;
 	if ($self->{_accounttype} eq "kbase") {
@@ -2069,23 +2077,21 @@ sub new
     my $options = $args[0];
 	$ENV{KB_NO_FILE_ENVIRONMENT} = 1;
     my %params;
-    if ((my $e = $ENV{KB_DEPLOYMENT_CONFIG}) && -e $ENV{KB_DEPLOYMENT_CONFIG})
-    {
-	my $service = $ENV{KB_SERVICE_NAME};
-	my $c = Config::Simple->new();
-	$c->read($e);
-	my @params = qw(workspace-url);
-	for my $p (@params)
-	{
-	  	my $v = $c->param("$service.$p");
-
-	    if ($v)
-	    {
-		$params{$p} = $v;
-	    }
-	}
+    if ((my $e = $ENV{KB_DEPLOYMENT_CONFIG}) && -e $ENV{KB_DEPLOYMENT_CONFIG}) {
+		my $service = $ENV{KB_SERVICE_NAME};
+		my $c = Config::Simple->new();
+		$c->read($e);
+		my @params = qw(workspace-url);
+		for my $p (@params) {
+		  	my $v = $c->param("$service.$p");
+		    if ($v) {
+				$params{$p} = $v;
+		    }
+		}
     }
-
+	if (defined $params{accounttype}) {
+		$self->{_accounttype} = $params{accounttype};
+    }
     if (defined $params{"workspace-url"}) {
 		$self->{"_workspace-url"} = $params{"workspace-url"};
     } else {
