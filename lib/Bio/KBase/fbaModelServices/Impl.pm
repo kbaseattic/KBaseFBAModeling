@@ -176,18 +176,18 @@ sub _accountType {
 sub _authenticate {
 	my ($self,$auth) = @_;
 	if ($self->{_accounttype} eq "kbase") {
-		if ($params->{auth} =~ m/^IRIS-/) {
+		if ($auth =~ m/^IRIS-/) {
 			return {
 				authentication => $auth,
 				user => $auth
 			};
 		} else {
 			my $token = Bio::KBase::AuthToken->new(
-				token => $params->{auth},
+				token => $auth,
 			);
 			if ($token->validate()) {
 				return {
-					authentication => $params->{auth},
+					authentication => $auth,
 					user => $token->user_id
 				};
 			} else {
@@ -205,10 +205,11 @@ sub _authenticate {
 			Bio::KBase::Exceptions::KBaseException->throw(error => $token,
 			method_name => '_setContext');
 		}
-		print "Logged user:".split(/\t/,$token)[0]."\n";
+		my $split = [split(/\t/,$token)];
+		print "Logged user:".$split->[0]."\n";
 		return {
 			authentication => $token,
-			user => split(/\t/,$token)[0]
+			user => $split->[0]
 		};
 	} elsif ($self->{_accounttype} eq "modelseed") { {
 		require "ModelSEED/utilities.pm";
@@ -218,7 +219,7 @@ sub _authenticate {
 		});
 		return {
 			authentication => $auth,
-			user => $username;
+			user => $username
 		};
 	}
 }
