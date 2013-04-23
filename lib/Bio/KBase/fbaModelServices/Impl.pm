@@ -2082,7 +2082,7 @@ sub new
 		my $service = $ENV{KB_SERVICE_NAME};
 		my $c = Config::Simple->new();
 		$c->read($e);
-		my @params = qw(workspace-url);
+		my @params = qw(accounttype workspace-url);
 		for my $p (@params) {
 		  	my $v = $c->param("$service.$p");
 		    if ($v) {
