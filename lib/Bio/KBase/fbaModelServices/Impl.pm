@@ -2091,6 +2091,7 @@ sub new
 		}
     }
 	if (defined $params{accounttype}) {
+		print STDERR "Setting account type to:".$params{accounttype}."\n";
 		$self->{_accounttype} = $params{accounttype};
     }
     if (defined $params{"workspace-url"}) {
