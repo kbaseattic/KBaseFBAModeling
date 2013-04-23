@@ -165,33 +165,71 @@ sub _KBaseStore {
 	return $self->{_kbasestore};
 }
 
-sub _setContext {
-	my ($self,$context,$params) = @_;
-	#Clearing the existing kbasestore and initializing a new one
-	if (defined($params->{wsurl})) {
-		$self->_getContext()->{_override}->{_wsurl} = $params->{wsurl};
-	}	
-	$self->_resetKBaseStore();
-	if ( defined $params->{auth} ) {
-		if (!defined($self->_getContext()->{_override}) || $self->_getContext()->{_override}->{_authentication} ne $params->{auth}) {
-			if ($params->{auth} eq m/^IRIS-/ ) {
-				$self->_getContext()->{_override}->{_authentication} = $params->{auth};
-				$self->_getContext()->{_override}->{_currentUser} = $params->{auth};
+sub _authenticate {
+	my ($self,$auth) = @_;
+	if ($self->{_accounttype} eq "kbase") {
+		if ($params->{auth} =~ m/^IRIS-/) {
+			return {
+				authentication => $auth,
+				user => $auth
+			};
+		} else {
+			my $token = Bio::KBase::AuthToken->new(
+				token => $params->{auth},
+			);
+			if ($token->validate()) {
+				return {
+					authentication => $params->{auth},
+					user => $token->user_id
+				};
 			} else {
-				my $token = Bio::KBase::AuthToken->new(
-					token => $params->{auth},
-				);
-				if ($token->validate()) {
-					$self->_getContext()->{_override}->{_authentication} = $params->{auth};
-					$self->_getContext()->{_override}->{_currentUser} = $token->user_id;
-					$self->_KBaseStore()->auth($params->{auth});
-				} else {
-					Bio::KBase::Exceptions::KBaseException->throw(error => "Invalid authorization token!",
-					method_name => '_setContext');
-				}
+				Bio::KBase::Exceptions::KBaseException->throw(error => "Invalid authorization token:".$params->{auth},
+				method_name => '_setContext');
 			}
 		}
-    }
+	} elsif ($self->{_accounttype} eq "seed") { {
+		require "ModelSEED/Client/MSSeedSupport.pm";
+		my $svr = ModelSEED::Client::MSSeedSupport->new();
+		my $token = $svr->authenticate({
+			token => $auth
+		});
+		if (!defined($token) || $token =~ m/ERROR:/) {
+			Bio::KBase::Exceptions::KBaseException->throw(error => $token,
+			method_name => '_setContext');
+		}
+		print "Logged user:".split(/\t/,$token)[0]."\n";
+		return {
+			authentication => $token,
+			user => split(/\t/,$token)[0]
+		};
+	} elsif ($self->{_accounttype} eq "modelseed") { {
+		require "ModelSEED/utilities.pm";
+		my $config = ModelSEED::utilities::config();
+		my $username = $config->authenticate({
+			token => $auth
+		});
+		return {
+			authentication => $auth,
+			user => $username;
+		};
+	}
+}
+
+sub _setContext {
+	my ($self,$context,$params) = @_;
+    #Clearing the existing kbasestore and initializing a new one
+	if (defined($params->{wsurl})) {
+		$self->_getContext()->{_override}->{_wsurl} = $params->{wsurl};
+	}
+	$self->_resetKBaseStore();
+    if (defined($params->{auth}) && length($params->{auth}) > 0) {
+		if (!defined($self->_getContext()->{_override}) || $self->_getContext()->{_override}->{_authentication} ne $params->{auth}) {
+			my $output = _authenticate($params->{auth});
+			$self->_getContext()->{_override}->{_authentication} = $output->{authentication};
+			$self->_getContext()->{_override}->{_currentUser} = $output->{user};
+			$self->_KBaseStore()->auth($output->{authentication});
+		}
+    }			
 }
 
 sub _getContext {

@@ -26,14 +26,14 @@ my $translation = {
 #Defining usage and options
 my $specs = [
     [ 'biomass|b:s', 'ID of biomass to be modified', { "default" => "bio1" }  ],
-    [ 'product|p:s', 'Product compound', { "default" => "0" }  ],
+    [ 'product|p', 'Product compound'],
     [ 'compartment|c:s', 'Compartment of target compound', { "default" => "c" } ],
     [ 'compindex|i:s', 'Index of compartment for target compound', { "default" => 0 } ],
     [ 'workspace|w:s', 'Workspace to save FBA results', { "default" => workspace() } ],
     [ 'overwrite|o', 'Overwrite any existing FBA with same name' ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
-if ($opt->{product} == 0) {
+if (!defined($opt->{product})) {
 	$params->{coefficient} = -1*$params->{coefficient};
 }
 #Calling the server
