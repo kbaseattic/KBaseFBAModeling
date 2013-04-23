@@ -191,11 +191,11 @@ sub _authenticate {
 					user => $token->user_id
 				};
 			} else {
-				Bio::KBase::Exceptions::KBaseException->throw(error => "Invalid authorization token:".$params->{auth},
+				Bio::KBase::Exceptions::KBaseException->throw(error => "Invalid authorization token:".$auth,
 				method_name => '_setContext');
 			}
 		}
-	} elsif ($self->{_accounttype} eq "seed") { {
+	} elsif ($self->{_accounttype} eq "seed") {
 		require "ModelSEED/Client/MSSeedSupport.pm";
 		my $svr = ModelSEED::Client::MSSeedSupport->new();
 		my $token = $svr->authenticate({
@@ -211,7 +211,7 @@ sub _authenticate {
 			authentication => $token,
 			user => $split->[0]
 		};
-	} elsif ($self->{_accounttype} eq "modelseed") { {
+	} elsif ($self->{_accounttype} eq "modelseed") {
 		require "ModelSEED/utilities.pm";
 		my $config = ModelSEED::utilities::config();
 		my $username = $config->authenticate({
