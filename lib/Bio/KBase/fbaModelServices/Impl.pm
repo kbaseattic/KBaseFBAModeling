@@ -233,7 +233,7 @@ sub _setContext {
 	$self->_resetKBaseStore();
     if (defined($params->{auth}) && length($params->{auth}) > 0) {
 		if (!defined($self->_getContext()->{_override}) || $self->_getContext()->{_override}->{_authentication} ne $params->{auth}) {
-			my $output = _authenticate($params->{auth});
+			my $output = $self->_authenticate($params->{auth});
 			$self->_getContext()->{_override}->{_authentication} = $output->{authentication};
 			$self->_getContext()->{_override}->{_currentUser} = $output->{user};
 			$self->_KBaseStore()->auth($output->{authentication});
