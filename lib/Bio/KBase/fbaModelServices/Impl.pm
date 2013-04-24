@@ -205,7 +205,8 @@ sub _authenticate {
 			Bio::KBase::Exceptions::KBaseException->throw(error => $token,
 			method_name => '_setContext');
 		}
-		my $split = [split(/\s/,$token)];
+		$token =~ s/\s/\t/;
+		my $split = [split(/\t/,$token)];
 		print "Logged user:".$split->[0]."\n";
 		return {
 			authentication => $token,
