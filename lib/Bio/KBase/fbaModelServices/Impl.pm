@@ -2090,9 +2090,15 @@ sub new
 				$params{$p} = $v;
 		    }
 		}
+    } else {
+    	my @params = qw(accounttype workspace-url);
+		for my $p (@params) {
+		  	if (defined($options->{$p})) {
+				$params{$p} = $options->{$p};
+		    }
+		}
     }
 	if (defined $params{accounttype}) {
-		print STDERR "Setting account type to:".$params{accounttype}."\n";
 		$self->{_accounttype} = $params{accounttype};
     }
     if (defined $params{"workspace-url"}) {
