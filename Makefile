@@ -113,6 +113,9 @@ deploy-docs:
 	cp docs/*html $(SERV_SERVICE_DIR)/webroot/.
 
 compile-typespec:
+	mkdir -p lib/biokbase/fbaModelServices
+	touch lib/biokbase/__init__.py
+	touch lib/biokbase/fbaModelServices/__init__.py
 	compile_typespec \
 	-impl Bio::KBase::fbaModelServices::Impl \
 	-service Bio::KBase::fbaModelServices::Server \

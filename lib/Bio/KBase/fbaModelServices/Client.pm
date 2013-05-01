@@ -70,6 +70,7 @@ uniquely identifies a workspace among all workspaces.
 sub new
 {
     my($class, $url, @args) = @_;
+    
 
     my $self = {
 	client => Bio::KBase::fbaModelServices::Client::RpcClient->new,
@@ -140,9 +141,9 @@ ModelBiomass is a reference to a hash where the following keys are defined:
 	biomass_compounds has a value which is a reference to a list where each element is a BiomassCompound
 biomass_id is a string
 BiomassCompound is a reference to a list containing 3 items:
-	0: a modelcompound_id
-	1: a float
-	2: a string
+	0: (modelcompound) a modelcompound_id
+	1: (coefficient) a float
+	2: (name) a string
 modelcompound_id is a string
 ModelCompartment is a reference to a hash where the following keys are defined:
 	id has a value which is a modelcompartment_id
@@ -170,30 +171,30 @@ ModelCompound is a reference to a hash where the following keys are defined:
 	compartment has a value which is a modelcompartment_id
 compound_id is a string
 FBAMeta is a reference to a list containing 6 items:
-	0: a fba_id
-	1: a workspace_id
-	2: a media_id
-	3: a workspace_id
-	4: a float
-	5: a reference to a list where each element is a feature_id
+	0: (id) a fba_id
+	1: (workspace) a workspace_id
+	2: (media) a media_id
+	3: (media_workspace) a workspace_id
+	4: (objective) a float
+	5: (ko) a reference to a list where each element is a feature_id
 fba_id is a string
 media_id is a string
 GapFillMeta is a reference to a list containing 6 items:
-	0: a gapfill_id
-	1: a workspace_id
-	2: a media_id
-	3: a workspace_id
-	4: a bool
-	5: a reference to a list where each element is a feature_id
+	0: (id) a gapfill_id
+	1: (workspace) a workspace_id
+	2: (media) a media_id
+	3: (media_workspace) a workspace_id
+	4: (done) a bool
+	5: (ko) a reference to a list where each element is a feature_id
 gapfill_id is a string
 bool is an int
 GapGenMeta is a reference to a list containing 6 items:
-	0: a gapgen_id
-	1: a workspace_id
-	2: a media_id
-	3: a workspace_id
-	4: a bool
-	5: a reference to a list where each element is a feature_id
+	0: (id) a gapgen_id
+	1: (workspace) a workspace_id
+	2: (media) a media_id
+	3: (media_workspace) a workspace_id
+	4: (done) a bool
+	5: (ko) a reference to a list where each element is a feature_id
 gapgen_id is a string
 Subsystem is a reference to a hash where the following keys are defined:
 	name has a value which is a string
@@ -246,9 +247,9 @@ ModelBiomass is a reference to a hash where the following keys are defined:
 	biomass_compounds has a value which is a reference to a list where each element is a BiomassCompound
 biomass_id is a string
 BiomassCompound is a reference to a list containing 3 items:
-	0: a modelcompound_id
-	1: a float
-	2: a string
+	0: (modelcompound) a modelcompound_id
+	1: (coefficient) a float
+	2: (name) a string
 modelcompound_id is a string
 ModelCompartment is a reference to a hash where the following keys are defined:
 	id has a value which is a modelcompartment_id
@@ -276,30 +277,30 @@ ModelCompound is a reference to a hash where the following keys are defined:
 	compartment has a value which is a modelcompartment_id
 compound_id is a string
 FBAMeta is a reference to a list containing 6 items:
-	0: a fba_id
-	1: a workspace_id
-	2: a media_id
-	3: a workspace_id
-	4: a float
-	5: a reference to a list where each element is a feature_id
+	0: (id) a fba_id
+	1: (workspace) a workspace_id
+	2: (media) a media_id
+	3: (media_workspace) a workspace_id
+	4: (objective) a float
+	5: (ko) a reference to a list where each element is a feature_id
 fba_id is a string
 media_id is a string
 GapFillMeta is a reference to a list containing 6 items:
-	0: a gapfill_id
-	1: a workspace_id
-	2: a media_id
-	3: a workspace_id
-	4: a bool
-	5: a reference to a list where each element is a feature_id
+	0: (id) a gapfill_id
+	1: (workspace) a workspace_id
+	2: (media) a media_id
+	3: (media_workspace) a workspace_id
+	4: (done) a bool
+	5: (ko) a reference to a list where each element is a feature_id
 gapfill_id is a string
 bool is an int
 GapGenMeta is a reference to a list containing 6 items:
-	0: a gapgen_id
-	1: a workspace_id
-	2: a media_id
-	3: a workspace_id
-	4: a bool
-	5: a reference to a list where each element is a feature_id
+	0: (id) a gapgen_id
+	1: (workspace) a workspace_id
+	2: (media) a media_id
+	3: (media_workspace) a workspace_id
+	4: (done) a bool
+	5: (ko) a reference to a list where each element is a feature_id
 gapgen_id is a string
 Subsystem is a reference to a hash where the following keys are defined:
 	name has a value which is a string
@@ -423,53 +424,53 @@ media_id is a string
 compound_id is a string
 prommodel_id is a string
 term is a reference to a list containing 3 items:
-	0: a float
-	1: a string
-	2: a string
+	0: (coefficient) a float
+	1: (varType) a string
+	2: (variable) a string
 feature_id is a string
 reaction_id is a string
 bound is a reference to a list containing 4 items:
-	0: a float
-	1: a float
-	2: a string
-	3: a string
+	0: (min) a float
+	1: (max) a float
+	2: (varType) a string
+	3: (variable) a string
 constraint is a reference to a list containing 4 items:
-	0: a float
-	1: a string
-	2: a reference to a list where each element is a term
-	3: a string
+	0: (rhs) a float
+	1: (sign) a string
+	2: (terms) a reference to a list where each element is a term
+	3: (name) a string
 MinimalMediaPrediction is a reference to a hash where the following keys are defined:
 	optionalNutrients has a value which is a reference to a list where each element is a compound_id
 	essentialNutrients has a value which is a reference to a list where each element is a compound_id
 MetaboliteProduction is a reference to a list containing 3 items:
-	0: a float
-	1: a modelcompound_id
-	2: a string
+	0: (maximumProduction) a float
+	1: (modelcompound) a modelcompound_id
+	2: (name) a string
 modelcompound_id is a string
 ReactionFlux is a reference to a list containing 8 items:
-	0: a modelreaction_id
-	1: a float
-	2: a float
-	3: a float
-	4: a float
-	5: a float
-	6: a string
-	7: a string
+	0: (reaction) a modelreaction_id
+	1: (value) a float
+	2: (upperBound) a float
+	3: (lowerBound) a float
+	4: (max) a float
+	5: (min) a float
+	6: (type) a string
+	7: (definition) a string
 modelreaction_id is a string
 CompoundFlux is a reference to a list containing 8 items:
-	0: a modelcompound_id
-	1: a float
-	2: a float
-	3: a float
-	4: a float
-	5: a float
-	6: a string
-	7: a string
+	0: (compound) a modelcompound_id
+	1: (value) a float
+	2: (upperBound) a float
+	3: (lowerBound) a float
+	4: (max) a float
+	5: (min) a float
+	6: (type) a string
+	7: (name) a string
 GeneAssertion is a reference to a list containing 4 items:
-	0: a feature_id
-	1: a float
-	2: a float
-	3: a bool
+	0: (feature) a feature_id
+	1: (growthFraction) a float
+	2: (growth) a float
+	3: (isEssential) a bool
 
 </pre>
 
@@ -527,53 +528,53 @@ media_id is a string
 compound_id is a string
 prommodel_id is a string
 term is a reference to a list containing 3 items:
-	0: a float
-	1: a string
-	2: a string
+	0: (coefficient) a float
+	1: (varType) a string
+	2: (variable) a string
 feature_id is a string
 reaction_id is a string
 bound is a reference to a list containing 4 items:
-	0: a float
-	1: a float
-	2: a string
-	3: a string
+	0: (min) a float
+	1: (max) a float
+	2: (varType) a string
+	3: (variable) a string
 constraint is a reference to a list containing 4 items:
-	0: a float
-	1: a string
-	2: a reference to a list where each element is a term
-	3: a string
+	0: (rhs) a float
+	1: (sign) a string
+	2: (terms) a reference to a list where each element is a term
+	3: (name) a string
 MinimalMediaPrediction is a reference to a hash where the following keys are defined:
 	optionalNutrients has a value which is a reference to a list where each element is a compound_id
 	essentialNutrients has a value which is a reference to a list where each element is a compound_id
 MetaboliteProduction is a reference to a list containing 3 items:
-	0: a float
-	1: a modelcompound_id
-	2: a string
+	0: (maximumProduction) a float
+	1: (modelcompound) a modelcompound_id
+	2: (name) a string
 modelcompound_id is a string
 ReactionFlux is a reference to a list containing 8 items:
-	0: a modelreaction_id
-	1: a float
-	2: a float
-	3: a float
-	4: a float
-	5: a float
-	6: a string
-	7: a string
+	0: (reaction) a modelreaction_id
+	1: (value) a float
+	2: (upperBound) a float
+	3: (lowerBound) a float
+	4: (max) a float
+	5: (min) a float
+	6: (type) a string
+	7: (definition) a string
 modelreaction_id is a string
 CompoundFlux is a reference to a list containing 8 items:
-	0: a modelcompound_id
-	1: a float
-	2: a float
-	3: a float
-	4: a float
-	5: a float
-	6: a string
-	7: a string
+	0: (compound) a modelcompound_id
+	1: (value) a float
+	2: (upperBound) a float
+	3: (lowerBound) a float
+	4: (max) a float
+	5: (min) a float
+	6: (type) a string
+	7: (name) a string
 GeneAssertion is a reference to a list containing 4 items:
-	0: a feature_id
-	1: a float
-	2: a float
-	3: a bool
+	0: (feature) a feature_id
+	1: (growthFraction) a float
+	2: (growth) a float
+	3: (isEssential) a bool
 
 
 =end text
@@ -710,21 +711,21 @@ media_id is a string
 compound_id is a string
 prommodel_id is a string
 term is a reference to a list containing 3 items:
-	0: a float
-	1: a string
-	2: a string
+	0: (coefficient) a float
+	1: (varType) a string
+	2: (variable) a string
 feature_id is a string
 reaction_id is a string
 bound is a reference to a list containing 4 items:
-	0: a float
-	1: a float
-	2: a string
-	3: a string
+	0: (min) a float
+	1: (max) a float
+	2: (varType) a string
+	3: (variable) a string
 constraint is a reference to a list containing 4 items:
-	0: a float
-	1: a string
-	2: a reference to a list where each element is a term
-	3: a string
+	0: (rhs) a float
+	1: (sign) a string
+	2: (terms) a reference to a list where each element is a term
+	3: (name) a string
 compartment_id is a string
 probanno_id is a string
 GapFillSolution is a reference to a hash where the following keys are defined:
@@ -735,17 +736,17 @@ GapFillSolution is a reference to a hash where the following keys are defined:
 	reactionAdditions has a value which is a reference to a list where each element is a reactionAddition
 gapfillsolution_id is a string
 biomassRemoval is a reference to a list containing 2 items:
-	0: a compound_id
-	1: a string
+	0: (compound) a compound_id
+	1: (name) a string
 mediaAddition is a reference to a list containing 2 items:
-	0: a compound_id
-	1: a string
+	0: (compound) a compound_id
+	1: (name) a string
 reactionAddition is a reference to a list containing 5 items:
-	0: a reaction_id
-	1: a string
-	2: a string
-	3: a string
-	4: a string
+	0: (reaction) a reaction_id
+	1: (direction) a string
+	2: (compartment_id) a string
+	3: (equation) a string
+	4: (definition) a string
 
 </pre>
 
@@ -820,21 +821,21 @@ media_id is a string
 compound_id is a string
 prommodel_id is a string
 term is a reference to a list containing 3 items:
-	0: a float
-	1: a string
-	2: a string
+	0: (coefficient) a float
+	1: (varType) a string
+	2: (variable) a string
 feature_id is a string
 reaction_id is a string
 bound is a reference to a list containing 4 items:
-	0: a float
-	1: a float
-	2: a string
-	3: a string
+	0: (min) a float
+	1: (max) a float
+	2: (varType) a string
+	3: (variable) a string
 constraint is a reference to a list containing 4 items:
-	0: a float
-	1: a string
-	2: a reference to a list where each element is a term
-	3: a string
+	0: (rhs) a float
+	1: (sign) a string
+	2: (terms) a reference to a list where each element is a term
+	3: (name) a string
 compartment_id is a string
 probanno_id is a string
 GapFillSolution is a reference to a hash where the following keys are defined:
@@ -845,17 +846,17 @@ GapFillSolution is a reference to a hash where the following keys are defined:
 	reactionAdditions has a value which is a reference to a list where each element is a reactionAddition
 gapfillsolution_id is a string
 biomassRemoval is a reference to a list containing 2 items:
-	0: a compound_id
-	1: a string
+	0: (compound) a compound_id
+	1: (name) a string
 mediaAddition is a reference to a list containing 2 items:
-	0: a compound_id
-	1: a string
+	0: (compound) a compound_id
+	1: (name) a string
 reactionAddition is a reference to a list containing 5 items:
-	0: a reaction_id
-	1: a string
-	2: a string
-	3: a string
-	4: a string
+	0: (reaction) a reaction_id
+	1: (direction) a string
+	2: (compartment_id) a string
+	3: (equation) a string
+	4: (definition) a string
 
 
 =end text
@@ -979,21 +980,21 @@ media_id is a string
 compound_id is a string
 prommodel_id is a string
 term is a reference to a list containing 3 items:
-	0: a float
-	1: a string
-	2: a string
+	0: (coefficient) a float
+	1: (varType) a string
+	2: (variable) a string
 feature_id is a string
 reaction_id is a string
 bound is a reference to a list containing 4 items:
-	0: a float
-	1: a float
-	2: a string
-	3: a string
+	0: (min) a float
+	1: (max) a float
+	2: (varType) a string
+	3: (variable) a string
 constraint is a reference to a list containing 4 items:
-	0: a float
-	1: a string
-	2: a reference to a list where each element is a term
-	3: a string
+	0: (rhs) a float
+	1: (sign) a string
+	2: (terms) a reference to a list where each element is a term
+	3: (name) a string
 GapgenSolution is a reference to a hash where the following keys are defined:
 	id has a value which is a gapgensolution_id
 	objective has a value which is a float
@@ -1002,16 +1003,16 @@ GapgenSolution is a reference to a hash where the following keys are defined:
 	reactionRemovals has a value which is a reference to a list where each element is a reactionRemoval
 gapgensolution_id is a string
 biomassAddition is a reference to a list containing 2 items:
-	0: a compound_id
-	1: a string
+	0: (compound) a compound_id
+	1: (name) a string
 mediaRemoval is a reference to a list containing 2 items:
-	0: a compound_id
-	1: a string
+	0: (compound) a compound_id
+	1: (name) a string
 reactionRemoval is a reference to a list containing 4 items:
-	0: a modelreaction_id
-	1: a string
-	2: a string
-	3: a string
+	0: (reaction) a modelreaction_id
+	1: (direction) a string
+	2: (equation) a string
+	3: (definition) a string
 modelreaction_id is a string
 
 </pre>
@@ -1074,21 +1075,21 @@ media_id is a string
 compound_id is a string
 prommodel_id is a string
 term is a reference to a list containing 3 items:
-	0: a float
-	1: a string
-	2: a string
+	0: (coefficient) a float
+	1: (varType) a string
+	2: (variable) a string
 feature_id is a string
 reaction_id is a string
 bound is a reference to a list containing 4 items:
-	0: a float
-	1: a float
-	2: a string
-	3: a string
+	0: (min) a float
+	1: (max) a float
+	2: (varType) a string
+	3: (variable) a string
 constraint is a reference to a list containing 4 items:
-	0: a float
-	1: a string
-	2: a reference to a list where each element is a term
-	3: a string
+	0: (rhs) a float
+	1: (sign) a string
+	2: (terms) a reference to a list where each element is a term
+	3: (name) a string
 GapgenSolution is a reference to a hash where the following keys are defined:
 	id has a value which is a gapgensolution_id
 	objective has a value which is a float
@@ -1097,16 +1098,16 @@ GapgenSolution is a reference to a hash where the following keys are defined:
 	reactionRemovals has a value which is a reference to a list where each element is a reactionRemoval
 gapgensolution_id is a string
 biomassAddition is a reference to a list containing 2 items:
-	0: a compound_id
-	1: a string
+	0: (compound) a compound_id
+	1: (name) a string
 mediaRemoval is a reference to a list containing 2 items:
-	0: a compound_id
-	1: a string
+	0: (compound) a compound_id
+	1: (name) a string
 reactionRemoval is a reference to a list containing 4 items:
-	0: a modelreaction_id
-	1: a string
-	2: a string
-	3: a string
+	0: (reaction) a modelreaction_id
+	1: (direction) a string
+	2: (equation) a string
+	3: (definition) a string
 modelreaction_id is a string
 
 
@@ -1757,23 +1758,23 @@ probanno_id is a string
 workspace_id is a string
 genome_id is a string
 annotationProbability is a reference to a list containing 3 items:
-	0: a feature_id
-	1: a string
-	2: a float
+	0: (feature) a feature_id
+	1: (function) a string
+	2: (probability) a float
 feature_id is a string
 bool is an int
 object_metadata is a reference to a list containing 11 items:
-	0: an object_id
-	1: an object_type
-	2: a timestamp
-	3: an int
-	4: a string
-	5: a username
-	6: a username
-	7: a workspace_id
-	8: a workspace_ref
-	9: a string
-	10: a reference to a hash where the key is a string and the value is a string
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -1801,23 +1802,23 @@ probanno_id is a string
 workspace_id is a string
 genome_id is a string
 annotationProbability is a reference to a list containing 3 items:
-	0: a feature_id
-	1: a string
-	2: a float
+	0: (feature) a feature_id
+	1: (function) a string
+	2: (probability) a float
 feature_id is a string
 bool is an int
 object_metadata is a reference to a list containing 11 items:
-	0: an object_id
-	1: an object_type
-	2: a timestamp
-	3: an int
-	4: a string
-	5: a username
-	6: a username
-	7: a workspace_id
-	8: a workspace_ref
-	9: a string
-	10: a reference to a hash where the key is a string and the value is a string
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -1926,34 +1927,34 @@ feature_id is a string
 location is a reference to a list where each element is a region_of_dna
 region_of_dna is a reference to a list containing 4 items:
 	0: a contig_id
-	1: an int
-	2: a string
-	3: an int
+	1: (begin) an int
+	2: (strand) a string
+	3: (length) an int
 feature_type is a string
 alt_func is a reference to a list containing 2 items:
-	0: a string
-	1: a float
+	0: (function) a string
+	1: (probability) a float
 gene_hit is a reference to a list containing 2 items:
-	0: a feature_id
-	1: a float
+	0: (gene) a feature_id
+	1: (blast_score) a float
 annotation is a reference to a list containing 3 items:
-	0: a string
-	1: a string
-	2: an int
+	0: (comment) a string
+	1: (annotator) a string
+	2: (annotation_time) an int
 workspace_id is a string
 bool is an int
 object_metadata is a reference to a list containing 11 items:
-	0: an object_id
-	1: an object_type
-	2: a timestamp
-	3: an int
-	4: a string
-	5: a username
-	6: a username
-	7: a workspace_id
-	8: a workspace_ref
-	9: a string
-	10: a reference to a hash where the key is a string and the value is a string
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -2000,34 +2001,34 @@ feature_id is a string
 location is a reference to a list where each element is a region_of_dna
 region_of_dna is a reference to a list containing 4 items:
 	0: a contig_id
-	1: an int
-	2: a string
-	3: an int
+	1: (begin) an int
+	2: (strand) a string
+	3: (length) an int
 feature_type is a string
 alt_func is a reference to a list containing 2 items:
-	0: a string
-	1: a float
+	0: (function) a string
+	1: (probability) a float
 gene_hit is a reference to a list containing 2 items:
-	0: a feature_id
-	1: a float
+	0: (gene) a feature_id
+	1: (blast_score) a float
 annotation is a reference to a list containing 3 items:
-	0: a string
-	1: a string
-	2: an int
+	0: (comment) a string
+	1: (annotator) a string
+	2: (annotation_time) an int
 workspace_id is a string
 bool is an int
 object_metadata is a reference to a list containing 11 items:
-	0: an object_id
-	1: an object_type
-	2: a timestamp
-	3: an int
-	4: a string
-	5: a username
-	6: a username
-	7: a workspace_id
-	8: a workspace_ref
-	9: a string
-	10: a reference to a hash where the key is a string and the value is a string
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -2116,17 +2117,17 @@ genome_id is a string
 workspace_id is a string
 bool is an int
 object_metadata is a reference to a list containing 11 items:
-	0: an object_id
-	1: an object_type
-	2: a timestamp
-	3: an int
-	4: a string
-	5: a username
-	6: a username
-	7: a workspace_id
-	8: a workspace_ref
-	9: a string
-	10: a reference to a hash where the key is a string and the value is a string
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -2153,17 +2154,17 @@ genome_id is a string
 workspace_id is a string
 bool is an int
 object_metadata is a reference to a list containing 11 items:
-	0: an object_id
-	1: an object_type
-	2: a timestamp
-	3: an int
-	4: a string
-	5: a username
-	6: a username
-	7: a workspace_id
-	8: a workspace_ref
-	9: a string
-	10: a reference to a hash where the key is a string and the value is a string
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -2250,22 +2251,22 @@ add_feature_translation_params is a reference to a hash where the following keys
 genome_id is a string
 workspace_id is a string
 translation is a reference to a list containing 2 items:
-	0: a string
-	1: a feature_id
+	0: (foreign_id) a string
+	1: (feature) a feature_id
 feature_id is a string
 bool is an int
 object_metadata is a reference to a list containing 11 items:
-	0: an object_id
-	1: an object_type
-	2: a timestamp
-	3: an int
-	4: a string
-	5: a username
-	6: a username
-	7: a workspace_id
-	8: a workspace_ref
-	9: a string
-	10: a reference to a hash where the key is a string and the value is a string
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -2290,22 +2291,22 @@ add_feature_translation_params is a reference to a hash where the following keys
 genome_id is a string
 workspace_id is a string
 translation is a reference to a list containing 2 items:
-	0: a string
-	1: a feature_id
+	0: (foreign_id) a string
+	1: (feature) a feature_id
 feature_id is a string
 bool is an int
 object_metadata is a reference to a list containing 11 items:
-	0: an object_id
-	1: an object_type
-	2: a timestamp
-	3: an int
-	4: a string
-	5: a username
-	6: a username
-	7: a workspace_id
-	8: a workspace_ref
-	9: a string
-	10: a reference to a hash where the key is a string and the value is a string
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -2400,17 +2401,17 @@ probanno_id is a string
 bool is an int
 fbamodel_id is a string
 object_metadata is a reference to a list containing 11 items:
-	0: an object_id
-	1: an object_type
-	2: a timestamp
-	3: an int
-	4: a string
-	5: a username
-	6: a username
-	7: a workspace_id
-	8: a workspace_ref
-	9: a string
-	10: a reference to a hash where the key is a string and the value is a string
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -2443,17 +2444,17 @@ probanno_id is a string
 bool is an int
 fbamodel_id is a string
 object_metadata is a reference to a list containing 11 items:
-	0: an object_id
-	1: an object_type
-	2: a timestamp
-	3: an int
-	4: a string
-	5: a username
-	6: a username
-	7: a workspace_id
-	8: a workspace_ref
-	9: a string
-	10: a reference to a hash where the key is a string and the value is a string
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -2535,10 +2536,10 @@ import_fbamodel_params is a reference to a hash where the following keys are def
 	genome_workspace has a value which is a workspace_id
 	biomass has a value which is a string
 	reactions has a value which is a reference to a list where each element is a reference to a list containing 4 items:
-	0: a string
-	1: a string
-	2: a string
-	3: a string
+	0: (id) a string
+	1: (direction) a string
+	2: (compartment) a string
+	3: (gpr) a string
 
 	model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
@@ -2550,17 +2551,17 @@ workspace_id is a string
 fbamodel_id is a string
 bool is an int
 object_metadata is a reference to a list containing 11 items:
-	0: an object_id
-	1: an object_type
-	2: a timestamp
-	3: an int
-	4: a string
-	5: a username
-	6: a username
-	7: a workspace_id
-	8: a workspace_ref
-	9: a string
-	10: a reference to a hash where the key is a string and the value is a string
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -2580,10 +2581,10 @@ import_fbamodel_params is a reference to a hash where the following keys are def
 	genome_workspace has a value which is a workspace_id
 	biomass has a value which is a string
 	reactions has a value which is a reference to a list where each element is a reference to a list containing 4 items:
-	0: a string
-	1: a string
-	2: a string
-	3: a string
+	0: (id) a string
+	1: (direction) a string
+	2: (compartment) a string
+	3: (gpr) a string
 
 	model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
@@ -2595,17 +2596,17 @@ workspace_id is a string
 fbamodel_id is a string
 bool is an int
 object_metadata is a reference to a list containing 11 items:
-	0: an object_id
-	1: an object_type
-	2: a timestamp
-	3: an int
-	4: a string
-	5: a username
-	6: a username
-	7: a workspace_id
-	8: a workspace_ref
-	9: a string
-	10: a reference to a hash where the key is a string and the value is a string
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -2685,27 +2686,33 @@ $modelMeta is an object_metadata
 genome_to_probfbamodel_params is a reference to a hash where the following keys are defined:
 	genome has a value which is a genome_id
 	genome_workspace has a value which is a workspace_id
-	probanno has a value which is a probanno_id
-	probanno_workspace has a value which is a workspace_id
 	model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
+	reaction_probs has a value which is a reference to a list where each element is a ReactionProbability
+	default_prob has a value which is a float
 	auth has a value which is a string
+	overwrite has a value which is a bool
 genome_id is a string
 workspace_id is a string
-probanno_id is a string
 fbamodel_id is a string
+ReactionProbability is a reference to a list containing 3 items:
+	0: (reaction) a reaction_id
+	1: (probability) a float
+	2: (gene_list) a string
+reaction_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
-	0: an object_id
-	1: an object_type
-	2: a timestamp
-	3: an int
-	4: a string
-	5: a username
-	6: a username
-	7: a workspace_id
-	8: a workspace_ref
-	9: a string
-	10: a reference to a hash where the key is a string and the value is a string
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -2723,27 +2730,33 @@ $modelMeta is an object_metadata
 genome_to_probfbamodel_params is a reference to a hash where the following keys are defined:
 	genome has a value which is a genome_id
 	genome_workspace has a value which is a workspace_id
-	probanno has a value which is a probanno_id
-	probanno_workspace has a value which is a workspace_id
 	model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
+	reaction_probs has a value which is a reference to a list where each element is a ReactionProbability
+	default_prob has a value which is a float
 	auth has a value which is a string
+	overwrite has a value which is a bool
 genome_id is a string
 workspace_id is a string
-probanno_id is a string
 fbamodel_id is a string
+ReactionProbability is a reference to a list containing 3 items:
+	0: (reaction) a reaction_id
+	1: (probability) a float
+	2: (gene_list) a string
+reaction_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
-	0: an object_id
-	1: an object_type
-	2: a timestamp
-	3: an int
-	4: a string
-	5: a username
-	6: a username
-	7: a workspace_id
-	8: a workspace_ref
-	9: a string
-	10: a reference to a hash where the key is a string and the value is a string
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -2918,6 +2931,7 @@ export_object_params is a reference to a hash where the following keys are defin
 	reference has a value which is a workspace_ref
 	type has a value which is a string
 	format has a value which is a string
+	auth has a value which is a string
 workspace_ref is a string
 
 </pre>
@@ -2932,6 +2946,7 @@ export_object_params is a reference to a hash where the following keys are defin
 	reference has a value which is a workspace_ref
 	type has a value which is a string
 	format has a value which is a string
+	auth has a value which is a string
 workspace_ref is a string
 
 
@@ -3105,7 +3120,7 @@ adjust_model_reaction_params is a reference to a hash where the following keys a
 	direction has a value which is a string
 	compartment has a value which is a compartment_id
 	compartmentIndex has a value which is an int
-	gpr has a value which is a reference to a list where each element is a reference to a list where each element is a reference to a list where each element is a feature_id
+	gpr has a value which is a string
 	removeReaction has a value which is a bool
 	addReaction has a value which is a bool
 	overwrite has a value which is a bool
@@ -3114,20 +3129,19 @@ fbamodel_id is a string
 workspace_id is a string
 reaction_id is a string
 compartment_id is a string
-feature_id is a string
 bool is an int
 object_metadata is a reference to a list containing 11 items:
-	0: an object_id
-	1: an object_type
-	2: a timestamp
-	3: an int
-	4: a string
-	5: a username
-	6: a username
-	7: a workspace_id
-	8: a workspace_ref
-	9: a string
-	10: a reference to a hash where the key is a string and the value is a string
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -3149,7 +3163,7 @@ adjust_model_reaction_params is a reference to a hash where the following keys a
 	direction has a value which is a string
 	compartment has a value which is a compartment_id
 	compartmentIndex has a value which is an int
-	gpr has a value which is a reference to a list where each element is a reference to a list where each element is a reference to a list where each element is a feature_id
+	gpr has a value which is a string
 	removeReaction has a value which is a bool
 	addReaction has a value which is a bool
 	overwrite has a value which is a bool
@@ -3158,20 +3172,19 @@ fbamodel_id is a string
 workspace_id is a string
 reaction_id is a string
 compartment_id is a string
-feature_id is a string
 bool is an int
 object_metadata is a reference to a list containing 11 items:
-	0: an object_id
-	1: an object_type
-	2: a timestamp
-	3: an int
-	4: a string
-	5: a username
-	6: a username
-	7: a workspace_id
-	8: a workspace_ref
-	9: a string
-	10: a reference to a hash where the key is a string and the value is a string
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -3265,17 +3278,17 @@ compound_id is a string
 compartment_id is a string
 bool is an int
 object_metadata is a reference to a list containing 11 items:
-	0: an object_id
-	1: an object_type
-	2: a timestamp
-	3: an int
-	4: a string
-	5: a username
-	6: a username
-	7: a workspace_id
-	8: a workspace_ref
-	9: a string
-	10: a reference to a hash where the key is a string and the value is a string
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -3307,17 +3320,17 @@ compound_id is a string
 compartment_id is a string
 bool is an int
 object_metadata is a reference to a list containing 11 items:
-	0: an object_id
-	1: an object_type
-	2: a timestamp
-	3: an int
-	4: a string
-	5: a username
-	6: a username
-	7: a workspace_id
-	8: a workspace_ref
-	9: a string
-	10: a reference to a hash where the key is a string and the value is a string
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -3411,17 +3424,17 @@ media_id is a string
 workspace_id is a string
 bool is an int
 object_metadata is a reference to a list containing 11 items:
-	0: an object_id
-	1: an object_type
-	2: a timestamp
-	3: an int
-	4: a string
-	5: a username
-	6: a username
-	7: a workspace_id
-	8: a workspace_ref
-	9: a string
-	10: a reference to a hash where the key is a string and the value is a string
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -3453,17 +3466,17 @@ media_id is a string
 workspace_id is a string
 bool is an int
 object_metadata is a reference to a list containing 11 items:
-	0: an object_id
-	1: an object_type
-	2: a timestamp
-	3: an int
-	4: a string
-	5: a username
-	6: a username
-	7: a workspace_id
-	8: a workspace_ref
-	9: a string
-	10: a reference to a hash where the key is a string and the value is a string
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -3677,34 +3690,34 @@ compound_id is a string
 prommodel_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
-	0: a float
-	1: a string
-	2: a string
+	0: (coefficient) a float
+	1: (varType) a string
+	2: (variable) a string
 feature_id is a string
 reaction_id is a string
 bound is a reference to a list containing 4 items:
-	0: a float
-	1: a float
-	2: a string
-	3: a string
+	0: (min) a float
+	1: (max) a float
+	2: (varType) a string
+	3: (variable) a string
 constraint is a reference to a list containing 4 items:
-	0: a float
-	1: a string
-	2: a reference to a list where each element is a term
-	3: a string
+	0: (rhs) a float
+	1: (sign) a string
+	2: (terms) a reference to a list where each element is a term
+	3: (name) a string
 fba_id is a string
 object_metadata is a reference to a list containing 11 items:
-	0: an object_id
-	1: an object_type
-	2: a timestamp
-	3: an int
-	4: a string
-	5: a username
-	6: a username
-	7: a workspace_id
-	8: a workspace_ref
-	9: a string
-	10: a reference to a hash where the key is a string and the value is a string
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -3762,34 +3775,34 @@ compound_id is a string
 prommodel_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
-	0: a float
-	1: a string
-	2: a string
+	0: (coefficient) a float
+	1: (varType) a string
+	2: (variable) a string
 feature_id is a string
 reaction_id is a string
 bound is a reference to a list containing 4 items:
-	0: a float
-	1: a float
-	2: a string
-	3: a string
+	0: (min) a float
+	1: (max) a float
+	2: (varType) a string
+	3: (variable) a string
 constraint is a reference to a list containing 4 items:
-	0: a float
-	1: a string
-	2: a reference to a list where each element is a term
-	3: a string
+	0: (rhs) a float
+	1: (sign) a string
+	2: (terms) a reference to a list where each element is a term
+	3: (name) a string
 fba_id is a string
 object_metadata is a reference to a list containing 11 items:
-	0: an object_id
-	1: an object_type
-	2: a timestamp
-	3: an int
-	4: a string
-	5: a username
-	6: a username
-	7: a workspace_id
-	8: a workspace_ref
-	9: a string
-	10: a reference to a hash where the key is a string and the value is a string
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -3972,27 +3985,27 @@ phenotypeSet_id is a string
 workspace_id is a string
 genome_id is a string
 Phenotype is a reference to a list containing 5 items:
-	0: a reference to a list where each element is a feature_id
-	1: a media_id
-	2: a workspace_id
-	3: a reference to a list where each element is a compound_id
-	4: a float
+	0: (geneKO) a reference to a list where each element is a feature_id
+	1: (baseMedia) a media_id
+	2: (media_workspace) a workspace_id
+	3: (additionalCpd) a reference to a list where each element is a compound_id
+	4: (normalizedGrowth) a float
 feature_id is a string
 media_id is a string
 compound_id is a string
 bool is an int
 object_metadata is a reference to a list containing 11 items:
-	0: an object_id
-	1: an object_type
-	2: a timestamp
-	3: an int
-	4: a string
-	5: a username
-	6: a username
-	7: a workspace_id
-	8: a workspace_ref
-	9: a string
-	10: a reference to a hash where the key is a string and the value is a string
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -4019,27 +4032,27 @@ phenotypeSet_id is a string
 workspace_id is a string
 genome_id is a string
 Phenotype is a reference to a list containing 5 items:
-	0: a reference to a list where each element is a feature_id
-	1: a media_id
-	2: a workspace_id
-	3: a reference to a list where each element is a compound_id
-	4: a float
+	0: (geneKO) a reference to a list where each element is a feature_id
+	1: (baseMedia) a media_id
+	2: (media_workspace) a workspace_id
+	3: (additionalCpd) a reference to a list where each element is a compound_id
+	4: (normalizedGrowth) a float
 feature_id is a string
 media_id is a string
 compound_id is a string
 bool is an int
 object_metadata is a reference to a list containing 11 items:
-	0: an object_id
-	1: an object_type
-	2: a timestamp
-	3: an int
-	4: a string
-	5: a username
-	6: a username
-	7: a workspace_id
-	8: a workspace_ref
-	9: a string
-	10: a reference to a hash where the key is a string and the value is a string
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -4157,34 +4170,34 @@ compound_id is a string
 prommodel_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
-	0: a float
-	1: a string
-	2: a string
+	0: (coefficient) a float
+	1: (varType) a string
+	2: (variable) a string
 feature_id is a string
 reaction_id is a string
 bound is a reference to a list containing 4 items:
-	0: a float
-	1: a float
-	2: a string
-	3: a string
+	0: (min) a float
+	1: (max) a float
+	2: (varType) a string
+	3: (variable) a string
 constraint is a reference to a list containing 4 items:
-	0: a float
-	1: a string
-	2: a reference to a list where each element is a term
-	3: a string
+	0: (rhs) a float
+	1: (sign) a string
+	2: (terms) a reference to a list where each element is a term
+	3: (name) a string
 phenotypeSimulationSet_id is a string
 object_metadata is a reference to a list containing 11 items:
-	0: an object_id
-	1: an object_type
-	2: a timestamp
-	3: an int
-	4: a string
-	5: a username
-	6: a username
-	7: a workspace_id
-	8: a workspace_ref
-	9: a string
-	10: a reference to a hash where the key is a string and the value is a string
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -4240,34 +4253,34 @@ compound_id is a string
 prommodel_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
-	0: a float
-	1: a string
-	2: a string
+	0: (coefficient) a float
+	1: (varType) a string
+	2: (variable) a string
 feature_id is a string
 reaction_id is a string
 bound is a reference to a list containing 4 items:
-	0: a float
-	1: a float
-	2: a string
-	3: a string
+	0: (min) a float
+	1: (max) a float
+	2: (varType) a string
+	3: (variable) a string
 constraint is a reference to a list containing 4 items:
-	0: a float
-	1: a string
-	2: a reference to a list where each element is a term
-	3: a string
+	0: (rhs) a float
+	1: (sign) a string
+	2: (terms) a reference to a list where each element is a term
+	3: (name) a string
 phenotypeSimulationSet_id is a string
 object_metadata is a reference to a list containing 11 items:
-	0: an object_id
-	1: an object_type
-	2: a timestamp
-	3: an int
-	4: a string
-	5: a username
-	6: a username
-	7: a workspace_id
-	8: a workspace_ref
-	9: a string
-	10: a reference to a hash where the key is a string and the value is a string
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -4453,17 +4466,17 @@ gapfillsolution_id is a string
 gapgensolution_id is a string
 bool is an int
 object_metadata is a reference to a list containing 11 items:
-	0: an object_id
-	1: an object_type
-	2: a timestamp
-	3: an int
-	4: a string
-	5: a username
-	6: a username
-	7: a workspace_id
-	8: a workspace_ref
-	9: a string
-	10: a reference to a hash where the key is a string and the value is a string
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -4493,17 +4506,17 @@ gapfillsolution_id is a string
 gapgensolution_id is a string
 bool is an int
 object_metadata is a reference to a list containing 11 items:
-	0: an object_id
-	1: an object_type
-	2: a timestamp
-	3: an int
-	4: a string
-	5: a username
-	6: a username
-	7: a workspace_id
-	8: a workspace_ref
-	9: a string
-	10: a reference to a hash where the key is a string and the value is a string
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -4624,34 +4637,34 @@ compound_id is a string
 prommodel_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
-	0: a float
-	1: a string
-	2: a string
+	0: (coefficient) a float
+	1: (varType) a string
+	2: (variable) a string
 feature_id is a string
 reaction_id is a string
 bound is a reference to a list containing 4 items:
-	0: a float
-	1: a float
-	2: a string
-	3: a string
+	0: (min) a float
+	1: (max) a float
+	2: (varType) a string
+	3: (variable) a string
 constraint is a reference to a list containing 4 items:
-	0: a float
-	1: a string
-	2: a reference to a list where each element is a term
-	3: a string
+	0: (rhs) a float
+	1: (sign) a string
+	2: (terms) a reference to a list where each element is a term
+	3: (name) a string
 fba_id is a string
 object_metadata is a reference to a list containing 11 items:
-	0: an object_id
-	1: an object_type
-	2: a timestamp
-	3: an int
-	4: a string
-	5: a username
-	6: a username
-	7: a workspace_id
-	8: a workspace_ref
-	9: a string
-	10: a reference to a hash where the key is a string and the value is a string
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -4710,34 +4723,34 @@ compound_id is a string
 prommodel_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
-	0: a float
-	1: a string
-	2: a string
+	0: (coefficient) a float
+	1: (varType) a string
+	2: (variable) a string
 feature_id is a string
 reaction_id is a string
 bound is a reference to a list containing 4 items:
-	0: a float
-	1: a float
-	2: a string
-	3: a string
+	0: (min) a float
+	1: (max) a float
+	2: (varType) a string
+	3: (variable) a string
 constraint is a reference to a list containing 4 items:
-	0: a float
-	1: a string
-	2: a reference to a list where each element is a term
-	3: a string
+	0: (rhs) a float
+	1: (sign) a string
+	2: (terms) a reference to a list where each element is a term
+	3: (name) a string
 fba_id is a string
 object_metadata is a reference to a list containing 11 items:
-	0: an object_id
-	1: an object_type
-	2: a timestamp
-	3: an int
-	4: a string
-	5: a username
-	6: a username
-	7: a workspace_id
-	8: a workspace_ref
-	9: a string
-	10: a reference to a hash where the key is a string and the value is a string
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -4824,6 +4837,8 @@ gapfill_model_params is a reference to a hash where the following keys are defin
 	out_model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
 	gapFill has a value which is a gapfill_id
+	timePerSolution has a value which is an int
+	totalTimeLimit has a value which is an int
 	auth has a value which is a string
 	overwrite has a value which is a bool
 	donot_submit_job has a value which is a bool
@@ -4878,37 +4893,37 @@ compound_id is a string
 prommodel_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
-	0: a float
-	1: a string
-	2: a string
+	0: (coefficient) a float
+	1: (varType) a string
+	2: (variable) a string
 feature_id is a string
 reaction_id is a string
 bound is a reference to a list containing 4 items:
-	0: a float
-	1: a float
-	2: a string
-	3: a string
+	0: (min) a float
+	1: (max) a float
+	2: (varType) a string
+	3: (variable) a string
 constraint is a reference to a list containing 4 items:
-	0: a float
-	1: a string
-	2: a reference to a list where each element is a term
-	3: a string
+	0: (rhs) a float
+	1: (sign) a string
+	2: (terms) a reference to a list where each element is a term
+	3: (name) a string
 compartment_id is a string
 probanno_id is a string
 phenotypeSet_id is a string
 gapfill_id is a string
 object_metadata is a reference to a list containing 11 items:
-	0: an object_id
-	1: an object_type
-	2: a timestamp
-	3: an int
-	4: a string
-	5: a username
-	6: a username
-	7: a workspace_id
-	8: a workspace_ref
-	9: a string
-	10: a reference to a hash where the key is a string and the value is a string
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -4933,6 +4948,8 @@ gapfill_model_params is a reference to a hash where the following keys are defin
 	out_model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
 	gapFill has a value which is a gapfill_id
+	timePerSolution has a value which is an int
+	totalTimeLimit has a value which is an int
 	auth has a value which is a string
 	overwrite has a value which is a bool
 	donot_submit_job has a value which is a bool
@@ -4987,37 +5004,37 @@ compound_id is a string
 prommodel_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
-	0: a float
-	1: a string
-	2: a string
+	0: (coefficient) a float
+	1: (varType) a string
+	2: (variable) a string
 feature_id is a string
 reaction_id is a string
 bound is a reference to a list containing 4 items:
-	0: a float
-	1: a float
-	2: a string
-	3: a string
+	0: (min) a float
+	1: (max) a float
+	2: (varType) a string
+	3: (variable) a string
 constraint is a reference to a list containing 4 items:
-	0: a float
-	1: a string
-	2: a reference to a list where each element is a term
-	3: a string
+	0: (rhs) a float
+	1: (sign) a string
+	2: (terms) a reference to a list where each element is a term
+	3: (name) a string
 compartment_id is a string
 probanno_id is a string
 phenotypeSet_id is a string
 gapfill_id is a string
 object_metadata is a reference to a list containing 11 items:
-	0: an object_id
-	1: an object_type
-	2: a timestamp
-	3: an int
-	4: a string
-	5: a username
-	6: a username
-	7: a workspace_id
-	8: a workspace_ref
-	9: a string
-	10: a reference to a hash where the key is a string and the value is a string
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -5105,6 +5122,8 @@ gapgen_model_params is a reference to a hash where the following keys are define
 	workspace has a value which is a workspace_id
 	gapGen has a value which is a gapgen_id
 	auth has a value which is a string
+	timePerSolution has a value which is an int
+	totalTimeLimit has a value which is an int
 	overwrite has a value which is a bool
 	donot_submit_job has a value which is a bool
 fbamodel_id is a string
@@ -5145,35 +5164,35 @@ compound_id is a string
 prommodel_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
-	0: a float
-	1: a string
-	2: a string
+	0: (coefficient) a float
+	1: (varType) a string
+	2: (variable) a string
 feature_id is a string
 reaction_id is a string
 bound is a reference to a list containing 4 items:
-	0: a float
-	1: a float
-	2: a string
-	3: a string
+	0: (min) a float
+	1: (max) a float
+	2: (varType) a string
+	3: (variable) a string
 constraint is a reference to a list containing 4 items:
-	0: a float
-	1: a string
-	2: a reference to a list where each element is a term
-	3: a string
+	0: (rhs) a float
+	1: (sign) a string
+	2: (terms) a reference to a list where each element is a term
+	3: (name) a string
 phenotypeSet_id is a string
 gapgen_id is a string
 object_metadata is a reference to a list containing 11 items:
-	0: an object_id
-	1: an object_type
-	2: a timestamp
-	3: an int
-	4: a string
-	5: a username
-	6: a username
-	7: a workspace_id
-	8: a workspace_ref
-	9: a string
-	10: a reference to a hash where the key is a string and the value is a string
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -5199,6 +5218,8 @@ gapgen_model_params is a reference to a hash where the following keys are define
 	workspace has a value which is a workspace_id
 	gapGen has a value which is a gapgen_id
 	auth has a value which is a string
+	timePerSolution has a value which is an int
+	totalTimeLimit has a value which is an int
 	overwrite has a value which is a bool
 	donot_submit_job has a value which is a bool
 fbamodel_id is a string
@@ -5239,35 +5260,35 @@ compound_id is a string
 prommodel_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
-	0: a float
-	1: a string
-	2: a string
+	0: (coefficient) a float
+	1: (varType) a string
+	2: (variable) a string
 feature_id is a string
 reaction_id is a string
 bound is a reference to a list containing 4 items:
-	0: a float
-	1: a float
-	2: a string
-	3: a string
+	0: (min) a float
+	1: (max) a float
+	2: (varType) a string
+	3: (variable) a string
 constraint is a reference to a list containing 4 items:
-	0: a float
-	1: a string
-	2: a reference to a list where each element is a term
-	3: a string
+	0: (rhs) a float
+	1: (sign) a string
+	2: (terms) a reference to a list where each element is a term
+	3: (name) a string
 phenotypeSet_id is a string
 gapgen_id is a string
 object_metadata is a reference to a list containing 11 items:
-	0: an object_id
-	1: an object_type
-	2: a timestamp
-	3: an int
-	4: a string
-	5: a username
-	6: a username
-	7: a workspace_id
-	8: a workspace_ref
-	9: a string
-	10: a reference to a hash where the key is a string and the value is a string
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -5390,21 +5411,21 @@ compound_id is a string
 prommodel_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
-	0: a float
-	1: a string
-	2: a string
+	0: (coefficient) a float
+	1: (varType) a string
+	2: (variable) a string
 feature_id is a string
 reaction_id is a string
 bound is a reference to a list containing 4 items:
-	0: a float
-	1: a float
-	2: a string
-	3: a string
+	0: (min) a float
+	1: (max) a float
+	2: (varType) a string
+	3: (variable) a string
 constraint is a reference to a list containing 4 items:
-	0: a float
-	1: a string
-	2: a reference to a list where each element is a term
-	3: a string
+	0: (rhs) a float
+	1: (sign) a string
+	2: (terms) a reference to a list where each element is a term
+	3: (name) a string
 GapfillingFormulation is a reference to a hash where the following keys are defined:
 	formulation has a value which is an FBAFormulation
 	num_solutions has a value which is an int
@@ -5442,17 +5463,17 @@ phenotypeSet_id is a string
 gapfill_id is a string
 gapgen_id is a string
 object_metadata is a reference to a list containing 11 items:
-	0: an object_id
-	1: an object_type
-	2: a timestamp
-	3: an int
-	4: a string
-	5: a username
-	6: a username
-	7: a workspace_id
-	8: a workspace_ref
-	9: a string
-	10: a reference to a hash where the key is a string and the value is a string
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -5513,21 +5534,21 @@ compound_id is a string
 prommodel_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
-	0: a float
-	1: a string
-	2: a string
+	0: (coefficient) a float
+	1: (varType) a string
+	2: (variable) a string
 feature_id is a string
 reaction_id is a string
 bound is a reference to a list containing 4 items:
-	0: a float
-	1: a float
-	2: a string
-	3: a string
+	0: (min) a float
+	1: (max) a float
+	2: (varType) a string
+	3: (variable) a string
 constraint is a reference to a list containing 4 items:
-	0: a float
-	1: a string
-	2: a reference to a list where each element is a term
-	3: a string
+	0: (rhs) a float
+	1: (sign) a string
+	2: (terms) a reference to a list where each element is a term
+	3: (name) a string
 GapfillingFormulation is a reference to a hash where the following keys are defined:
 	formulation has a value which is an FBAFormulation
 	num_solutions has a value which is an int
@@ -5565,17 +5586,17 @@ phenotypeSet_id is a string
 gapfill_id is a string
 gapgen_id is a string
 object_metadata is a reference to a list containing 11 items:
-	0: an object_id
-	1: an object_type
-	2: a timestamp
-	3: an int
-	4: a string
-	5: a username
-	6: a username
-	7: a workspace_id
-	8: a workspace_ref
-	9: a string
-	10: a reference to a hash where the key is a string and the value is a string
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -5698,21 +5719,21 @@ compound_id is a string
 prommodel_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
-	0: a float
-	1: a string
-	2: a string
+	0: (coefficient) a float
+	1: (varType) a string
+	2: (variable) a string
 feature_id is a string
 reaction_id is a string
 bound is a reference to a list containing 4 items:
-	0: a float
-	1: a float
-	2: a string
-	3: a string
+	0: (min) a float
+	1: (max) a float
+	2: (varType) a string
+	3: (variable) a string
 constraint is a reference to a list containing 4 items:
-	0: a float
-	1: a string
-	2: a reference to a list where each element is a term
-	3: a string
+	0: (rhs) a float
+	1: (sign) a string
+	2: (terms) a reference to a list where each element is a term
+	3: (name) a string
 GapfillingFormulation is a reference to a hash where the following keys are defined:
 	formulation has a value which is an FBAFormulation
 	num_solutions has a value which is an int
@@ -5750,17 +5771,17 @@ phenotypeSet_id is a string
 gapfill_id is a string
 gapgen_id is a string
 object_metadata is a reference to a list containing 11 items:
-	0: an object_id
-	1: an object_type
-	2: a timestamp
-	3: an int
-	4: a string
-	5: a username
-	6: a username
-	7: a workspace_id
-	8: a workspace_ref
-	9: a string
-	10: a reference to a hash where the key is a string and the value is a string
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -5821,21 +5842,21 @@ compound_id is a string
 prommodel_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
-	0: a float
-	1: a string
-	2: a string
+	0: (coefficient) a float
+	1: (varType) a string
+	2: (variable) a string
 feature_id is a string
 reaction_id is a string
 bound is a reference to a list containing 4 items:
-	0: a float
-	1: a float
-	2: a string
-	3: a string
+	0: (min) a float
+	1: (max) a float
+	2: (varType) a string
+	3: (variable) a string
 constraint is a reference to a list containing 4 items:
-	0: a float
-	1: a string
-	2: a reference to a list where each element is a term
-	3: a string
+	0: (rhs) a float
+	1: (sign) a string
+	2: (terms) a reference to a list where each element is a term
+	3: (name) a string
 GapfillingFormulation is a reference to a hash where the following keys are defined:
 	formulation has a value which is an FBAFormulation
 	num_solutions has a value which is an int
@@ -5873,17 +5894,17 @@ phenotypeSet_id is a string
 gapfill_id is a string
 gapgen_id is a string
 object_metadata is a reference to a list containing 11 items:
-	0: an object_id
-	1: an object_type
-	2: a timestamp
-	3: an int
-	4: a string
-	5: a username
-	6: a username
-	7: a workspace_id
-	8: a workspace_ref
-	9: a string
-	10: a reference to a hash where the key is a string and the value is a string
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -6004,21 +6025,21 @@ compound_id is a string
 prommodel_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
-	0: a float
-	1: a string
-	2: a string
+	0: (coefficient) a float
+	1: (varType) a string
+	2: (variable) a string
 feature_id is a string
 reaction_id is a string
 bound is a reference to a list containing 4 items:
-	0: a float
-	1: a float
-	2: a string
-	3: a string
+	0: (min) a float
+	1: (max) a float
+	2: (varType) a string
+	3: (variable) a string
 constraint is a reference to a list containing 4 items:
-	0: a float
-	1: a string
-	2: a reference to a list where each element is a term
-	3: a string
+	0: (rhs) a float
+	1: (sign) a string
+	2: (terms) a reference to a list where each element is a term
+	3: (name) a string
 GapfillingFormulation is a reference to a hash where the following keys are defined:
 	formulation has a value which is an FBAFormulation
 	num_solutions has a value which is an int
@@ -6056,17 +6077,17 @@ phenotypeSet_id is a string
 gapfill_id is a string
 gapgen_id is a string
 object_metadata is a reference to a list containing 11 items:
-	0: an object_id
-	1: an object_type
-	2: a timestamp
-	3: an int
-	4: a string
-	5: a username
-	6: a username
-	7: a workspace_id
-	8: a workspace_ref
-	9: a string
-	10: a reference to a hash where the key is a string and the value is a string
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -6125,21 +6146,21 @@ compound_id is a string
 prommodel_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
-	0: a float
-	1: a string
-	2: a string
+	0: (coefficient) a float
+	1: (varType) a string
+	2: (variable) a string
 feature_id is a string
 reaction_id is a string
 bound is a reference to a list containing 4 items:
-	0: a float
-	1: a float
-	2: a string
-	3: a string
+	0: (min) a float
+	1: (max) a float
+	2: (varType) a string
+	3: (variable) a string
 constraint is a reference to a list containing 4 items:
-	0: a float
-	1: a string
-	2: a reference to a list where each element is a term
-	3: a string
+	0: (rhs) a float
+	1: (sign) a string
+	2: (terms) a reference to a list where each element is a term
+	3: (name) a string
 GapfillingFormulation is a reference to a hash where the following keys are defined:
 	formulation has a value which is an FBAFormulation
 	num_solutions has a value which is an int
@@ -6177,17 +6198,17 @@ phenotypeSet_id is a string
 gapfill_id is a string
 gapgen_id is a string
 object_metadata is a reference to a list containing 11 items:
-	0: an object_id
-	1: an object_type
-	2: a timestamp
-	3: an int
-	4: a string
-	5: a username
-	6: a username
-	7: a workspace_id
-	8: a workspace_ref
-	9: a string
-	10: a reference to a hash where the key is a string and the value is a string
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
 object_id is a string
 object_type is a string
 timestamp is a string
@@ -6637,6 +6658,428 @@ sub run_job
 
 
 
+=head2 set_cofactors
+
+  $output = $obj->set_cofactors($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a set_cofactors_params
+$output is an object_metadata
+set_cofactors_params is a reference to a hash where the following keys are defined:
+	cofactors has a value which is a reference to a list where each element is a compound_id
+	biochemistry has a value which is a biochemistry_id
+	biochemistry_workspace has a value which is a workspace_id
+	reset has a value which is a bool
+	overwrite has a value which is a bool
+	auth has a value which is a string
+compound_id is a string
+biochemistry_id is a string
+workspace_id is a string
+bool is an int
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a set_cofactors_params
+$output is an object_metadata
+set_cofactors_params is a reference to a hash where the following keys are defined:
+	cofactors has a value which is a reference to a list where each element is a compound_id
+	biochemistry has a value which is a biochemistry_id
+	biochemistry_workspace has a value which is a workspace_id
+	reset has a value which is a bool
+	overwrite has a value which is a bool
+	auth has a value which is a string
+compound_id is a string
+biochemistry_id is a string
+workspace_id is a string
+bool is an int
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+=item Description
+
+
+
+=back
+
+=cut
+
+sub set_cofactors
+{
+    my($self, @args) = @_;
+
+# Authentication: none
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function set_cofactors (received $n, expecting 1)");
+    }
+    {
+	my($input) = @args;
+
+	my @_bad_arguments;
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to set_cofactors:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'set_cofactors');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.set_cofactors",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{code},
+					       method_name => 'set_cofactors',
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method set_cofactors",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'set_cofactors',
+				       );
+    }
+}
+
+
+
+=head2 find_reaction_synonyms
+
+  $output = $obj->find_reaction_synonyms($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a find_reaction_synonyms_params
+$output is an object_metadata
+find_reaction_synonyms_params is a reference to a hash where the following keys are defined:
+	reaction_synonyms has a value which is a reaction_synonyms_id
+	workspace has a value which is a workspace_id
+	biochemistry has a value which is a biochemistry_id
+	biochemistry_workspace has a value which is a workspace_id
+	overwrite has a value which is a bool
+	auth has a value which is a string
+reaction_synonyms_id is a string
+workspace_id is a string
+biochemistry_id is a string
+bool is an int
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a find_reaction_synonyms_params
+$output is an object_metadata
+find_reaction_synonyms_params is a reference to a hash where the following keys are defined:
+	reaction_synonyms has a value which is a reaction_synonyms_id
+	workspace has a value which is a workspace_id
+	biochemistry has a value which is a biochemistry_id
+	biochemistry_workspace has a value which is a workspace_id
+	overwrite has a value which is a bool
+	auth has a value which is a string
+reaction_synonyms_id is a string
+workspace_id is a string
+biochemistry_id is a string
+bool is an int
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+=item Description
+
+
+
+=back
+
+=cut
+
+sub find_reaction_synonyms
+{
+    my($self, @args) = @_;
+
+# Authentication: none
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function find_reaction_synonyms (received $n, expecting 1)");
+    }
+    {
+	my($input) = @args;
+
+	my @_bad_arguments;
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to find_reaction_synonyms:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'find_reaction_synonyms');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.find_reaction_synonyms",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{code},
+					       method_name => 'find_reaction_synonyms',
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method find_reaction_synonyms",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'find_reaction_synonyms',
+				       );
+    }
+}
+
+
+
+=head2 find_paths
+
+  $output = $obj->find_paths($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a find_paths_params
+$output is an object_metadata
+find_paths_params is a reference to a hash where the following keys are defined:
+	reaction_synonyms has a value which is a reaction_synonyms_id
+	media has a value which is a media_id
+	input_model has a value which is a fbamodel_id
+	output_model has a value which is a fbamodel_id
+	iterations has a value which is an int
+	workspace has a value which is a workspace_id
+	media_workspace has a value which is a workspace_id
+	biochemistry has a value which is a biochemistry_id
+	biochemistry_workspace has a value which is a workspace_id
+	overwrite has a value which is a bool
+	auth has a value which is a string
+reaction_synonyms_id is a string
+media_id is a string
+fbamodel_id is a string
+workspace_id is a string
+biochemistry_id is a string
+bool is an int
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a find_paths_params
+$output is an object_metadata
+find_paths_params is a reference to a hash where the following keys are defined:
+	reaction_synonyms has a value which is a reaction_synonyms_id
+	media has a value which is a media_id
+	input_model has a value which is a fbamodel_id
+	output_model has a value which is a fbamodel_id
+	iterations has a value which is an int
+	workspace has a value which is a workspace_id
+	media_workspace has a value which is a workspace_id
+	biochemistry has a value which is a biochemistry_id
+	biochemistry_workspace has a value which is a workspace_id
+	overwrite has a value which is a bool
+	auth has a value which is a string
+reaction_synonyms_id is a string
+media_id is a string
+fbamodel_id is a string
+workspace_id is a string
+biochemistry_id is a string
+bool is an int
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+=item Description
+
+
+
+=back
+
+=cut
+
+sub find_paths
+{
+    my($self, @args) = @_;
+
+# Authentication: none
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function find_paths (received $n, expecting 1)");
+    }
+    {
+	my($input) = @args;
+
+	my @_bad_arguments;
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to find_paths:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'find_paths');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.find_paths",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{code},
+					       method_name => 'find_paths',
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method find_paths",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'find_paths',
+				       );
+    }
+}
+
+
+
 sub version {
     my ($self) = @_;
     my $result = $self->{client}->call($self->{url}, {
@@ -6648,16 +7091,16 @@ sub version {
             Bio::KBase::Exceptions::JSONRPC->throw(
                 error => $result->error_message,
                 code => $result->content->{code},
-                method_name => 'run_job',
+                method_name => 'find_paths',
             );
         } else {
             return wantarray ? @{$result->result} : $result->result->[0];
         }
     } else {
         Bio::KBase::Exceptions::HTTP->throw(
-            error => "Error invoking method run_job",
+            error => "Error invoking method find_paths",
             status_line => $self->{client}->status_line,
-            method_name => 'run_job',
+            method_name => 'find_paths',
         );
     }
 }
@@ -7688,6 +8131,37 @@ a string
 
 
 
+=head2 reaction_synonyms_id
+
+=over 4
+
+
+
+=item Description
+
+A string identifier for a reaction synonyms in KBase.
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
 =head2 object_metadata
 
 =over 4
@@ -7707,17 +8181,17 @@ a string
 
 <pre>
 a reference to a list containing 11 items:
-0: an object_id
-1: an object_type
-2: a timestamp
-3: an int
-4: a string
-5: a username
-6: a username
-7: a workspace_id
-8: a workspace_ref
-9: a string
-10: a reference to a hash where the key is a string and the value is a string
+0: (id) an object_id
+1: (type) an object_type
+2: (moddate) a timestamp
+3: (instance) an int
+4: (command) a string
+5: (lastmodifier) a username
+6: (owner) a username
+7: (workspace) a workspace_id
+8: (ref) a workspace_ref
+9: (chsum) a string
+10: (metadata) a reference to a hash where the key is a string and the value is a string
 
 </pre>
 
@@ -7726,17 +8200,17 @@ a reference to a list containing 11 items:
 =begin text
 
 a reference to a list containing 11 items:
-0: an object_id
-1: an object_type
-2: a timestamp
-3: an int
-4: a string
-5: a username
-6: a username
-7: a workspace_id
-8: a workspace_ref
-9: a string
-10: a reference to a hash where the key is a string and the value is a string
+0: (id) an object_id
+1: (type) an object_type
+2: (moddate) a timestamp
+3: (instance) an int
+4: (command) a string
+5: (lastmodifier) a username
+6: (owner) a username
+7: (workspace) a workspace_id
+8: (ref) a workspace_ref
+9: (chsum) a string
+10: (metadata) a reference to a hash where the key is a string and the value is a string
 
 
 =end text
@@ -7830,9 +8304,9 @@ A region of DNA is maintained as a tuple of four components:
 <pre>
 a reference to a list containing 4 items:
 0: a contig_id
-1: an int
-2: a string
-3: an int
+1: (begin) an int
+2: (strand) a string
+3: (length) an int
 
 </pre>
 
@@ -7842,9 +8316,9 @@ a reference to a list containing 4 items:
 
 a reference to a list containing 4 items:
 0: a contig_id
-1: an int
-2: a string
-3: an int
+1: (begin) an int
+2: (strand) a string
+3: (length) an int
 
 
 =end text
@@ -7896,9 +8370,9 @@ a reference to a list where each element is a region_of_dna
 
 <pre>
 a reference to a list containing 3 items:
-0: a string
-1: a string
-2: an int
+0: (comment) a string
+1: (annotator) a string
+2: (annotation_time) an int
 
 </pre>
 
@@ -7907,9 +8381,9 @@ a reference to a list containing 3 items:
 =begin text
 
 a reference to a list containing 3 items:
-0: a string
-1: a string
-2: an int
+0: (comment) a string
+1: (annotator) a string
+2: (annotation_time) an int
 
 
 =end text
@@ -7930,8 +8404,8 @@ a reference to a list containing 3 items:
 
 <pre>
 a reference to a list containing 2 items:
-0: a feature_id
-1: a float
+0: (gene) a feature_id
+1: (blast_score) a float
 
 </pre>
 
@@ -7940,8 +8414,8 @@ a reference to a list containing 2 items:
 =begin text
 
 a reference to a list containing 2 items:
-0: a feature_id
-1: a float
+0: (gene) a feature_id
+1: (blast_score) a float
 
 
 =end text
@@ -7962,9 +8436,9 @@ a reference to a list containing 2 items:
 
 <pre>
 a reference to a list containing 3 items:
-0: a string
-1: a float
-2: a reference to a list where each element is a gene_hit
+0: (function) a string
+1: (probability) a float
+2: (gene_hits) a reference to a list where each element is a gene_hit
 
 </pre>
 
@@ -7973,9 +8447,9 @@ a reference to a list containing 3 items:
 =begin text
 
 a reference to a list containing 3 items:
-0: a string
-1: a float
-2: a reference to a list where each element is a gene_hit
+0: (function) a string
+1: (probability) a float
+2: (gene_hits) a reference to a list where each element is a gene_hit
 
 
 =end text
@@ -8125,9 +8599,9 @@ float probability - the probability that the functional role is associated with 
 
 <pre>
 a reference to a list containing 3 items:
-0: a feature_id
-1: a string
-2: a float
+0: (feature) a feature_id
+1: (function) a string
+2: (probability) a float
 
 </pre>
 
@@ -8136,9 +8610,9 @@ a reference to a list containing 3 items:
 =begin text
 
 a reference to a list containing 3 items:
-0: a feature_id
-1: a string
-2: a float
+0: (feature) a feature_id
+1: (function) a string
+2: (probability) a float
 
 
 =end text
@@ -8185,8 +8659,8 @@ a string
 
 <pre>
 a reference to a list containing 2 items:
-0: a string
-1: a float
+0: (function) a string
+1: (probability) a float
 
 </pre>
 
@@ -8195,8 +8669,8 @@ a reference to a list containing 2 items:
 =begin text
 
 a reference to a list containing 2 items:
-0: a string
-1: a float
+0: (function) a string
+1: (probability) a float
 
 
 =end text
@@ -8289,6 +8763,49 @@ id has a value which is a probanno_id
 genome has a value which is a genome_id
 genome_uuid has a value which is a workspace_ref
 featureAlternativeFunctions has a value which is a reference to a list where each element is a ProbAnnoFeature
+
+
+=end text
+
+=back
+
+
+
+=head2 ReactionProbability
+
+=over 4
+
+
+
+=item Description
+
+Data structure to hold probability of a reaction
+
+        reaction_id reaction - ID of the reaction
+        float probability - Probability of the reaction
+        string gene_list - List of genes most likely to be attached to reaction
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a list containing 3 items:
+0: (reaction) a reaction_id
+1: (probability) a float
+2: (gene_list) a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a list containing 3 items:
+0: (reaction) a reaction_id
+1: (probability) a float
+2: (gene_list) a string
 
 
 =end text
@@ -8686,9 +9203,9 @@ string name - name of compound in biomass reaction
 
 <pre>
 a reference to a list containing 3 items:
-0: a modelcompound_id
-1: a float
-2: a string
+0: (modelcompound) a modelcompound_id
+1: (coefficient) a float
+2: (name) a string
 
 </pre>
 
@@ -8697,9 +9214,9 @@ a reference to a list containing 3 items:
 =begin text
 
 a reference to a list containing 3 items:
-0: a modelcompound_id
-1: a float
-2: a string
+0: (modelcompound) a modelcompound_id
+1: (coefficient) a float
+2: (name) a string
 
 
 =end text
@@ -8778,12 +9295,12 @@ list<feature_id> ko - list of genes knocked out in the FBA study
 
 <pre>
 a reference to a list containing 6 items:
-0: a fba_id
-1: a workspace_id
-2: a media_id
-3: a workspace_id
-4: a float
-5: a reference to a list where each element is a feature_id
+0: (id) a fba_id
+1: (workspace) a workspace_id
+2: (media) a media_id
+3: (media_workspace) a workspace_id
+4: (objective) a float
+5: (ko) a reference to a list where each element is a feature_id
 
 </pre>
 
@@ -8792,12 +9309,12 @@ a reference to a list containing 6 items:
 =begin text
 
 a reference to a list containing 6 items:
-0: a fba_id
-1: a workspace_id
-2: a media_id
-3: a workspace_id
-4: a float
-5: a reference to a list where each element is a feature_id
+0: (id) a fba_id
+1: (workspace) a workspace_id
+2: (media) a media_id
+3: (media_workspace) a workspace_id
+4: (objective) a float
+5: (ko) a reference to a list where each element is a feature_id
 
 
 =end text
@@ -8830,12 +9347,12 @@ list<feature_id> ko - list of genes knocked out in gapgen study
 
 <pre>
 a reference to a list containing 6 items:
-0: a gapgen_id
-1: a workspace_id
-2: a media_id
-3: a workspace_id
-4: a bool
-5: a reference to a list where each element is a feature_id
+0: (id) a gapgen_id
+1: (workspace) a workspace_id
+2: (media) a media_id
+3: (media_workspace) a workspace_id
+4: (done) a bool
+5: (ko) a reference to a list where each element is a feature_id
 
 </pre>
 
@@ -8844,12 +9361,12 @@ a reference to a list containing 6 items:
 =begin text
 
 a reference to a list containing 6 items:
-0: a gapgen_id
-1: a workspace_id
-2: a media_id
-3: a workspace_id
-4: a bool
-5: a reference to a list where each element is a feature_id
+0: (id) a gapgen_id
+1: (workspace) a workspace_id
+2: (media) a media_id
+3: (media_workspace) a workspace_id
+4: (done) a bool
+5: (ko) a reference to a list where each element is a feature_id
 
 
 =end text
@@ -8882,12 +9399,12 @@ list<feature_id> ko - list of genes knocked out in gapfill study
 
 <pre>
 a reference to a list containing 6 items:
-0: a gapfill_id
-1: a workspace_id
-2: a media_id
-3: a workspace_id
-4: a bool
-5: a reference to a list where each element is a feature_id
+0: (id) a gapfill_id
+1: (workspace) a workspace_id
+2: (media) a media_id
+3: (media_workspace) a workspace_id
+4: (done) a bool
+5: (ko) a reference to a list where each element is a feature_id
 
 </pre>
 
@@ -8896,12 +9413,12 @@ a reference to a list containing 6 items:
 =begin text
 
 a reference to a list containing 6 items:
-0: a gapfill_id
-1: a workspace_id
-2: a media_id
-3: a workspace_id
-4: a bool
-5: a reference to a list where each element is a feature_id
+0: (id) a gapfill_id
+1: (workspace) a workspace_id
+2: (media) a media_id
+3: (media_workspace) a workspace_id
+4: (done) a bool
+5: (ko) a reference to a list where each element is a feature_id
 
 
 =end text
@@ -9057,10 +9574,10 @@ modelSubsystems has a value which is a reference to a list where each element is
 
 <pre>
 a reference to a list containing 4 items:
-0: a feature_id
-1: a float
-2: a float
-3: a bool
+0: (feature) a feature_id
+1: (growthFraction) a float
+2: (growth) a float
+3: (isEssential) a bool
 
 </pre>
 
@@ -9069,10 +9586,10 @@ a reference to a list containing 4 items:
 =begin text
 
 a reference to a list containing 4 items:
-0: a feature_id
-1: a float
-2: a float
-3: a bool
+0: (feature) a feature_id
+1: (growthFraction) a float
+2: (growth) a float
+3: (isEssential) a bool
 
 
 =end text
@@ -9107,14 +9624,14 @@ string name - name of compound
 
 <pre>
 a reference to a list containing 8 items:
-0: a modelcompound_id
-1: a float
-2: a float
-3: a float
-4: a float
-5: a float
-6: a string
-7: a string
+0: (compound) a modelcompound_id
+1: (value) a float
+2: (upperBound) a float
+3: (lowerBound) a float
+4: (max) a float
+5: (min) a float
+6: (type) a string
+7: (name) a string
 
 </pre>
 
@@ -9123,14 +9640,14 @@ a reference to a list containing 8 items:
 =begin text
 
 a reference to a list containing 8 items:
-0: a modelcompound_id
-1: a float
-2: a float
-3: a float
-4: a float
-5: a float
-6: a string
-7: a string
+0: (compound) a modelcompound_id
+1: (value) a float
+2: (upperBound) a float
+3: (lowerBound) a float
+4: (max) a float
+5: (min) a float
+6: (type) a string
+7: (name) a string
 
 
 =end text
@@ -9165,14 +9682,14 @@ string definition - stoichiometry of solution reaction in terms of compound name
 
 <pre>
 a reference to a list containing 8 items:
-0: a modelreaction_id
-1: a float
-2: a float
-3: a float
-4: a float
-5: a float
-6: a string
-7: a string
+0: (reaction) a modelreaction_id
+1: (value) a float
+2: (upperBound) a float
+3: (lowerBound) a float
+4: (max) a float
+5: (min) a float
+6: (type) a string
+7: (definition) a string
 
 </pre>
 
@@ -9181,14 +9698,14 @@ a reference to a list containing 8 items:
 =begin text
 
 a reference to a list containing 8 items:
-0: a modelreaction_id
-1: a float
-2: a float
-3: a float
-4: a float
-5: a float
-6: a string
-7: a string
+0: (reaction) a modelreaction_id
+1: (value) a float
+2: (upperBound) a float
+3: (lowerBound) a float
+4: (max) a float
+5: (min) a float
+6: (type) a string
+7: (definition) a string
 
 
 =end text
@@ -9218,9 +9735,9 @@ string name - name of compound with simulated production
 
 <pre>
 a reference to a list containing 3 items:
-0: a float
-1: a modelcompound_id
-2: a string
+0: (maximumProduction) a float
+1: (modelcompound) a modelcompound_id
+2: (name) a string
 
 </pre>
 
@@ -9229,9 +9746,9 @@ a reference to a list containing 3 items:
 =begin text
 
 a reference to a list containing 3 items:
-0: a float
-1: a modelcompound_id
-2: a string
+0: (maximumProduction) a float
+1: (modelcompound) a modelcompound_id
+2: (name) a string
 
 
 =end text
@@ -9302,10 +9819,10 @@ string variable - variable ID for custom bound
 
 <pre>
 a reference to a list containing 4 items:
-0: a float
-1: a float
-2: a string
-3: a string
+0: (min) a float
+1: (max) a float
+2: (varType) a string
+3: (variable) a string
 
 </pre>
 
@@ -9314,10 +9831,10 @@ a reference to a list containing 4 items:
 =begin text
 
 a reference to a list containing 4 items:
-0: a float
-1: a float
-2: a string
-3: a string
+0: (min) a float
+1: (max) a float
+2: (varType) a string
+3: (variable) a string
 
 
 =end text
@@ -9347,9 +9864,9 @@ string variable - variable ID for term in objective or constraint
 
 <pre>
 a reference to a list containing 3 items:
-0: a float
-1: a string
-2: a string
+0: (coefficient) a float
+1: (varType) a string
+2: (variable) a string
 
 </pre>
 
@@ -9358,9 +9875,9 @@ a reference to a list containing 3 items:
 =begin text
 
 a reference to a list containing 3 items:
-0: a float
-1: a string
-2: a string
+0: (coefficient) a float
+1: (varType) a string
+2: (variable) a string
 
 
 =end text
@@ -9391,10 +9908,10 @@ string name - name of custom constraint
 
 <pre>
 a reference to a list containing 4 items:
-0: a float
-1: a string
-2: a reference to a list where each element is a term
-3: a string
+0: (rhs) a float
+1: (sign) a string
+2: (terms) a reference to a list where each element is a term
+3: (name) a string
 
 </pre>
 
@@ -9403,10 +9920,10 @@ a reference to a list containing 4 items:
 =begin text
 
 a reference to a list containing 4 items:
-0: a float
-1: a string
-2: a reference to a list where each element is a term
-3: a string
+0: (rhs) a float
+1: (sign) a string
+2: (terms) a reference to a list where each element is a term
+3: (name) a string
 
 
 =end text
@@ -9681,11 +10198,11 @@ string definition - stoichiometry of removed reaction in terms of compound names
 
 <pre>
 a reference to a list containing 5 items:
-0: a reaction_id
-1: a string
-2: a string
-3: a string
-4: a string
+0: (reaction) a reaction_id
+1: (direction) a string
+2: (compartment_id) a string
+3: (equation) a string
+4: (definition) a string
 
 </pre>
 
@@ -9694,11 +10211,11 @@ a reference to a list containing 5 items:
 =begin text
 
 a reference to a list containing 5 items:
-0: a reaction_id
-1: a string
-2: a string
-3: a string
-4: a string
+0: (reaction) a reaction_id
+1: (direction) a string
+2: (compartment_id) a string
+3: (equation) a string
+4: (definition) a string
 
 
 =end text
@@ -9727,8 +10244,8 @@ string name - name of biomass component removed
 
 <pre>
 a reference to a list containing 2 items:
-0: a compound_id
-1: a string
+0: (compound) a compound_id
+1: (name) a string
 
 </pre>
 
@@ -9737,8 +10254,8 @@ a reference to a list containing 2 items:
 =begin text
 
 a reference to a list containing 2 items:
-0: a compound_id
-1: a string
+0: (compound) a compound_id
+1: (name) a string
 
 
 =end text
@@ -9767,8 +10284,8 @@ string name - name of media component added
 
 <pre>
 a reference to a list containing 2 items:
-0: a compound_id
-1: a string
+0: (compound) a compound_id
+1: (name) a string
 
 </pre>
 
@@ -9777,8 +10294,8 @@ a reference to a list containing 2 items:
 =begin text
 
 a reference to a list containing 2 items:
-0: a compound_id
-1: a string
+0: (compound) a compound_id
+1: (name) a string
 
 
 =end text
@@ -9964,10 +10481,10 @@ string definition - stoichiometry of removed reaction in terms of compound names
 
 <pre>
 a reference to a list containing 4 items:
-0: a modelreaction_id
-1: a string
-2: a string
-3: a string
+0: (reaction) a modelreaction_id
+1: (direction) a string
+2: (equation) a string
+3: (definition) a string
 
 </pre>
 
@@ -9976,10 +10493,10 @@ a reference to a list containing 4 items:
 =begin text
 
 a reference to a list containing 4 items:
-0: a modelreaction_id
-1: a string
-2: a string
-3: a string
+0: (reaction) a modelreaction_id
+1: (direction) a string
+2: (equation) a string
+3: (definition) a string
 
 
 =end text
@@ -10008,8 +10525,8 @@ string name - name of biomass compound added
 
 <pre>
 a reference to a list containing 2 items:
-0: a compound_id
-1: a string
+0: (compound) a compound_id
+1: (name) a string
 
 </pre>
 
@@ -10018,8 +10535,8 @@ a reference to a list containing 2 items:
 =begin text
 
 a reference to a list containing 2 items:
-0: a compound_id
-1: a string
+0: (compound) a compound_id
+1: (name) a string
 
 
 =end text
@@ -10048,8 +10565,8 @@ string name - name of media component removed
 
 <pre>
 a reference to a list containing 2 items:
-0: a compound_id
-1: a string
+0: (compound) a compound_id
+1: (name) a string
 
 </pre>
 
@@ -10058,8 +10575,8 @@ a reference to a list containing 2 items:
 =begin text
 
 a reference to a list containing 2 items:
-0: a compound_id
-1: a string
+0: (compound) a compound_id
+1: (name) a string
 
 
 =end text
@@ -10191,11 +10708,11 @@ solutions has a value which is a reference to a list where each element is a Gap
 
 <pre>
 a reference to a list containing 5 items:
-0: a reference to a list where each element is a feature_id
-1: a media_id
-2: a workspace_id
-3: a reference to a list where each element is a compound_id
-4: a float
+0: (geneKO) a reference to a list where each element is a feature_id
+1: (baseMedia) a media_id
+2: (media_workspace) a workspace_id
+3: (additionalCpd) a reference to a list where each element is a compound_id
+4: (normalizedGrowth) a float
 
 </pre>
 
@@ -10204,11 +10721,11 @@ a reference to a list containing 5 items:
 =begin text
 
 a reference to a list containing 5 items:
-0: a reference to a list where each element is a feature_id
-1: a media_id
-2: a workspace_id
-3: a reference to a list where each element is a compound_id
-4: a float
+0: (geneKO) a reference to a list where each element is a feature_id
+1: (baseMedia) a media_id
+2: (media_workspace) a workspace_id
+3: (additionalCpd) a reference to a list where each element is a compound_id
+4: (normalizedGrowth) a float
 
 
 =end text
@@ -10319,10 +10836,10 @@ string class - class of the phenotype simulation (i.e. 'CP' - correct positive, 
 
 <pre>
 a reference to a list containing 4 items:
-0: a Phenotype
-1: a float
-2: a float
-3: a string
+0: (phenotypeData) a Phenotype
+1: (simulatedGrowth) a float
+2: (simulatedGrowthFraction) a float
+3: (class) a string
 
 </pre>
 
@@ -10331,10 +10848,10 @@ a reference to a list containing 4 items:
 =begin text
 
 a reference to a list containing 4 items:
-0: a Phenotype
-1: a float
-2: a float
-3: a string
+0: (phenotypeData) a Phenotype
+1: (simulatedGrowth) a float
+2: (simulatedGrowthFraction) a float
+3: (class) a string
 
 
 =end text
@@ -10384,6 +10901,99 @@ model has a value which is a fbamodel_id
 model_workspace has a value which is a workspace_id
 phenotypeSet has a value which is a phenotypeSet_id
 phenotypeSimulations has a value which is a reference to a list where each element is a PhenotypeSimulation
+
+
+=end text
+
+=back
+
+
+
+=head2 reactionSpecification
+
+=over 4
+
+
+
+=item Description
+
+Data structure for holding gapfill or gapgen solution reaction information
+
+string direction - direction of gapfilled or gapgen reaction
+string reactionID - ID of gapfilled or gapgen reaction
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a list containing 2 items:
+0: (direction) a string
+1: (reactionID) a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a list containing 2 items:
+0: (direction) a string
+1: (reactionID) a string
+
+
+=end text
+
+=back
+
+
+
+=head2 PhenotypeSensitivityAnalysis
+
+=over 4
+
+
+
+=item Description
+
+list<string id, string solutionIndex, list<reactionSpecification> reactionList, list<string> biomassEdits,list<tuple<float simulatedGrowth,float simulatedGrowthFraction,string class>> PhenotypeSimulations> reconciliationSolutionSimulations;
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+phenotypeSet has a value which is a phenotypeSet_id
+phenotypeSet_workspace has a value which is a workspace_id
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+phenotypes has a value which is a reference to a list where each element is a Phenotype
+wildtypePhenotypeSimulations has a value which is a reference to a list where each element is a reference to a list containing 3 items:
+0: (simulatedGrowth) a float
+1: (simulatedGrowthFraction) a float
+2: (class) a string
+
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+phenotypeSet has a value which is a phenotypeSet_id
+phenotypeSet_workspace has a value which is a workspace_id
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+phenotypes has a value which is a reference to a list where each element is a Phenotype
+wildtypePhenotypeSimulations has a value which is a reference to a list where each element is a reference to a list containing 3 items:
+0: (simulatedGrowth) a float
+1: (simulatedGrowthFraction) a float
+2: (class) a string
+
 
 
 =end text
@@ -10645,6 +11255,136 @@ nodes has a value which is a reference to a list where each element is an ETCNod
 media has a value which is a string
 growth has a value which is a string
 organism has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 ReactionDefinition
+
+=over 4
+
+
+
+=item Description
+
+********************************************************************************
+	  AutoRecon type definitions
+   	********************************************************************************
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+id has a value which is a reaction_id
+name has a value which is a string
+definition has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+id has a value which is a reaction_id
+name has a value which is a string
+definition has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 ReactionSynonyms
+
+=over 4
+
+
+
+=item Description
+
+Reaction synonyms
+
+        reaction_id primary - ID of primary reaction
+        list<ReactionDefinition> synonyms - list of synonym reactions to the primary reaction (including itself)
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+primary has a value which is a reaction_id
+synonyms has a value which is a reference to a list where each element is a ReactionDefinition
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+primary has a value which is a reaction_id
+synonyms has a value which is a reference to a list where each element is a ReactionDefinition
+
+
+=end text
+
+=back
+
+
+
+=head2 ReactionSynonymsObject
+
+=over 4
+
+
+
+=item Description
+
+Reaction synonyms object
+
+        int version - version number of object
+        biochemistry_id biochemistry - ID of associated biochemistry database
+        workspace_id biochemistry_workspace - workspace with associated biochemistry database
+        list<ReactionSynonyms> synonym_list - list of all reaction synonyms from a biochemistry database
+        list<ReactionDefinition> excluded_list - list of reactions excluded because all compounds are cofactors
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+version has a value which is an int
+biochemistry has a value which is a biochemistry_id
+biochemistry_workspace has a value which is a workspace_id
+synonyms_list has a value which is a reference to a list where each element is a ReactionSynonyms
+excluded_list has a value which is a reference to a list where each element is a ReactionDefinition
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+version has a value which is an int
+biochemistry has a value which is a biochemistry_id
+biochemistry_workspace has a value which is a workspace_id
+synonyms_list has a value which is a reference to a list where each element is a ReactionSynonyms
+excluded_list has a value which is a reference to a list where each element is a ReactionDefinition
 
 
 =end text
@@ -11228,8 +11968,8 @@ A link between a KBase gene ID and the ID for the same gene in another database
 
 <pre>
 a reference to a list containing 2 items:
-0: a string
-1: a feature_id
+0: (foreign_id) a string
+1: (feature) a feature_id
 
 </pre>
 
@@ -11238,8 +11978,8 @@ a reference to a list containing 2 items:
 =begin text
 
 a reference to a list containing 2 items:
-0: a string
-1: a feature_id
+0: (foreign_id) a string
+1: (feature) a feature_id
 
 
 =end text
@@ -11373,7 +12113,7 @@ overwrite has a value which is a bool
 
 =item Description
 
-Input parameters for the "genome_to_fbamodel" function.
+Input parameters for the "import_fbamodel" function.
 
         genome_id genome - ID of the genome for which a model is to be built (a required argument)
         workspace_id genome_workspace - ID of the workspace containing the target genome (an optional argument; default is the workspace argument)
@@ -11395,10 +12135,10 @@ genome has a value which is a genome_id
 genome_workspace has a value which is a workspace_id
 biomass has a value which is a string
 reactions has a value which is a reference to a list where each element is a reference to a list containing 4 items:
-0: a string
-1: a string
-2: a string
-3: a string
+0: (id) a string
+1: (direction) a string
+2: (compartment) a string
+3: (gpr) a string
 
 model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
@@ -11417,10 +12157,10 @@ genome has a value which is a genome_id
 genome_workspace has a value which is a workspace_id
 biomass has a value which is a string
 reactions has a value which is a reference to a list where each element is a reference to a list containing 4 items:
-0: a string
-1: a string
-2: a string
-3: a string
+0: (id) a string
+1: (direction) a string
+2: (compartment) a string
+3: (gpr) a string
 
 model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
@@ -11443,14 +12183,14 @@ overwrite has a value which is a bool
 
 =item Description
 
-Input parameters for the "genome_to_fbamodel" function.
+Input parameters for the "genome_to_probfbamodel" function.
 
         genome_id genome - ID of the genome for which a model is to be built (a required argument)
         workspace_id genome_workspace - ID of the workspace containing the target genome (an optional argument; default is the workspace argument)
-        probanno_id probanno - ID of the probabilistic annotation to be used in building the model (an optional argument; default is 'undef')
-        workspace_id probanno_workspace - ID of the workspace containing the probabilistic annotation (an optional argument; default is the workspace argument)
-        fbamodel_id model - ID that should be used for the newly constructed model (an optional argument; default is 'undef')
-        workspace_id workspace - ID of the workspace where the newly developed model will be stored; also the default assumed workspace for input objects (a required argument)
+        fbamodel_id model - ID of the output model (an optional argument; default is 'undef')
+        workspace_id workspace - ID of the workspace where the output model will be stored; also the default assumed workspace for input objects (a required argument)
+        list<reactionProbability> reaction_probs - list of reactions and the reaction probability to be put in output model
+        float default_prob - default probability for reactions not associated with a complex (an optional argument, default is 0.0)
         string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
 
@@ -11462,11 +12202,12 @@ Input parameters for the "genome_to_fbamodel" function.
 a reference to a hash where the following keys are defined:
 genome has a value which is a genome_id
 genome_workspace has a value which is a workspace_id
-probanno has a value which is a probanno_id
-probanno_workspace has a value which is a workspace_id
 model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
+reaction_probs has a value which is a reference to a list where each element is a ReactionProbability
+default_prob has a value which is a float
 auth has a value which is a string
+overwrite has a value which is a bool
 
 </pre>
 
@@ -11477,11 +12218,12 @@ auth has a value which is a string
 a reference to a hash where the following keys are defined:
 genome has a value which is a genome_id
 genome_workspace has a value which is a workspace_id
-probanno has a value which is a probanno_id
-probanno_workspace has a value which is a workspace_id
 model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
+reaction_probs has a value which is a reference to a list where each element is a ReactionProbability
+default_prob has a value which is a float
 auth has a value which is a string
+overwrite has a value which is a bool
 
 
 =end text
@@ -11549,6 +12291,7 @@ Input parameters for the "export_object" function.
         workspace_ref reference - reference of object to print in html (a required argument)
         string type - type of the object to be exported (a required argument)
         string format - format to which data should be exported (an optional argument; default is html)
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
 
 =item Definition
@@ -11560,6 +12303,7 @@ a reference to a hash where the following keys are defined:
 reference has a value which is a workspace_ref
 type has a value which is a string
 format has a value which is a string
+auth has a value which is a string
 
 </pre>
 
@@ -11571,6 +12315,7 @@ a reference to a hash where the following keys are defined:
 reference has a value which is a workspace_ref
 type has a value which is a string
 format has a value which is a string
+auth has a value which is a string
 
 
 =end text
@@ -11659,7 +12404,7 @@ reaction has a value which is a reaction_id
 direction has a value which is a string
 compartment has a value which is a compartment_id
 compartmentIndex has a value which is an int
-gpr has a value which is a reference to a list where each element is a reference to a list where each element is a reference to a list where each element is a feature_id
+gpr has a value which is a string
 removeReaction has a value which is a bool
 addReaction has a value which is a bool
 overwrite has a value which is a bool
@@ -11678,7 +12423,7 @@ reaction has a value which is a reaction_id
 direction has a value which is a string
 compartment has a value which is a compartment_id
 compartmentIndex has a value which is an int
-gpr has a value which is a reference to a list where each element is a reference to a list where each element is a reference to a list where each element is a feature_id
+gpr has a value which is a string
 removeReaction has a value which is a bool
 addReaction has a value which is a bool
 overwrite has a value which is a bool
@@ -12272,6 +13017,8 @@ Input parameters for the "queue_gapfill_model" function.
         gapfill_id gapFill - ID to which gapfill solution will be saved (an optional argument: default is 'undef')
         workspace_id workspace - workspace where gapfill results will be saved (a required argument)
         bool donot_submit_job - a flag indicating if the job should be submitted to the cluster (an optional argument: default is '0')
+        int timePerSolution - maximum time to spend to obtain each solution
+        int totalTimeLimit - maximum time to spend to obtain all solutions
         string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
 
@@ -12290,6 +13037,8 @@ integrate_solution has a value which is a bool
 out_model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
 gapFill has a value which is a gapfill_id
+timePerSolution has a value which is an int
+totalTimeLimit has a value which is an int
 auth has a value which is a string
 overwrite has a value which is a bool
 donot_submit_job has a value which is a bool
@@ -12310,6 +13059,8 @@ integrate_solution has a value which is a bool
 out_model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
 gapFill has a value which is a gapfill_id
+timePerSolution has a value which is an int
+totalTimeLimit has a value which is an int
 auth has a value which is a string
 overwrite has a value which is a bool
 donot_submit_job has a value which is a bool
@@ -12340,6 +13091,8 @@ Input parameters for the "queue_gapfill_model" function.
         fbamodel_id out_model - ID where the gapgened model will be saved (an optional argument: default is 'undef')
         gapgen_id gapGen - ID to which gapgen solution will be saved (an optional argument: default is 'undef')
         workspace_id workspace - workspace where gapgen results will be saved (a required argument)
+        int timePerSolution - maximum time to spend to obtain each solution
+        int totalTimeLimit - maximum time to spend to obtain all solutions
         bool donot_submit_job - a flag indicating if the job should be submitted to the cluster (an optional argument: default is '0')
         string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
@@ -12360,6 +13113,8 @@ out_model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
 gapGen has a value which is a gapgen_id
 auth has a value which is a string
+timePerSolution has a value which is an int
+totalTimeLimit has a value which is an int
 overwrite has a value which is a bool
 donot_submit_job has a value which is a bool
 
@@ -12380,6 +13135,8 @@ out_model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
 gapGen has a value which is a gapgen_id
 auth has a value which is a string
+timePerSolution has a value which is an int
+totalTimeLimit has a value which is an int
 overwrite has a value which is a bool
 donot_submit_job has a value which is a bool
 
@@ -12504,14 +13261,11 @@ Input parameters for the "queue_reconciliation_sensitivity_analysis" function.
 <pre>
 a reference to a hash where the following keys are defined:
 model has a value which is a fbamodel_id
-model_workspace has a value which is a workspace_id
-fba_formulation has a value which is an FBAFormulation
-gapfill_formulation has a value which is a GapfillingFormulation
-gapgen_formulation has a value which is a GapgenFormulation
-phenotypeSet has a value which is a phenotypeSet_id
-phenotypeSet_workspace has a value which is a workspace_id
-out_model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
+phenotypeSet has a value which is a phenotypeSet_id
+fba_formulation has a value which is an FBAFormulation
+model_workspace has a value which is a workspace_id
+phenotypeSet_workspace has a value which is a workspace_id
 gapFills has a value which is a reference to a list where each element is a gapfill_id
 gapGens has a value which is a reference to a list where each element is a gapgen_id
 queueReconciliationCombination has a value which is a bool
@@ -12527,14 +13281,11 @@ donot_submit_job has a value which is a bool
 
 a reference to a hash where the following keys are defined:
 model has a value which is a fbamodel_id
-model_workspace has a value which is a workspace_id
-fba_formulation has a value which is an FBAFormulation
-gapfill_formulation has a value which is a GapfillingFormulation
-gapgen_formulation has a value which is a GapgenFormulation
-phenotypeSet has a value which is a phenotypeSet_id
-phenotypeSet_workspace has a value which is a workspace_id
-out_model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
+phenotypeSet has a value which is a phenotypeSet_id
+fba_formulation has a value which is an FBAFormulation
+model_workspace has a value which is a workspace_id
+phenotypeSet_workspace has a value which is a workspace_id
 gapFills has a value which is a reference to a list where each element is a gapfill_id
 gapGens has a value which is a reference to a list where each element is a gapgen_id
 queueReconciliationCombination has a value which is a bool
@@ -12570,6 +13321,8 @@ Input parameters for the "queue_combine_wildtype_phenotype_reconciliation" funct
         list<gapgen_id> gapGens - IDs of gapgen solutions (an optional argument: default is 'undef')
         list<gapfill_id> gapFills - IDs of gapfill solutions (an optional argument: default is 'undef')
         workspace_id workspace - workspace where solution combination results will be saved (a required argument)
+        int timePerSolution - maximum time spent per solution
+        int totalTimeLimit - maximum time allowed to work on problem
         bool donot_submit_job - a flag indicating if the job should be submitted to the cluster (an optional argument: default is '0')
         string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
@@ -12738,6 +13491,177 @@ auth has a value which is a string
 a reference to a hash where the following keys are defined:
 jobid has a value which is a job_id
 index has a value which is an int
+auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 set_cofactors_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "set_cofactors" function.
+
+        list<compound_id> cofactors - list of compounds that are universal cofactors (required)
+        biochemistry_id biochemistry - ID of biochemistry database (optional, default is "default") 
+        workspace_id biochemistry_workspace - ID of workspace containing biochemistry database (optional, default is current workspace)
+        bool reset - true to reset (turn off) compounds as universal cofactors (optional, default is false)
+        bool overwrite - true to overwrite existing object (optional, default is false)
+        string auth - the authentication token of the KBase account (optional, default user is "public")
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+cofactors has a value which is a reference to a list where each element is a compound_id
+biochemistry has a value which is a biochemistry_id
+biochemistry_workspace has a value which is a workspace_id
+reset has a value which is a bool
+overwrite has a value which is a bool
+auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+cofactors has a value which is a reference to a list where each element is a compound_id
+biochemistry has a value which is a biochemistry_id
+biochemistry_workspace has a value which is a workspace_id
+reset has a value which is a bool
+overwrite has a value which is a bool
+auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 find_reaction_synonyms_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "find_reaction_synonyms" function.
+
+        reaction_synonyms - ID of reaction synonyms object (required argument)
+        workspace_id workspace - ID of workspace for storing objects (optional argument, default is current workspace)
+        biochemistry_id biochemistry - ID of the biochemistry database (optional argument, default is default)
+        workspace_id biochemistry_workspace - ID of workspace containing biochemistry database (optional argument, default is kbase)
+        overwrite - True to overwrite existing object (optional argument, default is false)
+        string auth - the authentication token of the KBase account (optional argument, default user is "public")
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+reaction_synonyms has a value which is a reaction_synonyms_id
+workspace has a value which is a workspace_id
+biochemistry has a value which is a biochemistry_id
+biochemistry_workspace has a value which is a workspace_id
+overwrite has a value which is a bool
+auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+reaction_synonyms has a value which is a reaction_synonyms_id
+workspace has a value which is a workspace_id
+biochemistry has a value which is a biochemistry_id
+biochemistry_workspace has a value which is a workspace_id
+overwrite has a value which is a bool
+auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 find_paths_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "find_paths" function.
+
+        reaction_synonyms_id reaction_synonyms - ID of the reaction synonyms object to use (required argument)
+        media_id media - ID of media to use (required argument)
+        fbamodel_id input_model - ID of input metabolic model (required argument)
+        fbamodel_id output_model - ID of output metabolic model (required argument)
+        int iterations - number of times to run FBA to find paths (optional argument, default is 1)
+        workspace_id workspace - ID of workspace containing objects (optional argument, default is current workspace)
+        workspace_id media_workspace - ID of workspace containing media object (optional argument, default is current workspace)
+        biochemistry_id biochemistry - ID of the biochemistry database (optional argument, default is default)
+        workspace_id biochemistry_workspace - ID of workspace containing biochemistry database (optional argument, default is kbase)
+        overwrite - true to overwrite existing output metabolic model (optional argument, default is false)
+        string auth - the authentication token of the KBase account (optional argument, user is "public" if auth is not provided)
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+reaction_synonyms has a value which is a reaction_synonyms_id
+media has a value which is a media_id
+input_model has a value which is a fbamodel_id
+output_model has a value which is a fbamodel_id
+iterations has a value which is an int
+workspace has a value which is a workspace_id
+media_workspace has a value which is a workspace_id
+biochemistry has a value which is a biochemistry_id
+biochemistry_workspace has a value which is a workspace_id
+overwrite has a value which is a bool
+auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+reaction_synonyms has a value which is a reaction_synonyms_id
+media has a value which is a media_id
+input_model has a value which is a fbamodel_id
+output_model has a value which is a fbamodel_id
+iterations has a value which is an int
+workspace has a value which is a workspace_id
+media_workspace has a value which is a workspace_id
+biochemistry has a value which is a biochemistry_id
+biochemistry_workspace has a value which is a workspace_id
+overwrite has a value which is a bool
 auth has a value which is a string
 
 

@@ -146,6 +146,9 @@ module fbaModelServices {
     /* A string identifier used for a probabilistic annotation in KBase. */
     typedef string probanno_id;
     
+    /* A string identifier for a reaction synonyms in KBase. */
+    typedef string reaction_synonyms_id;
+    
     /*********************************************************************************
     Object type definition
    	*********************************************************************************/
@@ -262,6 +265,15 @@ module fbaModelServices {
 		workspace_ref genome_uuid;
 		list<ProbAnnoFeature> featureAlternativeFunctions;
     } ProbabilisticAnnotation;
+    
+    /* Data structure to hold probability of a reaction
+    
+    	reaction_id reaction - ID of the reaction
+    	float probability - Probability of the reaction
+    	string gene_list - List of genes most likely to be attached to reaction
+    	
+    */
+    typedef tuple<reaction_id reaction, float probability, string gene_list> ReactionProbability;
     
     /*********************************************************************************
     Biochemistry type definition
@@ -986,7 +998,7 @@ module fbaModelServices {
 		workspace_id model_workspace;
 		list<Phenotype> phenotypes;
 		list<tuple<float simulatedGrowth,float simulatedGrowthFraction,string class>> wildtypePhenotypeSimulations;
-		list<string id,string solutionIndex,list<reactionSpecification> reactionList,list<string compound> biomassEdits,list<tuple<float simulatedGrowth,float simulatedGrowthFraction,string class>> PhenotypeSimulations> reconciliationSolutionSimulations;
+/*		list<string id, string solutionIndex, list<reactionSpecification> reactionList, list<string> biomassEdits,list<tuple<float simulatedGrowth,float simulatedGrowthFraction,string class>> PhenotypeSimulations> reconciliationSolutionSimulations; */
     } PhenotypeSensitivityAnalysis;
     
     /*********************************************************************************
@@ -1056,6 +1068,52 @@ module fbaModelServices {
 		string growth;
 		string organism;
     } ETCDiagramSpecs;
+
+    /*********************************************************************************
+	  AutoRecon type definitions
+   	*********************************************************************************/
+	
+	/* Reaction definition
+	
+		reaction_id id - ID of reaction
+		string name - name of reaction
+		string definition - stoichiometric equation of reaction in terms of compound names
+		
+	*/
+	typedef structure {
+		reaction_id id;
+		string name;
+		string definition;
+	} ReactionDefinition;
+	 
+    /* Reaction synonyms
+    
+    	reaction_id primary - ID of primary reaction
+    	list<ReactionDefinition> synonyms - list of synonym reactions to the primary reaction (including itself)
+    	
+    */
+    typedef structure {
+    	reaction_id primary;
+    	list<ReactionDefinition> synonyms;
+    } ReactionSynonyms;
+
+	/* Reaction synonyms object
+	
+		int version - version number of object
+		biochemistry_id biochemistry - ID of associated biochemistry database
+		workspace_id biochemistry_workspace - workspace with associated biochemistry database
+		list<ReactionSynonyms> synonym_list - list of all reaction synonyms from a biochemistry database
+		list<ReactionDefinition> excluded_list - list of reactions excluded because all compounds are cofactors
+		
+	*/
+	typedef structure {
+		int version;
+		biochemistry_id biochemistry;
+		workspace_id biochemistry_workspace;
+		list<ReactionSynonyms> synonyms_list;
+		list<ReactionDefinition> excluded_list;
+	} ReactionSynonymsObject;
+	
     /*********************************************************************************
     Function definitions relating to data retrieval for Model Objects
    	*********************************************************************************/
@@ -1359,7 +1417,7 @@ module fbaModelServices {
     */
     funcdef genome_to_fbamodel (genome_to_fbamodel_params input) returns (object_metadata modelMeta);
 	
-	/* Input parameters for the "genome_to_fbamodel" function.
+	/* Input parameters for the "import_fbamodel" function.
 	
 		genome_id genome - ID of the genome for which a model is to be built (a required argument)
 		workspace_id genome_workspace - ID of the workspace containing the target genome (an optional argument; default is the workspace argument)
@@ -1415,25 +1473,26 @@ module fbaModelServices {
     */
     funcdef import_template_fbamodel(import_template_fbamodel_params input) returns (object_metadata modelMeta);
 	
-	/* Input parameters for the "genome_to_fbamodel" function.
+	/* Input parameters for the "genome_to_probfbamodel" function.
 	
 		genome_id genome - ID of the genome for which a model is to be built (a required argument)
 		workspace_id genome_workspace - ID of the workspace containing the target genome (an optional argument; default is the workspace argument)
-		probanno_id probanno - ID of the probabilistic annotation to be used in building the model (an optional argument; default is 'undef')
-		workspace_id probanno_workspace - ID of the workspace containing the probabilistic annotation (an optional argument; default is the workspace argument)
-		fbamodel_id model - ID that should be used for the newly constructed model (an optional argument; default is 'undef')
-		workspace_id workspace - ID of the workspace where the newly developed model will be stored; also the default assumed workspace for input objects (a required argument)
+		fbamodel_id model - ID of the output model (an optional argument; default is 'undef')
+		workspace_id workspace - ID of the workspace where the output model will be stored; also the default assumed workspace for input objects (a required argument)
+		list<reactionProbability> reaction_probs - list of reactions and the reaction probability to be put in output model
+		float default_prob - default probability for reactions not associated with a complex (an optional argument, default is 0.0)
 		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 		
 	*/
     typedef structure {
 		genome_id genome;
 		workspace_id genome_workspace;
-		probanno_id probanno;
-		workspace_id probanno_workspace;
 		fbamodel_id model;
 		workspace_id workspace;
+		list<ReactionProbability> reaction_probs;
+		float default_prob;
 		string auth;
+		bool overwrite;
     } genome_to_probfbamodel_params;
     /*
         Build a probabilistic genome-scale metabolic model based on annotations in an input genome and probabilistic annotation
@@ -2055,4 +2114,78 @@ module fbaModelServices {
         Runs specified job
     */
 	funcdef run_job(run_job_params input) returns (JobObject output);
+	
+	/* Input parameters for the "set_cofactors" function.
+	
+		list<compound_id> cofactors - list of compounds that are universal cofactors (required)
+		biochemistry_id biochemistry - ID of biochemistry database (optional, default is "default") 
+		workspace_id biochemistry_workspace - ID of workspace containing biochemistry database (optional, default is current workspace)
+		bool reset - true to reset (turn off) compounds as universal cofactors (optional, default is false)
+		bool overwrite - true to overwrite existing object (optional, default is false)
+		string auth - the authentication token of the KBase account (optional, default user is "public")
+	
+	*/
+	typedef structure {
+		list<compound_id> cofactors;
+		biochemistry_id biochemistry;
+		workspace_id biochemistry_workspace;
+		bool reset;
+		bool overwrite;
+		string auth;
+	} set_cofactors_params;
+		
+	funcdef set_cofactors(set_cofactors_params input) returns (object_metadata output);
+	
+	/* Input parameters for the "find_reaction_synonyms" function.
+	
+		reaction_synonyms - ID of reaction synonyms object (required argument)
+		workspace_id workspace - ID of workspace for storing objects (optional argument, default is current workspace)
+		biochemistry_id biochemistry - ID of the biochemistry database (optional argument, default is default)
+		workspace_id biochemistry_workspace - ID of workspace containing biochemistry database (optional argument, default is kbase)
+		overwrite - True to overwrite existing object (optional argument, default is false)
+		string auth - the authentication token of the KBase account (optional argument, default user is "public")
+		
+	 */
+	typedef structure {
+		reaction_synonyms_id reaction_synonyms;
+		workspace_id workspace;
+		biochemistry_id biochemistry;
+		workspace_id biochemistry_workspace;
+		bool overwrite;
+		string auth;
+	} find_reaction_synonyms_params;
+
+	funcdef find_reaction_synonyms(find_reaction_synonyms_params input) returns (object_metadata output);	
+	
+	/* Input parameters for the "find_paths" function.
+	
+		reaction_synonyms_id reaction_synonyms - ID of the reaction synonyms object to use (required argument)
+		media_id media - ID of media to use (required argument)
+		fbamodel_id input_model - ID of input metabolic model (required argument)
+		fbamodel_id output_model - ID of output metabolic model (required argument)
+		int iterations - number of times to run FBA to find paths (optional argument, default is 1)
+		workspace_id workspace - ID of workspace containing objects (optional argument, default is current workspace)
+		workspace_id media_workspace - ID of workspace containing media object (optional argument, default is current workspace)
+		biochemistry_id biochemistry - ID of the biochemistry database (optional argument, default is default)
+		workspace_id biochemistry_workspace - ID of workspace containing biochemistry database (optional argument, default is kbase)
+		overwrite - true to overwrite existing output metabolic model (optional argument, default is false)
+		string auth - the authentication token of the KBase account (optional argument, user is "public" if auth is not provided)
+		
+	 */
+	typedef structure {
+		reaction_synonyms_id reaction_synonyms;
+		media_id media;
+		fbamodel_id input_model;
+		fbamodel_id output_model;
+		int iterations;
+		workspace_id workspace;
+		workspace_id media_workspace;
+		biochemistry_id biochemistry;
+		workspace_id biochemistry_workspace;
+		bool overwrite;
+		string auth;
+	} find_paths_params;
+
+	funcdef find_paths(find_paths_params input) returns (object_metadata output);
+	
 };
