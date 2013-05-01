@@ -5305,6 +5305,11 @@ sub genome_to_probfbamodel
 				$add = 1;
 			}
 		}
+		my $reagents = $rxn->reagents();
+		my $numReagents = @$reagents;
+		if ($numReagents == 0) { # Skip reactions that have zero reagents.
+			$add = 0;
+		}
 		if ($add) {
 			my $mdlrxn = $model->addReactionToModel({
 				reaction => $rxn
