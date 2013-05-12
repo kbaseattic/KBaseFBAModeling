@@ -100,6 +100,7 @@ sub universalFBAScriptCode {
 	#Instantiating parameters
 	my $params = {
 		auth => auth(),
+		wsurl => workspaceURL()
 	};
 	foreach my $key (keys(%{$translation})) {
 		if (defined($opt->{$key})) {

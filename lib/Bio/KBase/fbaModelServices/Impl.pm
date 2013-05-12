@@ -333,6 +333,11 @@ sub _translate_genome_to_annotation {
 				}
 			}
 		}
+		if ($genome->{size} > 0) {
+			$genome->{gc} = $genome->{gc}/$genome->{size};
+		} else {
+			$genome->{gc} = 0.5;
+		}
    	}
     #Creating the annotation from the input genome object
 	my $annotation = ModelSEED::MS::Annotation->new({
@@ -407,6 +412,9 @@ sub _idServer {
 
 sub _workspaceServices {
 	my $self = shift;
+	if (defined($self->{_workspaceServiceOveride})) {
+		return $self->{_workspaceServiceOveride};
+	}
 	if (!defined($self->{_workspaceServices}->{$self->_workspaceURL()})) {
 		$self->{_workspaceServices}->{$self->_workspaceURL()} = Bio::KBase::workspaceService::Client->new($self->_workspaceURL());
 	}
@@ -682,13 +690,13 @@ sub _get_genomeObj_from_SEED {
 sub _get_genomeObj_from_RAST {
 	my($self,$id,$username,$password) = @_;
 	my $mssvr = ModelSEED::Client::MSSeedSupport->new();
-	my $data = $mssvr->genomeData({
-		ids      => [ $id ],
+	my $data = $mssvr->getRastGenomeData({
+		genome      => $id,
 		username => $username,
 		password => $password,
-		withSequences => 1
+		getSequences => 1,
+		getDNASequence => 1
 	});
-    $data = $data->{$id};
     if (!defined($data->{features})) {
     	my $msg = "Could not load data for rast genome!";
 		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => '_buildFBAObject');
@@ -705,11 +713,11 @@ sub _get_genomeObj_from_RAST {
 		contigs => [],
 		features => []
     };
-    if (defined($data->{sequence})) {
-    	for (my $i=0; $i < @{$data->{sequence}}; $i++) {
+    if (defined($data->{DNAsequence})) {
+    	for (my $i=0; $i < @{$data->{DNAsequence}}; $i++) {
     		push(@{$genomeObj->{contigs}},{
     			id => $id.".contig.".$i,
-	    		dna => $data->{sequence}->[$i]
+	    		dna => $data->{DNAsequence}->[$i]
     		});
     	}
     	my $size = 0;
@@ -731,13 +739,13 @@ sub _get_genomeObj_from_RAST {
 	for (my $i=0; $i < @{$data->{features}}; $i++) {
 		my $ftr = $data->{features}->[$i];
 		my $feature = {
-  			id => $ftr->{ID},
-  			location => "",
+  			id => $ftr->{ID}->[0],
+  			location => [],
   			function => "",
   			aliases => [],
   			annotations => []
   		};
-  		if (defined($ftr->{LOCATION}) && $ftr->{LOCATION} =~ m/^(.+)_(\d+)([\+\-_])(\d+)$/) {
+  		if (defined($ftr->{LOCATION}->[0]) && $ftr->{LOCATION}->[0] =~ m/^(.+)_(\d+)([\+\-_])(\d+)$/) {
 			my $contigData = $1;
 			if ($3 eq "-" || $3 eq "+") {
 				$feature->{location} = [[$contigData,$2,$3,$4]];
@@ -772,6 +780,101 @@ sub _processGenomeObject {
 	return ($genome,$anno,$mapping,$contigObj);
 }
 
+#sub _buildProbModel {
+#	my($self,$probanno,$modelid,$defaultProb,$command) = @_;
+#	if (!defined($modelid)) {
+#		$modelid = $self->_get_new_id($input->{genome}.".probmdl.");
+#	}
+#	# Create a new FBA model.
+#    my $model = ModelSEED::MS::Model->new({
+#		id => $input->{model},
+#		name => $input->{model},
+#		version => 1,
+#		type => "ProbModel",
+#		growth => 0,
+#		status => "", 
+#		current => 1,
+#		#mapping_uuid => $annotation->mapping_uuid(),
+#		#mapping => $annotation->mapping(),
+#		#biochemistry_uuid => $annotation->mapping()->biochemistry_uuid(),
+#		#biochemistry => $biochem,
+#		#annotation_uuid => $annotation->uuid(),
+#		#annotation => $annotation
+#	});
+#    # Retrieve the genome object from workspace.
+#    my $genome = $self->_get_msobject("Genome",$input->{genome_workspace},$input->{genome});
+#    # Retrieve annotation specified by genome.
+#    my $annotation = $self->_get_msobject("Annotation","NO_WORKSPACE",$genome->{annotation_uuid});
+#    # Retrieve biochemistry though annotation.
+#    my $biochem = $annotation->mapping()->biochemistry();
+#	# Build a hash from the array of blacklisted reactions.  These reactions are not added to the model.
+#	my $gfform = $self->_setDefaultGapfillFormulation({});
+#	my $blhash;
+#	foreach my $rxn (@{$gfform->{blacklistedrxns}}) {
+#		$blhash->{$rxn} = 1;
+#	}
+#	# Build a hash from the array of guaranteed reactions.  These reactions are always added to the model.
+#	my $grhash;
+#	foreach my $rxn (@{$gfform->{gauranteedrxns}}) {
+#		$grhash->{$rxn} = 1;
+#	}		
+#	#######################################
+#	my $input_list = [ ];
+#	foreach my $rxnprob (@{$input->{reaction_probs}}) {
+#		push($input_list, $rxnprob->[0]);		
+#	}
+#	my $field_list = [ "source_id" ];
+#	my $idhash = $self->_cdmi()->get_entity_Reaction($input_list, $field_list);
+#		
+#	# Build a hash from the array of reaction probabilities keyed by ModelSEED id.
+#	my $rxnhash;
+#	foreach my $rxnprob (@{$input->{reaction_probs}}) {
+#		my $kbid = $rxnprob->[0];
+#		my $val = $idhash->{$kbid};
+#		$rxnhash->{$val->{"source_id"}} = { probability => $rxnprob->[1], genes => $rxnprob->[2] };
+#	}
+#	#######################################
+#	
+#	# Run the list of all reactions in the Biochemistry object.
+#	# Add the reaction to the model if it is on the guaranteed list or is mass balanced and
+#	# is not blacklisted.  Set the probability from the input reaction probabilities list or
+#	# use the default probability if the reaction is not in the input list.
+#	my $rxns = $biochem->reactions();
+#	foreach my $rxn (@{$rxns}) {
+#		my $id = $rxn->id();
+#		my $add = 0;
+#		if (defined($grhash->{$id})) {
+#			$add = 1;
+#		} elsif (!defined($blhash->{$id})) {
+#			if ($rxn->status() eq "OK") { # Reaction is mass balanced
+#				$add = 1;
+#			}
+#		}
+#		my $reagents = $rxn->reagents();
+#		my $numReagents = @$reagents;
+#		if ($numReagents == 0) { # Skip reactions that have zero reagents.
+#			$add = 0;
+#		}
+#		if ($add) {
+#			my $mdlrxn = $model->addReactionToModel({
+#				reaction => $rxn
+#			});
+#			my $rxnprob = $rxnhash->{$id};
+#			if (defined($rxnprob)) {
+#				$mdlrxn->probability($rxnprob->{probability});
+#			}
+#			else {
+#				$mdlrxn->probability($defaultProb);
+#			}
+#		}
+#	}
+#	# Model uuid and model id will be set to WS values during save
+#	$modelMeta = $self->_save_msobject($model,"Model","NO_WORKSPACE",$modelid,$command,1);
+#	$probanno->{probmodel_uuid} = $modelMeta->[8];
+#	$probannoMeta = $self->_save_msobject($probanno,"ProbAnno",$object->{_kbaseWSMeta}->{ws},$object->{_kbaseWSMeta}->{wsid},$command,1);
+#	return $model;
+#}
+
 sub _validateargs {
 	my ($self,$args,$mandatoryArguments,$optionalArguments,$substitutions) = @_;
 	if (!defined($args)) {
@@ -802,7 +905,7 @@ sub _validateargs {
 			if (!defined($args->{$argument})) {
 				$args->{$argument} = $optionalArguments->{$argument};
 			}
-		}	
+		}
 	}
 	return $args;
 }
@@ -1101,6 +1204,31 @@ sub _buildGapfillObject {
 	$gapform->{_kbaseWSMeta}->{wsid} = $gapform->uuid();
 	$gapform->{_kbaseWSMeta}->{ws} = "NO_WORKSPACE";
 	$gapform->fbaFormulation()->numberOfSolutions($formulation->{num_solutions});
+	#Handling the probabilistic annotation
+	if (defined($formulation->{probabilisticAnnotation})) {
+		my $probanno = $self->_get_msobject("ProbAnno",$formulation->{probabilisticAnnotation_workspace},$formulation->{probabilisticAnnotation});
+		if (!defined($probanno)) {
+			Bio::KBase::Exceptions::ArgumentValidationError->throw(error => "Invalid probabilistic annotation object!",
+							       method_name => '_buildGapfillObject');	
+		}
+		#Get probabilistic model
+		my $ProbModel;
+		if (!defined($probanno->{probmodel_uuid})) {
+			$ProbModel = $self->_buildProbModel($probanno);
+		} else {
+			$ProbModel = $self->_get_msobject("Model","NO_WORKSPACE",$probanno->{probmodel_uuid});
+		}
+		#Get coefficients of probmodel
+		$formulation->parameters()->{"Objective coefficient file"} = "ProbModelReactionCoefficients.txt";
+		$formulation->inputfiles()->{"ProbModelReactionCoefficients.txt"} = [];
+		my $mdlrxns = $ProbModel->modelreactions();
+		for (my $i=0; $i < @{$mdlrxns}; $i++) {
+			my $mdlrxn = $mdlrxns->[$i];
+			my $prob = (1-$mdlrxn->probability());
+			push(@{$formulation->inputfiles()->{"ProbModelReactionCoefficients.txt"}},"forward\t".$mdlrxn->reaction()->id()."\t".$prob);
+			push(@{$formulation->inputfiles()->{"ProbModelReactionCoefficients.txt"}},"reverse\t".$mdlrxn->reaction()->id()."\t".$prob);
+		}	
+	}
 	return $gapform;
 }
 
@@ -2052,21 +2180,6 @@ sub _prepPhenotypeSimultationFBA {
 	return ($fba,$existingPhenos,$phenokeys);
 }
 
-=head3 _buildCoreModel
-
-Definition:
-	 = $self->_buildCoreModel();
-Description:
-	Builds a core model
-	
-=cut
-
-sub _buildCoreModel {
-	my($self) = @_;
-	
-	return ();
-}
-
 #END_HEADER
 
 sub new
@@ -2098,17 +2211,17 @@ sub new
 		    }
 		}
     }
+    $self->{_accounttype} = "kbase";
 	if (defined $params{accounttype}) {
 		$self->{_accounttype} = $params{accounttype};
     }
     if (defined $params{"workspace-url"}) {
 		$self->{"_workspace-url"} = $params{"workspace-url"};
+    } elsif (defined($options->{workspace})) {
+    	$self->{_workspaceServiceOveride} = $options->{workspace};
     } else {
 		print STDERR "workspace-url configuration not found, using 'localhost'\n";
 		$self->{"_workspace-url"} = "http://localhost:7058";
-    }
-	if (defined($options->{workspace})) {
-    	$self->{_workspaceServices}->{$self->{"_workspace-url"}} = $options->{workspace};
     }
     if (defined($options->{verbose})) {
     	set_verbose(1);
@@ -4765,10 +4878,8 @@ $modelMeta is an object_metadata
 genome_to_fbamodel_params is a reference to a hash where the following keys are defined:
 	genome has a value which is a genome_id
 	genome_workspace has a value which is a workspace_id
-	probanno has a value which is a probanno_id
-	probanno_workspace has a value which is a workspace_id
-	probannoThreshold has a value which is a float
-	probannoOnly has a value which is a bool
+	templatemodel has a value which is a template_id
+	templatemodel_workspace has a value which is a workspace_id
 	model has a value which is a fbamodel_id
 	coremodel has a value which is a bool
 	workspace has a value which is a workspace_id
@@ -4776,9 +4887,9 @@ genome_to_fbamodel_params is a reference to a hash where the following keys are 
 	overwrite has a value which is a bool
 genome_id is a string
 workspace_id is a string
-probanno_id is a string
-bool is an int
+template_id is a string
 fbamodel_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -4808,10 +4919,8 @@ $modelMeta is an object_metadata
 genome_to_fbamodel_params is a reference to a hash where the following keys are defined:
 	genome has a value which is a genome_id
 	genome_workspace has a value which is a workspace_id
-	probanno has a value which is a probanno_id
-	probanno_workspace has a value which is a workspace_id
-	probannoThreshold has a value which is a float
-	probannoOnly has a value which is a bool
+	templatemodel has a value which is a template_id
+	templatemodel_workspace has a value which is a workspace_id
 	model has a value which is a fbamodel_id
 	coremodel has a value which is a bool
 	workspace has a value which is a workspace_id
@@ -4819,9 +4928,9 @@ genome_to_fbamodel_params is a reference to a hash where the following keys are 
 	overwrite has a value which is a bool
 genome_id is a string
 workspace_id is a string
-probanno_id is a string
-bool is an int
+template_id is a string
 fbamodel_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -4871,10 +4980,9 @@ sub genome_to_fbamodel
     #BEGIN genome_to_fbamodel
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["genome","workspace"],{
-    	probannoThreshold => 0.5,
-    	probannoOnly => 0,
-    	probanno => undef,
-    	probanno_workspace => $input->{workspace},
+    	templatemodel => undef,
+    	templatemodel_workspace => $input->{workspace},
+    	coremodel => 0,
     	genome_workspace => $input->{workspace},
     	model => undef,
     	overwrite => 0
@@ -4887,22 +4995,26 @@ sub genome_to_fbamodel
     my $genome = $self->_get_msobject("Genome",$input->{genome_workspace},$input->{genome});
     #Retrieving annotation and mapping
     my $annotation = $self->_get_msobject("Annotation","NO_WORKSPACE",$genome->{annotation_uuid});
-    #Retreiving probabilistic annotation
-    if (defined($input->{probanno})) {
-    	my $probanno = $self->_get_msobject("ProbAnno",$input->{probanno_workspace},$input->{probanno});
-    	($annotation,my $mapping) = $self->_modify_annotation_from_probanno({
-    		probanno => $probanno,
-    		annotation => $annotation,
-    		threshold => $input->{probannoThreshold},
-    		probannoonly => $input->{probannoOnly}
-    	});
-    	my $meta = $self->_save_msobject($mapping,"Mapping","NO_WORKSPACE",$input->{probanno}.".anno.map","genome_to_fbamodel",1);
-    	$annotation->mapping_uuid($meta->[8]);
-    	#TODO: annotation should probably link to the probanno
-    	$meta = $self->_save_msobject($annotation,"Annotation","NO_WORKSPACE",$input->{probanno}.".anno","genome_to_fbamodel",1);
+    #Retrieving template model
+    my $template;
+    if (defined($input->{templatemodel})) {
+    	$template = $self->_get_msobject("TemplateModel",$input->{templatemodel_workspace},$input->{templatemodel});
+    } elsif ($input->{coremodel} == 1) {
+    	$template = $self->_get_msobject("TemplateModel","KBaseTemplateModels","CoreModelTemplate");
+    } else {
+    	my $class = $annotation->classifyGenomeFromAnnotation();
+    	if ($class eq "GramPositive") {
+    		$template = $self->_get_msobject("TemplateModel","KBaseTemplateModels","GramPosModelTemplate");
+    	} elsif ($class eq "GramNegative") {
+    		$template = $self->_get_msobject("TemplateModel","KBaseTemplateModels","GramNegModelTemplate");
+    	} elsif ($class eq "Plant") {
+    		$template = $self->_get_msobject("TemplateModel","KBaseTemplateModels","PlantModelTemplate");
+    	}
     }
-    #Building the FBA model
-    my $mdl = $annotation->createStandardFBAModel( { prefix => "Kbase", } );
+    #Building the model
+    my $mdl = $template->template->buildModel({
+	    annotation => $annotation
+	});
 	$mdl->defaultNameSpace("KBase");
 	#Model uuid and model id will be set to WS values during save
 	$modelMeta = $self->_save_msobject($mdl,"Model",$input->{workspace},$input->{model},"genome_to_fbamodel",$input->{overwrite});
@@ -5168,9 +5280,9 @@ sub import_fbamodel
 
 
 
-=head2 genome_to_probfbamodel
+=head2 import_template_fbamodel
 
-  $modelMeta = $obj->genome_to_probfbamodel($input)
+  $modelMeta = $obj->import_template_fbamodel($input)
 
 =over 4
 
@@ -5179,25 +5291,48 @@ sub import_fbamodel
 =begin html
 
 <pre>
-$input is a genome_to_probfbamodel_params
+$input is an import_template_fbamodel_params
 $modelMeta is an object_metadata
-genome_to_probfbamodel_params is a reference to a hash where the following keys are defined:
-	genome has a value which is a genome_id
-	genome_workspace has a value which is a workspace_id
-	model has a value which is a fbamodel_id
+import_template_fbamodel_params is a reference to a hash where the following keys are defined:
+	map has a value which is a mapping_id
+	mapping_workspace has a value which is a workspace_id
+	templateReactions has a value which is a reference to a list where each element is a reference to a list containing 5 items:
+	0: (id) a string
+	1: (compartment) a string
+	2: (direction) a string
+	3: (type) a string
+	4: (complexes) a reference to a list where each element is a string
+
+	templateBiomass has a value which is a reference to a list where each element is a reference to a list containing 11 items:
+	0: (name) a string
+	1: (type) a string
+	2: (dna) a float
+	3: (rna) a float
+	4: (protein) a float
+	5: (lipid) a float
+	6: (cellwall) a float
+	7: (cofactor) a float
+	8: (energy) a float
+	9: (other) a float
+	10: (compounds) a reference to a list where each element is a reference to a list containing 6 items:
+		0: (id) a string
+		1: (compartment) a string
+		2: (class) a string
+		3: (coefficientType) a string
+		4: (coefficient) a float
+		5: (conditions) a string
+
+
+	name has a value which is a string
+	modelType has a value which is a string
+	domain has a value which is a string
+	id has a value which is a template_id
 	workspace has a value which is a workspace_id
-	reaction_probs has a value which is a reference to a list where each element is a ReactionProbability
-	default_prob has a value which is a float
+	ignore_errors has a value which is a bool
 	auth has a value which is a string
-	overwrite has a value which is a bool
-genome_id is a string
+mapping_id is a string
 workspace_id is a string
-fbamodel_id is a string
-ReactionProbability is a reference to a list containing 3 items:
-	0: (reaction) a reaction_id
-	1: (probability) a float
-	2: (gene_list) a string
-reaction_id is a string
+template_id is a string
 bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
@@ -5223,25 +5358,48 @@ workspace_ref is a string
 
 =begin text
 
-$input is a genome_to_probfbamodel_params
+$input is an import_template_fbamodel_params
 $modelMeta is an object_metadata
-genome_to_probfbamodel_params is a reference to a hash where the following keys are defined:
-	genome has a value which is a genome_id
-	genome_workspace has a value which is a workspace_id
-	model has a value which is a fbamodel_id
+import_template_fbamodel_params is a reference to a hash where the following keys are defined:
+	map has a value which is a mapping_id
+	mapping_workspace has a value which is a workspace_id
+	templateReactions has a value which is a reference to a list where each element is a reference to a list containing 5 items:
+	0: (id) a string
+	1: (compartment) a string
+	2: (direction) a string
+	3: (type) a string
+	4: (complexes) a reference to a list where each element is a string
+
+	templateBiomass has a value which is a reference to a list where each element is a reference to a list containing 11 items:
+	0: (name) a string
+	1: (type) a string
+	2: (dna) a float
+	3: (rna) a float
+	4: (protein) a float
+	5: (lipid) a float
+	6: (cellwall) a float
+	7: (cofactor) a float
+	8: (energy) a float
+	9: (other) a float
+	10: (compounds) a reference to a list where each element is a reference to a list containing 6 items:
+		0: (id) a string
+		1: (compartment) a string
+		2: (class) a string
+		3: (coefficientType) a string
+		4: (coefficient) a float
+		5: (conditions) a string
+
+
+	name has a value which is a string
+	modelType has a value which is a string
+	domain has a value which is a string
+	id has a value which is a template_id
 	workspace has a value which is a workspace_id
-	reaction_probs has a value which is a reference to a list where each element is a ReactionProbability
-	default_prob has a value which is a float
+	ignore_errors has a value which is a bool
 	auth has a value which is a string
-	overwrite has a value which is a bool
-genome_id is a string
+mapping_id is a string
 workspace_id is a string
-fbamodel_id is a string
-ReactionProbability is a reference to a list containing 3 items:
-	0: (reaction) a reaction_id
-	1: (probability) a float
-	2: (gene_list) a string
-reaction_id is a string
+template_id is a string
 bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
@@ -5268,13 +5426,13 @@ workspace_ref is a string
 
 =item Description
 
-Build a probabilistic genome-scale metabolic model based on annotations in an input genome and probabilistic annotation
+Import a template model from an input table of template reactions and biomass components
 
 =back
 
 =cut
 
-sub genome_to_probfbamodel
+sub import_template_fbamodel
 {
     my $self = shift;
     my($input) = @_;
@@ -5282,130 +5440,49 @@ sub genome_to_probfbamodel
     my @_bad_arguments;
     (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
     if (@_bad_arguments) {
-	my $msg = "Invalid arguments passed to genome_to_probfbamodel:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	my $msg = "Invalid arguments passed to import_template_fbamodel:\n" . join("", map { "\t$_\n" } @_bad_arguments);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'genome_to_probfbamodel');
+							       method_name => 'import_template_fbamodel');
     }
 
     my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
     my($modelMeta);
-    #BEGIN genome_to_probfbamodel
+    #BEGIN import_template_fbamodel
     $self->_setContext($ctx,$input);
-    $input = $self->_validateargs($input,["genome","workspace"],{
-    	genome_workspace => $input->{workspace},
-    	model => undef,
-    	default_prob => 0.0,
-    	overwrite => 0
+    $input = $self->_validateargs($input,["workspace"],{
+    	"map" => "default",
+    	mapping_workspace => "kbase",
+    	templateReactions => [],
+    	templateBiomass => [],
+    	name => undef,
+    	modelType => "GenomeScale",
+    	domain => "Bacteria",
+    	id => undef,
+    	ignore_errors => 0
     });
-    # Generate a new model ID if needed.
-    if (!defined($input->{model})) {
-    	$input->{model} = $self->_get_new_id($input->{genome}.".fbamdl.");
+    if (!defined($input->{id})) {
+    	$input->{id} = $self->_get_new_id("kbtm.");
     }
-    # Retrieve the genome object from workspace.
-    my $genome = $self->_get_msobject("Genome",$input->{genome_workspace},$input->{genome});
-    # Retrieve annotation specified by genome.
-    my $annotation = $self->_get_msobject("Annotation","NO_WORKSPACE",$genome->{annotation_uuid});
-    # Retrieve biochemistry though annotation.
-    my $biochem = $annotation->mapping()->biochemistry();
-    # Create a new FBA model.
-    my $model = ModelSEED::MS::Model->new({
-		id => $input->{model},
-		name => $input->{model},
-		version => 1,
-		type => "ProbModel",
-		growth => 0,
-		status => "Reconstruction complete", 
-		current => 1,
-		mapping_uuid => $annotation->mapping_uuid(),
-		mapping => $annotation->mapping(),
-		biochemistry_uuid => $annotation->mapping()->biochemistry_uuid(),
-		biochemistry => $biochem,
-		annotation_uuid => $annotation->uuid(),
-		annotation => $annotation
+	my $factory = ModelSEED::MS::Factories::ExchangeFormatFactory->new(
+		store => $self->_KBaseStore()
+	);
+	my $templateModel = $factory->buildTemplateModel({
+		templateReactions => $input->{templateReactions},
+		templateBiomass => $input->{templateBiomass},
+		name => $input->{name},
+		modelType => $input->{modelType},
+		mapping => $input->{"map"},
+		domain => $input->{domain}
 	});
-	
-	# Build a hash from the array of blacklisted reactions.  These reactions are not added to the model.
-	my $gfform = $self->_setDefaultGapfillFormulation({});
-	my $blhash;
-	foreach my $rxn (@{$gfform->{blacklistedrxns}}) {
-		$blhash->{$rxn} = 1;
-	}
-	
-	# Build a hash from the array of guaranteed reactions.  These reactions are always added to the model.
-	my $grhash;
-	foreach my $rxn (@{$gfform->{gauranteedrxns}}) {
-		$grhash->{$rxn} = 1;
-	}
-	
-	# Get the mapping from KBase ids to ModelSEED ids.
-	my $input_list = [ ];
-	foreach my $rxnprob (@{$input->{reaction_probs}}) {
-		push($input_list, $rxnprob->[0]);		
-	}
-	my $field_list = [ "source_id" ];
-	my $idhash = $self->_cdmi()->get_entity_Reaction($input_list, $field_list);
-		
-	# Build a hash from the array of reaction probabilities keyed by ModelSEED id.
-	my $rxnhash;
-	foreach my $rxnprob (@{$input->{reaction_probs}}) {
-		my $kbid = $rxnprob->[0];
-		my $val = $idhash->{$kbid};
-		$rxnhash->{$val->{"source_id"}} = { probability => $rxnprob->[1], genes => $rxnprob->[2] };
-	}
-	
-	# Run the list of all reactions in the Biochemistry object.
-	# Add the reaction to the model if it is on the guaranteed list or is mass balanced and
-	# is not blacklisted.  Set the probability from the input reaction probabilities list or
-	# use the default probability if the reaction is not in the input list.
-	my $rxns = $biochem->reactions();
-	foreach my $rxn (@{$rxns}) {
-		my $id = $rxn->id();
-		my $add = 0;
-		if (defined($grhash->{$id})) {
-			$add = 1;
-		} elsif (!defined($blhash->{$id})) {
-			if ($rxn->status() eq "OK") { # Reaction is mass balanced
-				$add = 1;
-			}
-		}
-		my $reagents = $rxn->reagents();
-		my $numReagents = @$reagents;
-		if ($numReagents == 0) { # Skip reactions that have zero reagents.
-			$add = 0;
-		}
-		if ($add) {
-			my $mdlrxn = $model->addReactionToModel({
-				reaction => $rxn
-			});
-			my $rxnprob = $rxnhash->{$id};
-			if (defined($rxnprob)) {
-				$mdlrxn->probability($rxnprob->{probability});
-				$mdlrxn->isComplexAssociated(1);
-			}
-			else {
-				$mdlrxn->probability($input->{default_prob});
-				$mdlrxn->isComplexAssociated(0);
-			}
-		}
-	}
-	
-	# Add biomass reaction to model.
-	my $bio = $model->createStandardFBABiomass({
-		annotation => $annotation,
-		mapping => $annotation->mapping(),
-	});
-	$model->defaultNameSpace("KBase");
-	
-	# Model uuid and model id will be set to WS values during save
-	$modelMeta = $self->_save_msobject($model,"Model",$input->{workspace},$input->{model},"genome_to_probfbamodel",$input->{overwrite});
+    $modelMeta = $self->_save_msobject($templateModel,"ModelTemplate",$input->{workspace},$input->{id},"import_template_fbamodel",1);
     $self->_clearContext();
-    #END genome_to_probfbamodel
+    #END import_template_fbamodel
     my @_bad_returns;
     (ref($modelMeta) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"modelMeta\" (value was \"$modelMeta\")");
     if (@_bad_returns) {
-	my $msg = "Invalid returns passed to genome_to_probfbamodel:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	my $msg = "Invalid returns passed to import_template_fbamodel:\n" . join("", map { "\t$_\n" } @_bad_returns);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'genome_to_probfbamodel');
+							       method_name => 'import_template_fbamodel');
     }
     return($modelMeta);
 }
@@ -10591,9 +10668,9 @@ sub find_reaction_synonyms
 
 
 
-=head2 find_paths
+=head2 role_to_reactions
 
-  $output = $obj->find_paths($input)
+  $output = $obj->role_to_reactions($params)
 
 =over 4
 
@@ -10602,43 +10679,26 @@ sub find_reaction_synonyms
 =begin html
 
 <pre>
-$input is a find_paths_params
-$output is an object_metadata
-find_paths_params is a reference to a hash where the following keys are defined:
-	reaction_synonyms has a value which is a reaction_synonyms_id
-	media has a value which is a media_id
-	input_model has a value which is a fbamodel_id
-	output_model has a value which is a fbamodel_id
-	iterations has a value which is an int
-	workspace has a value which is a workspace_id
-	media_workspace has a value which is a workspace_id
-	biochemistry has a value which is a biochemistry_id
-	biochemistry_workspace has a value which is a workspace_id
-	overwrite has a value which is a bool
+$params is a role_to_reactions_params
+$output is a reference to a list where each element is a RoleComplexReactions
+role_to_reactions_params is a reference to a hash where the following keys are defined:
+	templateModel has a value which is a template_id
 	auth has a value which is a string
-reaction_synonyms_id is a string
-media_id is a string
-fbamodel_id is a string
-workspace_id is a string
-biochemistry_id is a string
-bool is an int
-object_metadata is a reference to a list containing 11 items:
-	0: (id) an object_id
-	1: (type) an object_type
-	2: (moddate) a timestamp
-	3: (instance) an int
-	4: (command) a string
-	5: (lastmodifier) a username
-	6: (owner) a username
-	7: (workspace) a workspace_id
-	8: (ref) a workspace_ref
-	9: (chsum) a string
-	10: (metadata) a reference to a hash where the key is a string and the value is a string
-object_id is a string
-object_type is a string
-timestamp is a string
-username is a string
-workspace_ref is a string
+template_id is a string
+RoleComplexReactions is a reference to a hash where the following keys are defined:
+	role has a value which is a role_id
+	reactions has a value which is a reference to a list where each element is a ComplexReactions
+role_id is a string
+ComplexReactions is a reference to a hash where the following keys are defined:
+	complex has a value which is a complex_id
+	reactions has a value which is a reference to a list where each element is a TemplateReactions
+complex_id is a string
+TemplateReactions is a reference to a hash where the following keys are defined:
+	reaction has a value which is a reaction_id
+	direction has a value which is a string
+	compartment has a value which is a compartment_id
+reaction_id is a string
+compartment_id is a string
 
 </pre>
 
@@ -10646,43 +10706,26 @@ workspace_ref is a string
 
 =begin text
 
-$input is a find_paths_params
-$output is an object_metadata
-find_paths_params is a reference to a hash where the following keys are defined:
-	reaction_synonyms has a value which is a reaction_synonyms_id
-	media has a value which is a media_id
-	input_model has a value which is a fbamodel_id
-	output_model has a value which is a fbamodel_id
-	iterations has a value which is an int
-	workspace has a value which is a workspace_id
-	media_workspace has a value which is a workspace_id
-	biochemistry has a value which is a biochemistry_id
-	biochemistry_workspace has a value which is a workspace_id
-	overwrite has a value which is a bool
+$params is a role_to_reactions_params
+$output is a reference to a list where each element is a RoleComplexReactions
+role_to_reactions_params is a reference to a hash where the following keys are defined:
+	templateModel has a value which is a template_id
 	auth has a value which is a string
-reaction_synonyms_id is a string
-media_id is a string
-fbamodel_id is a string
-workspace_id is a string
-biochemistry_id is a string
-bool is an int
-object_metadata is a reference to a list containing 11 items:
-	0: (id) an object_id
-	1: (type) an object_type
-	2: (moddate) a timestamp
-	3: (instance) an int
-	4: (command) a string
-	5: (lastmodifier) a username
-	6: (owner) a username
-	7: (workspace) a workspace_id
-	8: (ref) a workspace_ref
-	9: (chsum) a string
-	10: (metadata) a reference to a hash where the key is a string and the value is a string
-object_id is a string
-object_type is a string
-timestamp is a string
-username is a string
-workspace_ref is a string
+template_id is a string
+RoleComplexReactions is a reference to a hash where the following keys are defined:
+	role has a value which is a role_id
+	reactions has a value which is a reference to a list where each element is a ComplexReactions
+role_id is a string
+ComplexReactions is a reference to a hash where the following keys are defined:
+	complex has a value which is a complex_id
+	reactions has a value which is a reference to a list where each element is a TemplateReactions
+complex_id is a string
+TemplateReactions is a reference to a hash where the following keys are defined:
+	reaction has a value which is a reaction_id
+	direction has a value which is a string
+	compartment has a value which is a compartment_id
+reaction_id is a string
+compartment_id is a string
 
 
 =end text
@@ -10691,117 +10734,35 @@ workspace_ref is a string
 
 =item Description
 
-
+Retrieves a list of roles mapped to reactions based on input template model
 
 =back
 
 =cut
 
-sub find_paths
+sub role_to_reactions
 {
     my $self = shift;
-    my($input) = @_;
+    my($params) = @_;
 
     my @_bad_arguments;
-    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
+    (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"params\" (value was \"$params\")");
     if (@_bad_arguments) {
-	my $msg = "Invalid arguments passed to find_paths:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	my $msg = "Invalid arguments passed to role_to_reactions:\n" . join("", map { "\t$_\n" } @_bad_arguments);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'find_paths');
+							       method_name => 'role_to_reactions');
     }
 
     my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
     my($output);
-    #BEGIN find_paths
-    $self->_setContext($ctx,$input);
-
-	# Get the biochemistry from the workspace.
-	my $biochem = $self->_get_msobject("Biochemistry", $input->{biochemistry_workspace}, $input->{biochemistry});
-	
-	# Get the media from the workspace.
-	my $media = $self->_get_msobject("Media", $input->{media_workspace}, $input->{media});
-	
-	# Get the reaction synonyms from the specified workspace.
-	my $rxnsynsObjectInfo = $self->_workspaceServices()->get_object({
-		id => $input->{reaction_synonyms},
-		type => "ReactionSynonyms",
-		workspace => $input->{workspace},
-		auth => $input->{auth}
-	});
-	
-	# Get the input model object from the workspace.
-	my $inputModel = $self->_get_msobject("Model", $input->{workspace}, $input->{input_model});
-	
-	# MBM Why do we need to do Step 1?
-	# Step 1 - Compute a list of target metabolite/compartment pairs from the biomass equations.
-	my $targetList = [ ];
-	
-	# There can be multiple biomass equations ...
-	my $biomassList = $inputModel->biomasses();
-	foreach my $biomass (@{$biomassList}) {
-		print "got a biomass - ".$biomass->name()."\n";
-	
-		# ... each of which has a list of compounds in it.
-		my $biomassCompoundList = $biomass->biomasscompounds();
-		foreach my $bcpd (@{$biomassCompoundList}) {
-			# Here is the compound (translating from model compound to biochemistry compound).
-			my $compound = $bcpd->modelcompound()->compound();
-			
-			# Here is the compartment (translating from model compartment to biochemistry compartment).
-			my $compartment = $bcpd->modelcompound()->modelcompartment()->compartment();
-			
-			# And add the target to the target list.
-			my $target = { compound => $compound->id(), compartment => $compartment->id() };
-			push(@$targetList, $target);
-		}
-	}
-
-	# Step 2 - Convert probabilities into costs
-	# Lets talk about this next week.
-	my $reactionList = $inputModel->modelreactions();
-	foreach my $rxn (@{$reactionList}) {
-		my $cost = 1.0 - $rxn->probability();
-	}
-
-	# Generate a name for the fba formulation
-#	if (!defined($input->{fba})) {
-#		$input->{fba} = $self->_get_new_id($input->{model}.".fba.");
-#	}
-	my $fbaname = $input->{input_model}.".fba";
-	
-	my $formulation = $self->_setDefaultFBAFormulation({});
-	#Creating FBAFormulation Object
-	my $fba = $self->_buildFBAObject($formulation,$inputModel,$input->{workspace},$fbaname);
-	# print arrays of FBAObjectiveTerm, FBAConstraint, FBAReactionBound, FBACompoundBound
-	my $objectiveTerms = $fba->fbaObjectiveTerms();
-	foreach my $objterm (@{$objectiveTerms}) {
-		print STDERR $objterm->toReadableString()."\n";
-	}
-	
-#	$fba->fva($input->{fva});
-#	$fba->comboDeletions($input->{simulateko});
-#	$fba->fluxMinimization($input->{minimizeflux});
-#	$fba->findMinimalMedia($input->{findminmedia});
-    #Running FBA
-#    my $fbaResult = $fba->runFBA();
-#    if (!defined($fbaResult)) {
-#    	my $msg = "FBA failed with no solution returned!";
-#    	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'runfba');
-#    }
-#    if ($input->{add_to_model} == 1) {
-#    	$model->addLinkArrayItem("fbaFormulations",$fba);
-#    	$self->_save_msobject($model,"Model",$input->{model_workspace},$input->{model},"runfba");
-#    }
-    $fba->model_uuid($inputModel->uuid());
-	$output = $self->_save_msobject($fba,"FBA",$input->{workspace},$fbaname,"findpaths",$input->{overwrite});
-    $self->_clearContext();
-    #END find_paths
+    #BEGIN role_to_reactions
+    #END role_to_reactions
     my @_bad_returns;
     (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
     if (@_bad_returns) {
-	my $msg = "Invalid returns passed to find_paths:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	my $msg = "Invalid returns passed to role_to_reactions:\n" . join("", map { "\t$_\n" } @_bad_returns);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'find_paths');
+							       method_name => 'role_to_reactions');
     }
     return($output);
 }
@@ -10889,6 +10850,99 @@ an int
 =item Description
 
 A string used as an ID for a workspace. Any string consisting of alphanumeric characters and "-" is acceptable
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 complex_id
+
+=over 4
+
+
+
+=item Description
+
+A string used as an ID for a complex.
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 template_id
+
+=over 4
+
+
+
+=item Description
+
+A string used as an ID for a complex.
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 role_id
+
+=over 4
+
+
+
+=item Description
+
+A string used as an ID for a complex.
 
 
 =item Definition
@@ -14973,7 +15027,7 @@ organism has a value which is a string
 
 
 
-=head2 ReactionDefinition
+=head2 TemplateReactions
 
 =over 4
 
@@ -14984,6 +15038,129 @@ organism has a value which is a string
 ********************************************************************************
 	  AutoRecon type definitions
    	********************************************************************************
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+reaction has a value which is a reaction_id
+direction has a value which is a string
+compartment has a value which is a compartment_id
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+reaction has a value which is a reaction_id
+direction has a value which is a string
+compartment has a value which is a compartment_id
+
+
+=end text
+
+=back
+
+
+
+=head2 ComplexReactions
+
+=over 4
+
+
+
+=item Description
+
+Information on complexes in a template model
+
+        complex_id complex - ID of the associated complex
+        list<TemplateReactions> reactions - List of template models associated with complex
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+complex has a value which is a complex_id
+reactions has a value which is a reference to a list where each element is a TemplateReactions
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+complex has a value which is a complex_id
+reactions has a value which is a reference to a list where each element is a TemplateReactions
+
+
+=end text
+
+=back
+
+
+
+=head2 RoleComplexReactions
+
+=over 4
+
+
+
+=item Description
+
+Information on complexes in a template model
+
+        complex_id complex - ID of the associated complex
+        list<TemplateReactions> reactions - List of template models associated with complex
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+role has a value which is a role_id
+reactions has a value which is a reference to a list where each element is a ComplexReactions
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+role has a value which is a role_id
+reactions has a value which is a reference to a list where each element is a ComplexReactions
+
+
+=end text
+
+=back
+
+
+
+=head2 ReactionDefinition
+
+=over 4
+
+
+
+=item Description
+
+Reaction definition
+
+        reaction_id id - ID of reaction
+        string name - name of reaction
+        string definition - stoichiometric equation of reaction in terms of compound names
 
 
 =item Definition
@@ -15779,10 +15956,8 @@ Input parameters for the "genome_to_fbamodel" function.
 a reference to a hash where the following keys are defined:
 genome has a value which is a genome_id
 genome_workspace has a value which is a workspace_id
-probanno has a value which is a probanno_id
-probanno_workspace has a value which is a workspace_id
-probannoThreshold has a value which is a float
-probannoOnly has a value which is a bool
+templatemodel has a value which is a template_id
+templatemodel_workspace has a value which is a workspace_id
 model has a value which is a fbamodel_id
 coremodel has a value which is a bool
 workspace has a value which is a workspace_id
@@ -15798,10 +15973,8 @@ overwrite has a value which is a bool
 a reference to a hash where the following keys are defined:
 genome has a value which is a genome_id
 genome_workspace has a value which is a workspace_id
-probanno has a value which is a probanno_id
-probanno_workspace has a value which is a workspace_id
-probannoThreshold has a value which is a float
-probannoOnly has a value which is a bool
+templatemodel has a value which is a template_id
+templatemodel_workspace has a value which is a workspace_id
 model has a value which is a fbamodel_id
 coremodel has a value which is a bool
 workspace has a value which is a workspace_id
@@ -15885,7 +16058,7 @@ overwrite has a value which is a bool
 
 
 
-=head2 genome_to_probfbamodel_params
+=head2 import_template_fbamodel_params
 
 =over 4
 
@@ -15893,14 +16066,18 @@ overwrite has a value which is a bool
 
 =item Description
 
-Input parameters for the "genome_to_probfbamodel" function.
+Input parameters for the "import_template_fbamodel" function.
 
-        genome_id genome - ID of the genome for which a model is to be built (a required argument)
-        workspace_id genome_workspace - ID of the workspace containing the target genome (an optional argument; default is the workspace argument)
-        fbamodel_id model - ID of the output model (an optional argument; default is 'undef')
-        workspace_id workspace - ID of the workspace where the output model will be stored; also the default assumed workspace for input objects (a required argument)
-        list<reactionProbability> reaction_probs - list of reactions and the reaction probability to be put in output model
-        float default_prob - default probability for reactions not associated with a complex (an optional argument, default is 0.0)
+        mapping_id map - ID of the mapping to associate the template model with (an optional argument; default is 'default')
+        workspace_id mapping_workspace - ID of the workspace where the associated mapping is found (an optional argument; default is 'kbase')
+        list<tuple<string id,string compartment,string direction,string type,list<string complex> complexes>> templateReactions - list of reactions to include in template model
+        list<tuple<string name,string type,float dna,float rna,float protein,float lipid,float cellwall,float cofactor,float energy,float other,list<tuple<string id,string compartment,string class,string coefficientType,float coefficient,string conditions>> compounds>> templateBiomass - list of template biomass reactions for template model
+        string name - name for template model
+        string modelType - type of model constructed by template
+        string domain - domain of template model
+        template_id id - ID that should be used for the newly imported template model (an optional argument; default is 'undef')
+        workspace_id workspace - ID of the workspace where the newly developed template model will be stored; also the default assumed workspace for input objects (a required argument)
+        bool ignore_errors - ignores missing roles or reactions and imports template model anyway
         string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
 
@@ -15910,14 +16087,42 @@ Input parameters for the "genome_to_probfbamodel" function.
 
 <pre>
 a reference to a hash where the following keys are defined:
-genome has a value which is a genome_id
-genome_workspace has a value which is a workspace_id
-model has a value which is a fbamodel_id
+map has a value which is a mapping_id
+mapping_workspace has a value which is a workspace_id
+templateReactions has a value which is a reference to a list where each element is a reference to a list containing 5 items:
+0: (id) a string
+1: (compartment) a string
+2: (direction) a string
+3: (type) a string
+4: (complexes) a reference to a list where each element is a string
+
+templateBiomass has a value which is a reference to a list where each element is a reference to a list containing 11 items:
+0: (name) a string
+1: (type) a string
+2: (dna) a float
+3: (rna) a float
+4: (protein) a float
+5: (lipid) a float
+6: (cellwall) a float
+7: (cofactor) a float
+8: (energy) a float
+9: (other) a float
+10: (compounds) a reference to a list where each element is a reference to a list containing 6 items:
+	0: (id) a string
+	1: (compartment) a string
+	2: (class) a string
+	3: (coefficientType) a string
+	4: (coefficient) a float
+	5: (conditions) a string
+
+
+name has a value which is a string
+modelType has a value which is a string
+domain has a value which is a string
+id has a value which is a template_id
 workspace has a value which is a workspace_id
-reaction_probs has a value which is a reference to a list where each element is a ReactionProbability
-default_prob has a value which is a float
+ignore_errors has a value which is a bool
 auth has a value which is a string
-overwrite has a value which is a bool
 
 </pre>
 
@@ -15926,14 +16131,42 @@ overwrite has a value which is a bool
 =begin text
 
 a reference to a hash where the following keys are defined:
-genome has a value which is a genome_id
-genome_workspace has a value which is a workspace_id
-model has a value which is a fbamodel_id
+map has a value which is a mapping_id
+mapping_workspace has a value which is a workspace_id
+templateReactions has a value which is a reference to a list where each element is a reference to a list containing 5 items:
+0: (id) a string
+1: (compartment) a string
+2: (direction) a string
+3: (type) a string
+4: (complexes) a reference to a list where each element is a string
+
+templateBiomass has a value which is a reference to a list where each element is a reference to a list containing 11 items:
+0: (name) a string
+1: (type) a string
+2: (dna) a float
+3: (rna) a float
+4: (protein) a float
+5: (lipid) a float
+6: (cellwall) a float
+7: (cofactor) a float
+8: (energy) a float
+9: (other) a float
+10: (compounds) a reference to a list where each element is a reference to a list containing 6 items:
+	0: (id) a string
+	1: (compartment) a string
+	2: (class) a string
+	3: (coefficientType) a string
+	4: (coefficient) a float
+	5: (conditions) a string
+
+
+name has a value which is a string
+modelType has a value which is a string
+domain has a value which is a string
+id has a value which is a template_id
 workspace has a value which is a workspace_id
-reaction_probs has a value which is a reference to a list where each element is a ReactionProbability
-default_prob has a value which is a float
+ignore_errors has a value which is a bool
 auth has a value which is a string
-overwrite has a value which is a bool
 
 
 =end text
@@ -16790,7 +17023,7 @@ donot_submit_job has a value which is a bool
 
 =item Description
 
-Input parameters for the "queue_gapfill_model" function.
+Input parameters for the "queue_gapgen_model" function.
 
         fbamodel_id model - ID of the model that gapgen should be run on (a required argument)
         workspace_id model_workspace - workspace where model for gapgen should be run (an optional argument; default is the value of the workspace argument)
@@ -17314,7 +17547,7 @@ auth has a value which is a string
 
 
 
-=head2 find_paths_params
+=head2 role_to_reactions_params
 
 =over 4
 
@@ -17322,19 +17555,10 @@ auth has a value which is a string
 
 =item Description
 
-Input parameters for the "find_paths" function.
+Input parameters for the "role_to_reactions" function.
 
-        reaction_synonyms_id reaction_synonyms - ID of the reaction synonyms object to use (required argument)
-        media_id media - ID of media to use (required argument)
-        fbamodel_id input_model - ID of input metabolic model (required argument)
-        fbamodel_id output_model - ID of output metabolic model (required argument)
-        int iterations - number of times to run FBA to find paths (optional argument, default is 1)
-        workspace_id workspace - ID of workspace containing objects (optional argument, default is current workspace)
-        workspace_id media_workspace - ID of workspace containing media object (optional argument, default is current workspace)
-        biochemistry_id biochemistry - ID of the biochemistry database (optional argument, default is default)
-        workspace_id biochemistry_workspace - ID of workspace containing biochemistry database (optional argument, default is kbase)
-        overwrite - true to overwrite existing output metabolic model (optional argument, default is false)
-        string auth - the authentication token of the KBase account (optional argument, user is "public" if auth is not provided)
+        template_id templateModel - ID of the template model to be used to determine mapping (default is '')
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
 
 =item Definition
@@ -17343,16 +17567,7 @@ Input parameters for the "find_paths" function.
 
 <pre>
 a reference to a hash where the following keys are defined:
-reaction_synonyms has a value which is a reaction_synonyms_id
-media has a value which is a media_id
-input_model has a value which is a fbamodel_id
-output_model has a value which is a fbamodel_id
-iterations has a value which is an int
-workspace has a value which is a workspace_id
-media_workspace has a value which is a workspace_id
-biochemistry has a value which is a biochemistry_id
-biochemistry_workspace has a value which is a workspace_id
-overwrite has a value which is a bool
+templateModel has a value which is a template_id
 auth has a value which is a string
 
 </pre>
@@ -17362,16 +17577,7 @@ auth has a value which is a string
 =begin text
 
 a reference to a hash where the following keys are defined:
-reaction_synonyms has a value which is a reaction_synonyms_id
-media has a value which is a media_id
-input_model has a value which is a fbamodel_id
-output_model has a value which is a fbamodel_id
-iterations has a value which is an int
-workspace has a value which is a workspace_id
-media_workspace has a value which is a workspace_id
-biochemistry has a value which is a biochemistry_id
-biochemistry_workspace has a value which is a workspace_id
-overwrite has a value which is a bool
+templateModel has a value which is a template_id
 auth has a value which is a string
 
 

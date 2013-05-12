@@ -56,6 +56,15 @@ module fbaModelServices {
     /* A string used as an ID for a workspace. Any string consisting of alphanumeric characters and "-" is acceptable  */
     typedef string workspace_id;
 	
+	/* A string used as an ID for a complex.  */
+    typedef string complex_id;
+    
+    /* A string used as an ID for a complex.  */
+    typedef string template_id;
+    
+    /* A string used as an ID for a complex.  */
+    typedef string role_id;
+	
 	/* A string indicating the "type" of an object stored in a workspace. Acceptable types are returned by the "get_types()" command in the workspace_service  */
 	typedef string object_type;
 	
@@ -970,8 +979,6 @@ module fbaModelServices {
 		list<PhenotypeSimulation> phenotypeSimulations;
     } PhenotypeSimulationSet;
     
-    
-    
     /* Data structure for holding gapfill or gapgen solution reaction information
 		
 		string direction - direction of gapfilled or gapgen reaction
@@ -1072,6 +1079,41 @@ module fbaModelServices {
     /*********************************************************************************
 	  AutoRecon type definitions
    	*********************************************************************************/
+	
+	/* Information on a reaction in a template model
+	
+		reaction_id reaction - ID of the associated reaction
+		string direction - directionality of the associated reaction
+		compartment_id compartment - ID of the associated compartment
+				
+	*/
+	typedef structure {
+		reaction_id reaction;
+		string direction;
+		compartment_id compartment;
+    } TemplateReactions;
+	
+	/* Information on complexes in a template model
+	
+		complex_id complex - ID of the associated complex
+		list<TemplateReactions> reactions - List of template models associated with complex
+				
+	*/
+	typedef structure {
+		complex_id complex;
+		list<TemplateReactions> reactions; 
+    } ComplexReactions;
+    
+    /* Information on complexes in a template model
+	
+		complex_id complex - ID of the associated complex
+		list<TemplateReactions> reactions - List of template models associated with complex
+				
+	*/
+	typedef structure {
+		role_id role;
+		list<ComplexReactions> reactions; 
+   } RoleComplexReactions;
 	
 	/* Reaction definition
 	
@@ -1402,10 +1444,8 @@ module fbaModelServices {
     typedef structure {
 		genome_id genome;
 		workspace_id genome_workspace;
-		probanno_id probanno;
-		workspace_id probanno_workspace;
-		float probannoThreshold;
-		bool probannoOnly;
+		template_id templatemodel;
+		workspace_id templatemodel_workspace;
 		fbamodel_id model;
 		bool coremodel;
 		workspace_id workspace;
@@ -1445,60 +1485,39 @@ module fbaModelServices {
     */
     funcdef import_fbamodel(import_fbamodel_params input) returns (object_metadata modelMeta);
     
-    /* Input parameters for the "genome_to_fbamodel" function.
+    /* Input parameters for the "import_template_fbamodel" function.
 	
-		genome_id genome - ID of the genome for which a model is to be built (a required argument)
-		workspace_id genome_workspace - ID of the workspace containing the target genome (an optional argument; default is the workspace argument)
-		string biomass - biomass equation for model (an essential argument)
-		list<tuple<string id,string direction,string compartment,string gpr> reactions - list of reactions to appear in imported model (an essential argument)
-		fbamodel_id model - ID that should be used for the newly imported model (an optional argument; default is 'undef')
-		workspace_id workspace - ID of the workspace where the newly developed model will be stored; also the default assumed workspace for input objects (a required argument)
-		bool ignore_errors - ignores missing genes or reactions and imports model anyway
+		mapping_id map - ID of the mapping to associate the template model with (an optional argument; default is 'default')
+		workspace_id mapping_workspace - ID of the workspace where the associated mapping is found (an optional argument; default is 'kbase')
+		list<tuple<string id,string compartment,string direction,string type,list<string complex> complexes>> templateReactions - list of reactions to include in template model
+		list<tuple<string name,string type,float dna,float rna,float protein,float lipid,float cellwall,float cofactor,float energy,float other,list<tuple<string id,string compartment,string class,string coefficientType,float coefficient,string conditions>> compounds>> templateBiomass - list of template biomass reactions for template model
+		string name - name for template model
+		string modelType - type of model constructed by template
+		string domain - domain of template model
+		template_id id - ID that should be used for the newly imported template model (an optional argument; default is 'undef')
+		workspace_id workspace - ID of the workspace where the newly developed template model will be stored; also the default assumed workspace for input objects (a required argument)
+		bool ignore_errors - ignores missing roles or reactions and imports template model anyway
 		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 		
 	*/
     typedef structure {
-		genome_id genome;
-		workspace_id genome_workspace;
-		string biomass;
-		list<tuple<string id,string direction,string compartment,string gpr>> reactions;
-		fbamodel_id model;
+		mapping_id map;
+		workspace_id mapping_workspace;
+		list<tuple<string id,string compartment,string direction,string type,list<string> complexes>> templateReactions;
+		list<tuple<string name,string type,float dna,float rna,float protein,float lipid,float cellwall,float cofactor,float energy,float other,list<tuple<string id,string compartment,string class,string coefficientType,float coefficient,string conditions>> compounds>> templateBiomass;
+		string name;
+		string modelType;
+		string domain;
+		template_id id;
 		workspace_id workspace;
 		bool ignore_errors;
 		string auth;
-		bool overwrite;
     } import_template_fbamodel_params;
     /*
         Import a template model from an input table of template reactions and biomass components
     */
     funcdef import_template_fbamodel(import_template_fbamodel_params input) returns (object_metadata modelMeta);
-	
-	/* Input parameters for the "genome_to_probfbamodel" function.
-	
-		genome_id genome - ID of the genome for which a model is to be built (a required argument)
-		workspace_id genome_workspace - ID of the workspace containing the target genome (an optional argument; default is the workspace argument)
-		fbamodel_id model - ID of the output model (an optional argument; default is 'undef')
-		workspace_id workspace - ID of the workspace where the output model will be stored; also the default assumed workspace for input objects (a required argument)
-		list<reactionProbability> reaction_probs - list of reactions and the reaction probability to be put in output model
-		float default_prob - default probability for reactions not associated with a complex (an optional argument, default is 0.0)
-		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 		
-	*/
-    typedef structure {
-		genome_id genome;
-		workspace_id genome_workspace;
-		fbamodel_id model;
-		workspace_id workspace;
-		list<ReactionProbability> reaction_probs;
-		float default_prob;
-		string auth;
-		bool overwrite;
-    } genome_to_probfbamodel_params;
-    /*
-        Build a probabilistic genome-scale metabolic model based on annotations in an input genome and probabilistic annotation
-    */
-    funcdef genome_to_probfbamodel (genome_to_probfbamodel_params input) returns (object_metadata modelMeta);
-	
     /* Input parameters for the "export_fbamodel" function.
 	
 		fbamodel_id model - ID of the model to be exported (a required argument)
@@ -1909,7 +1928,7 @@ module fbaModelServices {
     */
     funcdef queue_gapfill_model(gapfill_model_params input) returns (object_metadata output);
     
-    /* Input parameters for the "queue_gapfill_model" function.
+    /* Input parameters for the "queue_gapgen_model" function.
 	
 		fbamodel_id model - ID of the model that gapgen should be run on (a required argument)
 		workspace_id model_workspace - workspace where model for gapgen should be run (an optional argument; default is the value of the workspace argument)
@@ -2067,7 +2086,7 @@ module fbaModelServices {
         Queues an FBAModel reconciliation job
     */
     funcdef queue_combine_wildtype_phenotype_reconciliation(combine_wildtype_phenotype_reconciliation_params input) returns (object_metadata output);
-    
+        
     /* Input parameters for the "jobs_done" function.
 	
 		job_id jobid - ID of the job object (a required argument)
@@ -2155,37 +2174,20 @@ module fbaModelServices {
 		string auth;
 	} find_reaction_synonyms_params;
 
-	funcdef find_reaction_synonyms(find_reaction_synonyms_params input) returns (object_metadata output);	
+	funcdef find_reaction_synonyms(find_reaction_synonyms_params input) returns (object_metadata output);		
 	
-	/* Input parameters for the "find_paths" function.
+	/* Input parameters for the "role_to_reactions" function.
 	
-		reaction_synonyms_id reaction_synonyms - ID of the reaction synonyms object to use (required argument)
-		media_id media - ID of media to use (required argument)
-		fbamodel_id input_model - ID of input metabolic model (required argument)
-		fbamodel_id output_model - ID of output metabolic model (required argument)
-		int iterations - number of times to run FBA to find paths (optional argument, default is 1)
-		workspace_id workspace - ID of workspace containing objects (optional argument, default is current workspace)
-		workspace_id media_workspace - ID of workspace containing media object (optional argument, default is current workspace)
-		biochemistry_id biochemistry - ID of the biochemistry database (optional argument, default is default)
-		workspace_id biochemistry_workspace - ID of workspace containing biochemistry database (optional argument, default is kbase)
-		overwrite - true to overwrite existing output metabolic model (optional argument, default is false)
-		string auth - the authentication token of the KBase account (optional argument, user is "public" if auth is not provided)
+		template_id templateModel - ID of the template model to be used to determine mapping (default is '')
+		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 		
-	 */
+	*/
 	typedef structure {
-		reaction_synonyms_id reaction_synonyms;
-		media_id media;
-		fbamodel_id input_model;
-		fbamodel_id output_model;
-		int iterations;
-		workspace_id workspace;
-		workspace_id media_workspace;
-		biochemistry_id biochemistry;
-		workspace_id biochemistry_workspace;
-		bool overwrite;
+		template_id templateModel;
 		string auth;
-	} find_paths_params;
-
-	funcdef find_paths(find_paths_params input) returns (object_metadata output);
-	
+    } role_to_reactions_params;
+    /*
+        Retrieves a list of roles mapped to reactions based on input template model
+    */
+    funcdef role_to_reactions(role_to_reactions_params params) returns (list<RoleComplexReactions> output);
 };

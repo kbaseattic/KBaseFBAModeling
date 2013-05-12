@@ -28,7 +28,7 @@ our %return_counts = (
         'add_feature_translation' => 1,
         'genome_to_fbamodel' => 1,
         'import_fbamodel' => 1,
-        'genome_to_probfbamodel' => 1,
+        'import_template_fbamodel' => 1,
         'export_fbamodel' => 1,
         'export_object' => 1,
         'export_genome' => 1,
@@ -53,7 +53,7 @@ our %return_counts = (
         'run_job' => 1,
         'set_cofactors' => 1,
         'find_reaction_synonyms' => 1,
-        'find_paths' => 1,
+        'role_to_reactions' => 1,
         'version' => 1,
 );
 
@@ -78,7 +78,7 @@ sub _build_valid_methods
         'add_feature_translation' => 1,
         'genome_to_fbamodel' => 1,
         'import_fbamodel' => 1,
-        'genome_to_probfbamodel' => 1,
+        'import_template_fbamodel' => 1,
         'export_fbamodel' => 1,
         'export_object' => 1,
         'export_genome' => 1,
@@ -103,7 +103,7 @@ sub _build_valid_methods
         'run_job' => 1,
         'set_cofactors' => 1,
         'find_reaction_synonyms' => 1,
-        'find_paths' => 1,
+        'role_to_reactions' => 1,
         'version' => 1,
     };
     return $methods;
