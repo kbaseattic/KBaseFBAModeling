@@ -13,13 +13,11 @@ my $primaryArgs = ["Job ID"];
 my $servercommand = "jobs_done";
 my $script = "kbfba-jobdone";
 my $translation = {
-	"Job ID" => "jobid",
+	"Job ID" => "job",
 	auth => "auth",
 };
 #Defining usage and options
-my $specs = [
-    [ 'workspace|w:s', 'Workspace containing job object', { "default" => workspace() } ]
-];
+my $specs = [];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
 #Calling the server
 my $output = runFBACommand($params,$servercommand,$opt);

@@ -6,7 +6,7 @@
 ########################################################################
 use strict;
 use warnings;
-use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
+use Bio::KBase::workspaceService::Helpers qw(printJobData auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
 use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Model"];
@@ -74,7 +74,6 @@ my $specs = [
     [ 'findminmedia', 'Find minimal media' ],
     [ 'addtomodel', 'Add FBA to model' ],
     [ 'notes:s', 'Notes for flux balance analysis' ],
-    [ 'nosubmit', 'Do not submit job to cluster', { "default" => 0 } ],
     [ 'workspace|w:s', 'Workspace to save FBA results', { "default" => workspace() } ],
     [ 'overwrite|o', 'Overwrite any existing FBA with same name' ],
 ];
@@ -168,5 +167,5 @@ if (!defined($output)) {
 	print "Flux balance analysis queue failed!\n";
 } else {
 	print "Flux balance job queued:\n";
-	printObjectMeta($output);
+	printJobData($output);
 }

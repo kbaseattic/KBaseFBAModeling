@@ -6,7 +6,7 @@
 ########################################################################
 use strict;
 use warnings;
-use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
+use Bio::KBase::workspaceService::Helpers qw(printJobData auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
 use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Model"];
@@ -73,7 +73,7 @@ my $specs = [
     [ 'addlcpd|c:s@', 'Additional compounds (; delimiter)' ],
     [ 'numsol:i', 'Number of solutions desired', {"default" => 1} ],
     [ 'nomediahyp', 'Donot search for media hypotheses', {"default" => 0} ],
-    [ 'nobiomasshyp', 'Donot search for biomass hypotheses', {"default" => 0} ],
+    [ 'nobiomasshyp', 'Donot search for biomass hypotheses', {"default" => 1} ],
     [ 'nogprhyp', 'Donot search for gpr hypotheses', {"default" => 0} ],
     [ 'nopathwayhyp', 'Donot search for pathway hypotheses', {"default" => 0} ],
     [ 'allowunbalanced', 'Allow unbalanced reactions in solutions', {"default" => 0} ],
@@ -108,7 +108,6 @@ my $specs = [
     [ 'allrev', 'Treat all reactions as reversible', { "default" => 0 } ],
     [ 'objfraction:s', 'Fraction of objective for follow on analysis', { "default" => 0.1 }],
     [ 'notes:s', 'Notes for flux balance analysis' ],
-    [ 'nosubmit', 'Do not submit job to cluster', { "default" => 0 } ],
     [ 'workspace|w:s', 'Workspace to save FBA results', { "default" => workspace() } ],
     [ 'overwrite|o', 'Overwrite any existing FBA with same name' ]
 ];
@@ -282,5 +281,5 @@ if (!defined($output)) {
 	print "Gapfilling queue failed!\n";
 } else {
 	print "Gapfilling job queued:\n";
-	printObjectMeta($output);
+	printJobData($output);
 }

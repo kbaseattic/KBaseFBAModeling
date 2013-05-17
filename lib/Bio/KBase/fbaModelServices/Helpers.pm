@@ -7,7 +7,7 @@ use Text::Table;
 use Bio::KBase::fbaModelServices::Client;
 use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
 use parent qw(Exporter);
-our @EXPORT_OK = qw( fbaURL get_fba_client printJobData runFBACommand universalFBAScriptCode fbaTranslation );
+our @EXPORT_OK = qw( fbaURL get_fba_client runFBACommand universalFBAScriptCode fbaTranslation );
 our $defaultURL = "http://kbase.us/services/fbaServices/";
 my $CurrentURL;
 
@@ -53,15 +53,6 @@ sub fbaURL {
     	}
     }
     return $CurrentURL;
-}
-
-sub printJobData {
-    my $job = shift;
-    print "Job ID: ".$job->{id}."\n";
-    print "Job WS: ".$job->{workspace}."\n";
-    print "Command: ".$job->{queuing_command}."\n";
-    print "Queue time: ".$job->{queuetime}."\n";
-    print "Is complete: ".$job->{complete}."\n";
 }
 
 sub universalFBAScriptCode {

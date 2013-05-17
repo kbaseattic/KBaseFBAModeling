@@ -4624,7 +4624,7 @@ sub integrate_reconciliation_solutions
 
 =head2 queue_runfba
 
-  $output = $obj->queue_runfba($input)
+  $job = $obj->queue_runfba($input)
 
 =over 4
 
@@ -4634,7 +4634,7 @@ sub integrate_reconciliation_solutions
 
 <pre>
 $input is a queue_runfba_params
-$output is an object_metadata
+$job is a JobObject
 queue_runfba_params is a reference to a hash where the following keys are defined:
 	model has a value which is a fbamodel_id
 	model_workspace has a value which is a workspace_id
@@ -4649,7 +4649,6 @@ queue_runfba_params is a reference to a hash where the following keys are define
 	auth has a value which is a string
 	overwrite has a value which is a bool
 	add_to_model has a value which is a bool
-	donot_submit_job has a value which is a bool
 fbamodel_id is a string
 workspace_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
@@ -4695,23 +4694,18 @@ constraint is a reference to a list containing 4 items:
 	2: (terms) a reference to a list where each element is a term
 	3: (name) a string
 fba_id is a string
-object_metadata is a reference to a list containing 11 items:
-	0: (id) an object_id
-	1: (type) an object_type
-	2: (moddate) a timestamp
-	3: (instance) an int
-	4: (command) a string
-	5: (lastmodifier) a username
-	6: (owner) a username
-	7: (workspace) a workspace_id
-	8: (ref) a workspace_ref
-	9: (chsum) a string
-	10: (metadata) a reference to a hash where the key is a string and the value is a string
-object_id is a string
-object_type is a string
-timestamp is a string
-username is a string
-workspace_ref is a string
+JobObject is a reference to a hash where the following keys are defined:
+	id has a value which is a job_id
+	type has a value which is a string
+	auth has a value which is a string
+	status has a value which is a string
+	jobdata has a value which is a reference to a hash where the key is a string and the value is a string
+	queuetime has a value which is a string
+	starttime has a value which is a string
+	completetime has a value which is a string
+	owner has a value which is a string
+	queuecommand has a value which is a string
+job_id is a string
 
 </pre>
 
@@ -4720,7 +4714,7 @@ workspace_ref is a string
 =begin text
 
 $input is a queue_runfba_params
-$output is an object_metadata
+$job is a JobObject
 queue_runfba_params is a reference to a hash where the following keys are defined:
 	model has a value which is a fbamodel_id
 	model_workspace has a value which is a workspace_id
@@ -4735,7 +4729,6 @@ queue_runfba_params is a reference to a hash where the following keys are define
 	auth has a value which is a string
 	overwrite has a value which is a bool
 	add_to_model has a value which is a bool
-	donot_submit_job has a value which is a bool
 fbamodel_id is a string
 workspace_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
@@ -4781,23 +4774,18 @@ constraint is a reference to a list containing 4 items:
 	2: (terms) a reference to a list where each element is a term
 	3: (name) a string
 fba_id is a string
-object_metadata is a reference to a list containing 11 items:
-	0: (id) an object_id
-	1: (type) an object_type
-	2: (moddate) a timestamp
-	3: (instance) an int
-	4: (command) a string
-	5: (lastmodifier) a username
-	6: (owner) a username
-	7: (workspace) a workspace_id
-	8: (ref) a workspace_ref
-	9: (chsum) a string
-	10: (metadata) a reference to a hash where the key is a string and the value is a string
-object_id is a string
-object_type is a string
-timestamp is a string
-username is a string
-workspace_ref is a string
+JobObject is a reference to a hash where the following keys are defined:
+	id has a value which is a job_id
+	type has a value which is a string
+	auth has a value which is a string
+	status has a value which is a string
+	jobdata has a value which is a reference to a hash where the key is a string and the value is a string
+	queuetime has a value which is a string
+	starttime has a value which is a string
+	completetime has a value which is a string
+	owner has a value which is a string
+	queuecommand has a value which is a string
+job_id is a string
 
 
 =end text
@@ -4858,7 +4846,7 @@ sub queue_runfba
 
 =head2 queue_gapfill_model
 
-  $output = $obj->queue_gapfill_model($input)
+  $job = $obj->queue_gapfill_model($input)
 
 =over 4
 
@@ -4868,7 +4856,7 @@ sub queue_runfba
 
 <pre>
 $input is a gapfill_model_params
-$output is an object_metadata
+$job is a JobObject
 gapfill_model_params is a reference to a hash where the following keys are defined:
 	model has a value which is a fbamodel_id
 	model_workspace has a value which is a workspace_id
@@ -4883,7 +4871,6 @@ gapfill_model_params is a reference to a hash where the following keys are defin
 	totalTimeLimit has a value which is an int
 	auth has a value which is a string
 	overwrite has a value which is a bool
-	donot_submit_job has a value which is a bool
 fbamodel_id is a string
 workspace_id is a string
 GapfillingFormulation is a reference to a hash where the following keys are defined:
@@ -4954,23 +4941,18 @@ compartment_id is a string
 probanno_id is a string
 phenotypeSet_id is a string
 gapfill_id is a string
-object_metadata is a reference to a list containing 11 items:
-	0: (id) an object_id
-	1: (type) an object_type
-	2: (moddate) a timestamp
-	3: (instance) an int
-	4: (command) a string
-	5: (lastmodifier) a username
-	6: (owner) a username
-	7: (workspace) a workspace_id
-	8: (ref) a workspace_ref
-	9: (chsum) a string
-	10: (metadata) a reference to a hash where the key is a string and the value is a string
-object_id is a string
-object_type is a string
-timestamp is a string
-username is a string
-workspace_ref is a string
+JobObject is a reference to a hash where the following keys are defined:
+	id has a value which is a job_id
+	type has a value which is a string
+	auth has a value which is a string
+	status has a value which is a string
+	jobdata has a value which is a reference to a hash where the key is a string and the value is a string
+	queuetime has a value which is a string
+	starttime has a value which is a string
+	completetime has a value which is a string
+	owner has a value which is a string
+	queuecommand has a value which is a string
+job_id is a string
 
 </pre>
 
@@ -4979,7 +4961,7 @@ workspace_ref is a string
 =begin text
 
 $input is a gapfill_model_params
-$output is an object_metadata
+$job is a JobObject
 gapfill_model_params is a reference to a hash where the following keys are defined:
 	model has a value which is a fbamodel_id
 	model_workspace has a value which is a workspace_id
@@ -4994,7 +4976,6 @@ gapfill_model_params is a reference to a hash where the following keys are defin
 	totalTimeLimit has a value which is an int
 	auth has a value which is a string
 	overwrite has a value which is a bool
-	donot_submit_job has a value which is a bool
 fbamodel_id is a string
 workspace_id is a string
 GapfillingFormulation is a reference to a hash where the following keys are defined:
@@ -5065,23 +5046,18 @@ compartment_id is a string
 probanno_id is a string
 phenotypeSet_id is a string
 gapfill_id is a string
-object_metadata is a reference to a list containing 11 items:
-	0: (id) an object_id
-	1: (type) an object_type
-	2: (moddate) a timestamp
-	3: (instance) an int
-	4: (command) a string
-	5: (lastmodifier) a username
-	6: (owner) a username
-	7: (workspace) a workspace_id
-	8: (ref) a workspace_ref
-	9: (chsum) a string
-	10: (metadata) a reference to a hash where the key is a string and the value is a string
-object_id is a string
-object_type is a string
-timestamp is a string
-username is a string
-workspace_ref is a string
+JobObject is a reference to a hash where the following keys are defined:
+	id has a value which is a job_id
+	type has a value which is a string
+	auth has a value which is a string
+	status has a value which is a string
+	jobdata has a value which is a reference to a hash where the key is a string and the value is a string
+	queuetime has a value which is a string
+	starttime has a value which is a string
+	completetime has a value which is a string
+	owner has a value which is a string
+	queuecommand has a value which is a string
+job_id is a string
 
 
 =end text
@@ -5142,7 +5118,7 @@ sub queue_gapfill_model
 
 =head2 queue_gapgen_model
 
-  $output = $obj->queue_gapgen_model($input)
+  $job = $obj->queue_gapgen_model($input)
 
 =over 4
 
@@ -5152,7 +5128,7 @@ sub queue_gapfill_model
 
 <pre>
 $input is a gapgen_model_params
-$output is an object_metadata
+$job is a JobObject
 gapgen_model_params is a reference to a hash where the following keys are defined:
 	model has a value which is a fbamodel_id
 	model_workspace has a value which is a workspace_id
@@ -5167,7 +5143,6 @@ gapgen_model_params is a reference to a hash where the following keys are define
 	timePerSolution has a value which is an int
 	totalTimeLimit has a value which is an int
 	overwrite has a value which is a bool
-	donot_submit_job has a value which is a bool
 fbamodel_id is a string
 workspace_id is a string
 GapgenFormulation is a reference to a hash where the following keys are defined:
@@ -5223,23 +5198,18 @@ constraint is a reference to a list containing 4 items:
 	3: (name) a string
 phenotypeSet_id is a string
 gapgen_id is a string
-object_metadata is a reference to a list containing 11 items:
-	0: (id) an object_id
-	1: (type) an object_type
-	2: (moddate) a timestamp
-	3: (instance) an int
-	4: (command) a string
-	5: (lastmodifier) a username
-	6: (owner) a username
-	7: (workspace) a workspace_id
-	8: (ref) a workspace_ref
-	9: (chsum) a string
-	10: (metadata) a reference to a hash where the key is a string and the value is a string
-object_id is a string
-object_type is a string
-timestamp is a string
-username is a string
-workspace_ref is a string
+JobObject is a reference to a hash where the following keys are defined:
+	id has a value which is a job_id
+	type has a value which is a string
+	auth has a value which is a string
+	status has a value which is a string
+	jobdata has a value which is a reference to a hash where the key is a string and the value is a string
+	queuetime has a value which is a string
+	starttime has a value which is a string
+	completetime has a value which is a string
+	owner has a value which is a string
+	queuecommand has a value which is a string
+job_id is a string
 
 </pre>
 
@@ -5248,7 +5218,7 @@ workspace_ref is a string
 =begin text
 
 $input is a gapgen_model_params
-$output is an object_metadata
+$job is a JobObject
 gapgen_model_params is a reference to a hash where the following keys are defined:
 	model has a value which is a fbamodel_id
 	model_workspace has a value which is a workspace_id
@@ -5263,7 +5233,6 @@ gapgen_model_params is a reference to a hash where the following keys are define
 	timePerSolution has a value which is an int
 	totalTimeLimit has a value which is an int
 	overwrite has a value which is a bool
-	donot_submit_job has a value which is a bool
 fbamodel_id is a string
 workspace_id is a string
 GapgenFormulation is a reference to a hash where the following keys are defined:
@@ -5319,23 +5288,18 @@ constraint is a reference to a list containing 4 items:
 	3: (name) a string
 phenotypeSet_id is a string
 gapgen_id is a string
-object_metadata is a reference to a list containing 11 items:
-	0: (id) an object_id
-	1: (type) an object_type
-	2: (moddate) a timestamp
-	3: (instance) an int
-	4: (command) a string
-	5: (lastmodifier) a username
-	6: (owner) a username
-	7: (workspace) a workspace_id
-	8: (ref) a workspace_ref
-	9: (chsum) a string
-	10: (metadata) a reference to a hash where the key is a string and the value is a string
-object_id is a string
-object_type is a string
-timestamp is a string
-username is a string
-workspace_ref is a string
+JobObject is a reference to a hash where the following keys are defined:
+	id has a value which is a job_id
+	type has a value which is a string
+	auth has a value which is a string
+	status has a value which is a string
+	jobdata has a value which is a reference to a hash where the key is a string and the value is a string
+	queuetime has a value which is a string
+	starttime has a value which is a string
+	completetime has a value which is a string
+	owner has a value which is a string
+	queuecommand has a value which is a string
+job_id is a string
 
 
 =end text
@@ -5396,7 +5360,7 @@ sub queue_gapgen_model
 
 =head2 queue_wildtype_phenotype_reconciliation
 
-  $output = $obj->queue_wildtype_phenotype_reconciliation($input)
+  $job = $obj->queue_wildtype_phenotype_reconciliation($input)
 
 =over 4
 
@@ -5406,7 +5370,7 @@ sub queue_gapgen_model
 
 <pre>
 $input is a wildtype_phenotype_reconciliation_params
-$output is an object_metadata
+$job is a JobObject
 wildtype_phenotype_reconciliation_params is a reference to a hash where the following keys are defined:
 	model has a value which is a fbamodel_id
 	model_workspace has a value which is a workspace_id
@@ -5423,7 +5387,6 @@ wildtype_phenotype_reconciliation_params is a reference to a hash where the foll
 	queueReconciliationCombination has a value which is a bool
 	auth has a value which is a string
 	overwrite has a value which is a bool
-	donot_submit_job has a value which is a bool
 fbamodel_id is a string
 workspace_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
@@ -5504,23 +5467,18 @@ GapgenFormulation is a reference to a hash where the following keys are defined:
 phenotypeSet_id is a string
 gapfill_id is a string
 gapgen_id is a string
-object_metadata is a reference to a list containing 11 items:
-	0: (id) an object_id
-	1: (type) an object_type
-	2: (moddate) a timestamp
-	3: (instance) an int
-	4: (command) a string
-	5: (lastmodifier) a username
-	6: (owner) a username
-	7: (workspace) a workspace_id
-	8: (ref) a workspace_ref
-	9: (chsum) a string
-	10: (metadata) a reference to a hash where the key is a string and the value is a string
-object_id is a string
-object_type is a string
-timestamp is a string
-username is a string
-workspace_ref is a string
+JobObject is a reference to a hash where the following keys are defined:
+	id has a value which is a job_id
+	type has a value which is a string
+	auth has a value which is a string
+	status has a value which is a string
+	jobdata has a value which is a reference to a hash where the key is a string and the value is a string
+	queuetime has a value which is a string
+	starttime has a value which is a string
+	completetime has a value which is a string
+	owner has a value which is a string
+	queuecommand has a value which is a string
+job_id is a string
 
 </pre>
 
@@ -5529,7 +5487,7 @@ workspace_ref is a string
 =begin text
 
 $input is a wildtype_phenotype_reconciliation_params
-$output is an object_metadata
+$job is a JobObject
 wildtype_phenotype_reconciliation_params is a reference to a hash where the following keys are defined:
 	model has a value which is a fbamodel_id
 	model_workspace has a value which is a workspace_id
@@ -5546,7 +5504,6 @@ wildtype_phenotype_reconciliation_params is a reference to a hash where the foll
 	queueReconciliationCombination has a value which is a bool
 	auth has a value which is a string
 	overwrite has a value which is a bool
-	donot_submit_job has a value which is a bool
 fbamodel_id is a string
 workspace_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
@@ -5627,23 +5584,18 @@ GapgenFormulation is a reference to a hash where the following keys are defined:
 phenotypeSet_id is a string
 gapfill_id is a string
 gapgen_id is a string
-object_metadata is a reference to a list containing 11 items:
-	0: (id) an object_id
-	1: (type) an object_type
-	2: (moddate) a timestamp
-	3: (instance) an int
-	4: (command) a string
-	5: (lastmodifier) a username
-	6: (owner) a username
-	7: (workspace) a workspace_id
-	8: (ref) a workspace_ref
-	9: (chsum) a string
-	10: (metadata) a reference to a hash where the key is a string and the value is a string
-object_id is a string
-object_type is a string
-timestamp is a string
-username is a string
-workspace_ref is a string
+JobObject is a reference to a hash where the following keys are defined:
+	id has a value which is a job_id
+	type has a value which is a string
+	auth has a value which is a string
+	status has a value which is a string
+	jobdata has a value which is a reference to a hash where the key is a string and the value is a string
+	queuetime has a value which is a string
+	starttime has a value which is a string
+	completetime has a value which is a string
+	owner has a value which is a string
+	queuecommand has a value which is a string
+job_id is a string
 
 
 =end text
@@ -5704,7 +5656,7 @@ sub queue_wildtype_phenotype_reconciliation
 
 =head2 queue_reconciliation_sensitivity_analysis
 
-  $output = $obj->queue_reconciliation_sensitivity_analysis($input)
+  $job = $obj->queue_reconciliation_sensitivity_analysis($input)
 
 =over 4
 
@@ -5714,7 +5666,7 @@ sub queue_wildtype_phenotype_reconciliation
 
 <pre>
 $input is a wildtype_phenotype_reconciliation_params
-$output is an object_metadata
+$job is a JobObject
 wildtype_phenotype_reconciliation_params is a reference to a hash where the following keys are defined:
 	model has a value which is a fbamodel_id
 	model_workspace has a value which is a workspace_id
@@ -5731,7 +5683,6 @@ wildtype_phenotype_reconciliation_params is a reference to a hash where the foll
 	queueReconciliationCombination has a value which is a bool
 	auth has a value which is a string
 	overwrite has a value which is a bool
-	donot_submit_job has a value which is a bool
 fbamodel_id is a string
 workspace_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
@@ -5812,23 +5763,18 @@ GapgenFormulation is a reference to a hash where the following keys are defined:
 phenotypeSet_id is a string
 gapfill_id is a string
 gapgen_id is a string
-object_metadata is a reference to a list containing 11 items:
-	0: (id) an object_id
-	1: (type) an object_type
-	2: (moddate) a timestamp
-	3: (instance) an int
-	4: (command) a string
-	5: (lastmodifier) a username
-	6: (owner) a username
-	7: (workspace) a workspace_id
-	8: (ref) a workspace_ref
-	9: (chsum) a string
-	10: (metadata) a reference to a hash where the key is a string and the value is a string
-object_id is a string
-object_type is a string
-timestamp is a string
-username is a string
-workspace_ref is a string
+JobObject is a reference to a hash where the following keys are defined:
+	id has a value which is a job_id
+	type has a value which is a string
+	auth has a value which is a string
+	status has a value which is a string
+	jobdata has a value which is a reference to a hash where the key is a string and the value is a string
+	queuetime has a value which is a string
+	starttime has a value which is a string
+	completetime has a value which is a string
+	owner has a value which is a string
+	queuecommand has a value which is a string
+job_id is a string
 
 </pre>
 
@@ -5837,7 +5783,7 @@ workspace_ref is a string
 =begin text
 
 $input is a wildtype_phenotype_reconciliation_params
-$output is an object_metadata
+$job is a JobObject
 wildtype_phenotype_reconciliation_params is a reference to a hash where the following keys are defined:
 	model has a value which is a fbamodel_id
 	model_workspace has a value which is a workspace_id
@@ -5854,7 +5800,6 @@ wildtype_phenotype_reconciliation_params is a reference to a hash where the foll
 	queueReconciliationCombination has a value which is a bool
 	auth has a value which is a string
 	overwrite has a value which is a bool
-	donot_submit_job has a value which is a bool
 fbamodel_id is a string
 workspace_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
@@ -5935,23 +5880,18 @@ GapgenFormulation is a reference to a hash where the following keys are defined:
 phenotypeSet_id is a string
 gapfill_id is a string
 gapgen_id is a string
-object_metadata is a reference to a list containing 11 items:
-	0: (id) an object_id
-	1: (type) an object_type
-	2: (moddate) a timestamp
-	3: (instance) an int
-	4: (command) a string
-	5: (lastmodifier) a username
-	6: (owner) a username
-	7: (workspace) a workspace_id
-	8: (ref) a workspace_ref
-	9: (chsum) a string
-	10: (metadata) a reference to a hash where the key is a string and the value is a string
-object_id is a string
-object_type is a string
-timestamp is a string
-username is a string
-workspace_ref is a string
+JobObject is a reference to a hash where the following keys are defined:
+	id has a value which is a job_id
+	type has a value which is a string
+	auth has a value which is a string
+	status has a value which is a string
+	jobdata has a value which is a reference to a hash where the key is a string and the value is a string
+	queuetime has a value which is a string
+	starttime has a value which is a string
+	completetime has a value which is a string
+	owner has a value which is a string
+	queuecommand has a value which is a string
+job_id is a string
 
 
 =end text
@@ -6012,7 +5952,7 @@ sub queue_reconciliation_sensitivity_analysis
 
 =head2 queue_combine_wildtype_phenotype_reconciliation
 
-  $output = $obj->queue_combine_wildtype_phenotype_reconciliation($input)
+  $job = $obj->queue_combine_wildtype_phenotype_reconciliation($input)
 
 =over 4
 
@@ -6022,7 +5962,7 @@ sub queue_reconciliation_sensitivity_analysis
 
 <pre>
 $input is a combine_wildtype_phenotype_reconciliation_params
-$output is an object_metadata
+$job is a JobObject
 combine_wildtype_phenotype_reconciliation_params is a reference to a hash where the following keys are defined:
 	model has a value which is a fbamodel_id
 	model_workspace has a value which is a workspace_id
@@ -6037,7 +5977,6 @@ combine_wildtype_phenotype_reconciliation_params is a reference to a hash where 
 	gapGens has a value which is a reference to a list where each element is a gapgen_id
 	auth has a value which is a string
 	overwrite has a value which is a bool
-	donot_submit_job has a value which is a bool
 fbamodel_id is a string
 workspace_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
@@ -6118,23 +6057,18 @@ GapgenFormulation is a reference to a hash where the following keys are defined:
 phenotypeSet_id is a string
 gapfill_id is a string
 gapgen_id is a string
-object_metadata is a reference to a list containing 11 items:
-	0: (id) an object_id
-	1: (type) an object_type
-	2: (moddate) a timestamp
-	3: (instance) an int
-	4: (command) a string
-	5: (lastmodifier) a username
-	6: (owner) a username
-	7: (workspace) a workspace_id
-	8: (ref) a workspace_ref
-	9: (chsum) a string
-	10: (metadata) a reference to a hash where the key is a string and the value is a string
-object_id is a string
-object_type is a string
-timestamp is a string
-username is a string
-workspace_ref is a string
+JobObject is a reference to a hash where the following keys are defined:
+	id has a value which is a job_id
+	type has a value which is a string
+	auth has a value which is a string
+	status has a value which is a string
+	jobdata has a value which is a reference to a hash where the key is a string and the value is a string
+	queuetime has a value which is a string
+	starttime has a value which is a string
+	completetime has a value which is a string
+	owner has a value which is a string
+	queuecommand has a value which is a string
+job_id is a string
 
 </pre>
 
@@ -6143,7 +6077,7 @@ workspace_ref is a string
 =begin text
 
 $input is a combine_wildtype_phenotype_reconciliation_params
-$output is an object_metadata
+$job is a JobObject
 combine_wildtype_phenotype_reconciliation_params is a reference to a hash where the following keys are defined:
 	model has a value which is a fbamodel_id
 	model_workspace has a value which is a workspace_id
@@ -6158,7 +6092,6 @@ combine_wildtype_phenotype_reconciliation_params is a reference to a hash where 
 	gapGens has a value which is a reference to a list where each element is a gapgen_id
 	auth has a value which is a string
 	overwrite has a value which is a bool
-	donot_submit_job has a value which is a bool
 fbamodel_id is a string
 workspace_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
@@ -6239,23 +6172,18 @@ GapgenFormulation is a reference to a hash where the following keys are defined:
 phenotypeSet_id is a string
 gapfill_id is a string
 gapgen_id is a string
-object_metadata is a reference to a list containing 11 items:
-	0: (id) an object_id
-	1: (type) an object_type
-	2: (moddate) a timestamp
-	3: (instance) an int
-	4: (command) a string
-	5: (lastmodifier) a username
-	6: (owner) a username
-	7: (workspace) a workspace_id
-	8: (ref) a workspace_ref
-	9: (chsum) a string
-	10: (metadata) a reference to a hash where the key is a string and the value is a string
-object_id is a string
-object_type is a string
-timestamp is a string
-username is a string
-workspace_ref is a string
+JobObject is a reference to a hash where the following keys are defined:
+	id has a value which is a job_id
+	type has a value which is a string
+	auth has a value which is a string
+	status has a value which is a string
+	jobdata has a value which is a reference to a hash where the key is a string and the value is a string
+	queuetime has a value which is a string
+	starttime has a value which is a string
+	completetime has a value which is a string
+	owner has a value which is a string
+	queuecommand has a value which is a string
+job_id is a string
 
 
 =end text
@@ -6316,7 +6244,7 @@ sub queue_combine_wildtype_phenotype_reconciliation
 
 =head2 jobs_done
 
-  $output = $obj->jobs_done($input)
+  $job = $obj->jobs_done($input)
 
 =over 4
 
@@ -6326,31 +6254,22 @@ sub queue_combine_wildtype_phenotype_reconciliation
 
 <pre>
 $input is a jobs_done_params
-$output is a JobObject
+$job is a JobObject
 jobs_done_params is a reference to a hash where the following keys are defined:
-	jobid has a value which is a job_id
+	job has a value which is a job_id
 	auth has a value which is a string
 job_id is a string
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
-	workspace has a value which is a workspace_id
-	clusterjobs has a value which is a reference to a list where each element is a clusterjob
-	postprocess_command has a value which is a string
-	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
-	queuing_command has a value which is a string
-	clustermem has a value which is a float
-	clustertime has a value which is an int
-	clustertoken has a value which is a string
+	type has a value which is a string
+	auth has a value which is a string
+	status has a value which is a string
+	jobdata has a value which is a reference to a hash where the key is a string and the value is a string
 	queuetime has a value which is a string
+	starttime has a value which is a string
 	completetime has a value which is a string
-	complete has a value which is a bool
 	owner has a value which is a string
-workspace_id is a string
-clusterjob is a reference to a hash where the following keys are defined:
-	auth has a value which is a string
-CommandArguments is a reference to a hash where the following keys are defined:
-	auth has a value which is a string
-bool is an int
+	queuecommand has a value which is a string
 
 </pre>
 
@@ -6359,31 +6278,22 @@ bool is an int
 =begin text
 
 $input is a jobs_done_params
-$output is a JobObject
+$job is a JobObject
 jobs_done_params is a reference to a hash where the following keys are defined:
-	jobid has a value which is a job_id
+	job has a value which is a job_id
 	auth has a value which is a string
 job_id is a string
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
-	workspace has a value which is a workspace_id
-	clusterjobs has a value which is a reference to a list where each element is a clusterjob
-	postprocess_command has a value which is a string
-	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
-	queuing_command has a value which is a string
-	clustermem has a value which is a float
-	clustertime has a value which is an int
-	clustertoken has a value which is a string
+	type has a value which is a string
+	auth has a value which is a string
+	status has a value which is a string
+	jobdata has a value which is a reference to a hash where the key is a string and the value is a string
 	queuetime has a value which is a string
+	starttime has a value which is a string
 	completetime has a value which is a string
-	complete has a value which is a bool
 	owner has a value which is a string
-workspace_id is a string
-clusterjob is a reference to a hash where the following keys are defined:
-	auth has a value which is a string
-CommandArguments is a reference to a hash where the following keys are defined:
-	auth has a value which is a string
-bool is an int
+	queuecommand has a value which is a string
 
 
 =end text
@@ -6442,137 +6352,9 @@ sub jobs_done
 
 
 
-=head2 check_job
-
-  $output = $obj->check_job($input)
-
-=over 4
-
-=item Parameter and return types
-
-=begin html
-
-<pre>
-$input is a check_job_params
-$output is a JobObject
-check_job_params is a reference to a hash where the following keys are defined:
-	jobid has a value which is a job_id
-	auth has a value which is a string
-job_id is a string
-JobObject is a reference to a hash where the following keys are defined:
-	id has a value which is a job_id
-	workspace has a value which is a workspace_id
-	clusterjobs has a value which is a reference to a list where each element is a clusterjob
-	postprocess_command has a value which is a string
-	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
-	queuing_command has a value which is a string
-	clustermem has a value which is a float
-	clustertime has a value which is an int
-	clustertoken has a value which is a string
-	queuetime has a value which is a string
-	completetime has a value which is a string
-	complete has a value which is a bool
-	owner has a value which is a string
-workspace_id is a string
-clusterjob is a reference to a hash where the following keys are defined:
-	auth has a value which is a string
-CommandArguments is a reference to a hash where the following keys are defined:
-	auth has a value which is a string
-bool is an int
-
-</pre>
-
-=end html
-
-=begin text
-
-$input is a check_job_params
-$output is a JobObject
-check_job_params is a reference to a hash where the following keys are defined:
-	jobid has a value which is a job_id
-	auth has a value which is a string
-job_id is a string
-JobObject is a reference to a hash where the following keys are defined:
-	id has a value which is a job_id
-	workspace has a value which is a workspace_id
-	clusterjobs has a value which is a reference to a list where each element is a clusterjob
-	postprocess_command has a value which is a string
-	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
-	queuing_command has a value which is a string
-	clustermem has a value which is a float
-	clustertime has a value which is an int
-	clustertoken has a value which is a string
-	queuetime has a value which is a string
-	completetime has a value which is a string
-	complete has a value which is a bool
-	owner has a value which is a string
-workspace_id is a string
-clusterjob is a reference to a hash where the following keys are defined:
-	auth has a value which is a string
-CommandArguments is a reference to a hash where the following keys are defined:
-	auth has a value which is a string
-bool is an int
-
-
-=end text
-
-=item Description
-
-Retreives job data given a job ID
-
-=back
-
-=cut
-
-sub check_job
-{
-    my($self, @args) = @_;
-
-# Authentication: none
-
-    if ((my $n = @args) != 1)
-    {
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
-							       "Invalid argument count for function check_job (received $n, expecting 1)");
-    }
-    {
-	my($input) = @args;
-
-	my @_bad_arguments;
-        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
-        if (@_bad_arguments) {
-	    my $msg = "Invalid arguments passed to check_job:\n" . join("", map { "\t$_\n" } @_bad_arguments);
-	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-								   method_name => 'check_job');
-	}
-    }
-
-    my $result = $self->{client}->call($self->{url}, {
-	method => "fbaModelServices.check_job",
-	params => \@args,
-    });
-    if ($result) {
-	if ($result->is_error) {
-	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
-					       method_name => 'check_job',
-					      );
-	} else {
-	    return wantarray ? @{$result->result} : $result->result->[0];
-	}
-    } else {
-        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method check_job",
-					    status_line => $self->{client}->status_line,
-					    method_name => 'check_job',
-				       );
-    }
-}
-
-
-
 =head2 run_job
 
-  $output = $obj->run_job($input)
+  $job = $obj->run_job($input)
 
 =over 4
 
@@ -6582,32 +6364,22 @@ sub check_job
 
 <pre>
 $input is a run_job_params
-$output is a JobObject
+$job is a JobObject
 run_job_params is a reference to a hash where the following keys are defined:
-	jobid has a value which is a job_id
-	index has a value which is an int
+	job has a value which is a job_id
 	auth has a value which is a string
 job_id is a string
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
-	workspace has a value which is a workspace_id
-	clusterjobs has a value which is a reference to a list where each element is a clusterjob
-	postprocess_command has a value which is a string
-	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
-	queuing_command has a value which is a string
-	clustermem has a value which is a float
-	clustertime has a value which is an int
-	clustertoken has a value which is a string
+	type has a value which is a string
+	auth has a value which is a string
+	status has a value which is a string
+	jobdata has a value which is a reference to a hash where the key is a string and the value is a string
 	queuetime has a value which is a string
+	starttime has a value which is a string
 	completetime has a value which is a string
-	complete has a value which is a bool
 	owner has a value which is a string
-workspace_id is a string
-clusterjob is a reference to a hash where the following keys are defined:
-	auth has a value which is a string
-CommandArguments is a reference to a hash where the following keys are defined:
-	auth has a value which is a string
-bool is an int
+	queuecommand has a value which is a string
 
 </pre>
 
@@ -6616,32 +6388,22 @@ bool is an int
 =begin text
 
 $input is a run_job_params
-$output is a JobObject
+$job is a JobObject
 run_job_params is a reference to a hash where the following keys are defined:
-	jobid has a value which is a job_id
-	index has a value which is an int
+	job has a value which is a job_id
 	auth has a value which is a string
 job_id is a string
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
-	workspace has a value which is a workspace_id
-	clusterjobs has a value which is a reference to a list where each element is a clusterjob
-	postprocess_command has a value which is a string
-	postprocess_args has a value which is a reference to a list where each element is a CommandArguments
-	queuing_command has a value which is a string
-	clustermem has a value which is a float
-	clustertime has a value which is an int
-	clustertoken has a value which is a string
+	type has a value which is a string
+	auth has a value which is a string
+	status has a value which is a string
+	jobdata has a value which is a reference to a hash where the key is a string and the value is a string
 	queuetime has a value which is a string
+	starttime has a value which is a string
 	completetime has a value which is a string
-	complete has a value which is a bool
 	owner has a value which is a string
-workspace_id is a string
-clusterjob is a reference to a hash where the following keys are defined:
-	auth has a value which is a string
-CommandArguments is a reference to a hash where the following keys are defined:
-	auth has a value which is a string
-bool is an int
+	queuecommand has a value which is a string
 
 
 =end text
@@ -11214,21 +10976,18 @@ auth has a value which is a string
 
 =item Description
 
-Data structures for an FBA job object
+Data structures for a job object
 
 job_id id - ID of the job object
-workspace_id workspace - workspace containing job object
-list<clusterjob> clusterjobs - list of data related to cluster jobs
-string postprocess_command - command to be run after the job is complete
-list<CommandArguments> postprocess_args - arguments to be submitted to the postprocess job
-string queuing_command - command used to queue job
-float clustermem - maximum memmory expected to be consumed by the job
-int clustertime - maximum time to spent running the job
-string clustertoken - token for submitted cluster job
-string queuetime - time when the job was queued
+string type - type of the job
+string auth - authentication token of job owner
+string status - current status of job
+mapping<string,string> jobdata;
+string queuetime - time when job was queued
+string starttime - time when job started running
 string completetime - time when the job was completed
-bool complete - flag indicating if job is complete
-string owner - username of the user that queued the job
+string owner - owner of the job
+string queuecommand - command used to queue job
 
 
 =item Definition
@@ -11238,18 +10997,15 @@ string owner - username of the user that queued the job
 <pre>
 a reference to a hash where the following keys are defined:
 id has a value which is a job_id
-workspace has a value which is a workspace_id
-clusterjobs has a value which is a reference to a list where each element is a clusterjob
-postprocess_command has a value which is a string
-postprocess_args has a value which is a reference to a list where each element is a CommandArguments
-queuing_command has a value which is a string
-clustermem has a value which is a float
-clustertime has a value which is an int
-clustertoken has a value which is a string
+type has a value which is a string
+auth has a value which is a string
+status has a value which is a string
+jobdata has a value which is a reference to a hash where the key is a string and the value is a string
 queuetime has a value which is a string
+starttime has a value which is a string
 completetime has a value which is a string
-complete has a value which is a bool
 owner has a value which is a string
+queuecommand has a value which is a string
 
 </pre>
 
@@ -11259,18 +11015,15 @@ owner has a value which is a string
 
 a reference to a hash where the following keys are defined:
 id has a value which is a job_id
-workspace has a value which is a workspace_id
-clusterjobs has a value which is a reference to a list where each element is a clusterjob
-postprocess_command has a value which is a string
-postprocess_args has a value which is a reference to a list where each element is a CommandArguments
-queuing_command has a value which is a string
-clustermem has a value which is a float
-clustertime has a value which is an int
-clustertoken has a value which is a string
+type has a value which is a string
+auth has a value which is a string
+status has a value which is a string
+jobdata has a value which is a reference to a hash where the key is a string and the value is a string
 queuetime has a value which is a string
+starttime has a value which is a string
 completetime has a value which is a string
-complete has a value which is a bool
 owner has a value which is a string
+queuecommand has a value which is a string
 
 
 =end text
@@ -12275,9 +12028,8 @@ Input parameters for the "genome_to_fbamodel" function.
 
         genome_id genome - ID of the genome for which a model is to be built (a required argument)
         workspace_id genome_workspace - ID of the workspace containing the target genome (an optional argument; default is the workspace argument)
-        probanno_id probanno - ID of the probabilistic annotation to be used in building the model (an optional argument; default is 'undef')
-        workspace_id probanno_workspace - ID of the workspace containing the probabilistic annotation (an optional argument; default is the workspace argument)
-        float probannoThreshold - a threshold of the probability required for a probabilistic annotation to be accepted (an optional argument; default is '1')
+        template_id templatemodel - 
+        workspace_id templatemodel_workspace - 
         bool probannoOnly - a boolean indicating if only the probabilistic annotation should be used in building the model (an optional argument; default is '0')
         fbamodel_id model - ID that should be used for the newly constructed model (an optional argument; default is 'undef')
         bool coremodel - indicates that a core model should be constructed instead of a genome scale model (an optional argument; default is '0')
@@ -13246,7 +12998,6 @@ workspace has a value which is a workspace_id
 auth has a value which is a string
 overwrite has a value which is a bool
 add_to_model has a value which is a bool
-donot_submit_job has a value which is a bool
 
 </pre>
 
@@ -13268,7 +13019,6 @@ workspace has a value which is a workspace_id
 auth has a value which is a string
 overwrite has a value which is a bool
 add_to_model has a value which is a bool
-donot_submit_job has a value which is a bool
 
 
 =end text
@@ -13296,7 +13046,6 @@ Input parameters for the "queue_gapfill_model" function.
         fbamodel_id out_model - ID where the gapfilled model will be saved (an optional argument: default is 'undef')
         gapfill_id gapFill - ID to which gapfill solution will be saved (an optional argument: default is 'undef')
         workspace_id workspace - workspace where gapfill results will be saved (a required argument)
-        bool donot_submit_job - a flag indicating if the job should be submitted to the cluster (an optional argument: default is '0')
         int timePerSolution - maximum time to spend to obtain each solution
         int totalTimeLimit - maximum time to spend to obtain all solutions
         string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
@@ -13321,7 +13070,6 @@ timePerSolution has a value which is an int
 totalTimeLimit has a value which is an int
 auth has a value which is a string
 overwrite has a value which is a bool
-donot_submit_job has a value which is a bool
 
 </pre>
 
@@ -13343,7 +13091,6 @@ timePerSolution has a value which is an int
 totalTimeLimit has a value which is an int
 auth has a value which is a string
 overwrite has a value which is a bool
-donot_submit_job has a value which is a bool
 
 
 =end text
@@ -13373,7 +13120,6 @@ Input parameters for the "queue_gapgen_model" function.
         workspace_id workspace - workspace where gapgen results will be saved (a required argument)
         int timePerSolution - maximum time to spend to obtain each solution
         int totalTimeLimit - maximum time to spend to obtain all solutions
-        bool donot_submit_job - a flag indicating if the job should be submitted to the cluster (an optional argument: default is '0')
         string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
 
@@ -13396,7 +13142,6 @@ auth has a value which is a string
 timePerSolution has a value which is an int
 totalTimeLimit has a value which is an int
 overwrite has a value which is a bool
-donot_submit_job has a value which is a bool
 
 </pre>
 
@@ -13418,7 +13163,6 @@ auth has a value which is a string
 timePerSolution has a value which is an int
 totalTimeLimit has a value which is an int
 overwrite has a value which is a bool
-donot_submit_job has a value which is a bool
 
 
 =end text
@@ -13450,7 +13194,6 @@ Input parameters for the "queue_wildtype_phenotype_reconciliation" function.
         bool queueSensitivityAnalysis - flag indicating if sensitivity analysis should be queued to run on solutions (an optional argument: default is '0')
         bool queueReconciliationCombination - flag indicating if reconcilication combination should be queued to run on solutions (an optional argument: default is '0')
         workspace_id workspace - workspace where reconciliation results will be saved (a required argument)
-        bool donot_submit_job - a flag indicating if the job should be submitted to the cluster (an optional argument: default is '0')
         string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
 
@@ -13475,7 +13218,6 @@ queueSensitivityAnalysis has a value which is a bool
 queueReconciliationCombination has a value which is a bool
 auth has a value which is a string
 overwrite has a value which is a bool
-donot_submit_job has a value which is a bool
 
 </pre>
 
@@ -13499,7 +13241,6 @@ queueSensitivityAnalysis has a value which is a bool
 queueReconciliationCombination has a value which is a bool
 auth has a value which is a string
 overwrite has a value which is a bool
-donot_submit_job has a value which is a bool
 
 
 =end text
@@ -13530,7 +13271,6 @@ Input parameters for the "queue_reconciliation_sensitivity_analysis" function.
         list<gapfill_id> gapFills - IDs of gapfill solutions (an optional argument: default is 'undef')
         bool queueReconciliationCombination - flag indicating if sensitivity analysis combination should be queued to run on solutions (an optional argument: default is '0')
         workspace_id workspace - workspace where sensitivity analysis results will be saved (a required argument)
-        bool donot_submit_job - a flag indicating if the job should be submitted to the cluster (an optional argument: default is '0')
         string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
 
@@ -13551,7 +13291,6 @@ gapGens has a value which is a reference to a list where each element is a gapge
 queueReconciliationCombination has a value which is a bool
 auth has a value which is a string
 overwrite has a value which is a bool
-donot_submit_job has a value which is a bool
 
 </pre>
 
@@ -13571,7 +13310,6 @@ gapGens has a value which is a reference to a list where each element is a gapge
 queueReconciliationCombination has a value which is a bool
 auth has a value which is a string
 overwrite has a value which is a bool
-donot_submit_job has a value which is a bool
 
 
 =end text
@@ -13603,7 +13341,6 @@ Input parameters for the "queue_combine_wildtype_phenotype_reconciliation" funct
         workspace_id workspace - workspace where solution combination results will be saved (a required argument)
         int timePerSolution - maximum time spent per solution
         int totalTimeLimit - maximum time allowed to work on problem
-        bool donot_submit_job - a flag indicating if the job should be submitted to the cluster (an optional argument: default is '0')
         string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
 
@@ -13626,7 +13363,6 @@ gapFills has a value which is a reference to a list where each element is a gapf
 gapGens has a value which is a reference to a list where each element is a gapgen_id
 auth has a value which is a string
 overwrite has a value which is a bool
-donot_submit_job has a value which is a bool
 
 </pre>
 
@@ -13648,7 +13384,6 @@ gapFills has a value which is a reference to a list where each element is a gapf
 gapGens has a value which is a reference to a list where each element is a gapgen_id
 auth has a value which is a string
 overwrite has a value which is a bool
-donot_submit_job has a value which is a bool
 
 
 =end text
@@ -13667,7 +13402,7 @@ donot_submit_job has a value which is a bool
 
 Input parameters for the "jobs_done" function.
 
-        job_id jobid - ID of the job object (a required argument)
+        job_id job - ID of the job object (a required argument)
         string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
 
@@ -13677,7 +13412,7 @@ Input parameters for the "jobs_done" function.
 
 <pre>
 a reference to a hash where the following keys are defined:
-jobid has a value which is a job_id
+job has a value which is a job_id
 auth has a value which is a string
 
 </pre>
@@ -13687,47 +13422,7 @@ auth has a value which is a string
 =begin text
 
 a reference to a hash where the following keys are defined:
-jobid has a value which is a job_id
-auth has a value which is a string
-
-
-=end text
-
-=back
-
-
-
-=head2 check_job_params
-
-=over 4
-
-
-
-=item Description
-
-Input parameters for the "check_job" function.
-
-        job_id jobid - ID of the job object (a required argument)
-        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-jobid has a value which is a job_id
-auth has a value which is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-jobid has a value which is a job_id
+job has a value which is a job_id
 auth has a value which is a string
 
 
@@ -13747,8 +13442,7 @@ auth has a value which is a string
 
 Input parameters for the "run_job" function.
 
-        job_id jobid - ID of the job object (a required argument)
-        int index - index of subobject to be run (an optional argument; default is '0')
+        job_id job - ID of the job object (a required argument)
         string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
 
@@ -13758,8 +13452,7 @@ Input parameters for the "run_job" function.
 
 <pre>
 a reference to a hash where the following keys are defined:
-jobid has a value which is a job_id
-index has a value which is an int
+job has a value which is a job_id
 auth has a value which is a string
 
 </pre>
@@ -13769,8 +13462,7 @@ auth has a value which is a string
 =begin text
 
 a reference to a hash where the following keys are defined:
-jobid has a value which is a job_id
-index has a value which is an int
+job has a value which is a job_id
 auth has a value which is a string
 
 

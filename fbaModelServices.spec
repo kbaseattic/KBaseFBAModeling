@@ -1024,37 +1024,31 @@ module fbaModelServices {
 		string auth;
     } clusterjob;
     
-    /* Data structures for an FBA job object
+    /* Data structures for a job object
 		
 		job_id id - ID of the job object
-		workspace_id workspace - workspace containing job object
-		list<clusterjob> clusterjobs - list of data related to cluster jobs
-		string postprocess_command - command to be run after the job is complete
-		list<CommandArguments> postprocess_args - arguments to be submitted to the postprocess job
-		string queuing_command - command used to queue job
-		float clustermem - maximum memmory expected to be consumed by the job
-		int clustertime - maximum time to spent running the job
-		string clustertoken - token for submitted cluster job
-		string queuetime - time when the job was queued
+		string type - type of the job
+		string auth - authentication token of job owner
+		string status - current status of job
+		mapping<string,string> jobdata;
+		string queuetime - time when job was queued
+		string starttime - time when job started running
 		string completetime - time when the job was completed
-		bool complete - flag indicating if job is complete
-		string owner - username of the user that queued the job
-		
+		string owner - owner of the job
+		string queuecommand - command used to queue job
+			
 	*/
     typedef structure {
 		job_id id;
-		workspace_id workspace;
-		list<clusterjob> clusterjobs;
-		string postprocess_command;
-		list<CommandArguments> postprocess_args;
-		string queuing_command;
-		float clustermem;
-		int clustertime;
-		string clustertoken;
+		string type;
+		string auth;
+		string status;
+		mapping<string,string> jobdata;
 		string queuetime;
+		string starttime;
 		string completetime;
-		bool complete;
-		string owner;		
+		string owner;
+		string queuecommand;
     } JobObject;
 	/*********************************************************************************
     ETC object type definitions
@@ -1431,9 +1425,8 @@ module fbaModelServices {
 	
 		genome_id genome - ID of the genome for which a model is to be built (a required argument)
 		workspace_id genome_workspace - ID of the workspace containing the target genome (an optional argument; default is the workspace argument)
-		probanno_id probanno - ID of the probabilistic annotation to be used in building the model (an optional argument; default is 'undef')
-		workspace_id probanno_workspace - ID of the workspace containing the probabilistic annotation (an optional argument; default is the workspace argument)
-		float probannoThreshold - a threshold of the probability required for a probabilistic annotation to be accepted (an optional argument; default is '1')
+		template_id templatemodel - 
+		workspace_id templatemodel_workspace - 
 		bool probannoOnly - a boolean indicating if only the probabilistic annotation should be used in building the model (an optional argument; default is '0')
 		fbamodel_id model - ID that should be used for the newly constructed model (an optional argument; default is 'undef')
 		bool coremodel - indicates that a core model should be constructed instead of a genome scale model (an optional argument; default is '0')
@@ -1865,7 +1858,6 @@ module fbaModelServices {
 		fba_id fba - ID under which the FBA results should be saved (an optional argument; defaul is 'undef')
 		workspace_id workspace - workspace where FBA results will be saved (a required argument)
 		bool add_to_model - a flag indicating if the FBA study should be attached to the model to support viewing results (an optional argument: default is '0')
-		bool donot_submit_job - a flag indicating if the job should be submitted to the cluster (an optional argument: default is '0')
 		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 		
 	*/
@@ -1883,12 +1875,11 @@ module fbaModelServices {
 		string auth;
 		bool overwrite;
 		bool add_to_model;
-		bool donot_submit_job;
     } queue_runfba_params;
 	/*
         Queues an FBA job in a single media condition
     */
-	funcdef queue_runfba(queue_runfba_params input) returns (object_metadata output);
+	funcdef queue_runfba(queue_runfba_params input) returns (JobObject job);
    
    /* Input parameters for the "queue_gapfill_model" function.
 	
@@ -1901,7 +1892,6 @@ module fbaModelServices {
 		fbamodel_id out_model - ID where the gapfilled model will be saved (an optional argument: default is 'undef')
 		gapfill_id gapFill - ID to which gapfill solution will be saved (an optional argument: default is 'undef')
 		workspace_id workspace - workspace where gapfill results will be saved (a required argument)
-		bool donot_submit_job - a flag indicating if the job should be submitted to the cluster (an optional argument: default is '0')
 		int timePerSolution - maximum time to spend to obtain each solution
 		int totalTimeLimit - maximum time to spend to obtain all solutions
 		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
@@ -1921,12 +1911,11 @@ module fbaModelServices {
 		int totalTimeLimit;
 		string auth;
 		bool overwrite;
-		bool donot_submit_job;
     } gapfill_model_params;
     /*
         Queues an FBAModel gapfilling job in single media condition
     */
-    funcdef queue_gapfill_model(gapfill_model_params input) returns (object_metadata output);
+    funcdef queue_gapfill_model(gapfill_model_params input) returns (JobObject job);
     
     /* Input parameters for the "queue_gapgen_model" function.
 	
@@ -1941,7 +1930,6 @@ module fbaModelServices {
 		workspace_id workspace - workspace where gapgen results will be saved (a required argument)
 		int timePerSolution - maximum time to spend to obtain each solution
 		int totalTimeLimit - maximum time to spend to obtain all solutions
-		bool donot_submit_job - a flag indicating if the job should be submitted to the cluster (an optional argument: default is '0')
 		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 		
 	*/
@@ -1959,12 +1947,11 @@ module fbaModelServices {
 		int timePerSolution;
 		int totalTimeLimit;
 		bool overwrite;
-		bool donot_submit_job;
     } gapgen_model_params;
     /*
         Queues an FBAModel gapfilling job in single media condition
     */
-    funcdef queue_gapgen_model(gapgen_model_params input) returns (object_metadata output);
+    funcdef queue_gapgen_model(gapgen_model_params input) returns (JobObject job);
     
     /* Input parameters for the "queue_wildtype_phenotype_reconciliation" function.
 	
@@ -1981,7 +1968,6 @@ module fbaModelServices {
 		bool queueSensitivityAnalysis - flag indicating if sensitivity analysis should be queued to run on solutions (an optional argument: default is '0')
 		bool queueReconciliationCombination - flag indicating if reconcilication combination should be queued to run on solutions (an optional argument: default is '0')
 		workspace_id workspace - workspace where reconciliation results will be saved (a required argument)
-		bool donot_submit_job - a flag indicating if the job should be submitted to the cluster (an optional argument: default is '0')
 		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 		
 	*/
@@ -2001,12 +1987,11 @@ module fbaModelServices {
 		bool queueReconciliationCombination;
 		string auth;
 		bool overwrite;
-		bool donot_submit_job;
     } wildtype_phenotype_reconciliation_params;
     /*
         Queues an FBAModel reconciliation job
     */
-    funcdef queue_wildtype_phenotype_reconciliation(wildtype_phenotype_reconciliation_params input) returns (object_metadata output);
+    funcdef queue_wildtype_phenotype_reconciliation(wildtype_phenotype_reconciliation_params input) returns (JobObject job);
     
     /* Input parameters for the "queue_reconciliation_sensitivity_analysis" function.
 	
@@ -2022,7 +2007,6 @@ module fbaModelServices {
 		list<gapfill_id> gapFills - IDs of gapfill solutions (an optional argument: default is 'undef')
 		bool queueReconciliationCombination - flag indicating if sensitivity analysis combination should be queued to run on solutions (an optional argument: default is '0')
 		workspace_id workspace - workspace where sensitivity analysis results will be saved (a required argument)
-		bool donot_submit_job - a flag indicating if the job should be submitted to the cluster (an optional argument: default is '0')
 		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 		
 	*/
@@ -2040,12 +2024,11 @@ module fbaModelServices {
 		bool queueReconciliationCombination;
 		string auth;
 		bool overwrite;
-		bool donot_submit_job;
     } queue_reconciliation_sensitivity_analysis_params;
     /*
         Queues an FBAModel reconciliation job
     */
-    funcdef queue_reconciliation_sensitivity_analysis(wildtype_phenotype_reconciliation_params input) returns (object_metadata output);
+    funcdef queue_reconciliation_sensitivity_analysis(wildtype_phenotype_reconciliation_params input) returns (JobObject job);
     
     /* Input parameters for the "queue_combine_wildtype_phenotype_reconciliation" function.
 	
@@ -2062,7 +2045,6 @@ module fbaModelServices {
 		workspace_id workspace - workspace where solution combination results will be saved (a required argument)
 		int timePerSolution - maximum time spent per solution
 		int totalTimeLimit - maximum time allowed to work on problem
-		bool donot_submit_job - a flag indicating if the job should be submitted to the cluster (an optional argument: default is '0')
 		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 		
 	*/
@@ -2080,59 +2062,41 @@ module fbaModelServices {
 		list<gapgen_id> gapGens;
 		string auth;
 		bool overwrite;
-		bool donot_submit_job;
     } combine_wildtype_phenotype_reconciliation_params;
     /*
         Queues an FBAModel reconciliation job
     */
-    funcdef queue_combine_wildtype_phenotype_reconciliation(combine_wildtype_phenotype_reconciliation_params input) returns (object_metadata output);
+    funcdef queue_combine_wildtype_phenotype_reconciliation(combine_wildtype_phenotype_reconciliation_params input) returns (JobObject job);
         
     /* Input parameters for the "jobs_done" function.
 	
-		job_id jobid - ID of the job object (a required argument)
+		job_id job - ID of the job object (a required argument)
 		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 		
 	*/
 	typedef structure {
-		job_id jobid;
+		job_id job;
 		string auth;
     } jobs_done_params;
 	/*
         Mark specified job as complete and run postprocessing
     */
-	funcdef jobs_done(jobs_done_params input) returns (JobObject output);
-
-	/* Input parameters for the "check_job" function.
-	
-		job_id jobid - ID of the job object (a required argument)
-		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
-		
-	*/
-	typedef structure {
-		job_id jobid;
-		string auth;
-    } check_job_params;
-    /*
-        Retreives job data given a job ID
-    */
-    funcdef check_job(check_job_params input) returns (JobObject output);       
+	funcdef jobs_done(jobs_done_params input) returns (JobObject job);
 	
 	/* Input parameters for the "run_job" function.
 	
-		job_id jobid - ID of the job object (a required argument)
-		int index - index of subobject to be run (an optional argument; default is '0')
+		job_id job - ID of the job object (a required argument)
 		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 		
 	*/
 	typedef structure {
-		job_id jobid;
-		int index;
+		job_id job;
 		string auth;
     } run_job_params;
 	/*
         Runs specified job
     */
-	funcdef run_job(run_job_params input) returns (JobObject output);
+	funcdef run_job(run_job_params input) returns (JobObject job);
 	
 	/* Input parameters for the "set_cofactors" function.
 	
