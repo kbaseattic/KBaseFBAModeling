@@ -15,23 +15,21 @@ my $script = "kbfba-buildfbamodel";
 my $translation = {
 	Genome => "genome",
 	genomews => "genome_workspace",
-	probanno => "probanno",
-	probannows => "probanno_workspace",
+	templateid => "templatemodel",
+	templatews => "templatemodel_workspace",
 	model => "model",
+	core => "coremodel",
 	workspace => "workspace",
 	auth => "auth",
-	overwrite => "overwrite",
-	probannoonly => "probannoOnly"
+	overwrite => "overwrite"
 };
 #Defining usage and options
 my $specs = [
-    [ 'model|m:s', 'Name to be provided for output model' ],
-    [ 'probanno|p:s', 'ID of probabilistic annotation object to use' ],
-    [ 'threshold|t:s', 'Minimum probability of annotations to be used'],
-    [ 'probannoonly|r:s', 'Only use probabilistic annotations for model reconstruction'],
-    [ 'workspace|w:s', 'Reference default workspace', { "default" => workspace() } ],
-    [ 'probannows:s', 'Workspace of probabilistic annotation object' ],
-    [ 'genomews:s', 'Workspace where genome object is located' ],
+    [ 'model|m=s', 'Name to be provided for output model' ],
+    [ 'templateid=s', 'ID of template model to use' ],
+    [ 'templatews=s', 'Workspace with template model' ],
+    [ 'core', 'Build core model'],
+    [ 'workspace|w=s', 'Reference default workspace', { "default" => workspace() } ],
     [ 'overwrite|o', 'Overwrite any existing model with same name' ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);

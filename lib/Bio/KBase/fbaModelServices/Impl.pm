@@ -77,6 +77,7 @@ use ModelSEED::MS::GapfillingFormulation;
 use ModelSEED::MS::GapgenFormulation;
 use ModelSEED::MS::FBAFormulation;
 use ModelSEED::MS::FBAProblem;
+use ModelSEED::MS::ModelTemplate;
 use ModelSEED::MS::PROMModel;;
 use ModelSEED::MS::Metadata::Definitions;
 use ModelSEED::Client::MSSeedSupport;
@@ -2243,10 +2244,10 @@ sub new
     if (defined $params{defaultJobState}) {
 		$self->{_defaultJobState} = $params{defaultJobState};
     }
-    if (defined $params{"workspace-url"}) {
-		$self->{"_workspace-url"} = $params{"workspace-url"};
-    } elsif (defined($options->{workspace})) {
+    if (defined($options->{workspace})) {
     	$self->{_workspaceServiceOveride} = $options->{workspace};
+    } elsif (defined $params{"workspace-url"}) {
+		$self->{"_workspace-url"} = $params{"workspace-url"};
     } else {
 		print STDERR "workspace-url configuration not found, using 'localhost'\n";
 		$self->{"_workspace-url"} = "http://localhost:7058";
@@ -5026,21 +5027,23 @@ sub genome_to_fbamodel
     #Retrieving template model
     my $template;
     if (defined($input->{templatemodel})) {
-    	$template = $self->_get_msobject("TemplateModel",$input->{templatemodel_workspace},$input->{templatemodel});
+    	$template = $self->_get_msobject("ModelTemplate",$input->{templatemodel_workspace},$input->{templatemodel});
     } elsif ($input->{coremodel} == 1) {
-    	$template = $self->_get_msobject("TemplateModel","KBaseTemplateModels","CoreModelTemplate");
+    	$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","CoreModelTemplate");
     } else {
     	my $class = $annotation->classifyGenomeFromAnnotation();
-    	if ($class eq "GramPositive") {
-    		$template = $self->_get_msobject("TemplateModel","KBaseTemplateModels","GramPosModelTemplate");
-    	} elsif ($class eq "GramNegative") {
-    		$template = $self->_get_msobject("TemplateModel","KBaseTemplateModels","GramNegModelTemplate");
+    	if ($class eq "Gram positive") {
+    		print $class." 2\n";
+    		$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","GramPosModelTemplate");
+    	} elsif ($class eq "Gram negative") {
+    		print $class." 3\n";
+    		$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","GramNegModelTemplate");
     	} elsif ($class eq "Plant") {
-    		$template = $self->_get_msobject("TemplateModel","KBaseTemplateModels","PlantModelTemplate");
+    		$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","PlantModelTemplate");
     	}
     }
     #Building the model
-    my $mdl = $template->template->buildModel({
+    my $mdl = $template->buildModel({
 	    annotation => $annotation
 	});
 	$mdl->defaultNameSpace("KBase");
@@ -5489,8 +5492,12 @@ sub import_template_fbamodel
     	ignore_errors => 0
     });
     if (!defined($input->{id})) {
-    	$input->{id} = $self->_get_new_id("kbtm.");
+    	$input->{id} = $self->_get_new_id("tm.");
     }
+    if (!defined($input->{name})) {
+    	$input->{name} = $input->{id};	
+    }
+    my $mapping = $self->_get_msobject("Mapping",$input->{mapping_workspace},$input->{"map"});
 	my $factory = ModelSEED::MS::Factories::ExchangeFormatFactory->new(
 		store => $self->_KBaseStore()
 	);
@@ -5499,7 +5506,7 @@ sub import_template_fbamodel
 		templateBiomass => $input->{templateBiomass},
 		name => $input->{name},
 		modelType => $input->{modelType},
-		mapping => $input->{"map"},
+		mapping => $mapping,
 		domain => $input->{domain}
 	});
     $modelMeta = $self->_save_msobject($templateModel,"ModelTemplate",$input->{workspace},$input->{id},"import_template_fbamodel",1);
