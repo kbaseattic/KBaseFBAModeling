@@ -4,7 +4,6 @@ kbfba-addmedia	modeling
 kbfba-adjustbiomass	modeling
 kbfba-adjustmodel	modeling
 kbfba-buildfbamodel	modeling
-kbfba-checkjob	modeling
 kbfba-exportfba	modeling
 kbfba-exportfbamodel	modeling
 kbfba-exportgenome	modeling
@@ -24,6 +23,7 @@ kbfba-getreactions	modeling
 kbfba-importfbamodel	modeling
 kbfba-importpheno	modeling
 kbfba-importprobanno	modeling
+kbfba-importtemplate	modeling
 kbfba-importtranslation	modeling
 kbfba-integratesolution	modeling
 kbfba-jobdone	modeling

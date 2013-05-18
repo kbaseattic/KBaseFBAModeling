@@ -1358,28 +1358,6 @@ sub _parseBound {
 	return $output;
 }
 
-sub _create_job {
-	my ($self,$args) = @_;
-	$args = $self->_validateargs($args,["queuing_command","clusterjobs","workspace"],{
-		clustermem => 1200,
-		clustertime => 19800,
-		postprocess_command => undef,
-		postprocess_args => undef
-	});
-	return {
-		workspace => $args->{workspace},
-		clustermem => $args->{clustermem},
-		clustertime => $args->{clustertime},
-		complete => 0,
-		clusterjobs => $args->{clusterjobs},
-		clustertoken => undef,
-		postprocess_command => $args->{postprocess_command},
-		postprocess_args => $args->{postprocess_args},
-		queuing_command => $args->{queuing_command},
-		fbaURL => $self->_myURL()
-	};
-}
-
 sub _get_new_id {
 	my ($self,$prefix) = @_;
 	my $id;
