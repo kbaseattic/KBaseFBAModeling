@@ -470,7 +470,8 @@ sub _processTemplateFiles {
 		id => "CoreModelTemplate",
 		workspace => "KBaseTemplateModels",
 		domain => "Bacteria",
-		modelType => "CoreModel"
+		modelType => "CoreModel",
+		auth => $token
 	};
 }
 
