@@ -23,7 +23,7 @@ my $ws = Bio::KBase::workspaceService::Client->new("http://localhost:7058");
 #Instantiating client object
 my $obj = Bio::KBase::fbaModelServices::Client->new("http://localhost:7036");
 #Checking for standard and default biochemistry
-&_prepareWorkspace($ws);
+&_prepareWorkspace($ws,$obj);
 #Testing biochemistry retrieval method
 my $biochemistry = $obj->get_biochemistry({});
 ok defined($biochemistry), "Successfully printed biochemistry!";
@@ -348,7 +348,7 @@ done_testing(21);
 #ok defined($html), "Successfully exported FBA to html format!";
 
 sub _prepareWorkspace {
-	my ($ws) = @_;
+	my ($ws,$obj) = @_;
 	#Making sure the kbase workspace exists
 	eval {
 		$ws->create_workspace({
