@@ -1,0 +1,9 @@
+{
+   "stores" : [],
+   "password" : "",
+   "ERROR_DIR" : "/.modelseed_error",
+   "MFATK_CACHE" : "/tmp",
+   "users" : [],
+   "MFATK_BIN" : "/kb/deployment/bin/mfatoolkit",
+   "username" : "public"
+}
