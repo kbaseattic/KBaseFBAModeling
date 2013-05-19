@@ -34,7 +34,7 @@ my $rxns = $obj->get_reactions({
 ok defined($rxns->[0]), "Successfully printed reactions!";
 #Testing compound retrieval method
 my $cpds = $obj->get_compounds({
-	compounds => ["H2O","ADP"],
+	compounds => ["cpd00001","cpd00002"],
 });
 ok defined($cpds->[0]), "Successfully printed compounds!";
 #Creating workspace for tests
@@ -83,8 +83,8 @@ my $phenos = $obj->import_phenotypes({
 	genome => "kb|g.0",
 	genome_workspace => "fbaservicestest",
 	phenotypes => [
-		[[],"CustomMedia","fbaservicestest",["D name"],1],
-		[[],"Carbon-D-Glucose","NO_WORKSPACE",["A name"],1],
+		[[],"CustomMedia","fbaservicestest",["ADP"],1],
+		[[],"Carbon-D-Glucose","NO_WORKSPACE",["ATP"],1],
 		[["kb|g.0.peg.1","kb|g.0.peg.2"],"Carbon-Glycerol","NO_WORKSPACE",[],1]
 	],
 	notes => "",
