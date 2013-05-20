@@ -421,28 +421,29 @@ sub _prepareWorkspace {
 			auth => $token
 		});
 	};
+	my $tempmeta;
 	eval {
-		$meta = $ws->get_object({
+		$tempmeta = $ws->get_object({
 			id => "CoreModelTemplate",
 			type => "ModelTemplate",
 			workspace => "KBaseTemplateModels",
 			auth => $token
 		});
 	};
-	if (!defined($meta)) {
+	if (!defined($tempmeta)) {
 		$obj->import_template_fbamodel(_processTemplateFiles());
-	}
-	eval {
-		$meta = $ws->get_object({
-			id => "CoreModelTemplate",
-			type => "ModelTemplate",
-			workspace => "KBaseTemplateModels",
-			auth => $token
-		});
-	};
-	if (!defined($meta)) {
-		print "Cannot find model template!\n";
-		exit();
+		eval {
+			$tempmeta = $ws->get_object({
+				id => "CoreModelTemplate",
+				type => "ModelTemplate",
+				workspace => "KBaseTemplateModels",
+				auth => $token
+			});
+		};
+		if (!defined($tempmeta)) {
+			print "Cannot find model template!\n";
+			exit();
+		}
 	}
 }
 
