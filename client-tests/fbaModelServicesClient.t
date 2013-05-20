@@ -19,22 +19,27 @@ my $tokenObj = Bio::KBase::AuthToken->new(
 $token = $tokenObj->token();
 
 #Instantiating client workspace
-my $ws = Bio::KBase::workspaceService::Client->new("http://localhost:7058");
+my $wsurl = "http://localhost:7058";
+my $ws = Bio::KBase::workspaceService::Client->new($wsurl);
 #Instantiating client object
 my $obj = Bio::KBase::fbaModelServices::Client->new("http://localhost:7036");
 #Checking for standard and default biochemistry
 &_prepareWorkspace($ws,$obj);
 #Testing biochemistry retrieval method
-my $biochemistry = $obj->get_biochemistry({});
+my $biochemistry = $obj->get_biochemistry({
+	wsurl => $wsurl
+});
 ok defined($biochemistry), "Successfully printed biochemistry!";
 #Testing reaction retrieval method
 my $rxns = $obj->get_reactions({
 	reactions => ["rxn00001","rxn00002"],
+	wsurl => $wsurl
 });
 ok defined($rxns->[0]), "Successfully printed reactions!";
 #Testing compound retrieval method
 my $cpds = $obj->get_compounds({
 	compounds => ["cpd00001","cpd00002"],
+	wsurl => $wsurl
 });
 ok defined($cpds->[0]), "Successfully printed compounds!";
 #Creating workspace for tests
@@ -51,7 +56,8 @@ eval {
 	$cdmgenome = $obj->genome_to_workspace({
 		genome => "kb|g.0",
 		workspace => "fbaservicestest",
-		auth => $token
+		auth => $token,
+		wsurl => $wsurl
 	});
 };
 ok defined($cdmgenome), "Genome successfully imported to workspace from CDM!"; 
@@ -67,14 +73,16 @@ my $media = $obj->addmedia({
 	concentrations => [0.001,0.001,0.001],
 	maxflux => [1000,1000,1000],
 	minflux => [-1000,-1000,-1000],
-	auth => $token
+	auth => $token,
+	wsurl => $wsurl
 });
 ok defined($media), "Media successfully added to workspace!";
 #Testing media retrieval method
 my $medias = $obj->get_media({
 	medias => ["Carbon-D-Glucose","CustomMedia"],
 	workspaces => ["NO_WORKSPACE","fbaservicestest"],
-	auth => $token
+	auth => $token,
+	wsurl => $wsurl
 });
 ok defined($medias->[0]), "Successfully printed media!";
 #Now test phenotype import
@@ -88,15 +96,19 @@ my $phenos = $obj->import_phenotypes({
 		[["kb|g.0.peg.1","kb|g.0.peg.2"],"Carbon-Glycerol","NO_WORKSPACE",[],1]
 	],
 	notes => "",
-	auth => $token
+	auth => $token,
+	wsurl => $wsurl
 });
+
+my $phenos
 ok defined($phenos), "Successfully imported phenotypes!";
 #Now test ability to produce a metabolic model
 my $model = $obj->genome_to_fbamodel({
 	genome => "kb|g.0",
 	workspace => "fbaservicestest",
 	coremodel => 1,
-	auth => $token
+	auth => $token,
+	wsurl => $wsurl
 });
 ok defined($model), "Model successfully constructed from input genome!";
 #Now test phenotype simulation
@@ -107,7 +119,8 @@ my $phenosim = $obj->simulate_phenotypes({
 	phenotypeSet_workspace => "fbaservicestest",
 	formulation => {},
 	notes => "",
-	auth => $token
+	auth => $token,
+	wsurl => $wsurl
 });
 ok defined($phenosim), "Successfully simulated phenotypes!";
 #Now test phenotype simulation export
@@ -115,7 +128,8 @@ my $html = $obj->export_phenotypeSimulationSet({
 	phenotypeSimulationSet => $phenosim->[0],
 	workspace => "fbaservicestest",
 	format => "html",
-	auth => $token
+	auth => $token,
+	wsurl => $wsurl
 });
 ok defined($html), "Successfully exported phenotype simulations to html format!";
 #Testing model export
@@ -123,28 +137,32 @@ my $cytoseed = $obj->export_fbamodel({
 	model => $model->[0],
 	workspace => "fbaservicestest",
 	format => "cytoseed",
-	auth => $token
+	auth => $token,
+	wsurl => $wsurl
 });
 ok defined($cytoseed), "Successfully exported model to cytoseed format!";
 $html = $obj->export_fbamodel({
 	model => $model->[0],
 	workspace => "fbaservicestest",
 	format => "html",
-	auth => $token
+	auth => $token,
+	wsurl => $wsurl
 });
 ok defined($html), "Successfully exported model to html format!";
 my $sbml = $obj->export_fbamodel({
 	model => $model->[0],
 	workspace => "fbaservicestest",
 	format => "sbml",
-	auth => $token
+	auth => $token,
+	wsurl => $wsurl
 });
 ok defined($sbml), "Successfully exported model to sml format!";
 #Testing model retrieval method
 my $mdls = $obj->get_models({
 	models => [$model->[0]],
 	workspaces => ["fbaservicestest"],
-	auth => $token
+	auth => $token,
+	wsurl => $wsurl
 });
 ok defined($mdls->[0]), "Successfully printed model data!";
 #Now exporting media formulation
@@ -152,7 +170,8 @@ $html = $obj->export_media({
 	media => $media->[0],
 	workspace => "fbaservicestest",
 	format => "html",
-	auth => $token
+	auth => $token,
+	wsurl => $wsurl
 });
 ok defined($html), "Successfully exported media to html format!";
 #Now test flux balance analysis
@@ -169,14 +188,16 @@ my $fba = $obj->runfba({
 	findminmedia => 0,
 	notes => "",
 	workspace => "fbaservicestest",
-	auth => $token
+	auth => $token,
+	wsurl => $wsurl
 });
 ok defined($fba), "FBA successfully run on input model!";
 #Testing fba retrieval method
 my $fbas = $obj->get_fbas({
 	fbas => [$fba->[0]],
 	workspaces => ["fbaservicestest"],
-	auth => $token
+	auth => $token,
+	wsurl => $wsurl
 });
 ok defined($fbas->[0]), "Successfully printed fba data!";
 #Now test flux balance analysis export
@@ -184,7 +205,8 @@ $html = $obj->export_fba({
 	fba => $fba->[0],
 	workspace => "fbaservicestest",
 	format => "html",
-	auth => $token
+	auth => $token,
+	wsurl => $wsurl
 });
 ok defined($html), "Successfully exported FBA to html format!";
 #Now test the queue fba function, without submitting the job to the cluster
@@ -201,7 +223,8 @@ my $job = $obj->queue_runfba({
 	findminmedia => 0,
 	notes => "",
 	workspace => "fbaservicestest",
-	auth => $token
+	auth => $token,
+	wsurl => $wsurl
 });
 ok defined($job), "FBA successfully queued for input model!";
 #Now queuing gapfilling in complete media
@@ -217,7 +240,8 @@ $job = $obj->queue_gapfill_model({
 	},
 	integrate_solution => 1,
 	out_model => $model->[0].".gf",
-	auth => $token
+	auth => $token,
+	wsurl => $wsurl
 });
 ok defined($html), "Successfully queued gapfill job!";
 #Now exporting queued FBA
@@ -235,7 +259,8 @@ $job = $obj->queue_gapgen_model({
 	},
 	integrate_solution => 1,
 	out_model => $model->[0].".gg",
-	auth => $token
+	auth => $token,
+	wsurl => $wsurl
 });
 ok defined($html), "Successfully queued gapgen job!";
 
@@ -245,7 +270,8 @@ done_testing(21);
 #$job = $obj->run_job({
 #	jobid => $job->[0],
 #	workspace => "fbaservicestest",
-#	auth => $token
+#	auth => $token,
+#	wsurl => $wsurl
 #});
 #ok defined($job), "Successfully ran queued FBA job!";
 ##Now exporting queued FBA
@@ -253,14 +279,16 @@ done_testing(21);
 #	fba => $job->{clusterjobs}->[0]->{fbaid},
 #	workspace => "fbaservicestest",
 #	format => "html",
-#	auth => $token
+#	auth => $token,
+#	wsurl => $wsurl
 #});
 #ok defined($html), "Successfully exported FBA to html format!";
 ##Now running queued gapfill job mannually to ensure that the job runs and postprocessing works
 #$job = $obj->run_job({
 #	jobid => $job->[0],
 #	workspace => "fbaservicestest",
-#	auth => $token
+#	auth => $token,
+#	wsurl => $wsurl
 #});
 #ok defined($job), "Successfully ran queued gapfill job!";
 ##Now queuing gapfilling in custom media
@@ -279,14 +307,16 @@ done_testing(21);
 #	donot_submit_job => 1,
 #	biochemistry => "testdefault",
 #	mapping => "testdefault",
-#	auth => $token
+#	auth => $token,
+#	wsurl => $wsurl
 #});
 #ok defined($html), "Successfully queued gapfill job!";
 ##Now running queued gapfill job mannually to ensure that the job runs and postprocessing works
 #$job = $obj->run_job({
 #	jobid => $job->[0],
 #	workspace => "fbaservicestest",
-#	auth => $token
+#	auth => $token,
+#	wsurl => $wsurl
 #});
 #ok defined($job), "Successfully ran queued gapfill job!";
 ##Now test flux balance analysis
@@ -303,7 +333,8 @@ done_testing(21);
 #	findminmedia => 0,
 #	notes => "",
 #	workspace => "fbaservicestest",
-#	auth => $token
+#	auth => $token,
+#	wsurl => $wsurl
 #});
 #ok defined($fba), "FBA successfully run on gapfilled model!";
 ##Now exporting queued FBA
@@ -311,14 +342,16 @@ done_testing(21);
 #	fba => $fba->[0],
 #	workspace => "fbaservicestest",
 #	format => "html",
-#	auth => $token
+#	auth => $token,
+#	wsurl => $wsurl
 #});
 #ok defined($html), "Successfully exported FBA to html format!";
 ##Now running queued gapfill job mannually to ensure that the job runs and postprocessing works
 #$job = $obj->run_job({
 #	jobid => $job->[0],
 #	workspace => "fbaservicestest",
-#	auth => $token
+#	auth => $token,
+#	wsurl => $wsurl
 #});
 #ok defined($job), "Successfully ran queued gapgen job!";
 ##Now test flux balance analysis
@@ -335,7 +368,8 @@ done_testing(21);
 #	findminmedia => 0,
 #	notes => "",
 #	workspace => "fbaservicestest",
-#	auth => $token
+#	auth => $token,
+#	wsurl => $wsurl
 #});
 #ok defined($fba), "FBA successfully run on gapgen model!";
 ##Now exporting queued FBA
@@ -343,7 +377,8 @@ done_testing(21);
 #	fba => $fba->[0],
 #	workspace => "fbaservicestest",
 #	format => "html",
-#	auth => $token
+#	auth => $token,
+#	wsurl => $wsurl
 #});
 #ok defined($html), "Successfully exported FBA to html format!";
 
@@ -398,6 +433,18 @@ sub _prepareWorkspace {
 	};
 	if (!defined($meta)) {
 		$obj->import_template_fbamodel(_processTemplateFiles());
+	}
+	eval {
+		$meta = $ws->get_object({
+			id => "CoreModelTemplate",
+			type => "ModelTemplate",
+			workspace => "KBaseTemplateModels",
+			auth => $token
+		});
+	};
+	if (!defined($meta)) {
+		print "Cannot find model template!\n";
+		exit();
 	}
 }
 
@@ -471,7 +518,8 @@ sub _processTemplateFiles {
 		workspace => "KBaseTemplateModels",
 		domain => "Bacteria",
 		modelType => "CoreModel",
-		auth => $token
+		auth => $token,
+		wsurl => $wsurl
 	};
 }
 
