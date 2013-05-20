@@ -99,8 +99,6 @@ my $phenos = $obj->import_phenotypes({
 	auth => $token,
 	wsurl => $wsurl
 });
-
-my $phenos
 ok defined($phenos), "Successfully imported phenotypes!";
 #Now test ability to produce a metabolic model
 my $model = $obj->genome_to_fbamodel({
