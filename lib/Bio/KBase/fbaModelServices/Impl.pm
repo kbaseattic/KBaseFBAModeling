@@ -2193,6 +2193,8 @@ sub new
     my $options = $args[0];
 	$ENV{KB_NO_FILE_ENVIRONMENT} = 1;
     my %params;
+    $self->{_defaultJobState} = "queued";
+    $self->{_accounttype} = "kbase";
     if ((my $e = $ENV{KB_DEPLOYMENT_CONFIG}) && -e $ENV{KB_DEPLOYMENT_CONFIG}) {
 		my $service = $ENV{KB_SERVICE_NAME};
 		if (defined($service)) {
@@ -2214,8 +2216,6 @@ sub new
 		    }
 		}
     }
-    $self->{_defaultJobState} = "queued";
-    $self->{_accounttype} = "kbase";
 	if (defined $params{accounttype}) {
 		$self->{_accounttype} = $params{accounttype};
     }
