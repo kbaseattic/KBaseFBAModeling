@@ -252,7 +252,7 @@ $job = $obj->queue_gapgen_model({
 			media_workspace => "fbaservicestest"
 		},
 		refmedia => "Complete",
-		refmedia_workspace => "kbasecdm",
+		refmedia_workspace => "NO_WORKSPACE",
 		num_solutions => 1
 	},
 	integrate_solution => 1,
@@ -296,7 +296,7 @@ done_testing(21);
 #	formulation => {
 #		formulation => {
 #			media => "Complete",
-#			media_workspace => "kbasecdm"
+#			media_workspace => "NO_WORKSPACE"
 #		},
 #		num_solutions => 1
 #	},
