@@ -244,7 +244,7 @@ $job = $obj->queue_gapfill_model({
 ok defined($html), "Successfully queued gapfill job!";
 #Now exporting queued FBA
 $job = $obj->queue_gapgen_model({
-	model => $model->[0].".gf2",
+	model => $model->[0],
 	workspace => "fbaservicestest",
 	formulation => {
 		formulation => {
