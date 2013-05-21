@@ -401,7 +401,7 @@ sub _prepareWorkspace {
 		});
 	};
 	if (!defined($meta)) {
-		$ws->import_bio({overwrite => 1});
+		$ws->import_bio({overwrite => 1,auth => $token});
 	}
 	eval {
 		$meta = $ws->get_object({
@@ -412,7 +412,7 @@ sub _prepareWorkspace {
 		});
 	};
 	if (!defined($meta)) {
-		$ws->import_map({overwrite => 1});
+		$ws->import_map({overwrite => 1,auth => $token});
 	}
 	eval {
 		$ws->create_workspace({
