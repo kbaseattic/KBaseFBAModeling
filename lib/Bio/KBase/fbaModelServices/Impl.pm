@@ -5011,10 +5011,8 @@ sub genome_to_fbamodel
     } else {
     	my $class = $annotation->classifyGenomeFromAnnotation();
     	if ($class eq "Gram positive") {
-    		print $class." 2\n";
     		$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","GramPosModelTemplate");
     	} elsif ($class eq "Gram negative") {
-    		print $class." 3\n";
     		$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","GramNegModelTemplate");
     	} elsif ($class eq "Plant") {
     		$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","PlantModelTemplate");
