@@ -2195,7 +2195,7 @@ sub new
     my $params;
     $self->{_defaultJobState} = "queued";
     $self->{_accounttype} = "kbase";
-    my $paramlist = qw(accounttype workspace-url defaultJobState);
+    my $paramlist = [qw(accounttype workspace-url defaultJobState)];
     if ((my $e = $ENV{KB_DEPLOYMENT_CONFIG}) && -e $ENV{KB_DEPLOYMENT_CONFIG}) {
 		my $service = $ENV{KB_SERVICE_NAME};
 		if (defined($service)) {
