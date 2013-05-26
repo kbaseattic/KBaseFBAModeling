@@ -33,9 +33,9 @@ close($fh);
 my $obj;
 if ($job->{wsurl} eq "impl") {
 	require "Bio/KBase/workspaceService/Impl.pm";
-	$obj = Bio::KBase::fbaModelServices::Impl->new({"workspace" => Bio::KBase::workspaceService::Impl->new()});
+	$obj = Bio::KBase::fbaModelServices::Impl->new({accounttype => $job->{accounttype},workspace => Bio::KBase::workspaceService::Impl->new()});
 } else {
-    $obj = Bio::KBase::fbaModelServices::Impl->new({"workspace-url" => $job->{wsurl}});
+    $obj = Bio::KBase::fbaModelServices::Impl->new({accounttype => $job->{accounttype},"workspace-url" => $job->{wsurl}});
 }
 $obj->run_job({
 	job => $job->{id},
