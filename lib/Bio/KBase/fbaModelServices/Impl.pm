@@ -2192,40 +2192,38 @@ sub new
     #BEGIN_CONSTRUCTOR
     my $options = $args[0];
 	$ENV{KB_NO_FILE_ENVIRONMENT} = 1;
-    my %params;
+    my $params;
     $self->{_defaultJobState} = "queued";
     $self->{_accounttype} = "kbase";
+    my $paramlist = qw(accounttype workspace-url defaultJobState);
     if ((my $e = $ENV{KB_DEPLOYMENT_CONFIG}) && -e $ENV{KB_DEPLOYMENT_CONFIG}) {
 		my $service = $ENV{KB_SERVICE_NAME};
 		if (defined($service)) {
 			my $c = Config::Simple->new();
 			$c->read($e);
-			my @params = qw(accounttype workspace-url defaultJobState);
-			for my $p (@params) {
+			for my $p (@{$paramlist}) {
 			  	my $v = $c->param("$service.$p");
 			    if ($v) {
-					$params{$p} = $v;
+					$params->{$p} = $v;
 			    }
 			}
 		}
-    } else {
-    	my @params = qw(accounttype workspace-url defaultJobState);
-		for my $p (@params) {
-		  	if (defined($options->{$p})) {
-				$params{$p} = $options->{$p};
-		    }
-		}
+    }	
+	for my $p (@{$paramlist}) {
+	  	if (defined($options->{$p})) {
+			$params->{$p} = $options->{$p};
+	    }
+	}
+	if (defined $params->{accounttype}) {
+		$self->{_accounttype} = $params->{accounttype};
     }
-	if (defined $params{accounttype}) {
-		$self->{_accounttype} = $params{accounttype};
-    }
-    if (defined $params{defaultJobState}) {
-		$self->{_defaultJobState} = $params{defaultJobState};
+    if (defined $params->{defaultJobState}) {
+		$self->{_defaultJobState} = $params->{defaultJobState};
     }
     if (defined($options->{workspace})) {
     	$self->{_workspaceServiceOveride} = $options->{workspace};
-    } elsif (defined $params{"workspace-url"}) {
-		$self->{"_workspace-url"} = $params{"workspace-url"};
+    } elsif (defined $params->{"workspace-url"}) {
+		$self->{"_workspace-url"} = $params->{"workspace-url"};
     } else {
 		print STDERR "workspace-url configuration not found, using 'localhost'\n";
 		$self->{"_workspace-url"} = "http://localhost:7058";
