@@ -9771,12 +9771,17 @@ sub jobs_done
     	}
     	$self->$function(@{$args});
     }
+    eval {
     $job = $self->_workspaceServices()->set_job_status({
     	jobid => $input->{job},
     	status => "done",
     	auth => $self->_authentication(),
     	currentStatus => "running"
     });
+    };
+    if (!defined($job)) {
+    	$job = {id => $input->{job}};
+    }
     $self->_clearContext();
     #END jobs_done
     my @_bad_returns;
@@ -9877,22 +9882,26 @@ sub run_job
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["job"],{});
     $job = $self->_getJob($input->{job});
-    $self->_workspaceServices()->set_job_status({
-	   	jobid => $job->{id},
-	   	status => "running",
-	   	auth => $self->_authentication(),
-	   	currentStatus => $job->{status}
-    });
+    eval {
+	    $self->_workspaceServices()->set_job_status({
+		   	jobid => $job->{id},
+		   	status => "running",
+		   	auth => $self->_authentication(),
+		   	currentStatus => $job->{status}
+	    });
+    };
     my $fba = $self->_get_msobject("FBA","NO_WORKSPACE",$job->{jobdata}->{fbaref});
     my $fbaResult = $fba->runFBA();
     if (!defined($fbaResult)) {
-    	$self->_workspaceServices()->set_job_status({
-	   		jobid => $job->{id},
-	   		status => "error",
-	   		auth => $self->_authentication(),
-	   		currentStatus => "running",
-	   		jobdata => {error => "FBA failed with no solution returned!"}
-    	});
+    	eval{
+	    	$self->_workspaceServices()->set_job_status({
+		   		jobid => $job->{id},
+		   		status => "error",
+		   		auth => $self->_authentication(),
+		   		currentStatus => "running",
+		   		jobdata => {error => "FBA failed with no solution returned!"}
+	    	});
+    	};
     	my $msg = "FBA failed with no solution returned!";
     	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'runfba');
     }
