@@ -4,6 +4,7 @@ DEPLOY_RUNTIME ?= /kb/runtime
 TARGET ?= /kb/deployment
  
 include $(TOP_DIR)/tools/Makefile.common
+include $(TOP_DIR)/tools/Makefile.common.rules
 
 SRC_PERL = $(wildcard scripts/*.pl)
 BIN_PERL = $(addprefix $(BIN_DIR)/,$(basename $(notdir $(SRC_PERL))))
@@ -83,17 +84,17 @@ deploy-dir:
 	if [ ! -d $(SERV_SERVICE_DIR) ] ; then mkdir $(SERV_SERVICE_DIR) ; fi
 	if [ ! -d $(SERV_SERVICE_DIR)/webroot ] ; then mkdir $(SERV_SERVICE_DIR)/webroot ; fi
 
-deploy-scripts:
-	export KB_TOP=$(TARGET); \
-	export KB_RUNTIME=$(KB_RUNTIME); \
-	export KB_PERL_PATH=$(TARGET)/lib bash ; \
-	for src in $(SRC_PERL) ; do \
-		basefile=`basename $$src`; \
-		base=`basename $$src .pl`; \
-		echo install $$src $$base ; \
-		cp $$src $(TARGET)/plbin ; \
-		bash $(TOOLS_DIR)/wrap_perl.sh "$(TARGET)/plbin/$$basefile" $(TARGET)/bin/$$base ; \
-	done 
+#deploy-scripts:
+#	export KB_TOP=$(TARGET); \
+#	export KB_RUNTIME=$(KB_RUNTIME); \
+#	export KB_PERL_PATH=$(TARGET)/lib bash ; \
+#	for src in $(SRC_PERL) ; do \
+#		basefile=`basename $$src`; \
+#		base=`basename $$src .pl`; \
+#		echo install $$src $$base ; \
+#		cp $$src $(TARGET)/plbin ; \
+#		bash $(TOOLS_DIR)/wrap_perl.sh "$(TARGET)/plbin/$$basefile" $(TARGET)/bin/$$base ; \
+#	done 
 
 deploy-libs:
 	rsync -arv lib/. $(TARGET)/lib/.
