@@ -1,4 +1,5 @@
 #group-name	modeling	Modeling Scripts
+#ignore kbfba-url
 kbfba-addaliases	modeling
 kbfba-addmedia	modeling
 kbfba-adjustbiomass	modeling
