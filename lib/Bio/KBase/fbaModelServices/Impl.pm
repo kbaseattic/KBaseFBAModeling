@@ -6244,8 +6244,7 @@ sub addmedia
 	    	if (defined($input->{minflux}->[$i])) {
 	    		$data->{minFlux} = $input->{minflux}->[$i];
 	    	}
-	    	#$media->add("mediacompounds",$data);
-	    	print $i." of ".@{$input->{compounds}}."\n";
+	    	$media->add("mediacompounds",$data);
 	    	push(@{$found},$cpdobj->id());
     	} else {
     		push(@{$missing},$input->{compounds}->[$i]);
