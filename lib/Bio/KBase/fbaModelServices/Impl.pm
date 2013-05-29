@@ -65,6 +65,7 @@ use Bio::KBase::IDServer::Client;
 use Bio::KBase::CDMI::CDMIClient;
 use Bio::KBase::AuthToken;
 use Bio::KBase::workspaceService::Client;
+use Bio::KBase::probabilistic_annotation::Client;
 use ModelSEED::KBaseStore;
 use Data::UUID;
 use ModelSEED::MS::Biochemistry;
@@ -427,6 +428,15 @@ sub _workspaceURL {
 		return $self->_getContext()->{_override}->{_wsurl};
 	}
 	return $self->{"_workspace-url"};
+}
+
+# TODO Figure out a way to specify in config file
+sub _probanno {
+	my $self = shift;
+	if (!defined($self->{_probanno})) {
+		$self->{_probanno} = Bio::KBase::probabilistic_annotation::Client->new("http://localhost:7073");
+	}
+	return $self->{_probanno};
 }
 
 sub _myURL {
@@ -1211,22 +1221,38 @@ sub _buildGapfillObject {
 			Bio::KBase::Exceptions::ArgumentValidationError->throw(error => "Invalid probabilistic annotation object!",
 							       method_name => '_buildGapfillObject');	
 		}
-		#Get probabilistic model
-		my $ProbModel;
-		if (!defined($probanno->{probmodel_uuid})) {
-			$ProbModel = $self->_buildProbModel($probanno);
-		} else {
-			$ProbModel = $self->_get_msobject("Model","NO_WORKSPACE",$probanno->{probmodel_uuid});
-		}
+#		#Get probabilistic model
+#		my $ProbModel;
+#		if (!defined($probanno->{probmodel_uuid})) {
+#			$ProbModel = $self->_buildProbModel($probanno);
+#		} else {
+#			$ProbModel = $self->_get_msobject("Model","NO_WORKSPACE",$probanno->{probmodel_uuid});
+#		}
+		# Calculate the reaction probabilities from the probabilistic annotation.
+		# The output RxnProbs object is saved by reference via the "NO_WORKSPACE" workspace.
+		# TODO Do we need to specify a model template here?
+		my $rpmeta = $self->_probanno()->calculate( { 
+			probanno => $formulation->{probabilisticAnnotation},
+			probanno_workspace => $formulation->{probabilisticAnnotation_workspace},
+			rxnprobs => $formulation->{probabilisticAnnotation},
+			rxnprobs_workspace => "NO_WORKSPACE",
+			auth => $self->_authentication()
+		});
+		# Get the RxnProbs object from the workspace.
+		my $rxnprobs = $self->_workspaceServices()->get_object_by_ref({
+			reference => $rpmeta->[8],
+			auth => $self->_authentication()
+		});
+		
 		#Get coefficients of probmodel
-		$formulation->parameters()->{"Objective coefficient file"} = "ProbModelReactionCoefficients.txt";
-		$formulation->inputfiles()->{"ProbModelReactionCoefficients.txt"} = [];
-		my $mdlrxns = $ProbModel->modelreactions();
-		for (my $i=0; $i < @{$mdlrxns}; $i++) {
-			my $mdlrxn = $mdlrxns->[$i];
-			my $prob = (1-$mdlrxn->probability());
-			push(@{$formulation->inputfiles()->{"ProbModelReactionCoefficients.txt"}},"forward\t".$mdlrxn->reaction()->id()."\t".$prob);
-			push(@{$formulation->inputfiles()->{"ProbModelReactionCoefficients.txt"}},"reverse\t".$mdlrxn->reaction()->id()."\t".$prob);
+		$formulation->{"parameters"}->{"Objective coefficient file"} = "ProbModelReactionCoefficients";
+		$formulation->{"inputfiles"}->{"ProbModelReactionCoefficients"} = [];
+		my $rxns = $rxnprobs->{"data"}->{"reactionProbabilities"};
+		for (my $i=0; $i < @{$rxns}; $i++) {
+			my $rxn = $rxns->[$i];
+			my $cost = (1-$rxn->[1]);
+			push(@{$formulation->{"inputfiles"}->{"ProbModelReactionCoefficients"}},"forward\t".$rxn->[0]."\t".$cost);
+			push(@{$formulation->{"inputfiles"}->{"ProbModelReactionCoefficients"}},"reverse\t".$rxn->[0]."\t".$cost);
 		}	
 	}
 	return $gapform;
@@ -2139,12 +2165,12 @@ Description:
 
 sub _queueJob {
 	my($self,$args) = @_;
+	print STDERR Dumper $args;
 	return $self->_workspaceServices()->queue_job({
 		type => $args->{type},
-		jobdata =>  => $args->{jobdata},
-		queuecommand =>  => $args->{queuecommand},
-		"state" =>  => $args->{"state"},
-		jobdata =>  => $args->{jobdata},
+		jobdata => $args->{jobdata},
+		queuecommand => $args->{queuecommand},
+		"state" => $args->{"state"},
 		auth => $self->_authentication(),
 	});
 }
