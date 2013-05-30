@@ -447,7 +447,7 @@ sub _workspaceURL {
 sub _probanno {
 	my $self = shift;
 	if (!defined($self->{_probanno})) {
-		$self->{_probanno} = Bio::KBase::probabilistic_annotation::Client->new("http://localhost:7073");
+		$self->{_probanno} = Bio::KBase::probabilistic_annotation::Client->new($self->{"_probanno-url"});
 	}
 	return $self->{_probanno};
 }
@@ -2320,6 +2320,12 @@ sub new
     } else {
 		print STDERR "workspace-url configuration not found, using 'localhost'\n";
 		$self->{"_workspace-url"} = "http://localhost:7058";
+    }
+    if (defined($params{"probanno-url"})) {
+    	$self->{"_probanno-url"} = $params{"probanno-url"};
+    } else {
+    	print STDERR "probanno-url configuration not found, using 'localhost'\n";
+    	$self->{"_probanno-url"} = "http://localhost:7073";
     }
     if (defined($options->{verbose})) {
     	set_verbose(1);
