@@ -232,6 +232,9 @@ sub _setContext {
 	if (defined($params->{wsurl})) {
 		$self->_getContext()->{_override}->{_wsurl} = $params->{wsurl};
 	}
+	if (defined($params->{probanno_url})) {
+		$self->_getContext()->{_override}->{_probanno_url} = $params->{probanno_url};
+	}
 	$self->_resetKBaseStore();
     if (defined($params->{auth}) && length($params->{auth}) > 0) {
 		if (!defined($self->_getContext()->{_override}) || $self->_getContext()->{_override}->{_authentication} ne $params->{auth}) {
@@ -1245,14 +1248,14 @@ sub _buildGapfillObject {
 		});
 		
 		#Get coefficients of probmodel
-		$formulation->{"parameters"}->{"Objective coefficient file"} = "ProbModelReactionCoefficients";
-		$formulation->{"inputfiles"}->{"ProbModelReactionCoefficients"} = [];
+		$gapform->fbaFormulation()->{"parameters"}->{"Objective coefficient file"} = "ProbModelReactionCoefficients.txt";
+		$gapform->fbaFormulation()->{"inputfiles"}->{"ProbModelReactionCoefficients.txt"} = [];
 		my $rxns = $rxnprobs->{"data"}->{"reactionProbabilities"};
 		for (my $i=0; $i < @{$rxns}; $i++) {
 			my $rxn = $rxns->[$i];
 			my $cost = (1-$rxn->[1]);
-			push(@{$formulation->{"inputfiles"}->{"ProbModelReactionCoefficients"}},"forward\t".$rxn->[0]."\t".$cost);
-			push(@{$formulation->{"inputfiles"}->{"ProbModelReactionCoefficients"}},"reverse\t".$rxn->[0]."\t".$cost);
+			push(@{$gapform->fbaFormulation()->{"inputfiles"}->{"ProbModelReactionCoefficients.txt"}},"forward\t".$rxn->[0]."\t".$cost);
+			push(@{$gapform->fbaFormulation()->{"inputfiles"}->{"ProbModelReactionCoefficients.txt"}},"reverse\t".$rxn->[0]."\t".$cost);
 		}	
 	}
 	return $gapform;
@@ -2165,7 +2168,6 @@ Description:
 
 sub _queueJob {
 	my($self,$args) = @_;
-	print STDERR Dumper $args;
 	return $self->_workspaceServices()->queue_job({
 		type => $args->{type},
 		jobdata => $args->{jobdata},
@@ -2173,6 +2175,19 @@ sub _queueJob {
 		"state" => $args->{"state"},
 		auth => $self->_authentication(),
 	});
+
+	# MBM Use the following to run the job on my local machine.
+#	my($self,$job) = @_;
+#	$job->{wsurl} = $self->_workspaceURL();
+#	my $JSON = JSON::XS->new();
+#    my $data = $JSON->encode($job);
+#	my $jobdir = File::Temp::tempdir(DIR =>"/tmp")."/";
+#	open(my $fh, ">", $jobdir."jobfile.json") || return;
+#	print $fh $data;
+#	close($fh);
+#	my $executable = "/home/mmundy/kb/dev_container/modules/KBaseFBAModeling/internalScripts/RunJob.sh ".$jobdir;
+#	my $cmd = "nohup ".$executable." > ".$jobdir."stdout.log 2> ".$jobdir."stderr.log &";
+#	system($cmd);
 }
 
 =head3 _defaultJobState
@@ -9913,6 +9928,7 @@ sub run_job
 	   	auth => $self->_authentication(),
 	   	currentStatus => $job->{status}
     });
+#	$job = $input;
     my $fba = $self->_get_msobject("FBA","NO_WORKSPACE",$job->{jobdata}->{fbaref});
     my $fbaResult = $fba->runFBA();
     if (!defined($fbaResult)) {
