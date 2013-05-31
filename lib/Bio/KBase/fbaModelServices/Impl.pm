@@ -3784,7 +3784,6 @@ sub get_media
 			$new = {
                 id => $obj->id(),
                 name => $obj->name(),
-		aliases => $obj->allAliases(),
                 pH => 7,
                 temperature => 298,
                 compounds => [],
