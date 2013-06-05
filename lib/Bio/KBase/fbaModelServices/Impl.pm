@@ -198,7 +198,7 @@ sub _authenticate {
 	} elsif ($self->{_accounttype} eq "seed") {
 		$auth =~ s/\s/\t/;
 		my $split = [split(/\t/,$auth)];
-		my $svr = Bio::ModelSEED::MSSeedSupportServer::Client->new("http://localhost:7050");
+		my $svr = $self->_mssServer();
 		my $token = $svr->authenticate({
 			username => $split->[0],
 			password => $split->[1]
@@ -404,11 +404,17 @@ sub _cdmi {
     return $self->{_cdmi};
 }
 
+sub _mssServer {
+	my $self = shift;
+	if (!defined($self->{_mssServer})) {
+		$self->{_mssServer} = Bio::ModelSEED::MSSeedSupportServer::Client->new($self->{'_mssserver-url'});
+	}
+    return $self->{_mssServer};
+}
+
 sub _idServer {
 	my $self = shift;
-        # this is lazy initialization.
 	if (!defined($self->{_idserver})) {
-		#$self->{_idserver} = Bio::KBase::IDServer::Client->new('http://bio-data-1.mcs.anl.gov/services/idserver');
 		$self->{_idserver} = Bio::KBase::IDServer::Client->new( $self->{'_idserver-url'} );
 	}
     return $self->{_idserver};
@@ -693,7 +699,7 @@ sub _get_genomeObj_from_SEED {
 
 sub _get_genomeObj_from_RAST {
 	my($self,$id,$username,$password) = @_;
-	my $mssvr = Bio::ModelSEED::MSSeedSupportServer::Client->new("http://localhost:7050");
+	my $mssvr = $self->_mssServer();
 	my $data = $mssvr->getRastGenomeData({
 		genome      => $id,
 		username => $username,
@@ -2200,7 +2206,8 @@ sub new
     $self->{_defaultJobState} = "queued";
     $self->{_accounttype} = "kbase";
     $self->{'_idserver-url'} = "http://bio-data-1.mcs.anl.gov/services/idserver";
-    my $paramlist = [qw(accounttype workspace-url defaultJobState idserver-url)];
+    $self->{'_mssserver-url'} = "http://biologin-4.mcs.anl.gov:7050";
+    my $paramlist = [qw(mssserver-url accounttype workspace-url defaultJobState idserver-url)];
 
     # so it looks like params is created by looping over the config object
     # if deployment.cfg exists
@@ -2252,7 +2259,9 @@ sub new
     if (defined $params->{'idserver-url'}) {
     		$self->{'_idserver-url'} = $params->{'idserver-url'};
     }
-
+    if (defined $params->{'mssserver-url'}) {
+    		$self->{'_mssserver-url'} = $params->{'mssserver-url'};
+    }
     # for the predefined parameter 'workspace-url', we apply logic that
     # if the user passes in a workspace parameter, it is defined in the
     # incoming options hash, and so we set a new instance variable
