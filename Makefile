@@ -76,7 +76,7 @@ test-client:
 deploy: deploy-client deploy-service
 deploy-all: deploy-client deploy-service
 
-deploy-service: deploy-dir deploy-libs deploy-scripts deploy-services
+deploy-service: deploy-dir deploy-libs deploy-scripts deploy-services deploy-cfg
 deploy-client: deploy-dir deploy-libs deploy-scripts deploy-docs
 
 deploy-dir:

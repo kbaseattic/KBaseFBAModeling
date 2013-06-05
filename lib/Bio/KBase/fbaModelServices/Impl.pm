@@ -404,8 +404,10 @@ sub _cdmi {
 
 sub _idServer {
 	my $self = shift;
+        # this is lazy initialization.
 	if (!defined($self->{_idserver})) {
-		$self->{_idserver} = Bio::KBase::IDServer::Client->new('http://bio-data-1.mcs.anl.gov/services/idserver');
+		#$self->{_idserver} = Bio::KBase::IDServer::Client->new('http://bio-data-1.mcs.anl.gov/services/idserver');
+		$self->{_idserver} = Bio::KBase::IDServer::Client->new( $self->{'_idserver-url'} );
 	}
     return $self->{_idserver};
 }
@@ -2195,7 +2197,21 @@ sub new
     my $params;
     $self->{_defaultJobState} = "queued";
     $self->{_accounttype} = "kbase";
-    my $paramlist = [qw(accounttype workspace-url defaultJobState)];
+    $self->{'_idserver-url'} = "http://bio-data-1.mcs.anl.gov/services/idserver";
+    my $paramlist = [qw(accounttype workspace-url defaultJobState idserver-url)];
+
+    # so it looks like params is created by looping over the config object
+    # if deployment.cfg exists
+
+    # the keys in the params hash are the same as in the config obuject 
+    # except the block name from the config file is ommitted.
+
+    # the block name is picked up from KB_SERVICE_NAME. this has to be set
+    # in the start_service script as an environment variable.
+
+    # looping over a set of predefined set of parameter keys, see if there
+    # is a value for that key in the config object
+
     if ((my $e = $ENV{KB_DEPLOYMENT_CONFIG}) && -e $ENV{KB_DEPLOYMENT_CONFIG}) {
 		my $service = $ENV{KB_SERVICE_NAME};
 		if (defined($service)) {
@@ -2208,18 +2224,43 @@ sub new
 			    }
 			}
 		}
-    }	
-	for my $p (@{$paramlist}) {
-	  	if (defined($options->{$p})) {
-			$params->{$p} = $options->{$p};
-	    }
-	}
-	if (defined $params->{accounttype}) {
+    }
+
+    # now, we have the options hash. THis is passed into the constructor as a
+    # parameter to new(). If a key from the predefined set of parameter keys
+    # is found in the incoming hash, let the associated value override what
+    # was previously assigned to the params hash from the config object.
+
+    for my $p (@{$paramlist}) {
+  	if (defined($options->{$p})) {
+		$params->{$p} = $options->{$p};
+        }
+    }
+
+    # now, if params has one of the predefined set of parameter keys,
+    # use that value to override object instance variable values. The
+    # default object instance variable values were set above.
+
+    if (defined $params->{accounttype}) {
 		$self->{_accounttype} = $params->{accounttype};
     }
     if (defined $params->{defaultJobState}) {
 		$self->{_defaultJobState} = $params->{defaultJobState};
     }
+    if (defined $params->{'idserver-url'}) {
+    		$self->{'_idserver-url'} = $params->{'idserver-url'};
+    }
+
+    # for the predefined parameter 'workspace-url', we apply logic that
+    # if the user passes in a workspace parameter, it is defined in the
+    # incoming options hash, and so we set a new instance variable
+    # _sorkspaceServiceOverride to what the incominb value is, and the
+    # params hash doesn't isn't used.
+
+    # so basically, if a workspace is set in the incoming params hash,
+    # use it, otherwise use what is in the config file, otherwise
+    # use localhost.
+
     if (defined($options->{workspace})) {
     	$self->{_workspaceServiceOveride} = $options->{workspace};
     } elsif (defined $params->{"workspace-url"}) {
