@@ -689,7 +689,7 @@ sub _get_genomeObj_from_SEED {
 
 sub _get_genomeObj_from_RAST {
 	my($self,$id,$username,$password) = @_;
-	my $mssvr = ModelSEED::Client::MSSeedSupport->new();
+	my $mssvr = Bio::ModelSEED::MSSeedSupportServer::Client->new("http://localhost:7050");
 	my $data = $mssvr->getRastGenomeData({
 		genome      => $id,
 		username => $username,
@@ -758,8 +758,8 @@ sub _get_genomeObj_from_RAST {
   		if (defined($ftr->{SEQUENCE})) {
 			$feature->{protein_translation} = $ftr->{SEQUENCE}->[0];
 		}
-		if (defined($ftr->{FUNCTION})) {
-			$feature->{function} = $ftr->{FUNCTION};
+		if (defined($ftr->{ROLES})) {
+			$feature->{function} = $ftr->{ROLES};
 		}
   		push(@{$genomeObj->{features}},$feature);
 	}
