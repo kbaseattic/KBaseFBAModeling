@@ -80,7 +80,7 @@ use ModelSEED::MS::FBAProblem;
 use ModelSEED::MS::ModelTemplate;
 use ModelSEED::MS::PROMModel;;
 use ModelSEED::MS::Metadata::Definitions;
-use ModelSEED::Client::MSSeedSupport;
+use Bio::ModelSEED::MSSeedSupportServer::Client;
 use ModelSEED::utilities qw( args verbose set_verbose translateArrayOptions);
 use Try::Tiny;
 use Data::Dumper;
@@ -196,17 +196,19 @@ sub _authenticate {
 			}
 		}
 	} elsif ($self->{_accounttype} eq "seed") {
-		require "ModelSEED/Client/MSSeedSupport.pm";
-		my $svr = ModelSEED::Client::MSSeedSupport->new();
+		$auth =~ s/\s/\t/;
+		my $split = [split(/\t/,$auth)];
+		my $svr = Bio::ModelSEED::MSSeedSupportServer::Client->new("http://localhost:7050");
 		my $token = $svr->authenticate({
-			token => $auth
+			username => $split->[0],
+			password => $split->[1]
 		});
 		if (!defined($token) || $token =~ m/ERROR:/) {
 			Bio::KBase::Exceptions::KBaseException->throw(error => $token,
 			method_name => '_setContext');
 		}
 		$token =~ s/\s/\t/;
-		my $split = [split(/\t/,$token)];
+		$split = [split(/\t/,$token)];
 		print "Logged user:".$split->[0]."\n";
 		return {
 			authentication => $token,
