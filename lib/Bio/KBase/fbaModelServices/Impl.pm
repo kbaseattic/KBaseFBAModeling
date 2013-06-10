@@ -209,7 +209,6 @@ sub _authenticate {
 		}
 		$token =~ s/\s/\t/;
 		$split = [split(/\t/,$token)];
-		print "Logged user:".$split->[0]."\n";
 		return {
 			authentication => $token,
 			user => $split->[0]
@@ -407,7 +406,8 @@ sub _cdmi {
 sub _mssServer {
 	my $self = shift;
 	if (!defined($self->{_mssServer})) {
-		$self->{_mssServer} = Bio::ModelSEED::MSSeedSupportServer::Client->new($self->{'_mssserver-url'});
+		$self->{_mssServer} = Bio::ModelSEED::MSSeedSupportServer::Impl->new();
+		#$self->{_mssServer} = Bio::ModelSEED::MSSeedSupportServer::Client->new($self->{'_mssserver-url'});
 	}
     return $self->{_mssServer};
 }
@@ -769,7 +769,7 @@ sub _get_genomeObj_from_RAST {
 			$feature->{protein_translation} = $ftr->{SEQUENCE}->[0];
 		}
 		if (defined($ftr->{ROLES})) {
-			$feature->{function} = $ftr->{ROLES};
+			$feature->{function} = join(" / ",@{$ftr->{ROLES}});
 		}
   		push(@{$genomeObj->{features}},$feature);
 	}
