@@ -3948,20 +3948,19 @@ sub get_aliassets
         biochemistry => "default",
         mapping => "default"
 				  });
-    
     my $biochem = $self->_get_msobject("Biochemistry","kbase",$input->{biochemistry});
-    my $allAliasSets = $biochem->{aliasSets};
 
     $aliassets = [];
-    for (my $i=0; $i < @{$allAliasSets}; $i++) {
-	# CHRIS - this part doesn't work (it returns an empty string instead of telling me if the aliasSet goes
-	# with a compound or a reaction)
-        my $type = $allAliasSets->[$i]->{attribute};
+    for (my $i=0; $i < @{$biochem->{aliasSets}}; $i++) {
+	$Data::Dumper::Indent = 1;
+	$Data::Dumper::Sortkeys = 1;
+        my $type = $biochem->{aliasSets}->[$i]->{data}->{class};
+	print STDERR Dumper $type;
+	print STDERR Dumper keys($biochem->{aliasSets}->[$i]->{data});
 	# I only did this to avoid confusion with "reaction" vs. "reactions" and "compound" vs "compounds".
 	# not too fond of this solution though.
 	if (lc($input->{object_type}) =~ lc($type)) {
-	    die $type;
-	    push(@{$aliassets}, $allAliasSets->[$i]->{source});
+	    push(@{$aliassets}, $biochem->{aliasSets}->[$i]->{data}->{name});
 	}
     }
 
