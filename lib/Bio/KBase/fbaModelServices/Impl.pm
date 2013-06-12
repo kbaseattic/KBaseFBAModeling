@@ -65,6 +65,7 @@ use Bio::KBase::IDServer::Client;
 use Bio::KBase::CDMI::CDMIClient;
 use Bio::KBase::AuthToken;
 use Bio::KBase::workspaceService::Client;
+use Bio::KBase::probabilistic_annotation::Client;
 use ModelSEED::KBaseStore;
 use Data::UUID;
 use ModelSEED::MS::Biochemistry;
@@ -80,7 +81,6 @@ use ModelSEED::MS::FBAProblem;
 use ModelSEED::MS::ModelTemplate;
 use ModelSEED::MS::PROMModel;;
 use ModelSEED::MS::Metadata::Definitions;
-#use Bio::ModelSEED::MSSeedSupportServer::Client;
 use ModelSEED::utilities qw( args verbose set_verbose translateArrayOptions);
 use Try::Tiny;
 use Data::Dumper;
@@ -209,7 +209,6 @@ sub _authenticate {
 		}
 		$token =~ s/\s/\t/;
 		$split = [split(/\t/,$token)];
-		print "Logged user:".$split->[0]."\n";
 		return {
 			authentication => $token,
 			user => $split->[0]
@@ -232,6 +231,9 @@ sub _setContext {
     #Clearing the existing kbasestore and initializing a new one
 	if (defined($params->{wsurl})) {
 		$self->_getContext()->{_override}->{_wsurl} = $params->{wsurl};
+	}
+	if (defined($params->{probanno_url})) {
+		$self->_getContext()->{_override}->{_probanno_url} = $params->{probanno_url};
 	}
 	$self->_resetKBaseStore();
     if (defined($params->{auth}) && length($params->{auth}) > 0) {
@@ -407,6 +409,7 @@ sub _cdmi {
 sub _mssServer {
 	my $self = shift;
 	if (!defined($self->{_mssServer})) {
+		require "Bio/ModelSEED/MSSeedSupportServer/Client.pm";
 		$self->{_mssServer} = Bio::ModelSEED::MSSeedSupportServer::Client->new($self->{'_mssserver-url'});
 	}
     return $self->{_mssServer};
@@ -437,6 +440,18 @@ sub _workspaceURL {
 		return $self->_getContext()->{_override}->{_wsurl};
 	}
 	return $self->{"_workspace-url"};
+}
+
+sub _probanno {
+	my $self = shift;
+	my $url = $self->{"_probanno-url"};
+	if (defined($self->_getContext()->{_override}->{_probanno_url})) {
+		$url = $self->_getContext()->{_override}->{_probanno_url};
+	}
+	if (!defined($self->{_probannoServices}->{$url})) {
+		$self->{_probannoServices}->{$url} = Bio::KBase::workspaceService::Client->new($url);
+	}
+	return $self->{_probannoServices}->{$url};
 }
 
 sub _myURL {
@@ -769,7 +784,7 @@ sub _get_genomeObj_from_RAST {
 			$feature->{protein_translation} = $ftr->{SEQUENCE}->[0];
 		}
 		if (defined($ftr->{ROLES})) {
-			$feature->{function} = $ftr->{ROLES};
+			$feature->{function} = join(" / ",@{$ftr->{ROLES}});
 		}
   		push(@{$genomeObj->{features}},$feature);
 	}
@@ -1221,22 +1236,38 @@ sub _buildGapfillObject {
 			Bio::KBase::Exceptions::ArgumentValidationError->throw(error => "Invalid probabilistic annotation object!",
 							       method_name => '_buildGapfillObject');	
 		}
-		#Get probabilistic model
-		my $ProbModel;
-		if (!defined($probanno->{probmodel_uuid})) {
-			$ProbModel = $self->_buildProbModel($probanno);
-		} else {
-			$ProbModel = $self->_get_msobject("Model","NO_WORKSPACE",$probanno->{probmodel_uuid});
-		}
+#		#Get probabilistic model
+#		my $ProbModel;
+#		if (!defined($probanno->{probmodel_uuid})) {
+#			$ProbModel = $self->_buildProbModel($probanno);
+#		} else {
+#			$ProbModel = $self->_get_msobject("Model","NO_WORKSPACE",$probanno->{probmodel_uuid});
+#		}
+		# Calculate the reaction probabilities from the probabilistic annotation.
+		# The output RxnProbs object is saved by reference via the "NO_WORKSPACE" workspace.
+		# TODO Do we need to specify a model template here?
+		my $rpmeta = $self->_probanno()->calculate( { 
+			probanno => $formulation->{probabilisticAnnotation},
+			probanno_workspace => $formulation->{probabilisticAnnotation_workspace},
+			rxnprobs => $formulation->{probabilisticAnnotation},
+			rxnprobs_workspace => "NO_WORKSPACE",
+			auth => $self->_authentication()
+		});
+		# Get the RxnProbs object from the workspace.
+		my $rxnprobs = $self->_workspaceServices()->get_object_by_ref({
+			reference => $rpmeta->[8],
+			auth => $self->_authentication()
+		});
+		
 		#Get coefficients of probmodel
-		$formulation->parameters()->{"Objective coefficient file"} = "ProbModelReactionCoefficients.txt";
-		$formulation->inputfiles()->{"ProbModelReactionCoefficients.txt"} = [];
-		my $mdlrxns = $ProbModel->modelreactions();
-		for (my $i=0; $i < @{$mdlrxns}; $i++) {
-			my $mdlrxn = $mdlrxns->[$i];
-			my $prob = (1-$mdlrxn->probability());
-			push(@{$formulation->inputfiles()->{"ProbModelReactionCoefficients.txt"}},"forward\t".$mdlrxn->reaction()->id()."\t".$prob);
-			push(@{$formulation->inputfiles()->{"ProbModelReactionCoefficients.txt"}},"reverse\t".$mdlrxn->reaction()->id()."\t".$prob);
+		$gapform->fbaFormulation()->{"parameters"}->{"Objective coefficient file"} = "ProbModelReactionCoefficients.txt";
+		$gapform->fbaFormulation()->{"inputfiles"}->{"ProbModelReactionCoefficients.txt"} = [];
+		my $rxns = $rxnprobs->{"data"}->{"reactionProbabilities"};
+		for (my $i=0; $i < @{$rxns}; $i++) {
+			my $rxn = $rxns->[$i];
+			my $cost = (1-$rxn->[1]);
+			push(@{$gapform->fbaFormulation()->{"inputfiles"}->{"ProbModelReactionCoefficients.txt"}},"forward\t".$rxn->[0]."\t".$cost);
+			push(@{$gapform->fbaFormulation()->{"inputfiles"}->{"ProbModelReactionCoefficients.txt"}},"reverse\t".$rxn->[0]."\t".$cost);
 		}	
 	}
 	return $gapform;
@@ -2151,12 +2182,24 @@ sub _queueJob {
 	my($self,$args) = @_;
 	return $self->_workspaceServices()->queue_job({
 		type => $args->{type},
-		jobdata =>  => $args->{jobdata},
-		queuecommand =>  => $args->{queuecommand},
-		"state" =>  => $args->{"state"},
-		jobdata =>  => $args->{jobdata},
+		jobdata => $args->{jobdata},
+		queuecommand => $args->{queuecommand},
+		"state" => $args->{"state"},
 		auth => $self->_authentication(),
 	});
+
+	# MBM Use the following to run the job on my local machine.
+#	my($self,$job) = @_;
+#	$job->{wsurl} = $self->_workspaceURL();
+#	my $JSON = JSON::XS->new();
+#    my $data = $JSON->encode($job);
+#	my $jobdir = File::Temp::tempdir(DIR =>"/tmp")."/";
+#	open(my $fh, ">", $jobdir."jobfile.json") || return;
+#	print $fh $data;
+#	close($fh);
+#	my $executable = "/home/mmundy/kb/dev_container/modules/KBaseFBAModeling/internalScripts/RunJob.sh ".$jobdir;
+#	my $cmd = "nohup ".$executable." > ".$jobdir."stdout.log 2> ".$jobdir."stderr.log &";
+#	system($cmd);
 }
 
 =head3 _defaultJobState
@@ -2207,7 +2250,9 @@ sub new
     $self->{_accounttype} = "kbase";
     $self->{'_idserver-url'} = "http://bio-data-1.mcs.anl.gov/services/idserver";
     $self->{'_mssserver-url'} = "http://biologin-4.mcs.anl.gov:7050";
-    my $paramlist = [qw(mssserver-url accounttype workspace-url defaultJobState idserver-url)];
+    $self->{"_probanno-url"} = "http://localhost:7073";
+    $self->{"_workspace-url"} = "http://localhost:7058";
+    my $paramlist = [qw(probanno-url mssserver-url accounttype workspace-url defaultJobState idserver-url)];
 
     # so it looks like params is created by looping over the config object
     # if deployment.cfg exists
@@ -2262,23 +2307,17 @@ sub new
     if (defined $params->{'mssserver-url'}) {
     		$self->{'_mssserver-url'} = $params->{'mssserver-url'};
     }
-    # for the predefined parameter 'workspace-url', we apply logic that
-    # if the user passes in a workspace parameter, it is defined in the
-    # incoming options hash, and so we set a new instance variable
-    # _sorkspaceServiceOverride to what the incominb value is, and the
-    # params hash doesn't isn't used.
-
-    # so basically, if a workspace is set in the incoming params hash,
-    # use it, otherwise use what is in the config file, otherwise
-    # use localhost.
+    if (defined $params->{'workspace-url'}) {
+    		$self->{'_workspace-url'} = $params->{'workspace-url'};
+    }
+    if (defined $params->{'probanno-url'}) {
+    		$self->{'_probanno-url'} = $params->{'probanno-url'};
+    }
+    
+    #This final condition allows one to specify a fully implemented workspace IMPL or CLIENT for use
 
     if (defined($options->{workspace})) {
     	$self->{_workspaceServiceOveride} = $options->{workspace};
-    } elsif (defined $params->{"workspace-url"}) {
-		$self->{"_workspace-url"} = $params->{"workspace-url"};
-    } else {
-		print STDERR "workspace-url configuration not found, using 'localhost'\n";
-		$self->{"_workspace-url"} = "http://localhost:7058";
     }
     if (defined($options->{verbose})) {
     	set_verbose(1);
@@ -3587,6 +3626,7 @@ sub get_reactions
                 abbrev => $obj->abbreviation(),
                 name => $obj->name(),
                 enzymes => $obj->getAliases("Enzyme Class"),
+		aliases => $obj->allAliases(),
                 direction => $obj->direction(),
                 reversibility => $obj->thermoReversibility(),
                 deltaG => $obj->deltaG(),
@@ -3709,7 +3749,7 @@ sub get_compounds
                 id => $obj->id(),
                 name => $obj->name(),
                 abbrev => $obj->abbreviation(),
-                aliases => $obj->getAliases("name"),
+                aliases => $obj->allAliases(),
                 charge => $obj->defaultCharge,
                 formula => $obj->formula,
                 deltaG => $obj->deltaG(),
