@@ -442,13 +442,16 @@ sub _workspaceURL {
 	return $self->{"_workspace-url"};
 }
 
-# TODO Figure out a way to specify in config file
 sub _probanno {
 	my $self = shift;
-	if (!defined($self->{_probanno})) {
-		$self->{_probanno} = Bio::KBase::probabilistic_annotation::Client->new($self->{"_probanno-url"});
+	my $url = $self->{"_probanno-url"};
+	if (defined($self->_getContext()->{_override}->{_probanno_url})) {
+		$url = $self->_getContext()->{_override}->{_probanno_url};
 	}
-	return $self->{_probanno};
+	if (!defined($self->{_probannoServices}->{$url})) {
+		$self->{_probannoServices}->{$url} = Bio::KBase::workspaceService::Client->new($url);
+	}
+	return $self->{_probannoServices}->{$url};
 }
 
 sub _myURL {
@@ -2247,7 +2250,9 @@ sub new
     $self->{_accounttype} = "kbase";
     $self->{'_idserver-url'} = "http://bio-data-1.mcs.anl.gov/services/idserver";
     $self->{'_mssserver-url'} = "http://biologin-4.mcs.anl.gov:7050";
-    my $paramlist = [qw(mssserver-url accounttype workspace-url defaultJobState idserver-url)];
+    $self->{"_probanno-url"} = "http://localhost:7073";
+    $self->{"_workspace-url"} = "http://localhost:7058";
+    my $paramlist = [qw(probanno-url mssserver-url accounttype workspace-url defaultJobState idserver-url)];
 
     # so it looks like params is created by looping over the config object
     # if deployment.cfg exists
@@ -2302,29 +2307,17 @@ sub new
     if (defined $params->{'mssserver-url'}) {
     		$self->{'_mssserver-url'} = $params->{'mssserver-url'};
     }
-    # for the predefined parameter 'workspace-url', we apply logic that
-    # if the user passes in a workspace parameter, it is defined in the
-    # incoming options hash, and so we set a new instance variable
-    # _sorkspaceServiceOverride to what the incominb value is, and the
-    # params hash doesn't isn't used.
-
-    # so basically, if a workspace is set in the incoming params hash,
-    # use it, otherwise use what is in the config file, otherwise
-    # use localhost.
+    if (defined $params->{'workspace-url'}) {
+    		$self->{'_workspace-url'} = $params->{'workspace-url'};
+    }
+    if (defined $params->{'probanno-url'}) {
+    		$self->{'_probanno-url'} = $params->{'probanno-url'};
+    }
+    
+    #This final condition allows one to specify a fully implemented workspace IMPL or CLIENT for use
 
     if (defined($options->{workspace})) {
     	$self->{_workspaceServiceOveride} = $options->{workspace};
-    } elsif (defined $params->{"workspace-url"}) {
-		$self->{"_workspace-url"} = $params->{"workspace-url"};
-    } else {
-		print STDERR "workspace-url configuration not found, using 'localhost'\n";
-		$self->{"_workspace-url"} = "http://localhost:7058";
-    }
-    if (defined($params{"probanno-url"})) {
-    	$self->{"_probanno-url"} = $params{"probanno-url"};
-    } else {
-    	print STDERR "probanno-url configuration not found, using 'localhost'\n";
-    	$self->{"_probanno-url"} = "http://localhost:7073";
     }
     if (defined($options->{verbose})) {
     	set_verbose(1);
@@ -9982,7 +9975,6 @@ sub run_job
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["job"],{});
     $job = $self->_getJob($input->{job});
-<<<<<<< HEAD
     eval {
 	    $self->_workspaceServices()->set_job_status({
 		   	jobid => $job->{id},
@@ -9991,15 +9983,6 @@ sub run_job
 		   	currentStatus => $job->{status}
 	    });
     };
-=======
-    $self->_workspaceServices()->set_job_status({
-	   	jobid => $job->{id},
-	   	status => "running",
-	   	auth => $self->_authentication(),
-	   	currentStatus => $job->{status}
-    });
-#	$job = $input;
->>>>>>> 277b8744455389651bac7ea07c26529fd1d4a428
     my $fba = $self->_get_msobject("FBA","NO_WORKSPACE",$job->{jobdata}->{fbaref});
     my $fbaResult = $fba->runFBA();
     if (!defined($fbaResult)) {
