@@ -9980,6 +9980,7 @@ sub run_job
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["job"],{});
     $job = $self->_getJob($input->{job});
+<<<<<<< HEAD
     eval {
 	    $self->_workspaceServices()->set_job_status({
 		   	jobid => $job->{id},
@@ -9988,6 +9989,15 @@ sub run_job
 		   	currentStatus => $job->{status}
 	    });
     };
+=======
+    $self->_workspaceServices()->set_job_status({
+	   	jobid => $job->{id},
+	   	status => "running",
+	   	auth => $self->_authentication(),
+	   	currentStatus => $job->{status}
+    });
+#	$job = $input;
+>>>>>>> 277b8744455389651bac7ea07c26529fd1d4a428
     my $fba = $self->_get_msobject("FBA","NO_WORKSPACE",$job->{jobdata}->{fbaref});
     my $fbaResult = $fba->runFBA();
     if (!defined($fbaResult)) {
