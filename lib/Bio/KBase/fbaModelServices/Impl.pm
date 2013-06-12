@@ -80,7 +80,6 @@ use ModelSEED::MS::FBAProblem;
 use ModelSEED::MS::ModelTemplate;
 use ModelSEED::MS::PROMModel;;
 use ModelSEED::MS::Metadata::Definitions;
-#use Bio::ModelSEED::MSSeedSupportServer::Client;
 use ModelSEED::utilities qw( args verbose set_verbose translateArrayOptions);
 use Try::Tiny;
 use Data::Dumper;
@@ -406,8 +405,8 @@ sub _cdmi {
 sub _mssServer {
 	my $self = shift;
 	if (!defined($self->{_mssServer})) {
-		$self->{_mssServer} = Bio::ModelSEED::MSSeedSupportServer::Impl->new();
-		#$self->{_mssServer} = Bio::ModelSEED::MSSeedSupportServer::Client->new($self->{'_mssserver-url'});
+		require "Bio/ModelSEED/MSSeedSupportServer/Client.pm";
+		$self->{_mssServer} = Bio::ModelSEED::MSSeedSupportServer::Client->new($self->{'_mssserver-url'});
 	}
     return $self->{_mssServer};
 }
