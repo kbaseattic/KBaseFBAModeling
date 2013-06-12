@@ -3952,13 +3952,7 @@ sub get_aliassets
 
     $aliassets = [];
     for (my $i=0; $i < @{$biochem->{aliasSets}}; $i++) {
-	$Data::Dumper::Indent = 1;
-	$Data::Dumper::Sortkeys = 1;
         my $type = $biochem->{aliasSets}->[$i]->{data}->{class};
-	print STDERR Dumper $type;
-	print STDERR Dumper keys($biochem->{aliasSets}->[$i]->{data});
-	# I only did this to avoid confusion with "reaction" vs. "reactions" and "compound" vs "compounds".
-	# not too fond of this solution though.
 	if (lc($input->{object_type}) =~ lc($type)) {
 	    push(@{$aliassets}, $biochem->{aliasSets}->[$i]->{data}->{name});
 	}
