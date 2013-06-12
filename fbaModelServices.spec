@@ -1246,8 +1246,8 @@ module fbaModelServices {
     */
     funcdef get_reactions(get_reactions_params input) returns (list<Reaction> out_reactions);
 
-	/* Input parameters for the "get_compounds" function.
-	
+	/* 
+	        Input parameters for the "get_compounds" function.	
 		list<compound_id> compounds - a list of the compound IDs for the compounds to be returned (a required argument)
 		string id_type - the type of ID that should be used in the output data (a optional argument; default is 'ModelSEED')
 		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
@@ -1263,6 +1263,52 @@ module fbaModelServices {
     */
     funcdef get_compounds(get_compounds_params input) returns (list<Compound> out_compounds);
 
+    /* Input parameters for the get_alias function
+
+                string object_type    - The type of object (e.g. Compound or Reaction)
+                string input_id_type - The type (e.g. ModelSEED) of alias to be inputted
+		string output_id_type - The type (e.g. KEGG) of alias to be outputted
+		list<string> input_ids - A list of input IDs
+		string auth; - The authentication token of the KBase account (optional)
+    */
+
+    typedef structure {
+	string object_type;
+	string input_id_type;
+	string output_id_type;
+	list<string> input_ids;
+	string auth;
+    } get_alias_params;
+
+    /* Output for get_alias function
+
+              string original_id - The original ID
+	      list<string> aliases - Aliases for the original ID in the new format
+
+    */
+    typedef structure {
+	string original_id;
+	list<string> aliases;
+    } get_alias_outputs;
+
+    /* Turns one compound I into another of a different type */
+    funcdef get_alias(get_alias_params input) returns (list<get_alias_outputs> output);
+
+    /* Input parameters for the get_aliassets function
+
+              string auth; - The authentication token of the KBase account (optional)
+	      string object_type; - The type of object (e.g. Compound or Reaction)
+    */
+    typedef structure {
+	string object_type;
+	string auth;
+    } get_aliassets_params;
+
+    /* 
+         Get possible types of aliases (alias sets) 
+    */
+    funcdef get_aliassets(get_aliassets_params input) returns ( list<string> aliassets );
+    
     /* Input parameters for the "get_media" function.
 	
 		list<media_id> medias - a list of the media IDs for the media to be returned (a required argument)

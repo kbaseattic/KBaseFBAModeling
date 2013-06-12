@@ -1387,6 +1387,190 @@ sub get_compounds
 
 
 
+=head2 get_alias
+
+  $output = $obj->get_alias($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a get_alias_params
+$output is a reference to a list where each element is a get_alias_outputs
+get_alias_params is a reference to a hash where the following keys are defined:
+	object_type has a value which is a string
+	input_id_type has a value which is a string
+	output_id_type has a value which is a string
+	input_ids has a value which is a reference to a list where each element is a string
+	auth has a value which is a string
+get_alias_outputs is a reference to a hash where the following keys are defined:
+	original_id has a value which is a string
+	aliases has a value which is a reference to a list where each element is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a get_alias_params
+$output is a reference to a list where each element is a get_alias_outputs
+get_alias_params is a reference to a hash where the following keys are defined:
+	object_type has a value which is a string
+	input_id_type has a value which is a string
+	output_id_type has a value which is a string
+	input_ids has a value which is a reference to a list where each element is a string
+	auth has a value which is a string
+get_alias_outputs is a reference to a hash where the following keys are defined:
+	original_id has a value which is a string
+	aliases has a value which is a reference to a list where each element is a string
+
+
+=end text
+
+=item Description
+
+Turns one compound I into another of a different type
+
+=back
+
+=cut
+
+sub get_alias
+{
+    my($self, @args) = @_;
+
+# Authentication: none
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function get_alias (received $n, expecting 1)");
+    }
+    {
+	my($input) = @args;
+
+	my @_bad_arguments;
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to get_alias:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'get_alias');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.get_alias",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{code},
+					       method_name => 'get_alias',
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method get_alias",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'get_alias',
+				       );
+    }
+}
+
+
+
+=head2 get_aliassets
+
+  $aliassets = $obj->get_aliassets($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a get_aliassets_params
+$aliassets is a reference to a list where each element is a string
+get_aliassets_params is a reference to a hash where the following keys are defined:
+	object_type has a value which is a string
+	auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a get_aliassets_params
+$aliassets is a reference to a list where each element is a string
+get_aliassets_params is a reference to a hash where the following keys are defined:
+	object_type has a value which is a string
+	auth has a value which is a string
+
+
+=end text
+
+=item Description
+
+Get possible types of aliases (alias sets)
+
+=back
+
+=cut
+
+sub get_aliassets
+{
+    my($self, @args) = @_;
+
+# Authentication: none
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function get_aliassets (received $n, expecting 1)");
+    }
+    {
+	my($input) = @args;
+
+	my @_bad_arguments;
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to get_aliassets:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'get_aliassets');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.get_aliassets",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{code},
+					       method_name => 'get_aliassets',
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method get_aliassets",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'get_aliassets',
+				       );
+    }
+}
+
+
+
 =head2 get_media
 
   $out_media = $obj->get_media($input)
@@ -11602,11 +11786,10 @@ id_type has a value which is a string
 
 =item Description
 
-Input parameters for the "get_compounds" function.
-
-        list<compound_id> compounds - a list of the compound IDs for the compounds to be returned (a required argument)
-        string id_type - the type of ID that should be used in the output data (a optional argument; default is 'ModelSEED')
-        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+Input parameters for the "get_compounds" function.        
+list<compound_id> compounds - a list of the compound IDs for the compounds to be returned (a required argument)
+string id_type - the type of ID that should be used in the output data (a optional argument; default is 'ModelSEED')
+string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
 
 =item Definition
@@ -11629,6 +11812,135 @@ a reference to a hash where the following keys are defined:
 compounds has a value which is a reference to a list where each element is a compound_id
 auth has a value which is a string
 id_type has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 get_alias_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the get_alias function
+
+                string object_type    - The type of object (e.g. Compound or Reaction)
+                string input_id_type - The type (e.g. ModelSEED) of alias to be inputted
+                string output_id_type - The type (e.g. KEGG) of alias to be outputted
+                list<string> input_ids - A list of input IDs
+                string auth; - The authentication token of the KBase account (optional)
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+object_type has a value which is a string
+input_id_type has a value which is a string
+output_id_type has a value which is a string
+input_ids has a value which is a reference to a list where each element is a string
+auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+object_type has a value which is a string
+input_id_type has a value which is a string
+output_id_type has a value which is a string
+input_ids has a value which is a reference to a list where each element is a string
+auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 get_alias_outputs
+
+=over 4
+
+
+
+=item Description
+
+Output for get_alias function
+
+              string original_id - The original ID
+              list<string> aliases - Aliases for the original ID in the new format
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+original_id has a value which is a string
+aliases has a value which is a reference to a list where each element is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+original_id has a value which is a string
+aliases has a value which is a reference to a list where each element is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 get_aliassets_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the get_aliassets function
+
+              string auth; - The authentication token of the KBase account (optional)
+              string object_type; - The type of object (e.g. Compound or Reaction)
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+object_type has a value which is a string
+auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+object_type has a value which is a string
+auth has a value which is a string
 
 
 =end text
