@@ -80,7 +80,7 @@ use ModelSEED::MS::FBAProblem;
 use ModelSEED::MS::ModelTemplate;
 use ModelSEED::MS::PROMModel;;
 use ModelSEED::MS::Metadata::Definitions;
-use Bio::ModelSEED::MSSeedSupportServer::Client;
+#use Bio::ModelSEED::MSSeedSupportServer::Client;
 use ModelSEED::utilities qw( args verbose set_verbose translateArrayOptions);
 use Try::Tiny;
 use Data::Dumper;
@@ -5955,7 +5955,9 @@ sub adjust_model_reaction
     	gpr => undef,
     	removeReaction => 0,
     	addReaction => 0,
-    	overwrite => 0
+    	overwrite => 0,
+	outputid => $input->{model},
+	outputws => $input->{workspace}
     });
     my $model = $self->_get_msobject("Model",$input->{workspace},$input->{model});
     if (defined($input->{gpr})) {
@@ -5970,7 +5972,7 @@ sub adjust_model_reaction
     	removeReaction => $input->{removeReaction},
     	addReaction => $input->{addReaction}
     });
-	$modelMeta = $self->_save_msobject($model,"Model",$input->{workspace},$input->{model},"adjust_model_reaction",$input->{overwrite});
+	$modelMeta = $self->_save_msobject($model,"Model",$input->{outputws},$input->{outputid},"adjust_model_reaction",$input->{overwrite});
     $self->_clearContext();
     #END adjust_model_reaction
     my @_bad_returns;

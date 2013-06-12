@@ -23,7 +23,8 @@ my $translation = {
 	removerxn => "removeReaction",
 	addrxn => "addReaction",
 	auth => "auth",
-	overwrite => "overwrite"
+	overwrite => "overwrite",
+	outputid => "outputid"
 };
 #Defining usage and options
 my $specs = [
@@ -34,7 +35,8 @@ my $specs = [
     [ 'removerxn|r', 'Remove reaction', { "default" => 0 } ],
     [ 'addrxn|a', 'Add reaction', { "default" => 0 } ],
     [ 'workspace|w:s', 'Workspace to save FBA results', { "default" => workspace() } ],
-    [ 'overwrite|o', 'Overwrite any existing FBA with same name' ]
+    [ 'overwrite|o', 'Overwrite any existing FBA with same name' ],
+    [ 'outputid|u:s', 'Output ID for adjusted reaction (by default, creates a new version of the same model)']
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
 #Calling the server
