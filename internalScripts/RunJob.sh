@@ -1,3 +1,4 @@
+#! /bin/bash
 set_script_dir () {
 	pushd . > /dev/null
 	SCRIPT_DIR="${BASH_SOURCE[0]}";

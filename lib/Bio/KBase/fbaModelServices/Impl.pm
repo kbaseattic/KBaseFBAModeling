@@ -65,6 +65,7 @@ use Bio::KBase::IDServer::Client;
 use Bio::KBase::CDMI::CDMIClient;
 use Bio::KBase::AuthToken;
 use Bio::KBase::workspaceService::Client;
+use Bio::KBase::probabilistic_annotation::Client;
 use ModelSEED::KBaseStore;
 use Data::UUID;
 use ModelSEED::MS::Biochemistry;
@@ -230,6 +231,9 @@ sub _setContext {
     #Clearing the existing kbasestore and initializing a new one
 	if (defined($params->{wsurl})) {
 		$self->_getContext()->{_override}->{_wsurl} = $params->{wsurl};
+	}
+	if (defined($params->{probanno_url})) {
+		$self->_getContext()->{_override}->{_probanno_url} = $params->{probanno_url};
 	}
 	$self->_resetKBaseStore();
     if (defined($params->{auth}) && length($params->{auth}) > 0) {
@@ -436,6 +440,15 @@ sub _workspaceURL {
 		return $self->_getContext()->{_override}->{_wsurl};
 	}
 	return $self->{"_workspace-url"};
+}
+
+# TODO Figure out a way to specify in config file
+sub _probanno {
+	my $self = shift;
+	if (!defined($self->{_probanno})) {
+		$self->{_probanno} = Bio::KBase::probabilistic_annotation::Client->new($self->{"_probanno-url"});
+	}
+	return $self->{_probanno};
 }
 
 sub _myURL {
@@ -1220,22 +1233,38 @@ sub _buildGapfillObject {
 			Bio::KBase::Exceptions::ArgumentValidationError->throw(error => "Invalid probabilistic annotation object!",
 							       method_name => '_buildGapfillObject');	
 		}
-		#Get probabilistic model
-		my $ProbModel;
-		if (!defined($probanno->{probmodel_uuid})) {
-			$ProbModel = $self->_buildProbModel($probanno);
-		} else {
-			$ProbModel = $self->_get_msobject("Model","NO_WORKSPACE",$probanno->{probmodel_uuid});
-		}
+#		#Get probabilistic model
+#		my $ProbModel;
+#		if (!defined($probanno->{probmodel_uuid})) {
+#			$ProbModel = $self->_buildProbModel($probanno);
+#		} else {
+#			$ProbModel = $self->_get_msobject("Model","NO_WORKSPACE",$probanno->{probmodel_uuid});
+#		}
+		# Calculate the reaction probabilities from the probabilistic annotation.
+		# The output RxnProbs object is saved by reference via the "NO_WORKSPACE" workspace.
+		# TODO Do we need to specify a model template here?
+		my $rpmeta = $self->_probanno()->calculate( { 
+			probanno => $formulation->{probabilisticAnnotation},
+			probanno_workspace => $formulation->{probabilisticAnnotation_workspace},
+			rxnprobs => $formulation->{probabilisticAnnotation},
+			rxnprobs_workspace => "NO_WORKSPACE",
+			auth => $self->_authentication()
+		});
+		# Get the RxnProbs object from the workspace.
+		my $rxnprobs = $self->_workspaceServices()->get_object_by_ref({
+			reference => $rpmeta->[8],
+			auth => $self->_authentication()
+		});
+		
 		#Get coefficients of probmodel
-		$formulation->parameters()->{"Objective coefficient file"} = "ProbModelReactionCoefficients.txt";
-		$formulation->inputfiles()->{"ProbModelReactionCoefficients.txt"} = [];
-		my $mdlrxns = $ProbModel->modelreactions();
-		for (my $i=0; $i < @{$mdlrxns}; $i++) {
-			my $mdlrxn = $mdlrxns->[$i];
-			my $prob = (1-$mdlrxn->probability());
-			push(@{$formulation->inputfiles()->{"ProbModelReactionCoefficients.txt"}},"forward\t".$mdlrxn->reaction()->id()."\t".$prob);
-			push(@{$formulation->inputfiles()->{"ProbModelReactionCoefficients.txt"}},"reverse\t".$mdlrxn->reaction()->id()."\t".$prob);
+		$gapform->fbaFormulation()->{"parameters"}->{"Objective coefficient file"} = "ProbModelReactionCoefficients.txt";
+		$gapform->fbaFormulation()->{"inputfiles"}->{"ProbModelReactionCoefficients.txt"} = [];
+		my $rxns = $rxnprobs->{"data"}->{"reactionProbabilities"};
+		for (my $i=0; $i < @{$rxns}; $i++) {
+			my $rxn = $rxns->[$i];
+			my $cost = (1-$rxn->[1]);
+			push(@{$gapform->fbaFormulation()->{"inputfiles"}->{"ProbModelReactionCoefficients.txt"}},"forward\t".$rxn->[0]."\t".$cost);
+			push(@{$gapform->fbaFormulation()->{"inputfiles"}->{"ProbModelReactionCoefficients.txt"}},"reverse\t".$rxn->[0]."\t".$cost);
 		}	
 	}
 	return $gapform;
@@ -2150,12 +2179,24 @@ sub _queueJob {
 	my($self,$args) = @_;
 	return $self->_workspaceServices()->queue_job({
 		type => $args->{type},
-		jobdata =>  => $args->{jobdata},
-		queuecommand =>  => $args->{queuecommand},
-		"state" =>  => $args->{"state"},
-		jobdata =>  => $args->{jobdata},
+		jobdata => $args->{jobdata},
+		queuecommand => $args->{queuecommand},
+		"state" => $args->{"state"},
 		auth => $self->_authentication(),
 	});
+
+	# MBM Use the following to run the job on my local machine.
+#	my($self,$job) = @_;
+#	$job->{wsurl} = $self->_workspaceURL();
+#	my $JSON = JSON::XS->new();
+#    my $data = $JSON->encode($job);
+#	my $jobdir = File::Temp::tempdir(DIR =>"/tmp")."/";
+#	open(my $fh, ">", $jobdir."jobfile.json") || return;
+#	print $fh $data;
+#	close($fh);
+#	my $executable = "/home/mmundy/kb/dev_container/modules/KBaseFBAModeling/internalScripts/RunJob.sh ".$jobdir;
+#	my $cmd = "nohup ".$executable." > ".$jobdir."stdout.log 2> ".$jobdir."stderr.log &";
+#	system($cmd);
 }
 
 =head3 _defaultJobState
@@ -2278,6 +2319,12 @@ sub new
     } else {
 		print STDERR "workspace-url configuration not found, using 'localhost'\n";
 		$self->{"_workspace-url"} = "http://localhost:7058";
+    }
+    if (defined($params{"probanno-url"})) {
+    	$self->{"_probanno-url"} = $params{"probanno-url"};
+    } else {
+    	print STDERR "probanno-url configuration not found, using 'localhost'\n";
+    	$self->{"_probanno-url"} = "http://localhost:7073";
     }
     if (defined($options->{verbose})) {
     	set_verbose(1);
@@ -9935,6 +9982,7 @@ sub run_job
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["job"],{});
     $job = $self->_getJob($input->{job});
+<<<<<<< HEAD
     eval {
 	    $self->_workspaceServices()->set_job_status({
 		   	jobid => $job->{id},
@@ -9943,6 +9991,15 @@ sub run_job
 		   	currentStatus => $job->{status}
 	    });
     };
+=======
+    $self->_workspaceServices()->set_job_status({
+	   	jobid => $job->{id},
+	   	status => "running",
+	   	auth => $self->_authentication(),
+	   	currentStatus => $job->{status}
+    });
+#	$job = $input;
+>>>>>>> 277b8744455389651bac7ea07c26529fd1d4a428
     my $fba = $self->_get_msobject("FBA","NO_WORKSPACE",$job->{jobdata}->{fbaref});
     my $fbaResult = $fba->runFBA();
     if (!defined($fbaResult)) {
