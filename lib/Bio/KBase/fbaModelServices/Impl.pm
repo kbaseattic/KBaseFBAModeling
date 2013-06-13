@@ -449,7 +449,7 @@ sub _probanno {
 		$url = $self->_getContext()->{_override}->{_probanno_url};
 	}
 	if (!defined($self->{_probannoServices}->{$url})) {
-		$self->{_probannoServices}->{$url} = Bio::KBase::workspaceService::Client->new($url);
+		$self->{_probannoServices}->{$url} = Bio::KBase::probabilistic_annotation::Client->new($url);
 	}
 	return $self->{_probannoServices}->{$url};
 }
@@ -3734,7 +3734,7 @@ sub get_compounds
     #BEGIN get_compounds
 	$self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["compounds"],{
-    	id_type => "ModelSEED",
+    	id_type => "all",
     	biochemistry => "default",
 		mapping => "default"
     });
@@ -3742,7 +3742,12 @@ sub get_compounds
 	$out_compounds = [];
 	for (my $i=0; $i < @{$input->{compounds}}; $i++) {
 		my $cpd = $input->{compounds}->[$i];
-		my $obj = $biochem->getObjectByAlias("compounds",$cpd,$input->{id_type});
+		my $obj;
+		if ($input->{id_type} eq "all") {
+			$obj = $biochem->getObjectByAlias("compounds",$cpd);
+		} else {
+			$obj = $biochem->getObjectByAlias("compounds",$cpd,$input->{id_type});
+		}
 		my $new;
 		if (defined($obj)) {
 			$new = {
