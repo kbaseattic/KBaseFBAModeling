@@ -9984,6 +9984,10 @@ sub run_job
 	    });
     };
     my $fba = $self->_get_msobject("FBA","NO_WORKSPACE",$job->{jobdata}->{fbaref});
+    if (defined($job->{jobdata}->{newgapfilltime})) {
+    	$fba->parameters()->{"CPLEX solver time limit"} = $job->{jobdata}->{newgapfilltime};
+    	$fba->parameters()->{"Recursive MILP timeout"} = $job->{jobdata}->{newgapfilltime}-100;
+    }
     my $fbaResult = $fba->runFBA();
     if (!defined($fbaResult)) {
     	eval{
