@@ -4,3 +4,4 @@ workspace_service
 auth
 idserver
 kb_model_seed
+probabilistic_annotation
