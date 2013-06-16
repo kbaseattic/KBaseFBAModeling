@@ -21,7 +21,7 @@ my $url = $c->param("GapFillManager.wsurl");
 my $auth = $c->param("GapFillManager.auth");
 my $wserv = Bio::KBase::workspaceService::Client->new($url);
 
-open(PID, "> ".$directory."/PID") || die "could not open PID file!"; 
+open(PID, "> ".$directory."/PID") || die "could not open PID file\n!"; 
 print PID "$$\n"; 
 close(PID);
 while(1) {
@@ -43,7 +43,7 @@ while(1) {
 				$newJobData = {newgapfilltime => 86400,error => ""};
 			}
 			if (defined($newJobData)) {
-				print "Resubmitting ".$job->{id}." for ".$newJobData->{newgapfilltime}." seconds!";
+				print "Resubmitting ".$job->{id}." for ".$newJobData->{newgapfilltime}." seconds!\n";
 				eval {
 					$wserv->set_job_status({
 						auth => $auth,
