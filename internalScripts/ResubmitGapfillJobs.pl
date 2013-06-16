@@ -24,17 +24,16 @@ my $wserv = Bio::KBase::workspaceService::Client->new($url);
 open(PID, "> ".$directory."/PID") || die "could not open PID file!"; 
 print PID "$$\n"; 
 close(PID);
-open(LOG, "> ".$directory."/log.out") || die "could not open log file!";
 while(1) {
 	my $jobs = $wserv->get_jobs({
 		type => "FBA",
 		status => "error",
 		auth => $auth
 	});
-	print LOG @{$jobs}." jobs with errors!\n";
+	print @{$jobs}." jobs with errors!\n";
 	for (my $i=0; $i < @{$jobs}; $i++) {
 		my $job = $jobs->[$i];
-		if (defined($job->{jobdata}->{error}) && $job->{jobdata}->{error} m/Gapfilling\scompleted,\sbut\sno\svalid\ssolutions\sfound/) {
+		if (defined($job->{jobdata}->{error}) && $job->{jobdata}->{error} =~ m/Gapfilling\scompleted,\sbut\sno\svalid\ssolutions\sfound/) {
 			my $newJobData;
 			if (!defined($job->{jobdata}->{newgapfilltime})) {
 				$newJobData = {newgapfilltime => 14400,error => ""};
@@ -44,7 +43,7 @@ while(1) {
 				$newJobData = {newgapfilltime => 86400,error => ""};
 			}
 			if (defined($newJobData)) {
-				print LOG "Resubmitting ".$job->{id}." for ".$newJobData->{newgapfilltime}." seconds!";
+				print "Resubmitting ".$job->{id}." for ".$newJobData->{newgapfilltime}." seconds!";
 				eval {
 					$wserv->set_job_status({
 						auth => $auth,
@@ -55,14 +54,13 @@ while(1) {
 					});
 				};
 			} else {
-				print LOG $job->{id}." does not solve after 24 hours!\n";
+				print $job->{id}." does not solve after 24 hours!\n";
 			}
 		} else {
-			print LOG $job->{id}." not a timeout error!\n";
+			print $job->{id}." not a timeout error!\n";
 		}
 	}
 	sleep(180);
 }
-close(LOG);
 
 1;
