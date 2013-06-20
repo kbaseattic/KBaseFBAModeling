@@ -1230,6 +1230,7 @@ sub _buildGapfillObject {
 	$gapform->{_kbaseWSMeta}->{ws} = "NO_WORKSPACE";
 	$gapform->fbaFormulation()->numberOfSolutions($formulation->{num_solutions});
 	#Handling the probabilistic annotation
+	my $probRXNWS = $formulation->{probabilisticAnnotation_workspace};
 	if (defined($formulation->{probabilisticAnnotation})) {
 		my $probanno = $self->_get_msobject("ProbAnno",$formulation->{probabilisticAnnotation_workspace},$formulation->{probabilisticAnnotation});
 		if (!defined($probanno)) {
@@ -1253,16 +1254,17 @@ sub _buildGapfillObject {
 			rxnprobs_workspace => "NO_WORKSPACE",
 			auth => $self->_authentication()
 		});
-		# Get the RxnProbs object from the workspace.
-		my $rxnprobs = $self->_workspaceServices()->get_object_by_ref({
-			reference => $rpmeta->[8],
-			auth => $self->_authentication()
-		});
+		$formulation->{probabilisticReactions} = $rpmeta->[8];
+		$probRXNWS = "NO_WORKSPACE";
 		
+	}
+	if (defined($formulation->{probabilisticReactions})) {
+		# Get the RxnProbs object from the workspace.
+		my $rxnprobs = $self->_get_msobject("RxnProbs",$probRXNWS,$formulation->{probabilisticReactions});
 		#Get coefficients of probmodel
 		$gapform->fbaFormulation()->{"parameters"}->{"Objective coefficient file"} = "ProbModelReactionCoefficients.txt";
 		$gapform->fbaFormulation()->{"inputfiles"}->{"ProbModelReactionCoefficients.txt"} = [];
-		my $rxns = $rxnprobs->{"data"}->{"reactionProbabilities"};
+		my $rxns = $rxnprobs->{"reactionProbabilities"};
 		for (my $i=0; $i < @{$rxns}; $i++) {
 			my $rxn = $rxns->[$i];
 			my $cost = (1-$rxn->[1]);
@@ -1749,7 +1751,8 @@ sub _GapFill_to_GapFillFormulation {
 		blacklistedrxns => [],
 		gauranteedrxns => [],
 		allowedcmps => [],
-		probabilisticAnnotation => undef
+		probabilisticAnnotation => undef,
+		probabilisticReactions => undef
 	};
 	foreach my $rxn (@{$obj->blacklistedReactions()}) {
 		push(@{$form->{blacklistedrxns}},$rxn->id());
@@ -3889,7 +3892,7 @@ sub get_alias
 	    $oneoutput->{original_id} = $id;
 	    $oneoutput->{aliases} = [];
 	    my $alias = $obj->getAliases($input->{output_id_type});
-	    push($oneoutput->{aliases},$alias);
+	    push(@{$oneoutput->{aliases}},$alias);
 	    push(@{$output}, $oneoutput);
 	} 
     }

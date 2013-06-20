@@ -44,6 +44,7 @@ my $gfTranslation = {
 	biomasstranspen => "biomasstranspen",
 	singletranspen => "singletranspen",
 	transpen=> "transpen",
+	probrxn => "probabilisticReactions",
 	probanno => "probabilisticAnnotation",
 	probannows => "probabilisticAnnotation_workspace",
 };
@@ -86,7 +87,8 @@ my $specs = [
     [ 'biomasstranspen:s', 'Penalty for biomass transport reactions', {"default" => 1} ],
     [ 'singletranspen:s', 'Penalty for single transport reactions', {"default" => 1} ],
     [ 'transpen:s', 'Penalty for transport reactions', {"default" => 1} ],
-	[ 'probanno:s', 'ID of probabilistic annotation' ],
+	[ 'probrxn=s', 'ID of probabilistic reactions' ],
+	[ 'probanno=s', 'ID of probabilistic annotation' ],
     [ 'probannows:s', 'Workspace with probabilistic annotation' ],
     [ 'blacklist:s@', 'List of blacklisted reactions (; delimiter)' ],
     [ 'gauranteed:s@', 'List of gauranteed reactions (; delimiter)' ],
