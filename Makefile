@@ -7,7 +7,9 @@ include $(TOP_DIR)/tools/Makefile.common
 
 SRC_PERL = $(wildcard scripts/*.pl)
 BIN_PERL = $(addprefix $(BIN_DIR)/,$(basename $(notdir $(SRC_PERL))))
-KB_PERL = $(addprefix $(TARGET)/bin/,$(basename $(notdir $(SRC_PERL))))
+SRC_PYTHON = $(wildcard scripts/*.py)
+BIN_PYTHON = $(addprefix $(BIN_DIR)/,$(basename $(notdir $(SRC_PYTHON))))
+# KB_PERL = $(addprefix $(TARGET)/bin/,$(basename $(notdir $(SRC_PERL))))
 
 # SERVER_SPEC :  fbaModelServices.spec
 # SERVER_MODULE : fbaModelServices
@@ -28,13 +30,16 @@ SERV_TPAGE_ARGS = --define kb_top=$(TARGET) --define kb_runtime=$(KB_RUNTIME) --
 
 all: bin server
 
-bin: $(BIN_PERL)
+bin: $(BIN_PERL) $(BIN_PYTHON)
 
 server:
 	echo "server target does nothing"
 
 $(BIN_DIR)/%: scripts/%.pl 
 	$(TOOLS_DIR)/wrap_perl '$$KB_TOP/modules/$(CURRENT_DIR)/$<' $@
+
+$(BIN_DIR)/%: scripts/%.py
+	$(TOOLS_DIR)/wrap_python '$$KB_TOP/modules/$(CURRENT_DIR)/$<' $@
 
 CLIENT_TESTS = $(wildcard client-tests/*.t)
 SCRIPT_TESTS = $(wildcard script-tests/*.sh)

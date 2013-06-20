@@ -3796,6 +3796,205 @@ sub get_compounds
 
 
 
+=head2 get_alias
+
+  $output = $obj->get_alias($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a get_alias_params
+$output is a reference to a list where each element is a get_alias_outputs
+get_alias_params is a reference to a hash where the following keys are defined:
+	object_type has a value which is a string
+	input_id_type has a value which is a string
+	output_id_type has a value which is a string
+	input_ids has a value which is a reference to a list where each element is a string
+	auth has a value which is a string
+get_alias_outputs is a reference to a hash where the following keys are defined:
+	original_id has a value which is a string
+	aliases has a value which is a reference to a list where each element is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a get_alias_params
+$output is a reference to a list where each element is a get_alias_outputs
+get_alias_params is a reference to a hash where the following keys are defined:
+	object_type has a value which is a string
+	input_id_type has a value which is a string
+	output_id_type has a value which is a string
+	input_ids has a value which is a reference to a list where each element is a string
+	auth has a value which is a string
+get_alias_outputs is a reference to a hash where the following keys are defined:
+	original_id has a value which is a string
+	aliases has a value which is a reference to a list where each element is a string
+
+
+=end text
+
+
+
+=item Description
+
+Turns one compound I into another of a different type
+
+=back
+
+=cut
+
+sub get_alias
+{
+    my $self = shift;
+    my($input) = @_;
+
+    my @_bad_arguments;
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to get_alias:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'get_alias');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($output);
+    #BEGIN get_alias
+    $self->_setContext($ctx,$input);
+    $input = $self->_validateargs($input,["input_ids", "input_id_type", "output_id_type", "object_type"],{
+        biochemistry => "default",
+	mapping => "default"
+    });
+
+    my $biochem = $self->_get_msobject("Biochemistry","kbase",$input->{biochemistry});
+    my $output = [];
+    for (my $i=0; $i < @{$input->{input_ids}}; $i++) {
+	my $id = $input->{input_ids}->[$i];
+	my $obj;
+	my $oneoutput = {};
+	if (lc($input->{"object_type"}) eq "compound") {
+	    $obj = $biochem->getObjectByAlias("compounds",$id,$input->{input_id_type});
+	} elsif (lc($input->{"object_type"}) eq "reaction") {
+	    $obj = $biochem->getObjectByAlias("reactions", $id, $input->{input_id_type});
+	} else { 
+	    die "Object type $input->{object_type} does not support alias sets";
+	}
+	if (defined($obj)) {
+	    $oneoutput->{original_id} = $id;
+	    $oneoutput->{aliases} = [];
+	    my $alias = $obj->getAliases($input->{output_id_type});
+	    push($oneoutput->{aliases},$alias);
+	    push(@{$output}, $oneoutput);
+	} 
+    }
+    
+    #END get_alias
+    my @_bad_returns;
+    (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to get_alias:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'get_alias');
+    }
+    return($output);
+}
+
+
+
+
+=head2 get_aliassets
+
+  $aliassets = $obj->get_aliassets($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a get_aliassets_params
+$aliassets is a reference to a list where each element is a string
+get_aliassets_params is a reference to a hash where the following keys are defined:
+	object_type has a value which is a string
+	auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a get_aliassets_params
+$aliassets is a reference to a list where each element is a string
+get_aliassets_params is a reference to a hash where the following keys are defined:
+	object_type has a value which is a string
+	auth has a value which is a string
+
+
+=end text
+
+
+
+=item Description
+
+Get possible types of aliases (alias sets)
+
+=back
+
+=cut
+
+sub get_aliassets
+{
+    my $self = shift;
+    my($input) = @_;
+
+    my @_bad_arguments;
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to get_aliassets:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'get_aliassets');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($aliassets);
+    #BEGIN get_aliassets
+    $self->_setContext($ctx,$input);
+    $input = $self->_validateargs($input,["object_type"],{
+        biochemistry => "default",
+        mapping => "default"
+				  });
+    my $biochem = $self->_get_msobject("Biochemistry","kbase",$input->{biochemistry});
+
+    $aliassets = [];
+    for (my $i=0; $i < @{$biochem->{aliasSets}}; $i++) {
+        my $type = $biochem->{aliasSets}->[$i]->{data}->{class};
+	if (lc($input->{object_type}) =~ lc($type)) {
+	    push(@{$aliassets}, $biochem->{aliasSets}->[$i]->{data}->{name});
+	}
+    }
+
+    #END get_aliassets
+    my @_bad_returns;
+    (ref($aliassets) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"aliassets\" (value was \"$aliassets\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to get_aliassets:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'get_aliassets');
+    }
+    return($aliassets);
+}
+
+
+
+
 =head2 get_media
 
   $out_media = $obj->get_media($input)
@@ -15701,11 +15900,10 @@ id_type has a value which is a string
 
 =item Description
 
-Input parameters for the "get_compounds" function.
-
-        list<compound_id> compounds - a list of the compound IDs for the compounds to be returned (a required argument)
-        string id_type - the type of ID that should be used in the output data (a optional argument; default is 'ModelSEED')
-        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+Input parameters for the "get_compounds" function.        
+list<compound_id> compounds - a list of the compound IDs for the compounds to be returned (a required argument)
+string id_type - the type of ID that should be used in the output data (a optional argument; default is 'ModelSEED')
+string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
 
 =item Definition
@@ -15728,6 +15926,135 @@ a reference to a hash where the following keys are defined:
 compounds has a value which is a reference to a list where each element is a compound_id
 auth has a value which is a string
 id_type has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 get_alias_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the get_alias function
+
+                string object_type    - The type of object (e.g. Compound or Reaction)
+                string input_id_type - The type (e.g. ModelSEED) of alias to be inputted
+                string output_id_type - The type (e.g. KEGG) of alias to be outputted
+                list<string> input_ids - A list of input IDs
+                string auth; - The authentication token of the KBase account (optional)
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+object_type has a value which is a string
+input_id_type has a value which is a string
+output_id_type has a value which is a string
+input_ids has a value which is a reference to a list where each element is a string
+auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+object_type has a value which is a string
+input_id_type has a value which is a string
+output_id_type has a value which is a string
+input_ids has a value which is a reference to a list where each element is a string
+auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 get_alias_outputs
+
+=over 4
+
+
+
+=item Description
+
+Output for get_alias function
+
+              string original_id - The original ID
+              list<string> aliases - Aliases for the original ID in the new format
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+original_id has a value which is a string
+aliases has a value which is a reference to a list where each element is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+original_id has a value which is a string
+aliases has a value which is a reference to a list where each element is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 get_aliassets_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the get_aliassets function
+
+              string auth; - The authentication token of the KBase account (optional)
+              string object_type; - The type of object (e.g. Compound or Reaction)
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+object_type has a value which is a string
+auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+object_type has a value which is a string
+auth has a value which is a string
 
 
 =end text
