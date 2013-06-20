@@ -456,7 +456,7 @@ sub _probanno {
 
 sub _myURL {
 	my $self = shift;
-	return "http://bio-data-1.mcs.anl.gov/services/fba";
+	return $self->{"_fba-url"};
 }
 
 sub _save_msobject {
@@ -2234,6 +2234,20 @@ sub _getJob {
 	return $jobs->[0];
 }
 
+=head3 _error
+
+Definition:
+	$self->_error(string message,string method);
+Description:
+	Throws an exception
+		
+=cut
+
+sub _error {
+	my($self,$msg,$method) = @_;
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => $method);
+}
+
 #END_HEADER
 
 sub new
@@ -2248,11 +2262,12 @@ sub new
     my $params;
     $self->{_defaultJobState} = "queued";
     $self->{_accounttype} = "kbase";
+    $self->{'_fba-url'} = "";
     $self->{'_idserver-url'} = "http://bio-data-1.mcs.anl.gov/services/idserver";
     $self->{'_mssserver-url'} = "http://biologin-4.mcs.anl.gov:7050";
     $self->{"_probanno-url"} = "http://localhost:7073";
     $self->{"_workspace-url"} = "http://localhost:7058";
-    my $paramlist = [qw(probanno-url mssserver-url accounttype workspace-url defaultJobState idserver-url)];
+    my $paramlist = [qw(fba-url probanno-url mssserver-url accounttype workspace-url defaultJobState idserver-url)];
 
     # so it looks like params is created by looping over the config object
     # if deployment.cfg exists
@@ -2300,6 +2315,9 @@ sub new
     }
     if (defined $params->{defaultJobState}) {
 		$self->{_defaultJobState} = $params->{defaultJobState};
+    }
+    if (defined $params->{'fba-url'}) {
+    		$self->{'_fba-url'} = $params->{'fba-url'};
     }
     if (defined $params->{'idserver-url'}) {
     		$self->{'_idserver-url'} = $params->{'idserver-url'};
@@ -10491,6 +10509,465 @@ sub role_to_reactions
 
 
 
+=head2 fasta_to_contigs
+
+  $output = $obj->fasta_to_contigs($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is a fasta_to_contigs_params
+$output is an object_metadata
+fasta_to_contigs_params is a reference to a hash where the following keys are defined:
+	contigid has a value which is a string
+	fasta has a value which is a string
+	workspace has a value which is a workspace_id
+	auth has a value which is a string
+	source has a value which is a string
+	genetic_code has a value which is a string
+	domain has a value which is a string
+	scientific_name has a value which is a string
+workspace_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is a fasta_to_contigs_params
+$output is an object_metadata
+fasta_to_contigs_params is a reference to a hash where the following keys are defined:
+	contigid has a value which is a string
+	fasta has a value which is a string
+	workspace has a value which is a workspace_id
+	auth has a value which is a string
+	source has a value which is a string
+	genetic_code has a value which is a string
+	domain has a value which is a string
+	scientific_name has a value which is a string
+workspace_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+
+
+=item Description
+
+Loads a fasta file as a Contigs object in the workspace
+
+=back
+
+=cut
+
+sub fasta_to_contigs
+{
+    my $self = shift;
+    my($params) = @_;
+
+    my @_bad_arguments;
+    (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"params\" (value was \"$params\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to fasta_to_contigs:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'fasta_to_contigs');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($output);
+    #BEGIN fasta_to_contigs
+    $self->_setContext($ctx,$params);
+	$params = $self->_validateargs($params,["fasta","workspace"],{
+		contigid => undef,
+		source => "Unknown",
+		genetic_code => 11,
+		domain => "Bacteria",
+		scientific_name => "Unknown organism",
+	});
+	if (!defined($params->{contigid})) {
+		$params->{contigid} = $self->_get_new_id("kb|contig.");
+	}
+	my $contigs = {
+		id => $params->{contigid},
+		scientific_name => $params->{scientific_name},
+		domain => $params->{domain},
+		genetic_code => $params->{genetic_code},
+		source => $params->{source},
+		contigs => []
+	};
+	my $array = [split(/\n/,$params->{fasta})];
+	my $id;
+	my $seq;
+	for (my $i=0; $i < @{$array}; $i++) {
+		my $line = $array->[$i];
+		if ($line =~ m/^\>([^\s]+)\s/) {
+			my $newid = $1;
+			if (defined($id) && length($seq) > 0) {
+				push(@{$contigs->{contigs}}, { id => $id, dna => $seq });
+			}
+			$id = $newid;
+			$seq = "";
+		} elsif (length($line) > 0) {
+			$seq .= $line;
+		}
+	}
+	if (defined($id) && length($seq) > 0) {
+		push(@{$contigs->{contigs}}, { id => $id, dna => $seq });
+	}
+    $output = $self->_save_msobject($contigs,"Contigs",$params->{workspace},$params->{contigid},"fasta_to_contigs",1);
+    $self->_clearContext();
+    #END fasta_to_contigs
+    my @_bad_returns;
+    (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to fasta_to_contigs:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'fasta_to_contigs');
+    }
+    return($output);
+}
+
+
+
+
+=head2 contigs_to_genome
+
+  $job = $obj->contigs_to_genome($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is a contigs_to_genome_params
+$job is a JobObject
+contigs_to_genome_params is a reference to a hash where the following keys are defined:
+	contigid has a value which is a string
+	contig_workspace has a value which is a workspace_id
+	workspace has a value which is a workspace_id
+	genomeid has a value which is a string
+	auth has a value which is a string
+workspace_id is a string
+JobObject is a reference to a hash where the following keys are defined:
+	id has a value which is a job_id
+	type has a value which is a string
+	auth has a value which is a string
+	status has a value which is a string
+	jobdata has a value which is a reference to a hash where the key is a string and the value is a string
+	queuetime has a value which is a string
+	starttime has a value which is a string
+	completetime has a value which is a string
+	owner has a value which is a string
+	queuecommand has a value which is a string
+job_id is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is a contigs_to_genome_params
+$job is a JobObject
+contigs_to_genome_params is a reference to a hash where the following keys are defined:
+	contigid has a value which is a string
+	contig_workspace has a value which is a workspace_id
+	workspace has a value which is a workspace_id
+	genomeid has a value which is a string
+	auth has a value which is a string
+workspace_id is a string
+JobObject is a reference to a hash where the following keys are defined:
+	id has a value which is a job_id
+	type has a value which is a string
+	auth has a value which is a string
+	status has a value which is a string
+	jobdata has a value which is a reference to a hash where the key is a string and the value is a string
+	queuetime has a value which is a string
+	starttime has a value which is a string
+	completetime has a value which is a string
+	owner has a value which is a string
+	queuecommand has a value which is a string
+job_id is a string
+
+
+=end text
+
+
+
+=item Description
+
+Annotates contigs object creating a genome object
+
+=back
+
+=cut
+
+sub contigs_to_genome
+{
+    my $self = shift;
+    my($params) = @_;
+
+    my @_bad_arguments;
+    (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"params\" (value was \"$params\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to contigs_to_genome:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'contigs_to_genome');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($job);
+    #BEGIN contigs_to_genome
+    $self->_setContext($ctx,$params);
+	$params = $self->_validateargs($params,["contigid","workspace"],{
+		genomeid => undef,
+		contig_workspace => $params->{workspace}
+	});
+	if (!defined($params->{genomeid})) {
+		$params->{genomeid} = $self->_get_new_id("kb|g.");
+	}
+	my $contigs = $self->_get_msobject("Contigs",$params->{contig_workspace},$params->{contigid});
+	my $contigmeta;
+	$job = $self->_queueJob({
+		type => "Annotation",
+		jobdata => {
+			fbaurl => $self->_myURL(),
+			contig_reference => $contigmeta->[8],
+			genomeid => $params->{genomeid},
+			workspace => $params->{workspace}
+		},
+		queuecommand => "contigs_to_genome",
+		"state" => $self->_defaultJobState()
+	});
+	$self->_clearContext();
+    #END contigs_to_genome
+    my @_bad_returns;
+    (ref($job) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"job\" (value was \"$job\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to contigs_to_genome:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'contigs_to_genome');
+    }
+    return($job);
+}
+
+
+
+
+=head2 add_stimuli
+
+  $output = $obj->add_stimuli($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is an add_stimuli_params
+$output is an object_metadata
+add_stimuli_params is a reference to a hash where the following keys are defined:
+	biochemid has a value which is a string
+	stimuliid has a value which is a string
+	name has a value which is a string
+	abbreviation has a value which is a string
+	type has a value which is a string
+	description has a value which is a string
+	compounds has a value which is a reference to a list where each element is a string
+	workspace has a value which is a string
+	authl has a value which is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is an add_stimuli_params
+$output is an object_metadata
+add_stimuli_params is a reference to a hash where the following keys are defined:
+	biochemid has a value which is a string
+	stimuliid has a value which is a string
+	name has a value which is a string
+	abbreviation has a value which is a string
+	type has a value which is a string
+	description has a value which is a string
+	compounds has a value which is a reference to a list where each element is a string
+	workspace has a value which is a string
+	authl has a value which is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+
+=end text
+
+
+
+=item Description
+
+Adds a stimuli either to the central database or as an object in a workspace
+
+=back
+
+=cut
+
+sub add_stimuli
+{
+    my $self = shift;
+    my($params) = @_;
+
+    my @_bad_arguments;
+    (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"params\" (value was \"$params\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to add_stimuli:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'add_stimuli');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($output);
+    #BEGIN add_stimuli
+    $self->_setContext($ctx,$params);
+	$params = $self->_validateargs($params,["name","type","workspace"],{
+		biochemid => undef,
+		stimuliid => undef,
+		abbreviation => $params->{name},
+		description => "",
+		compounds => []
+	});
+	my $allowableTypes = {
+		chemical => 1,environmental => 1
+	};
+	if (!defined($allowableTypes->{$params->{type}})) {
+		$self->_error("Input type ".$params->{type}." not recognized!","add_stimuli");
+	}
+	if (!defined($params->{stimuliid})) {
+		$params->{stimuliid} = $self->_get_new_id("kb|stim.");
+	}
+	my $biochem;
+	if (defined($params->{biochemid})) {
+		$biochem = $self->_get_msobject("Biochemistry",$params->{biochem_workspace},$params->{biochemid});
+	} else {
+		$biochem = $self->_get_msobject("Biochemistry","kbase","default");
+	}
+	my $obj = {
+		description => $params->{stimuliid},
+		id => $params->{stimuliid},
+		name => $params->{name},
+		type => $params->{type},
+		abbreviation => $params->{abbreviation},
+		description => $params->{description},
+		compound_uuids => []
+	};
+	my $missingCpd;
+	if (defined($params->{compounds})) {
+		for (my $i=0; $i < @{$params->{compounds}}; $i++) {
+			my $cpd = $params->{compounds}->[$i];
+			my $cpdobj = $biochem->searchForCompound($cpd);
+			if (!defined($cpdobj)) {
+				push(@{$missingCpd},$cpd);
+			} else {
+				push(@{$obj->{compound_uuids}},$cpdobj->uuid());
+			}
+		}
+	}
+	if (defined($params->{biochemid})) {
+		$biochem->add("stimuli",$obj);
+		$output = $self->_save_msobject($biochem,"Biochemistry",$params->{biochem_workspace},$params->{biochemid},"add_stimuli");	
+	} else {
+		$output = $self->_save_msobject($obj,"Stimuli",$params->{workspace},$params->{stimuliid},"add_stimuli");
+	}
+	$self->_clearContext();
+    #END add_stimuli
+    my @_bad_returns;
+    (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to add_stimuli:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'add_stimuli');
+    }
+    return($output);
+}
+
+
+
+
 =head2 version 
 
   $return = $obj->version()
@@ -17230,6 +17707,162 @@ auth has a value which is a string
 a reference to a hash where the following keys are defined:
 templateModel has a value which is a template_id
 auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 fasta_to_contigs_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "fasta_to_contigs" function.
+
+        string contigid - ID to be assigned to the contigs object created (optional)
+        string fasta - string with sequence data from fasta file (required argument)
+        workspace_id workspace - ID of workspace for storing objects (optional argument, default is current workspace)
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+contigid has a value which is a string
+fasta has a value which is a string
+workspace has a value which is a workspace_id
+auth has a value which is a string
+source has a value which is a string
+genetic_code has a value which is a string
+domain has a value which is a string
+scientific_name has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+contigid has a value which is a string
+fasta has a value which is a string
+workspace has a value which is a workspace_id
+auth has a value which is a string
+source has a value which is a string
+genetic_code has a value which is a string
+domain has a value which is a string
+scientific_name has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 contigs_to_genome_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "contigs_to_genome" function.
+
+        string contigid - ID to be assigned to the contigs object created (optional)
+        workspace_id contigws - ID of workspace with contigs (optional argument, default is value of workspace argument)
+        workspace_id workspace - ID of workspace for storing objects (optional argument, default is current workspace)
+        string genomeid - ID to use for genome object (required argument)
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+contigid has a value which is a string
+contig_workspace has a value which is a workspace_id
+workspace has a value which is a workspace_id
+genomeid has a value which is a string
+auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+contigid has a value which is a string
+contig_workspace has a value which is a workspace_id
+workspace has a value which is a workspace_id
+genomeid has a value which is a string
+auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 add_stimuli_params
+
+=over 4
+
+
+
+=item Description
+
+********************************************************************************
+    Code relating to reconstruction, import, and analysis of regulatory models
+   	********************************************************************************
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+biochemid has a value which is a string
+stimuliid has a value which is a string
+name has a value which is a string
+abbreviation has a value which is a string
+type has a value which is a string
+description has a value which is a string
+compounds has a value which is a reference to a list where each element is a string
+workspace has a value which is a string
+authl has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+biochemid has a value which is a string
+stimuliid has a value which is a string
+name has a value which is a string
+abbreviation has a value which is a string
+type has a value which is a string
+description has a value which is a string
+compounds has a value which is a reference to a list where each element is a string
+workspace has a value which is a string
+authl has a value which is a string
 
 
 =end text

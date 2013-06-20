@@ -2154,4 +2154,81 @@ module fbaModelServices {
         Retrieves a list of roles mapped to reactions based on input template model
     */
     funcdef role_to_reactions(role_to_reactions_params params) returns (list<RoleComplexReactions> output);
+
+	/* Input parameters for the "fasta_to_contigs" function.
+	
+		string contigid - ID to be assigned to the contigs object created (optional)
+		string fasta - string with sequence data from fasta file (required argument)
+		workspace_id workspace - ID of workspace for storing objects (optional argument, default is current workspace)
+		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+		
+	*/
+	typedef structure {
+		string contigid;
+		string fasta;
+		workspace_id workspace;
+		string auth;
+		string source;
+		string genetic_code;
+		string domain;
+		string scientific_name;
+    } fasta_to_contigs_params;
+    /*
+		Loads a fasta file as a Contigs object in the workspace        
+    */
+    funcdef fasta_to_contigs(fasta_to_contigs_params params) returns (object_metadata output);
+
+	/* Input parameters for the "contigs_to_genome" function.
+	
+		string contigid - ID to be assigned to the contigs object created (optional)
+		workspace_id contigws - ID of workspace with contigs (optional argument, default is value of workspace argument)
+		workspace_id workspace - ID of workspace for storing objects (optional argument, default is current workspace)
+		string genomeid - ID to use for genome object (required argument)
+		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+		
+	*/
+	typedef structure {
+		string contigid;
+		workspace_id contig_workspace;
+		workspace_id workspace;
+		string genomeid;
+		string auth;
+    } contigs_to_genome_params;
+    /*
+		Annotates contigs object creating a genome object        
+    */
+    funcdef contigs_to_genome(contigs_to_genome_params params) returns (JobObject job);
+	
+	/*********************************************************************************
+    Code relating to reconstruction, import, and analysis of regulatory models
+   	*********************************************************************************/
+	/* Input parameters for the "add_stimuli" function.
+	
+		string biochemid - ID of biochemistry with stimuli (optional)
+		string biochem_workspace - ID of workspace with biochemistry with stimuli (optional)
+		string stimuliid - ID for the stimuli to be created (optional)
+		string name - Name for the stimuli (required)
+		string abbreviation - Abbreviation for the stimuli (optional)
+		string type - Type of the stimuli (required)
+		list<string> compounds - Compounds associated with stimuli (optional)
+		string workspace - ID of workspace where all output objects will be stored (optional argument, default is current workspace)
+		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+		
+	*/
+	typedef structure {
+		string biochemid;
+		string biochem_workspace;
+		string stimuliid;
+		string name;
+		string abbreviation;
+		string type;
+		string description;
+		list<string> compounds;
+		string workspace;
+		string auth;
+    } add_stimuli_params;
+    /*
+		Adds a stimuli either to the central database or as an object in a workspace        
+    */
+    funcdef add_stimuli(add_stimuli_params params) returns (object_metadata output);
 };

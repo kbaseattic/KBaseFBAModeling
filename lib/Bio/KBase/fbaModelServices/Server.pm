@@ -53,6 +53,9 @@ our %return_counts = (
         'set_cofactors' => 1,
         'find_reaction_synonyms' => 1,
         'role_to_reactions' => 1,
+        'fasta_to_contigs' => 1,
+        'contigs_to_genome' => 1,
+        'add_stimuli' => 1,
         'version' => 1,
 );
 
@@ -102,6 +105,9 @@ sub _build_valid_methods
         'set_cofactors' => 1,
         'find_reaction_synonyms' => 1,
         'role_to_reactions' => 1,
+        'fasta_to_contigs' => 1,
+        'contigs_to_genome' => 1,
+        'add_stimuli' => 1,
         'version' => 1,
     };
     return $methods;
