@@ -2200,7 +2200,7 @@ sub _queueJob {
 		print $fh $data;
 		close($fh);
 		# Change the path below to your dev_container.
-		my $executable = "/home/mmundy/kb/dev_container/modules/KBaseFBAModeling/internalScripts/RunJob.sh ".$jobdir;
+		my $executable = "/kb/dev_container/modules/KBaseFBAModeling/internalScripts/RunJob.sh ".$jobdir;
 		my $cmd = "nohup ".$executable." > ".$jobdir."stdout.log 2> ".$jobdir."stderr.log &";
 		system($cmd);
 		# Make my own job object to return.
@@ -6226,30 +6226,80 @@ sub adjust_model_reaction
     #BEGIN adjust_model_reaction
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["reaction","model","workspace"],{
-    	direction => undef,
-    	compartment => "c",
-    	compartmentIndex => 0,
-    	gpr => undef,
+    	direction => [undef],
+    	compartment => ["c"],
+    	compartmentIndex => [0],
+    	gpr => [undef],
     	removeReaction => 0,
     	addReaction => 0,
     	overwrite => 0,
 	outputid => $input->{model},
 	outputws => $input->{workspace}
     });
-    my $model = $self->_get_msobject("Model",$input->{workspace},$input->{model});
-    if (defined($input->{gpr})) {
-    	$input->{gpr} = $self->_translateGPRHash($self->_parseGPR($input->{gpr}))
+
+    # For reverse compatibility, if we are given scalar arguments for the reactions or other multi-component objects
+    # we turn them into array refs.
+    if ( ref($input->{reaction}) eq 'SCALAR' ) {  $input->{reaction} = [ $input->{reaction} ];   }
+    if ( ref($input->{direction}) eq 'SCALAR' ) { $input->{direction} = [ $input->{direction} ]; }
+    if ( ref($input->{gpr}) eq 'SCALAR' ) {  $input->{gpr} = [ $input->{gpr} ];  }
+    if ( ref($input->{compartment}) eq 'SCALAR') { $input->{compartment} = [ $input->{compartment} ]; }
+    if ( ref($input->{compartmentIndex}) eq 'SCALAR') { $input->{compartmentIndex} = [ $input->{compartmentIndex} ]; }
+
+    # If we receive entries for compartments, directions, gprs, etc... they must all either have the same size
+    # or be size 1 (in which case we apply the same value to all of the elements)
+    my $nreactions = scalar @{ $input->{reaction} };
+    my $ncomps = scalar @{ $input->{compartment} };
+    my $ncompidx = scalar @{ $input->{compartmentIndex} };
+    my $ndir = scalar @{ $input->{direction} };
+    my $ngpr = scalar @{ $input->{gpr} };
+    if( !($ncomps == $nreactions || $ncomps == 1) ||
+	!($ncompidx == $nreactions || $ncompidx == 1) ||
+	!($ndir == $nreactions || $ndir == 1) ||
+	!($ngpr == $nreactions || $ngpr == 1) ) {
+	die "Size mismatch between number of reactions and number of GPR, direction, compartment or compartmentIndexes";
     }
-    $model->manualReactionAdjustment({
-    	reaction => $input->{reaction},
-    	direction => $input->{direction},
-    	compartment => $input->{compartment},
-    	compartmentIndex => $input->{compartmentIndex},
-    	gpr => $input->{gpr},
-    	removeReaction => $input->{removeReaction},
-    	addReaction => $input->{addReaction}
-    });
-	$modelMeta = $self->_save_msobject($model,"Model",$input->{outputws},$input->{outputid},"adjust_model_reaction",$input->{overwrite});
+
+    my $model = $self->_get_msobject("Model",$input->{workspace},$input->{model});
+    for (my $i=0; $i < @{$input->{reaction}}; $i++)  {
+	my $gpr;
+	my $dir;
+	my $comp;
+	my $compidx;
+	if ( scalar @{$input->{gpr}} eq 1) {
+	    if ( defined($input->{gpr}->[0] )) {
+		$gpr = $self->_translateGPRHash($self->_parseGPR($input->{gpr}->[0]));
+	    }
+	} else {
+	    if ( defined($input->{gpr}->[$i]) ) {
+		$gpr = $self->_translateGPRHash($self->_parseGPR($input->{gpr}->[$i]));	 
+	    }}
+	if ( scalar @{$input->{direction}} eq 1 ) {
+	    $dir = $input->{direction}->[0];
+	} else {
+	    $dir = $input->{direction}->[$i];
+	}
+	if ( scalar @{$input->{compartment}} eq 1 ) {  
+	    $comp = $input->{compartment}->[0]; 
+	} else {  
+	    $comp = $input->{compartment}->[$i];
+	}
+	if ( scalar @{$input->{compartmentIndex}} eq 1 ) {
+	    $compidx = $input->{compartmentIndex}->[0];
+	} else {
+	    $compidx = $input->{compartmentIndex}->[$i];
+	}
+
+	$model->manualReactionAdjustment({
+	    reaction => $input->{reaction}->[$i],
+	    direction => $dir,
+	    compartment => $comp,
+	    compartmentIndex => $compidx,
+	    gpr => $gpr,
+	    removeReaction => $input->{removeReaction},
+	    addReaction => $input->{addReaction}
+					 });
+    }
+    $modelMeta = $self->_save_msobject($model,"Model",$input->{outputws},$input->{outputid},"adjust_model_reaction",$input->{overwrite});
     $self->_clearContext();
     #END adjust_model_reaction
     my @_bad_returns;
@@ -8391,7 +8441,7 @@ sub queue_gapfill_model
 		$gapfill->model_uuid($model->uuid());
 		my $gapfillmeta = $self->_save_msobject($gapfill,"GapFill","NO_WORKSPACE",$gapfill->uuid(),"queue_gapfill_model",0,$gapfill->uuid());
 	    $job = $self->_queueJob({
-			localjob => 1,
+			#localjob => 1,
 			type => "FBA",
 			jobdata => {
 				postprocess_command => "queue_gapfill_model",

@@ -1618,24 +1618,28 @@ module fbaModelServices {
 	
 		fbamodel_id model - ID of model to be adjusted
 		workspace_id workspace - workspace containing model to be adjusted
-		reaction_id reaction - ID of reaction to be added, removed, or adjusted
-		string direction - direction to set for reaction being added or adjusted
-		compartment_id compartment - ID of compartment containing reaction being added or adjusted
-		int compartmentIndex - index of compartment containing reaction being altered or adjusted
-		list<list<list<feature_id>>> gpr - array specifying gene-protein-reaction associations
-		bool removeReaction - boolean indicating reaction should be removed
-		bool addReaction - boolean indicating reaction should be added
+		list<reaction_id> reaction - List of IDs of reactions to be added, removed, or adjusted
+		list<string> direction - directions to set for reactions being added or adjusted
+		list<compartment_id> compartment - IDs of compartment containing reaction being added or adjusted
+		list<int> compartmentIndex - indexes of compartment containing reaction being altered or adjusted
+		list<string> gpr - array specifying gene-protein-reaction association(s)
+		bool removeReaction - boolean indicating listed reaction(s) should be removed
+		bool addReaction - boolean indicating reaction(s) should be added
+		bool overwrite - boolean indicating whether or not to overwrite model object in the workspace
 		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+
+		For all of the lists above, if only one element is specified it is assumed the user wants to apply the same
+		to all the listed reactions.
 		
 	*/
     typedef structure {
 		fbamodel_id model;
 		workspace_id workspace;
-		reaction_id reaction;
-		string direction;
-		compartment_id compartment;
-		int compartmentIndex;
-		string gpr;
+		list<reaction_id> reaction;
+		list<string> direction;
+		list<compartment_id> compartment;
+		list<int> compartmentIndex;
+		list<string> gpr;
 		bool removeReaction;
 		bool addReaction;
 		bool overwrite;
