@@ -6120,11 +6120,11 @@ $modelMeta is an object_metadata
 adjust_model_reaction_params is a reference to a hash where the following keys are defined:
 	model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
-	reaction has a value which is a reaction_id
-	direction has a value which is a string
-	compartment has a value which is a compartment_id
-	compartmentIndex has a value which is an int
-	gpr has a value which is a string
+	reaction has a value which is a reference to a list where each element is a reaction_id
+	direction has a value which is a reference to a list where each element is a string
+	compartment has a value which is a reference to a list where each element is a compartment_id
+	compartmentIndex has a value which is a reference to a list where each element is an int
+	gpr has a value which is a reference to a list where each element is a string
 	removeReaction has a value which is a bool
 	addReaction has a value which is a bool
 	overwrite has a value which is a bool
@@ -6163,11 +6163,11 @@ $modelMeta is an object_metadata
 adjust_model_reaction_params is a reference to a hash where the following keys are defined:
 	model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
-	reaction has a value which is a reaction_id
-	direction has a value which is a string
-	compartment has a value which is a compartment_id
-	compartmentIndex has a value which is an int
-	gpr has a value which is a string
+	reaction has a value which is a reference to a list where each element is a reaction_id
+	direction has a value which is a reference to a list where each element is a string
+	compartment has a value which is a reference to a list where each element is a compartment_id
+	compartmentIndex has a value which is a reference to a list where each element is an int
+	gpr has a value which is a reference to a list where each element is a string
 	removeReaction has a value which is a bool
 	addReaction has a value which is a bool
 	overwrite has a value which is a bool
@@ -8441,7 +8441,7 @@ sub queue_gapfill_model
 		$gapfill->model_uuid($model->uuid());
 		my $gapfillmeta = $self->_save_msobject($gapfill,"GapFill","NO_WORKSPACE",$gapfill->uuid(),"queue_gapfill_model",0,$gapfill->uuid());
 	    $job = $self->_queueJob({
-			#localjob => 1,
+			localjob => 1,
 			type => "FBA",
 			jobdata => {
 				postprocess_command => "queue_gapfill_model",
@@ -11090,6 +11090,7 @@ $params is an add_stimuli_params
 $output is an object_metadata
 add_stimuli_params is a reference to a hash where the following keys are defined:
 	biochemid has a value which is a string
+	biochem_workspace has a value which is a string
 	stimuliid has a value which is a string
 	name has a value which is a string
 	abbreviation has a value which is a string
@@ -11097,7 +11098,7 @@ add_stimuli_params is a reference to a hash where the following keys are defined
 	description has a value which is a string
 	compounds has a value which is a reference to a list where each element is a string
 	workspace has a value which is a string
-	authl has a value which is a string
+	auth has a value which is a string
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -11127,6 +11128,7 @@ $params is an add_stimuli_params
 $output is an object_metadata
 add_stimuli_params is a reference to a hash where the following keys are defined:
 	biochemid has a value which is a string
+	biochem_workspace has a value which is a string
 	stimuliid has a value which is a string
 	name has a value which is a string
 	abbreviation has a value which is a string
@@ -11134,7 +11136,7 @@ add_stimuli_params is a reference to a hash where the following keys are defined
 	description has a value which is a string
 	compounds has a value which is a reference to a list where each element is a string
 	workspace has a value which is a string
-	authl has a value which is a string
+	auth has a value which is a string
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -16921,14 +16923,18 @@ Input parameters for the "adjust_model_reaction" function.
 
         fbamodel_id model - ID of model to be adjusted
         workspace_id workspace - workspace containing model to be adjusted
-        reaction_id reaction - ID of reaction to be added, removed, or adjusted
-        string direction - direction to set for reaction being added or adjusted
-        compartment_id compartment - ID of compartment containing reaction being added or adjusted
-        int compartmentIndex - index of compartment containing reaction being altered or adjusted
-        list<list<list<feature_id>>> gpr - array specifying gene-protein-reaction associations
-        bool removeReaction - boolean indicating reaction should be removed
-        bool addReaction - boolean indicating reaction should be added
+        list<reaction_id> reaction - List of IDs of reactions to be added, removed, or adjusted
+        list<string> direction - directions to set for reactions being added or adjusted
+        list<compartment_id> compartment - IDs of compartment containing reaction being added or adjusted
+        list<int> compartmentIndex - indexes of compartment containing reaction being altered or adjusted
+        list<string> gpr - array specifying gene-protein-reaction association(s)
+        bool removeReaction - boolean indicating listed reaction(s) should be removed
+        bool addReaction - boolean indicating reaction(s) should be added
+        bool overwrite - boolean indicating whether or not to overwrite model object in the workspace
         string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+
+        For all of the lists above, if only one element is specified it is assumed the user wants to apply the same
+        to all the listed reactions.
 
 
 =item Definition
@@ -16939,11 +16945,11 @@ Input parameters for the "adjust_model_reaction" function.
 a reference to a hash where the following keys are defined:
 model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
-reaction has a value which is a reaction_id
-direction has a value which is a string
-compartment has a value which is a compartment_id
-compartmentIndex has a value which is an int
-gpr has a value which is a string
+reaction has a value which is a reference to a list where each element is a reaction_id
+direction has a value which is a reference to a list where each element is a string
+compartment has a value which is a reference to a list where each element is a compartment_id
+compartmentIndex has a value which is a reference to a list where each element is an int
+gpr has a value which is a reference to a list where each element is a string
 removeReaction has a value which is a bool
 addReaction has a value which is a bool
 overwrite has a value which is a bool
@@ -16958,11 +16964,11 @@ auth has a value which is a string
 a reference to a hash where the following keys are defined:
 model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
-reaction has a value which is a reaction_id
-direction has a value which is a string
-compartment has a value which is a compartment_id
-compartmentIndex has a value which is an int
-gpr has a value which is a string
+reaction has a value which is a reference to a list where each element is a reaction_id
+direction has a value which is a reference to a list where each element is a string
+compartment has a value which is a reference to a list where each element is a compartment_id
+compartmentIndex has a value which is a reference to a list where each element is an int
+gpr has a value which is a reference to a list where each element is a string
 removeReaction has a value which is a bool
 addReaction has a value which is a bool
 overwrite has a value which is a bool
@@ -18246,6 +18252,7 @@ auth has a value which is a string
 <pre>
 a reference to a hash where the following keys are defined:
 biochemid has a value which is a string
+biochem_workspace has a value which is a string
 stimuliid has a value which is a string
 name has a value which is a string
 abbreviation has a value which is a string
@@ -18253,7 +18260,7 @@ type has a value which is a string
 description has a value which is a string
 compounds has a value which is a reference to a list where each element is a string
 workspace has a value which is a string
-authl has a value which is a string
+auth has a value which is a string
 
 </pre>
 
@@ -18263,6 +18270,7 @@ authl has a value which is a string
 
 a reference to a hash where the following keys are defined:
 biochemid has a value which is a string
+biochem_workspace has a value which is a string
 stimuliid has a value which is a string
 name has a value which is a string
 abbreviation has a value which is a string
@@ -18270,7 +18278,7 @@ type has a value which is a string
 description has a value which is a string
 compounds has a value which is a reference to a list where each element is a string
 workspace has a value which is a string
-authl has a value which is a string
+auth has a value which is a string
 
 
 =end text
