@@ -11106,13 +11106,20 @@ sub add_stimuli
     my($output);
     #BEGIN add_stimuli
     $self->_setContext($ctx,$params);
-	$params = $self->_validateargs($params,["name","type","workspace"],{
+	$params = $self->_validateargs($params,["name","workspace"],{
 		biochemid => undef,
 		stimuliid => undef,
 		abbreviation => $params->{name},
 		description => "",
-		compounds => []
+		compounds => [],
+		type => undef
 	});
+	if (!defined($params->{type})) {
+		$params->{type} = "environment";
+		if (@{$params->{compounds}} > 0) {
+			$params->{type} = "chemical";
+		}
+	}
 	my $allowableTypes = {
 		chemical => 1,environmental => 1
 	};
