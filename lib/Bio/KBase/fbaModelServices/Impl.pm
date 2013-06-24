@@ -8441,7 +8441,7 @@ sub queue_gapfill_model
 		$gapfill->model_uuid($model->uuid());
 		my $gapfillmeta = $self->_save_msobject($gapfill,"GapFill","NO_WORKSPACE",$gapfill->uuid(),"queue_gapfill_model",0,$gapfill->uuid());
 	    $job = $self->_queueJob({
-			localjob => 1,
+			#localjob => 1,
 			type => "FBA",
 			jobdata => {
 				postprocess_command => "queue_gapfill_model",
