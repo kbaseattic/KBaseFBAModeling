@@ -37,9 +37,16 @@ if ($job->{wsurl} eq "impl") {
 } else {
     $obj = Bio::KBase::fbaModelServices::Impl->new({accounttype => $job->{accounttype},"workspace-url" => $job->{wsurl}});
 }
-$obj->run_job({
-	job => $job->{id},
-	auth => $job->{auth}
-});
+if (!defined($job->{localjob})) {
+	 $obj->run_job({
+	    job => $job->{id},
+	    auth => $job->{auth}
+	 });	
+} else {
+	$obj->run_job({
+		job => $job,
+		auth => $job->{jobdata}->{auth}
+	});
+}
 
 1;

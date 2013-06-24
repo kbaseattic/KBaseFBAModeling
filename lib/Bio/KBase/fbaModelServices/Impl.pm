@@ -2183,6 +2183,7 @@ Description:
 
 sub _queueJob {
 	my($self,$args) = @_;
+	if (!defined($args->{localjob})) {
 	return $self->_workspaceServices()->queue_job({
 		type => $args->{type},
 		jobdata => $args->{jobdata},
@@ -2190,19 +2191,31 @@ sub _queueJob {
 		"state" => $args->{"state"},
 		auth => $self->_authentication(),
 	});
-
-	# MBM Use the following to run the job on my local machine.
-#	my($self,$job) = @_;
-#	$job->{wsurl} = $self->_workspaceURL();
-#	my $JSON = JSON::XS->new();
-#    my $data = $JSON->encode($job);
-#	my $jobdir = File::Temp::tempdir(DIR =>"/tmp")."/";
-#	open(my $fh, ">", $jobdir."jobfile.json") || return;
-#	print $fh $data;
-#	close($fh);
-#	my $executable = "/home/mmundy/kb/dev_container/modules/KBaseFBAModeling/internalScripts/RunJob.sh ".$jobdir;
-#	my $cmd = "nohup ".$executable." > ".$jobdir."stdout.log 2> ".$jobdir."stderr.log &";
-#	system($cmd);
+	} else {
+		$args->{wsurl} = $self->_workspaceURL();
+		my $JSON = JSON::XS->new();
+	    my $data = $JSON->encode($args);
+		my $jobdir = File::Temp::tempdir(DIR =>"/tmp")."/";
+		open(my $fh, ">", $jobdir."jobfile.json") || return;
+		print $fh $data;
+		close($fh);
+		# Change the path below to your dev_container.
+		my $executable = "/home/mmundy/kb/dev_container/modules/KBaseFBAModeling/internalScripts/RunJob.sh ".$jobdir;
+		my $cmd = "nohup ".$executable." > ".$jobdir."stdout.log 2> ".$jobdir."stderr.log &";
+		system($cmd);
+		# Make my own job object to return.
+		my $jobobj = { 
+			"id" => "local: ".$jobdir, 
+			"type" => $args->{type}, 
+			"status" => "queued",
+			"owner" => $self->_getUsername(),
+			"queuetime" => "now",
+			"starttime" => "now",
+			"queuecommand" => $args->{queuecommand},
+			"auth" => $self->_authentication()
+		};
+		return $jobobj;
+	}
 }
 
 =head3 _defaultJobState
@@ -8378,6 +8391,7 @@ sub queue_gapfill_model
 		$gapfill->model_uuid($model->uuid());
 		my $gapfillmeta = $self->_save_msobject($gapfill,"GapFill","NO_WORKSPACE",$gapfill->uuid(),"queue_gapfill_model",0,$gapfill->uuid());
 	    $job = $self->_queueJob({
+			localjob => 1,
 			type => "FBA",
 			jobdata => {
 				postprocess_command => "queue_gapfill_model",
@@ -10079,8 +10093,12 @@ sub jobs_done
     my($job);
     #BEGIN jobs_done
     $self->_setContext($ctx,$input);
+    if (!defined($input->{job}->{localjob})) {
     $input = $self->_validateargs($input,["job"],{});
     $job = $self->_getJob($input->{job});
+    } else {
+		$job = $input->{job};
+    }
     if (defined($job->{jobdata}->{postprocess_command})) {
     	my $function = $job->{jobdata}->{postprocess_command};
     	my $args;
@@ -10089,6 +10107,7 @@ sub jobs_done
     	}
     	$self->$function(@{$args});
     }
+    if (!defined($input->{job}->{localjob})) {
     eval {
     $job = $self->_workspaceServices()->set_job_status({
     	jobid => $input->{job},
@@ -10097,6 +10116,9 @@ sub jobs_done
     	currentStatus => "running"
     });
     };
+    } else {
+    	print STDERR "Job is done\n";
+    }
     if (!defined($job)) {
     	$job = {id => $input->{job}};
     }
@@ -10198,6 +10220,7 @@ sub run_job
     my($job);
     #BEGIN run_job
     $self->_setContext($ctx,$input);
+    if (!defined($input->{job}->{localjob})) {
     $input = $self->_validateargs($input,["job"],{});
     $job = $self->_getJob($input->{job});
     eval {
@@ -10208,6 +10231,9 @@ sub run_job
 		   	currentStatus => $job->{status}
 	    });
     };
+    } else {
+		$job = $input->{job};
+    }
     my $fba = $self->_get_msobject("FBA","NO_WORKSPACE",$job->{jobdata}->{fbaref});
     if (defined($job->{jobdata}->{newgapfilltime})) {
     	$fba->parameters()->{"CPLEX solver time limit"} = $job->{jobdata}->{newgapfilltime};
@@ -10215,6 +10241,7 @@ sub run_job
     }
     my $fbaResult = $fba->runFBA();
     if (!defined($fbaResult)) {
+    	if (!defined($input->{job}->{localjob})) {
     	eval{
 	    	$self->_workspaceServices()->set_job_status({
 		   		jobid => $job->{id},
@@ -10224,6 +10251,7 @@ sub run_job
 		   		jobdata => {error => "FBA failed with no solution returned!"}
 	    	});
     	};
+    	}
     	my $msg = "FBA failed with no solution returned!";
     	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'runfba');
     }
