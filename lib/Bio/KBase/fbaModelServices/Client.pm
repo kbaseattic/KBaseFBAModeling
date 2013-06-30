@@ -197,8 +197,13 @@ GapGenMeta is a reference to a list containing 6 items:
 	5: (ko) a reference to a list where each element is a feature_id
 gapgen_id is a string
 Subsystem is a reference to a hash where the following keys are defined:
+	id has a value which is a subsystem_id
 	name has a value which is a string
-	feature has a value which is a reference to a list where each element is a feature_id
+	class has a value which is a string
+	subclass has a value which is a string
+	type has a value which is a string
+	aliases has a value which is a reference to a list where each element is a string
+	roles has a value which is a reference to a list where each element is a role_id
 
 </pre>
 
@@ -303,8 +308,13 @@ GapGenMeta is a reference to a list containing 6 items:
 	5: (ko) a reference to a list where each element is a feature_id
 gapgen_id is a string
 Subsystem is a reference to a hash where the following keys are defined:
+	id has a value which is a subsystem_id
 	name has a value which is a string
-	feature has a value which is a reference to a list where each element is a feature_id
+	class has a value which is a string
+	subclass has a value which is a string
+	type has a value which is a string
+	aliases has a value which is a reference to a list where each element is a string
+	roles has a value which is a reference to a list where each element is a role_id
 
 
 =end text
@@ -2844,202 +2854,6 @@ sub import_fbamodel
         Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method import_fbamodel",
 					    status_line => $self->{client}->status_line,
 					    method_name => 'import_fbamodel',
-				       );
-    }
-}
-
-
-
-=head2 import_template_fbamodel
-
-  $modelMeta = $obj->import_template_fbamodel($input)
-
-=over 4
-
-=item Parameter and return types
-
-=begin html
-
-<pre>
-$input is an import_template_fbamodel_params
-$modelMeta is an object_metadata
-import_template_fbamodel_params is a reference to a hash where the following keys are defined:
-	map has a value which is a mapping_id
-	mapping_workspace has a value which is a workspace_id
-	templateReactions has a value which is a reference to a list where each element is a reference to a list containing 5 items:
-	0: (id) a string
-	1: (compartment) a string
-	2: (direction) a string
-	3: (type) a string
-	4: (complexes) a reference to a list where each element is a string
-
-	templateBiomass has a value which is a reference to a list where each element is a reference to a list containing 11 items:
-	0: (name) a string
-	1: (type) a string
-	2: (dna) a float
-	3: (rna) a float
-	4: (protein) a float
-	5: (lipid) a float
-	6: (cellwall) a float
-	7: (cofactor) a float
-	8: (energy) a float
-	9: (other) a float
-	10: (compounds) a reference to a list where each element is a reference to a list containing 6 items:
-		0: (id) a string
-		1: (compartment) a string
-		2: (class) a string
-		3: (coefficientType) a string
-		4: (coefficient) a float
-		5: (conditions) a string
-
-
-	name has a value which is a string
-	modelType has a value which is a string
-	domain has a value which is a string
-	id has a value which is a template_id
-	workspace has a value which is a workspace_id
-	ignore_errors has a value which is a bool
-	auth has a value which is a string
-mapping_id is a string
-workspace_id is a string
-template_id is a string
-bool is an int
-object_metadata is a reference to a list containing 11 items:
-	0: (id) an object_id
-	1: (type) an object_type
-	2: (moddate) a timestamp
-	3: (instance) an int
-	4: (command) a string
-	5: (lastmodifier) a username
-	6: (owner) a username
-	7: (workspace) a workspace_id
-	8: (ref) a workspace_ref
-	9: (chsum) a string
-	10: (metadata) a reference to a hash where the key is a string and the value is a string
-object_id is a string
-object_type is a string
-timestamp is a string
-username is a string
-workspace_ref is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-$input is an import_template_fbamodel_params
-$modelMeta is an object_metadata
-import_template_fbamodel_params is a reference to a hash where the following keys are defined:
-	map has a value which is a mapping_id
-	mapping_workspace has a value which is a workspace_id
-	templateReactions has a value which is a reference to a list where each element is a reference to a list containing 5 items:
-	0: (id) a string
-	1: (compartment) a string
-	2: (direction) a string
-	3: (type) a string
-	4: (complexes) a reference to a list where each element is a string
-
-	templateBiomass has a value which is a reference to a list where each element is a reference to a list containing 11 items:
-	0: (name) a string
-	1: (type) a string
-	2: (dna) a float
-	3: (rna) a float
-	4: (protein) a float
-	5: (lipid) a float
-	6: (cellwall) a float
-	7: (cofactor) a float
-	8: (energy) a float
-	9: (other) a float
-	10: (compounds) a reference to a list where each element is a reference to a list containing 6 items:
-		0: (id) a string
-		1: (compartment) a string
-		2: (class) a string
-		3: (coefficientType) a string
-		4: (coefficient) a float
-		5: (conditions) a string
-
-
-	name has a value which is a string
-	modelType has a value which is a string
-	domain has a value which is a string
-	id has a value which is a template_id
-	workspace has a value which is a workspace_id
-	ignore_errors has a value which is a bool
-	auth has a value which is a string
-mapping_id is a string
-workspace_id is a string
-template_id is a string
-bool is an int
-object_metadata is a reference to a list containing 11 items:
-	0: (id) an object_id
-	1: (type) an object_type
-	2: (moddate) a timestamp
-	3: (instance) an int
-	4: (command) a string
-	5: (lastmodifier) a username
-	6: (owner) a username
-	7: (workspace) a workspace_id
-	8: (ref) a workspace_ref
-	9: (chsum) a string
-	10: (metadata) a reference to a hash where the key is a string and the value is a string
-object_id is a string
-object_type is a string
-timestamp is a string
-username is a string
-workspace_ref is a string
-
-
-=end text
-
-=item Description
-
-Import a template model from an input table of template reactions and biomass components
-
-=back
-
-=cut
-
-sub import_template_fbamodel
-{
-    my($self, @args) = @_;
-
-# Authentication: none
-
-    if ((my $n = @args) != 1)
-    {
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
-							       "Invalid argument count for function import_template_fbamodel (received $n, expecting 1)");
-    }
-    {
-	my($input) = @args;
-
-	my @_bad_arguments;
-        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
-        if (@_bad_arguments) {
-	    my $msg = "Invalid arguments passed to import_template_fbamodel:\n" . join("", map { "\t$_\n" } @_bad_arguments);
-	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-								   method_name => 'import_template_fbamodel');
-	}
-    }
-
-    my $result = $self->{client}->call($self->{url}, {
-	method => "fbaModelServices.import_template_fbamodel",
-	params => \@args,
-    });
-    if ($result) {
-	if ($result->is_error) {
-	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
-					       method_name => 'import_template_fbamodel',
-					      );
-	} else {
-	    return wantarray ? @{$result->result} : $result->result->[0];
-	}
-    } else {
-        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method import_template_fbamodel",
-					    status_line => $self->{client}->status_line,
-					    method_name => 'import_template_fbamodel',
 				       );
     }
 }
@@ -7286,6 +7100,1272 @@ sub contigs_to_genome
 
 
 
+=head2 get_mapping
+
+  $output = $obj->get_mapping($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is a get_mapping_params
+$output is a Mapping
+get_mapping_params is a reference to a hash where the following keys are defined:
+	map has a value which is a mapping_id
+	workspace has a value which is a workspace_id
+	auth has a value which is a string
+mapping_id is a string
+workspace_id is a string
+Mapping is a reference to a hash where the following keys are defined:
+	id has a value which is a mapping_id
+	name has a value which is a string
+	subsystems has a value which is a reference to a list where each element is a Subsystem
+	roles has a value which is a reference to a list where each element is a FunctionalRole
+	complexes has a value which is a reference to a list where each element is a Complex
+Subsystem is a reference to a hash where the following keys are defined:
+	id has a value which is a subsystem_id
+	name has a value which is a string
+	class has a value which is a string
+	subclass has a value which is a string
+	type has a value which is a string
+	aliases has a value which is a reference to a list where each element is a string
+	roles has a value which is a reference to a list where each element is a role_id
+subsystem_id is a string
+role_id is a string
+FunctionalRole is a reference to a hash where the following keys are defined:
+	id has a value which is a role_id
+	name has a value which is a string
+	feature has a value which is a string
+	aliases has a value which is a reference to a list where each element is a string
+	complexes has a value which is a reference to a list where each element is a complex_id
+complex_id is a string
+Complex is a reference to a hash where the following keys are defined:
+	id has a value which is a complex_id
+	name has a value which is a string
+	aliases has a value which is a reference to a list where each element is a string
+	roles has a value which is a reference to a list where each element is a ComplexRole
+ComplexRole is a reference to a list containing 4 items:
+	0: (id) a role_id
+	1: (roleType) a string
+	2: (optional) a bool
+	3: (triggering) a bool
+bool is an int
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is a get_mapping_params
+$output is a Mapping
+get_mapping_params is a reference to a hash where the following keys are defined:
+	map has a value which is a mapping_id
+	workspace has a value which is a workspace_id
+	auth has a value which is a string
+mapping_id is a string
+workspace_id is a string
+Mapping is a reference to a hash where the following keys are defined:
+	id has a value which is a mapping_id
+	name has a value which is a string
+	subsystems has a value which is a reference to a list where each element is a Subsystem
+	roles has a value which is a reference to a list where each element is a FunctionalRole
+	complexes has a value which is a reference to a list where each element is a Complex
+Subsystem is a reference to a hash where the following keys are defined:
+	id has a value which is a subsystem_id
+	name has a value which is a string
+	class has a value which is a string
+	subclass has a value which is a string
+	type has a value which is a string
+	aliases has a value which is a reference to a list where each element is a string
+	roles has a value which is a reference to a list where each element is a role_id
+subsystem_id is a string
+role_id is a string
+FunctionalRole is a reference to a hash where the following keys are defined:
+	id has a value which is a role_id
+	name has a value which is a string
+	feature has a value which is a string
+	aliases has a value which is a reference to a list where each element is a string
+	complexes has a value which is a reference to a list where each element is a complex_id
+complex_id is a string
+Complex is a reference to a hash where the following keys are defined:
+	id has a value which is a complex_id
+	name has a value which is a string
+	aliases has a value which is a reference to a list where each element is a string
+	roles has a value which is a reference to a list where each element is a ComplexRole
+ComplexRole is a reference to a list containing 4 items:
+	0: (id) a role_id
+	1: (roleType) a string
+	2: (optional) a bool
+	3: (triggering) a bool
+bool is an int
+
+
+=end text
+
+=item Description
+
+Annotates contigs object creating a genome object
+
+=back
+
+=cut
+
+sub get_mapping
+{
+    my($self, @args) = @_;
+
+# Authentication: none
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function get_mapping (received $n, expecting 1)");
+    }
+    {
+	my($params) = @args;
+
+	my @_bad_arguments;
+        (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to get_mapping:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'get_mapping');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.get_mapping",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{code},
+					       method_name => 'get_mapping',
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method get_mapping",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'get_mapping',
+				       );
+    }
+}
+
+
+
+=head2 adjust_mapping_role
+
+  $output = $obj->adjust_mapping_role($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is an adjust_mapping_role_params
+$output is a FunctionalRole
+adjust_mapping_role_params is a reference to a hash where the following keys are defined:
+	map has a value which is a mapping_id
+	workspace has a value which is a workspace_id
+	role has a value which is a string
+	new has a value which is a bool
+	name has a value which is a string
+	feature has a value which is a string
+	aliasesToAdd has a value which is a reference to a list where each element is a string
+	aliasesToRemove has a value which is a reference to a list where each element is a string
+	delete has a value which is a bool
+	auth has a value which is a string
+mapping_id is a string
+workspace_id is a string
+bool is an int
+FunctionalRole is a reference to a hash where the following keys are defined:
+	id has a value which is a role_id
+	name has a value which is a string
+	feature has a value which is a string
+	aliases has a value which is a reference to a list where each element is a string
+	complexes has a value which is a reference to a list where each element is a complex_id
+role_id is a string
+complex_id is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is an adjust_mapping_role_params
+$output is a FunctionalRole
+adjust_mapping_role_params is a reference to a hash where the following keys are defined:
+	map has a value which is a mapping_id
+	workspace has a value which is a workspace_id
+	role has a value which is a string
+	new has a value which is a bool
+	name has a value which is a string
+	feature has a value which is a string
+	aliasesToAdd has a value which is a reference to a list where each element is a string
+	aliasesToRemove has a value which is a reference to a list where each element is a string
+	delete has a value which is a bool
+	auth has a value which is a string
+mapping_id is a string
+workspace_id is a string
+bool is an int
+FunctionalRole is a reference to a hash where the following keys are defined:
+	id has a value which is a role_id
+	name has a value which is a string
+	feature has a value which is a string
+	aliases has a value which is a reference to a list where each element is a string
+	complexes has a value which is a reference to a list where each element is a complex_id
+role_id is a string
+complex_id is a string
+
+
+=end text
+
+=item Description
+
+An API function supporting the curation of functional roles in a mapping object
+
+=back
+
+=cut
+
+sub adjust_mapping_role
+{
+    my($self, @args) = @_;
+
+# Authentication: none
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function adjust_mapping_role (received $n, expecting 1)");
+    }
+    {
+	my($params) = @args;
+
+	my @_bad_arguments;
+        (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to adjust_mapping_role:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'adjust_mapping_role');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.adjust_mapping_role",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{code},
+					       method_name => 'adjust_mapping_role',
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method adjust_mapping_role",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'adjust_mapping_role',
+				       );
+    }
+}
+
+
+
+=head2 adjust_mapping_complex
+
+  $output = $obj->adjust_mapping_complex($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is an adjust_mapping_complex_params
+$output is a Complex
+adjust_mapping_complex_params is a reference to a hash where the following keys are defined:
+	map has a value which is a mapping_id
+	workspace has a value which is a workspace_id
+	complex has a value which is a string
+	new has a value which is a bool
+	name has a value which is a string
+	rolesToAdd has a value which is a reference to a list where each element is a string
+	rolesToRemove has a value which is a reference to a list where each element is a string
+	delete has a value which is a bool
+	auth has a value which is a string
+mapping_id is a string
+workspace_id is a string
+bool is an int
+Complex is a reference to a hash where the following keys are defined:
+	id has a value which is a complex_id
+	name has a value which is a string
+	aliases has a value which is a reference to a list where each element is a string
+	roles has a value which is a reference to a list where each element is a ComplexRole
+complex_id is a string
+ComplexRole is a reference to a list containing 4 items:
+	0: (id) a role_id
+	1: (roleType) a string
+	2: (optional) a bool
+	3: (triggering) a bool
+role_id is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is an adjust_mapping_complex_params
+$output is a Complex
+adjust_mapping_complex_params is a reference to a hash where the following keys are defined:
+	map has a value which is a mapping_id
+	workspace has a value which is a workspace_id
+	complex has a value which is a string
+	new has a value which is a bool
+	name has a value which is a string
+	rolesToAdd has a value which is a reference to a list where each element is a string
+	rolesToRemove has a value which is a reference to a list where each element is a string
+	delete has a value which is a bool
+	auth has a value which is a string
+mapping_id is a string
+workspace_id is a string
+bool is an int
+Complex is a reference to a hash where the following keys are defined:
+	id has a value which is a complex_id
+	name has a value which is a string
+	aliases has a value which is a reference to a list where each element is a string
+	roles has a value which is a reference to a list where each element is a ComplexRole
+complex_id is a string
+ComplexRole is a reference to a list containing 4 items:
+	0: (id) a role_id
+	1: (roleType) a string
+	2: (optional) a bool
+	3: (triggering) a bool
+role_id is a string
+
+
+=end text
+
+=item Description
+
+An API function supporting the curation of complexes in a mapping object
+
+=back
+
+=cut
+
+sub adjust_mapping_complex
+{
+    my($self, @args) = @_;
+
+# Authentication: none
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function adjust_mapping_complex (received $n, expecting 1)");
+    }
+    {
+	my($params) = @args;
+
+	my @_bad_arguments;
+        (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to adjust_mapping_complex:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'adjust_mapping_complex');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.adjust_mapping_complex",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{code},
+					       method_name => 'adjust_mapping_complex',
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method adjust_mapping_complex",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'adjust_mapping_complex',
+				       );
+    }
+}
+
+
+
+=head2 adjust_mapping_subsystem
+
+  $output = $obj->adjust_mapping_subsystem($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is an adjust_mapping_subsystem_params
+$output is a Subsystem
+adjust_mapping_subsystem_params is a reference to a hash where the following keys are defined:
+	map has a value which is a mapping_id
+	workspace has a value which is a workspace_id
+	complex has a value which is a string
+	new has a value which is a bool
+	name has a value which is a string
+	type has a value which is a string
+	class has a value which is a string
+	subclass has a value which is a string
+	rolesToAdd has a value which is a reference to a list where each element is a string
+	rolesToRemove has a value which is a reference to a list where each element is a string
+	delete has a value which is a bool
+	auth has a value which is a string
+mapping_id is a string
+workspace_id is a string
+bool is an int
+Subsystem is a reference to a hash where the following keys are defined:
+	id has a value which is a subsystem_id
+	name has a value which is a string
+	class has a value which is a string
+	subclass has a value which is a string
+	type has a value which is a string
+	aliases has a value which is a reference to a list where each element is a string
+	roles has a value which is a reference to a list where each element is a role_id
+subsystem_id is a string
+role_id is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is an adjust_mapping_subsystem_params
+$output is a Subsystem
+adjust_mapping_subsystem_params is a reference to a hash where the following keys are defined:
+	map has a value which is a mapping_id
+	workspace has a value which is a workspace_id
+	complex has a value which is a string
+	new has a value which is a bool
+	name has a value which is a string
+	type has a value which is a string
+	class has a value which is a string
+	subclass has a value which is a string
+	rolesToAdd has a value which is a reference to a list where each element is a string
+	rolesToRemove has a value which is a reference to a list where each element is a string
+	delete has a value which is a bool
+	auth has a value which is a string
+mapping_id is a string
+workspace_id is a string
+bool is an int
+Subsystem is a reference to a hash where the following keys are defined:
+	id has a value which is a subsystem_id
+	name has a value which is a string
+	class has a value which is a string
+	subclass has a value which is a string
+	type has a value which is a string
+	aliases has a value which is a reference to a list where each element is a string
+	roles has a value which is a reference to a list where each element is a role_id
+subsystem_id is a string
+role_id is a string
+
+
+=end text
+
+=item Description
+
+An API function supporting the curation of subsystems in a mapping object
+
+=back
+
+=cut
+
+sub adjust_mapping_subsystem
+{
+    my($self, @args) = @_;
+
+# Authentication: none
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function adjust_mapping_subsystem (received $n, expecting 1)");
+    }
+    {
+	my($params) = @args;
+
+	my @_bad_arguments;
+        (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to adjust_mapping_subsystem:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'adjust_mapping_subsystem');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.adjust_mapping_subsystem",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{code},
+					       method_name => 'adjust_mapping_subsystem',
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method adjust_mapping_subsystem",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'adjust_mapping_subsystem',
+				       );
+    }
+}
+
+
+
+=head2 get_template_model
+
+  $output = $obj->get_template_model($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is a get_template_model_params
+$output is a TemplateModel
+get_template_model_params is a reference to a hash where the following keys are defined:
+	templateModel has a value which is a template_id
+	workspace has a value which is a workspace_id
+	auth has a value which is a string
+template_id is a string
+workspace_id is a string
+TemplateModel is a reference to a hash where the following keys are defined:
+	id has a value which is a template_id
+	name has a value which is a string
+	type has a value which is a string
+	domain has a value which is a string
+	map has a value which is a mapping_id
+	mappingws has a value which is a workspace_id
+	reactions has a value which is a reference to a list where each element is a TemplateReaction
+	biomasses has a value which is a reference to a list where each element is a TemplateBiomass
+mapping_id is a string
+TemplateReaction is a reference to a hash where the following keys are defined:
+	id has a value which is a temprxn_id
+	compartment has a value which is a compartment_id
+	reaction has a value which is a reaction_id
+	complexes has a value which is a reference to a list where each element is a complex_id
+	direction has a value which is a string
+	type has a value which is a string
+temprxn_id is a string
+compartment_id is a string
+reaction_id is a string
+complex_id is a string
+TemplateBiomass is a reference to a hash where the following keys are defined:
+	id has a value which is a tempbiomass_id
+	name has a value which is a string
+	type has a value which is a string
+	other has a value which is a string
+	protein has a value which is a string
+	dna has a value which is a string
+	rna has a value which is a string
+	cofactor has a value which is a string
+	energy has a value which is a string
+	cellwall has a value which is a string
+	lipid has a value which is a string
+	compounds has a value which is a reference to a list where each element is a TemplateBiomassCompounds
+tempbiomass_id is a string
+TemplateBiomassCompounds is a reference to a list containing 7 items:
+	0: (compound) a compound_id
+	1: (compartment) a compartment_id
+	2: (class) a string
+	3: (universal) a string
+	4: (coefficientType) a string
+	5: (coefficient) a string
+	6: (linkedCompounds) a reference to a list where each element is a reference to a list containing 2 items:
+		0: (coeffficient) a string
+		1: (compound) a compound_id
+
+compound_id is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is a get_template_model_params
+$output is a TemplateModel
+get_template_model_params is a reference to a hash where the following keys are defined:
+	templateModel has a value which is a template_id
+	workspace has a value which is a workspace_id
+	auth has a value which is a string
+template_id is a string
+workspace_id is a string
+TemplateModel is a reference to a hash where the following keys are defined:
+	id has a value which is a template_id
+	name has a value which is a string
+	type has a value which is a string
+	domain has a value which is a string
+	map has a value which is a mapping_id
+	mappingws has a value which is a workspace_id
+	reactions has a value which is a reference to a list where each element is a TemplateReaction
+	biomasses has a value which is a reference to a list where each element is a TemplateBiomass
+mapping_id is a string
+TemplateReaction is a reference to a hash where the following keys are defined:
+	id has a value which is a temprxn_id
+	compartment has a value which is a compartment_id
+	reaction has a value which is a reaction_id
+	complexes has a value which is a reference to a list where each element is a complex_id
+	direction has a value which is a string
+	type has a value which is a string
+temprxn_id is a string
+compartment_id is a string
+reaction_id is a string
+complex_id is a string
+TemplateBiomass is a reference to a hash where the following keys are defined:
+	id has a value which is a tempbiomass_id
+	name has a value which is a string
+	type has a value which is a string
+	other has a value which is a string
+	protein has a value which is a string
+	dna has a value which is a string
+	rna has a value which is a string
+	cofactor has a value which is a string
+	energy has a value which is a string
+	cellwall has a value which is a string
+	lipid has a value which is a string
+	compounds has a value which is a reference to a list where each element is a TemplateBiomassCompounds
+tempbiomass_id is a string
+TemplateBiomassCompounds is a reference to a list containing 7 items:
+	0: (compound) a compound_id
+	1: (compartment) a compartment_id
+	2: (class) a string
+	3: (universal) a string
+	4: (coefficientType) a string
+	5: (coefficient) a string
+	6: (linkedCompounds) a reference to a list where each element is a reference to a list containing 2 items:
+		0: (coeffficient) a string
+		1: (compound) a compound_id
+
+compound_id is a string
+
+
+=end text
+
+=item Description
+
+Retrieves the specified template model
+
+=back
+
+=cut
+
+sub get_template_model
+{
+    my($self, @args) = @_;
+
+# Authentication: none
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function get_template_model (received $n, expecting 1)");
+    }
+    {
+	my($params) = @args;
+
+	my @_bad_arguments;
+        (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to get_template_model:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'get_template_model');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.get_template_model",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{code},
+					       method_name => 'get_template_model',
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method get_template_model",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'get_template_model',
+				       );
+    }
+}
+
+
+
+=head2 import_template_fbamodel
+
+  $modelMeta = $obj->import_template_fbamodel($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is an import_template_fbamodel_params
+$modelMeta is an object_metadata
+import_template_fbamodel_params is a reference to a hash where the following keys are defined:
+	map has a value which is a mapping_id
+	mapping_workspace has a value which is a workspace_id
+	templateReactions has a value which is a reference to a list where each element is a reference to a list containing 5 items:
+	0: (id) a string
+	1: (compartment) a string
+	2: (direction) a string
+	3: (type) a string
+	4: (complexes) a reference to a list where each element is a string
+
+	templateBiomass has a value which is a reference to a list where each element is a reference to a list containing 11 items:
+	0: (name) a string
+	1: (type) a string
+	2: (dna) a float
+	3: (rna) a float
+	4: (protein) a float
+	5: (lipid) a float
+	6: (cellwall) a float
+	7: (cofactor) a float
+	8: (energy) a float
+	9: (other) a float
+	10: (compounds) a reference to a list where each element is a reference to a list containing 6 items:
+		0: (id) a string
+		1: (compartment) a string
+		2: (class) a string
+		3: (coefficientType) a string
+		4: (coefficient) a float
+		5: (conditions) a string
+
+
+	name has a value which is a string
+	modelType has a value which is a string
+	domain has a value which is a string
+	id has a value which is a template_id
+	workspace has a value which is a workspace_id
+	ignore_errors has a value which is a bool
+	auth has a value which is a string
+mapping_id is a string
+workspace_id is a string
+template_id is a string
+bool is an int
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is an import_template_fbamodel_params
+$modelMeta is an object_metadata
+import_template_fbamodel_params is a reference to a hash where the following keys are defined:
+	map has a value which is a mapping_id
+	mapping_workspace has a value which is a workspace_id
+	templateReactions has a value which is a reference to a list where each element is a reference to a list containing 5 items:
+	0: (id) a string
+	1: (compartment) a string
+	2: (direction) a string
+	3: (type) a string
+	4: (complexes) a reference to a list where each element is a string
+
+	templateBiomass has a value which is a reference to a list where each element is a reference to a list containing 11 items:
+	0: (name) a string
+	1: (type) a string
+	2: (dna) a float
+	3: (rna) a float
+	4: (protein) a float
+	5: (lipid) a float
+	6: (cellwall) a float
+	7: (cofactor) a float
+	8: (energy) a float
+	9: (other) a float
+	10: (compounds) a reference to a list where each element is a reference to a list containing 6 items:
+		0: (id) a string
+		1: (compartment) a string
+		2: (class) a string
+		3: (coefficientType) a string
+		4: (coefficient) a float
+		5: (conditions) a string
+
+
+	name has a value which is a string
+	modelType has a value which is a string
+	domain has a value which is a string
+	id has a value which is a template_id
+	workspace has a value which is a workspace_id
+	ignore_errors has a value which is a bool
+	auth has a value which is a string
+mapping_id is a string
+workspace_id is a string
+template_id is a string
+bool is an int
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+=item Description
+
+Import a template model from an input table of template reactions and biomass components
+
+=back
+
+=cut
+
+sub import_template_fbamodel
+{
+    my($self, @args) = @_;
+
+# Authentication: none
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function import_template_fbamodel (received $n, expecting 1)");
+    }
+    {
+	my($input) = @args;
+
+	my @_bad_arguments;
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to import_template_fbamodel:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'import_template_fbamodel');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.import_template_fbamodel",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{code},
+					       method_name => 'import_template_fbamodel',
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method import_template_fbamodel",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'import_template_fbamodel',
+				       );
+    }
+}
+
+
+
+=head2 adjust_template_reaction
+
+  $output = $obj->adjust_template_reaction($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is an adjust_template_reaction_params
+$output is a TemplateReaction
+adjust_template_reaction_params is a reference to a hash where the following keys are defined:
+	templateModel has a value which is a template_id
+	workspace has a value which is a workspace_id
+	reaction has a value which is a string
+	new has a value which is a bool
+	delete has a value which is a bool
+	compartment has a value which is a compartment_id
+	complexesToAdd has a value which is a reference to a list where each element is a complex_id
+	complexesToRemove has a value which is a reference to a list where each element is a complex_id
+	direction has a value which is a string
+	type has a value which is a string
+	auth has a value which is a string
+template_id is a string
+workspace_id is a string
+bool is an int
+compartment_id is a string
+complex_id is a string
+TemplateReaction is a reference to a hash where the following keys are defined:
+	id has a value which is a temprxn_id
+	compartment has a value which is a compartment_id
+	reaction has a value which is a reaction_id
+	complexes has a value which is a reference to a list where each element is a complex_id
+	direction has a value which is a string
+	type has a value which is a string
+temprxn_id is a string
+reaction_id is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is an adjust_template_reaction_params
+$output is a TemplateReaction
+adjust_template_reaction_params is a reference to a hash where the following keys are defined:
+	templateModel has a value which is a template_id
+	workspace has a value which is a workspace_id
+	reaction has a value which is a string
+	new has a value which is a bool
+	delete has a value which is a bool
+	compartment has a value which is a compartment_id
+	complexesToAdd has a value which is a reference to a list where each element is a complex_id
+	complexesToRemove has a value which is a reference to a list where each element is a complex_id
+	direction has a value which is a string
+	type has a value which is a string
+	auth has a value which is a string
+template_id is a string
+workspace_id is a string
+bool is an int
+compartment_id is a string
+complex_id is a string
+TemplateReaction is a reference to a hash where the following keys are defined:
+	id has a value which is a temprxn_id
+	compartment has a value which is a compartment_id
+	reaction has a value which is a reaction_id
+	complexes has a value which is a reference to a list where each element is a complex_id
+	direction has a value which is a string
+	type has a value which is a string
+temprxn_id is a string
+reaction_id is a string
+
+
+=end text
+
+=item Description
+
+Modifies a reaction of a template model
+
+=back
+
+=cut
+
+sub adjust_template_reaction
+{
+    my($self, @args) = @_;
+
+# Authentication: none
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function adjust_template_reaction (received $n, expecting 1)");
+    }
+    {
+	my($params) = @args;
+
+	my @_bad_arguments;
+        (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to adjust_template_reaction:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'adjust_template_reaction');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.adjust_template_reaction",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{code},
+					       method_name => 'adjust_template_reaction',
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method adjust_template_reaction",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'adjust_template_reaction',
+				       );
+    }
+}
+
+
+
+=head2 adjust_template_biomass
+
+  $output = $obj->adjust_template_biomass($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is an adjust_template_biomass_params
+$output is a TemplateBiomass
+adjust_template_biomass_params is a reference to a hash where the following keys are defined:
+	templateModel has a value which is a template_id
+	workspace has a value which is a workspace_id
+	biomass has a value which is a string
+	new has a value which is a bool
+	delete has a value which is a bool
+	name has a value which is a string
+	type has a value which is a string
+	other has a value which is a string
+	protein has a value which is a string
+	dna has a value which is a string
+	rna has a value which is a string
+	cofactor has a value which is a string
+	energy has a value which is a string
+	cellwall has a value which is a string
+	lipid has a value which is a string
+	compoundsToRemove has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+	0: (compound) a compound_id
+	1: (compartment) a compartment_id
+
+	compoundsToAdd has a value which is a reference to a list where each element is a reference to a list containing 7 items:
+	0: (compound) a compound_id
+	1: (compartment) a compartment_id
+	2: (class) a string
+	3: (universal) a string
+	4: (coefficientType) a string
+	5: (coefficient) a string
+	6: (linkedCompounds) a reference to a list where each element is a reference to a list containing 2 items:
+		0: (coeffficient) a string
+		1: (compound) a compound_id
+
+
+	auth has a value which is a string
+template_id is a string
+workspace_id is a string
+bool is an int
+compound_id is a string
+compartment_id is a string
+TemplateBiomass is a reference to a hash where the following keys are defined:
+	id has a value which is a tempbiomass_id
+	name has a value which is a string
+	type has a value which is a string
+	other has a value which is a string
+	protein has a value which is a string
+	dna has a value which is a string
+	rna has a value which is a string
+	cofactor has a value which is a string
+	energy has a value which is a string
+	cellwall has a value which is a string
+	lipid has a value which is a string
+	compounds has a value which is a reference to a list where each element is a TemplateBiomassCompounds
+tempbiomass_id is a string
+TemplateBiomassCompounds is a reference to a list containing 7 items:
+	0: (compound) a compound_id
+	1: (compartment) a compartment_id
+	2: (class) a string
+	3: (universal) a string
+	4: (coefficientType) a string
+	5: (coefficient) a string
+	6: (linkedCompounds) a reference to a list where each element is a reference to a list containing 2 items:
+		0: (coeffficient) a string
+		1: (compound) a compound_id
+
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is an adjust_template_biomass_params
+$output is a TemplateBiomass
+adjust_template_biomass_params is a reference to a hash where the following keys are defined:
+	templateModel has a value which is a template_id
+	workspace has a value which is a workspace_id
+	biomass has a value which is a string
+	new has a value which is a bool
+	delete has a value which is a bool
+	name has a value which is a string
+	type has a value which is a string
+	other has a value which is a string
+	protein has a value which is a string
+	dna has a value which is a string
+	rna has a value which is a string
+	cofactor has a value which is a string
+	energy has a value which is a string
+	cellwall has a value which is a string
+	lipid has a value which is a string
+	compoundsToRemove has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+	0: (compound) a compound_id
+	1: (compartment) a compartment_id
+
+	compoundsToAdd has a value which is a reference to a list where each element is a reference to a list containing 7 items:
+	0: (compound) a compound_id
+	1: (compartment) a compartment_id
+	2: (class) a string
+	3: (universal) a string
+	4: (coefficientType) a string
+	5: (coefficient) a string
+	6: (linkedCompounds) a reference to a list where each element is a reference to a list containing 2 items:
+		0: (coeffficient) a string
+		1: (compound) a compound_id
+
+
+	auth has a value which is a string
+template_id is a string
+workspace_id is a string
+bool is an int
+compound_id is a string
+compartment_id is a string
+TemplateBiomass is a reference to a hash where the following keys are defined:
+	id has a value which is a tempbiomass_id
+	name has a value which is a string
+	type has a value which is a string
+	other has a value which is a string
+	protein has a value which is a string
+	dna has a value which is a string
+	rna has a value which is a string
+	cofactor has a value which is a string
+	energy has a value which is a string
+	cellwall has a value which is a string
+	lipid has a value which is a string
+	compounds has a value which is a reference to a list where each element is a TemplateBiomassCompounds
+tempbiomass_id is a string
+TemplateBiomassCompounds is a reference to a list containing 7 items:
+	0: (compound) a compound_id
+	1: (compartment) a compartment_id
+	2: (class) a string
+	3: (universal) a string
+	4: (coefficientType) a string
+	5: (coefficient) a string
+	6: (linkedCompounds) a reference to a list where each element is a reference to a list containing 2 items:
+		0: (coeffficient) a string
+		1: (compound) a compound_id
+
+
+
+=end text
+
+=item Description
+
+Modifies the biomass of a template model
+
+=back
+
+=cut
+
+sub adjust_template_biomass
+{
+    my($self, @args) = @_;
+
+# Authentication: none
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function adjust_template_biomass (received $n, expecting 1)");
+    }
+    {
+	my($params) = @args;
+
+	my @_bad_arguments;
+        (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to adjust_template_biomass:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'adjust_template_biomass');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.adjust_template_biomass",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{code},
+					       method_name => 'adjust_template_biomass',
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method adjust_template_biomass",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'adjust_template_biomass',
+				       );
+    }
+}
+
+
+
 =head2 add_stimuli
 
   $output = $obj->add_stimuli($params)
@@ -7301,6 +8381,7 @@ $params is an add_stimuli_params
 $output is an object_metadata
 add_stimuli_params is a reference to a hash where the following keys are defined:
 	biochemid has a value which is a string
+	biochem_workspace has a value which is a string
 	stimuliid has a value which is a string
 	name has a value which is a string
 	abbreviation has a value which is a string
@@ -7308,7 +8389,7 @@ add_stimuli_params is a reference to a hash where the following keys are defined
 	description has a value which is a string
 	compounds has a value which is a reference to a list where each element is a string
 	workspace has a value which is a string
-	authl has a value which is a string
+	auth has a value which is a string
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -7338,6 +8419,7 @@ $params is an add_stimuli_params
 $output is an object_metadata
 add_stimuli_params is a reference to a hash where the following keys are defined:
 	biochemid has a value which is a string
+	biochem_workspace has a value which is a string
 	stimuliid has a value which is a string
 	name has a value which is a string
 	abbreviation has a value which is a string
@@ -7345,7 +8427,7 @@ add_stimuli_params is a reference to a hash where the following keys are defined
 	description has a value which is a string
 	compounds has a value which is a reference to a list where each element is a string
 	workspace has a value which is a string
-	authl has a value which is a string
+	auth has a value which is a string
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -12847,123 +13929,6 @@ overwrite has a value which is a bool
 
 
 
-=head2 import_template_fbamodel_params
-
-=over 4
-
-
-
-=item Description
-
-Input parameters for the "import_template_fbamodel" function.
-
-        mapping_id map - ID of the mapping to associate the template model with (an optional argument; default is 'default')
-        workspace_id mapping_workspace - ID of the workspace where the associated mapping is found (an optional argument; default is 'kbase')
-        list<tuple<string id,string compartment,string direction,string type,list<string complex> complexes>> templateReactions - list of reactions to include in template model
-        list<tuple<string name,string type,float dna,float rna,float protein,float lipid,float cellwall,float cofactor,float energy,float other,list<tuple<string id,string compartment,string class,string coefficientType,float coefficient,string conditions>> compounds>> templateBiomass - list of template biomass reactions for template model
-        string name - name for template model
-        string modelType - type of model constructed by template
-        string domain - domain of template model
-        template_id id - ID that should be used for the newly imported template model (an optional argument; default is 'undef')
-        workspace_id workspace - ID of the workspace where the newly developed template model will be stored; also the default assumed workspace for input objects (a required argument)
-        bool ignore_errors - ignores missing roles or reactions and imports template model anyway
-        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-map has a value which is a mapping_id
-mapping_workspace has a value which is a workspace_id
-templateReactions has a value which is a reference to a list where each element is a reference to a list containing 5 items:
-0: (id) a string
-1: (compartment) a string
-2: (direction) a string
-3: (type) a string
-4: (complexes) a reference to a list where each element is a string
-
-templateBiomass has a value which is a reference to a list where each element is a reference to a list containing 11 items:
-0: (name) a string
-1: (type) a string
-2: (dna) a float
-3: (rna) a float
-4: (protein) a float
-5: (lipid) a float
-6: (cellwall) a float
-7: (cofactor) a float
-8: (energy) a float
-9: (other) a float
-10: (compounds) a reference to a list where each element is a reference to a list containing 6 items:
-	0: (id) a string
-	1: (compartment) a string
-	2: (class) a string
-	3: (coefficientType) a string
-	4: (coefficient) a float
-	5: (conditions) a string
-
-
-name has a value which is a string
-modelType has a value which is a string
-domain has a value which is a string
-id has a value which is a template_id
-workspace has a value which is a workspace_id
-ignore_errors has a value which is a bool
-auth has a value which is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-map has a value which is a mapping_id
-mapping_workspace has a value which is a workspace_id
-templateReactions has a value which is a reference to a list where each element is a reference to a list containing 5 items:
-0: (id) a string
-1: (compartment) a string
-2: (direction) a string
-3: (type) a string
-4: (complexes) a reference to a list where each element is a string
-
-templateBiomass has a value which is a reference to a list where each element is a reference to a list containing 11 items:
-0: (name) a string
-1: (type) a string
-2: (dna) a float
-3: (rna) a float
-4: (protein) a float
-5: (lipid) a float
-6: (cellwall) a float
-7: (cofactor) a float
-8: (energy) a float
-9: (other) a float
-10: (compounds) a reference to a list where each element is a reference to a list containing 6 items:
-	0: (id) a string
-	1: (compartment) a string
-	2: (class) a string
-	3: (coefficientType) a string
-	4: (coefficient) a float
-	5: (conditions) a string
-
-
-name has a value which is a string
-modelType has a value which is a string
-domain has a value which is a string
-id has a value which is a template_id
-workspace has a value which is a workspace_id
-ignore_errors has a value which is a bool
-auth has a value which is a string
-
-
-=end text
-
-=back
-
-
-
 =head2 export_fbamodel_params
 
 =over 4
@@ -14419,6 +15384,995 @@ auth has a value which is a string
 
 
 
+=head2 FunctionalRole
+
+=over 4
+
+
+
+=item Description
+
+********************************************************************************
+	Code relating to loading, retrieval, and curation of mappings
+   	********************************************************************************
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+id has a value which is a role_id
+name has a value which is a string
+feature has a value which is a string
+aliases has a value which is a reference to a list where each element is a string
+complexes has a value which is a reference to a list where each element is a complex_id
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+id has a value which is a role_id
+name has a value which is a string
+feature has a value which is a string
+aliases has a value which is a reference to a list where each element is a string
+complexes has a value which is a reference to a list where each element is a complex_id
+
+
+=end text
+
+=back
+
+
+
+=head2 ComplexRole
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a list containing 4 items:
+0: (id) a role_id
+1: (roleType) a string
+2: (optional) a bool
+3: (triggering) a bool
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a list containing 4 items:
+0: (id) a role_id
+1: (roleType) a string
+2: (optional) a bool
+3: (triggering) a bool
+
+
+=end text
+
+=back
+
+
+
+=head2 Complex
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+id has a value which is a complex_id
+name has a value which is a string
+aliases has a value which is a reference to a list where each element is a string
+roles has a value which is a reference to a list where each element is a ComplexRole
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+id has a value which is a complex_id
+name has a value which is a string
+aliases has a value which is a reference to a list where each element is a string
+roles has a value which is a reference to a list where each element is a ComplexRole
+
+
+=end text
+
+=back
+
+
+
+=head2 subsystem_id
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 Subsystem
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+id has a value which is a subsystem_id
+name has a value which is a string
+class has a value which is a string
+subclass has a value which is a string
+type has a value which is a string
+aliases has a value which is a reference to a list where each element is a string
+roles has a value which is a reference to a list where each element is a role_id
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+id has a value which is a subsystem_id
+name has a value which is a string
+class has a value which is a string
+subclass has a value which is a string
+type has a value which is a string
+aliases has a value which is a reference to a list where each element is a string
+roles has a value which is a reference to a list where each element is a role_id
+
+
+=end text
+
+=back
+
+
+
+=head2 Mapping
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+id has a value which is a mapping_id
+name has a value which is a string
+subsystems has a value which is a reference to a list where each element is a Subsystem
+roles has a value which is a reference to a list where each element is a FunctionalRole
+complexes has a value which is a reference to a list where each element is a Complex
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+id has a value which is a mapping_id
+name has a value which is a string
+subsystems has a value which is a reference to a list where each element is a Subsystem
+roles has a value which is a reference to a list where each element is a FunctionalRole
+complexes has a value which is a reference to a list where each element is a Complex
+
+
+=end text
+
+=back
+
+
+
+=head2 get_mapping_params
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+map has a value which is a mapping_id
+workspace has a value which is a workspace_id
+auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+map has a value which is a mapping_id
+workspace has a value which is a workspace_id
+auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 adjust_mapping_role_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "adjust_mapping_role" function.
+
+        mapping_id map - ID of the mapping object to be edited
+        workspace_id workspace - ID of workspace containing mapping to be edited
+        string role - identifier for role to be edited
+        bool new - boolean indicating that a new role is being added
+        string name - new name for the role
+        string feature - representative feature MD5
+        list<string> aliasesToAdd - list of new aliases for the role
+        list<string> aliasesToRemove - list of aliases to remove for role
+        bool delete - boolean indicating that role should be deleted
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+map has a value which is a mapping_id
+workspace has a value which is a workspace_id
+role has a value which is a string
+new has a value which is a bool
+name has a value which is a string
+feature has a value which is a string
+aliasesToAdd has a value which is a reference to a list where each element is a string
+aliasesToRemove has a value which is a reference to a list where each element is a string
+delete has a value which is a bool
+auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+map has a value which is a mapping_id
+workspace has a value which is a workspace_id
+role has a value which is a string
+new has a value which is a bool
+name has a value which is a string
+feature has a value which is a string
+aliasesToAdd has a value which is a reference to a list where each element is a string
+aliasesToRemove has a value which is a reference to a list where each element is a string
+delete has a value which is a bool
+auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 adjust_mapping_complex_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "adjust_mapping_complex" function.
+
+        mapping_id map - ID of the mapping object to be edited
+        workspace_id workspace - ID of workspace containing mapping to be edited
+        string complex - identifier for complex to be edited
+        bool new - boolean indicating that a new complex is being added
+        string name - new name for the role
+        string feature - representative feature MD5
+        list<string> rolesToAdd - roles to add to the complex
+        list<string> rolesToRemove - roles to remove from the complex
+        bool delete - boolean indicating that complex should be deleted
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+map has a value which is a mapping_id
+workspace has a value which is a workspace_id
+complex has a value which is a string
+new has a value which is a bool
+name has a value which is a string
+rolesToAdd has a value which is a reference to a list where each element is a string
+rolesToRemove has a value which is a reference to a list where each element is a string
+delete has a value which is a bool
+auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+map has a value which is a mapping_id
+workspace has a value which is a workspace_id
+complex has a value which is a string
+new has a value which is a bool
+name has a value which is a string
+rolesToAdd has a value which is a reference to a list where each element is a string
+rolesToRemove has a value which is a reference to a list where each element is a string
+delete has a value which is a bool
+auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 adjust_mapping_subsystem_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "adjust_mapping_subsystem" function.
+
+        mapping_id map - ID of the mapping object to be edited
+        workspace_id workspace - ID of workspace containing mapping to be edited
+        string subsystem - identifier for subsystem to be edited
+        bool new - boolean indicating that a new subsystem is being added
+        string name - new name for the subsystem
+        string type - new type for the subsystem
+        string class - new class for the subsystem
+        string subclass - new subclass for the subsystem
+        list<string> rolesToAdd - roles to add to the subsystem
+        list<string> rolesToRemove - roles to remove from the subsystem
+        bool delete - boolean indicating that subsystem should be deleted
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+map has a value which is a mapping_id
+workspace has a value which is a workspace_id
+complex has a value which is a string
+new has a value which is a bool
+name has a value which is a string
+type has a value which is a string
+class has a value which is a string
+subclass has a value which is a string
+rolesToAdd has a value which is a reference to a list where each element is a string
+rolesToRemove has a value which is a reference to a list where each element is a string
+delete has a value which is a bool
+auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+map has a value which is a mapping_id
+workspace has a value which is a workspace_id
+complex has a value which is a string
+new has a value which is a bool
+name has a value which is a string
+type has a value which is a string
+class has a value which is a string
+subclass has a value which is a string
+rolesToAdd has a value which is a reference to a list where each element is a string
+rolesToRemove has a value which is a reference to a list where each element is a string
+delete has a value which is a bool
+auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 temprxn_id
+
+=over 4
+
+
+
+=item Description
+
+********************************************************************************
+	Code relating to loading, retrieval, and curation of template models
+   	********************************************************************************
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 TemplateReaction
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+id has a value which is a temprxn_id
+compartment has a value which is a compartment_id
+reaction has a value which is a reaction_id
+complexes has a value which is a reference to a list where each element is a complex_id
+direction has a value which is a string
+type has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+id has a value which is a temprxn_id
+compartment has a value which is a compartment_id
+reaction has a value which is a reaction_id
+complexes has a value which is a reference to a list where each element is a complex_id
+direction has a value which is a string
+type has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 TemplateBiomassCompounds
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a list containing 7 items:
+0: (compound) a compound_id
+1: (compartment) a compartment_id
+2: (class) a string
+3: (universal) a string
+4: (coefficientType) a string
+5: (coefficient) a string
+6: (linkedCompounds) a reference to a list where each element is a reference to a list containing 2 items:
+	0: (coeffficient) a string
+	1: (compound) a compound_id
+
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a list containing 7 items:
+0: (compound) a compound_id
+1: (compartment) a compartment_id
+2: (class) a string
+3: (universal) a string
+4: (coefficientType) a string
+5: (coefficient) a string
+6: (linkedCompounds) a reference to a list where each element is a reference to a list containing 2 items:
+	0: (coeffficient) a string
+	1: (compound) a compound_id
+
+
+
+=end text
+
+=back
+
+
+
+=head2 tempbiomass_id
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 TemplateBiomass
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+id has a value which is a tempbiomass_id
+name has a value which is a string
+type has a value which is a string
+other has a value which is a string
+protein has a value which is a string
+dna has a value which is a string
+rna has a value which is a string
+cofactor has a value which is a string
+energy has a value which is a string
+cellwall has a value which is a string
+lipid has a value which is a string
+compounds has a value which is a reference to a list where each element is a TemplateBiomassCompounds
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+id has a value which is a tempbiomass_id
+name has a value which is a string
+type has a value which is a string
+other has a value which is a string
+protein has a value which is a string
+dna has a value which is a string
+rna has a value which is a string
+cofactor has a value which is a string
+energy has a value which is a string
+cellwall has a value which is a string
+lipid has a value which is a string
+compounds has a value which is a reference to a list where each element is a TemplateBiomassCompounds
+
+
+=end text
+
+=back
+
+
+
+=head2 TemplateModel
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+id has a value which is a template_id
+name has a value which is a string
+type has a value which is a string
+domain has a value which is a string
+map has a value which is a mapping_id
+mappingws has a value which is a workspace_id
+reactions has a value which is a reference to a list where each element is a TemplateReaction
+biomasses has a value which is a reference to a list where each element is a TemplateBiomass
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+id has a value which is a template_id
+name has a value which is a string
+type has a value which is a string
+domain has a value which is a string
+map has a value which is a mapping_id
+mappingws has a value which is a workspace_id
+reactions has a value which is a reference to a list where each element is a TemplateReaction
+biomasses has a value which is a reference to a list where each element is a TemplateBiomass
+
+
+=end text
+
+=back
+
+
+
+=head2 get_template_model_params
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+templateModel has a value which is a template_id
+workspace has a value which is a workspace_id
+auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+templateModel has a value which is a template_id
+workspace has a value which is a workspace_id
+auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 import_template_fbamodel_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "import_template_fbamodel" function.
+
+        mapping_id map - ID of the mapping to associate the template model with (an optional argument; default is 'default')
+        workspace_id mapping_workspace - ID of the workspace where the associated mapping is found (an optional argument; default is 'kbase')
+        list<tuple<string id,string compartment,string direction,string type,list<string complex> complexes>> templateReactions - list of reactions to include in template model
+        list<tuple<string name,string type,float dna,float rna,float protein,float lipid,float cellwall,float cofactor,float energy,float other,list<tuple<string id,string compartment,string class,string coefficientType,float coefficient,string conditions>> compounds>> templateBiomass - list of template biomass reactions for template model
+        string name - name for template model
+        string modelType - type of model constructed by template
+        string domain - domain of template model
+        template_id id - ID that should be used for the newly imported template model (an optional argument; default is 'undef')
+        workspace_id workspace - ID of the workspace where the newly developed template model will be stored; also the default assumed workspace for input objects (a required argument)
+        bool ignore_errors - ignores missing roles or reactions and imports template model anyway
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+map has a value which is a mapping_id
+mapping_workspace has a value which is a workspace_id
+templateReactions has a value which is a reference to a list where each element is a reference to a list containing 5 items:
+0: (id) a string
+1: (compartment) a string
+2: (direction) a string
+3: (type) a string
+4: (complexes) a reference to a list where each element is a string
+
+templateBiomass has a value which is a reference to a list where each element is a reference to a list containing 11 items:
+0: (name) a string
+1: (type) a string
+2: (dna) a float
+3: (rna) a float
+4: (protein) a float
+5: (lipid) a float
+6: (cellwall) a float
+7: (cofactor) a float
+8: (energy) a float
+9: (other) a float
+10: (compounds) a reference to a list where each element is a reference to a list containing 6 items:
+	0: (id) a string
+	1: (compartment) a string
+	2: (class) a string
+	3: (coefficientType) a string
+	4: (coefficient) a float
+	5: (conditions) a string
+
+
+name has a value which is a string
+modelType has a value which is a string
+domain has a value which is a string
+id has a value which is a template_id
+workspace has a value which is a workspace_id
+ignore_errors has a value which is a bool
+auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+map has a value which is a mapping_id
+mapping_workspace has a value which is a workspace_id
+templateReactions has a value which is a reference to a list where each element is a reference to a list containing 5 items:
+0: (id) a string
+1: (compartment) a string
+2: (direction) a string
+3: (type) a string
+4: (complexes) a reference to a list where each element is a string
+
+templateBiomass has a value which is a reference to a list where each element is a reference to a list containing 11 items:
+0: (name) a string
+1: (type) a string
+2: (dna) a float
+3: (rna) a float
+4: (protein) a float
+5: (lipid) a float
+6: (cellwall) a float
+7: (cofactor) a float
+8: (energy) a float
+9: (other) a float
+10: (compounds) a reference to a list where each element is a reference to a list containing 6 items:
+	0: (id) a string
+	1: (compartment) a string
+	2: (class) a string
+	3: (coefficientType) a string
+	4: (coefficient) a float
+	5: (conditions) a string
+
+
+name has a value which is a string
+modelType has a value which is a string
+domain has a value which is a string
+id has a value which is a template_id
+workspace has a value which is a workspace_id
+ignore_errors has a value which is a bool
+auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 adjust_template_reaction_params
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+templateModel has a value which is a template_id
+workspace has a value which is a workspace_id
+reaction has a value which is a string
+new has a value which is a bool
+delete has a value which is a bool
+compartment has a value which is a compartment_id
+complexesToAdd has a value which is a reference to a list where each element is a complex_id
+complexesToRemove has a value which is a reference to a list where each element is a complex_id
+direction has a value which is a string
+type has a value which is a string
+auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+templateModel has a value which is a template_id
+workspace has a value which is a workspace_id
+reaction has a value which is a string
+new has a value which is a bool
+delete has a value which is a bool
+compartment has a value which is a compartment_id
+complexesToAdd has a value which is a reference to a list where each element is a complex_id
+complexesToRemove has a value which is a reference to a list where each element is a complex_id
+direction has a value which is a string
+type has a value which is a string
+auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 adjust_template_biomass_params
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+templateModel has a value which is a template_id
+workspace has a value which is a workspace_id
+biomass has a value which is a string
+new has a value which is a bool
+delete has a value which is a bool
+name has a value which is a string
+type has a value which is a string
+other has a value which is a string
+protein has a value which is a string
+dna has a value which is a string
+rna has a value which is a string
+cofactor has a value which is a string
+energy has a value which is a string
+cellwall has a value which is a string
+lipid has a value which is a string
+compoundsToRemove has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+0: (compound) a compound_id
+1: (compartment) a compartment_id
+
+compoundsToAdd has a value which is a reference to a list where each element is a reference to a list containing 7 items:
+0: (compound) a compound_id
+1: (compartment) a compartment_id
+2: (class) a string
+3: (universal) a string
+4: (coefficientType) a string
+5: (coefficient) a string
+6: (linkedCompounds) a reference to a list where each element is a reference to a list containing 2 items:
+	0: (coeffficient) a string
+	1: (compound) a compound_id
+
+
+auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+templateModel has a value which is a template_id
+workspace has a value which is a workspace_id
+biomass has a value which is a string
+new has a value which is a bool
+delete has a value which is a bool
+name has a value which is a string
+type has a value which is a string
+other has a value which is a string
+protein has a value which is a string
+dna has a value which is a string
+rna has a value which is a string
+cofactor has a value which is a string
+energy has a value which is a string
+cellwall has a value which is a string
+lipid has a value which is a string
+compoundsToRemove has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+0: (compound) a compound_id
+1: (compartment) a compartment_id
+
+compoundsToAdd has a value which is a reference to a list where each element is a reference to a list containing 7 items:
+0: (compound) a compound_id
+1: (compartment) a compartment_id
+2: (class) a string
+3: (universal) a string
+4: (coefficientType) a string
+5: (coefficient) a string
+6: (linkedCompounds) a reference to a list where each element is a reference to a list containing 2 items:
+	0: (coeffficient) a string
+	1: (compound) a compound_id
+
+
+auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
 =head2 add_stimuli_params
 
 =over 4
@@ -14439,6 +16393,7 @@ auth has a value which is a string
 <pre>
 a reference to a hash where the following keys are defined:
 biochemid has a value which is a string
+biochem_workspace has a value which is a string
 stimuliid has a value which is a string
 name has a value which is a string
 abbreviation has a value which is a string
@@ -14446,7 +16401,7 @@ type has a value which is a string
 description has a value which is a string
 compounds has a value which is a reference to a list where each element is a string
 workspace has a value which is a string
-authl has a value which is a string
+auth has a value which is a string
 
 </pre>
 
@@ -14456,6 +16411,7 @@ authl has a value which is a string
 
 a reference to a hash where the following keys are defined:
 biochemid has a value which is a string
+biochem_workspace has a value which is a string
 stimuliid has a value which is a string
 name has a value which is a string
 abbreviation has a value which is a string
@@ -14463,7 +16419,7 @@ type has a value which is a string
 description has a value which is a string
 compounds has a value which is a reference to a list where each element is a string
 workspace has a value which is a string
-authl has a value which is a string
+auth has a value which is a string
 
 
 =end text

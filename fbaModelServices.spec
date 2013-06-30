@@ -1523,39 +1523,6 @@ module fbaModelServices {
         Import a model from an input table of model and gene IDs
     */
     funcdef import_fbamodel(import_fbamodel_params input) returns (object_metadata modelMeta);
-    
-    /* Input parameters for the "import_template_fbamodel" function.
-	
-		mapping_id map - ID of the mapping to associate the template model with (an optional argument; default is 'default')
-		workspace_id mapping_workspace - ID of the workspace where the associated mapping is found (an optional argument; default is 'kbase')
-		list<tuple<string id,string compartment,string direction,string type,list<string complex> complexes>> templateReactions - list of reactions to include in template model
-		list<tuple<string name,string type,float dna,float rna,float protein,float lipid,float cellwall,float cofactor,float energy,float other,list<tuple<string id,string compartment,string class,string coefficientType,float coefficient,string conditions>> compounds>> templateBiomass - list of template biomass reactions for template model
-		string name - name for template model
-		string modelType - type of model constructed by template
-		string domain - domain of template model
-		template_id id - ID that should be used for the newly imported template model (an optional argument; default is 'undef')
-		workspace_id workspace - ID of the workspace where the newly developed template model will be stored; also the default assumed workspace for input objects (a required argument)
-		bool ignore_errors - ignores missing roles or reactions and imports template model anyway
-		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
-		
-	*/
-    typedef structure {
-		mapping_id map;
-		workspace_id mapping_workspace;
-		list<tuple<string id,string compartment,string direction,string type,list<string> complexes>> templateReactions;
-		list<tuple<string name,string type,float dna,float rna,float protein,float lipid,float cellwall,float cofactor,float energy,float other,list<tuple<string id,string compartment,string class,string coefficientType,float coefficient,string conditions>> compounds>> templateBiomass;
-		string name;
-		string modelType;
-		string domain;
-		template_id id;
-		workspace_id workspace;
-		bool ignore_errors;
-		string auth;
-    } import_template_fbamodel_params;
-    /*
-        Import a template model from an input table of template reactions and biomass components
-    */
-    funcdef import_template_fbamodel(import_template_fbamodel_params input) returns (object_metadata modelMeta);
 		
     /* Input parameters for the "export_fbamodel" function.
 	
@@ -2201,6 +2168,9 @@ module fbaModelServices {
     */
     funcdef role_to_reactions(role_to_reactions_params params) returns (list<RoleComplexReactions> output);
 
+		
+	
+
 	/* Input parameters for the "fasta_to_contigs" function.
 	
 		string contigid - ID to be assigned to the contigs object created (optional)
@@ -2244,6 +2214,282 @@ module fbaModelServices {
 		Annotates contigs object creating a genome object        
     */
     funcdef contigs_to_genome(contigs_to_genome_params params) returns (JobObject job);
+	
+	
+	/*********************************************************************************
+	Code relating to loading, retrieval, and curation of mappings
+   	*********************************************************************************/
+	typedef structure {
+		role_id id;
+		string name;
+		string feature;
+		list<string> aliases;
+		list<complex_id> complexes;
+    } FunctionalRole;
+    
+    typedef tuple<role_id id,string roleType,bool optional,bool triggering> ComplexRole;
+    
+    typedef structure {
+		complex_id id;
+		string name;
+		list<string> aliases;
+		list<ComplexRole> roles;
+    } Complex;
+    
+    typedef string subsystem_id;
+    typedef structure {
+		subsystem_id id;
+		string name;
+		string class;
+		string subclass;
+		string type;
+		list<string> aliases;
+		list<role_id> roles;
+    } Subsystem;
+	
+	typedef structure {
+		mapping_id id;
+		string name;
+		list<Subsystem> subsystems;
+		list<FunctionalRole> roles;
+		list<Complex> complexes;
+    } Mapping;
+	
+	typedef structure {
+		mapping_id map;
+		workspace_id workspace;
+		string auth;
+    } get_mapping_params;
+    /*
+		Annotates contigs object creating a genome object        
+    */
+    funcdef get_mapping(get_mapping_params params) returns (Mapping output);
+    	
+	/* Input parameters for the "adjust_mapping_role" function.
+	
+		mapping_id map - ID of the mapping object to be edited
+		workspace_id workspace - ID of workspace containing mapping to be edited
+		string role - identifier for role to be edited
+		bool new - boolean indicating that a new role is being added
+		string name - new name for the role
+		string feature - representative feature MD5
+		list<string> aliasesToAdd - list of new aliases for the role
+		list<string> aliasesToRemove - list of aliases to remove for role
+		bool delete - boolean indicating that role should be deleted
+		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+		
+	*/
+	typedef structure {
+		mapping_id map;
+		workspace_id workspace;
+		string role;
+		bool new;
+		string name;
+		string feature;
+		list<string> aliasesToAdd;
+		list<string> aliasesToRemove;
+		bool delete;
+		string auth;
+    } adjust_mapping_role_params;
+    /*
+        An API function supporting the curation of functional roles in a mapping object
+    */
+    funcdef adjust_mapping_role(adjust_mapping_role_params params) returns (FunctionalRole output);
+	
+	/* Input parameters for the "adjust_mapping_complex" function.
+	
+		mapping_id map - ID of the mapping object to be edited
+		workspace_id workspace - ID of workspace containing mapping to be edited
+		string complex - identifier for complex to be edited
+		bool new - boolean indicating that a new complex is being added
+		string name - new name for the role
+		string feature - representative feature MD5
+		list<string> rolesToAdd - roles to add to the complex
+		list<string> rolesToRemove - roles to remove from the complex
+		bool delete - boolean indicating that complex should be deleted
+		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+		
+	*/
+	typedef structure {
+		mapping_id map;
+		workspace_id workspace;
+		string complex;
+		bool new;
+		string name;
+		list<string> rolesToAdd;
+		list<string> rolesToRemove;
+		bool delete;
+		string auth;
+    }adjust_mapping_complex_params;
+    /*
+        An API function supporting the curation of complexes in a mapping object
+    */
+    funcdef adjust_mapping_complex(adjust_mapping_complex_params params) returns (Complex output);
+	
+	/* Input parameters for the "adjust_mapping_subsystem" function.
+	
+		mapping_id map - ID of the mapping object to be edited
+		workspace_id workspace - ID of workspace containing mapping to be edited
+		string subsystem - identifier for subsystem to be edited
+		bool new - boolean indicating that a new subsystem is being added
+		string name - new name for the subsystem
+		string type - new type for the subsystem
+		string class - new class for the subsystem
+		string subclass - new subclass for the subsystem
+		list<string> rolesToAdd - roles to add to the subsystem
+		list<string> rolesToRemove - roles to remove from the subsystem
+		bool delete - boolean indicating that subsystem should be deleted
+		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+		
+	*/
+	typedef structure {
+		mapping_id map;
+		workspace_id workspace;
+		string subsystem;
+		bool new;
+		string name;
+		string type;
+		string class;
+		string subclass;
+		list<string> rolesToAdd;
+		list<string> rolesToRemove;
+		bool delete;
+		string auth;
+    }adjust_mapping_subsystem_params;
+    /*
+        An API function supporting the curation of subsystems in a mapping object
+    */
+    funcdef adjust_mapping_subsystem(adjust_mapping_subsystem_params params) returns (Subsystem output);
+	
+	/*********************************************************************************
+	Code relating to loading, retrieval, and curation of template models
+   	*********************************************************************************/
+	typedef string temprxn_id;
+	typedef structure {
+		temprxn_id id;
+		compartment_id compartment;
+		reaction_id reaction;
+		list<complex_id> complexes;
+		string direction;
+		string type;
+    } TemplateReaction;
+    
+    typedef tuple<compound_id compound,compartment_id compartment,string class,string universal,string coefficientType,string coefficient,list<tuple<string coeffficient,compound_id compound> > linkedCompounds> TemplateBiomassCompounds;
+    
+    typedef string tempbiomass_id;
+    typedef structure {
+		tempbiomass_id id;
+		string name;
+		string type;
+		string other;
+		string protein;
+		string dna;
+		string rna;
+		string cofactor;
+		string energy;
+		string cellwall;
+		string lipid;
+		list<TemplateBiomassCompounds> compounds;
+    } TemplateBiomass;
+	
+	typedef structure {
+		template_id id;
+		string name;
+		string type;
+		string domain;
+		mapping_id map;
+		workspace_id mappingws;
+		list<TemplateReaction> reactions;
+		list<TemplateBiomass> biomasses;
+    } TemplateModel;
+	
+	typedef structure {
+		template_id templateModel;
+		workspace_id workspace;
+		string auth;
+    } get_template_model_params;
+    /*
+		Retrieves the specified template model        
+    */
+    funcdef get_template_model(get_template_model_params params) returns (TemplateModel output);
+	
+	/* Input parameters for the "import_template_fbamodel" function.
+	
+		mapping_id map - ID of the mapping to associate the template model with (an optional argument; default is 'default')
+		workspace_id mapping_workspace - ID of the workspace where the associated mapping is found (an optional argument; default is 'kbase')
+		list<tuple<string id,string compartment,string direction,string type,list<string complex> complexes>> templateReactions - list of reactions to include in template model
+		list<tuple<string name,string type,float dna,float rna,float protein,float lipid,float cellwall,float cofactor,float energy,float other,list<tuple<string id,string compartment,string class,string coefficientType,float coefficient,string conditions>> compounds>> templateBiomass - list of template biomass reactions for template model
+		string name - name for template model
+		string modelType - type of model constructed by template
+		string domain - domain of template model
+		template_id id - ID that should be used for the newly imported template model (an optional argument; default is 'undef')
+		workspace_id workspace - ID of the workspace where the newly developed template model will be stored; also the default assumed workspace for input objects (a required argument)
+		bool ignore_errors - ignores missing roles or reactions and imports template model anyway
+		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+		
+	*/
+    typedef structure {
+		mapping_id map;
+		workspace_id mapping_workspace;
+		list<tuple<string id,string compartment,string direction,string type,list<string> complexes>> templateReactions;
+		list<tuple<string name,string type,float dna,float rna,float protein,float lipid,float cellwall,float cofactor,float energy,float other,list<tuple<string id,string compartment,string class,string coefficientType,float coefficient,string conditions>> compounds>> templateBiomass;
+		string name;
+		string modelType;
+		string domain;
+		template_id id;
+		workspace_id workspace;
+		bool ignore_errors;
+		string auth;
+    } import_template_fbamodel_params;
+    /*
+        Import a template model from an input table of template reactions and biomass components
+    */
+    funcdef import_template_fbamodel(import_template_fbamodel_params input) returns (object_metadata modelMeta);
+	
+	typedef structure {
+		template_id templateModel;
+		workspace_id workspace;
+		string reaction;
+		bool clearComplexes;
+		bool new;
+		bool delete;
+		compartment_id compartment;
+		list<complex_id> complexesToAdd;
+		list<complex_id> complexesToRemove;
+		string direction;
+		string type;
+		string auth;
+    } adjust_template_reaction_params;
+    /*
+		Modifies a reaction of a template model       
+    */
+    funcdef adjust_template_reaction(adjust_template_reaction_params params) returns (TemplateReaction output);
+
+	typedef structure {
+		template_id templateModel;
+		workspace_id workspace;
+		string biomass;
+		bool new;
+		bool delete;
+		bool clearBiomassCompounds;
+		string name;
+		string type;
+		string other;
+		string protein;
+		string dna;
+		string rna;
+		string cofactor;
+		string energy;
+		string cellwall;
+		string lipid;
+		list<tuple<compound_id compound,compartment_id compartment>> compoundsToRemove;
+		list<tuple<compound_id compound,compartment_id compartment,string class,string universal,string coefficientType,string coefficient,list<tuple<string coeffficient,compound_id compound> > linkedCompounds>> compoundsToAdd;
+		string auth;
+    } adjust_template_biomass_params;
+    /*
+		Modifies the biomass of a template model        
+    */
+    funcdef adjust_template_biomass(adjust_template_biomass_params params) returns (TemplateBiomass output);
 	
 	/*********************************************************************************
     Code relating to reconstruction, import, and analysis of regulatory models

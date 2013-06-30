@@ -33,7 +33,7 @@ my $specs = [
     [ 'workspace|w=s', 'Workspace with model', { "default" => workspace() } ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
-$params->{type} = "environment";
+$params->{type} = "environmental";
 if (defined($params->{compounds})) {
 	$params->{compounds} = [split(/;/,$params->{compounds})];
 	if (@{$params->{compounds}} > 0) {
