@@ -26,6 +26,7 @@ my $translation = {
 #Defining usage and options
 my $specs = [
     [ 'model|m=s', 'Name to be provided for output model' ],
+    [ 'genomews=s', 'Workspace where genome is located' ],
     [ 'templateid=s', 'ID of template model to use' ],
     [ 'templatews=s', 'Workspace with template model' ],
     [ 'core', 'Build core model'],
