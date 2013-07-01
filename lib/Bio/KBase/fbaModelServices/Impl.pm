@@ -319,6 +319,7 @@ sub _modify_annotation_from_probanno {
 
 sub _translate_genome_to_annotation {
     my($self,$genome,$mapping) = @_;
+   	print "Translating!\n";
    	if (!defined($genome->{gc}) || !defined($genome->{size})) {
    		$genome->{gc} = 0.5;
    		$genome->{size} = 0;
@@ -344,6 +345,7 @@ sub _translate_genome_to_annotation {
 			$genome->{gc} = 0.5;
 		}
    	}
+   	print "Building anno!\n";
     #Creating the annotation from the input genome object
 	my $annotation = ModelSEED::MS::Annotation->new({
 	  name         => $genome->{scientific_name},
@@ -361,6 +363,7 @@ sub _translate_genome_to_annotation {
 		 gc       => $genome->{gc}
 	  }]
 	});
+	print "Features!\n";
 	for ( my $i = 0 ; $i < @{ $genome->{features} } ; $i++ ) {
 		my $ftr = $genome->{features}->[$i];
 		my $newftr = $annotation->add("features",{
@@ -396,6 +399,7 @@ sub _translate_genome_to_annotation {
 			}
 		}
 	}
+	print "Done!\n";
 	return $annotation;
 }
 
@@ -797,11 +801,14 @@ sub _processGenomeObject {
 	my($self,$genome,$mapping,$command) = @_;
 	print "Call to process genome ".$genome."!\n";
 	my $anno = $self->_translate_genome_to_annotation($genome,$mapping);
+	print "Saving mapping!\n";
 	my $meta = $self->_save_msobject($mapping,"Mapping","NO_WORKSPACE",$genome->{id}.".anno.mapping",$command);
 	$anno->mapping_uuid($meta->[8]);
+	print "Saving annotation!\n";
 	$meta = $self->_save_msobject($anno,"Annotation","NO_WORKSPACE",$genome->{id}.".anno",$command);
 	$genome->{annotation_uuid} = $meta->[8];
 	my $contigObj = {contigs => $genome->{contigs}};
+	print "Saving contigs!\n";
 	$meta = $self->_save_msobject($contigObj,"GenomeContigs","NO_WORKSPACE",$genome->{id}.".contigs",$command);
 	$genome->{contigs_uuid} = $meta->[8];
 	delete $genome->{contigs};
