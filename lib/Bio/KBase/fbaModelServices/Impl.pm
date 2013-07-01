@@ -2282,7 +2282,7 @@ sub new
     $self->{'_idserver-url'} = "http://bio-data-1.mcs.anl.gov/services/idserver";
     $self->{'_mssserver-url'} = "http://bio-data-1.mcs.anl.gov/services/ms_fba";
     $self->{"_probanno-url"} = "http://localhost:7073";
-    $self->{"_workspace-url"} = "http://localhost:7058";
+    $self->{"_workspace-url"} = "http://kbase.us/services/workspace";
     my $paramlist = [qw(fba-url probanno-url mssserver-url accounttype workspace-url defaultJobState idserver-url)];
 
     # so it looks like params is created by looping over the config object
