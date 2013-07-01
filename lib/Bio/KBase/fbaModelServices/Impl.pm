@@ -2201,7 +2201,7 @@ sub _queueJob {
 		print $fh $data;
 		close($fh);
 		# Change the path below to your dev_container.
-		my $executable = "/home/mmundy/kb/dev_container/modules/KBaseFBAModeling/internalScripts/RunJob.sh ".$jobdir;
+		my $executable = "/kb/dev_container/modules/KBaseFBAModeling/internalScripts/RunJob.sh ".$jobdir;
 		my $cmd = "nohup ".$executable." > ".$jobdir."stdout.log 2> ".$jobdir."stderr.log &";
 		system($cmd);
 		# Make my own job object to return.
@@ -5916,11 +5916,11 @@ $modelMeta is an object_metadata
 adjust_model_reaction_params is a reference to a hash where the following keys are defined:
 	model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
-	reaction has a value which is a reaction_id
-	direction has a value which is a string
-	compartment has a value which is a compartment_id
-	compartmentIndex has a value which is an int
-	gpr has a value which is a string
+	reaction has a value which is a reference to a list where each element is a reaction_id
+	direction has a value which is a reference to a list where each element is a string
+	compartment has a value which is a reference to a list where each element is a compartment_id
+	compartmentIndex has a value which is a reference to a list where each element is an int
+	gpr has a value which is a reference to a list where each element is a string
 	removeReaction has a value which is a bool
 	addReaction has a value which is a bool
 	overwrite has a value which is a bool
@@ -5959,11 +5959,11 @@ $modelMeta is an object_metadata
 adjust_model_reaction_params is a reference to a hash where the following keys are defined:
 	model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
-	reaction has a value which is a reaction_id
-	direction has a value which is a string
-	compartment has a value which is a compartment_id
-	compartmentIndex has a value which is an int
-	gpr has a value which is a string
+	reaction has a value which is a reference to a list where each element is a reaction_id
+	direction has a value which is a reference to a list where each element is a string
+	compartment has a value which is a reference to a list where each element is a compartment_id
+	compartmentIndex has a value which is a reference to a list where each element is an int
+	gpr has a value which is a reference to a list where each element is a string
 	removeReaction has a value which is a bool
 	addReaction has a value which is a bool
 	overwrite has a value which is a bool
@@ -6022,30 +6022,80 @@ sub adjust_model_reaction
     #BEGIN adjust_model_reaction
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["reaction","model","workspace"],{
-    	direction => undef,
-    	compartment => "c",
-    	compartmentIndex => 0,
-    	gpr => undef,
+    	direction => [undef],
+    	compartment => ["c"],
+    	compartmentIndex => [0],
+    	gpr => [undef],
     	removeReaction => 0,
     	addReaction => 0,
     	overwrite => 0,
 	outputid => $input->{model},
 	outputws => $input->{workspace}
     });
-    my $model = $self->_get_msobject("Model",$input->{workspace},$input->{model});
-    if (defined($input->{gpr})) {
-    	$input->{gpr} = $self->_translateGPRHash($self->_parseGPR($input->{gpr}))
+
+    # For reverse compatibility, if we are given scalar arguments for the reactions or other multi-component objects
+    # we turn them into array refs.
+    if ( ref($input->{reaction}) eq 'SCALAR' ) {  $input->{reaction} = [ $input->{reaction} ];   }
+    if ( ref($input->{direction}) eq 'SCALAR' ) { $input->{direction} = [ $input->{direction} ]; }
+    if ( ref($input->{gpr}) eq 'SCALAR' ) {  $input->{gpr} = [ $input->{gpr} ];  }
+    if ( ref($input->{compartment}) eq 'SCALAR') { $input->{compartment} = [ $input->{compartment} ]; }
+    if ( ref($input->{compartmentIndex}) eq 'SCALAR') { $input->{compartmentIndex} = [ $input->{compartmentIndex} ]; }
+
+    # If we receive entries for compartments, directions, gprs, etc... they must all either have the same size
+    # or be size 1 (in which case we apply the same value to all of the elements)
+    my $nreactions = scalar @{ $input->{reaction} };
+    my $ncomps = scalar @{ $input->{compartment} };
+    my $ncompidx = scalar @{ $input->{compartmentIndex} };
+    my $ndir = scalar @{ $input->{direction} };
+    my $ngpr = scalar @{ $input->{gpr} };
+    if( !($ncomps == $nreactions || $ncomps == 1) ||
+	!($ncompidx == $nreactions || $ncompidx == 1) ||
+	!($ndir == $nreactions || $ndir == 1) ||
+	!($ngpr == $nreactions || $ngpr == 1) ) {
+	die "Size mismatch between number of reactions and number of GPR, direction, compartment or compartmentIndexes";
     }
-    $model->manualReactionAdjustment({
-    	reaction => $input->{reaction},
-    	direction => $input->{direction},
-    	compartment => $input->{compartment},
-    	compartmentIndex => $input->{compartmentIndex},
-    	gpr => $input->{gpr},
-    	removeReaction => $input->{removeReaction},
-    	addReaction => $input->{addReaction}
-    });
-	$modelMeta = $self->_save_msobject($model,"Model",$input->{outputws},$input->{outputid},"adjust_model_reaction",$input->{overwrite});
+
+    my $model = $self->_get_msobject("Model",$input->{workspace},$input->{model});
+    for (my $i=0; $i < @{$input->{reaction}}; $i++)  {
+	my $gpr;
+	my $dir;
+	my $comp;
+	my $compidx;
+	if ( scalar @{$input->{gpr}} eq 1) {
+	    if ( defined($input->{gpr}->[0] )) {
+		$gpr = $self->_translateGPRHash($self->_parseGPR($input->{gpr}->[0]));
+	    }
+	} else {
+	    if ( defined($input->{gpr}->[$i]) ) {
+		$gpr = $self->_translateGPRHash($self->_parseGPR($input->{gpr}->[$i]));	 
+	    }}
+	if ( scalar @{$input->{direction}} eq 1 ) {
+	    $dir = $input->{direction}->[0];
+	} else {
+	    $dir = $input->{direction}->[$i];
+	}
+	if ( scalar @{$input->{compartment}} eq 1 ) {  
+	    $comp = $input->{compartment}->[0]; 
+	} else {  
+	    $comp = $input->{compartment}->[$i];
+	}
+	if ( scalar @{$input->{compartmentIndex}} eq 1 ) {
+	    $compidx = $input->{compartmentIndex}->[0];
+	} else {
+	    $compidx = $input->{compartmentIndex}->[$i];
+	}
+
+	$model->manualReactionAdjustment({
+	    reaction => $input->{reaction}->[$i],
+	    direction => $dir,
+	    compartment => $comp,
+	    compartmentIndex => $compidx,
+	    gpr => $gpr,
+	    removeReaction => $input->{removeReaction},
+	    addReaction => $input->{addReaction}
+					 });
+    }
+    $modelMeta = $self->_save_msobject($model,"Model",$input->{outputws},$input->{outputid},"adjust_model_reaction",$input->{overwrite});
     $self->_clearContext();
     #END adjust_model_reaction
     my @_bad_returns;
@@ -8187,7 +8237,7 @@ sub queue_gapfill_model
 		$gapfill->model_uuid($model->uuid());
 		my $gapfillmeta = $self->_save_msobject($gapfill,"GapFill","NO_WORKSPACE",$gapfill->uuid(),"queue_gapfill_model",0,$gapfill->uuid());
 	    $job = $self->_queueJob({
-			localjob => 1,
+			#localjob => 1,
 			type => "FBA",
 			jobdata => {
 				postprocess_command => "queue_gapfill_model",
@@ -10832,6 +10882,7 @@ sub contigs_to_genome
 =begin html
 
 <pre>
+<<<<<<< HEAD
 $params is a get_mapping_params
 $output is a Mapping
 get_mapping_params is a reference to a hash where the following keys are defined:
@@ -10842,6 +10893,14 @@ mapping_id is a string
 workspace_id is a string
 Mapping is a reference to a hash where the following keys are defined:
 	id has a value which is a mapping_id
+=======
+$params is an add_stimuli_params
+$output is an object_metadata
+add_stimuli_params is a reference to a hash where the following keys are defined:
+	biochemid has a value which is a string
+	biochem_workspace has a value which is a string
+	stimuliid has a value which is a string
+>>>>>>> 7dc47ff949f17502942d16d5b08023f467b09351
 	name has a value which is a string
 	subsystems has a value which is a reference to a list where each element is a Subsystem
 	roles has a value which is a reference to a list where each element is a FunctionalRole
@@ -10852,6 +10911,7 @@ Subsystem is a reference to a hash where the following keys are defined:
 	class has a value which is a string
 	subclass has a value which is a string
 	type has a value which is a string
+<<<<<<< HEAD
 	aliases has a value which is a reference to a list where each element is a string
 	roles has a value which is a reference to a list where each element is a role_id
 subsystem_id is a string
@@ -10874,6 +10934,30 @@ ComplexRole is a reference to a list containing 4 items:
 	2: (optional) a bool
 	3: (triggering) a bool
 bool is an int
+=======
+	description has a value which is a string
+	compounds has a value which is a reference to a list where each element is a string
+	workspace has a value which is a string
+	auth has a value which is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+>>>>>>> 7dc47ff949f17502942d16d5b08023f467b09351
 
 </pre>
 
@@ -10881,6 +10965,7 @@ bool is an int
 
 =begin text
 
+<<<<<<< HEAD
 $params is a get_mapping_params
 $output is a Mapping
 get_mapping_params is a reference to a hash where the following keys are defined:
@@ -10891,6 +10976,14 @@ mapping_id is a string
 workspace_id is a string
 Mapping is a reference to a hash where the following keys are defined:
 	id has a value which is a mapping_id
+=======
+$params is an add_stimuli_params
+$output is an object_metadata
+add_stimuli_params is a reference to a hash where the following keys are defined:
+	biochemid has a value which is a string
+	biochem_workspace has a value which is a string
+	stimuliid has a value which is a string
+>>>>>>> 7dc47ff949f17502942d16d5b08023f467b09351
 	name has a value which is a string
 	subsystems has a value which is a reference to a list where each element is a Subsystem
 	roles has a value which is a reference to a list where each element is a FunctionalRole
@@ -10901,6 +10994,7 @@ Subsystem is a reference to a hash where the following keys are defined:
 	class has a value which is a string
 	subclass has a value which is a string
 	type has a value which is a string
+<<<<<<< HEAD
 	aliases has a value which is a reference to a list where each element is a string
 	roles has a value which is a reference to a list where each element is a role_id
 subsystem_id is a string
@@ -11039,6 +11133,28 @@ adjust_mapping_role_params is a reference to a hash where the following keys are
 	delete has a value which is a bool
 	auth has a value which is a string
 mapping_id is a string
+=======
+	description has a value which is a string
+	compounds has a value which is a reference to a list where each element is a string
+	workspace has a value which is a string
+	auth has a value which is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+>>>>>>> 7dc47ff949f17502942d16d5b08023f467b09351
 workspace_id is a string
 bool is an int
 FunctionalRole is a reference to a hash where the following keys are defined:
@@ -19079,12 +19195,29 @@ auth has a value which is a string
 
 Input parameters for the "set_cofactors" function.
 
+<<<<<<< HEAD
         list<compound_id> cofactors - list of compounds that are universal cofactors (required)
         biochemistry_id biochemistry - ID of biochemistry database (optional, default is "default") 
         workspace_id biochemistry_workspace - ID of workspace containing biochemistry database (optional, default is current workspace)
         bool reset - true to reset (turn off) compounds as universal cofactors (optional, default is false)
         bool overwrite - true to overwrite existing object (optional, default is false)
         string auth - the authentication token of the KBase account (optional, default user is "public")
+=======
+        fbamodel_id model - ID of model to be adjusted
+        workspace_id workspace - workspace containing model to be adjusted
+        list<reaction_id> reaction - List of IDs of reactions to be added, removed, or adjusted
+        list<string> direction - directions to set for reactions being added or adjusted
+        list<compartment_id> compartment - IDs of compartment containing reaction being added or adjusted
+        list<int> compartmentIndex - indexes of compartment containing reaction being altered or adjusted
+        list<string> gpr - array specifying gene-protein-reaction association(s)
+        bool removeReaction - boolean indicating listed reaction(s) should be removed
+        bool addReaction - boolean indicating reaction(s) should be added
+        bool overwrite - boolean indicating whether or not to overwrite model object in the workspace
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+>>>>>>> 7dc47ff949f17502942d16d5b08023f467b09351
+
+        For all of the lists above, if only one element is specified it is assumed the user wants to apply the same
+        to all the listed reactions.
 
 
 =item Definition
@@ -19093,10 +19226,22 @@ Input parameters for the "set_cofactors" function.
 
 <pre>
 a reference to a hash where the following keys are defined:
+<<<<<<< HEAD
 cofactors has a value which is a reference to a list where each element is a compound_id
 biochemistry has a value which is a biochemistry_id
 biochemistry_workspace has a value which is a workspace_id
 reset has a value which is a bool
+=======
+model has a value which is a fbamodel_id
+workspace has a value which is a workspace_id
+reaction has a value which is a reference to a list where each element is a reaction_id
+direction has a value which is a reference to a list where each element is a string
+compartment has a value which is a reference to a list where each element is a compartment_id
+compartmentIndex has a value which is a reference to a list where each element is an int
+gpr has a value which is a reference to a list where each element is a string
+removeReaction has a value which is a bool
+addReaction has a value which is a bool
+>>>>>>> 7dc47ff949f17502942d16d5b08023f467b09351
 overwrite has a value which is a bool
 auth has a value which is a string
 
@@ -19107,10 +19252,22 @@ auth has a value which is a string
 =begin text
 
 a reference to a hash where the following keys are defined:
+<<<<<<< HEAD
 cofactors has a value which is a reference to a list where each element is a compound_id
 biochemistry has a value which is a biochemistry_id
 biochemistry_workspace has a value which is a workspace_id
 reset has a value which is a bool
+=======
+model has a value which is a fbamodel_id
+workspace has a value which is a workspace_id
+reaction has a value which is a reference to a list where each element is a reaction_id
+direction has a value which is a reference to a list where each element is a string
+compartment has a value which is a reference to a list where each element is a compartment_id
+compartmentIndex has a value which is a reference to a list where each element is an int
+gpr has a value which is a reference to a list where each element is a string
+removeReaction has a value which is a bool
+addReaction has a value which is a bool
+>>>>>>> 7dc47ff949f17502942d16d5b08023f467b09351
 overwrite has a value which is a bool
 auth has a value which is a string
 
