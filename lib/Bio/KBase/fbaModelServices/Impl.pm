@@ -2280,7 +2280,7 @@ sub new
     $self->{_accounttype} = "kbase";
     $self->{'_fba-url'} = "";
     $self->{'_idserver-url'} = "http://bio-data-1.mcs.anl.gov/services/idserver";
-    $self->{'_mssserver-url'} = "http://biologin-4.mcs.anl.gov:7050";
+    $self->{'_mssserver-url'} = "http://bio-data-1.mcs.anl.gov/services/ms_fba";
     $self->{"_probanno-url"} = "http://localhost:7073";
     $self->{"_workspace-url"} = "http://localhost:7058";
     my $paramlist = [qw(fba-url probanno-url mssserver-url accounttype workspace-url defaultJobState idserver-url)];
@@ -2347,7 +2347,6 @@ sub new
     if (defined $params->{'probanno-url'}) {
     		$self->{'_probanno-url'} = $params->{'probanno-url'};
     }
-    print $params->{'mssserver-url'}."\n";
     #This final condition allows one to specify a fully implemented workspace IMPL or CLIENT for use
 
     if (defined($options->{workspace})) {
