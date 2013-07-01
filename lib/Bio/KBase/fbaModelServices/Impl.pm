@@ -319,7 +319,6 @@ sub _modify_annotation_from_probanno {
 
 sub _translate_genome_to_annotation {
     my($self,$genome,$mapping) = @_;
-   	print "Translating!\n";
    	if (!defined($genome->{gc}) || !defined($genome->{size})) {
    		$genome->{gc} = 0.5;
    		$genome->{size} = 0;
@@ -345,7 +344,6 @@ sub _translate_genome_to_annotation {
 			$genome->{gc} = 0.5;
 		}
    	}
-   	print "Building anno!\n";
     #Creating the annotation from the input genome object
 	my $annotation = ModelSEED::MS::Annotation->new({
 	  name         => $genome->{scientific_name},
@@ -363,10 +361,8 @@ sub _translate_genome_to_annotation {
 		 gc       => $genome->{gc}
 	  }]
 	});
-	print "Features!\n";
 	for ( my $i = 0 ; $i < @{ $genome->{features} } ; $i++ ) {
 		my $ftr = $genome->{features}->[$i];
-		print "New feature: ".$i." ".$ftr->{function}."\n";
 		my $newftr = $annotation->add("features",{
 			 id          => $ftr->{id},
 			 type        => $ftr->{type},
@@ -387,12 +383,10 @@ sub _translate_genome_to_annotation {
 					name => $output->{roles}->[$j]
 				});
 				if ( !defined($role) ) {
-					print "New role: ".$j." ".$output->{roles}->[$j]."\n";
 					$role = $mapping->add( "roles",{
 						name => $output->{roles}->[$j]
 					});
 				}
-				print "Adding role: ".$j." ".$output->{roles}->[$j]."\n";
 				$newftr->add("featureroles",{
 					 role_uuid   => $role->uuid(),
 					 compartment => $output->{compartments}->[0],
@@ -401,9 +395,7 @@ sub _translate_genome_to_annotation {
 				});
 			}
 		}
-		print "Feature done!\n";
 	}
-	print "Done!\n";
 	return $annotation;
 }
 
@@ -524,7 +516,6 @@ sub _get_msobject {
 	if (!defined($self->_cachedBiochemistry()) && $type eq "Biochemistry" && $id eq "default" && $ws eq "kbase") {
 		$self->_cachedBiochemistry($obj);
 	}
-	print "Call to get ".$type."!\n";
 	#Processing genomes to automatically have an annotation object
 	if ($type eq "Genome") {
 		if (!defined($obj->{annotation_uuid})) {
@@ -803,20 +794,15 @@ sub _get_genomeObj_from_RAST {
 
 sub _processGenomeObject {
 	my($self,$genome,$mapping,$command) = @_;
-	print "Call to process genome ".$genome."!\n";
 	my $anno = $self->_translate_genome_to_annotation($genome,$mapping);
-	print "Saving mapping!\n";
 	my $meta = $self->_save_msobject($mapping,"Mapping","NO_WORKSPACE",$genome->{id}.".anno.mapping",$command);
 	$anno->mapping_uuid($meta->[8]);
-	print "Saving annotation!\n";
 	$meta = $self->_save_msobject($anno,"Annotation","NO_WORKSPACE",$genome->{id}.".anno",$command);
 	$genome->{annotation_uuid} = $meta->[8];
 	my $contigObj = {contigs => $genome->{contigs}};
-	print "Saving contigs!\n";
 	$meta = $self->_save_msobject($contigObj,"GenomeContigs","NO_WORKSPACE",$genome->{id}.".contigs",$command);
 	$genome->{contigs_uuid} = $meta->[8];
 	delete $genome->{contigs};
-	print "Done process genome ".$genome."!\n";
 	return ($genome,$anno,$mapping,$contigObj);
 }
 
@@ -5032,7 +5018,6 @@ sub genome_to_workspace
     my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
     my($genomeMeta);
     #BEGIN genome_to_workspace
-    print "Call started!\n";
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["genome","workspace"],{
     	overwrite => 0,
@@ -5052,11 +5037,8 @@ sub genome_to_workspace
     	$genomeObj = $self->_get_genomeObj_from_RAST($input->{genome},$input->{sourceLogin},$input->{sourcePassword});
     }
     ($genomeObj,my $anno,$mapping,my $contigObj) = $self->_processGenomeObject($genomeObj,$mapping,"genome_to_workspace");
-    print "Saving!\n";
     $genomeMeta = $self->_save_msobject($genomeObj,"Genome",$input->{workspace},$genomeObj->{id},"genome_to_workspace",$input->{overwrite});
-	print "Done 1!\n";
 	$self->_clearContext();
-	print "Done 2!\n";
     #END genome_to_workspace
     my @_bad_returns;
     (ref($genomeMeta) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"genomeMeta\" (value was \"$genomeMeta\")");
@@ -5065,7 +5047,6 @@ sub genome_to_workspace
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
 							       method_name => 'genome_to_workspace');
     }
-    print "Done 3!\n";
     return($genomeMeta);
 }
 
