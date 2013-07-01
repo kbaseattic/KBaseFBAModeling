@@ -365,8 +365,8 @@ sub _translate_genome_to_annotation {
 	});
 	print "Features!\n";
 	for ( my $i = 0 ; $i < @{ $genome->{features} } ; $i++ ) {
-		print "New feature: ".$i." ".$ftr->{function}."\n";
 		my $ftr = $genome->{features}->[$i];
+		print "New feature: ".$i." ".$ftr->{function}."\n";
 		my $newftr = $annotation->add("features",{
 			 id          => $ftr->{id},
 			 type        => $ftr->{type},
