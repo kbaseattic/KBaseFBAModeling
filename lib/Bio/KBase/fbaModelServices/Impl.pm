@@ -515,6 +515,7 @@ sub _get_msobject {
 	if (!defined($self->_cachedBiochemistry()) && $type eq "Biochemistry" && $id eq "default" && $ws eq "kbase") {
 		$self->_cachedBiochemistry($obj);
 	}
+	print "Call to get ".$type."!\n";
 	#Processing genomes to automatically have an annotation object
 	if ($type eq "Genome") {
 		if (!defined($obj->{annotation_uuid})) {
@@ -793,6 +794,7 @@ sub _get_genomeObj_from_RAST {
 
 sub _processGenomeObject {
 	my($self,$genome,$mapping,$command) = @_;
+	print "Call to process genome ".$genome."!\n";
 	my $anno = $self->_translate_genome_to_annotation($genome,$mapping);
 	my $meta = $self->_save_msobject($mapping,"Mapping","NO_WORKSPACE",$genome->{id}.".anno.mapping",$command);
 	$anno->mapping_uuid($meta->[8]);
@@ -802,6 +804,7 @@ sub _processGenomeObject {
 	$meta = $self->_save_msobject($contigObj,"GenomeContigs","NO_WORKSPACE",$genome->{id}.".contigs",$command);
 	$genome->{contigs_uuid} = $meta->[8];
 	delete $genome->{contigs};
+	print "Done process genome ".$genome."!\n";
 	return ($genome,$anno,$mapping,$contigObj);
 }
 
