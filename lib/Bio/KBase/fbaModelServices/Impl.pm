@@ -365,6 +365,7 @@ sub _translate_genome_to_annotation {
 	});
 	print "Features!\n";
 	for ( my $i = 0 ; $i < @{ $genome->{features} } ; $i++ ) {
+		print "New feature: ".$i." ".$ftr->{function}."\n";
 		my $ftr = $genome->{features}->[$i];
 		my $newftr = $annotation->add("features",{
 			 id          => $ftr->{id},
@@ -386,10 +387,12 @@ sub _translate_genome_to_annotation {
 					name => $output->{roles}->[$j]
 				});
 				if ( !defined($role) ) {
+					print "New role: ".$j." ".$output->{roles}->[$j]."\n";
 					$role = $mapping->add( "roles",{
 						name => $output->{roles}->[$j]
 					});
 				}
+				print "Adding role: ".$j." ".$output->{roles}->[$j]."\n";
 				$newftr->add("featureroles",{
 					 role_uuid   => $role->uuid(),
 					 compartment => $output->{compartments}->[0],
@@ -398,6 +401,7 @@ sub _translate_genome_to_annotation {
 				});
 			}
 		}
+		print "Feature done!\n";
 	}
 	print "Done!\n";
 	return $annotation;
