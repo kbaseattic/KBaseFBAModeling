@@ -2347,7 +2347,7 @@ sub new
     if (defined $params->{'probanno-url'}) {
     		$self->{'_probanno-url'} = $params->{'probanno-url'};
     }
-    
+    print $params->{'mssserver-url'}."\n";
     #This final condition allows one to specify a fully implemented workspace IMPL or CLIENT for use
 
     if (defined($options->{workspace})) {
