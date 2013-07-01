@@ -5017,6 +5017,7 @@ sub genome_to_workspace
     my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
     my($genomeMeta);
     #BEGIN genome_to_workspace
+    print "Call started!\n";
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["genome","workspace"],{
     	overwrite => 0,
@@ -5036,8 +5037,11 @@ sub genome_to_workspace
     	$genomeObj = $self->_get_genomeObj_from_RAST($input->{genome},$input->{sourceLogin},$input->{sourcePassword});
     }
     ($genomeObj,my $anno,$mapping,my $contigObj) = $self->_processGenomeObject($genomeObj,$mapping,"genome_to_workspace");
+    print "Saving!\n";
     $genomeMeta = $self->_save_msobject($genomeObj,"Genome",$input->{workspace},$genomeObj->{id},"genome_to_workspace",$input->{overwrite});
+	print "Done 1!\n";
 	$self->_clearContext();
+	print "Done 2!\n";
     #END genome_to_workspace
     my @_bad_returns;
     (ref($genomeMeta) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"genomeMeta\" (value was \"$genomeMeta\")");
@@ -5046,6 +5050,7 @@ sub genome_to_workspace
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
 							       method_name => 'genome_to_workspace');
     }
+    print "Done 3!\n";
     return($genomeMeta);
 }
 
