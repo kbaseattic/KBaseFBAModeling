@@ -34,8 +34,8 @@ my $specs = [
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
 $params->{type} = "environmental";
-if (defined($params->{compounds})) {
-	$params->{compounds} = [split(/;/,$params->{compounds})];
+if (defined($opt->{compounds})) {
+	$params->{compounds} = [split(/;/,$opt->{compounds})];
 	if (@{$params->{compounds}} > 0) {
 		$params->{type} = "chemical"; 
 	}

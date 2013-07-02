@@ -12458,7 +12458,7 @@ sub add_stimuli
 		$self->_error("Input type ".$params->{type}." not recognized!","add_stimuli");
 	}
 	if (!defined($params->{stimuliid})) {
-		$params->{stimuliid} = $self->_get_new_id("kb|stim.");
+		$params->{stimuliid} = $self->_get_new_id("stim.");
 	}
 	my $biochem;
 	if (defined($params->{biochemid})) {
