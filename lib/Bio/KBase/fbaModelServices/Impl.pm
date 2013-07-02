@@ -8518,7 +8518,7 @@ sub queue_gapgen_model
 		#TODO: This block should be in a "safe save" block to prevent race conditions
 		my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
 		my $gapgen = $self->_buildGapGenObject($input->{formulation},$model);	
-		$input->{gapgen} = $gapgen->uuid();
+		$input->{gapGen} = $gapgen->uuid();
 		push(@{$model->unintegratedGapgen_uuids()},$gapgen->uuid());
 		my $modelmeta = $self->_save_msobject($model,"Model",$input->{workspace},$input->{out_model},"queue_gapgen_model");
 		#End "safe save" block
@@ -10065,17 +10065,17 @@ sub run_job
     my($job);
     #BEGIN run_job
     $self->_setContext($ctx,$input);
-    if (!defined($input->{job}->{localjob})) {
     $input = $self->_validateargs($input,["job"],{});
-    $job = $self->_getJob($input->{job});
-    eval {
-	    $self->_workspaceServices()->set_job_status({
-		   	jobid => $job->{id},
-		   	status => "running",
-		   	auth => $self->_authentication(),
-		   	currentStatus => $job->{status}
-	    });
-    };
+    if (ref($input->{job}) ne "HASH" || !defined($input->{job}->{localjob})) {
+	    $job = $self->_getJob($input->{job});
+	    eval {
+		    $self->_workspaceServices()->set_job_status({
+			   	jobid => $job->{id},
+			   	status => "running",
+			   	auth => $self->_authentication(),
+			   	currentStatus => $job->{status}
+		    });
+	    };
     } else {
 		$job = $input->{job};
     }
