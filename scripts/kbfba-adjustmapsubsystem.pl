@@ -32,18 +32,18 @@ my $specs = [
     [ 'subclass=s', 'Subclass of subsystem' ],
     [ 'new', 'Create new subsystem' ],
     [ 'delete', 'Delete specified subsystem' ],
-    [ 'rolesToAdd=s@', 'Roles to add to subsystem (; delimited)' ],
-    [ 'rolesToRemove=s@', 'Roles to remove from subsystem (; delimited)' ],
+    [ 'rolestoadd=s@', 'Roles to add to subsystem (; delimited)' ],
+    [ 'rolestoremove=s@', 'Roles to remove from subsystem (; delimited)' ],
     [ 'workspace|w=s', 'Workspace with mapping to be adjusted', { "default" => workspace() } ],
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
-if (defined($opt->{rolesToAdd})) {
-	foreach my $role (@{$opt->{rolesToAdd}}) {
+if (defined($opt->{rolestoadd})) {
+	foreach my $role (@{$opt->{rolestoadd}}) {
 		push(@{$params->{rolesToAdd}},split(/;/,$role));
 	}
 }
-if (defined($opt->{rolesToRemove})) {
-	foreach my $role (@{$opt->{rolesToRemove}}) {
+if (defined($opt->{rolestoremove})) {
+	foreach my $role (@{$opt->{rolestoremove}}) {
 		push(@{$params->{rolesToRemove}},split(/;/,$role));
 	}
 }

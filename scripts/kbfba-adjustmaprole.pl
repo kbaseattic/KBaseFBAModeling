@@ -28,18 +28,18 @@ my $specs = [
     [ 'feature=s', 'Example feature for role' ],
     [ 'new', 'Create new role' ],
     [ 'delete', 'Delete specified role' ],
-    [ 'aliasesToAdd=s@', 'Aliases to add to role (; delimited)' ],
-    [ 'aliasesToRemove=s@', 'Aliases to remove from role (; delimited)' ],
+    [ 'aliasestoadd=s@', 'Aliases to add to role (; delimited)' ],
+    [ 'aliasestoremove=s@', 'Aliases to remove from role (; delimited)' ],
     [ 'workspace|w=s', 'Workspace to save FBA results', { "default" => workspace() } ],
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
-if (defined($opt->{aliasesToAdd})) {
-	foreach my $alias (@{$opt->{aliasesToAdd}}) {
+if (defined($opt->{aliasestoadd})) {
+	foreach my $alias (@{$opt->{aliasestoadd}}) {
 		push(@{$params->{aliasesToAdd}},split(/;/,$alias));
 	}
 }
-if (defined($opt->{aliasesToRemove})) {
-	foreach my $alias (@{$opt->{aliasesToRemove}}) {
+if (defined($opt->{aliasestoremove})) {
+	foreach my $alias (@{$opt->{aliasestoremove}}) {
 		push(@{$params->{aliasesToRemove}},split(/;/,$alias));
 	}
 }

@@ -8254,9 +8254,35 @@ sub queue_gapfill_model
 		}
 		$gapfill->parseGapfillingResults($gapfill->fbaFormulation()->fbaResults()->[0]);
 		if (!defined($gapfill->gapfillingSolutions()->[0])) {
-			my $msg = "Gapfilling completed, but no valid solutions found!";
-			Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'queue_gapfill_model');
-		}
+			if (defined($input->{jobid})) {
+				my $job = $self->_getJob($input->{jobid});
+				my $newJobData;
+				if (!defined($job->{jobdata}->{newgapfilltime})) {
+					$newJobData = {newgapfilltime => 14400,error => ""};
+				} elsif ($job->{jobdata}->{newgapfilltime} == 14400) {
+					$newJobData = {newgapfilltime => 43200,error => ""};
+				} elsif ($job->{jobdata}->{newgapfilltime} == 43200) {
+					$newJobData = {newgapfilltime => 86400,error => ""};
+				}
+				if (defined($newJobData)) {
+					print STDERR "Resubmitting ".$job->{id}." for ".$newJobData->{newgapfilltime}." seconds!\n";
+					eval {
+						$self->_workspaceServices()->set_job_status({
+							auth => $self->_authentication(),
+							jobid => $job->{id},
+							currentStatus => "running",
+							status => "queued",
+							jobdata => $newJobData
+						});
+					};
+				} else {
+					my $msg = "Gapfilling completed, but no valid solutions found after 24 hours!";
+					Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'queue_gapfill_model');	
+				}	
+			} else {
+				my $msg = "Gapfilling completed, but no valid solutions found!";
+				Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'queue_gapfill_model');
+			}
 		if ($input->{integrate_solution} == 1) {
 			#TODO: This block should be in a "safe save" block to prevent race conditions
 			my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
@@ -9950,17 +9976,21 @@ sub jobs_done
     	if (defined($job->{jobdata}->{postprocess_args})) {
     		$args = $job->{jobdata}->{postprocess_args};
     	}
+    	$args->[0]->{jobid} = $job->{id};
     	$self->$function(@{$args});
     }
     if (!defined($input->{job}->{localjob})) {
-    eval {
-    $job = $self->_workspaceServices()->set_job_status({
-    	jobid => $input->{job},
-    	status => "done",
-    	auth => $self->_authentication(),
-    	currentStatus => "running"
-    });
-    };
+	    $job = $self->_getJob($input->{job});
+	    if ($job->{status} ne "queued") {
+		    eval {
+			    $job = $self->_workspaceServices()->set_job_status({
+			    	jobid => $input->{job},
+			    	status => "done",
+			    	auth => $self->_authentication(),
+			    	currentStatus => "running"
+			    });
+		    };
+	    }
     } else {
     	print STDERR "Job is done\n";
     }
@@ -11192,6 +11222,7 @@ sub adjust_mapping_role
 		$arguments->{aliasToRemove} = $input->{aliasesToRemove};
 	}
 	my $role = $map->adjustRole($arguments);
+	my $mapMeta = $self->_save_msobject($map,"Mapping",$input->{workspace},$input->{"map"},"adjust_mapping_role",1);
 	$output = {
 		id => $role->id(),
 		name => $role->name(),
@@ -11339,6 +11370,7 @@ sub adjust_mapping_complex
     	}
     }
 	my $cpx = $map->adjustComplex($arguments);
+	my $mapMeta = $self->_save_msobject($map,"Mapping",$input->{workspace},$input->{"map"},"adjust_mapping_complex",1);
 	$output = {
     	id => $cpx->id(),
     	name => $cpx->name(),
@@ -11490,6 +11522,7 @@ sub adjust_mapping_subsystem
     	}
     }
 	my $ss = $map->adjustRoleset($arguments);
+	my $mapMeta = $self->_save_msobject($map,"Mapping",$input->{workspace},$input->{"map"},"adjust_mapping_subsystem",1);
 	$output = {
     	id => $ss->id(),
     	name => $ss->name(),

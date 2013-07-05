@@ -26,21 +26,21 @@ my $specs = [
     [ 'name=s', 'Name of complex' ],
     [ 'new', 'Create new complex' ],
     [ 'delete', 'Delete specified complex' ],
-    [ 'rolesToAdd=s@', 'Roles to add to complex (role id:triggering:optional:type)' ],
-    [ 'rolesToRemove=s@', 'Roles to remove from complex (; delimited)' ],
+    [ 'rolestoadd=s@', 'Roles to add to complex (role id:triggering:optional:type)' ],
+    [ 'rolestoremove=s@', 'Roles to remove from complex (; delimited)' ],
     [ 'workspace|w=s', 'Workspace to save FBA results', { "default" => workspace() } ],
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
-if (defined($opt->{rolesToAdd})) {
-	foreach my $role (@{$opt->{rolesToAdd}}) {
+if (defined($opt->{rolestoadd})) {
+	foreach my $role (@{$opt->{rolestoadd}}) {
 		my $rolelist = [split(/;/,$role)];
-		foreach my $roleitem (@{$rolelist) {
+		foreach my $roleitem (@{$rolelist}) {
 			push(@{$params->{rolesToAdd}},[split(/:/,$roleitem)]);
 		}
 	}
 }
-if (defined($opt->{rolesToRemove})) {
-	foreach my $role (@{$opt->{rolesToRemove}}) {
+if (defined($opt->{rolestoremove})) {
+	foreach my $role (@{$opt->{rolestoremove}}) {
 		push(@{$params->{rolesToRemove}},split(/;/,$role));
 	}
 }
