@@ -85,7 +85,6 @@ use ModelSEED::utilities qw( args verbose set_verbose translateArrayOptions);
 use Try::Tiny;
 use Data::Dumper;
 use Config::Simple;
-use POSIX;
 
 sub _authentication {
 	my($self) = @_;
@@ -3898,7 +3897,7 @@ sub get_alias
     });
 
     my $biochem = $self->_get_msobject("Biochemistry","kbase",$input->{biochemistry});
-    my $output = [];
+    $output = [];
     for (my $i=0; $i < @{$input->{input_ids}}; $i++) {
 	my $id = $input->{input_ids}->[$i];
 	my $obj;
@@ -8283,6 +8282,7 @@ sub queue_gapfill_model
 				my $msg = "Gapfilling completed, but no valid solutions found!";
 				Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'queue_gapfill_model');
 			}
+		}
 		if ($input->{integrate_solution} == 1) {
 			#TODO: This block should be in a "safe save" block to prevent race conditions
 			my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
@@ -10117,15 +10117,15 @@ sub run_job
     my $fbaResult = $fba->runFBA();
     if (!defined($fbaResult)) {
     	if (!defined($input->{job}->{localjob})) {
-    	eval{
-	    	$self->_workspaceServices()->set_job_status({
-		   		jobid => $job->{id},
-		   		status => "error",
-		   		auth => $self->_authentication(),
-		   		currentStatus => "running",
-		   		jobdata => {error => "FBA failed with no solution returned!"}
-	    	});
-    	};
+	    	eval{
+		    	$self->_workspaceServices()->set_job_status({
+			   		jobid => $job->{id},
+			   		status => "error",
+			   		auth => $self->_authentication(),
+			   		currentStatus => "running",
+			   		jobdata => {error => "FBA failed with no solution returned!"}
+		    	});
+	    	};
     	}
     	my $msg = "FBA failed with no solution returned!";
     	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'runfba');
