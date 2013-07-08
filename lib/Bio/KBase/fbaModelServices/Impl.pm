@@ -9964,9 +9964,9 @@ sub jobs_done
     my($job);
     #BEGIN jobs_done
     $self->_setContext($ctx,$input);
-    if (!defined($input->{job}->{localjob})) {
-    $input = $self->_validateargs($input,["job"],{});
-    $job = $self->_getJob($input->{job});
+    if (ref($input->{job}) ne "HASH" || !defined($input->{job}->{localjob})) {
+	    $input = $self->_validateargs($input,["job"],{});
+	    $job = $self->_getJob($input->{job});
     } else {
 		$job = $input->{job};
     }
