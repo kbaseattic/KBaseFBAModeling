@@ -66,7 +66,7 @@ sub clearOldDirectoryFiles {
 		my @stat = stat($directory."/".$file);
 		if ($stat[9] < ($now - $age)) {
 			print "Deleting $file...";
-			if ($file =~ m/\/fbajobs\//) {
+			if ($file =~ m/\/fbajobs\/.+/) {
 				rmtree($file);
 			}
 		}
