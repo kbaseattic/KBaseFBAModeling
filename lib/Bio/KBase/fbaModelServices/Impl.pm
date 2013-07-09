@@ -9964,12 +9964,8 @@ sub jobs_done
     my($job);
     #BEGIN jobs_done
     $self->_setContext($ctx,$input);
-    if (ref($input->{job}) ne "HASH" || !defined($input->{job}->{localjob})) {
-	    $input = $self->_validateargs($input,["job"],{});
-	    $job = $self->_getJob($input->{job});
-    } else {
-		$job = $input->{job};
-    }
+	$input = $self->_validateargs($input,["job"],{});
+	$job = $self->_getJob($input->{job});
     if (defined($job->{jobdata}->{postprocess_command})) {
     	my $function = $job->{jobdata}->{postprocess_command};
     	my $args;
@@ -9979,23 +9975,16 @@ sub jobs_done
     	$args->[0]->{jobid} = $job->{id};
     	$self->$function(@{$args});
     }
-    if (!defined($input->{job}->{localjob})) {
-	    $job = $self->_getJob($input->{job});
-	    if ($job->{status} ne "queued") {
-		    eval {
-			    $job = $self->_workspaceServices()->set_job_status({
-			    	jobid => $input->{job},
-			    	status => "done",
-			    	auth => $self->_authentication(),
-			    	currentStatus => "running"
-			    });
-		    };
-	    }
-    } else {
-    	print STDERR "Job is done\n";
-    }
-    if (!defined($job)) {
-    	$job = {id => $input->{job}};
+    $job = $self->_getJob($input->{job});
+    if ($job->{status} ne "queued") {
+	    eval {
+		    $job = $self->_workspaceServices()->set_job_status({
+		    	jobid => $input->{job},
+		    	status => "done",
+		    	auth => $self->_authentication(),
+		    	currentStatus => "running"
+		    });
+	    };
     }
     $self->_clearContext();
     #END jobs_done
@@ -10096,19 +10085,15 @@ sub run_job
     #BEGIN run_job
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["job"],{});
-    if (ref($input->{job}) ne "HASH" || !defined($input->{job}->{localjob})) {
-	    $job = $self->_getJob($input->{job});
-	    eval {
-		    $self->_workspaceServices()->set_job_status({
-			   	jobid => $job->{id},
-			   	status => "running",
-			   	auth => $self->_authentication(),
-			   	currentStatus => $job->{status}
-		    });
-	    };
-    } else {
-		$job = $input->{job};
-    }
+    $job = $self->_getJob($input->{job});
+    eval {
+	    $self->_workspaceServices()->set_job_status({
+		   	jobid => $job->{id},
+		   	status => "running",
+		   	auth => $self->_authentication(),
+		   	currentStatus => $job->{status}
+	    });
+    };
     my $fba = $self->_get_msobject("FBA","NO_WORKSPACE",$job->{jobdata}->{fbaref});
     if (defined($job->{jobdata}->{newgapfilltime})) {
     	$fba->parameters()->{"CPLEX solver time limit"} = $job->{jobdata}->{newgapfilltime};
@@ -10116,17 +10101,15 @@ sub run_job
     }
     my $fbaResult = $fba->runFBA();
     if (!defined($fbaResult)) {
-    	if (!defined($input->{job}->{localjob})) {
-	    	eval{
-		    	$self->_workspaceServices()->set_job_status({
-			   		jobid => $job->{id},
-			   		status => "error",
-			   		auth => $self->_authentication(),
-			   		currentStatus => "running",
-			   		jobdata => {error => "FBA failed with no solution returned!"}
-		    	});
-	    	};
-    	}
+   	    eval{
+		    $self->_workspaceServices()->set_job_status({
+			   	jobid => $job->{id},
+			   	status => "error",
+			   	auth => $self->_authentication(),
+			   	currentStatus => "running",
+			   	jobdata => {error => "FBA failed with no solution returned!"}
+		    });
+	    };
     	my $msg = "FBA failed with no solution returned!";
     	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'runfba');
     }
