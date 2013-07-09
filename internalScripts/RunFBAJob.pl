@@ -15,6 +15,7 @@ use Data::Dumper;
 use File::Temp qw(tempfile);
 use LWP::Simple;
 use Config::Simple;
+use File::Path;
 use Bio::KBase::fbaModelServices::Impl;
 
 $|=1;
@@ -37,6 +38,10 @@ if ($job->{wsurl} eq "impl") {
 } else {
     $obj = Bio::KBase::fbaModelServices::Impl->new({accounttype => $job->{accounttype},"workspace-url" => $job->{wsurl}});
 }
+#Clearing out old files
+if (-d "/tmp/fbajobs/") {
+	&clearOldDirectoryFiles("/tmp/fbajobs/");
+}
 if (!defined($job->{localjob})) {
 	 $obj->run_job({
 	    job => $job->{id},
@@ -47,6 +52,25 @@ if (!defined($job->{localjob})) {
 		job => $job,
 		auth => $job->{jobdata}->{auth}
 	});
+}
+
+sub clearOldDirectoryFiles {
+	my($directory) = @_;
+	my $now = time();       # get current time
+	my $age = 60*60*24*3;  # convert 3 days into seconds
+	my $files = [];
+	opendir(DIR,$directory) || die "Can't open $directory : $!\n";
+	push(@{$files},readdir(DIR));
+	close(DIR);
+	foreach my $file (@{$files}) {	
+		my @stat = stat($directory."/".$file);
+		if ($stat[9] < ($now - $age)) {
+			print "Deleting $file...";
+			if ($file =~ m/\/fbajobs\//) {
+				rmtree($file);
+			}
+		}
+	}
 }
 
 1;
