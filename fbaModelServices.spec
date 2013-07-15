@@ -1084,6 +1084,7 @@ module fbaModelServices {
 	typedef structure {
 		reaction_id reaction;
 		string direction;
+		string equation;
 		compartment_id compartment;
     } TemplateReactions;
 	
@@ -1095,6 +1096,7 @@ module fbaModelServices {
 	*/
 	typedef structure {
 		complex_id complex;
+		string name;
 		list<TemplateReactions> reactions; 
     } ComplexReactions;
     
@@ -1106,7 +1108,8 @@ module fbaModelServices {
 	*/
 	typedef structure {
 		role_id role;
-		list<ComplexReactions> reactions; 
+		string name;
+		list<ComplexReactions> complexes; 
    } RoleComplexReactions;
 	
 	/* Reaction definition
@@ -2165,15 +2168,13 @@ module fbaModelServices {
 	*/
 	typedef structure {
 		template_id templateModel;
+		workspace_id workspace;
 		string auth;
     } role_to_reactions_params;
     /*
         Retrieves a list of roles mapped to reactions based on input template model
     */
     funcdef role_to_reactions(role_to_reactions_params params) returns (list<RoleComplexReactions> output);
-
-		
-	
 
 	/* Input parameters for the "fasta_to_contigs" function.
 	

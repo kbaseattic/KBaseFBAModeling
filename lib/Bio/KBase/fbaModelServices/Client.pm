@@ -6747,19 +6747,24 @@ $params is a role_to_reactions_params
 $output is a reference to a list where each element is a RoleComplexReactions
 role_to_reactions_params is a reference to a hash where the following keys are defined:
 	templateModel has a value which is a template_id
+	workspace has a value which is a workspace_id
 	auth has a value which is a string
 template_id is a string
+workspace_id is a string
 RoleComplexReactions is a reference to a hash where the following keys are defined:
 	role has a value which is a role_id
-	reactions has a value which is a reference to a list where each element is a ComplexReactions
+	name has a value which is a string
+	complexes has a value which is a reference to a list where each element is a ComplexReactions
 role_id is a string
 ComplexReactions is a reference to a hash where the following keys are defined:
 	complex has a value which is a complex_id
+	name has a value which is a string
 	reactions has a value which is a reference to a list where each element is a TemplateReactions
 complex_id is a string
 TemplateReactions is a reference to a hash where the following keys are defined:
 	reaction has a value which is a reaction_id
 	direction has a value which is a string
+	equation has a value which is a string
 	compartment has a value which is a compartment_id
 reaction_id is a string
 compartment_id is a string
@@ -6774,19 +6779,24 @@ $params is a role_to_reactions_params
 $output is a reference to a list where each element is a RoleComplexReactions
 role_to_reactions_params is a reference to a hash where the following keys are defined:
 	templateModel has a value which is a template_id
+	workspace has a value which is a workspace_id
 	auth has a value which is a string
 template_id is a string
+workspace_id is a string
 RoleComplexReactions is a reference to a hash where the following keys are defined:
 	role has a value which is a role_id
-	reactions has a value which is a reference to a list where each element is a ComplexReactions
+	name has a value which is a string
+	complexes has a value which is a reference to a list where each element is a ComplexReactions
 role_id is a string
 ComplexReactions is a reference to a hash where the following keys are defined:
 	complex has a value which is a complex_id
+	name has a value which is a string
 	reactions has a value which is a reference to a list where each element is a TemplateReactions
 complex_id is a string
 TemplateReactions is a reference to a hash where the following keys are defined:
 	reaction has a value which is a reaction_id
 	direction has a value which is a string
+	equation has a value which is a string
 	compartment has a value which is a compartment_id
 reaction_id is a string
 compartment_id is a string
@@ -12796,6 +12806,7 @@ organism has a value which is a string
 a reference to a hash where the following keys are defined:
 reaction has a value which is a reaction_id
 direction has a value which is a string
+equation has a value which is a string
 compartment has a value which is a compartment_id
 
 </pre>
@@ -12807,6 +12818,7 @@ compartment has a value which is a compartment_id
 a reference to a hash where the following keys are defined:
 reaction has a value which is a reaction_id
 direction has a value which is a string
+equation has a value which is a string
 compartment has a value which is a compartment_id
 
 
@@ -12837,6 +12849,7 @@ Information on complexes in a template model
 <pre>
 a reference to a hash where the following keys are defined:
 complex has a value which is a complex_id
+name has a value which is a string
 reactions has a value which is a reference to a list where each element is a TemplateReactions
 
 </pre>
@@ -12847,6 +12860,7 @@ reactions has a value which is a reference to a list where each element is a Tem
 
 a reference to a hash where the following keys are defined:
 complex has a value which is a complex_id
+name has a value which is a string
 reactions has a value which is a reference to a list where each element is a TemplateReactions
 
 
@@ -12877,7 +12891,8 @@ Information on complexes in a template model
 <pre>
 a reference to a hash where the following keys are defined:
 role has a value which is a role_id
-reactions has a value which is a reference to a list where each element is a ComplexReactions
+name has a value which is a string
+complexes has a value which is a reference to a list where each element is a ComplexReactions
 
 </pre>
 
@@ -12887,7 +12902,8 @@ reactions has a value which is a reference to a list where each element is a Com
 
 a reference to a hash where the following keys are defined:
 role has a value which is a role_id
-reactions has a value which is a reference to a list where each element is a ComplexReactions
+name has a value which is a string
+complexes has a value which is a reference to a list where each element is a ComplexReactions
 
 
 =end text
@@ -15270,6 +15286,7 @@ Input parameters for the "role_to_reactions" function.
 <pre>
 a reference to a hash where the following keys are defined:
 templateModel has a value which is a template_id
+workspace has a value which is a workspace_id
 auth has a value which is a string
 
 </pre>
@@ -15280,6 +15297,7 @@ auth has a value which is a string
 
 a reference to a hash where the following keys are defined:
 templateModel has a value which is a template_id
+workspace has a value which is a workspace_id
 auth has a value which is a string
 
 
