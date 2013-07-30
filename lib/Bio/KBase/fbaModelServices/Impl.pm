@@ -1788,7 +1788,8 @@ sub _GapFill_to_GapFillData {
 				objective => $solution->{solutionCost},
 				biomassRemovals => [],
 				mediaAdditions => [],
-				reactionAdditions => []
+				reactionAdditions => [],
+				integrated => $solution->integrated()
 			};
 			for (my $j=0; $j < @{$solution->biomassRemovals()}; $j++) {
 				push(@{$solData->{biomassRemovals}},[
@@ -2704,8 +2705,13 @@ sub get_models
     			features => $rxn->featureIDs(),
     			compartment => $rxn->modelcompartment()->label(),
     			equation => $rxn->equation(),
-    			definition => $rxn->definition()
+    			definition => $rxn->definition(),
+    			gapfilled => 0
     		};
+    		my $proteins = $rxn->modelReactionProteins();
+    		if (@{$proteins} == 0 || (@{$proteins} == 1 && $proteins->[0]->complex_uuid() eq "00000000-0000-0000-0000-000000000000" && $proteins->[0]->note() ne "spontaneous")) {
+    			$rxndata->{gapfilled} = 1;
+    		}
     		push(@{$mdldata->{reactions}},$rxndata);
     	}
     	#Creating fbas, gapfills, and gapgens

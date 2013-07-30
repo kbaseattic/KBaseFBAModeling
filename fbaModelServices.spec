@@ -426,6 +426,7 @@ module fbaModelServices {
 		string direction;
 		string equation;
 		string definition;
+		bool gapfilled;
 		list<feature_id> features;
 		modelcompartment_id compartment;
     } ModelReaction;
@@ -803,6 +804,7 @@ module fbaModelServices {
     typedef structure {
     	gapfillsolution_id id;
         float objective;
+        bool integrated;
 		list<biomassRemoval> biomassRemovals;
 		list<mediaAddition> mediaAdditions;
 		list<reactionAddition> reactionAdditions;
