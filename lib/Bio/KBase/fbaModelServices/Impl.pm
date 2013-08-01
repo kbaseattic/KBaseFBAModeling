@@ -1263,7 +1263,7 @@ sub _buildGapfillObject {
 		#Get coefficients of probmodel
 		$gapform->fbaFormulation()->{"parameters"}->{"Objective coefficient file"} = "ProbModelReactionCoefficients.txt";
 		$gapform->fbaFormulation()->{"inputfiles"}->{"ProbModelReactionCoefficients.txt"} = [];
-		my $rxns = $rxnprobs->{"reactionProbabilities"};
+		my $rxns = $rxnprobs->{"reaction_probabilities"};
 		for (my $i=0; $i < @{$rxns}; $i++) {
 			my $rxn = $rxns->[$i];
 			my $cost = (1-$rxn->[1]);
