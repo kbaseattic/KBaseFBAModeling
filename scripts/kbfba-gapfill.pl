@@ -27,6 +27,8 @@ my $translation = {
 	phenoid => "phenotypeSet",
 	timepersol => "timePerSolution",
 	timelimit => "totalTimeLimit",
+	iterativegf => "completeGapfill",
+	solver => "solver"
 };
 my $gfTranslation = {
 	numsol => "num_solutions",
@@ -67,6 +69,7 @@ my $fbaTranslation = {
 my $specs = [
     [ 'modelout:s', 'ID for output model in workspace' ],
     [ 'intsol', 'Automatically integrate solution', { "default" => 0 } ],
+    [ 'iterativegf|t', 'Gapfill all inactive reactions', { "default" => 0 } ],
     [ 'timepersol:s', 'Maximum time spent per solution' ],
     [ 'timelimit:s', 'Maximum toal time' ],
     [ 'media|m:s', 'Media formulation for FBA' ],
@@ -110,6 +113,7 @@ my $specs = [
     [ 'allrev', 'Treat all reactions as reversible', { "default" => 0 } ],
     [ 'objfraction:s', 'Fraction of objective for follow on analysis', { "default" => 0.1 }],
     [ 'notes:s', 'Notes for flux balance analysis' ],
+    [ 'solver:s', 'Solver to use for gapfilling' ],
     [ 'workspace|w:s', 'Workspace to save FBA results', { "default" => workspace() } ],
     [ 'overwrite|o', 'Overwrite any existing FBA with same name' ]
 ];

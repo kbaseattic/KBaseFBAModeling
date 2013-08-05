@@ -1917,7 +1917,7 @@ module fbaModelServices {
 		int timePerSolution - maximum time to spend to obtain each solution
 		int totalTimeLimit - maximum time to spend to obtain all solutions
 		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
-		
+		bool completeGapfill - boolean indicating that all inactive reactions should be gapfilled
 	*/
     typedef structure {
 		fbamodel_id model;
@@ -1933,6 +1933,7 @@ module fbaModelServices {
 		int totalTimeLimit;
 		string auth;
 		bool overwrite;
+		bool completeGapfill;
     } gapfill_model_params;
     /*
         Queues an FBAModel gapfilling job in single media condition

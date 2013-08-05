@@ -25,6 +25,7 @@ my $translation = {
 	phenoid => "phenotypeSet",
 	timepersol => "timePerSolution",
 	timelimit => "totalTimeLimit",
+	solver => "solver"
 };
 my $ggTranslation = {
 	numsol => "num_solutions",
@@ -83,6 +84,7 @@ my $specs = [
     [ 'allrev', 'Treat all reactions as reversible', { "default" => 0 } ],
     [ 'objfraction:s', 'Fraction of objective for follow on analysis', { "default" => 0.1 }],
     [ 'notes:s', 'Notes for flux balance analysis' ],
+    [ 'solver:s', 'Solver to use for gapgen' ],
     [ 'workspace|w:s', 'Workspace to save FBA results', { "default" => workspace() } ],
     [ 'overwrite|o', 'Overwrite any existing FBA with same name' ]
 ];

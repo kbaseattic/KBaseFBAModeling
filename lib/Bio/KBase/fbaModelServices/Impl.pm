@@ -1204,6 +1204,7 @@ sub _buildGapfillObject {
 		reactionAdditionHypothesis => $self->_invert_boolean($formulation->{nopathwayhyp}),
 		timePerSolution => $formulation->{timePerSolution},
 		totalTimeLimit => $formulation->{totalTimeLimit},
+		completeGapfill => $formulation->{completeGapfill}
 	});
 	$gapform->parent($self->_KBaseStore());
 	foreach my $reaction (@{$formulation->{gauranteedrxns}}) {
@@ -8221,7 +8222,9 @@ sub queue_gapfill_model
 		gapFill_workspace => $input->{workspace},
 		overwrite => 0,
 		timePerSolution => 3600,
-		totalTimeLimit => 18000
+		totalTimeLimit => 18000,
+		completeGapfill => 0,
+		solver => undef
 	});
 	$input->{formulation}->{timePerSolution} = $input->{timePerSolution};
 	$input->{formulation}->{totalTimeLimit} = $input->{totalTimeLimit};
@@ -8231,6 +8234,7 @@ sub queue_gapfill_model
 		$input->{formulation} = $self->_setDefaultGapfillFormulation($input->{formulation});
 		#TODO: This block should be in a "safe save" block to prevent race conditions
 		my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
+		$input->{formulation}->{completeGapfill} = $input->{completeGapfill};
 		my $gapfill = $self->_buildGapfillObject($input->{formulation},$model);
 		$input->{gapFill} = $gapfill->uuid();
 		push(@{$model->unintegratedGapfilling_uuids()},$gapfill->uuid());
@@ -8240,14 +8244,17 @@ sub queue_gapfill_model
 		my $fbameta = $self->_save_msobject($gapfill->fbaFormulation(),"FBA","NO_WORKSPACE",$gapfill->fbaFormulation()->uuid(),"queue_gapfill_model",0,$gapfill->fbaFormulation()->uuid());
 		$gapfill->model_uuid($model->uuid());
 		my $gapfillmeta = $self->_save_msobject($gapfill,"GapFill","NO_WORKSPACE",$gapfill->uuid(),"queue_gapfill_model",0,$gapfill->uuid());
+	    my $jobdata = {
+			postprocess_command => "queue_gapfill_model",
+			postprocess_args => [$input],
+			fbaref => $gapfill->fbaFormulation()->uuid()
+		};
+		if (defined($input->{solver})) {
+			$jobdata->{solver} = $input->{solver};
+		}
 	    $job = $self->_queueJob({
-			#localjob => 1,
 			type => "FBA",
-			jobdata => {
-				postprocess_command => "queue_gapfill_model",
-				postprocess_args => [$input],
-				fbaref => $gapfill->fbaFormulation()->uuid()
-			},
+			jobdata => $jobdata,
 			queuecommand => "queue_gapfill_model",
 			"state" => $self->_defaultJobState()
 		});
@@ -8541,6 +8548,7 @@ sub queue_gapgen_model
 		out_model => $input->{model},
 		gapGen => undef,
 		overwrite => 0,
+		solver => undef
 	});
 	$input->{formulation}->{timePerSolution} = $input->{timePerSolution};
 	$input->{formulation}->{totalTimeLimit} = $input->{totalTimeLimit};
@@ -8558,13 +8566,17 @@ sub queue_gapgen_model
 		my $fbameta = $self->_save_msobject($gapgen->fbaFormulation(),"FBA","NO_WORKSPACE",$gapgen->fbaFormulation()->uuid(),"queue_gapgen_model",0,$gapgen->fbaFormulation()->uuid());
 		$gapgen->model_uuid($model->uuid());
 		my $gapgenmeta = $self->_save_msobject($gapgen,"GapGen","NO_WORKSPACE",$gapgen->uuid(),"queue_gapgen_model",0,$gapgen->uuid());
+	    my $jobdata = {
+			postprocess_command => "queue_gapgen_model",
+			postprocess_args => [$input],
+			fbaref => $gapgen->fbaFormulation()->uuid()
+		};
+	    if (defined($input->{solver})) {
+			$jobdata->{solver} = $input->{solver};
+		}
 	    $job = $self->_queueJob({
 			type => "FBA",
-			jobdata => {
-				postprocess_command => "queue_gapgen_model",
-				postprocess_args => [$input],
-				fbaref => $gapgen->fbaFormulation()->uuid()
-			},
+			jobdata => $jobdata,
 			queuecommand => "queue_gapgen_model",
 			"state" => $self->_defaultJobState()
 		});
@@ -10104,6 +10116,8 @@ sub run_job
     if (defined($job->{jobdata}->{newgapfilltime})) {
     	$fba->parameters()->{"CPLEX solver time limit"} = $job->{jobdata}->{newgapfilltime};
     	$fba->parameters()->{"Recursive MILP timeout"} = $job->{jobdata}->{newgapfilltime}-100;
+    } elsif (defined($job->{jobdata}->{solver})) {
+    	$fba->parameters()->{MFASolver} = $job->{jobdata}->{solver};
     }
     my $fbaResult = $fba->runFBA();
     if (!defined($fbaResult)) {
