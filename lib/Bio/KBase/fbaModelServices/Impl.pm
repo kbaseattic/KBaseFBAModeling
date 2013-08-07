@@ -2160,9 +2160,9 @@ sub _prepPhenotypeSimultationFBA {
 		} else {
 			push(@{$existingPhenos->{$phenokey}},$i);
 		}
-		if ($i/1000 eq floor($i/1000)) {
+#		if ($i/1000 eq floor($i/1000)) {
 			#print $i."\n";
-		}
+#		}
 	}
 	#print "Unique phenos:".keys(%{$existingPhenos})."\n";
 	return ($fba,$existingPhenos,$phenokeys);
