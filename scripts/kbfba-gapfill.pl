@@ -280,6 +280,7 @@ if (defined($opt->{uptakelim})) {
 		}
 	}
 }
+$params->{formulation}->{nobiomasshyp} = 1;
 #Calling the server
 my $output = runFBACommand($params,$servercommand,$opt);
 #Checking output and report results

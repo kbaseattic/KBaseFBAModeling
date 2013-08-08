@@ -525,6 +525,10 @@ sub _get_msobject {
 	return $obj;
 }
 
+sub _getMSObjectsByRef {
+	my($self,$type,$ids) = @_;
+	return $self->_KBaseStore()->get_objects($type,$ids);
+}
 
 sub _set_uuid_by_idws {
 	my($self,$id,$ws) = @_;
@@ -1199,7 +1203,8 @@ sub _buildGapfillObject {
 		singleTransporterMultiplier => $formulation->{singletranspen},
 		transporterMultiplier => $formulation->{transpen},
 		mediaHypothesis => $self->_invert_boolean($formulation->{nomediahyp}),
-		biomassHypothesis => $self->_invert_boolean($formulation->{nobiomasshyp}),
+		#biomassHypothesis => $self->_invert_boolean($formulation->{nobiomasshyp}),
+		biomassHypothesis => 0,
 		gprHypothesis => $self->_invert_boolean($formulation->{nogprhyp}),
 		reactionAdditionHypothesis => $self->_invert_boolean($formulation->{nopathwayhyp}),
 		timePerSolution => $formulation->{timePerSolution},
@@ -2716,6 +2721,16 @@ sub get_models
     		push(@{$mdldata->{reactions}},$rxndata);
     	}
     	#Creating fbas, gapfills, and gapgens
+    	my $ids = $model->fbaFormulation_uuids();
+    	$model->fbaFormulations($self->_getMSObjectsByRef("FBAFormulation",$ids));
+    	$ids = $model->integratedGapfilling_uuids();
+    	$model->integratedGapfillings($self->_getMSObjectsByRef("GapfillingFormulation",$ids));
+    	$ids = $model->unintegratedGapfilling_uuids();
+    	$model->unintegratedGapfillings($self->_getMSObjectsByRef("GapfillingFormulation",$ids));
+    	$ids = $model->integratedGapgen_uuids();
+    	$model->integratedGapgens($self->_getMSObjectsByRef("GapgenFormulation",$ids));
+    	$ids = $model->unintegratedGapgen_uuids();
+    	$model->unintegratedGapgens($self->_getMSObjectsByRef("GapgenFormulation",$ids));
     	foreach my $obj (@{$model->fbaFormulations()}) {
     		push(@{$mdldata->{fbas}},$self->_generate_fbameta($obj));
     	}
