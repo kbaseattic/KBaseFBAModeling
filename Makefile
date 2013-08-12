@@ -100,7 +100,7 @@ deploy-dir:
 #		bash $(TOOLS_DIR)/wrap_perl.sh "$(TARGET)/plbin/$$basefile" $(TARGET)/bin/$$base ; \
 #	done 
 
-deploy-libs: compile-typespec
+deploy-libs:
 	rsync -arv lib/. $(TARGET)/lib/.
 
 deploy-services:
