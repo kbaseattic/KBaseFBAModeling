@@ -121,6 +121,10 @@ my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translat
 if (!defined($opt->{mediaws}) && defined($opt->{media})) {
 	$opt->{mediaws} = $opt->{workspace};
 }
+if (defined($opt->{probanno}) && defined($opt->{probrxn})) {
+    die "Attempt to pass probanno and probrxns objects in the same call. This is not allowed because probrxn is calcualted from probanno and could cause collisions";
+}
+
 $params->{formulation} = {
 	blacklistedrxns => [qw(
 rxn12985 rxn00238 rxn07058 rxn05305 rxn00154 rxn09037 rxn10643
