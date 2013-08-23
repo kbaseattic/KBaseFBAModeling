@@ -51,7 +51,7 @@ module fbaModelServices {
     Universal simple type definitions
    	*********************************************************************************/
     /* indicates true or false values, false <= 0, true >=1 */
-    typedef int bool;
+    /*typedef int bool;*/
     
     /* A string used as an ID for a workspace. Any string consisting of alphanumeric characters and "-" is acceptable  */
     typedef string workspace_id;
@@ -304,12 +304,28 @@ module fbaModelServices {
 		list<media_id> media;
     } Biochemistry;
     
+    /* Data structures for media compound formulation
+		
+		compound_id compound - ID of compound in media
+		string name - name of compound in media
+		float concentration - concentration of compound in media
+		float maxFlux - maximum flux of compound in media
+		float minFlux - minimum flux of compound in media
+						
+	*/
+    typedef structure {
+		compound_id compound;
+		string name;
+		float concentration;
+		float max_flux;
+		float min_flux;
+    } MediaCompound;
+    
     /* Data structures for media formulation
 		
 		media_id id - ID of media formulation
 		string name - name of media formulaiton
-		list<compound_id> compounds - list of compounds in media formulation
-		list<float> concentrations - list of compound concentrations
+		list<MediaCompound> media_compounds - list of compounds in media formulation
 		float pH - pH of media condition
 		float temperature - temperature of media condition
 						
@@ -317,8 +333,7 @@ module fbaModelServices {
     typedef structure {
 		media_id id;
 		string name;
-		list<compound_id> compounds;
-		list<float> concentrations;
+		list<MediaCompound> media_compounds;
 		float pH;
 		float temperature;
     } Media;
