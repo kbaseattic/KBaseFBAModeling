@@ -31,7 +31,11 @@ if (!defined($output)) {
 } elsif ($opt->{long}) {
 	for (my $i=0; $i < @{$output}; $i++) {
 		my $media = $output->[$i];
-		my $cpdparams = { "compounds" => $media->{compounds}, "id_type" => "all" };
+		my $cpdlist = [];
+		for (my $j=0; $j < @{$media->{media_compounds}}; $j++) {
+			push(@{$cpdlist},$media->{media_compounds}->[$j]->{compound});
+		}
+		my $cpdparams = { "compounds" => $cpdlist, "id_type" => "all" };
 		my $cpdoutput = runFBACommand($cpdparams,"get_compounds",$opt);
 		print "Media: ".$media->{name}.", pH: ".$media->{pH}.", temperature: ".$media->{temperature}."\n";
 		print "Compounds:\n";
@@ -42,15 +46,18 @@ if (!defined($output)) {
 	        if ($listlen >= 4) { $listlen = 3; }
 	        my $aliases = join(';',@{$cpd->{aliases}}[0..$listlen]);
 	        my $row = [
+	            $media->{media_compounds}->[$j]->{compound},
 	            $cpd->{name},
 	            $cpd->{formula},
-	            $media->{concentrations}->[$j],
+	            $media->{media_compounds}->[$j]->{concentrations},
+	            $media->{media_compounds}->[$j]->{min_flux},
+	            $media->{media_compounds}->[$j]->{max_flux},
 	            $aliases
 	        ];
 	        push(@{$tbl},$row);
 		}
     	my $table = Text::Table->new(
-    		'Name', 'Formula', "Concentration", "Aliases"
+    		"Compound",'Name', 'Formula', "Concentration","Max flux","Min flux", "Aliases"
     	);
 	    $table->load(@$tbl);
     	print $table."\n";
