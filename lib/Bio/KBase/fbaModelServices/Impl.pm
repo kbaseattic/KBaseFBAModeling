@@ -1124,60 +1124,64 @@ sub _setDefaultGapfillFormulation {
 		singletranspen => 1,
 		transpen => 1,
 		blacklistedrxns => [qw(
-rxn12985 rxn00238 rxn07058 rxn05305 rxn00154 rxn09037 rxn10643
-rxn11317 rxn05254 rxn05257 rxn05258 rxn05259 rxn05264 rxn05268
-rxn05269 rxn05270 rxn05271 rxn05272 rxn05273 rxn05274 rxn05275
-rxn05276 rxn05277 rxn05278 rxn05279 rxn05280 rxn05281 rxn05282
-rxn05283 rxn05284 rxn05285 rxn05286 rxn05963 rxn05964 rxn05971
-rxn05989 rxn05990 rxn06041 rxn06042 rxn06043 rxn06044 rxn06045
-rxn06046 rxn06079 rxn06080 rxn06081 rxn06086 rxn06087 rxn06088
-rxn06089 rxn06090 rxn06091 rxn06092 rxn06138 rxn06139 rxn06140
-rxn06141 rxn06145 rxn06217 rxn06218 rxn06219 rxn06220 rxn06221
-rxn06222 rxn06223 rxn06235 rxn06362 rxn06368 rxn06378 rxn06474
-rxn06475 rxn06502 rxn06562 rxn06569 rxn06604 rxn06702 rxn06706
-rxn06715 rxn06803 rxn06811 rxn06812 rxn06850 rxn06901 rxn06971
-rxn06999 rxn07123 rxn07172 rxn07254 rxn07255 rxn07269 rxn07451
-rxn09037 rxn10018 rxn10077 rxn10096 rxn10097 rxn10098 rxn10099
-rxn10101 rxn10102 rxn10103 rxn10104 rxn10105 rxn10106 rxn10107
-rxn10109 rxn10111 rxn10403 rxn10410 rxn10416 rxn11313 rxn11316
-rxn11318 rxn11353 rxn05224 rxn05795 rxn05796 rxn05797 rxn05798
-rxn05799 rxn05801 rxn05802 rxn05803 rxn05804 rxn05805 rxn05806
-rxn05808 rxn05812 rxn05815 rxn05832 rxn05836 rxn05851 rxn05857
-rxn05869 rxn05870 rxn05884 rxn05888 rxn05896 rxn05898 rxn05900
-rxn05903 rxn05904 rxn05905 rxn05911 rxn05921 rxn05925 rxn05936
-rxn05947 rxn05956 rxn05959 rxn05960 rxn05980 rxn05991 rxn05992
-rxn05999 rxn06001 rxn06014 rxn06017 rxn06021 rxn06026 rxn06027
-rxn06034 rxn06048 rxn06052 rxn06053 rxn06054 rxn06057 rxn06059
-rxn06061 rxn06102 rxn06103 rxn06127 rxn06128 rxn06129 rxn06130
-rxn06131 rxn06132 rxn06137 rxn06146 rxn06161 rxn06167 rxn06172
-rxn06174 rxn06175 rxn06187 rxn06189 rxn06203 rxn06204 rxn06246
-rxn06261 rxn06265 rxn06266 rxn06286 rxn06291 rxn06294 rxn06310
-rxn06320 rxn06327 rxn06334 rxn06337 rxn06339 rxn06342 rxn06343
-rxn06350 rxn06352 rxn06358 rxn06361 rxn06369 rxn06380 rxn06395
-rxn06415 rxn06419 rxn06420 rxn06421 rxn06423 rxn06450 rxn06457
-rxn06463 rxn06464 rxn06466 rxn06471 rxn06482 rxn06483 rxn06486
-rxn06492 rxn06497 rxn06498 rxn06501 rxn06505 rxn06506 rxn06521
-rxn06534 rxn06580 rxn06585 rxn06593 rxn06609 rxn06613 rxn06654
-rxn06667 rxn06676 rxn06693 rxn06730 rxn06746 rxn06762 rxn06779
-rxn06790 rxn06791 rxn06792 rxn06793 rxn06794 rxn06795 rxn06796
-rxn06797 rxn06821 rxn06826 rxn06827 rxn06829 rxn06839 rxn06841
-rxn06842 rxn06851 rxn06866 rxn06867 rxn06873 rxn06885 rxn06891
-rxn06892 rxn06896 rxn06938 rxn06939 rxn06944 rxn06951 rxn06952
-rxn06955 rxn06957 rxn06960 rxn06964 rxn06965 rxn07086 rxn07097
-rxn07103 rxn07104 rxn07105 rxn07106 rxn07107 rxn07109 rxn07119
-rxn07179 rxn07186 rxn07187 rxn07188 rxn07195 rxn07196 rxn07197
-rxn07198 rxn07201 rxn07205 rxn07206 rxn07210 rxn07244 rxn07245
-rxn07253 rxn07275 rxn07299 rxn07302 rxn07651 rxn07723 rxn07736
-rxn07878 rxn11417 rxn11582 rxn11593 rxn11597 rxn11615 rxn11617
-rxn11619 rxn11620 rxn11624 rxn11626 rxn11638 rxn11648 rxn11651
-rxn11665 rxn11666 rxn11667 rxn11698 rxn11983 rxn11986 rxn11994
-rxn12006 rxn12007 rxn12014 rxn12017 rxn12022 rxn12160 rxn12161
-rxn01267 )],
+			rxn12985 rxn00238 rxn07058 rxn05305 rxn00154 rxn09037 rxn10643
+			rxn11317 rxn05254 rxn05257 rxn05258 rxn05259 rxn05264 rxn05268
+			rxn05269 rxn05270 rxn05271 rxn05272 rxn05273 rxn05274 rxn05275
+			rxn05276 rxn05277 rxn05278 rxn05279 rxn05280 rxn05281 rxn05282
+			rxn05283 rxn05284 rxn05285 rxn05286 rxn05963 rxn05964 rxn05971
+			rxn05989 rxn05990 rxn06041 rxn06042 rxn06043 rxn06044 rxn06045
+			rxn06046 rxn06079 rxn06080 rxn06081 rxn06086 rxn06087 rxn06088
+			rxn06089 rxn06090 rxn06091 rxn06092 rxn06138 rxn06139 rxn06140
+			rxn06141 rxn06145 rxn06217 rxn06218 rxn06219 rxn06220 rxn06221
+			rxn06222 rxn06223 rxn06235 rxn06362 rxn06368 rxn06378 rxn06474
+			rxn06475 rxn06502 rxn06562 rxn06569 rxn06604 rxn06702 rxn06706
+			rxn06715 rxn06803 rxn06811 rxn06812 rxn06850 rxn06901 rxn06971
+			rxn06999 rxn07123 rxn07172 rxn07254 rxn07255 rxn07269 rxn07451
+			rxn09037 rxn10018 rxn10077 rxn10096 rxn10097 rxn10098 rxn10099
+			rxn10101 rxn10102 rxn10103 rxn10104 rxn10105 rxn10106 rxn10107
+			rxn10109 rxn10111 rxn10403 rxn10410 rxn10416 rxn11313 rxn11316
+			rxn11318 rxn11353 rxn05224 rxn05795 rxn05796 rxn05797 rxn05798
+			rxn05799 rxn05801 rxn05802 rxn05803 rxn05804 rxn05805 rxn05806
+			rxn05808 rxn05812 rxn05815 rxn05832 rxn05836 rxn05851 rxn05857
+			rxn05869 rxn05870 rxn05884 rxn05888 rxn05896 rxn05898 rxn05900
+			rxn05903 rxn05904 rxn05905 rxn05911 rxn05921 rxn05925 rxn05936
+			rxn05947 rxn05956 rxn05959 rxn05960 rxn05980 rxn05991 rxn05992
+			rxn05999 rxn06001 rxn06014 rxn06017 rxn06021 rxn06026 rxn06027
+			rxn06034 rxn06048 rxn06052 rxn06053 rxn06054 rxn06057 rxn06059
+			rxn06061 rxn06102 rxn06103 rxn06127 rxn06128 rxn06129 rxn06130
+			rxn06131 rxn06132 rxn06137 rxn06146 rxn06161 rxn06167 rxn06172
+			rxn06174 rxn06175 rxn06187 rxn06189 rxn06203 rxn06204 rxn06246
+			rxn06261 rxn06265 rxn06266 rxn06286 rxn06291 rxn06294 rxn06310
+			rxn06320 rxn06327 rxn06334 rxn06337 rxn06339 rxn06342 rxn06343
+			rxn06350 rxn06352 rxn06358 rxn06361 rxn06369 rxn06380 rxn06395
+			rxn06415 rxn06419 rxn06420 rxn06421 rxn06423 rxn06450 rxn06457
+			rxn06463 rxn06464 rxn06466 rxn06471 rxn06482 rxn06483 rxn06486
+			rxn06492 rxn06497 rxn06498 rxn06501 rxn06505 rxn06506 rxn06521
+			rxn06534 rxn06580 rxn06585 rxn06593 rxn06609 rxn06613 rxn06654
+			rxn06667 rxn06676 rxn06693 rxn06730 rxn06746 rxn06762 rxn06779
+			rxn06790 rxn06791 rxn06792 rxn06793 rxn06794 rxn06795 rxn06796
+			rxn06797 rxn06821 rxn06826 rxn06827 rxn06829 rxn06839 rxn06841
+			rxn06842 rxn06851 rxn06866 rxn06867 rxn06873 rxn06885 rxn06891
+			rxn06892 rxn06896 rxn06938 rxn06939 rxn06944 rxn06951 rxn06952
+			rxn06955 rxn06957 rxn06960 rxn06964 rxn06965 rxn07086 rxn07097
+			rxn07103 rxn07104 rxn07105 rxn07106 rxn07107 rxn07109 rxn07119
+			rxn07179 rxn07186 rxn07187 rxn07188 rxn07195 rxn07196 rxn07197
+			rxn07198 rxn07201 rxn07205 rxn07206 rxn07210 rxn07244 rxn07245
+			rxn07253 rxn07275 rxn07299 rxn07302 rxn07651 rxn07723 rxn07736
+			rxn07878 rxn11417 rxn11582 rxn11593 rxn11597 rxn11615 rxn11617
+			rxn11619 rxn11620 rxn11624 rxn11626 rxn11638 rxn11648 rxn11651
+			rxn11665 rxn11666 rxn11667 rxn11698 rxn11983 rxn11986 rxn11994
+			rxn12006 rxn12007 rxn12014 rxn12017 rxn12022 rxn12160 rxn12161
+			rxn01267 
+		)],
 		gauranteedrxns => [qw(
-rxn1 rxn2 rxn3 rxn4 rxn5 rxn6 rxn7 rxn8
-rxn13782 rxn13783 rxn13784 rxn05294 rxn05295 rxn05296 rxn10002
-rxn10088 rxn11921 rxn11922 rxn10200 rxn11923 rxn05029 )],
-		allowedcmps => ["c","e","p"]
+			rxn1 rxn2 rxn3 rxn4 rxn5 rxn6 rxn7 rxn8 rxn11572
+			rxn07298 rxn24256 rxn04219 rxn17241 rxn19302 rxn25468 rxn23165
+			rxn25469 rxn23171 rxn23067 rxn30830 rxn30910 rxn31440 rxn01659
+			rxn13782 rxn13783 rxn13784 rxn05294 rxn05295 rxn05296 rxn10002
+			rxn10088 rxn11921 rxn11922 rxn10200 rxn11923 rxn05029
+		)],
+		allowedcmps => []
 	});
 	$formulation->{formulation} = $self->_setDefaultFBAFormulation($formulation->{formulation});
 	return $formulation;
@@ -1224,11 +1228,9 @@ sub _buildGapfillObject {
 			$gapform->addLinkArrayItem("blacklistedReactions",$rxnObj);
 		}
 	}
-	foreach my $comp (@{$formulation->{allowedcmps}}) {
-		my $compObj = $model->biochemistry()->queryObject("compartments",{id => $comp});
-		if (defined($compObj)) {
-			$gapform->addLinkArrayItem("allowableCompartments",$compObj);
-		}
+	my $mdlcmps = $model->modelcompartments();
+	foreach my $mdlcmp (@{$mdlcmps}) {
+		$gapform->addLinkArrayItem("allowableCompartments",$mdlcmp->compartment());
 	}
 	$gapform->prepareFBAFormulation();
 	$gapform->{_kbaseWSMeta}->{wsid} = $gapform->uuid();
@@ -2444,6 +2446,7 @@ ModelReaction is a reference to a hash where the following keys are defined:
 	direction has a value which is a string
 	equation has a value which is a string
 	definition has a value which is a string
+	gapfilled has a value which is a bool
 	features has a value which is a reference to a list where each element is a feature_id
 	compartment has a value which is a modelcompartment_id
 modelreaction_id is a string
@@ -2472,7 +2475,6 @@ GapFillMeta is a reference to a list containing 6 items:
 	4: (done) a bool
 	5: (ko) a reference to a list where each element is a feature_id
 gapfill_id is a string
-bool is an int
 GapGenMeta is a reference to a list containing 6 items:
 	0: (id) a gapgen_id
 	1: (workspace) a workspace_id
@@ -2555,6 +2557,7 @@ ModelReaction is a reference to a hash where the following keys are defined:
 	direction has a value which is a string
 	equation has a value which is a string
 	definition has a value which is a string
+	gapfilled has a value which is a bool
 	features has a value which is a reference to a list where each element is a feature_id
 	compartment has a value which is a modelcompartment_id
 modelreaction_id is a string
@@ -2583,7 +2586,6 @@ GapFillMeta is a reference to a list containing 6 items:
 	4: (done) a bool
 	5: (ko) a reference to a list where each element is a feature_id
 gapfill_id is a string
-bool is an int
 GapGenMeta is a reference to a list containing 6 items:
 	0: (id) a gapgen_id
 	1: (workspace) a workspace_id
@@ -2797,7 +2799,6 @@ FBA is a reference to a hash where the following keys are defined:
 	compoundFluxes has a value which is a reference to a list where each element is a CompoundFlux
 	geneAssertions has a value which is a reference to a list where each element is a GeneAssertion
 fbamodel_id is a string
-bool is an int
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
@@ -2901,7 +2902,6 @@ FBA is a reference to a hash where the following keys are defined:
 	compoundFluxes has a value which is a reference to a list where each element is a CompoundFlux
 	geneAssertions has a value which is a reference to a list where each element is a GeneAssertion
 fbamodel_id is a string
-bool is an int
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
@@ -3072,7 +3072,6 @@ GapFill is a reference to a hash where the following keys are defined:
 	formulation has a value which is a GapfillingFormulation
 	solutions has a value which is a reference to a list where each element is a GapFillSolution
 fbamodel_id is a string
-bool is an int
 GapfillingFormulation is a reference to a hash where the following keys are defined:
 	formulation has a value which is an FBAFormulation
 	num_solutions has a value which is an int
@@ -3141,6 +3140,7 @@ probanno_id is a string
 GapFillSolution is a reference to a hash where the following keys are defined:
 	id has a value which is a gapfillsolution_id
 	objective has a value which is a float
+	integrated has a value which is a bool
 	biomassRemovals has a value which is a reference to a list where each element is a biomassRemoval
 	mediaAdditions has a value which is a reference to a list where each element is a mediaAddition
 	reactionAdditions has a value which is a reference to a list where each element is a reactionAddition
@@ -3182,7 +3182,6 @@ GapFill is a reference to a hash where the following keys are defined:
 	formulation has a value which is a GapfillingFormulation
 	solutions has a value which is a reference to a list where each element is a GapFillSolution
 fbamodel_id is a string
-bool is an int
 GapfillingFormulation is a reference to a hash where the following keys are defined:
 	formulation has a value which is an FBAFormulation
 	num_solutions has a value which is an int
@@ -3251,6 +3250,7 @@ probanno_id is a string
 GapFillSolution is a reference to a hash where the following keys are defined:
 	id has a value which is a gapfillsolution_id
 	objective has a value which is a float
+	integrated has a value which is a bool
 	biomassRemovals has a value which is a reference to a list where each element is a biomassRemoval
 	mediaAdditions has a value which is a reference to a list where each element is a mediaAddition
 	reactionAdditions has a value which is a reference to a list where each element is a reactionAddition
@@ -3355,7 +3355,6 @@ GapGen is a reference to a hash where the following keys are defined:
 	formulation has a value which is a GapgenFormulation
 	solutions has a value which is a reference to a list where each element is a GapgenSolution
 fbamodel_id is a string
-bool is an int
 GapgenFormulation is a reference to a hash where the following keys are defined:
 	formulation has a value which is an FBAFormulation
 	refmedia has a value which is a media_id
@@ -3450,7 +3449,6 @@ GapGen is a reference to a hash where the following keys are defined:
 	formulation has a value which is a GapgenFormulation
 	solutions has a value which is a reference to a list where each element is a GapgenSolution
 fbamodel_id is a string
-bool is an int
 GapgenFormulation is a reference to a hash where the following keys are defined:
 	formulation has a value which is an FBAFormulation
 	refmedia has a value which is a media_id
@@ -4063,10 +4061,15 @@ workspace_id is a string
 Media is a reference to a hash where the following keys are defined:
 	id has a value which is a media_id
 	name has a value which is a string
-	compounds has a value which is a reference to a list where each element is a compound_id
-	concentrations has a value which is a reference to a list where each element is a float
+	media_compounds has a value which is a reference to a list where each element is a MediaCompound
 	pH has a value which is a float
 	temperature has a value which is a float
+MediaCompound is a reference to a hash where the following keys are defined:
+	compound has a value which is a compound_id
+	name has a value which is a string
+	concentration has a value which is a float
+	max_flux has a value which is a float
+	min_flux has a value which is a float
 compound_id is a string
 
 </pre>
@@ -4086,10 +4089,15 @@ workspace_id is a string
 Media is a reference to a hash where the following keys are defined:
 	id has a value which is a media_id
 	name has a value which is a string
-	compounds has a value which is a reference to a list where each element is a compound_id
-	concentrations has a value which is a reference to a list where each element is a float
+	media_compounds has a value which is a reference to a list where each element is a MediaCompound
 	pH has a value which is a float
 	temperature has a value which is a float
+MediaCompound is a reference to a hash where the following keys are defined:
+	compound has a value which is a compound_id
+	name has a value which is a string
+	concentration has a value which is a float
+	max_flux has a value which is a float
+	min_flux has a value which is a float
 compound_id is a string
 
 
@@ -4145,12 +4153,16 @@ sub get_media
                 name => $obj->name(),
                 pH => 7,
                 temperature => 298,
-                compounds => [],
-                concentrations => []
+                media_compounds => [],
             };
             foreach my $mediaCompound (@{$obj->mediacompounds}) {
-                push(@{$new->{compounds}}, $mediaCompound->compound()->id());
-                push(@{$new->{concentrations}}, $mediaCompound->concentration());
+                push(@{$new->{media_compounds}},{
+                	compound => $mediaCompound->compound()->id(),
+                	name => $mediaCompound->compound()->name(),
+                	concentration => $mediaCompound->concentration(),
+                	max_flux => $mediaCompound->maxFlux(),
+                	min_flux => $mediaCompound->minFlux()
+                });
             }
 		}
 		push(@{$out_media},$new);
@@ -4505,7 +4517,6 @@ annotationProbability is a reference to a list containing 3 items:
 	1: (function) a string
 	2: (probability) a float
 feature_id is a string
-bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -4549,7 +4560,6 @@ annotationProbability is a reference to a list containing 3 items:
 	1: (function) a string
 	2: (probability) a float
 feature_id is a string
-bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -4783,7 +4793,6 @@ annotation is a reference to a list containing 3 items:
 	1: (annotator) a string
 	2: (annotation_time) an int
 workspace_id is a string
-bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -4857,7 +4866,6 @@ annotation is a reference to a list containing 3 items:
 	1: (annotator) a string
 	2: (annotation_time) an int
 workspace_id is a string
-bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -4953,7 +4961,6 @@ genome_to_workspace_params is a reference to a hash where the following keys are
 	overwrite has a value which is a bool
 genome_id is a string
 workspace_id is a string
-bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -4990,7 +4997,6 @@ genome_to_workspace_params is a reference to a hash where the following keys are
 	overwrite has a value which is a bool
 genome_id is a string
 workspace_id is a string
-bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -5099,7 +5105,6 @@ translation is a reference to a list containing 2 items:
 	0: (foreign_id) a string
 	1: (feature) a feature_id
 feature_id is a string
-bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -5139,7 +5144,6 @@ translation is a reference to a list containing 2 items:
 	0: (foreign_id) a string
 	1: (feature) a feature_id
 feature_id is a string
-bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -5254,7 +5258,6 @@ genome_id is a string
 workspace_id is a string
 template_id is a string
 fbamodel_id is a string
-bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -5295,7 +5298,6 @@ genome_id is a string
 workspace_id is a string
 template_id is a string
 fbamodel_id is a string
-bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -5429,7 +5431,6 @@ import_fbamodel_params is a reference to a hash where the following keys are def
 genome_id is a string
 workspace_id is a string
 fbamodel_id is a string
-bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -5474,7 +5475,6 @@ import_fbamodel_params is a reference to a hash where the following keys are def
 genome_id is a string
 workspace_id is a string
 fbamodel_id is a string
-bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -5949,7 +5949,6 @@ fbamodel_id is a string
 workspace_id is a string
 reaction_id is a string
 compartment_id is a string
-bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -5992,7 +5991,6 @@ fbamodel_id is a string
 workspace_id is a string
 reaction_id is a string
 compartment_id is a string
-bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -6159,7 +6157,6 @@ workspace_id is a string
 biomass_id is a string
 compound_id is a string
 compartment_id is a string
-bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -6201,7 +6198,6 @@ workspace_id is a string
 biomass_id is a string
 compound_id is a string
 compartment_id is a string
-bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -6309,7 +6305,6 @@ addmedia_params is a reference to a hash where the following keys are defined:
 	auth has a value which is a string
 media_id is a string
 workspace_id is a string
-bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -6351,7 +6346,6 @@ addmedia_params is a reference to a hash where the following keys are defined:
 	auth has a value which is a string
 media_id is a string
 workspace_id is a string
-bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -6629,7 +6623,6 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
-bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -6714,7 +6707,6 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
-bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -6950,7 +6942,6 @@ Phenotype is a reference to a list containing 5 items:
 feature_id is a string
 media_id is a string
 compound_id is a string
-bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -6997,7 +6988,6 @@ Phenotype is a reference to a list containing 5 items:
 feature_id is a string
 media_id is a string
 compound_id is a string
-bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -7250,7 +7240,6 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
-bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -7333,7 +7322,6 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
-bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -7597,7 +7585,6 @@ fbamodel_id is a string
 workspace_id is a string
 gapfillsolution_id is a string
 gapgensolution_id is a string
-bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -7637,7 +7624,6 @@ fbamodel_id is a string
 workspace_id is a string
 gapfillsolution_id is a string
 gapgensolution_id is a string
-bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -7796,7 +7782,6 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
-bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -7876,7 +7861,6 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
-bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -8008,6 +7992,7 @@ gapfill_model_params is a reference to a hash where the following keys are defin
 	totalTimeLimit has a value which is an int
 	auth has a value which is a string
 	overwrite has a value which is a bool
+	completeGapfill has a value which is a bool
 fbamodel_id is a string
 workspace_id is a string
 GapfillingFormulation is a reference to a hash where the following keys are defined:
@@ -8057,7 +8042,6 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
-bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -8113,6 +8097,7 @@ gapfill_model_params is a reference to a hash where the following keys are defin
 	totalTimeLimit has a value which is an int
 	auth has a value which is a string
 	overwrite has a value which is a bool
+	completeGapfill has a value which is a bool
 fbamodel_id is a string
 workspace_id is a string
 GapfillingFormulation is a reference to a hash where the following keys are defined:
@@ -8162,7 +8147,6 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
-bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -8402,7 +8386,6 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
-bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -8492,7 +8475,6 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
-bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -8686,7 +8668,6 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
-bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -8803,7 +8784,6 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
-bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -9122,7 +9102,6 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
-bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -9239,7 +9218,6 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
-bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -9598,7 +9576,6 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
-bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -9713,7 +9690,6 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
-bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -10190,7 +10166,6 @@ set_cofactors_params is a reference to a hash where the following keys are defin
 compound_id is a string
 biochemistry_id is a string
 workspace_id is a string
-bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -10227,7 +10202,6 @@ set_cofactors_params is a reference to a hash where the following keys are defin
 compound_id is a string
 biochemistry_id is a string
 workspace_id is a string
-bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -10338,7 +10312,6 @@ find_reaction_synonyms_params is a reference to a hash where the following keys 
 reaction_synonyms_id is a string
 workspace_id is a string
 biochemistry_id is a string
-bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -10375,7 +10348,6 @@ find_reaction_synonyms_params is a reference to a hash where the following keys 
 reaction_synonyms_id is a string
 workspace_id is a string
 biochemistry_id is a string
-bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -10985,7 +10957,6 @@ ComplexRole is a reference to a list containing 4 items:
 	1: (roleType) a string
 	2: (optional) a bool
 	3: (triggering) a bool
-bool is an int
 
 </pre>
 
@@ -11034,7 +11005,6 @@ ComplexRole is a reference to a list containing 4 items:
 	1: (roleType) a string
 	2: (optional) a bool
 	3: (triggering) a bool
-bool is an int
 
 
 =end text
@@ -11152,7 +11122,6 @@ adjust_mapping_role_params is a reference to a hash where the following keys are
 	auth has a value which is a string
 mapping_id is a string
 workspace_id is a string
-bool is an int
 FunctionalRole is a reference to a hash where the following keys are defined:
 	id has a value which is a role_id
 	name has a value which is a string
@@ -11183,7 +11152,6 @@ adjust_mapping_role_params is a reference to a hash where the following keys are
 	auth has a value which is a string
 mapping_id is a string
 workspace_id is a string
-bool is an int
 FunctionalRole is a reference to a hash where the following keys are defined:
 	id has a value which is a role_id
 	name has a value which is a string
@@ -11302,7 +11270,6 @@ adjust_mapping_complex_params is a reference to a hash where the following keys 
 	auth has a value which is a string
 mapping_id is a string
 workspace_id is a string
-bool is an int
 Complex is a reference to a hash where the following keys are defined:
 	id has a value which is a complex_id
 	name has a value which is a string
@@ -11336,7 +11303,6 @@ adjust_mapping_complex_params is a reference to a hash where the following keys 
 	auth has a value which is a string
 mapping_id is a string
 workspace_id is a string
-bool is an int
 Complex is a reference to a hash where the following keys are defined:
 	id has a value which is a complex_id
 	name has a value which is a string
@@ -11452,7 +11418,6 @@ adjust_mapping_subsystem_params is a reference to a hash where the following key
 	auth has a value which is a string
 mapping_id is a string
 workspace_id is a string
-bool is an int
 Subsystem is a reference to a hash where the following keys are defined:
 	id has a value which is a subsystem_id
 	name has a value which is a string
@@ -11487,7 +11452,6 @@ adjust_mapping_subsystem_params is a reference to a hash where the following key
 	auth has a value which is a string
 mapping_id is a string
 workspace_id is a string
-bool is an int
 Subsystem is a reference to a hash where the following keys are defined:
 	id has a value which is a subsystem_id
 	name has a value which is a string
@@ -11847,7 +11811,6 @@ import_template_fbamodel_params is a reference to a hash where the following key
 mapping_id is a string
 workspace_id is a string
 template_id is a string
-bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -11914,7 +11877,6 @@ import_template_fbamodel_params is a reference to a hash where the following key
 mapping_id is a string
 workspace_id is a string
 template_id is a string
-bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -12036,7 +11998,6 @@ adjust_template_reaction_params is a reference to a hash where the following key
 	auth has a value which is a string
 template_id is a string
 workspace_id is a string
-bool is an int
 compartment_id is a string
 complex_id is a string
 TemplateReaction is a reference to a hash where the following keys are defined:
@@ -12072,7 +12033,6 @@ adjust_template_reaction_params is a reference to a hash where the following key
 	auth has a value which is a string
 template_id is a string
 workspace_id is a string
-bool is an int
 compartment_id is a string
 complex_id is a string
 TemplateReaction is a reference to a hash where the following keys are defined:
@@ -12205,7 +12165,6 @@ adjust_template_biomass_params is a reference to a hash where the following keys
 	auth has a value which is a string
 template_id is a string
 workspace_id is a string
-bool is an int
 compound_id is a string
 compartment_id is a string
 TemplateBiomass is a reference to a hash where the following keys are defined:
@@ -12278,7 +12237,6 @@ adjust_template_biomass_params is a reference to a hash where the following keys
 	auth has a value which is a string
 template_id is a string
 workspace_id is a string
-bool is an int
 compound_id is a string
 compartment_id is a string
 TemplateBiomass is a reference to a hash where the following keys are defined:
@@ -12612,7 +12570,7 @@ sub version {
 
 
 
-=head2 bool
+=head2 workspace_id
 
 =over 4
 
@@ -12623,37 +12581,6 @@ sub version {
 ********************************************************************************
     Universal simple type definitions
    	********************************************************************************
-
-
-=item Definition
-
-=begin html
-
-<pre>
-an int
-</pre>
-
-=end html
-
-=begin text
-
-an int
-
-=end text
-
-=back
-
-
-
-=head2 workspace_id
-
-=over 4
-
-
-
-=item Description
-
-A string used as an ID for a workspace. Any string consisting of alphanumeric characters and "-" is acceptable
 
 
 =item Definition
@@ -14427,6 +14354,55 @@ media has a value which is a reference to a list where each element is a media_i
 
 
 
+=head2 MediaCompound
+
+=over 4
+
+
+
+=item Description
+
+Data structures for media compound formulation
+
+compound_id compound - ID of compound in media
+string name - name of compound in media
+float concentration - concentration of compound in media
+float maxFlux - maximum flux of compound in media
+float minFlux - minimum flux of compound in media
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+compound has a value which is a compound_id
+name has a value which is a string
+concentration has a value which is a float
+max_flux has a value which is a float
+min_flux has a value which is a float
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+compound has a value which is a compound_id
+name has a value which is a string
+concentration has a value which is a float
+max_flux has a value which is a float
+min_flux has a value which is a float
+
+
+=end text
+
+=back
+
+
+
 =head2 Media
 
 =over 4
@@ -14439,8 +14415,7 @@ Data structures for media formulation
 
 media_id id - ID of media formulation
 string name - name of media formulaiton
-list<compound_id> compounds - list of compounds in media formulation
-list<float> concentrations - list of compound concentrations
+list<MediaCompound> media_compounds - list of compounds in media formulation
 float pH - pH of media condition
 float temperature - temperature of media condition
 
@@ -14453,8 +14428,7 @@ float temperature - temperature of media condition
 a reference to a hash where the following keys are defined:
 id has a value which is a media_id
 name has a value which is a string
-compounds has a value which is a reference to a list where each element is a compound_id
-concentrations has a value which is a reference to a list where each element is a float
+media_compounds has a value which is a reference to a list where each element is a MediaCompound
 pH has a value which is a float
 temperature has a value which is a float
 
@@ -14467,8 +14441,7 @@ temperature has a value which is a float
 a reference to a hash where the following keys are defined:
 id has a value which is a media_id
 name has a value which is a string
-compounds has a value which is a reference to a list where each element is a compound_id
-concentrations has a value which is a reference to a list where each element is a float
+media_compounds has a value which is a reference to a list where each element is a MediaCompound
 pH has a value which is a float
 temperature has a value which is a float
 
@@ -14724,6 +14697,7 @@ name has a value which is a string
 direction has a value which is a string
 equation has a value which is a string
 definition has a value which is a string
+gapfilled has a value which is a bool
 features has a value which is a reference to a list where each element is a feature_id
 compartment has a value which is a modelcompartment_id
 
@@ -14740,6 +14714,7 @@ name has a value which is a string
 direction has a value which is a string
 equation has a value which is a string
 definition has a value which is a string
+gapfilled has a value which is a bool
 features has a value which is a reference to a list where each element is a feature_id
 compartment has a value which is a modelcompartment_id
 
@@ -15897,6 +15872,7 @@ list<reactionAddition> reactionAdditions - list of reactions being added
 a reference to a hash where the following keys are defined:
 id has a value which is a gapfillsolution_id
 objective has a value which is a float
+integrated has a value which is a bool
 biomassRemovals has a value which is a reference to a list where each element is a biomassRemoval
 mediaAdditions has a value which is a reference to a list where each element is a mediaAddition
 reactionAdditions has a value which is a reference to a list where each element is a reactionAddition
@@ -15910,6 +15886,7 @@ reactionAdditions has a value which is a reference to a list where each element 
 a reference to a hash where the following keys are defined:
 id has a value which is a gapfillsolution_id
 objective has a value which is a float
+integrated has a value which is a bool
 biomassRemovals has a value which is a reference to a list where each element is a biomassRemoval
 mediaAdditions has a value which is a reference to a list where each element is a mediaAddition
 reactionAdditions has a value which is a reference to a list where each element is a reactionAddition
@@ -18775,6 +18752,7 @@ Input parameters for the "queue_gapfill_model" function.
         int timePerSolution - maximum time to spend to obtain each solution
         int totalTimeLimit - maximum time to spend to obtain all solutions
         string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+        bool completeGapfill - boolean indicating that all inactive reactions should be gapfilled
 
 
 =item Definition
@@ -18796,6 +18774,7 @@ timePerSolution has a value which is an int
 totalTimeLimit has a value which is an int
 auth has a value which is a string
 overwrite has a value which is a bool
+completeGapfill has a value which is a bool
 
 </pre>
 
@@ -18817,6 +18796,7 @@ timePerSolution has a value which is an int
 totalTimeLimit has a value which is an int
 auth has a value which is a string
 overwrite has a value which is a bool
+completeGapfill has a value which is a bool
 
 
 =end text
