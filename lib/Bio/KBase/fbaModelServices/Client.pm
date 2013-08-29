@@ -7076,6 +7076,134 @@ sub contigs_to_genome
 
 
 
+=head2 probanno_to_genome
+
+  $output = $obj->probanno_to_genome($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is a contigs_to_genome_params
+$output is an object_metadata
+contigs_to_genome_params is a reference to a hash where the following keys are defined:
+	contigid has a value which is a string
+	contig_workspace has a value which is a workspace_id
+	workspace has a value which is a workspace_id
+	genomeid has a value which is a string
+	auth has a value which is a string
+workspace_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is a contigs_to_genome_params
+$output is an object_metadata
+contigs_to_genome_params is a reference to a hash where the following keys are defined:
+	contigid has a value which is a string
+	contig_workspace has a value which is a workspace_id
+	workspace has a value which is a workspace_id
+	genomeid has a value which is a string
+	auth has a value which is a string
+workspace_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+=item Description
+
+Converts a probabilistic annotation into a genome with the same annotations
+
+=back
+
+=cut
+
+sub probanno_to_genome
+{
+    my($self, @args) = @_;
+
+# Authentication: none
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function probanno_to_genome (received $n, expecting 1)");
+    }
+    {
+	my($params) = @args;
+
+	my @_bad_arguments;
+        (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to probanno_to_genome:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'probanno_to_genome');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.probanno_to_genome",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{code},
+					       method_name => 'probanno_to_genome',
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method probanno_to_genome",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'probanno_to_genome',
+				       );
+    }
+}
+
+
+
 =head2 get_mapping
 
   $output = $obj->get_mapping($params)
@@ -15375,6 +15503,55 @@ contigid has a value which is a string
 contig_workspace has a value which is a workspace_id
 workspace has a value which is a workspace_id
 genomeid has a value which is a string
+auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 probanno_to_genome_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "probanno_to_genome" function.
+
+        probanno_id pa_id - ID of the probanno object (required)
+        workspace_id pa_ws - ID of workspace with probanno object (optional argument, default is value of workspace argument)
+        genome_id g_id - ID to use for genome object (required argument)
+        workspace_id workspace - ID of workspace for storing output objects (optional argument, default is current workspace)
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+pa_id has a value which is a probanno_id
+pa_ws has a value which is a workspace_id
+workspace has a value which is a workspace_id
+g_id has a value which is a genome_id
+auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+pa_id has a value which is a probanno_id
+pa_ws has a value which is a workspace_id
+workspace has a value which is a workspace_id
+g_id has a value which is a genome_id
 auth has a value which is a string
 
 

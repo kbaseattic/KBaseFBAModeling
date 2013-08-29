@@ -228,6 +228,7 @@ sub _authenticate {
 sub _setContext {
 	my ($self,$context,$params) = @_;
     #Clearing the existing kbasestore and initializing a new one
+	$self->_getContext()->{_debug} = "";
 	if (defined($params->{wsurl})) {
 		$self->_getContext()->{_override}->{_wsurl} = $params->{wsurl};
 	}
@@ -343,6 +344,9 @@ sub _translate_genome_to_annotation {
 		}
    	}
     #Creating the annotation from the input genome object
+	if (!defined($genome->{scientific_name})) {
+		$genome->{scientific_name} = $genome->{id};
+	}
 	my $annotation = ModelSEED::MS::Annotation->new({
 	  name         => $genome->{scientific_name},
 	  mapping_uuid => $mapping->uuid(),
@@ -2270,6 +2274,34 @@ Description:
 sub _error {
 	my($self,$msg,$method) = @_;
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => $method);
+}
+
+=head3 _debugmessages
+
+Definition:
+	$self->_debugmessages();
+Description:
+	Returns debug messages
+		
+=cut
+
+sub _debugmessages {
+	my($self) = @_;
+	return $self->_getContext()->{_debug};
+}
+
+=head3 _debugMessage
+
+Definition:
+	$self->_debugMessage(string input);
+Description:
+	Adds a debug message
+		
+=cut
+
+sub _debugMessage {
+	my($self,$msg) = @_;
+	$self->_getContext()->{_debug} .= $msg."\n";
 }
 
 #END_HEADER
@@ -7040,12 +7072,17 @@ sub import_phenotypes
 		phenotypeSet => undef,
 		genome_workspace => $input->{workspace},
 		ignore_errors => 0,
-		biochemistry => "default"
+		biochemistry => "default",
+		name => undef,
+		source => "unknown",
+		type => "unknown"
 	});
     if (!defined($input->{phenotypeSet})) {
-    	$input->{phenotypeSet} = $self->_get_new_id($input->{genome}.".phenos.");
+    	$input->{phenotypeSet} = $self->_get_new_id($input->{genome}.".phe.");
     }
-    
+    if (!defined($input->{name})) {
+    	$input->{name} = $input->{phenotypeSet};
+    }
     #Retrieving biochemistry
     my $bio = $self->_get_msobject("Biochemistry","kbase",$input->{biochemistry});
     #Retrieving specified genome
@@ -7063,6 +7100,9 @@ sub import_phenotypes
     for (my $i=0; $i < @{$genomeObj->{features}}; $i++) {
     	my $ftr = $genomeObj->{features}->[$i];
     	$genehash->{$ftr->{id}} = $ftr->{id};
+    	if ($ftr->{id} =~ m/\.(peg\.\d+)/) {
+    		$genehash->{$1} = $ftr->{id};
+    	}
     	if (defined($ftr->{aliases})) {
     		for (my $j=0; $j < @{$ftr->{aliases}}; $j++) {
     			$genehash->{$ftr->{aliases}->[$j]} = $ftr->{id};
@@ -7075,6 +7115,9 @@ sub import_phenotypes
     	genome => $input->{genome},
     	genome_workspace => $input->{genome_workspace},
     	phenotypes => [],
+    	source => $input->{source},
+    	name => $input->{name},
+    	type => $input->{type}
     };
     #Validating media, genes, and compounds
     my $missingMedia = [];
@@ -10733,6 +10776,7 @@ sub fasta_to_contigs
 		domain => "Bacteria",
 		scientific_name => "Unknown organism",
 	});
+	$self->_debugMessage("FASTA:".$params->{fasta}.":ENDFASTA") if (defined($params->{_debug}));
 	if (!defined($params->{contigid})) {
 		$params->{contigid} = $self->_get_new_id("kb|contig.");
 	}
@@ -10763,7 +10807,9 @@ sub fasta_to_contigs
 	if (defined($id) && length($seq) > 0) {
 		push(@{$contigs->{contigs}}, { id => $id, dna => $seq });
 	}
+	$self->_debugMessage("CONTIGS:".$params->{workspace}."/".$params->{contigid}.":ENDCONTIGS") if (defined($params->{_debug}));
     $output = $self->_save_msobject($contigs,"Contigs",$params->{workspace},$params->{contigid},"fasta_to_contigs",1);
+    $output->{_debug} = $self->_debugmessages() if (defined($params->{_debug}));
     $self->_clearContext();
     #END fasta_to_contigs
     my @_bad_returns;
@@ -10900,6 +10946,158 @@ sub contigs_to_genome
 							       method_name => 'contigs_to_genome');
     }
     return($job);
+}
+
+
+
+
+=head2 probanno_to_genome
+
+  $output = $obj->probanno_to_genome($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is a contigs_to_genome_params
+$output is an object_metadata
+contigs_to_genome_params is a reference to a hash where the following keys are defined:
+	contigid has a value which is a string
+	contig_workspace has a value which is a workspace_id
+	workspace has a value which is a workspace_id
+	genomeid has a value which is a string
+	auth has a value which is a string
+workspace_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is a contigs_to_genome_params
+$output is an object_metadata
+contigs_to_genome_params is a reference to a hash where the following keys are defined:
+	contigid has a value which is a string
+	contig_workspace has a value which is a workspace_id
+	workspace has a value which is a workspace_id
+	genomeid has a value which is a string
+	auth has a value which is a string
+workspace_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+
+
+=item Description
+
+Converts a probabilistic annotation into a genome with the same annotations
+
+=back
+
+=cut
+
+sub probanno_to_genome
+{
+    my $self = shift;
+    my($params) = @_;
+
+    my @_bad_arguments;
+    (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"params\" (value was \"$params\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to probanno_to_genome:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'probanno_to_genome');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($output);
+    #BEGIN probanno_to_genome
+    $self->_setContext($ctx,$params);
+	$params = $self->_validateargs($params,["pa_id","workspace"],{
+		g_id => undef,
+		pa_ws => $params->{workspace},
+		threshold => undef,
+		mapping_workspace => "kbase",
+		mapping => "default"
+	});
+	if (!defined($params->{g_id})) {
+		$params->{g_id} = $self->_get_new_id("kb|g.");
+	}
+	my $pa = $self->_get_msobject("ProbAnno",$params->{pa_ws},$params->{pa_id});
+	my $gn = $self->_get_msobject("Genome",$pa->{genome_workspace},$pa->{genome});
+	if (!defined($pa->{roleset_probabilities})) {
+		$self->_error("No annotations in probanno!","probanno_to_genome");
+	}
+	delete $gn->{annotation_uuid};
+	$gn->{id} = $params->{g_id};
+	for (my $i=0; $i < @{$gn->{features}};$i++) {
+		my $ftr = $gn->{features}->[$i];
+		if (defined($pa->{roleset_probabilities}->{$ftr->{id}})) {
+			my $function = "";
+			for (my $j=0; $j < @{$pa->{roleset_probabilities}->{$ftr->{id}}};$j++) {
+				my $func = $pa->{roleset_probabilities}->{$ftr->{id}}->[$j];
+				if (!defined($params->{threshold}) || $func->[1] > $params->{threshold}) {
+					if (length($function) > 0) {
+						$function .= " @ ";
+					}
+					$function .= $func->[0];
+				}
+			}
+			$ftr->{function} = $function;
+		} 
+	}
+	my $mapping = $self->_get_msobject("Mapping",$params->{mapping_workspace},$params->{mapping});
+	($gn,my $anno,$mapping,my $contigObj) = $self->_processGenomeObject($gn,$mapping,"probanno_to_genome");
+	$output = $self->_save_msobject($gn,"Genome",$params->{workspace},$params->{g_id},"probanno_to_genome");
+	$self->_clearContext();
+    #END probanno_to_genome
+    my @_bad_returns;
+    (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to probanno_to_genome:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'probanno_to_genome');
+    }
+    return($output);
 }
 
 
@@ -19418,6 +19616,55 @@ contigid has a value which is a string
 contig_workspace has a value which is a workspace_id
 workspace has a value which is a workspace_id
 genomeid has a value which is a string
+auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 probanno_to_genome_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "probanno_to_genome" function.
+
+        probanno_id pa_id - ID of the probanno object (required)
+        workspace_id pa_ws - ID of workspace with probanno object (optional argument, default is value of workspace argument)
+        genome_id g_id - ID to use for genome object (required argument)
+        workspace_id workspace - ID of workspace for storing output objects (optional argument, default is current workspace)
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+pa_id has a value which is a probanno_id
+pa_ws has a value which is a workspace_id
+workspace has a value which is a workspace_id
+g_id has a value which is a genome_id
+auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+pa_id has a value which is a probanno_id
+pa_ws has a value which is a workspace_id
+workspace has a value which is a workspace_id
+g_id has a value which is a genome_id
 auth has a value which is a string
 
 

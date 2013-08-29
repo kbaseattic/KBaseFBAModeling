@@ -1634,6 +1634,41 @@ class fbaModelServices:
         else:
             raise ServerError('Unknown', 0, 'An unknown server error occurred')
 
+    def probanno_to_genome(self, params):
+
+        arg_hash = { 'method': 'fbaModelServices.probanno_to_genome',
+                     'params': [params],
+                     'version': '1.1',
+                     'id': str(random.random())[2:]
+                     }
+
+        body = json.dumps(arg_hash, cls = JSONObjectEncoder)
+        try:
+            request = urllib2.Request( self.url, body, self._headers)
+#            ret = urllib2.urlopen(self.url, body, timeout = self.timeout)
+            ret = urllib2.urlopen(request, timeout = self.timeout)
+        except HTTPError as h:
+            if _CT in h.headers and h.headers[_CT] == _AJ:
+                b = h.read()
+                err = json.loads(b) 
+                if 'error' in err:
+                    raise ServerError(**err['error'])
+                else:            #this should never happen... but if it does 
+                    se = ServerError('Unknown', 0, b)
+                    se.httpError = h
+                    raise se
+                    #raise h      #  h.read() will return '' in the calling code.
+            else:
+                raise h
+        if ret.code != httplib.OK:
+            raise URLError('Received bad response code from server:' + ret.code)
+        resp = json.loads(ret.read())
+
+        if 'result' in resp:
+            return resp['result'][0]
+        else:
+            raise ServerError('Unknown', 0, 'An unknown server error occurred')
+
     def get_mapping(self, params):
 
         arg_hash = { 'method': 'fbaModelServices.get_mapping',
