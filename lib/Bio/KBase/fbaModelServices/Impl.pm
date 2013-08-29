@@ -1265,6 +1265,7 @@ sub _buildGapfillObject {
 		$probRXNWS = "NO_WORKSPACE";
 		
 	}
+	$formulation->{probabilisticReaction_workspace} = $probRXNWS;
 	if (defined($formulation->{probabilisticReactions})) {
 		# Get the RxnProbs object from the workspace.
 		my $rxnprobs = $self->_get_msobject("RxnProbs",$probRXNWS,$formulation->{probabilisticReactions});
@@ -1280,6 +1281,22 @@ sub _buildGapfillObject {
 		}	
 	}
 	return $gapform;
+}
+
+# Build the three-level GPR array for all reactions in a RxnProbs object.
+
+sub _buildRxnProbsGPRArray {
+    my ($self, $rxnprobs) = @_;
+    my($rxnprobsGPRArray);
+    for(my $i=0; $i < @{$rxnprobs->{reaction_probabilities}}; $i++) {
+	my $rxnarray = $rxnprobs->{reaction_probabilities}->[$i];
+	my $rxnid = $rxnarray->[0];
+	my $gpr = $rxnarray->[4];
+	if ( $gpr ne "" ) {
+	    $rxnprobsGPRArray->{$rxnid} = $self->_translateGPRHash($self->_parseGPR($gpr));
+	}
+    }
+    return $rxnprobsGPRArray;
 }
 
 sub _setDefaultGapGenFormulation {
@@ -7681,18 +7698,11 @@ sub integrate_reconciliation_solutions
     });
     my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
     my($rxnprobs);
-    my($rxnprobsGPRHash);
-    use Data::Dumper;
+    my($rxnprobsGPRArray);
+
     if ( defined($input->{rxnprobs}) ) {
 	$rxnprobs = $self->_get_msobject("RxnProbs", $input->{rxnprobs_workspace}, $input->{rxnprobs});
-	for(my $i=0; $i < @{$rxnprobs->{reaction_probabilities}}; $i++) {
-	    my $rxnarray = $rxnprobs->{reaction_probabilities}->[$i];
-	    my $rxnid = $rxnarray->[0];
-	    my $gpr = $rxnarray->[4];
-	    if ( $gpr ne "" ) {
-		$rxnprobsGPRHash->{$rxnid} = $self->_translateGPRHash($self->_parseGPR($gpr));
-	    }
-	}
+	$rxnprobsGPRArray = $self->_buildRxnProbsGPRArray($rxnprobs);
     }
     foreach my $id (@{$input->{gapfillSolutions}}) {
     	if ($id =~ m/(.+)\.solution\.(.+)/) {
@@ -7704,7 +7714,7 @@ sub integrate_reconciliation_solutions
 	    			$model->integrateGapfillSolution({
 						gapfillingFormulation => $gf,
 						solutionNum => $solid,
-						rxnProbGpr => $rxnprobsGPRHash
+						rxnProbGpr => $rxnprobsGPRArray
 					});
 					$self->_save_msobject($gf,"GapFill","NO_WORKSPACE",$gf->uuid(),"integrate_reconciliation_solutions",1,$gf->uuid());
 					last;
@@ -8315,9 +8325,17 @@ sub queue_gapfill_model
 		if ($input->{integrate_solution} == 1) {
 			#TODO: This block should be in a "safe save" block to prevent race conditions
 			my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
+			my $fba = $gapfill->fbaFormulation();
+			my ($rxnprobsGPRArray);
+			my ($rxnprobs);
+			if( defined($fba->{probabilisticReactions}) ) {
+			    $rxnprobs = $self->_get_msobject("RxnProbs", $fba->{probabilisticReaction_workspace}, $fba->{probabilisticReactions});
+			    $rxnprobsGPRArray = $self->_buildRxnProbsGPRArray($rxnprobs);
+			}
 			$model->integrateGapfillSolution({
 				gapfillingFormulation => $gapfill,
-				solutionNum => 0
+				solutionNum => 0,
+				rxnProbGpr => $rxnprobsGPRArray
 			});
 			my $modelmeta = $self->_save_msobject($model,"Model",$input->{workspace},$input->{out_model},"queue_gapfill_model");
 			#End "safe save" block
