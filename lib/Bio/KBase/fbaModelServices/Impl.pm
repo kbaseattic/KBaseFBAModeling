@@ -8328,8 +8328,10 @@ sub queue_gapfill_model
 			my $fba = $gapfill->fbaFormulation();
 			my ($rxnprobsGPRArray);
 			my ($rxnprobs);
-			if( defined($fba->{probabilisticReactions}) ) {
-			    $rxnprobs = $self->_get_msobject("RxnProbs", $fba->{probabilisticReaction_workspace}, $fba->{probabilisticReactions});
+			if ( defined($input->{formulation}->{probabilisticReactions} )) {
+			    my $rxnprobsid = $input->{formulation}->{probabilisticReactions};
+			    my $rxnprobsws = $input->{formulation}->{probabilisticReaction_workspace};
+			    $rxnprobs = $self->_get_msobject("RxnProbs", $rxnprobsws, $rxnprobsid);
 			    $rxnprobsGPRArray = $self->_buildRxnProbsGPRArray($rxnprobs);
 			}
 			$model->integrateGapfillSolution({
