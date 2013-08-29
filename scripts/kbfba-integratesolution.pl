@@ -19,6 +19,9 @@ my $translation = {
 	workspace => "workspace",
 	auth => "auth",
 	overwrite => "overwrite",
+	rxnprobs => "rxnprobs",
+	rxnprobws =>  "rxnprobs_workspace"
+
 };
 #Defining usage and options
 my $specs = [
@@ -27,7 +30,9 @@ my $specs = [
     [ 'outmodel|i:s', 'ID to save new model as'],
     [ 'workspace|w:s', 'Reference default workspace', { "default" => workspace() } ],
     [ 'modelws:s', 'Workspace for input FBA model' ],
-    [ 'overwrite|o', 'Overwrite any existing model with same name' ]
+    [ 'overwrite|o', 'Overwrite any existing model with same name' ],
+    [ 'rxnprobs|r:s', 'ID for a rxnprobs object to use to assign GPRs to gapfilled reactions' ],
+    [ 'rxnprobsws|x:s', 'Workspace for rxnprobs object', { "default" => workspace() } ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
 $params->{gapfillSolutions} = [];
@@ -43,6 +48,7 @@ if (defined($opt->{gapgensols})) {
 	}
 }
 #Calling the server
+print $params;
 my $output = runFBACommand($params,$servercommand,$opt);
 #Checking output and report results
 if (!defined($output)) {
