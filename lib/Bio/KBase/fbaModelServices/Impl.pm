@@ -10788,24 +10788,18 @@ sub fasta_to_contigs
 		source => $params->{source},
 		contigs => []
 	};
-	my $array = [split(/\n/,$params->{fasta})];
+	$params->{fasta} =~ s/\>(.+)\n/>$1\|\|\|/g;
+	$params->{fasta} =~ s/\n//g;
+	my $array = [split(/\>/,$params->{fasta})]; 
 	my $id;
 	my $seq;
 	for (my $i=0; $i < @{$array}; $i++) {
-		my $line = $array->[$i];
-		if ($line =~ m/^\>([^\s]+)\s/) {
-			my $newid = $1;
-			if (defined($id) && length($seq) > 0) {
-				push(@{$contigs->{contigs}}, { id => $id, dna => $seq });
+		if (length($array->[$i]) > 0) {
+			my $subarray = [split(/\|\|\|/,$array->[$i])];
+			if (@{$subarray} == 2) {
+				push(@{$contigs->{contigs}}, { id => $subarray->[0], seq => $subarray->[1] });
 			}
-			$id = $newid;
-			$seq = "";
-		} elsif (length($line) > 0) {
-			$seq .= $line;
 		}
-	}
-	if (defined($id) && length($seq) > 0) {
-		push(@{$contigs->{contigs}}, { id => $id, dna => $seq });
 	}
 	$self->_debugMessage("CONTIGS:".$params->{workspace}."/".$params->{contigid}.":ENDCONTIGS") if (defined($params->{_debug}));
     $output = $self->_save_msobject($contigs,"Contigs",$params->{workspace},$params->{contigid},"fasta_to_contigs",1);
