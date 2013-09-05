@@ -30,6 +30,9 @@ close($fh);
 if (!defined($job->{wsurl})) {
 	$job->{wsurl} = "http://kbase.us/services/workspace";
 }
+if (!defined($job->{fbaurl})) {
+	$job->{fbaurl} = "http://140.221.85.73:4043";
+}
 my $wsserv = Bio::KBase::workspaceService::Client->new($job->{wsurl});
 my $output = $wsserv->get_object_by_ref({
 	reference => $job->{jobdata}->{contig_reference},
