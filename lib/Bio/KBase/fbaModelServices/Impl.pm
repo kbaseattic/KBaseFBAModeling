@@ -10917,8 +10917,12 @@ sub contigs_to_genome
 	if (!defined($params->{genomeid})) {
 		$params->{genomeid} = $self->_get_new_id("kb|g.");
 	}
-	my $contigs = $self->_get_msobject("Contigs",$params->{contig_workspace},$params->{contigid});
-	my $contigmeta;
+	my $contigmeta = $self->_workspaceServices()->get_objectmeta({
+		id => $params->{contigid},
+		workspace => $params->{contig_workspace},
+		type => "Contigs",
+		auth => $self->_authentication()
+	});
 	$job = $self->_queueJob({
 		type => "Annotation",
 		jobdata => {
