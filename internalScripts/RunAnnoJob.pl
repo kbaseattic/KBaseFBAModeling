@@ -53,7 +53,7 @@ for (my $i=0; $i < @{$genome->{contigs}}; $i++) {
 	delete $genome->{contigs}->[$i]->{seq};
 }
 $genome = $annoserv->annotate_genome($genome);
-my $fbaserv = Bio::KBase::fbaModelServices::Client->new($job->{jobdata}->{fbaurl});
+my $fbaserv = Bio::KBase::fbaModelServices::Client->new($job->{fbaurl});
 $fbaserv->genome_object_to_workspace({
 	genomeobj => $genome,
 	workspace => $job->{jobdata}->{workspace},
