@@ -27,6 +27,9 @@ my $job;
     $job = decode_json $str;
 }
 close($fh);
+if (!defined($job->{wsurl})) {
+	$job->{wsurl} = "http://kbase.us/services/workspace";
+}
 my $wsserv = Bio::KBase::workspaceService::Client->new($job->{wsurl});
 my $output = $wsserv->get_object_by_ref({
 	reference => $job->{jobdata}->{contig_reference},
