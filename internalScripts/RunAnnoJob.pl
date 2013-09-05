@@ -53,7 +53,7 @@ $fbaserv->genome_object_to_workspace({
 	workspace => $job->{jobdata}->{workspace},
 	auth => $job->{auth}
 });
-$wserv->set_job_status({
+$wsserv->set_job_status({
 	auth => $job->{auth},
 	jobid => $job->{id},
 	currentStatus => "running",
