@@ -27,21 +27,39 @@ my $job;
     $job = decode_json $str;
 }
 close($fh);
+if (!defined($job->{wsurl})) {
+	$job->{wsurl} = "http://kbase.us/services/workspace";
+}
+if (!defined($job->{fbaurl})) {
+	$job->{fbaurl} = "http://140.221.85.73:4043";
+}
 my $wsserv = Bio::KBase::workspaceService::Client->new($job->{wsurl});
 my $output = $wsserv->get_object_by_ref({
 	reference => $job->{jobdata}->{contig_reference},
 	auth => $job->{auth}
 });
 my $annoserv = Bio::KBase::GenomeAnnotation::GenomeAnnotationImpl->new();
-my $genome = $output->{data};
+my $genome = {
+	id => $job->{jobdata}->{genomeid},
+	genetic_code => $output->{data}->{genetic_code},
+	features => [],
+	domain => $output->{data}->{domain},
+	scientific_name => $output->{data}->{scientific_name},
+	contigs => $output->{data}->{contigs},
+	source => $job->{jobdata}->{source}
+};
+for (my $i=0; $i < @{$genome->{contigs}}; $i++) {
+	$genome->{contigs}->[$i]->{dna} = $genome->{contigs}->[$i]->{seq};
+	delete $genome->{contigs}->[$i]->{seq};
+}
 $genome = $annoserv->annotate_genome($genome);
-my $fbaserv = Bio::KBase::fbaModelServices::Client->new($job->{jobdata}->{fbaurl});
-$fbaserv->genome_to_workspace({
-	genome => $job->{jobdata}->{genomeid},
+my $fbaserv = Bio::KBase::fbaModelServices::Client->new($job->{fbaurl});
+$fbaserv->genome_object_to_workspace({
+	genomeobj => $genome,
 	workspace => $job->{jobdata}->{workspace},
 	auth => $job->{auth}
 });
-$wserv->set_job_status({
+$wsserv->set_job_status({
 	auth => $job->{auth},
 	jobid => $job->{id},
 	currentStatus => "running",

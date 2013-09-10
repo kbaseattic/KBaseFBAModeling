@@ -147,7 +147,7 @@ module fbaModelServices {
     typedef string expression_id;
     
     /* A string identifier used for a set of phenotype data loaded into KBase. */
-    typedef string phenotypeSet_id;
+    typedef string phenotype_set_id;
     
     /* A permanent reference to an object in a workspace. */
     typedef string workspace_ref;
@@ -947,22 +947,26 @@ module fbaModelServices {
 		float normalizedGrowth - fraction of reference growth rate for growth phenotype
 				
 	*/
-    typedef tuple<list<feature_id> geneKO,media_id baseMedia,workspace_id media_workspace,list<compound_id> additionalCpd,float normalizedGrowth> Phenotype;
+    typedef tuple<list<feature_id> geneKO,media_id baseMedia,workspace_id media_workspace,list<compound_id> additionalCpd,float normalizedGrowth,string label> Phenotype;
     
     /* Data structures for set of growth phenotype observations
 		
-		phenotypeSet_id id - ID of the phenotype set
+		phenotype_set_id id - ID of the phenotype set
 		genome_id genome - ID of the genome for the strain used with the growth phenotypes
 		workspace_id genome_workspace - workspace containing the genome object
 		list<Phenotype> phenotypes - list of phenotypes included in the phenotype set
 		string importErrors - list of errors encountered during the import of the phenotype set
+		string source - source of the phenotype set
+		string name - name of the phenotype set
 				
 	*/
     typedef structure {
-		phenotypeSet_id id;
+		phenotype_set_id id;
 		genome_id genome;
 		workspace_id genome_workspace;
 		list<Phenotype> phenotypes;
+		string source;
+		string name;
 		string importErrors;
     } PhenotypeSet;
     
@@ -984,7 +988,7 @@ module fbaModelServices {
 		phenotypeSimulationSet_id id - ID for the phenotype simulation set object
 		fbamodel_id model - ID of the model used to simulate all phenotypes
 		workspace_id model_workspace - workspace containing the model used for the simulation
-		phenotypeSet_id phenotypeSet - set of observed phenotypes that were simulated
+		phenotype_set_id phenotypeSet - set of observed phenotypes that were simulated
 		list<PhenotypeSimulation> phenotypeSimulations - list of simulated phenotypes
 						
 	*/
@@ -992,7 +996,7 @@ module fbaModelServices {
     	phenotypeSimulationSet_id id;
 		fbamodel_id model;
 		workspace_id model_workspace;
-		phenotypeSet_id phenotypeSet;
+		phenotype_set_id phenotypeSet;
 		list<PhenotypeSimulation> phenotypeSimulations;
     } PhenotypeSimulationSet;
     
@@ -1006,7 +1010,7 @@ module fbaModelServices {
     
     /* Data structure for holding results from PhenotypeSensitivityAnalysis
 		
-		phenotypeSet_id phenotypeSet - ID of phenotype set analyzed
+		phenotype_set_id phenotypeSet - ID of phenotype set analyzed
     	workspace_id phenotypeSet_workspace - workspace containing phenotype set analyzed
 		fbamodel_id model - ID of model used to analyze phenotypes
 		workspace_id model_workspace - workspace containing model used to analyze phenotypes
@@ -1016,7 +1020,7 @@ module fbaModelServices {
 					
 	*/
     typedef structure {
-    	phenotypeSet_id phenotypeSet;
+    	phenotype_set_id phenotypeSet;
     	workspace_id phenotypeSet_workspace;
 		fbamodel_id model;
 		workspace_id model_workspace;
@@ -1781,7 +1785,7 @@ module fbaModelServices {
    	*********************************************************************************/
     /* Input parameters for the "import_phenotypes" function.
 	
-		phenotypeSet_id phenotypeSet - ID to be used for the imported phenotype set (an optional argument: default is 'undef')
+		phenotype_set_id phenotypeSet - ID to be used for the imported phenotype set (an optional argument: default is 'undef')
 		workspace_id workspace - workspace where the imported phenotype set should be stored (a required argument)
 		genome_id genome - genome the imported phenotypes should be associated with (a required argument)
 		workspace_id genome_workspace - workspace containing the genome object (an optional argument: default is value of the workspace argument)
@@ -1791,11 +1795,13 @@ module fbaModelServices {
 		
 	*/
     typedef structure {
-		phenotypeSet_id phenotypeSet;
+		phenotype_set_id phenotypeSet;
 		workspace_id workspace;
 		genome_id genome;
 		workspace_id genome_workspace;
 		list<Phenotype> phenotypes;
+		string name;
+		string source;
 		bool ignore_errors;
 		string auth;
     } import_phenotypes_params;
@@ -1808,7 +1814,7 @@ module fbaModelServices {
 	
 		fbamodel_id model - ID of the model to be used for the simulation (a required argument)
 		workspace_id model_workspace - workspace containing the model for the simulation (an optional argument: default is value of workspace argument)
-		phenotypeSet_id phenotypeSet - ID of the phenotypes set to be simulated (a required argument)
+		phenotype_set_id phenotypeSet - ID of the phenotypes set to be simulated (a required argument)
 		workspace_id phenotypeSet_workspace - workspace containing the phenotype set to be simulated (an optional argument: default is value of workspace argument)
 		FBAFormulation formulation - parameters for the simulation flux balance analysis (an optional argument: default is 'undef')
 		string notes - string of notes to associate with the phenotype simulation (an optional argument: default is '')
@@ -1820,7 +1826,7 @@ module fbaModelServices {
     typedef structure {
 		fbamodel_id model;
 		workspace_id model_workspace;
-		phenotypeSet_id phenotypeSet;
+		phenotype_set_id phenotypeSet;
 		workspace_id phenotypeSet_workspace;
 		FBAFormulation formulation;
 		string notes;
@@ -1923,7 +1929,7 @@ module fbaModelServices {
 		fbamodel_id model - ID of the model that gapfill should be run on (a required argument)
 		workspace_id model_workspace - workspace where model for gapfill should be run (an optional argument; default is the value of the workspace argument)
 		GapfillingFormulation formulation - a hash specifying the parameters for the gapfill study (an optional argument)
-		phenotypeSet_id phenotypeSet - ID of a phenotype set against which gapfilled model should be simulated (an optional argument: default is 'undef')
+		phenotype_set_id phenotypeSet - ID of a phenotype set against which gapfilled model should be simulated (an optional argument: default is 'undef')
 		workspace_id phenotypeSet_workspace - workspace containing phenotype set to be simulated (an optional argument; default is the value of the workspace argument)
 		bool integrate_solution - a flag indicating if the first solution should be integrated in the model (an optional argument: default is '0')
 		fbamodel_id out_model - ID where the gapfilled model will be saved (an optional argument: default is 'undef')
@@ -1938,7 +1944,7 @@ module fbaModelServices {
 		fbamodel_id model;
 		workspace_id model_workspace;
 		GapfillingFormulation formulation;
-		phenotypeSet_id phenotypeSet;
+		phenotype_set_id phenotypeSet;
 		workspace_id phenotypeSet_workspace;
 		bool integrate_solution;
 		fbamodel_id out_model;
@@ -1960,7 +1966,7 @@ module fbaModelServices {
 		fbamodel_id model - ID of the model that gapgen should be run on (a required argument)
 		workspace_id model_workspace - workspace where model for gapgen should be run (an optional argument; default is the value of the workspace argument)
 		GapgenFormulation formulation - a hash specifying the parameters for the gapgen study (an optional argument)
-		phenotypeSet_id phenotypeSet - ID of a phenotype set against which gapgened model should be simulated (an optional argument: default is 'undef')
+		phenotype_set_id phenotypeSet - ID of a phenotype set against which gapgened model should be simulated (an optional argument: default is 'undef')
 		workspace_id phenotypeSet_workspace - workspace containing phenotype set to be simulated (an optional argument; default is the value of the workspace argument)
 		bool integrate_solution - a flag indicating if the first solution should be integrated in the model (an optional argument: default is '0')
 		fbamodel_id out_model - ID where the gapgened model will be saved (an optional argument: default is 'undef')
@@ -1975,7 +1981,7 @@ module fbaModelServices {
 		fbamodel_id model;
 		workspace_id model_workspace;
 		GapgenFormulation formulation;
-		phenotypeSet_id phenotypeSet;
+		phenotype_set_id phenotypeSet;
 		workspace_id phenotypeSet_workspace;
 		bool integrate_solution;
 		fbamodel_id out_model;
@@ -1998,7 +2004,7 @@ module fbaModelServices {
 		FBAFormulation formulation - a hash specifying the parameters for the reconciliation study (an optional argument)
 		GapfillingFormulation gapfill_formulation - a hash specifying the parameters for the gapfill study (an optional argument)
 		GapgenFormulation gapgen_formulation - a hash specifying the parameters for the gapgen study (an optional argument)
-		phenotypeSet_id phenotypeSet - ID of a phenotype set against which reconciled model should be simulated (an optional argument: default is 'undef')
+		phenotype_set_id phenotypeSet - ID of a phenotype set against which reconciled model should be simulated (an optional argument: default is 'undef')
 		workspace_id phenotypeSet_workspace - workspace containing phenotype set to be simulated (an optional argument; default is the value of the workspace argument)
 		fbamodel_id out_model - ID where the reconciled model will be saved (an optional argument: default is 'undef')
 		list<gapgen_id> gapGens - IDs of gapgen solutions (an optional argument: default is 'undef')
@@ -2015,7 +2021,7 @@ module fbaModelServices {
 		FBAFormulation fba_formulation;
 		GapfillingFormulation gapfill_formulation;
 		GapgenFormulation gapgen_formulation;
-		phenotypeSet_id phenotypeSet;
+		phenotype_set_id phenotypeSet;
 		workspace_id phenotypeSet_workspace;
 		fbamodel_id out_model;
 		workspace_id workspace;
@@ -2038,7 +2044,7 @@ module fbaModelServices {
 		FBAFormulation formulation - a hash specifying the parameters for the sensitivity analysis study (an optional argument)
 		GapfillingFormulation gapfill_formulation - a hash specifying the parameters for the gapfill study (an optional argument)
 		GapgenFormulation gapgen_formulation - a hash specifying the parameters for the gapgen study (an optional argument)
-		phenotypeSet_id phenotypeSet - ID of a phenotype set against which sensitivity analysis model should be simulated (an optional argument: default is 'undef')
+		phenotype_set_id phenotypeSet - ID of a phenotype set against which sensitivity analysis model should be simulated (an optional argument: default is 'undef')
 		workspace_id phenotypeSet_workspace - workspace containing phenotype set to be simulated (an optional argument; default is the value of the workspace argument)
 		fbamodel_id out_model - ID where the sensitivity analysis model will be saved (an optional argument: default is 'undef')
 		list<gapgen_id> gapGens - IDs of gapgen solutions (an optional argument: default is 'undef')
@@ -2051,7 +2057,7 @@ module fbaModelServices {
     typedef structure {
 		fbamodel_id model;
 		workspace_id workspace;
-		phenotypeSet_id phenotypeSet;
+		phenotype_set_id phenotypeSet;
 		
 		FBAFormulation fba_formulation;
 		workspace_id model_workspace;
@@ -2075,7 +2081,7 @@ module fbaModelServices {
 		FBAFormulation formulation - a hash specifying the parameters for the solution combination study (an optional argument)
 		GapfillingFormulation gapfill_formulation - a hash specifying the parameters for the gapfill study (an optional argument)
 		GapgenFormulation gapgen_formulation - a hash specifying the parameters for the gapgen study (an optional argument)
-		phenotypeSet_id phenotypeSet - ID of a phenotype set against which solution combination model should be simulated (an optional argument: default is 'undef')
+		phenotype_set_id phenotypeSet - ID of a phenotype set against which solution combination model should be simulated (an optional argument: default is 'undef')
 		workspace_id phenotypeSet_workspace - workspace containing phenotype set to be simulated (an optional argument; default is the value of the workspace argument)
 		fbamodel_id out_model - ID where the solution combination model will be saved (an optional argument: default is 'undef')
 		list<gapgen_id> gapGens - IDs of gapgen solutions (an optional argument: default is 'undef')
@@ -2092,7 +2098,7 @@ module fbaModelServices {
 		FBAFormulation fba_formulation;
 		GapfillingFormulation gapfill_formulation;
 		GapgenFormulation gapgen_formulation;
-		phenotypeSet_id phenotypeSet;
+		phenotype_set_id phenotypeSet;
 		workspace_id phenotypeSet_workspace;
 		fbamodel_id out_model;
 		workspace_id workspace;
@@ -2238,6 +2244,28 @@ module fbaModelServices {
     */
     funcdef contigs_to_genome(contigs_to_genome_params params) returns (JobObject job);
 	
+	/* Input parameters for the "probanno_to_genome" function.
+	
+		probanno_id pa_id - ID of the probanno object (required)
+		workspace_id pa_ws - ID of workspace with probanno object (optional argument, default is value of workspace argument)
+		genome_id g_id - ID to use for genome object (required argument)
+		workspace_id workspace - ID of workspace for storing output objects (optional argument, default is current workspace)
+		float threshold - probability threshold for including function in genome (optional argument, default is to include all functions)
+		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+		
+	*/
+	typedef structure {
+		probanno_id pa_id;
+		workspace_id pa_ws;
+		workspace_id workspace;
+		genome_id g_id;
+		float threshold;
+		string auth;
+    } probanno_to_genome_params;
+    /*
+		Converts a probabilistic annotation into a genome with the same annotations        
+    */
+    funcdef probanno_to_genome(contigs_to_genome_params params) returns (object_metadata output);
 	
 	/*********************************************************************************
 	Code relating to loading, retrieval, and curation of mappings
@@ -2546,4 +2574,23 @@ module fbaModelServices {
 		Adds a stimuli either to the central database or as an object in a workspace        
     */
     funcdef add_stimuli(add_stimuli_params params) returns (object_metadata output);
+    
+    /*********************************************************************************
+    Code relating to accessing server logs
+   	*********************************************************************************/
+   	/* Input parameters for the "add_stimuli" function.
+	
+		string tag - tag of error to be retrieved
+		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+		
+	*/
+	typedef structure {
+		string tag;
+		string auth;
+    } retrieve_logs_params;
+    /*
+		Retrieves logs from the server to support debugging of web service access      
+    */
+    funcdef retrieve_logs(retrieve_logs_params params) returns (list<string> output);
+   	
 };
