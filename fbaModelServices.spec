@@ -2576,21 +2576,163 @@ module fbaModelServices {
     funcdef add_stimuli(add_stimuli_params params) returns (object_metadata output);
     
     /*********************************************************************************
-    Code relating to accessing server logs
+    Functions relating to comparison of models
    	*********************************************************************************/
-   	/* Input parameters for the "add_stimuli" function.
+   	/* Input parameters for the "compare_models" function.
 	
 		string tag - tag of error to be retrieved
 		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 		
 	*/
 	typedef structure {
-		string tag;
+		list<fbamodel_id> models;
+		list<workspace_id> workspaces;
 		string auth;
-    } retrieve_logs_params;
+    } compare_models_params;
+    
+    /* Data structure to hold model comparison data
+	
+		fbamodel_id model - id of the fba model
+		workspace_id workspace - id of workspace with model
+		string model_name - name of the fba model
+		genome_id genome - id of the genome for the fba model
+		string genome_name - name of the genome for the fba model
+		int core_reactions - number of core reactions in the fba model
+		int unique_reactions - number of unique reactions in the fba model
+		
+	*/
+    typedef structure {
+		fbamodel_id model;
+		workspace_id workspace;
+		string model_name;
+		genome_id genome;
+		string genome_name;
+		int gapfilled_reactions;
+		int core_reactions;
+		int noncore_reactions;
+    } ModelComparisonModel;
+    
+    /* Data structure to hold model reaction comparison data
+	
+		reaction_id reaction - id of the reaction
+		compartment_id compartment - id of the reaction compartment
+		string equation - equation for the reaction
+		bool core - boolean indicating if the reaction is core
+		mapping<fbamodel_id,list<feature_id> > model_features - map of models and features for reaction
+		string role - role associated with the reaction
+		string subsytem - subsystem associated with role
+		string class - class one of the subsystem
+		string subclass - class two of the subsystem
+		int number_models - number of models with reaction
+		float fraction_models - fraction of models with reaction
+		
+	*/
+    typedef structure {
+		reaction_id reaction;
+		string compartment;
+		string equation;
+		bool core;
+		mapping<fbamodel_id,list<feature_id> > model_features;
+		string role;
+		string subsystem;
+		string class;
+		string subclass;
+		int number_models;
+		float fraction_models;
+    } ModelCompareReaction;
+    
+    /* Output structure for the "compare_models" function.
+	
+		list<ModelComparisonModel> model_comparisons;
+		list<ModelCompareReaction> reaction_comparisons;
+				
+	*/
+    typedef structure {
+		list<ModelComparisonModel> model_comparisons;
+		list<ModelCompareReaction> reaction_comparisons;
+		string auth;
+    } ModelComparisonData;
+    
     /*
-		Retrieves logs from the server to support debugging of web service access      
+		Compares the specified models and computes unique reactions and core reactions
     */
-    funcdef retrieve_logs(retrieve_logs_params params) returns (list<string> output);
+    funcdef compare_models(compare_models_params params) returns (ModelComparisonData output);
+   	
+   	/*********************************************************************************
+    Functions relating to comparison of models
+   	*********************************************************************************/
+   	/* Input parameters for the "compare_genomes" function.
+	
+		list<genome_id> genomes
+		list<workspace_id> workspaces
+		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+		
+	*/
+	typedef structure {
+		list<genome_id> genomes;
+		list<workspace_id> workspaces;
+		string auth;
+    } compare_genomes_params;
+    
+    /* Data structure to hold genome comparison data
+	
+		genome_id genome;
+		workspace_id workspace;
+		string genome_name;
+		string taxonomy;
+		int features;
+		int core_functions;
+		int noncore_functions;
+		
+	*/
+    typedef structure {
+		genome_id genome;
+		workspace_id workspace;
+		string genome_name;
+		string taxonomy;
+		int features;
+		int core_functions;
+		int noncore_functions;
+    } GenomeComparisonGenome;
+    
+    /* Data structure to hold model reaction comparison data
+	
+		string role
+		bool core - boolean indicating if the function is core
+		mapping<genome_id,list<feature_id> > genome_features
+		string subsytem - subsystem associated with role
+		string class - class one of the subsystem
+		string subclass - class two of the subsystem
+		int number_genomes - number of genomes with function
+		float fraction_genomes - fraction of genomes with function
+		
+	*/
+    typedef structure {
+		bool core;
+		mapping<genome_id,list<feature_id> > genome_features;
+		string role;
+		string subsystem;
+		string class;
+		string subclass;
+		int number_genomes;
+		float fraction_genomes;
+    } GenomeCompareFunction;
+    
+    /* Output structure for the "compare_genomes" function.
+	
+		list<GenomeComparisonGenome> genome_comparisons;
+		list<GenomeCompareFunction> function_comparisons;
+				
+	*/
+    typedef structure {
+		list<GenomeComparisonGenome> genome_comparisons;
+		list<GenomeCompareFunction> function_comparisons;
+		string auth;
+    } GenomeComparisonData;
+    
+    /*
+		Compares the specified genomes and computes unique features and core features
+    */
+    funcdef compare_genomes(compare_genomes_params params) returns (GenomeComparisonData output);
    	
 };

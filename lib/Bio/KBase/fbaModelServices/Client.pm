@@ -4000,22 +4000,25 @@ sub export_fba
 $input is an import_phenotypes_params
 $output is an object_metadata
 import_phenotypes_params is a reference to a hash where the following keys are defined:
-	phenotypeSet has a value which is a phenotypeSet_id
+	phenotypeSet has a value which is a phenotype_set_id
 	workspace has a value which is a workspace_id
 	genome has a value which is a genome_id
 	genome_workspace has a value which is a workspace_id
 	phenotypes has a value which is a reference to a list where each element is a Phenotype
+	name has a value which is a string
+	source has a value which is a string
 	ignore_errors has a value which is a bool
 	auth has a value which is a string
-phenotypeSet_id is a string
+phenotype_set_id is a string
 workspace_id is a string
 genome_id is a string
-Phenotype is a reference to a list containing 5 items:
+Phenotype is a reference to a list containing 6 items:
 	0: (geneKO) a reference to a list where each element is a feature_id
 	1: (baseMedia) a media_id
 	2: (media_workspace) a workspace_id
 	3: (additionalCpd) a reference to a list where each element is a compound_id
 	4: (normalizedGrowth) a float
+	5: (label) a string
 feature_id is a string
 media_id is a string
 compound_id is a string
@@ -4046,22 +4049,25 @@ workspace_ref is a string
 $input is an import_phenotypes_params
 $output is an object_metadata
 import_phenotypes_params is a reference to a hash where the following keys are defined:
-	phenotypeSet has a value which is a phenotypeSet_id
+	phenotypeSet has a value which is a phenotype_set_id
 	workspace has a value which is a workspace_id
 	genome has a value which is a genome_id
 	genome_workspace has a value which is a workspace_id
 	phenotypes has a value which is a reference to a list where each element is a Phenotype
+	name has a value which is a string
+	source has a value which is a string
 	ignore_errors has a value which is a bool
 	auth has a value which is a string
-phenotypeSet_id is a string
+phenotype_set_id is a string
 workspace_id is a string
 genome_id is a string
-Phenotype is a reference to a list containing 5 items:
+Phenotype is a reference to a list containing 6 items:
 	0: (geneKO) a reference to a list where each element is a feature_id
 	1: (baseMedia) a media_id
 	2: (media_workspace) a workspace_id
 	3: (additionalCpd) a reference to a list where each element is a compound_id
 	4: (normalizedGrowth) a float
+	5: (label) a string
 feature_id is a string
 media_id is a string
 compound_id is a string
@@ -4156,7 +4162,7 @@ $output is an object_metadata
 simulate_phenotypes_params is a reference to a hash where the following keys are defined:
 	model has a value which is a fbamodel_id
 	model_workspace has a value which is a workspace_id
-	phenotypeSet has a value which is a phenotypeSet_id
+	phenotypeSet has a value which is a phenotype_set_id
 	phenotypeSet_workspace has a value which is a workspace_id
 	formulation has a value which is an FBAFormulation
 	notes has a value which is a string
@@ -4166,7 +4172,7 @@ simulate_phenotypes_params is a reference to a hash where the following keys are
 	auth has a value which is a string
 fbamodel_id is a string
 workspace_id is a string
-phenotypeSet_id is a string
+phenotype_set_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
@@ -4238,7 +4244,7 @@ $output is an object_metadata
 simulate_phenotypes_params is a reference to a hash where the following keys are defined:
 	model has a value which is a fbamodel_id
 	model_workspace has a value which is a workspace_id
-	phenotypeSet has a value which is a phenotypeSet_id
+	phenotypeSet has a value which is a phenotype_set_id
 	phenotypeSet_workspace has a value which is a workspace_id
 	formulation has a value which is an FBAFormulation
 	notes has a value which is a string
@@ -4248,7 +4254,7 @@ simulate_phenotypes_params is a reference to a hash where the following keys are
 	auth has a value which is a string
 fbamodel_id is a string
 workspace_id is a string
-phenotypeSet_id is a string
+phenotype_set_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
@@ -4837,7 +4843,7 @@ gapfill_model_params is a reference to a hash where the following keys are defin
 	model has a value which is a fbamodel_id
 	model_workspace has a value which is a workspace_id
 	formulation has a value which is a GapfillingFormulation
-	phenotypeSet has a value which is a phenotypeSet_id
+	phenotypeSet has a value which is a phenotype_set_id
 	phenotypeSet_workspace has a value which is a workspace_id
 	integrate_solution has a value which is a bool
 	out_model has a value which is a fbamodel_id
@@ -4915,7 +4921,7 @@ constraint is a reference to a list containing 4 items:
 	3: (name) a string
 compartment_id is a string
 probanno_id is a string
-phenotypeSet_id is a string
+phenotype_set_id is a string
 gapfill_id is a string
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
@@ -4942,7 +4948,7 @@ gapfill_model_params is a reference to a hash where the following keys are defin
 	model has a value which is a fbamodel_id
 	model_workspace has a value which is a workspace_id
 	formulation has a value which is a GapfillingFormulation
-	phenotypeSet has a value which is a phenotypeSet_id
+	phenotypeSet has a value which is a phenotype_set_id
 	phenotypeSet_workspace has a value which is a workspace_id
 	integrate_solution has a value which is a bool
 	out_model has a value which is a fbamodel_id
@@ -5020,7 +5026,7 @@ constraint is a reference to a list containing 4 items:
 	3: (name) a string
 compartment_id is a string
 probanno_id is a string
-phenotypeSet_id is a string
+phenotype_set_id is a string
 gapfill_id is a string
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
@@ -5109,7 +5115,7 @@ gapgen_model_params is a reference to a hash where the following keys are define
 	model has a value which is a fbamodel_id
 	model_workspace has a value which is a workspace_id
 	formulation has a value which is a GapgenFormulation
-	phenotypeSet has a value which is a phenotypeSet_id
+	phenotypeSet has a value which is a phenotype_set_id
 	phenotypeSet_workspace has a value which is a workspace_id
 	integrate_solution has a value which is a bool
 	out_model has a value which is a fbamodel_id
@@ -5171,7 +5177,7 @@ constraint is a reference to a list containing 4 items:
 	1: (sign) a string
 	2: (terms) a reference to a list where each element is a term
 	3: (name) a string
-phenotypeSet_id is a string
+phenotype_set_id is a string
 gapgen_id is a string
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
@@ -5198,7 +5204,7 @@ gapgen_model_params is a reference to a hash where the following keys are define
 	model has a value which is a fbamodel_id
 	model_workspace has a value which is a workspace_id
 	formulation has a value which is a GapgenFormulation
-	phenotypeSet has a value which is a phenotypeSet_id
+	phenotypeSet has a value which is a phenotype_set_id
 	phenotypeSet_workspace has a value which is a workspace_id
 	integrate_solution has a value which is a bool
 	out_model has a value which is a fbamodel_id
@@ -5260,7 +5266,7 @@ constraint is a reference to a list containing 4 items:
 	1: (sign) a string
 	2: (terms) a reference to a list where each element is a term
 	3: (name) a string
-phenotypeSet_id is a string
+phenotype_set_id is a string
 gapgen_id is a string
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
@@ -5351,7 +5357,7 @@ wildtype_phenotype_reconciliation_params is a reference to a hash where the foll
 	fba_formulation has a value which is an FBAFormulation
 	gapfill_formulation has a value which is a GapfillingFormulation
 	gapgen_formulation has a value which is a GapgenFormulation
-	phenotypeSet has a value which is a phenotypeSet_id
+	phenotypeSet has a value which is a phenotype_set_id
 	phenotypeSet_workspace has a value which is a workspace_id
 	out_model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
@@ -5437,7 +5443,7 @@ GapgenFormulation is a reference to a hash where the following keys are defined:
 	nobiomasshyp has a value which is a bool
 	nogprhyp has a value which is a bool
 	nopathwayhyp has a value which is a bool
-phenotypeSet_id is a string
+phenotype_set_id is a string
 gapfill_id is a string
 gapgen_id is a string
 JobObject is a reference to a hash where the following keys are defined:
@@ -5467,7 +5473,7 @@ wildtype_phenotype_reconciliation_params is a reference to a hash where the foll
 	fba_formulation has a value which is an FBAFormulation
 	gapfill_formulation has a value which is a GapfillingFormulation
 	gapgen_formulation has a value which is a GapgenFormulation
-	phenotypeSet has a value which is a phenotypeSet_id
+	phenotypeSet has a value which is a phenotype_set_id
 	phenotypeSet_workspace has a value which is a workspace_id
 	out_model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
@@ -5553,7 +5559,7 @@ GapgenFormulation is a reference to a hash where the following keys are defined:
 	nobiomasshyp has a value which is a bool
 	nogprhyp has a value which is a bool
 	nopathwayhyp has a value which is a bool
-phenotypeSet_id is a string
+phenotype_set_id is a string
 gapfill_id is a string
 gapgen_id is a string
 JobObject is a reference to a hash where the following keys are defined:
@@ -5645,7 +5651,7 @@ wildtype_phenotype_reconciliation_params is a reference to a hash where the foll
 	fba_formulation has a value which is an FBAFormulation
 	gapfill_formulation has a value which is a GapfillingFormulation
 	gapgen_formulation has a value which is a GapgenFormulation
-	phenotypeSet has a value which is a phenotypeSet_id
+	phenotypeSet has a value which is a phenotype_set_id
 	phenotypeSet_workspace has a value which is a workspace_id
 	out_model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
@@ -5731,7 +5737,7 @@ GapgenFormulation is a reference to a hash where the following keys are defined:
 	nobiomasshyp has a value which is a bool
 	nogprhyp has a value which is a bool
 	nopathwayhyp has a value which is a bool
-phenotypeSet_id is a string
+phenotype_set_id is a string
 gapfill_id is a string
 gapgen_id is a string
 JobObject is a reference to a hash where the following keys are defined:
@@ -5761,7 +5767,7 @@ wildtype_phenotype_reconciliation_params is a reference to a hash where the foll
 	fba_formulation has a value which is an FBAFormulation
 	gapfill_formulation has a value which is a GapfillingFormulation
 	gapgen_formulation has a value which is a GapgenFormulation
-	phenotypeSet has a value which is a phenotypeSet_id
+	phenotypeSet has a value which is a phenotype_set_id
 	phenotypeSet_workspace has a value which is a workspace_id
 	out_model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
@@ -5847,7 +5853,7 @@ GapgenFormulation is a reference to a hash where the following keys are defined:
 	nobiomasshyp has a value which is a bool
 	nogprhyp has a value which is a bool
 	nopathwayhyp has a value which is a bool
-phenotypeSet_id is a string
+phenotype_set_id is a string
 gapfill_id is a string
 gapgen_id is a string
 JobObject is a reference to a hash where the following keys are defined:
@@ -5939,7 +5945,7 @@ combine_wildtype_phenotype_reconciliation_params is a reference to a hash where 
 	fba_formulation has a value which is an FBAFormulation
 	gapfill_formulation has a value which is a GapfillingFormulation
 	gapgen_formulation has a value which is a GapgenFormulation
-	phenotypeSet has a value which is a phenotypeSet_id
+	phenotypeSet has a value which is a phenotype_set_id
 	phenotypeSet_workspace has a value which is a workspace_id
 	out_model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
@@ -6023,7 +6029,7 @@ GapgenFormulation is a reference to a hash where the following keys are defined:
 	nobiomasshyp has a value which is a bool
 	nogprhyp has a value which is a bool
 	nopathwayhyp has a value which is a bool
-phenotypeSet_id is a string
+phenotype_set_id is a string
 gapfill_id is a string
 gapgen_id is a string
 JobObject is a reference to a hash where the following keys are defined:
@@ -6053,7 +6059,7 @@ combine_wildtype_phenotype_reconciliation_params is a reference to a hash where 
 	fba_formulation has a value which is an FBAFormulation
 	gapfill_formulation has a value which is a GapfillingFormulation
 	gapgen_formulation has a value which is a GapgenFormulation
-	phenotypeSet has a value which is a phenotypeSet_id
+	phenotypeSet has a value which is a phenotype_set_id
 	phenotypeSet_workspace has a value which is a workspace_id
 	out_model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
@@ -6137,7 +6143,7 @@ GapgenFormulation is a reference to a hash where the following keys are defined:
 	nobiomasshyp has a value which is a bool
 	nogprhyp has a value which is a bool
 	nopathwayhyp has a value which is a bool
-phenotypeSet_id is a string
+phenotype_set_id is a string
 gapfill_id is a string
 gapgen_id is a string
 JobObject is a reference to a hash where the following keys are defined:
@@ -8598,6 +8604,290 @@ sub add_stimuli
 
 
 
+=head2 compare_models
+
+  $output = $obj->compare_models($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is a compare_models_params
+$output is a ModelComparisonData
+compare_models_params is a reference to a hash where the following keys are defined:
+	models has a value which is a reference to a list where each element is a fbamodel_id
+	workspaces has a value which is a reference to a list where each element is a workspace_id
+	auth has a value which is a string
+fbamodel_id is a string
+workspace_id is a string
+ModelComparisonData is a reference to a hash where the following keys are defined:
+	model_comparisons has a value which is a reference to a list where each element is a ModelComparisonModel
+	reaction_comparisons has a value which is a reference to a list where each element is a ModelCompareReaction
+	auth has a value which is a string
+ModelComparisonModel is a reference to a hash where the following keys are defined:
+	model has a value which is a fbamodel_id
+	workspace has a value which is a workspace_id
+	model_name has a value which is a string
+	genome has a value which is a genome_id
+	genome_name has a value which is a string
+	gapfilled_reactions has a value which is an int
+	core_reactions has a value which is an int
+	noncore_reactions has a value which is an int
+genome_id is a string
+ModelCompareReaction is a reference to a hash where the following keys are defined:
+	reaction has a value which is a reaction_id
+	compartment has a value which is a string
+	equation has a value which is a string
+	core has a value which is a bool
+	model_features has a value which is a reference to a hash where the key is a fbamodel_id and the value is a reference to a list where each element is a feature_id
+	role has a value which is a string
+	subsystem has a value which is a string
+	class has a value which is a string
+	subclass has a value which is a string
+	number_models has a value which is an int
+	fraction_models has a value which is a float
+reaction_id is a string
+feature_id is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is a compare_models_params
+$output is a ModelComparisonData
+compare_models_params is a reference to a hash where the following keys are defined:
+	models has a value which is a reference to a list where each element is a fbamodel_id
+	workspaces has a value which is a reference to a list where each element is a workspace_id
+	auth has a value which is a string
+fbamodel_id is a string
+workspace_id is a string
+ModelComparisonData is a reference to a hash where the following keys are defined:
+	model_comparisons has a value which is a reference to a list where each element is a ModelComparisonModel
+	reaction_comparisons has a value which is a reference to a list where each element is a ModelCompareReaction
+	auth has a value which is a string
+ModelComparisonModel is a reference to a hash where the following keys are defined:
+	model has a value which is a fbamodel_id
+	workspace has a value which is a workspace_id
+	model_name has a value which is a string
+	genome has a value which is a genome_id
+	genome_name has a value which is a string
+	gapfilled_reactions has a value which is an int
+	core_reactions has a value which is an int
+	noncore_reactions has a value which is an int
+genome_id is a string
+ModelCompareReaction is a reference to a hash where the following keys are defined:
+	reaction has a value which is a reaction_id
+	compartment has a value which is a string
+	equation has a value which is a string
+	core has a value which is a bool
+	model_features has a value which is a reference to a hash where the key is a fbamodel_id and the value is a reference to a list where each element is a feature_id
+	role has a value which is a string
+	subsystem has a value which is a string
+	class has a value which is a string
+	subclass has a value which is a string
+	number_models has a value which is an int
+	fraction_models has a value which is a float
+reaction_id is a string
+feature_id is a string
+
+
+=end text
+
+=item Description
+
+Compares the specified models and computes unique reactions and core reactions
+
+=back
+
+=cut
+
+sub compare_models
+{
+    my($self, @args) = @_;
+
+# Authentication: none
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function compare_models (received $n, expecting 1)");
+    }
+    {
+	my($params) = @args;
+
+	my @_bad_arguments;
+        (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to compare_models:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'compare_models');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.compare_models",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{code},
+					       method_name => 'compare_models',
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method compare_models",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'compare_models',
+				       );
+    }
+}
+
+
+
+=head2 compare_genomes
+
+  $output = $obj->compare_genomes($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is a compare_genomes_params
+$output is a GenomeComparisonData
+compare_genomes_params is a reference to a hash where the following keys are defined:
+	genomes has a value which is a reference to a list where each element is a genome_id
+	workspaces has a value which is a reference to a list where each element is a workspace_id
+	auth has a value which is a string
+genome_id is a string
+workspace_id is a string
+GenomeComparisonData is a reference to a hash where the following keys are defined:
+	genome_comparisons has a value which is a reference to a list where each element is a GenomeComparisonGenome
+	feature_comparisons has a value which is a reference to a list where each element is a GenomeCompareFeature
+	auth has a value which is a string
+GenomeComparisonGenome is a reference to a hash where the following keys are defined:
+	genome has a value which is a genome_id
+	workspace has a value which is a workspace_id
+	genome_name has a value which is a string
+	taxonomy has a value which is a string
+	features has a value which is an int
+	core_functions has a value which is an int
+	noncore_functions has a value which is an int
+GenomeCompareFeature is a reference to a hash where the following keys are defined:
+	core has a value which is a bool
+	genome_features has a value which is a reference to a hash where the key is a genome_id and the value is a reference to a list where each element is a feature_id
+	role has a value which is a string
+	subsystem has a value which is a string
+	class has a value which is a string
+	subclass has a value which is a string
+	number_genomes has a value which is an int
+	fraction_genomes has a value which is a float
+feature_id is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is a compare_genomes_params
+$output is a GenomeComparisonData
+compare_genomes_params is a reference to a hash where the following keys are defined:
+	genomes has a value which is a reference to a list where each element is a genome_id
+	workspaces has a value which is a reference to a list where each element is a workspace_id
+	auth has a value which is a string
+genome_id is a string
+workspace_id is a string
+GenomeComparisonData is a reference to a hash where the following keys are defined:
+	genome_comparisons has a value which is a reference to a list where each element is a GenomeComparisonGenome
+	feature_comparisons has a value which is a reference to a list where each element is a GenomeCompareFeature
+	auth has a value which is a string
+GenomeComparisonGenome is a reference to a hash where the following keys are defined:
+	genome has a value which is a genome_id
+	workspace has a value which is a workspace_id
+	genome_name has a value which is a string
+	taxonomy has a value which is a string
+	features has a value which is an int
+	core_functions has a value which is an int
+	noncore_functions has a value which is an int
+GenomeCompareFeature is a reference to a hash where the following keys are defined:
+	core has a value which is a bool
+	genome_features has a value which is a reference to a hash where the key is a genome_id and the value is a reference to a list where each element is a feature_id
+	role has a value which is a string
+	subsystem has a value which is a string
+	class has a value which is a string
+	subclass has a value which is a string
+	number_genomes has a value which is an int
+	fraction_genomes has a value which is a float
+feature_id is a string
+
+
+=end text
+
+=item Description
+
+Compares the specified genomes and computes unique features and core features
+
+=back
+
+=cut
+
+sub compare_genomes
+{
+    my($self, @args) = @_;
+
+# Authentication: none
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function compare_genomes (received $n, expecting 1)");
+    }
+    {
+	my($params) = @args;
+
+	my @_bad_arguments;
+        (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to compare_genomes:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'compare_genomes');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.compare_genomes",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{code},
+					       method_name => 'compare_genomes',
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method compare_genomes",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'compare_genomes',
+				       );
+    }
+}
+
+
+
 sub version {
     my ($self) = @_;
     my $result = $self->{client}->call($self->{url}, {
@@ -8609,16 +8899,16 @@ sub version {
             Bio::KBase::Exceptions::JSONRPC->throw(
                 error => $result->error_message,
                 code => $result->content->{code},
-                method_name => 'add_stimuli',
+                method_name => 'compare_genomes',
             );
         } else {
             return wantarray ? @{$result->result} : $result->result->[0];
         }
     } else {
         Bio::KBase::Exceptions::HTTP->throw(
-            error => "Error invoking method add_stimuli",
+            error => "Error invoking method compare_genomes",
             status_line => $self->{client}->status_line,
-            method_name => 'add_stimuli',
+            method_name => 'compare_genomes',
         );
     }
 }
@@ -9618,7 +9908,7 @@ a string
 
 
 
-=head2 phenotypeSet_id
+=head2 phenotype_set_id
 
 =over 4
 
@@ -12337,12 +12627,13 @@ solutions has a value which is a reference to a list where each element is a Gap
 =begin html
 
 <pre>
-a reference to a list containing 5 items:
+a reference to a list containing 6 items:
 0: (geneKO) a reference to a list where each element is a feature_id
 1: (baseMedia) a media_id
 2: (media_workspace) a workspace_id
 3: (additionalCpd) a reference to a list where each element is a compound_id
 4: (normalizedGrowth) a float
+5: (label) a string
 
 </pre>
 
@@ -12350,12 +12641,13 @@ a reference to a list containing 5 items:
 
 =begin text
 
-a reference to a list containing 5 items:
+a reference to a list containing 6 items:
 0: (geneKO) a reference to a list where each element is a feature_id
 1: (baseMedia) a media_id
 2: (media_workspace) a workspace_id
 3: (additionalCpd) a reference to a list where each element is a compound_id
 4: (normalizedGrowth) a float
+5: (label) a string
 
 
 =end text
@@ -12374,11 +12666,13 @@ a reference to a list containing 5 items:
 
 Data structures for set of growth phenotype observations
 
-phenotypeSet_id id - ID of the phenotype set
+phenotype_set_id id - ID of the phenotype set
 genome_id genome - ID of the genome for the strain used with the growth phenotypes
 workspace_id genome_workspace - workspace containing the genome object
 list<Phenotype> phenotypes - list of phenotypes included in the phenotype set
 string importErrors - list of errors encountered during the import of the phenotype set
+string source - source of the phenotype set
+string name - name of the phenotype set
 
 
 =item Definition
@@ -12387,10 +12681,12 @@ string importErrors - list of errors encountered during the import of the phenot
 
 <pre>
 a reference to a hash where the following keys are defined:
-id has a value which is a phenotypeSet_id
+id has a value which is a phenotype_set_id
 genome has a value which is a genome_id
 genome_workspace has a value which is a workspace_id
 phenotypes has a value which is a reference to a list where each element is a Phenotype
+source has a value which is a string
+name has a value which is a string
 importErrors has a value which is a string
 
 </pre>
@@ -12400,10 +12696,12 @@ importErrors has a value which is a string
 =begin text
 
 a reference to a hash where the following keys are defined:
-id has a value which is a phenotypeSet_id
+id has a value which is a phenotype_set_id
 genome has a value which is a genome_id
 genome_workspace has a value which is a workspace_id
 phenotypes has a value which is a reference to a list where each element is a Phenotype
+source has a value which is a string
+name has a value which is a string
 importErrors has a value which is a string
 
 
@@ -12503,7 +12801,7 @@ Data structures for phenotype simulations of a set of phenotype data
 phenotypeSimulationSet_id id - ID for the phenotype simulation set object
 fbamodel_id model - ID of the model used to simulate all phenotypes
 workspace_id model_workspace - workspace containing the model used for the simulation
-phenotypeSet_id phenotypeSet - set of observed phenotypes that were simulated
+phenotype_set_id phenotypeSet - set of observed phenotypes that were simulated
 list<PhenotypeSimulation> phenotypeSimulations - list of simulated phenotypes
 
 
@@ -12516,7 +12814,7 @@ a reference to a hash where the following keys are defined:
 id has a value which is a phenotypeSimulationSet_id
 model has a value which is a fbamodel_id
 model_workspace has a value which is a workspace_id
-phenotypeSet has a value which is a phenotypeSet_id
+phenotypeSet has a value which is a phenotype_set_id
 phenotypeSimulations has a value which is a reference to a list where each element is a PhenotypeSimulation
 
 </pre>
@@ -12529,7 +12827,7 @@ a reference to a hash where the following keys are defined:
 id has a value which is a phenotypeSimulationSet_id
 model has a value which is a fbamodel_id
 model_workspace has a value which is a workspace_id
-phenotypeSet has a value which is a phenotypeSet_id
+phenotypeSet has a value which is a phenotype_set_id
 phenotypeSimulations has a value which is a reference to a list where each element is a PhenotypeSimulation
 
 
@@ -12596,7 +12894,7 @@ list<string id, string solutionIndex, list<reactionSpecification> reactionList, 
 
 <pre>
 a reference to a hash where the following keys are defined:
-phenotypeSet has a value which is a phenotypeSet_id
+phenotypeSet has a value which is a phenotype_set_id
 phenotypeSet_workspace has a value which is a workspace_id
 model has a value which is a fbamodel_id
 model_workspace has a value which is a workspace_id
@@ -12614,7 +12912,7 @@ wildtypePhenotypeSimulations has a value which is a reference to a list where ea
 =begin text
 
 a reference to a hash where the following keys are defined:
-phenotypeSet has a value which is a phenotypeSet_id
+phenotypeSet has a value which is a phenotype_set_id
 phenotypeSet_workspace has a value which is a workspace_id
 model has a value which is a fbamodel_id
 model_workspace has a value which is a workspace_id
@@ -14558,11 +14856,13 @@ auth has a value which is a string
 
 <pre>
 a reference to a hash where the following keys are defined:
-phenotypeSet has a value which is a phenotypeSet_id
+phenotypeSet has a value which is a phenotype_set_id
 workspace has a value which is a workspace_id
 genome has a value which is a genome_id
 genome_workspace has a value which is a workspace_id
 phenotypes has a value which is a reference to a list where each element is a Phenotype
+name has a value which is a string
+source has a value which is a string
 ignore_errors has a value which is a bool
 auth has a value which is a string
 
@@ -14573,11 +14873,13 @@ auth has a value which is a string
 =begin text
 
 a reference to a hash where the following keys are defined:
-phenotypeSet has a value which is a phenotypeSet_id
+phenotypeSet has a value which is a phenotype_set_id
 workspace has a value which is a workspace_id
 genome has a value which is a genome_id
 genome_workspace has a value which is a workspace_id
 phenotypes has a value which is a reference to a list where each element is a Phenotype
+name has a value which is a string
+source has a value which is a string
 ignore_errors has a value which is a bool
 auth has a value which is a string
 
@@ -14600,7 +14902,7 @@ Input parameters for the "simulate_phenotypes" function.
 
         fbamodel_id model - ID of the model to be used for the simulation (a required argument)
         workspace_id model_workspace - workspace containing the model for the simulation (an optional argument: default is value of workspace argument)
-        phenotypeSet_id phenotypeSet - ID of the phenotypes set to be simulated (a required argument)
+        phenotype_set_id phenotypeSet - ID of the phenotypes set to be simulated (a required argument)
         workspace_id phenotypeSet_workspace - workspace containing the phenotype set to be simulated (an optional argument: default is value of workspace argument)
         FBAFormulation formulation - parameters for the simulation flux balance analysis (an optional argument: default is 'undef')
         string notes - string of notes to associate with the phenotype simulation (an optional argument: default is '')
@@ -14617,7 +14919,7 @@ Input parameters for the "simulate_phenotypes" function.
 a reference to a hash where the following keys are defined:
 model has a value which is a fbamodel_id
 model_workspace has a value which is a workspace_id
-phenotypeSet has a value which is a phenotypeSet_id
+phenotypeSet has a value which is a phenotype_set_id
 phenotypeSet_workspace has a value which is a workspace_id
 formulation has a value which is an FBAFormulation
 notes has a value which is a string
@@ -14635,7 +14937,7 @@ auth has a value which is a string
 a reference to a hash where the following keys are defined:
 model has a value which is a fbamodel_id
 model_workspace has a value which is a workspace_id
-phenotypeSet has a value which is a phenotypeSet_id
+phenotypeSet has a value which is a phenotype_set_id
 phenotypeSet_workspace has a value which is a workspace_id
 formulation has a value which is an FBAFormulation
 notes has a value which is a string
@@ -14828,7 +15130,7 @@ Input parameters for the "queue_gapfill_model" function.
         fbamodel_id model - ID of the model that gapfill should be run on (a required argument)
         workspace_id model_workspace - workspace where model for gapfill should be run (an optional argument; default is the value of the workspace argument)
         GapfillingFormulation formulation - a hash specifying the parameters for the gapfill study (an optional argument)
-        phenotypeSet_id phenotypeSet - ID of a phenotype set against which gapfilled model should be simulated (an optional argument: default is 'undef')
+        phenotype_set_id phenotypeSet - ID of a phenotype set against which gapfilled model should be simulated (an optional argument: default is 'undef')
         workspace_id phenotypeSet_workspace - workspace containing phenotype set to be simulated (an optional argument; default is the value of the workspace argument)
         bool integrate_solution - a flag indicating if the first solution should be integrated in the model (an optional argument: default is '0')
         fbamodel_id out_model - ID where the gapfilled model will be saved (an optional argument: default is 'undef')
@@ -14849,7 +15151,7 @@ a reference to a hash where the following keys are defined:
 model has a value which is a fbamodel_id
 model_workspace has a value which is a workspace_id
 formulation has a value which is a GapfillingFormulation
-phenotypeSet has a value which is a phenotypeSet_id
+phenotypeSet has a value which is a phenotype_set_id
 phenotypeSet_workspace has a value which is a workspace_id
 integrate_solution has a value which is a bool
 out_model has a value which is a fbamodel_id
@@ -14871,7 +15173,7 @@ a reference to a hash where the following keys are defined:
 model has a value which is a fbamodel_id
 model_workspace has a value which is a workspace_id
 formulation has a value which is a GapfillingFormulation
-phenotypeSet has a value which is a phenotypeSet_id
+phenotypeSet has a value which is a phenotype_set_id
 phenotypeSet_workspace has a value which is a workspace_id
 integrate_solution has a value which is a bool
 out_model has a value which is a fbamodel_id
@@ -14903,7 +15205,7 @@ Input parameters for the "queue_gapgen_model" function.
         fbamodel_id model - ID of the model that gapgen should be run on (a required argument)
         workspace_id model_workspace - workspace where model for gapgen should be run (an optional argument; default is the value of the workspace argument)
         GapgenFormulation formulation - a hash specifying the parameters for the gapgen study (an optional argument)
-        phenotypeSet_id phenotypeSet - ID of a phenotype set against which gapgened model should be simulated (an optional argument: default is 'undef')
+        phenotype_set_id phenotypeSet - ID of a phenotype set against which gapgened model should be simulated (an optional argument: default is 'undef')
         workspace_id phenotypeSet_workspace - workspace containing phenotype set to be simulated (an optional argument; default is the value of the workspace argument)
         bool integrate_solution - a flag indicating if the first solution should be integrated in the model (an optional argument: default is '0')
         fbamodel_id out_model - ID where the gapgened model will be saved (an optional argument: default is 'undef')
@@ -14923,7 +15225,7 @@ a reference to a hash where the following keys are defined:
 model has a value which is a fbamodel_id
 model_workspace has a value which is a workspace_id
 formulation has a value which is a GapgenFormulation
-phenotypeSet has a value which is a phenotypeSet_id
+phenotypeSet has a value which is a phenotype_set_id
 phenotypeSet_workspace has a value which is a workspace_id
 integrate_solution has a value which is a bool
 out_model has a value which is a fbamodel_id
@@ -14944,7 +15246,7 @@ a reference to a hash where the following keys are defined:
 model has a value which is a fbamodel_id
 model_workspace has a value which is a workspace_id
 formulation has a value which is a GapgenFormulation
-phenotypeSet has a value which is a phenotypeSet_id
+phenotypeSet has a value which is a phenotype_set_id
 phenotypeSet_workspace has a value which is a workspace_id
 integrate_solution has a value which is a bool
 out_model has a value which is a fbamodel_id
@@ -14977,7 +15279,7 @@ Input parameters for the "queue_wildtype_phenotype_reconciliation" function.
         FBAFormulation formulation - a hash specifying the parameters for the reconciliation study (an optional argument)
         GapfillingFormulation gapfill_formulation - a hash specifying the parameters for the gapfill study (an optional argument)
         GapgenFormulation gapgen_formulation - a hash specifying the parameters for the gapgen study (an optional argument)
-        phenotypeSet_id phenotypeSet - ID of a phenotype set against which reconciled model should be simulated (an optional argument: default is 'undef')
+        phenotype_set_id phenotypeSet - ID of a phenotype set against which reconciled model should be simulated (an optional argument: default is 'undef')
         workspace_id phenotypeSet_workspace - workspace containing phenotype set to be simulated (an optional argument; default is the value of the workspace argument)
         fbamodel_id out_model - ID where the reconciled model will be saved (an optional argument: default is 'undef')
         list<gapgen_id> gapGens - IDs of gapgen solutions (an optional argument: default is 'undef')
@@ -14999,7 +15301,7 @@ model_workspace has a value which is a workspace_id
 fba_formulation has a value which is an FBAFormulation
 gapfill_formulation has a value which is a GapfillingFormulation
 gapgen_formulation has a value which is a GapgenFormulation
-phenotypeSet has a value which is a phenotypeSet_id
+phenotypeSet has a value which is a phenotype_set_id
 phenotypeSet_workspace has a value which is a workspace_id
 out_model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
@@ -15022,7 +15324,7 @@ model_workspace has a value which is a workspace_id
 fba_formulation has a value which is an FBAFormulation
 gapfill_formulation has a value which is a GapfillingFormulation
 gapgen_formulation has a value which is a GapgenFormulation
-phenotypeSet has a value which is a phenotypeSet_id
+phenotypeSet has a value which is a phenotype_set_id
 phenotypeSet_workspace has a value which is a workspace_id
 out_model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
@@ -15055,7 +15357,7 @@ Input parameters for the "queue_reconciliation_sensitivity_analysis" function.
         FBAFormulation formulation - a hash specifying the parameters for the sensitivity analysis study (an optional argument)
         GapfillingFormulation gapfill_formulation - a hash specifying the parameters for the gapfill study (an optional argument)
         GapgenFormulation gapgen_formulation - a hash specifying the parameters for the gapgen study (an optional argument)
-        phenotypeSet_id phenotypeSet - ID of a phenotype set against which sensitivity analysis model should be simulated (an optional argument: default is 'undef')
+        phenotype_set_id phenotypeSet - ID of a phenotype set against which sensitivity analysis model should be simulated (an optional argument: default is 'undef')
         workspace_id phenotypeSet_workspace - workspace containing phenotype set to be simulated (an optional argument; default is the value of the workspace argument)
         fbamodel_id out_model - ID where the sensitivity analysis model will be saved (an optional argument: default is 'undef')
         list<gapgen_id> gapGens - IDs of gapgen solutions (an optional argument: default is 'undef')
@@ -15073,7 +15375,7 @@ Input parameters for the "queue_reconciliation_sensitivity_analysis" function.
 a reference to a hash where the following keys are defined:
 model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
-phenotypeSet has a value which is a phenotypeSet_id
+phenotypeSet has a value which is a phenotype_set_id
 fba_formulation has a value which is an FBAFormulation
 model_workspace has a value which is a workspace_id
 phenotypeSet_workspace has a value which is a workspace_id
@@ -15092,7 +15394,7 @@ overwrite has a value which is a bool
 a reference to a hash where the following keys are defined:
 model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
-phenotypeSet has a value which is a phenotypeSet_id
+phenotypeSet has a value which is a phenotype_set_id
 fba_formulation has a value which is an FBAFormulation
 model_workspace has a value which is a workspace_id
 phenotypeSet_workspace has a value which is a workspace_id
@@ -15124,7 +15426,7 @@ Input parameters for the "queue_combine_wildtype_phenotype_reconciliation" funct
         FBAFormulation formulation - a hash specifying the parameters for the solution combination study (an optional argument)
         GapfillingFormulation gapfill_formulation - a hash specifying the parameters for the gapfill study (an optional argument)
         GapgenFormulation gapgen_formulation - a hash specifying the parameters for the gapgen study (an optional argument)
-        phenotypeSet_id phenotypeSet - ID of a phenotype set against which solution combination model should be simulated (an optional argument: default is 'undef')
+        phenotype_set_id phenotypeSet - ID of a phenotype set against which solution combination model should be simulated (an optional argument: default is 'undef')
         workspace_id phenotypeSet_workspace - workspace containing phenotype set to be simulated (an optional argument; default is the value of the workspace argument)
         fbamodel_id out_model - ID where the solution combination model will be saved (an optional argument: default is 'undef')
         list<gapgen_id> gapGens - IDs of gapgen solutions (an optional argument: default is 'undef')
@@ -15146,7 +15448,7 @@ model_workspace has a value which is a workspace_id
 fba_formulation has a value which is an FBAFormulation
 gapfill_formulation has a value which is a GapfillingFormulation
 gapgen_formulation has a value which is a GapgenFormulation
-phenotypeSet has a value which is a phenotypeSet_id
+phenotypeSet has a value which is a phenotype_set_id
 phenotypeSet_workspace has a value which is a workspace_id
 out_model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
@@ -15167,7 +15469,7 @@ model_workspace has a value which is a workspace_id
 fba_formulation has a value which is an FBAFormulation
 gapfill_formulation has a value which is a GapfillingFormulation
 gapgen_formulation has a value which is a GapgenFormulation
-phenotypeSet has a value which is a phenotypeSet_id
+phenotypeSet has a value which is a phenotype_set_id
 phenotypeSet_workspace has a value which is a workspace_id
 out_model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
@@ -15526,6 +15828,7 @@ Input parameters for the "probanno_to_genome" function.
         workspace_id pa_ws - ID of workspace with probanno object (optional argument, default is value of workspace argument)
         genome_id g_id - ID to use for genome object (required argument)
         workspace_id workspace - ID of workspace for storing output objects (optional argument, default is current workspace)
+        float threshold - probability threshold for including function in genome (optional argument, default is to include all functions)
         string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
 
@@ -15539,6 +15842,7 @@ pa_id has a value which is a probanno_id
 pa_ws has a value which is a workspace_id
 workspace has a value which is a workspace_id
 g_id has a value which is a genome_id
+threshold has a value which is a float
 auth has a value which is a string
 
 </pre>
@@ -15552,6 +15856,7 @@ pa_id has a value which is a probanno_id
 pa_ws has a value which is a workspace_id
 workspace has a value which is a workspace_id
 g_id has a value which is a genome_id
+threshold has a value which is a float
 auth has a value which is a string
 
 
@@ -16600,6 +16905,409 @@ type has a value which is a string
 description has a value which is a string
 compounds has a value which is a reference to a list where each element is a string
 workspace has a value which is a string
+auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 compare_models_params
+
+=over 4
+
+
+
+=item Description
+
+********************************************************************************
+    Functions relating to comparison of models
+   	********************************************************************************
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+models has a value which is a reference to a list where each element is a fbamodel_id
+workspaces has a value which is a reference to a list where each element is a workspace_id
+auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+models has a value which is a reference to a list where each element is a fbamodel_id
+workspaces has a value which is a reference to a list where each element is a workspace_id
+auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 ModelComparisonModel
+
+=over 4
+
+
+
+=item Description
+
+Data structure to hold model comparison data
+
+        fbamodel_id model - id of the fba model
+        workspace_id workspace - id of workspace with model
+        string model_name - name of the fba model
+        genome_id genome - id of the genome for the fba model
+        string genome_name - name of the genome for the fba model
+        int core_reactions - number of core reactions in the fba model
+        int unique_reactions - number of unique reactions in the fba model
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+model has a value which is a fbamodel_id
+workspace has a value which is a workspace_id
+model_name has a value which is a string
+genome has a value which is a genome_id
+genome_name has a value which is a string
+gapfilled_reactions has a value which is an int
+core_reactions has a value which is an int
+noncore_reactions has a value which is an int
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+model has a value which is a fbamodel_id
+workspace has a value which is a workspace_id
+model_name has a value which is a string
+genome has a value which is a genome_id
+genome_name has a value which is a string
+gapfilled_reactions has a value which is an int
+core_reactions has a value which is an int
+noncore_reactions has a value which is an int
+
+
+=end text
+
+=back
+
+
+
+=head2 ModelCompareReaction
+
+=over 4
+
+
+
+=item Description
+
+Data structure to hold model reaction comparison data
+
+        reaction_id reaction - id of the reaction
+        compartment_id compartment - id of the reaction compartment
+        string equation - equation for the reaction
+        bool core - boolean indicating if the reaction is core
+        mapping<fbamodel_id,list<feature_id> > model_features - map of models and features for reaction
+        string role - role associated with the reaction
+        string subsytem - subsystem associated with role
+        string class - class one of the subsystem
+        string subclass - class two of the subsystem
+        int number_models - number of models with reaction
+        float fraction_models - fraction of models with reaction
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+reaction has a value which is a reaction_id
+compartment has a value which is a string
+equation has a value which is a string
+core has a value which is a bool
+model_features has a value which is a reference to a hash where the key is a fbamodel_id and the value is a reference to a list where each element is a feature_id
+role has a value which is a string
+subsystem has a value which is a string
+class has a value which is a string
+subclass has a value which is a string
+number_models has a value which is an int
+fraction_models has a value which is a float
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+reaction has a value which is a reaction_id
+compartment has a value which is a string
+equation has a value which is a string
+core has a value which is a bool
+model_features has a value which is a reference to a hash where the key is a fbamodel_id and the value is a reference to a list where each element is a feature_id
+role has a value which is a string
+subsystem has a value which is a string
+class has a value which is a string
+subclass has a value which is a string
+number_models has a value which is an int
+fraction_models has a value which is a float
+
+
+=end text
+
+=back
+
+
+
+=head2 ModelComparisonData
+
+=over 4
+
+
+
+=item Description
+
+Output structure for the "compare_models" function.
+
+        list<ModelComparisonModel> model_comparisons;
+        list<ModelCompareReaction> reaction_comparisons;
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+model_comparisons has a value which is a reference to a list where each element is a ModelComparisonModel
+reaction_comparisons has a value which is a reference to a list where each element is a ModelCompareReaction
+auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+model_comparisons has a value which is a reference to a list where each element is a ModelComparisonModel
+reaction_comparisons has a value which is a reference to a list where each element is a ModelCompareReaction
+auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 compare_genomes_params
+
+=over 4
+
+
+
+=item Description
+
+********************************************************************************
+    Functions relating to comparison of models
+   	********************************************************************************
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+genomes has a value which is a reference to a list where each element is a genome_id
+workspaces has a value which is a reference to a list where each element is a workspace_id
+auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+genomes has a value which is a reference to a list where each element is a genome_id
+workspaces has a value which is a reference to a list where each element is a workspace_id
+auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 GenomeComparisonGenome
+
+=over 4
+
+
+
+=item Description
+
+Data structure to hold genome comparison data
+
+        genome_id genome;
+        workspace_id workspace;
+        string genome_name;
+        string taxonomy;
+        int features;
+        int core_functions;
+        int noncore_functions;
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+genome has a value which is a genome_id
+workspace has a value which is a workspace_id
+genome_name has a value which is a string
+taxonomy has a value which is a string
+features has a value which is an int
+core_functions has a value which is an int
+noncore_functions has a value which is an int
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+genome has a value which is a genome_id
+workspace has a value which is a workspace_id
+genome_name has a value which is a string
+taxonomy has a value which is a string
+features has a value which is an int
+core_functions has a value which is an int
+noncore_functions has a value which is an int
+
+
+=end text
+
+=back
+
+
+
+=head2 GenomeCompareFeature
+
+=over 4
+
+
+
+=item Description
+
+Data structure to hold model reaction comparison data
+
+        string role
+        bool core - boolean indicating if the function is core
+        mapping<genome_id,list<feature_id> > genome_features
+        string subsytem - subsystem associated with role
+        string class - class one of the subsystem
+        string subclass - class two of the subsystem
+        int number_genomes - number of genomes with function
+        float fraction_genomes - fraction of genomes with function
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+core has a value which is a bool
+genome_features has a value which is a reference to a hash where the key is a genome_id and the value is a reference to a list where each element is a feature_id
+role has a value which is a string
+subsystem has a value which is a string
+class has a value which is a string
+subclass has a value which is a string
+number_genomes has a value which is an int
+fraction_genomes has a value which is a float
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+core has a value which is a bool
+genome_features has a value which is a reference to a hash where the key is a genome_id and the value is a reference to a list where each element is a feature_id
+role has a value which is a string
+subsystem has a value which is a string
+class has a value which is a string
+subclass has a value which is a string
+number_genomes has a value which is an int
+fraction_genomes has a value which is a float
+
+
+=end text
+
+=back
+
+
+
+=head2 GenomeComparisonData
+
+=over 4
+
+
+
+=item Description
+
+Output structure for the "compare_genomes" function.
+
+        list<GenomeComparisonGenome> genome_comparisons;
+        list<GenomeCompareFeature> feature_comparisons;
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+genome_comparisons has a value which is a reference to a list where each element is a GenomeComparisonGenome
+feature_comparisons has a value which is a reference to a list where each element is a GenomeCompareFeature
+auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+genome_comparisons has a value which is a reference to a list where each element is a GenomeComparisonGenome
+feature_comparisons has a value which is a reference to a list where each element is a GenomeCompareFeature
 auth has a value which is a string
 
 

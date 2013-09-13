@@ -66,6 +66,8 @@ our %return_counts = (
         'adjust_template_reaction' => 1,
         'adjust_template_biomass' => 1,
         'add_stimuli' => 1,
+        'compare_models' => 1,
+        'compare_genomes' => 1,
         'version' => 1,
 );
 
@@ -128,6 +130,8 @@ sub _build_valid_methods
         'adjust_template_reaction' => 1,
         'adjust_template_biomass' => 1,
         'add_stimuli' => 1,
+        'compare_models' => 1,
+        'compare_genomes' => 1,
         'version' => 1,
     };
     return $methods;

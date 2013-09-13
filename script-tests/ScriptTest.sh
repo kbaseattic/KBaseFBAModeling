@@ -6,6 +6,7 @@ kbws-createws scripttest n
 kbws-workspace scripttest
 kbfba-url "http://localhost:7036"
 kbfba-loadgenome "kb|g.0" -e
+kbfba-loadgenome "315750.3" -r -l reviewer -p reviewer -e
 kbfba-buildfbamodel "kb|g.0" -m "kb|g.0.fbamdl.201" --core -e
 kbfba-runfba "kb|g.0.fbamdl.201" -e
 kbfba-addmedia GlucoseMinimal "D-Glucose;Sulfate;Phosphate;NH3;Al;Boron;Ca2+;Cl-;Co2+;Cu2+;Fe2+;Fe3+;H+;H2O;K+;Mg;Mn2+;Ni2+;Molybdate;Na+;O2;Zn2+" -d -type "Minimal"
