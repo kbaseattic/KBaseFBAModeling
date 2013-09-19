@@ -1086,7 +1086,14 @@ sub _buildFBAObject {
 			$form->addLinkArrayItem("geneKOs",$geneObj);
 		}
 	}
-	#Parsing reaction KO
+	#Parsing reaction KO and blacklisted reactions
+	foreach my $reaction (@{$fbaFormulation->{blacklistedrxns}}) {
+	    my $rxnObj = $model->biochemistry()->searchForReaction($reaction);
+	    if (defined($rxnObj)) {
+		$form->addLinkArrayItem("reactionKOs",$rxnObj);
+	    }
+        }
+
 	foreach my $reaction (@{$fbaFormulation->{rxnko}}) {
 		my $rxnObj = $model->biochemistry()->searchForReaction($reaction);
 		if (defined($rxnObj)) {
