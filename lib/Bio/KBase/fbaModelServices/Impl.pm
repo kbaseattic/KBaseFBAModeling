@@ -1236,7 +1236,10 @@ sub _buildGapfillObject {
 	foreach my $reaction (@{$formulation->{blacklistedrxns}}) {
 		my $rxnObj = $model->biochemistry()->searchForReaction($reaction);
 		if (defined($rxnObj)) {
+		    # This one is no longer necessary for gapfill itself but I don't know if it's used elsewhere or not.
 			$gapform->addLinkArrayItem("blacklistedReactions",$rxnObj);
+		       # This one has to be added to fix the bug
+			$gapform->fbaFormulation()->addLinkArrayItem("reactionKOs",$rxnObj);
 		}
 	}
 	my $mdlcmps = $model->modelcompartments();
