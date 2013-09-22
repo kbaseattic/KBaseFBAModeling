@@ -13168,7 +13168,6 @@ sub compare_genomes
 				$function =~ s/\s+$//;
 				my $roles = [split(/\s*;\s+|\s+[\@\/]\s+/,$function)];
 				for (my $k=0; $k < @{$roles}; $k++) {
-					print $roles->[$k]."\n";
 					if (!defined($FunctionHash->{$roles->[$k]})) {
 						my $ss = "None";
 						my $class = "None";

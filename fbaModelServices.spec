@@ -506,11 +506,6 @@ module fbaModelServices {
 	*/
     typedef tuple<gapfill_id id,workspace_id workspace,media_id media,workspace_id media_workspace,bool done,list<feature_id> ko> GapFillMeta;
     
-    typedef structure {
-		string name;
-		list<feature_id> feature;
-    } Subsystem;
-    
     /* Data structure holding data for metabolic model
 		
 		fbamodel_id id - ID of model
@@ -558,7 +553,6 @@ module fbaModelServices {
 		list<GapFillMeta> unintegrated_gapfillings;
 		list<GapGenMeta> integrated_gapgenerations;
 		list<GapGenMeta> unintegrated_gapgenerations;
-		list<Subsystem> modelSubsystems;
     } FBAModel;
     /*********************************************************************************
     Flux Balance Analysis type definition
