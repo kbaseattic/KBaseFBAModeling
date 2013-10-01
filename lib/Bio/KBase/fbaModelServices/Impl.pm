@@ -392,7 +392,7 @@ sub _translate_genome_to_annotation {
 				}
 				$newftr->add("featureroles",{
 					 role_uuid   => $role->uuid(),
-					 compartment => $output->{compartments}->[0],
+					 compartment => join(";",@{$output->{compartments}}),
 					 delimiter   => $output->{delimiter},
 					 comment     => $output->{comment}
 				});
