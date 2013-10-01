@@ -97,7 +97,7 @@ if (defined($inGenome->{protein_wsid}) && !defined($inGenome->{transcript_wsid})
 			auth => $job->{auth}
 		});
 		for (my $i=0; $i < @{$output->{data}->{contigs}}; $i++) {
-			$genome->{contigs}->[$i] = {
+			$inGenome->{contigs}->[$i] = {
 				id => $output->{data}->{contigs}->[$i]->{sourceid},
 				dna => $output->{data}->{contigs}->[$i]->{sequence},
 			};
@@ -113,7 +113,7 @@ if (defined($inGenome->{protein_wsid}) && !defined($inGenome->{transcript_wsid})
 			auth => $job->{auth}
 		});
 		for (my $i=0; $i < @{$output->{data}->{transcripts}}; $i++) {
-			$genome->{contigs}->[$i] = {
+			$inGenome->{contigs}->[$i] = {
 				id => $output->{data}->{contigs}->[$i]->{sourceid},
 				dna => $output->{data}->{contigs}->[$i]->{sequence},
 			};
@@ -123,24 +123,24 @@ if (defined($inGenome->{protein_wsid}) && !defined($inGenome->{transcript_wsid})
 #Running annotation pipeline
 for (my $i=0; $i < @{$job->{jobdata}->{stages}}; $i++) {
 	if ($job->{jobdata}->{stages}->[$i]->{id} eq "call_selenoproteins") {
-		$genome = $annoserv->call_selenoproteins($genome);
+		$inGenome = $annoserv->call_selenoproteins($inGenome);
 	} elsif ($job->{jobdata}->{stages}->[$i]->{id} eq "call_pyrrolysoproteins") {
-		$genome = $annoserv->call_pyrrolysoproteins($genome);
+		$inGenome = $annoserv->call_pyrrolysoproteins($inGenome);
 	} elsif ($job->{jobdata}->{stages}->[$i]->{id} eq "call_RNAs") {
-		$genome = $annoserv->call_RNAs($genome);
+		$inGenome = $annoserv->call_RNAs($inGenome);
 	} elsif ($job->{jobdata}->{stages}->[$i]->{id} eq "call_CDSs") {
-		$genome = $annoserv->call_CDSs($genome);
+		$inGenome = $annoserv->call_CDSs($inGenome);
 	} elsif ($job->{jobdata}->{stages}->[$i]->{id} eq "find_close_neighbors") {
-		$genome = $annoserv->find_close_neighbors($genome);
+		$inGenome = $annoserv->find_close_neighbors($inGenome);
 	} elsif ($job->{jobdata}->{stages}->[$i]->{id} eq "assign_functions_to_CDSs") {
-		$genome = $annoserv->assign_functions_to_CDSs($genome);
+		$inGenome = $annoserv->assign_functions_to_CDSs($inGenome);
 	}
 }
 my $fbaserv = Bio::KBase::fbaModelServices::Client->new($job->{fbaurl});
-delete $genome->{contigs};
+delete $inGenome->{contigs};
 $fbaserv->genome_object_to_workspace({
 	uid => $job->{jobdata}->{Genome_uid},
-	genomeobj => $genome,
+	genomeobj => $inGenome,
 	workspace => $job->{jobdata}->{workspace},
 	auth => $job->{auth}
 });
