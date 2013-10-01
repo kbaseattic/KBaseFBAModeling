@@ -1087,7 +1087,14 @@ sub _buildFBAObject {
 			$form->addLinkArrayItem("geneKOs",$geneObj);
 		}
 	}
-	#Parsing reaction KO
+	#Parsing reaction KO and blacklisted reactions
+	foreach my $reaction (@{$fbaFormulation->{blacklistedrxns}}) {
+	    my $rxnObj = $model->biochemistry()->searchForReaction($reaction);
+	    if (defined($rxnObj)) {
+		$form->addLinkArrayItem("reactionKOs",$rxnObj);
+	    }
+        }
+
 	foreach my $reaction (@{$fbaFormulation->{rxnko}}) {
 		my $rxnObj = $model->biochemistry()->searchForReaction($reaction);
 		if (defined($rxnObj)) {
@@ -1230,7 +1237,10 @@ sub _buildGapfillObject {
 	foreach my $reaction (@{$formulation->{blacklistedrxns}}) {
 		my $rxnObj = $model->biochemistry()->searchForReaction($reaction);
 		if (defined($rxnObj)) {
+		    # This one is no longer necessary for gapfill itself but I don't know if it's used elsewhere or not.
 			$gapform->addLinkArrayItem("blacklistedReactions",$rxnObj);
+		       # This one has to be added to fix the bug
+			$gapform->fbaFormulation()->addLinkArrayItem("reactionKOs",$rxnObj);
 		}
 	}
 	my $mdlcmps = $model->modelcompartments();
@@ -7789,9 +7799,25 @@ sub integrate_reconciliation_solutions
     $input = $self->_validateargs($input,["model","workspace","gapfillSolutions","gapgenSolutions"],{
 		model_workspace => $input->{workspace},
 		out_model => $input->{model},
-    	overwrite => 0
+		overwrite => 0,
+		rxnprobs => undef,
+		rxnprobs_workspace => $input->{workspace}
     });
     my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
+    my($rxnprobs);
+    my($rxnprobsGPRHash);
+    use Data::Dumper;
+    if ( defined($input->{rxnprobs}) ) {
+	$rxnprobs = $self->_get_msobject("RxnProbs", $input->{rxnprobs_workspace}, $input->{rxnprobs});
+	for(my $i=0; $i < @{$rxnprobs->{reaction_probabilities}}; $i++) {
+	    my $rxnarray = $rxnprobs->{reaction_probabilities}->[$i];
+	    my $rxnid = $rxnarray->[0];
+	    my $gpr = $rxnarray->[4];
+	    if ( $gpr ne "" ) {
+		$rxnprobsGPRHash->{$rxnid} = $self->_translateGPRHash($self->_parseGPR($gpr));
+	    }
+	}
+    }
     foreach my $id (@{$input->{gapfillSolutions}}) {
     	if ($id =~ m/(.+)\.solution\.(.+)/) {
     		my $gfid = $1;
@@ -7801,7 +7827,8 @@ sub integrate_reconciliation_solutions
     			if ($gf->uuid() eq $gfid) {
 	    			$model->integrateGapfillSolution({
 						gapfillingFormulation => $gf,
-						solutionNum => $solid
+						solutionNum => $solid,
+						rxnProbGpr => $rxnprobsGPRHash
 					});
 					$self->_save_msobject($gf,"GapFill","NO_WORKSPACE",$gf->uuid(),"integrate_reconciliation_solutions",1,$gf->uuid());
 					last;
@@ -7818,7 +7845,7 @@ sub integrate_reconciliation_solutions
     			if ($gg->uuid() eq $ggid) {
 	    			$model->integrateGapgenSolution({
 						gapgenFormulation => $gg,
-						solutionNum => $solid
+						solutionNum => $solid,
 					});
 					$self->_save_msobject($gg,"GapGen","NO_WORKSPACE",$gg->uuid(),"integrate_reconciliation_solutions",1,$gg->uuid());
     				last;
