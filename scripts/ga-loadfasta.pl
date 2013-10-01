@@ -6,30 +6,38 @@
 ########################################################################
 use strict;
 use warnings;
-use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
+use Bio::KBase::workspaceService::Helpers qw(printJobData auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
 use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Filename"];
-my $servercommand = "fasta_to_sequences";
-my $script = "ga-fasta_to_sequences";
+my $servercommand = "fasta_to_ContigSet";
+my $script = "ga-loadfasta";
 my $translation = {
-	contigid => "contigid",
+	userid => "uid",
+	name => "name",
+	sourceid => "sourceid",
 	source => "source",
-	workspace => "workspace",
-	code => "genetic_code",
-	domain => "domain",
-	auth => "auth",
-	name => "scientific_name"
+	type => "type"
 };
+
 #Defining usage and options
 my $specs = [
-    [ 'sequenceid:s', 'ID for contigs in workspace' ],
-    [ 'name:s', 'Name of sequence dataset', { "default" => "unknown sample" } ],
-    [ 'source:s', 'Source of contig data', { "default" => "unknown" } ],
-    [ 'type-s', 'type of sequence data'],
-    [ 'workspace|w:s', 'Workspace to save phenotypes in', { "default" => workspace() } ],
+    [ 'userid|u=s', 'ID for object in workspace' ],
+    [ 'transcripts|t', 'FASTA contains trascripts instead of full contigs' ],
+    [ 'proteins|p', 'FASTA contains proteins instead of full contigs' ],
+    [ 'name|n=s', 'Name for FASTA data' ],
+    [ 'sourceid|i=s', 'Source ID of FASTA data' ],
+    [ 'source|s=s', 'Source of FASTA data' ],
+    [ 'type|y=s', 'Type of sequence data' ],
+    [ 'workspace|w=s', 'Workspace to save FBA results', { "default" => workspace() } ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
+if (defined($opt->{transcripts}) && $opt->{transcripts} == 1) {
+	$servercommand = "fasta_to_TranscriptSet";
+} elsif (defined($opt->{proteins}) && $opt->{proteins} == 1) {
+	$servercommand = "fasta_to_ProteinSet";
+}
+print $servercommand."\n";
 $params->{fasta} = "";
 if (!-e $opt->{"Filename"}) {
 	print "Could not find input fasta file!\n";
@@ -44,8 +52,8 @@ close($fh);
 my $output = runFBACommand($params,$servercommand,$opt);
 #Checking output and report results
 if (!defined($output)) {
-	print "Fasta load failed!\n";
+	print "Loading of FASTA data to workspace failed!\n";
 } else {
-	print "Fasta load successful:\n";
+	print "Data loaded to workspace:\n";
 	printObjectMeta($output);
 }

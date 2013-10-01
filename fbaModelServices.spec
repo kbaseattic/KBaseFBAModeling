@@ -972,10 +972,10 @@ module fbaModelServices {
 		Phenotype phenotypeData - actual phenotype data simulated
 		float simulatedGrowth - actual simulated growth rate
 		float simulatedGrowthFraction - fraction of wildtype simulated growth rate
-		string class - class of the phenotype simulation (i.e. 'CP' - correct positive, 'CN' - correct negative, 'FP' - false positive, 'FN' - false negative)
+		string phenoclass - class of the phenotype simulation (i.e. 'CP' - correct positive, 'CN' - correct negative, 'FP' - false positive, 'FN' - false negative)
 				
 	*/
-    typedef tuple<Phenotype phenotypeData,float simulatedGrowth,float simulatedGrowthFraction,string class> PhenotypeSimulation;
+    typedef tuple<Phenotype phenotypeData,float simulatedGrowth,float simulatedGrowthFraction,string phenoclass> PhenotypeSimulation;
     
     /* Data structures for phenotype simulations of a set of phenotype data
 		
@@ -1009,8 +1009,8 @@ module fbaModelServices {
 		fbamodel_id model - ID of model used to analyze phenotypes
 		workspace_id model_workspace - workspace containing model used to analyze phenotypes
 		list<Phenotype> phenotypes - list of phenotypes simulated
-		list<tuple<float simulatedGrowth,float simulatedGrowthFraction,string class>> wildtypePhenotypeSimulations - results from simulating phenotypes with original model
-		list<string type,string id,string solutionIndex,list<reactionSpecification> reactionList,list<string compound> biomassEdits,list<tuple<float simulatedGrowth,float simulatedGrowthFraction,string class>> PhenotypeSimulations> reconciliationSolutionSimulations - results from simulating reconciliation solutions
+		list<tuple<float simulatedGrowth,float simulatedGrowthFraction,string phenoclass>> wildtypePhenotypeSimulations - results from simulating phenotypes with original model
+		list<string type,string id,string solutionIndex,list<reactionSpecification> reactionList,list<string compound> biomassEdits,list<tuple<float simulatedGrowth,float simulatedGrowthFraction,string phenoclass>> PhenotypeSimulations> reconciliationSolutionSimulations - results from simulating reconciliation solutions
 					
 	*/
     typedef structure {
@@ -1019,8 +1019,8 @@ module fbaModelServices {
 		fbamodel_id model;
 		workspace_id model_workspace;
 		list<Phenotype> phenotypes;
-		list<tuple<float simulatedGrowth,float simulatedGrowthFraction,string class>> wildtypePhenotypeSimulations;
-/*		list<string id, string solutionIndex, list<reactionSpecification> reactionList, list<string> biomassEdits,list<tuple<float simulatedGrowth,float simulatedGrowthFraction,string class>> PhenotypeSimulations> reconciliationSolutionSimulations; */
+		list<tuple<float simulatedGrowth,float simulatedGrowthFraction,string phenoclass>> wildtypePhenotypeSimulations;
+/*		list<string id, string solutionIndex, list<reactionSpecification> reactionList, list<string> biomassEdits,list<tuple<float simulatedGrowth,float simulatedGrowthFraction,string phenoclass>> PhenotypeSimulations> reconciliationSolutionSimulations; */
     } PhenotypeSensitivityAnalysis;
     
     /*********************************************************************************
@@ -1415,12 +1415,14 @@ module fbaModelServices {
     
     /* Input parameters for the "genome_object_to_workspace" function.
 	
+		Genome_uid uid - ID to use when saving genome to workspace
 		GenomeObject genomeobj - full genome typed object to be loaded into the workspace (a required argument)
 		workspace_id workspace - ID of the workspace into which the genome typed object is to be loaded (a required argument)
 		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
 	*/
     typedef structure {
+		Genome_uid uid;
 		GenomeObject genomeobj;
 		workspace_id workspace;
 		string auth;
@@ -2194,50 +2196,309 @@ module fbaModelServices {
     */
     funcdef role_to_reactions(role_to_reactions_params params) returns (list<RoleComplexReactions> output);
 
-	/* Input parameters for the "fasta_to_contigs" function.
+	/*********************************************************************************
+	Code relating to import and analysis of ProteinSets
+   	*********************************************************************************/
+	/* Type spec for a "Protein" subobject in the "ProteinSet" object
 	
-		string contigid - ID to be assigned to the contigs object created (optional)
+		string kbid - unique kbase ID of the protein
+		string sourceid - ID of the source data for the protein
+		string sequence - sequence of the protein
+				
+	*/
+	typedef structure {
+		string kbid;
+		string sourceid;
+		string sequence;
+    } ProteinSetProtein;
+	/* Type spec for the "ProteinSet" object
+	
+		string kbid - unique kbase ID of the protein set
+		string name - name of the protein set
+		string type - type of the protein set (values are: Organism,Environment,Collection)
+		list<ProteinSetProtein> proteins - list of proteins in the protein set
+				
+	*/
+	typedef structure {
+		string kbid;
+		string name;
+		string sourceid;
+		string source;
+		string type;
+		list<ProteinSetProtein> proteins;
+    } ProteinSet;
+	/* Input parameters for the "fasta_to_ProteinSet" function.
+	
+		string uid - user assigned ID for the protein set (optional)
 		string fasta - string with sequence data from fasta file (required argument)
-		workspace_id workspace - ID of workspace for storing objects (optional argument, default is current workspace)
+		workspace_id workspace - ID of workspace for storing objects (required argument)
 		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+		string name - name of the protein data (optional)
+		string sourceid - source ID of the protein data (optional)
+		string source - source of the protein data (optional)
+		string type - type of the protein set (optional)
 		
 	*/
 	typedef structure {
-		string contigid;
+		string uid;
 		string fasta;
 		workspace_id workspace;
 		string auth;
+		string name;
+		string sourceid;
 		string source;
-		string genetic_code;
-		string domain;
-		string scientific_name;
-    } fasta_to_contigs_params;
+		string type;
+    } fasta_to_ProteinSet_params;
     /*
-		Loads a fasta file as a Contigs object in the workspace        
+		Loads a fasta file as a ProteinSet object in the workspace       
     */
-    funcdef fasta_to_contigs(fasta_to_contigs_params params) returns (object_metadata output);
-
-	/* Input parameters for the "contigs_to_genome" function.
+    funcdef fasta_to_ProteinSet(fasta_to_ProteinSet_params params) returns (object_metadata output);
+    /* Input parameters for the "ProteinSet_to_Genome" function.
 	
-		string contigid - ID to be assigned to the contigs object created (optional)
-		workspace_id contigws - ID of workspace with contigs (optional argument, default is value of workspace argument)
-		workspace_id workspace - ID of workspace for storing objects (optional argument, default is current workspace)
-		string genomeid - ID to use for genome object (required argument)
+		string ProteinSet_uid - ID to be assigned to the ProteinSet (required argument)
+		workspace_id ProteinSet_ws - ID of workspace with the ProteinSet (optional argument; default is value of workspace argument)
+		string uid - user assigned ID for the Genome (optional)
+		workspace_id workspace - ID of workspace for storing objects (required argument)
+		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+		string scientific_name - scientific name to assign to genome
+		string domain - domain of life for genome
+		int genetic_code - genetic code to assign to genome
+		
+	*/
+	typedef structure {
+		string ProteinSet_uid;
+		workspace_id ProteinSet_ws;
+		workspace_id workspace;
+		string uid;
+		string auth;
+		string scientific_name;
+		string domain;
+		int genetic_code;
+    } ProteinSet_to_Genome_params;
+    /*
+		Creates a Genome associated with the ProteinSet object. You cannot recall genes on this genome.  
+    */
+    funcdef ProteinSet_to_Genome(ProteinSet_to_Genome_params params) returns (object_metadata output);
+	/*********************************************************************************
+	Code relating to import and analysis of TranscriptSets
+   	*********************************************************************************/
+	/* Type spec for a "Transcript" subobject in the "TranscriptSet" object
+	
+		string kbid - unique kbase ID of the transcript
+		string sourceid - ID of the source data for the transcript
+		string sequence - sequence of the transcript
+				
+	*/
+	typedef structure {
+		string kbid;
+		string sourceid;
+		string sequence;
+    } TranscriptSetTranscript;
+	/* Type spec for the "TranscriptSet" object
+	
+		string kbid - unique kbase ID of the transcript set
+		string name - name of the transcript set
+		string type - type of the transcript set (values are: Organism,Environment,Collection)
+		string sourceid - source ID of the TranscriptSet data
+		string source - source of the TranscriptSet data
+		list<TranscriptSetTranscript> transcripts - list of transcripts in the transcript set
+				
+	*/
+	typedef structure {
+		string kbid;
+		string name;
+		string sourceid;
+		string source;
+		string type;
+		list<TranscriptSetTranscript> transcripts;
+    } TranscriptSet;
+	/* Input parameters for the "fasta_to_Transcripts" function.
+	
+		string uid - user assigned ID for the TranscriptSet (optional)
+		string fasta - string with sequence data from fasta file (required argument)
+		workspace_id workspace - ID of workspace for storing objects (required argument)
+		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+		string name - name of the TranscriptSet data (optional)
+		string sourceid - source ID of the TranscriptSet data (optional)
+		string source - source of the TranscriptSet data (optional)
+		string type - type of the TranscriptSet (optional)
+		
+	*/
+	typedef structure {
+		string uid;
+		string fasta;
+		workspace_id workspace;
+		string auth;
+		string name;
+		string sourceid;
+		string source;
+		string type;
+    } fasta_to_Transcripts_params;
+    /*
+		Loads a fasta file as a TranscriptSet object in the workspace       
+    */
+    funcdef fasta_to_TranscriptSet(fasta_to_Transcripts_params params) returns (object_metadata output);
+    /* Input parameters for the "TranscriptSet_to_Genome" function.
+	
+		string TranscriptSet_uid - user ID to be assigned to the TranscriptSet (required argument)
+		workspace_id TranscriptSet_ws - ID of workspace with the TranscriptSet (optional argument; default is value of workspace argument)
+		string uid - user assigned ID for the Genome (optional)
+		workspace_id workspace - ID of workspace for storing objects (required argument)
+		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+		string scientific_name - scientific name to assign to genome
+		string domain - domain of life for genome
+		int genetic_code - genetic code to assign to genome
+		
+	*/
+	typedef structure {
+		string TranscriptSet_uid;
+		workspace_id TranscriptSet_ws;
+		workspace_id workspace;
+		string uid;
+		string auth;
+		string scientific_name;
+		string domain;
+		int genetic_code;
+    } TranscriptSet_to_Genome_params;
+    /*
+		Creates a Genome associated with the TranscriptSet object
+		Cannot do global genome structure comparison with such a genome   
+    */
+    funcdef TranscriptSet_to_Genome(TranscriptSet_to_Genome_params params) returns (object_metadata output);
+	/*********************************************************************************
+	Code relating to import and analysis of Contigs
+   	*********************************************************************************/
+	/* Type spec for a "Contig" subobject in the "ContigSet" object
+	
+		string kbid - unique kbase ID of the contig
+		string sourceid - ID of the source data for the contig
+		string sequence - sequence of the contig
+				
+	*/
+	typedef structure {
+		string kbid;
+		string sourceid;
+		string sequence;
+    } ContigSetContig;
+	/* Type spec for the "ContigSet" object
+	
+		string kbid - unique kbase ID of the contig set
+		string name - name of the contig set
+		string type - type of the contig set (values are: Organism,Environment,Collection)
+		string sourceid - source ID of the TranscriptSet data
+		string source - source of the TranscriptSet data
+		list<ContigSetContig> contigs - list of contigs in the transcript set
+				
+	*/
+	typedef structure {
+		string kbid;
+		string name;
+		string sourceid;
+		string source;
+		string type;
+		list<ContigSetContig> contigs;
+    } ContigSet;
+	/* Input parameters for the "fasta_to_ContigSet" function.
+	
+		string uid - user assigned ID for the ContigSet (optional)
+		string fasta - string with sequence data from fasta file (required argument)
+		workspace_id workspace - ID of workspace for storing objects (required argument)
+		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+		string name - name of the ContigSet data (optional)
+		string sourceid - source ID of the ContigSet data (optional)
+		string source - source of the ContigSet data (optional)
+		string type - type of the ContigSet (optional)
+		
+	*/
+	typedef structure {
+		string uid;
+		string fasta;
+		workspace_id workspace;
+		string auth;
+		string name;
+		string sourceid;
+		string source;
+		string type;
+    } fasta_to_ContigSet_params;
+    /*
+		Loads a fasta file as a ContigSet object in the workspace       
+    */
+    funcdef fasta_to_ContigSet(fasta_to_Transcripts_params params) returns (object_metadata output);
+	/* Input parameters for the "ContigSet_to_Genome" function.
+	
+		string ContigSet_uid - ID to be assigned to the ContigSet (required argument)
+		workspace_id ContigSet_ws - ID of workspace with the ContigSet (optional argument; default is value of workspace argument)
+		string uid - user assigned ID for the Genome (optional)
+		workspace_id workspace - ID of workspace for storing objects (required argument)
+		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+		string scientific_name - scientific name to assign to genome
+		string domain - domain of life for genome
+		int genetic_code - genetic code to assign to genome
+		
+	*/
+	typedef structure {
+		string ContigSet_uid;
+		workspace_id ContigSet_ws;
+		workspace_id workspace;
+		string uid;
+		string auth;
+		string scientific_name;
+		string domain;
+		int genetic_code;
+    } ContigSet_to_Genome_params;
+    /*
+		Creates a genome associated with the ContigSet object   
+    */
+    funcdef ContigSet_to_Genome(ContigSet_to_Genome_params params) returns (object_metadata output);
+	/*********************************************************************************
+	Code relating to workspace versions of genome analysis algorithms
+   	*********************************************************************************/
+	/* 
+		string stage_id - Name of a stage in the annotation pipeline
+			Options include:
+				1.) call_selenoproteins
+				2.) call_pyrrolysoproteins
+				3.) call_RNAs
+				4.) call_CDSs
+				5.) find_close_neighbors
+				6.) assign_functions_to_CDSs
+	*/
+	typedef string stage_id;
+	/*
+		stage_id id - ID of stage of analysis to run
+		bool enable - boolean indicating the stage should be run
+		mapping<string,string> parameters - parameters for the analysis stage
+	*/
+	typedef structure {
+		stage_id id;
+		bool enable;
+		mapping<string,string> parameters;
+    } AnnotationPipelineStage;
+	/* Input parameters for the "annotate_workspace_Genome" function.
+		
+		string Genome_uid - user ID to be assigned to the Genome (required argument)
+		string Genome_ws - workspace with genome for annotation (optional; workspace argument will be used if no genome workspace is provided)
+		string new_uid - new ID to assign to annotated genome (optional; original genome will be overwritten if no new uid is provided)
+		workspace_id workspace - ID of workspace with Genome (required argument)
+		list<AnnotationPipelineStage> pipeline_stages - list of annotation pipeline steps to run
 		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 		
 	*/
 	typedef structure {
-		string contigid;
-		workspace_id contig_workspace;
+		string Genome_uid;
+		string Genome_ws;
+		string new_uid;
 		workspace_id workspace;
-		string genomeid;
+		list<AnnotationPipelineStage> pipeline_stages;
 		string auth;
-    } contigs_to_genome_params;
+    } annotate_workspace_Genome_params;
     /*
-		Annotates contigs object creating a genome object        
+		Create a job that runs the genome annotation pipeline on a genome object in a workspace
     */
-    funcdef contigs_to_genome(contigs_to_genome_params params) returns (JobObject job);
-	
+    funcdef annotate_workspace_Genome(annotate_workspace_Genome_params params) returns (JobObject job);
+	/*********************************************************************************
+	Code relating to analysis of probabilistic annotations
+   	*********************************************************************************/
 	/* Input parameters for the "probanno_to_genome" function.
 	
 		probanno_id pa_id - ID of the probanno object (required)
@@ -2259,7 +2520,7 @@ module fbaModelServices {
     /*
 		Converts a probabilistic annotation into a genome with the same annotations        
     */
-    funcdef probanno_to_genome(contigs_to_genome_params params) returns (object_metadata output);
+    funcdef probanno_to_genome(probanno_to_genome_params params) returns (object_metadata output);
 	
 	/*********************************************************************************
 	Code relating to loading, retrieval, and curation of mappings
@@ -2272,7 +2533,7 @@ module fbaModelServices {
 		list<complex_id> complexes;
     } FunctionalRole;
     
-    typedef tuple<role_id id,string roleType,bool optional,bool triggering> ComplexRole;
+    typedef tuple<role_id id,string roleType,bool optional_role,bool triggering> ComplexRole;
     
     typedef structure {
 		complex_id id;
@@ -2285,7 +2546,7 @@ module fbaModelServices {
     typedef structure {
 		subsystem_id id;
 		string name;
-		string class;
+		string phenoclass;
 		string subclass;
 		string type;
 		list<string> aliases;
@@ -2379,7 +2640,7 @@ module fbaModelServices {
 		bool new - boolean indicating that a new subsystem is being added
 		string name - new name for the subsystem
 		string type - new type for the subsystem
-		string class - new class for the subsystem
+		string primclass - new class for the subsystem
 		string subclass - new subclass for the subsystem
 		list<string> rolesToAdd - roles to add to the subsystem
 		list<string> rolesToRemove - roles to remove from the subsystem
@@ -2394,7 +2655,7 @@ module fbaModelServices {
 		bool new;
 		string name;
 		string type;
-		string class;
+		string primclass;
 		string subclass;
 		list<string> rolesToAdd;
 		list<string> rolesToRemove;
@@ -2419,7 +2680,7 @@ module fbaModelServices {
 		string type;
     } TemplateReaction;
     
-    typedef tuple<compound_id compound,compartment_id compartment,string class,string universal,string coefficientType,string coefficient,list<tuple<string coeffficient,compound_id compound> > linkedCompounds> TemplateBiomassCompounds;
+    typedef tuple<compound_id compound,compartment_id compartment,string cpdclass,string universal,string coefficientType,string coefficient,list<tuple<string coeffficient,compound_id compound> > linkedCompounds> TemplateBiomassCompounds;
     
     typedef string tempbiomass_id;
     typedef structure {
@@ -2463,7 +2724,7 @@ module fbaModelServices {
 		mapping_id map - ID of the mapping to associate the template model with (an optional argument; default is 'default')
 		workspace_id mapping_workspace - ID of the workspace where the associated mapping is found (an optional argument; default is 'kbase')
 		list<tuple<string id,string compartment,string direction,string type,list<string complex> complexes>> templateReactions - list of reactions to include in template model
-		list<tuple<string name,string type,float dna,float rna,float protein,float lipid,float cellwall,float cofactor,float energy,float other,list<tuple<string id,string compartment,string class,string coefficientType,float coefficient,string conditions>> compounds>> templateBiomass - list of template biomass reactions for template model
+		list<tuple<string name,string type,float dna,float rna,float protein,float lipid,float cellwall,float cofactor,float energy,float other,list<tuple<string id,string compartment,string cpdclass,string coefficientType,float coefficient,string conditions>> compounds>> templateBiomass - list of template biomass reactions for template model
 		string name - name for template model
 		string modelType - type of model constructed by template
 		string domain - domain of template model
@@ -2477,7 +2738,7 @@ module fbaModelServices {
 		mapping_id map;
 		workspace_id mapping_workspace;
 		list<tuple<string id,string compartment,string direction,string type,list<string> complexes>> templateReactions;
-		list<tuple<string name,string type,float dna,float rna,float protein,float lipid,float cellwall,float cofactor,float energy,float other,list<tuple<string id,string compartment,string class,string coefficientType,float coefficient,string conditions>> compounds>> templateBiomass;
+		list<tuple<string name,string type,float dna,float rna,float protein,float lipid,float cellwall,float cofactor,float energy,float other,list<tuple<string id,string compartment,string cpdclass,string coefficientType,float coefficient,string conditions>> compounds>> templateBiomass;
 		string name;
 		string modelType;
 		string domain;
@@ -2528,7 +2789,7 @@ module fbaModelServices {
 		string cellwall;
 		string lipid;
 		list<tuple<compound_id compound,compartment_id compartment>> compoundsToRemove;
-		list<tuple<compound_id compound,compartment_id compartment,string class,string universal,string coefficientType,string coefficient,list<tuple<string coeffficient,compound_id compound> > linkedCompounds>> compoundsToAdd;
+		list<tuple<compound_id compound,compartment_id compartment,string cpdclass,string universal,string coefficientType,string coefficient,list<tuple<string coeffficient,compound_id compound> > linkedCompounds>> compoundsToAdd;
 		string auth;
     } adjust_template_biomass_params;
     /*
@@ -2615,7 +2876,7 @@ module fbaModelServices {
 		mapping<fbamodel_id,list<feature_id> > model_features - map of models and features for reaction
 		string role - role associated with the reaction
 		string subsytem - subsystem associated with role
-		string class - class one of the subsystem
+		string primclass - class one of the subsystem
 		string subclass - class two of the subsystem
 		int number_models - number of models with reaction
 		float fraction_models - fraction of models with reaction
@@ -2629,7 +2890,7 @@ module fbaModelServices {
 		mapping<fbamodel_id,list<feature_id> > model_features;
 		string role;
 		string subsystem;
-		string class;
+		string primclass;
 		string subclass;
 		int number_models;
 		float fraction_models;
@@ -2695,7 +2956,7 @@ module fbaModelServices {
 		bool core - boolean indicating if the function is core
 		mapping<genome_id,list<feature_id> > genome_features
 		string subsytem - subsystem associated with role
-		string class - class one of the subsystem
+		string primclass - class one of the subsystem
 		string subclass - class two of the subsystem
 		int number_genomes - number of genomes with function
 		float fraction_genomes - fraction of genomes with function
@@ -2706,7 +2967,7 @@ module fbaModelServices {
 		mapping<genome_id,list<feature_id> > genome_features;
 		string role;
 		string subsystem;
-		string class;
+		string primclass;
 		string subclass;
 		int number_genomes;
 		float fraction_genomes;

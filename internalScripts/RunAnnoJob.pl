@@ -34,27 +34,112 @@ if (!defined($job->{fbaurl})) {
 	$job->{fbaurl} = "http://140.221.85.73:4043";
 }
 my $wsserv = Bio::KBase::workspaceService::Client->new($job->{wsurl});
-my $output = $wsserv->get_object_by_ref({
-	reference => $job->{jobdata}->{contig_reference},
+my $output = $wsserv->get_object({
+	id => $job->{jobdata}->{Genome_uid},
+	type => "Genome",
+	workspace => $job->{jobdata}->{Genome_ws},
+	instance => $job->{jobdata}->{Genome_inst},
 	auth => $job->{auth}
 });
+my $inGenome = $output->{data};
 my $annoserv = Bio::KBase::GenomeAnnotation::GenomeAnnotationImpl->new();
-my $genome = {
-	id => $job->{jobdata}->{genomeid},
-	genetic_code => $output->{data}->{genetic_code},
-	features => [],
-	domain => $output->{data}->{domain},
-	scientific_name => $output->{data}->{scientific_name},
-	contigs => $output->{data}->{contigs},
-	source => $job->{jobdata}->{source}
-};
-for (my $i=0; $i < @{$genome->{contigs}}; $i++) {
-	$genome->{contigs}->[$i]->{dna} = $genome->{contigs}->[$i]->{seq};
-	delete $genome->{contigs}->[$i]->{seq};
+#Setting full pipeline 
+if (!defined($job->{jobdata}->{stages})) {
+	$job->{jobdata}->{stages} = [
+		{
+			id => "call_selenoproteins",
+			enable => 1,
+			parameters => {}
+		},
+		{
+			id => "call_pyrrolysoproteins",
+			enable => 1,
+			parameters => {}
+		},
+		{
+			id => "call_RNAs",
+			enable => 1,
+			parameters => {}
+		},
+		{
+			id => "call_CDSs",
+			enable => 1,
+			parameters => {}
+		},
+		{
+			id => "find_close_neighbors",
+			enable => 1,
+			parameters => {}
+		},
+		{
+			id => "assign_functions_to_CDSs",
+			enable => 1,
+			parameters => {}
+		}
+	];
 }
-$genome = $annoserv->annotate_genome($genome);
+#Removing gene calling steps if only proteins are provided
+if (defined($inGenome->{protein_wsid}) && !defined($inGenome->{transcript_wsid}) && !defined($inGenome->{contig_wsid})) {
+	my $newstages;
+	for (my $i=0; $i < @{$job->{jobdata}->{stages}}; $i++) {
+		if ($job->{jobdata}->{stages}->[$i]->{id} !~ m/^call_/) {
+			push(@{$newstages},$job->{jobdata}->{stages}->[$i]);
+		}
+	}
+	$job->{jobdata}->{stages} = $newstages;
+} elsif (defined($inGenome->{contig_wsid})) {
+	if ($inGenome->{contig_wsid} =~ m/(.+)\/(.+)\/v(.+)/) {
+		my $output = $wsserv->get_object({
+			id => $2,
+			type => "ContigSet",
+			workspace => $1,
+			instance => $3,
+			auth => $job->{auth}
+		});
+		for (my $i=0; $i < @{$output->{data}->{contigs}}; $i++) {
+			$genome->{contigs}->[$i] = {
+				id => $output->{data}->{contigs}->[$i]->{sourceid},
+				dna => $output->{data}->{contigs}->[$i]->{sequence},
+			};
+		}
+	}
+} elsif (defined($inGenome->{transcript_wsid})) {
+	if ($inGenome->{transcript_wsid} =~ m/(.+)\/(.+)\/v(.+)/) {
+		my $output = $wsserv->get_object({
+			id => $2,
+			type => "TranscriptSet",
+			workspace => $1,
+			instance => $3,
+			auth => $job->{auth}
+		});
+		for (my $i=0; $i < @{$output->{data}->{transcripts}}; $i++) {
+			$genome->{contigs}->[$i] = {
+				id => $output->{data}->{contigs}->[$i]->{sourceid},
+				dna => $output->{data}->{contigs}->[$i]->{sequence},
+			};
+		}
+	}
+}
+#Running annotation pipeline
+for (my $i=0; $i < @{$job->{jobdata}->{stages}}; $i++) {
+	if ($job->{jobdata}->{stages}->[$i]->{id} eq "call_selenoproteins") {
+		$genome = $annoserv->call_selenoproteins($genome);
+	} elsif ($job->{jobdata}->{stages}->[$i]->{id} eq "call_pyrrolysoproteins") {
+		$genome = $annoserv->call_pyrrolysoproteins($genome);
+	} elsif ($job->{jobdata}->{stages}->[$i]->{id} eq "call_RNAs") {
+		$genome = $annoserv->call_RNAs($genome);
+	} elsif ($job->{jobdata}->{stages}->[$i]->{id} eq "call_CDSs") {
+		$genome = $annoserv->call_CDSs($genome);
+	} elsif ($job->{jobdata}->{stages}->[$i]->{id} eq "find_close_neighbors") {
+		$genome = $annoserv->find_close_neighbors($genome);
+	} elsif ($job->{jobdata}->{stages}->[$i]->{id} eq "assign_functions_to_CDSs") {
+		$genome = $annoserv->assign_functions_to_CDSs($genome);
+	}
+}
 my $fbaserv = Bio::KBase::fbaModelServices::Client->new($job->{fbaurl});
+delete $genome->{contigs};
 $fbaserv->genome_object_to_workspace({
+	uid => $job->{jobdata}->{Genome_uid},
 	genomeobj => $genome,
 	workspace => $job->{jobdata}->{workspace},
 	auth => $job->{auth}

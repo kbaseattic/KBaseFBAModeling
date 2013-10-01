@@ -132,11 +132,12 @@ for (my $i=0; $i < @{$cpxs}; $i++) {
 	}
 }
 open($fh, ">", $directory."complex.dtx");
-print $fh "id\tmsid\tmod-date\n";
+print $fh "id\tmod-date\tsource-id\n";
 foreach my $cpx (keys(%{$cpxhash})) {
 	my $id = "kb|".$cpxhash->{$cpx}->name();
 	$id =~ s/cpx0*/cpx./;
-	print $fh $id."\t".$cpxhash->{$cpx}->name()."\t".$cpxhash->{$cpx}->modDate()."\n";
+	$id =~ s/mscpx/cpx/;
+	print $fh $id."\t".$cpxhash->{$cpx}->modDate()."\t".$cpxhash->{$cpx}->name()."\n";
 }
 close($fh);
 #        Table: ComplexName
@@ -147,7 +148,8 @@ print $fh "id\tmsid\tname\n";
 foreach my $cpx (keys(%{$cpxhash})) {
 	my $id = "kb|".$cpxhash->{$cpx}->name();
 	$id =~ s/cpx0*/cpx./;
-	print $fh $id."\t".$cpxhash->{$cpx}->name()."\t".$cpxname->{$cpx}."\n";
+	$id =~ s/mscpx/cpx/;
+	print $fh $id."\t".$cpxname->{$cpx}."\n";
 }
 close($fh);
 #    Compound: A compound is a chemical that participates in a reaction. Both ligands
@@ -171,13 +173,13 @@ close($fh);
 #            msid (string): common modeling ID of this compound
 #            uncharged-formula (string): a electrically neutral formula for the compound   
 open($fh, ">", $directory."compound.dtx");
-print $fh "id\tmsid\tmass\tmod-date\tabbr\tdefault-charge\tdeltaG\tdeltaG-error\tformula\tlabel\tuncharged-formula\n";
+print $fh "abbr\tcharge\tdeltaG\tdeltaG-error\tformula\tid\tlabel\tmass\tmod-date\tsource-id\n";
 my $cpds = $bio->compounds();
 for (my $i=0; $i < @{$cpds}; $i++) {
 	my $cpd = $cpds->[$i];
 	my $id = "kb|".$cpd->id();
 	$id =~ s/cpd0*/cpd./;
-	print $fh $id."\t".$cpd->id()."\t".$cpd->mass()."\t".$cpd->modDate()."\t".$cpd->abbreviation()."\t".$cpd->defaultCharge()."\t".$cpd->deltaG()."\t".$cpd->deltaGErr()."\t".$cpd->formula()."\t".$cpd->name()."\t".$cpd->unchargedFormula()."\n";
+	print $fh $cpd->abbreviation()."\t".$cpd->defaultCharge()."\t".$cpd->deltaG()."\t".$cpd->deltaGErr()."\t".$cpd->formula()."\t".$id."\t".$cpd->name()."\t".$cpd->mass()."\t".$cpd->modDate()."\t".$cpd->id()."\n";
 }
 close($fh);
 #    Media: A media describes the chemical content of the solution in which cells
@@ -193,11 +195,11 @@ close($fh);
 #            name (string): descriptive name of the media
 #            type (string): type of the medium (aerobic or anaerobic)
 open($fh, ">", $directory."media.dtx");
-print $fh "id\tis-minimal\tmod-date\tname\ttype\n";
+print $fh "id\tis-minimal\tmod-date\tsource-id\tname\ttype\n";
 my $medias = $bio->media();
 for (my $i=0; $i < @{$medias}; $i++) {
 	my $media = $medias->[$i];
-	print $fh "kb|med.".($i+1)."\t".$media->isMinimal()."\t".$media->modDate()."\t".$media->name()."\t".$media->type()."\n";
+	print $fh "kb|med.".($i+1)."\t".$media->isMinimal()."\t".$media->modDate()."\t".$media->name()."\t".$media->name()."\t".$media->type()."\n";
 }
 close($fh);
 #    Reaction: A reaction is a chemical process that converts one set of compounds
@@ -222,13 +224,13 @@ close($fh);
 #                             reaction, generally indicating whether the reaction
 #                             is balanced and/or accurate
 open($fh, ">", $directory."reaction.dtx");
-print $fh "id\tdefault-protons\tdeltaG\tdeltaG-error\tdirection\tmod-date\tthermodynamic-reversibility\tabbr\tmsid\tname\tstatus\n";
+print $fh "abbr\tdefault-protons\tdeltaG\tdeltaG-error\tdirection\tmod-date\tname\tid\tsource-id\tstatus\tthermodynamic-reversibility\n";
 my $rxns = $bio->reactions();
 for (my $i=0; $i < @{$rxns}; $i++) {
 	my $rxn = $rxns->[$i];
 	my $id = "kb|".$rxn->id();
 	$id =~ s/rxn0*/rxn./;
-	print $fh $id."\t".$rxn->defaultProtons()."\t".$rxn->deltaG()."\t".$rxn->deltaGErr()."\t".$rxn->direction()."\t".$rxn->modDate()."\t".$rxn->thermoReversibility()."\t".$rxn->abbreviation()."\t".$rxn->id()."\t".$rxn->name()."\t".$rxn->status()."\n";
+	print $fh $rxn->abbreviation()."\t".$rxn->defaultProtons()."\t".$rxn->deltaG()."\t".$rxn->deltaGErr()."\t".$rxn->direction()."\t".$rxn->modDate()."\t".$rxn->name()."\t".$id."\t".$rxn->id()."\t".$rxn->status()."\t".$rxn->thermoReversibility()."\n";
 }
 close($fh);
 #    HasCompoundAliasFrom: This relationship connects a source (database or organization)
@@ -240,7 +242,7 @@ close($fh);
 #            to-link (string): id of the target Compound.
 #            alias (string): alias for the compound assigned by the source
 open($fh, ">", $directory."hasCompoundAliasFrom.dtx");
-print $fh "from-link\tto-link\talias\n";
+print $fh "alias\tto-link\tfrom-link\n";
 my $cpdaliases = $bio->queryObjects("aliasSets", { attribute => "compounds" });
 for (my $i=0; $i < @{$cpdaliases}; $i++) {
 	my $aliases = $cpdaliases->[$i]->aliases;
@@ -249,7 +251,7 @@ for (my $i=0; $i < @{$cpdaliases}; $i++) {
 		foreach my $uuid (@$uuids) {
 			my $id = "kb|".$bio->getObject("compounds",$uuid)->id();
 			$id =~ s/cpd0*/cpd./;
-			print $fh $cpdaliases->[$i]->name."\t".$id."\t".$als_name."\n";
+			print $fh $als_name."\t".$id."\t".$cpdaliases->[$i]->name."\n";
 		}
 	}
 }
@@ -265,7 +267,7 @@ close($fh);
 #            maximum-flux (float): maximum flux of the compound for this media
 #            minimum-flux (float): minimum flux of the compound for this media    
 open($fh, ">", $directory."hasPresenceOf.dtx");
-print $fh "from-link\tto-link\tconcentration\tmaximum-flux\tminimum-flux\n";
+print $fh "concentration\tfrom-link\tmaximum-flux\tminimum-flux\tto-link\n";
 $medias = $bio->media();
 for (my $i=0; $i < @{$medias}; $i++) {
 	my $media = $medias->[$i];
@@ -273,7 +275,7 @@ for (my $i=0; $i < @{$medias}; $i++) {
 	for (my $j=0; $j < @{$mediacpds}; $j++) {
 		my $id = "kb|".$mediacpds->[$j]->compound()->id();
 		$id =~ s/cpd0*/cpd./;
-		print $fh "kb|med.".($i+1)."\t".$id."\t".$mediacpds->[$j]->concentration()."\t".$mediacpds->[$j]->maxFlux()."\t".$mediacpds->[$j]->minFlux()."\n";
+		print $fh $mediacpds->[$j]->concentration()."\t"."kb|med.".($i+1)."\t".$mediacpds->[$j]->maxFlux()."\t".$mediacpds->[$j]->minFlux()."\t".$id."\n";
 	}
 }
 close($fh); 
@@ -286,7 +288,7 @@ close($fh);
 #            to-link (string): id of the target Reaction.
 #            alias (string): alias for the reaction assigned by the source    
 open($fh, ">", $directory."hasReactionAliasFrom.dtx");
-print $fh "from-link\tto-link\talias\n";
+print $fh "alias\tto-link\tfrom-link\n";
 my $rxnaliases = $bio->queryObjects("aliasSets", { attribute => "reactions" });
 for (my $i=0; $i < @{$rxnaliases}; $i++) {
 	my $aliases = $rxnaliases->[$i]->aliases;
@@ -295,7 +297,7 @@ for (my $i=0; $i < @{$rxnaliases}; $i++) {
 		foreach my $uuid (@$uuids) {
 			my $id = "kb|".$bio->getObject("reactions",$uuid)->id();
 			$id =~ s/rxn0*/rxn./;
-			print $fh $rxnaliases->[$i]->name."\t".$id."\t".$als_name."\n";
+			print $fh $als_name."\t".$id."\t".$rxnaliases->[$i]->name."\n";
 		}
 	}
 }
@@ -332,6 +334,7 @@ foreach my $cpxrxn (keys(%{$cpxrxnHash})) {
 	foreach my $rxn (keys(%{$cpxrxnHash->{$cpxrxn}})) {
 		my $cpxrxn = "kb|".$cpxrxn;
 		$cpxrxn =~ s/cpx0*/cpx./;
+		$cpxrxn =~ s/mscpx/cpx/;
 		my $id = "kb|".$rxn;
 		$id =~ s/rxn0*/rxn./;
 		print $fh $cpxrxn."\t".$id."\n";
@@ -384,8 +387,8 @@ close($fh);
 #            is-transport (boolean): TRUE if the compound is being transported out
 #                                    of or into the reaction's compartment, FALSE
 #                                    if it stays in the same compartment
-open($fh, ">", $directory."Reagent.dtx");
-print $fh "from-link\tto-link\tcoefficient\tcofactor\tis-transport\n";
+open($fh, ">", $directory."Involves.dtx");
+print $fh "coefficient\tcofactor\tfrom-link\tto-link\n";
 $rxns = $bio->reactions();
 for (my $i=0; $i < @{$rxns}; $i++) {
 	my $rxn = $rxns->[$i];
@@ -395,7 +398,7 @@ for (my $i=0; $i < @{$rxns}; $i++) {
 		$id =~ s/rxn0*/rxn./;
 		my $lid = $locationID->{$cpds->[$j]->compartment()->id()}.".".$cpds->[$j]->compound()->id();
 		$lid =~ s/cpd0*/cpd./;
-		print $fh $id."\t".$lid."\t".$cpds->[$j]->coefficient()."\t".$cpds->[$j]->isCofactor()."\t0\n";
+		print $fh $cpds->[$j]->coefficient()."\t".$cpds->[$j]->isCofactor()."\t".$id."\t".$lid."\n";
 	}
 }
 close($fh);
@@ -411,13 +414,14 @@ close($fh);
 #            triggering (boolean): TRUE if the presence of the role requires including
 #            the complex in the model, else FALSE.
 open($fh, ">", $directory."isTriggeredBy.dtx");
-print $fh "from-link\tto-link\tmsid\toptional\ttype\ttriggering\n";
+print $fh "from-link\toptional\tto-link\ttriggering\ttype\n";
 foreach my $cpx (keys(%{$cpxidhash})) {
 	my $roles = $cpxidhash->{$cpx}->complexroles();
 	foreach my $role (@{$roles}) {
 		my $id = "kb|".$cpxidhash->{$cpx}->name();
 		$id =~ s/cpx0*/cpx./;
-		print $fh $id."\t".$role->role()->name()."\t".$role->role()->id()."\t".$role->optional()."\t".$role->type()."\t".$role->triggering()."\n";
+		$id =~ s/mscpx/cpx/;
+		print $fh $id."\t".$role->optional()."\t".$role->role()->name()."\t".$role->triggering()."\t".$role->type()."\n";
 	}
 }
 close($fh);
