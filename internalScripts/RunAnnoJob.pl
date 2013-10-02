@@ -123,15 +123,15 @@ if (defined($inGenome->{protein_wsid}) && !defined($inGenome->{transcript_wsid})
 #Running annotation pipeline
 for (my $i=0; $i < @{$job->{jobdata}->{stages}}; $i++) {
 	if ($job->{jobdata}->{stages}->[$i]->{id} eq "call_selenoproteins") {
-		$inGenome = $annoserv->call_selenoproteins($inGenome);
+		#$inGenome = $annoserv->call_selenoproteins($inGenome);
 	} elsif ($job->{jobdata}->{stages}->[$i]->{id} eq "call_pyrrolysoproteins") {
-		$inGenome = $annoserv->call_pyrrolysoproteins($inGenome);
+		#$inGenome = $annoserv->call_pyrrolysoproteins($inGenome);
 	} elsif ($job->{jobdata}->{stages}->[$i]->{id} eq "call_RNAs") {
 		$inGenome = $annoserv->call_RNAs($inGenome);
 	} elsif ($job->{jobdata}->{stages}->[$i]->{id} eq "call_CDSs") {
 		$inGenome = $annoserv->call_CDSs($inGenome);
 	} elsif ($job->{jobdata}->{stages}->[$i]->{id} eq "find_close_neighbors") {
-		$inGenome = $annoserv->find_close_neighbors($inGenome);
+		#$inGenome = $annoserv->find_close_neighbors($inGenome);
 	} elsif ($job->{jobdata}->{stages}->[$i]->{id} eq "assign_functions_to_CDSs") {
 		$inGenome = $annoserv->assign_functions_to_CDSs($inGenome);
 	}
