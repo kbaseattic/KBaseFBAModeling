@@ -7,7 +7,7 @@ use Text::Table;
 use Bio::KBase::fbaModelServices::Client;
 use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
 use parent qw(Exporter);
-our @EXPORT_OK = qw( fbaURL get_fba_client runFBACommand universalFBAScriptCode fbaTranslation );
+our @EXPORT_OK = qw( fbaURL get_fba_client runFBACommand universalFBAScriptCode fbaTranslation roles_of_function );
 our $defaultURL = "http://kbase.us/services/fbaServices/";
 my $CurrentURL;
 
@@ -127,6 +127,14 @@ sub process {
     print "Command: ".$job->{queuing_command}."\n";
     print "Queue time: ".$job->{queuetime}."\n";
     print "Is complete: ".$job->{complete}."\n";
+}
+
+sub roles_of_function {
+	my $function = shift;
+	my $array = [split(/\#/,$function)];
+	$function = shift(@{$array});
+	$function =~ s/\s+$//;
+	return [split(/\s*;\s+|\s+[\@\/]\s+/,$function)];
 }
 
 1;

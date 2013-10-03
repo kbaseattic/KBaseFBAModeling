@@ -5492,7 +5492,9 @@ sub genome_to_fbamodel
     	$template = $self->_get_msobject("ModelTemplate",$input->{templatemodel_workspace},$input->{templatemodel});
     } elsif ($input->{coremodel} == 1) {
     	$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","CoreModelTemplate");
-    } else {
+    } elsif ($genome->{domain} eq "Plant") {
+    	$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","PlantModelTemplate");
+	} else {
     	my $class = $annotation->classifyGenomeFromAnnotation();
     	if ($class eq "Gram positive") {
     		$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","GramPosModelTemplate");
