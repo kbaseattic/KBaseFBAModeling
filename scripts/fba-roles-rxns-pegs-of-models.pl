@@ -22,7 +22,7 @@ my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translat
 
 my $in_fh;
 if ($opt->{input}) {
-    open($in_fh, "<", $opt->{input}) or die "Cannot open $input_file: $!";
+    open($in_fh, "<", $opt->{input}) or die "Cannot open input file: $!";
 } else {
     $in_fh = \*STDIN;
 }
@@ -43,6 +43,48 @@ while (defined($_ = <$in_fh>)){
     	workspace => $w_id,
 	    auth => auth()
 	);
+
+
+my $comp;
+$comp->{workspace} = 'KBaseTemplateModels';
+$comp->{templateModel} = 'GramPosModelTemplate';
+
+my $biochem = get_fba_client()->role_to_reactions($comp);
+
+
+my %hash1;
+my %hash2;
+for(my $i =0; $i< @{$biochem}; $i++){
+
+  my $comp = $biochem->[$i]->{complexes};
+  my $role = $biochem->[$i]->{name};
+
+    for (my $j =0; $j< @{$comp}; $j++){
+
+     my $comp_id = $comp->[$j]->{complex};
+     my $rxns = $comp->[$j]->{reactions};
+       #print "%$comp_id%\t";
+        for (my $k =0; $k< @{$rxns}; $k++){
+
+           my $rxn_id = $rxns->[$k]->{reaction};
+            #print "$comp_id\t*$rxn_id*\n";
+
+              #my @roles = &SeedUtils::roles_of_function($role);
+                 #foreach my $r (@roles){
+
+                   #$hash1{$rxn_id}->{$role} = 1;
+                   #push(@{$hash2{$rxn_id}},$role);
+                   $hash1{$role}->{$rxn_id} = 1;
+
+                   push(@{$hash2{$role}},$rxn_id);
+
+        }
+
+    }
+
+}
+
+
 
 my $model = get_fba_client()->get_models(\%modelHash);
 my $modelOne = $model->[0]->{reactions};
@@ -70,9 +112,9 @@ try{
     my $name = $genomeData->[$i]->{id};
     #my @rxnArray = split /\s+/, @{$roleHash{$func}};
     #print "@{$roleHash{$func}}\n";
-    if (exists $roleHash{$func} ){
+    if (exists $hash2{$func} ){
         my @rxnPrintArray;
-           foreach my $r (@{$roleHash{$func}}){
+           foreach my $r (@{$hash2{$func}}){
 
               if (exists $modelrxnHash{$r}){
                  push (@rxnPrintArray, $r);
