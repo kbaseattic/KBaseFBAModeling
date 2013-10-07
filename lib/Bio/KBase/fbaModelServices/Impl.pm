@@ -2137,10 +2137,45 @@ sub _parseSingleProtein {
 	return $subunits;
 }
 
+=head3 _addPhenotypeMedia
+
+Definition:
+    ModelSEED::MS::Model = $self->_addPnenotypeMedia(ModelSEED::MS::Model, PhenotypeSet);
+Description:
+    Add transporters for all media in a PhenotypeSet to the input model.
+    Note - this must be called BEFORE _buildFBAObject.
+
+=cut
+
+sub _addPhenotypeMedia {
+    my($self, $model, $pheno) = @_;
+    my $bio = $model->biochemistry();
+    my $mediaChecked = {};
+    for (my $i=0; $i < @{$pheno->{phenotypes}};$i++) {
+	my $media = $pheno->{phenotypes}->[$i]->[2]."/".$pheno->{phenotypes}->[$i]->[1];
+	if (!defined($mediaChecked->{$media})) {
+	    $mediaChecked->{$media} = 1;
+	    my($mediaobj);
+	    if ($pheno->{phenotypes}->[$i]->[2] eq "NO_WORKSPACE") {
+		$mediaobj = $bio->queryObject("media",{id => $pheno->{phenotypes}->[$i]->[1]});
+	    } else {
+		$mediaobj = $self->_get_msobject("Media",$pheno->{phenotypes}->[$i]->[2],$pheno->{phenotypes}->[$i]->[1]);
+		$bio->add("media",$mediaobj);
+	    }
+	    # Add transporters to the model for everything in the media
+	    if ( defined($mediaobj) ) {
+		print STDERR "Adding media ${media} to model...\n";
+		$model->addMediaReactions( { media => $mediaobj, biochemistry => $bio } );
+	    };
+	}
+    }
+    return $model;
+}
+
 =head3 _prepPhenotypeSimultationFBA
 
 Definition:
-	 = $self->_prepPhenotypeSimultationFBA(ModelSEED::MS::Model,PhenotypeSet);
+	 = $self->_prepPhenotypeSimultationFBA(ModelSEED::MS::Model,PhenotypeSet, FBA);
 Description:
 	Translate an input Model and PhenotypeSet into a loaded FBA problem object.
 	
@@ -2162,12 +2197,17 @@ sub _prepPhenotypeSimultationFBA {
 		my $media = $pheno->{phenotypes}->[$i]->[2]."/".$pheno->{phenotypes}->[$i]->[1]; 
 		if (!defined($mediaChecked->{$media})) {
 			$mediaChecked->{$media} = 1;
+			my($mediaobj);
 			if ($pheno->{phenotypes}->[$i]->[2] eq "NO_WORKSPACE") {
-				my $mediaobj = $bio->queryObject("media",{id => $pheno->{phenotypes}->[$i]->[1]});
+				$mediaobj = $bio->queryObject("media",{id => $pheno->{phenotypes}->[$i]->[1]});
 				$media = $mediaobj->uuid();
 			} else {
-				my $mediaobj = $self->_get_msobject("Media",$pheno->{phenotypes}->[$i]->[2],$pheno->{phenotypes}->[$i]->[1]);
+			    # This could be defined from earlier call (to _addPhenotypeMedia) and trying to define it again causes the program to hang (I think).
+			    $mediaobj = $bio->queryObject("media", {id => $pheno->{phenotypes}->[$i]->[1]});
+			    if ( ! defined($mediaobj) ) {
+				$mediaobj = $self->_get_msobject("Media",$pheno->{phenotypes}->[$i]->[2],$pheno->{phenotypes}->[$i]->[1]);
 				$bio->add("media",$mediaobj);
+			    }
 			}
 		}
 		my $genekos = [];
@@ -7543,6 +7583,7 @@ sub simulate_phenotypes
 	#Retrieving model
 	my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
 	#Creating FBAFormulation Object
+        $model = $self->_addPhenotypeMedia($model, $pheno);
 	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
 	my $fba = $self->_buildFBAObject($input->{formulation},$model,"NO_WORKSPACE",Data::UUID->new()->create_str());
 	#Constructing FBA simulation object from 
