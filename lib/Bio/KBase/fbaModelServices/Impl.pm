@@ -7404,6 +7404,8 @@ simulate_phenotypes_params is a reference to a hash where the following keys are
 	workspace has a value which is a workspace_id
 	overwrite has a value which is a bool
 	auth has a value which is a string
+	all_transporters has a value which is a bool
+	positive_transporters has a value which is a bool
 fbamodel_id is a string
 workspace_id is a string
 phenotype_set_id is a string
@@ -7486,6 +7488,8 @@ simulate_phenotypes_params is a reference to a hash where the following keys are
 	workspace has a value which is a workspace_id
 	overwrite has a value which is a bool
 	auth has a value which is a string
+	all_transporters has a value which is a bool
+	positive_transporters has a value which is a bool
 fbamodel_id is a string
 workspace_id is a string
 phenotype_set_id is a string
@@ -7649,6 +7653,158 @@ sub simulate_phenotypes
 	my $msg = "Invalid returns passed to simulate_phenotypes:\n" . join("", map { "\t$_\n" } @_bad_returns);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
 							       method_name => 'simulate_phenotypes');
+    }
+    return($output);
+}
+
+
+=head2 add_media_transporters
+
+  $output = $obj->add_media_transporters($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is an add_media_transporters_params
+$output is an object_metadata
+add_media_transporters_params is a reference to a hash where the following keys are defined:
+	phenotypeSet has a value which is a phenotype_set_id
+	phenotypeSet_workspace has a value which is a workspace_id
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
+	outmodel has a value which is a fbamodel_id
+	workspace has a value which is a workspace_id
+	overwrite has a value which is a bool
+	auth has a value which is a string
+	all_transporters has a value which is a bool
+	positive_transporters has a value which is a bool
+phenotype_set_id is a string
+workspace_id is a string
+fbamodel_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is an add_media_transporters_params
+$output is an object_metadata
+add_media_transporters_params is a reference to a hash where the following keys are defined:
+	phenotypeSet has a value which is a phenotype_set_id
+	phenotypeSet_workspace has a value which is a workspace_id
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
+	outmodel has a value which is a fbamodel_id
+	workspace has a value which is a workspace_id
+	overwrite has a value which is a bool
+	auth has a value which is a string
+	all_transporters has a value which is a bool
+	positive_transporters has a value which is a bool
+phenotype_set_id is a string
+workspace_id is a string
+fbamodel_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+
+
+=item Description
+
+Adds transporters for media in a PhenotypeSet to a model
+
+=back
+
+=cut
+
+sub add_media_transporters
+{
+    my $self = shift;
+    my($input) = @_;
+
+    my @_bad_arguments;
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to add_media_transporters:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'add_media_transporters');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($output);
+    #BEGIN add_media_transporters
+    # TODO - I could also attempt to use the probanno object to add the "best" transporters. But I didn't
+    # get that complicated here.
+    $self->_setContext($ctx,$input);
+    $input = $self->_validateargs($input,["phenotypeSet","model","outmodel", "workspace"],
+				  {
+				      phenotypeSet_workspace => $input->{workspace},
+				      model_workspace => $input->{workspace},
+				      overwrite => 0,
+				      auth => $self->_authentication(),
+				      all_transporters => 0,
+				      positive_transporters => 0
+				  });
+
+    my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
+    my $pheno = $self->_get_msobject("PhenotypeSet", $input->{phenotypeSet_workspace}, $input->{phenotypeSet});
+
+    if ( $input->{all_transporters} ) {
+	$model = $self->_addPhenotypeMedia($model, $pheno, 0);
+    } elsif ( $input->{positive_transporters} ) {
+	    $model = $self->_addPhenotypeMedia($model, $pheno, 1);
+    } else {
+	die "Must specify either all_transporters or positive_transporters.\n";
+    }
+
+    my $output = $self->_save_msobject($model,"Model",$input->{workspace},$input->{outmodel},"add_media_transporters");
+
+    #END add_media_transporters
+    my @_bad_returns;
+    (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to add_media_transporters:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'add_media_transporters');
     }
     return($output);
 }
@@ -20191,6 +20347,8 @@ Input parameters for the "simulate_phenotypes" function.
         phenotypeSimulationSet_id phenotypeSimultationSet - ID of the phenotype simulation set to be generated (an optional argument: default is 'undef')
         workspace_id workspace - workspace where the phenotype simulation set should be saved (a required argument)
         string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+        bool all_transporters - Set to TRUE if you want to add transporters for ALL media in the phenotypeset before simulating
+        bool positive_transporters - Set to TRUE if you want to add transporters for POSITIVE (non-zero growth) media only before simulating
 
 
 =item Definition
@@ -20209,6 +20367,8 @@ phenotypeSimultationSet has a value which is a phenotypeSimulationSet_id
 workspace has a value which is a workspace_id
 overwrite has a value which is a bool
 auth has a value which is a string
+all_transporters has a value which is a bool
+positive_transporters has a value which is a bool
 
 </pre>
 
@@ -20227,6 +20387,72 @@ phenotypeSimultationSet has a value which is a phenotypeSimulationSet_id
 workspace has a value which is a workspace_id
 overwrite has a value which is a bool
 auth has a value which is a string
+all_transporters has a value which is a bool
+positive_transporters has a value which is a bool
+
+
+=end text
+
+=back
+
+
+
+=head2 add_media_transporters_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the add_media_transporters function.
+
+              phenotype_set_id phenotypeSet - ID for a phenotype set (required)
+              workspace_id phenotypeSet_workspace - ID for the workspace in which the phenotype set is found
+              fbamodel_id model - Model to which to add the transport reactions (required)
+              workspace_id model_workspace - workspace containing the input model
+              fbamodel_id outmodel - Name of output model (with transporters added)
+              workspace_id workspace - workspace where the modified model should be saved
+              bool overwrite - Overwrite or not
+              stirng auth - Auth string
+              bool all_transporters - Add transporters for ALL media in the phenotypeset
+              bool positive_transporters - Add transporters for only POSITIVE (non-zero growth) media in the phenotype set
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+phenotypeSet has a value which is a phenotype_set_id
+phenotypeSet_workspace has a value which is a workspace_id
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+outmodel has a value which is a fbamodel_id
+workspace has a value which is a workspace_id
+overwrite has a value which is a bool
+auth has a value which is a string
+all_transporters has a value which is a bool
+positive_transporters has a value which is a bool
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+phenotypeSet has a value which is a phenotype_set_id
+phenotypeSet_workspace has a value which is a workspace_id
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+outmodel has a value which is a fbamodel_id
+workspace has a value which is a workspace_id
+overwrite has a value which is a bool
+auth has a value which is a string
+all_transporters has a value which is a bool
+positive_transporters has a value which is a bool
 
 
 =end text
