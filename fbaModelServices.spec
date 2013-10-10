@@ -1424,6 +1424,7 @@ module fbaModelServices {
 		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
 	*/
+    typedef string Genome_uid;
     typedef structure {
 		Genome_uid uid;
 		GenomeObject genomeobj;
@@ -1820,7 +1821,8 @@ module fbaModelServices {
 		phenotypeSimulationSet_id phenotypeSimultationSet - ID of the phenotype simulation set to be generated (an optional argument: default is 'undef')
 		workspace_id workspace - workspace where the phenotype simulation set should be saved (a required argument)
 		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
-		
+		bool all_transporters - Set to TRUE if you want to add transporters for ALL media in the phenotypeset before simulating
+		bool positive_transporters - Set to TRUE if you want to add transporters for POSITIVE (non-zero growth) media only before simulating
 	*/
     typedef structure {
 		fbamodel_id model;
@@ -1833,12 +1835,47 @@ module fbaModelServices {
 		workspace_id workspace;
 		bool overwrite;
 		string auth;
+		bool all_transporters;
+		bool positive_transporters;
     } simulate_phenotypes_params;
     /*
         Simulates the specified phenotype set
     */
     funcdef simulate_phenotypes (simulate_phenotypes_params input) returns (object_metadata output);
     
+    /* Input parameters for the add_media_transporters function.
+
+              phenotype_set_id phenotypeSet - ID for a phenotype set (required)
+	      workspace_id phenotypeSet_workspace - ID for the workspace in which the phenotype set is found
+	      fbamodel_id model - Model to which to add the transport reactions (required)
+	      workspace_id model_workspace - workspace containing the input model
+	      fbamodel_id outmodel - Name of output model (with transporters added)
+	      workspace_id workspace - workspace where the modified model should be saved
+	      bool overwrite - Overwrite or not
+	      stirng auth - Auth string
+	      bool all_transporters - Add transporters for ALL media in the phenotypeset
+	      bool positive_transporters - Add transporters for only POSITIVE (non-zero growth) media in the phenotype set
+
+    */
+    typedef structure {
+	phenotype_set_id phenotypeSet;
+	workspace_id phenotypeSet_workspace;
+	fbamodel_id model;
+	workspace_id model_workspace;
+	fbamodel_id outmodel;
+	workspace_id workspace;
+	bool overwrite;
+	string auth;
+	bool all_transporters;
+	bool positive_transporters;
+    } add_media_transporters_params;
+
+    /*
+         Adds transporters for media in a PhenotypeSet to a model
+	 
+    */
+    funcdef add_media_transporters (add_media_transporters_params input) returns (object_metadata output);
+
     /* Input parameters for the "export_phenotypeSimulationSet" function.
 	
 		phenotypeSimulationSet_id phenotypeSimultationSet - ID of the phenotype simulation set to be exported (a required argument)

@@ -4156,6 +4156,8 @@ simulate_phenotypes_params is a reference to a hash where the following keys are
 	workspace has a value which is a workspace_id
 	overwrite has a value which is a bool
 	auth has a value which is a string
+	all_transporters has a value which is a bool
+	positive_transporters has a value which is a bool
 fbamodel_id is a string
 workspace_id is a string
 phenotype_set_id is a string
@@ -4238,6 +4240,8 @@ simulate_phenotypes_params is a reference to a hash where the following keys are
 	workspace has a value which is a workspace_id
 	overwrite has a value which is a bool
 	auth has a value which is a string
+	all_transporters has a value which is a bool
+	positive_transporters has a value which is a bool
 fbamodel_id is a string
 workspace_id is a string
 phenotype_set_id is a string
@@ -4352,6 +4356,148 @@ sub simulate_phenotypes
         Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method simulate_phenotypes",
 					    status_line => $self->{client}->status_line,
 					    method_name => 'simulate_phenotypes',
+				       );
+    }
+}
+
+
+
+=head2 add_media_transporters
+
+  $output = $obj->add_media_transporters($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is an add_media_transporters_params
+$output is an object_metadata
+add_media_transporters_params is a reference to a hash where the following keys are defined:
+	phenotypeSet has a value which is a phenotype_set_id
+	phenotypeSet_workspace has a value which is a workspace_id
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
+	outmodel has a value which is a fbamodel_id
+	workspace has a value which is a workspace_id
+	overwrite has a value which is a bool
+	auth has a value which is a string
+	all_transporters has a value which is a bool
+	positive_transporters has a value which is a bool
+phenotype_set_id is a string
+workspace_id is a string
+fbamodel_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is an add_media_transporters_params
+$output is an object_metadata
+add_media_transporters_params is a reference to a hash where the following keys are defined:
+	phenotypeSet has a value which is a phenotype_set_id
+	phenotypeSet_workspace has a value which is a workspace_id
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
+	outmodel has a value which is a fbamodel_id
+	workspace has a value which is a workspace_id
+	overwrite has a value which is a bool
+	auth has a value which is a string
+	all_transporters has a value which is a bool
+	positive_transporters has a value which is a bool
+phenotype_set_id is a string
+workspace_id is a string
+fbamodel_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+=item Description
+
+Adds transporters for media in a PhenotypeSet to a model
+
+=back
+
+=cut
+
+sub add_media_transporters
+{
+    my($self, @args) = @_;
+
+# Authentication: none
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function add_media_transporters (received $n, expecting 1)");
+    }
+    {
+	my($input) = @args;
+
+	my @_bad_arguments;
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to add_media_transporters:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'add_media_transporters');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.add_media_transporters",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{code},
+					       method_name => 'add_media_transporters',
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method add_media_transporters",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'add_media_transporters',
 				       );
     }
 }
@@ -9878,9 +10024,9 @@ metagenome_to_fbamodels_params is a reference to a hash where the following keys
 	metaanno_uid has a value which is a string
 	metaanno_ws has a value which is a workspace_id
 	min_abundance has a value which is a float
-	min_confidence has a value which is a float
+	confidence_threshold has a value which is a float
 	max_otu_models has a value which is an int
-	tail_model has a value which is a bool
+	min_reactions has a value which is an int
 	templates has a value which is a reference to a hash where the key is a string and the value is a reference to a list containing 2 items:
 	0: (template_ws) a workspace_id
 	1: (template_uid) a template_id
@@ -9920,9 +10066,9 @@ metagenome_to_fbamodels_params is a reference to a hash where the following keys
 	metaanno_uid has a value which is a string
 	metaanno_ws has a value which is a workspace_id
 	min_abundance has a value which is a float
-	min_confidence has a value which is a float
+	confidence_threshold has a value which is a float
 	max_otu_models has a value which is an int
-	tail_model has a value which is a bool
+	min_reactions has a value which is an int
 	templates has a value which is a reference to a hash where the key is a string and the value is a reference to a list containing 2 items:
 	0: (template_ws) a workspace_id
 	1: (template_uid) a template_id
@@ -15139,7 +15285,7 @@ overwrite has a value which is a bool
 
 
 
-=head2 genome_object_to_workspace_params
+=head2 Genome_uid
 
 =over 4
 
@@ -15153,6 +15299,32 @@ Input parameters for the "genome_object_to_workspace" function.
         GenomeObject genomeobj - full genome typed object to be loaded into the workspace (a required argument)
         workspace_id workspace - ID of the workspace into which the genome typed object is to be loaded (a required argument)
         string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 genome_object_to_workspace_params
+
+=over 4
+
 
 
 =item Definition
@@ -16026,6 +16198,8 @@ Input parameters for the "simulate_phenotypes" function.
         phenotypeSimulationSet_id phenotypeSimultationSet - ID of the phenotype simulation set to be generated (an optional argument: default is 'undef')
         workspace_id workspace - workspace where the phenotype simulation set should be saved (a required argument)
         string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+        bool all_transporters - Set to TRUE if you want to add transporters for ALL media in the phenotypeset before simulating
+        bool positive_transporters - Set to TRUE if you want to add transporters for POSITIVE (non-zero growth) media only before simulating
 
 
 =item Definition
@@ -16044,6 +16218,8 @@ phenotypeSimultationSet has a value which is a phenotypeSimulationSet_id
 workspace has a value which is a workspace_id
 overwrite has a value which is a bool
 auth has a value which is a string
+all_transporters has a value which is a bool
+positive_transporters has a value which is a bool
 
 </pre>
 
@@ -16062,6 +16238,72 @@ phenotypeSimultationSet has a value which is a phenotypeSimulationSet_id
 workspace has a value which is a workspace_id
 overwrite has a value which is a bool
 auth has a value which is a string
+all_transporters has a value which is a bool
+positive_transporters has a value which is a bool
+
+
+=end text
+
+=back
+
+
+
+=head2 add_media_transporters_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the add_media_transporters function.
+
+              phenotype_set_id phenotypeSet - ID for a phenotype set (required)
+              workspace_id phenotypeSet_workspace - ID for the workspace in which the phenotype set is found
+              fbamodel_id model - Model to which to add the transport reactions (required)
+              workspace_id model_workspace - workspace containing the input model
+              fbamodel_id outmodel - Name of output model (with transporters added)
+              workspace_id workspace - workspace where the modified model should be saved
+              bool overwrite - Overwrite or not
+              stirng auth - Auth string
+              bool all_transporters - Add transporters for ALL media in the phenotypeset
+              bool positive_transporters - Add transporters for only POSITIVE (non-zero growth) media in the phenotype set
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+phenotypeSet has a value which is a phenotype_set_id
+phenotypeSet_workspace has a value which is a workspace_id
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+outmodel has a value which is a fbamodel_id
+workspace has a value which is a workspace_id
+overwrite has a value which is a bool
+auth has a value which is a string
+all_transporters has a value which is a bool
+positive_transporters has a value which is a bool
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+phenotypeSet has a value which is a phenotype_set_id
+phenotypeSet_workspace has a value which is a workspace_id
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+outmodel has a value which is a fbamodel_id
+workspace has a value which is a workspace_id
+overwrite has a value which is a bool
+auth has a value which is a string
+all_transporters has a value which is a bool
+positive_transporters has a value which is a bool
 
 
 =end text
@@ -19388,9 +19630,9 @@ workspace has a value which is a workspace_id
 metaanno_uid has a value which is a string
 metaanno_ws has a value which is a workspace_id
 min_abundance has a value which is a float
-min_confidence has a value which is a float
+confidence_threshold has a value which is a float
 max_otu_models has a value which is an int
-tail_model has a value which is a bool
+min_reactions has a value which is an int
 templates has a value which is a reference to a hash where the key is a string and the value is a reference to a list containing 2 items:
 0: (template_ws) a workspace_id
 1: (template_uid) a template_id
@@ -19409,9 +19651,9 @@ workspace has a value which is a workspace_id
 metaanno_uid has a value which is a string
 metaanno_ws has a value which is a workspace_id
 min_abundance has a value which is a float
-min_confidence has a value which is a float
+confidence_threshold has a value which is a float
 max_otu_models has a value which is an int
-tail_model has a value which is a bool
+min_reactions has a value which is an int
 templates has a value which is a reference to a hash where the key is a string and the value is a reference to a list containing 2 items:
 0: (template_ws) a workspace_id
 1: (template_uid) a template_id
