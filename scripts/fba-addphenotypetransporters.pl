@@ -12,7 +12,7 @@ use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand univer
 
 my $primaryArgs = ["Model ID" , "PhenotypeSet ID" , "Output model ID"];
 my $servercommand = "add_media_transporters";
-my $script = "kbfba-addphenotypetransporters";
+my $script = "fba-addphenotypetransporters";
 my $translation = {
 	"Model ID" => "model",
 	"PhenotypeSet ID" => "phenotypeSet",
