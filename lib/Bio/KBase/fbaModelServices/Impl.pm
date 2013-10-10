@@ -4910,10 +4910,12 @@ sub import_probanno
 $input is a genome_object_to_workspace_params
 $genomeMeta is an object_metadata
 genome_object_to_workspace_params is a reference to a hash where the following keys are defined:
+	uid has a value which is a Genome_uid
 	genomeobj has a value which is a GenomeObject
 	workspace has a value which is a workspace_id
 	auth has a value which is a string
 	overwrite has a value which is a bool
+Genome_uid is a string
 GenomeObject is a reference to a hash where the following keys are defined:
 	id has a value which is a genome_id
 	scientific_name has a value which is a string
@@ -4983,10 +4985,12 @@ workspace_ref is a string
 $input is a genome_object_to_workspace_params
 $genomeMeta is an object_metadata
 genome_object_to_workspace_params is a reference to a hash where the following keys are defined:
+	uid has a value which is a Genome_uid
 	genomeobj has a value which is a GenomeObject
 	workspace has a value which is a workspace_id
 	auth has a value which is a string
 	overwrite has a value which is a bool
+Genome_uid is a string
 GenomeObject is a reference to a hash where the following keys are defined:
 	id has a value which is a genome_id
 	scientific_name has a value which is a string
@@ -11743,16 +11747,17 @@ $params is an annotate_workspace_Genome_params
 $job is a JobObject
 annotate_workspace_Genome_params is a reference to a hash where the following keys are defined:
 	Genome_uid has a value which is a string
+	Genome_ws has a value which is a string
+	new_uid has a value which is a string
 	workspace has a value which is a workspace_id
-	full_annotation has a value which is a bool
-	call_selenoproteins has a value which is a bool
-	call_pyrrolysoproteins has a value which is a bool
-	call_RNAs has a value which is a bool
-	call_CDSs has a value which is a bool
-	find_close_neighbors has a value which is a bool
-	assign_functions_to_CDSs has a value which is a bool
+	pipeline_stages has a value which is a reference to a list where each element is an AnnotationPipelineStage
 	auth has a value which is a string
 workspace_id is a string
+AnnotationPipelineStage is a reference to a hash where the following keys are defined:
+	id has a value which is a stage_id
+	enable has a value which is a bool
+	parameters has a value which is a reference to a hash where the key is a string and the value is a string
+stage_id is a string
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
 	type has a value which is a string
@@ -11776,16 +11781,17 @@ $params is an annotate_workspace_Genome_params
 $job is a JobObject
 annotate_workspace_Genome_params is a reference to a hash where the following keys are defined:
 	Genome_uid has a value which is a string
+	Genome_ws has a value which is a string
+	new_uid has a value which is a string
 	workspace has a value which is a workspace_id
-	full_annotation has a value which is a bool
-	call_selenoproteins has a value which is a bool
-	call_pyrrolysoproteins has a value which is a bool
-	call_RNAs has a value which is a bool
-	call_CDSs has a value which is a bool
-	find_close_neighbors has a value which is a bool
-	assign_functions_to_CDSs has a value which is a bool
+	pipeline_stages has a value which is a reference to a list where each element is an AnnotationPipelineStage
 	auth has a value which is a string
 workspace_id is a string
+AnnotationPipelineStage is a reference to a hash where the following keys are defined:
+	id has a value which is a stage_id
+	enable has a value which is a bool
+	parameters has a value which is a reference to a hash where the key is a string and the value is a string
+stage_id is a string
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
 	type has a value which is a string
@@ -19261,7 +19267,7 @@ overwrite has a value which is a bool
 
 
 
-=head2 genome_object_to_workspace_params
+=head2 Genome_uid
 
 =over 4
 
@@ -19271,6 +19277,7 @@ overwrite has a value which is a bool
 
 Input parameters for the "genome_object_to_workspace" function.
 
+        Genome_uid uid - ID to use when saving genome to workspace
         GenomeObject genomeobj - full genome typed object to be loaded into the workspace (a required argument)
         workspace_id workspace - ID of the workspace into which the genome typed object is to be loaded (a required argument)
         string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
@@ -19281,7 +19288,34 @@ Input parameters for the "genome_object_to_workspace" function.
 =begin html
 
 <pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 genome_object_to_workspace_params
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
 a reference to a hash where the following keys are defined:
+uid has a value which is a Genome_uid
 genomeobj has a value which is a GenomeObject
 workspace has a value which is a workspace_id
 auth has a value which is a string
@@ -19294,6 +19328,7 @@ overwrite has a value which is a bool
 =begin text
 
 a reference to a hash where the following keys are defined:
+uid has a value which is a Genome_uid
 genomeobj has a value which is a GenomeObject
 workspace has a value which is a workspace_id
 auth has a value which is a string
@@ -20988,7 +21023,7 @@ sequence has a value which is a string
 
 
 
-=head2 fasta_to_ProteinSet_params
+=head2 ProteinSet
 
 =over 4
 
@@ -21572,7 +21607,7 @@ genetic_code has a value which is an int
 
 
 
-=head2 annotate_workspace_Genome_params
+=head2 stage_id
 
 =over 4
 
@@ -21590,16 +21625,91 @@ genetic_code has a value which is an int
 =begin html
 
 <pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 AnnotationPipelineStage
+
+=over 4
+
+
+
+=item Description
+
+stage_id id - ID of stage of analysis to run
+bool enable - boolean indicating the stage should be run
+mapping<string,string> parameters - parameters for the analysis stage
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+id has a value which is a stage_id
+enable has a value which is a bool
+parameters has a value which is a reference to a hash where the key is a string and the value is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+id has a value which is a stage_id
+enable has a value which is a bool
+parameters has a value which is a reference to a hash where the key is a string and the value is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 annotate_workspace_Genome_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "annotate_workspace_Genome" function.
+
+string Genome_uid - user ID to be assigned to the Genome (required argument)
+string Genome_ws - workspace with genome for annotation (optional; workspace argument will be used if no genome workspace is provided)
+string new_uid - new ID to assign to annotated genome (optional; original genome will be overwritten if no new uid is provided)
+workspace_id workspace - ID of workspace with Genome (required argument)
+list<AnnotationPipelineStage> pipeline_stages - list of annotation pipeline steps to run
+string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+
+
+=item Definition
+
+=begin html
+
+<pre>
 a reference to a hash where the following keys are defined:
 Genome_uid has a value which is a string
+Genome_ws has a value which is a string
+new_uid has a value which is a string
 workspace has a value which is a workspace_id
-full_annotation has a value which is a bool
-call_selenoproteins has a value which is a bool
-call_pyrrolysoproteins has a value which is a bool
-call_RNAs has a value which is a bool
-call_CDSs has a value which is a bool
-find_close_neighbors has a value which is a bool
-assign_functions_to_CDSs has a value which is a bool
+pipeline_stages has a value which is a reference to a list where each element is an AnnotationPipelineStage
 auth has a value which is a string
 
 </pre>
@@ -21610,14 +21720,10 @@ auth has a value which is a string
 
 a reference to a hash where the following keys are defined:
 Genome_uid has a value which is a string
+Genome_ws has a value which is a string
+new_uid has a value which is a string
 workspace has a value which is a workspace_id
-full_annotation has a value which is a bool
-call_selenoproteins has a value which is a bool
-call_pyrrolysoproteins has a value which is a bool
-call_RNAs has a value which is a bool
-call_CDSs has a value which is a bool
-find_close_neighbors has a value which is a bool
-assign_functions_to_CDSs has a value which is a bool
+pipeline_stages has a value which is a reference to a list where each element is an AnnotationPipelineStage
 auth has a value which is a string
 
 

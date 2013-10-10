@@ -1421,6 +1421,7 @@ module fbaModelServices {
 		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
 	*/
+    typedef string Genome_uid;
     typedef structure {
 		Genome_uid uid;
 		GenomeObject genomeobj;
