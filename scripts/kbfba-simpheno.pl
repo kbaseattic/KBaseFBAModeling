@@ -25,7 +25,9 @@ my $translation = {
 	notes => "notes",
 	workspace => "workspace",
 	auth => "auth",
-	overwrite => "overwrite"
+	overwrite => "overwrite",
+	alltransporters => "all_transporters",
+	positivetransporters => "positive_transporters"
 };
 my $fbaTranslation = {
 	objfraction => "objfraction",
@@ -66,7 +68,9 @@ my $specs = [
     [ 'objfraction:s', 'Fraction of objective for follow on analysis', { "default" => 0.1 }],
     [ 'notes:s', 'Notes for flux balance analysis' ],
     [ 'workspace|w:s', 'Workspace to save FBA results', { "default" => workspace() } ],
-    [ 'overwrite|o', 'Overwrite any existing FBA with same name' ]
+    [ 'overwrite|o', 'Overwrite any existing FBA with same name' ],
+    [ 'alltransporters', 'Add transporters for everything in EVERY media in the phenotype set before doing the simulation' ],
+    [ 'positivetransporters', 'Add transporters ONLY for media that the organism grows on in the phenotype set before doing the simulation' ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
 $params->{formulation} = {

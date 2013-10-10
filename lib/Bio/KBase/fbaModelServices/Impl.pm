@@ -2148,10 +2148,15 @@ Description:
 =cut
 
 sub _addPhenotypeMedia {
-    my($self, $model, $pheno) = @_;
+    my($self, $model, $pheno, $positiveonly) = @_;
     my $bio = $model->biochemistry();
     my $mediaChecked = {};
     for (my $i=0; $i < @{$pheno->{phenotypes}};$i++) {
+	# If we only want to add media for POSITIVE phenotypes we need to check the growth rate
+	# and make sure it isn't 0.
+	if ( $positiveonly && ( $pheno->{phenotypes}->[$i]->[4] eq "0" ) ) {
+	     next;
+	}
 	my $media = $pheno->{phenotypes}->[$i]->[2]."/".$pheno->{phenotypes}->[$i]->[1];
 	if (!defined($mediaChecked->{$media})) {
 	    $mediaChecked->{$media} = 1;
@@ -7580,14 +7585,20 @@ sub simulate_phenotypes
 		formulation => undef,
 		notes => "",
 		phenotypeSimultationSet => $input->{phenotypeSet}.".simulation",
-		overwrite => 0
+		overwrite => 0,
+		all_transporters => 0,
+		positive_transporters => 0
 	});
 	#Retrieving phenotypes
 	my $pheno = $self->_get_msobject("PhenotypeSet",$input->{phenotypeSet_workspace},$input->{phenotypeSet});
 	#Retrieving model
 	my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
 	#Creating FBAFormulation Object
-        $model = $self->_addPhenotypeMedia($model, $pheno);
+        if ( $input->{all_transporters} ) {
+	    $model = $self->_addPhenotypeMedia($model, $pheno, 0);
+	} elsif ( $input->{positive_transporters} ) {
+	    $model = $self->_addPhenotypeMedia($model, $pheno, 1);
+	}
 	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
 	my $fba = $self->_buildFBAObject($input->{formulation},$model,"NO_WORKSPACE",Data::UUID->new()->create_str());
 	#Constructing FBA simulation object from 
