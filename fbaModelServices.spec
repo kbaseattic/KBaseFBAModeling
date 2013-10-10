@@ -158,6 +158,9 @@ module fbaModelServices {
     /* A string identifier for a reaction synonyms in KBase. */
     typedef string reaction_synonyms_id;
     
+    /* A user ID for a genome in KBase */
+    
+    typedef string Genome_uid;
     /*********************************************************************************
     Object type definition
    	*********************************************************************************/
@@ -1363,7 +1366,7 @@ module fbaModelServices {
     */
     funcdef get_biochemistry(get_biochemistry_params input) returns (Biochemistry out_biochemistry);
 	
-	/* Input parameters for the "genome_to_fbamodel" function.
+	/* Input parameters for the "get_ETCDiagram" function.
 	
 		model_id model - ID of the model to retrieve ETC for
 		workspace_id workspace - ID of the workspace containing the model 
@@ -2914,7 +2917,7 @@ module fbaModelServices {
     funcdef compare_models(compare_models_params params) returns (ModelComparisonData output);
    	
    	/*********************************************************************************
-    Functions relating to comparison of models
+    Functions relating to comparison of genomes
    	*********************************************************************************/
    	/* Input parameters for the "compare_genomes" function.
 	
@@ -2990,4 +2993,143 @@ module fbaModelServices {
     */
     funcdef compare_genomes(compare_genomes_params params) returns (GenomeComparisonData output);
    	
+   	/*********************************************************************************
+    Functions relating to construction of community models
+   	*********************************************************************************/ 
+    /* Structure for the "MetagenomeAnnotationOTUFunction" object
+		
+		list<string> reference_genes - list of genes associated with hit
+		string functional_role - annotated function
+		string kbid - kbase ID of OTU function in metagenome
+		int abundance - number of hits with associated role and OTU
+		float confidence - confidence of functional role hit
+		string confidence_type - type of functional role hit
+				
+	*/
+    typedef structure {
+		string kbid;
+		list<string> reference_genes;
+		string functional_role;
+		int abundance;
+		float confidence;
+    } MetagenomeAnnotationOTUFunction;
+     
+    /* Structure for the "MetagenomeAnnotationOTU" object
+	
+		string name - name of metagenome OTU
+		string kbid - KBase ID of OTU of metagenome object
+		string source_id - ID used for OTU in metagenome source
+		string source - source OTU ID
+		list<MetagenomeAnnotationOTUFunction> functions - list of functions in OTU
+		
+	*/
+    typedef structure {
+    	float ave_confidence;
+		float ave_coverage;
+		string kbid;
+		string name;
+		string source_id;
+		string source;
+		list<MetagenomeAnnotationOTUFunction> functions;
+    } MetagenomeAnnotationOTU;
+    
+    /* Structure for the "MetagenomeAnnotation" object
+	
+		string type - type of metagenome object
+		string name - name of metagenome object
+		string kbid - KBase ID of metagenome object
+		string source_id - ID used in metagenome source
+		string source - source of metagenome data
+		string confidence_type - type of confidence score
+		list<MetagenomeAnnotationOTU> otus - list of otus in metagenome
+		
+	*/
+    typedef structure {
+		string type;
+		string name;
+		string kbid;
+		string source_id;
+		string source;
+		string confidence_type;
+		list<MetagenomeAnnotationOTU> otus;
+    } MetagenomeAnnotation;
+    
+    /* Input parameters for the "import_metagenome_annotation" function.
+	
+		string metaanno_uid - ID to save metagenome in workspace
+		workspace_id workspace - ID of workspace for metagenome object
+		string source_id - ID used in metagenome data source
+		string source - metagenome data source
+		string type - type of metagenome
+		string confidence_type - type of confidence score
+		string name - name of metagenome
+		list<tuple<list<string> genes,string functional_role,string otu,int abundance,float confidence,string confidence_type>> annotations;
+		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+		
+	*/
+	typedef structure {
+		string metaanno_uid;
+		workspace_id workspace;
+		string source_id;
+		string source;
+		string type;
+		string confidence_type;
+		string name;
+		list<tuple<list<string> genes,string functional_role,string otu,int abundance,float confidence>> annotations;
+		string auth;
+    } import_metagenome_annotation_params;
+    
+    /*
+		Imports metagenome annotation data into a metagenome annotation object
+    */
+    funcdef import_metagenome_annotation(import_metagenome_annotation_params params) returns (object_metadata output);
+   	
+   	/* Input parameters for the "models_to_community_model" function.
+	
+		string model_uid - ID of community model
+		workspace_id workspace - workspace where community model should be saved
+		string name - name of community model
+		list<tuple<string model_uid,string model_ws,float abundance>> models - models to be merged into community model
+		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+		
+	*/
+	typedef structure {
+		string model_uid;
+		workspace_id workspace;
+		string name;
+		list<tuple<string model_uid,string model_ws,float abundance>> models;
+		string auth;
+    } models_to_community_model_params;
+    
+    /*
+		Combines multiple single genome models into a single community model
+    */
+    funcdef models_to_community_model(import_metagenome_annotation_params params) returns (object_metadata output);
+   	
+   	/* Input parameters for the "metagenome_to_fbamodel" function.
+	
+		string model_uid - ID of community model
+		workspace_id workspace - workspace where community model should be saved
+		string name - name of community model
+		list<tuple<string model_uid,workspace_id model_ws,float abundance>> models - models to be merged into community model
+		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+		
+	*/
+	typedef structure {
+		mapping<string,string> model_uids;
+		workspace_id workspace;
+		string metaanno_uid;
+		workspace_id metaanno_ws;
+		float min_abundance;
+		float confidence_threshold;
+		int max_otu_models;
+		int min_reactions;
+		mapping<string,tuple<workspace_id template_ws,template_id template_uid>> templates;
+		string auth;
+    } metagenome_to_fbamodels_params;
+    
+    /*
+		Constructs models from metagenome annotation OTUs
+    */
+    funcdef metagenome_to_fbamodels(metagenome_to_fbamodels_params params) returns (list<object_metadata> outputs);
 };

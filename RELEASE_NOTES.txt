@@ -3,6 +3,31 @@ OVERVIEW
 This KBase service contains all commands that support the reconstruction, optimization, and 
 analysis of genome-scale metabolic models.
 
+VERSION: 0.0.3 (Released 10/10/2013)
+------------------------------------------
+NEW FEATURES:
+-Full support for user generation and curation of template models
+-Full support for generation and analysis of microbial community models
+-Integration of prototype workspace-enabled genome annotation pipeline
+-Plant genome annotation and model reconstruction (proteins and trascripts only)
+-Support for comparison of many genomes and models
+-Support for iterative gapfilling
+-More API functions for querying model data
+
+UPDATED FEATURES / MAJOR BUG FIXES:
+-Model reconstruction can now be done from a template
+-Fixed bugs in job generation and gapfilling
+-Improvements in flux balance analysis
+-Improvements in model retrieval scripts
+
+ANTICIPATED FUTURE DEVELOPMENTS:
+-More commands to support model reconciliation
+-Commands to view model history
+-Enable import of models from SBML
+-Support for PROM constraints
+-Support for regulatory modeling
+-Support for probabilistic annotation and modeling
+
 VERSION: 0.0.2 (Released 11/30/2012)
 ------------------------------------------
 NEW FEATURES:

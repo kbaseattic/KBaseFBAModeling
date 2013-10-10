@@ -73,6 +73,9 @@ our %return_counts = (
         'add_stimuli' => 1,
         'compare_models' => 1,
         'compare_genomes' => 1,
+        'import_metagenome_annotation' => 1,
+        'models_to_community_model' => 1,
+        'metagenome_to_fbamodels' => 1,
         'version' => 1,
 );
 
@@ -142,6 +145,9 @@ sub _build_valid_methods
         'add_stimuli' => 1,
         'compare_models' => 1,
         'compare_genomes' => 1,
+        'import_metagenome_annotation' => 1,
+        'models_to_community_model' => 1,
+        'metagenome_to_fbamodels' => 1,
         'version' => 1,
     };
     return $methods;

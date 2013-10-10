@@ -2076,10 +2076,12 @@ sub import_probanno
 $input is a genome_object_to_workspace_params
 $genomeMeta is an object_metadata
 genome_object_to_workspace_params is a reference to a hash where the following keys are defined:
+	uid has a value which is a Genome_uid
 	genomeobj has a value which is a GenomeObject
 	workspace has a value which is a workspace_id
 	auth has a value which is a string
 	overwrite has a value which is a bool
+Genome_uid is a string
 GenomeObject is a reference to a hash where the following keys are defined:
 	id has a value which is a genome_id
 	scientific_name has a value which is a string
@@ -2149,10 +2151,12 @@ workspace_ref is a string
 $input is a genome_object_to_workspace_params
 $genomeMeta is an object_metadata
 genome_object_to_workspace_params is a reference to a hash where the following keys are defined:
+	uid has a value which is a Genome_uid
 	genomeobj has a value which is a GenomeObject
 	workspace has a value which is a workspace_id
 	auth has a value which is a string
 	overwrite has a value which is a bool
+Genome_uid is a string
 GenomeObject is a reference to a hash where the following keys are defined:
 	id has a value which is a genome_id
 	scientific_name has a value which is a string
@@ -7632,16 +7636,17 @@ $params is an annotate_workspace_Genome_params
 $job is a JobObject
 annotate_workspace_Genome_params is a reference to a hash where the following keys are defined:
 	Genome_uid has a value which is a string
+	Genome_ws has a value which is a string
+	new_uid has a value which is a string
 	workspace has a value which is a workspace_id
-	full_annotation has a value which is a bool
-	call_selenoproteins has a value which is a bool
-	call_pyrrolysoproteins has a value which is a bool
-	call_RNAs has a value which is a bool
-	call_CDSs has a value which is a bool
-	find_close_neighbors has a value which is a bool
-	assign_functions_to_CDSs has a value which is a bool
+	pipeline_stages has a value which is a reference to a list where each element is an AnnotationPipelineStage
 	auth has a value which is a string
 workspace_id is a string
+AnnotationPipelineStage is a reference to a hash where the following keys are defined:
+	id has a value which is a stage_id
+	enable has a value which is a bool
+	parameters has a value which is a reference to a hash where the key is a string and the value is a string
+stage_id is a string
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
 	type has a value which is a string
@@ -7665,16 +7670,17 @@ $params is an annotate_workspace_Genome_params
 $job is a JobObject
 annotate_workspace_Genome_params is a reference to a hash where the following keys are defined:
 	Genome_uid has a value which is a string
+	Genome_ws has a value which is a string
+	new_uid has a value which is a string
 	workspace has a value which is a workspace_id
-	full_annotation has a value which is a bool
-	call_selenoproteins has a value which is a bool
-	call_pyrrolysoproteins has a value which is a bool
-	call_RNAs has a value which is a bool
-	call_CDSs has a value which is a bool
-	find_close_neighbors has a value which is a bool
-	assign_functions_to_CDSs has a value which is a bool
+	pipeline_stages has a value which is a reference to a list where each element is an AnnotationPipelineStage
 	auth has a value which is a string
 workspace_id is a string
+AnnotationPipelineStage is a reference to a hash where the following keys are defined:
+	id has a value which is a stage_id
+	enable has a value which is a bool
+	parameters has a value which is a reference to a hash where the key is a string and the value is a string
+stage_id is a string
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
 	type has a value which is a string
@@ -9557,6 +9563,448 @@ sub compare_genomes
 
 
 
+=head2 import_metagenome_annotation
+
+  $output = $obj->import_metagenome_annotation($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is an import_metagenome_annotation_params
+$output is an object_metadata
+import_metagenome_annotation_params is a reference to a hash where the following keys are defined:
+	metaanno_uid has a value which is a string
+	workspace has a value which is a workspace_id
+	source_id has a value which is a string
+	source has a value which is a string
+	type has a value which is a string
+	confidence_type has a value which is a string
+	name has a value which is a string
+	annotations has a value which is a reference to a list where each element is a reference to a list containing 5 items:
+	0: (genes) a reference to a list where each element is a string
+	1: (functional_role) a string
+	2: (otu) a string
+	3: (abundance) an int
+	4: (confidence) a float
+
+	auth has a value which is a string
+workspace_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is an import_metagenome_annotation_params
+$output is an object_metadata
+import_metagenome_annotation_params is a reference to a hash where the following keys are defined:
+	metaanno_uid has a value which is a string
+	workspace has a value which is a workspace_id
+	source_id has a value which is a string
+	source has a value which is a string
+	type has a value which is a string
+	confidence_type has a value which is a string
+	name has a value which is a string
+	annotations has a value which is a reference to a list where each element is a reference to a list containing 5 items:
+	0: (genes) a reference to a list where each element is a string
+	1: (functional_role) a string
+	2: (otu) a string
+	3: (abundance) an int
+	4: (confidence) a float
+
+	auth has a value which is a string
+workspace_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+=item Description
+
+Imports metagenome annotation data into a metagenome annotation object
+
+=back
+
+=cut
+
+sub import_metagenome_annotation
+{
+    my($self, @args) = @_;
+
+# Authentication: none
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function import_metagenome_annotation (received $n, expecting 1)");
+    }
+    {
+	my($params) = @args;
+
+	my @_bad_arguments;
+        (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to import_metagenome_annotation:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'import_metagenome_annotation');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.import_metagenome_annotation",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{code},
+					       method_name => 'import_metagenome_annotation',
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method import_metagenome_annotation",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'import_metagenome_annotation',
+				       );
+    }
+}
+
+
+
+=head2 models_to_community_model
+
+  $output = $obj->models_to_community_model($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is an import_metagenome_annotation_params
+$output is an object_metadata
+import_metagenome_annotation_params is a reference to a hash where the following keys are defined:
+	metaanno_uid has a value which is a string
+	workspace has a value which is a workspace_id
+	source_id has a value which is a string
+	source has a value which is a string
+	type has a value which is a string
+	confidence_type has a value which is a string
+	name has a value which is a string
+	annotations has a value which is a reference to a list where each element is a reference to a list containing 5 items:
+	0: (genes) a reference to a list where each element is a string
+	1: (functional_role) a string
+	2: (otu) a string
+	3: (abundance) an int
+	4: (confidence) a float
+
+	auth has a value which is a string
+workspace_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is an import_metagenome_annotation_params
+$output is an object_metadata
+import_metagenome_annotation_params is a reference to a hash where the following keys are defined:
+	metaanno_uid has a value which is a string
+	workspace has a value which is a workspace_id
+	source_id has a value which is a string
+	source has a value which is a string
+	type has a value which is a string
+	confidence_type has a value which is a string
+	name has a value which is a string
+	annotations has a value which is a reference to a list where each element is a reference to a list containing 5 items:
+	0: (genes) a reference to a list where each element is a string
+	1: (functional_role) a string
+	2: (otu) a string
+	3: (abundance) an int
+	4: (confidence) a float
+
+	auth has a value which is a string
+workspace_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+=item Description
+
+Combines multiple single genome models into a single community model
+
+=back
+
+=cut
+
+sub models_to_community_model
+{
+    my($self, @args) = @_;
+
+# Authentication: none
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function models_to_community_model (received $n, expecting 1)");
+    }
+    {
+	my($params) = @args;
+
+	my @_bad_arguments;
+        (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to models_to_community_model:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'models_to_community_model');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.models_to_community_model",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{code},
+					       method_name => 'models_to_community_model',
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method models_to_community_model",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'models_to_community_model',
+				       );
+    }
+}
+
+
+
+=head2 metagenome_to_fbamodels
+
+  $outputs = $obj->metagenome_to_fbamodels($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is a metagenome_to_fbamodels_params
+$outputs is a reference to a list where each element is an object_metadata
+metagenome_to_fbamodels_params is a reference to a hash where the following keys are defined:
+	model_uids has a value which is a reference to a hash where the key is a string and the value is a string
+	workspace has a value which is a workspace_id
+	metaanno_uid has a value which is a string
+	metaanno_ws has a value which is a workspace_id
+	min_abundance has a value which is a float
+	min_confidence has a value which is a float
+	max_otu_models has a value which is an int
+	tail_model has a value which is a bool
+	templates has a value which is a reference to a hash where the key is a string and the value is a reference to a list containing 2 items:
+	0: (template_ws) a workspace_id
+	1: (template_uid) a template_id
+
+	auth has a value which is a string
+workspace_id is a string
+template_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is a metagenome_to_fbamodels_params
+$outputs is a reference to a list where each element is an object_metadata
+metagenome_to_fbamodels_params is a reference to a hash where the following keys are defined:
+	model_uids has a value which is a reference to a hash where the key is a string and the value is a string
+	workspace has a value which is a workspace_id
+	metaanno_uid has a value which is a string
+	metaanno_ws has a value which is a workspace_id
+	min_abundance has a value which is a float
+	min_confidence has a value which is a float
+	max_otu_models has a value which is an int
+	tail_model has a value which is a bool
+	templates has a value which is a reference to a hash where the key is a string and the value is a reference to a list containing 2 items:
+	0: (template_ws) a workspace_id
+	1: (template_uid) a template_id
+
+	auth has a value which is a string
+workspace_id is a string
+template_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+=item Description
+
+Constructs models from metagenome annotation OTUs
+
+=back
+
+=cut
+
+sub metagenome_to_fbamodels
+{
+    my($self, @args) = @_;
+
+# Authentication: none
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function metagenome_to_fbamodels (received $n, expecting 1)");
+    }
+    {
+	my($params) = @args;
+
+	my @_bad_arguments;
+        (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to metagenome_to_fbamodels:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'metagenome_to_fbamodels');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.metagenome_to_fbamodels",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{code},
+					       method_name => 'metagenome_to_fbamodels',
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method metagenome_to_fbamodels",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'metagenome_to_fbamodels',
+				       );
+    }
+}
+
+
+
 sub version {
     my ($self) = @_;
     my $result = $self->{client}->call($self->{url}, {
@@ -9568,16 +10016,16 @@ sub version {
             Bio::KBase::Exceptions::JSONRPC->throw(
                 error => $result->error_message,
                 code => $result->content->{code},
-                method_name => 'compare_genomes',
+                method_name => 'metagenome_to_fbamodels',
             );
         } else {
             return wantarray ? @{$result->result} : $result->result->[0];
         }
     } else {
         Bio::KBase::Exceptions::HTTP->throw(
-            error => "Error invoking method compare_genomes",
+            error => "Error invoking method metagenome_to_fbamodels",
             status_line => $self->{client}->status_line,
-            method_name => 'compare_genomes',
+            method_name => 'metagenome_to_fbamodels',
         );
     }
 }
@@ -10679,6 +11127,37 @@ a string
 =item Description
 
 A string identifier for a reaction synonyms in KBase.
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 Genome_uid
+
+=over 4
+
+
+
+=item Description
+
+A user ID for a genome in KBase
 
 
 =item Definition
@@ -14568,7 +15047,7 @@ auth has a value which is a string
 
 =item Description
 
-Input parameters for the "genome_to_fbamodel" function.
+Input parameters for the "get_ETCDiagram" function.
 
         model_id model - ID of the model to retrieve ETC for
         workspace_id workspace - ID of the workspace containing the model 
@@ -14670,6 +15149,7 @@ overwrite has a value which is a bool
 
 Input parameters for the "genome_object_to_workspace" function.
 
+        Genome_uid uid - ID to use when saving genome to workspace
         GenomeObject genomeobj - full genome typed object to be loaded into the workspace (a required argument)
         workspace_id workspace - ID of the workspace into which the genome typed object is to be loaded (a required argument)
         string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
@@ -14681,6 +15161,7 @@ Input parameters for the "genome_object_to_workspace" function.
 
 <pre>
 a reference to a hash where the following keys are defined:
+uid has a value which is a Genome_uid
 genomeobj has a value which is a GenomeObject
 workspace has a value which is a workspace_id
 auth has a value which is a string
@@ -14693,6 +15174,7 @@ overwrite has a value which is a bool
 =begin text
 
 a reference to a hash where the following keys are defined:
+uid has a value which is a Genome_uid
 genomeobj has a value which is a GenomeObject
 workspace has a value which is a workspace_id
 auth has a value which is a string
@@ -16387,7 +16869,7 @@ sequence has a value which is a string
 
 
 
-=head2 fasta_to_ProteinSet_params
+=head2 ProteinSet
 
 =over 4
 
@@ -16971,7 +17453,7 @@ genetic_code has a value which is an int
 
 
 
-=head2 annotate_workspace_Genome_params
+=head2 stage_id
 
 =over 4
 
@@ -16989,16 +17471,91 @@ genetic_code has a value which is an int
 =begin html
 
 <pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 AnnotationPipelineStage
+
+=over 4
+
+
+
+=item Description
+
+stage_id id - ID of stage of analysis to run
+bool enable - boolean indicating the stage should be run
+mapping<string,string> parameters - parameters for the analysis stage
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+id has a value which is a stage_id
+enable has a value which is a bool
+parameters has a value which is a reference to a hash where the key is a string and the value is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+id has a value which is a stage_id
+enable has a value which is a bool
+parameters has a value which is a reference to a hash where the key is a string and the value is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 annotate_workspace_Genome_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "annotate_workspace_Genome" function.
+
+string Genome_uid - user ID to be assigned to the Genome (required argument)
+string Genome_ws - workspace with genome for annotation (optional; workspace argument will be used if no genome workspace is provided)
+string new_uid - new ID to assign to annotated genome (optional; original genome will be overwritten if no new uid is provided)
+workspace_id workspace - ID of workspace with Genome (required argument)
+list<AnnotationPipelineStage> pipeline_stages - list of annotation pipeline steps to run
+string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+
+
+=item Definition
+
+=begin html
+
+<pre>
 a reference to a hash where the following keys are defined:
 Genome_uid has a value which is a string
+Genome_ws has a value which is a string
+new_uid has a value which is a string
 workspace has a value which is a workspace_id
-full_annotation has a value which is a bool
-call_selenoproteins has a value which is a bool
-call_pyrrolysoproteins has a value which is a bool
-call_RNAs has a value which is a bool
-call_CDSs has a value which is a bool
-find_close_neighbors has a value which is a bool
-assign_functions_to_CDSs has a value which is a bool
+pipeline_stages has a value which is a reference to a list where each element is an AnnotationPipelineStage
 auth has a value which is a string
 
 </pre>
@@ -17009,14 +17566,10 @@ auth has a value which is a string
 
 a reference to a hash where the following keys are defined:
 Genome_uid has a value which is a string
+Genome_ws has a value which is a string
+new_uid has a value which is a string
 workspace has a value which is a workspace_id
-full_annotation has a value which is a bool
-call_selenoproteins has a value which is a bool
-call_pyrrolysoproteins has a value which is a bool
-call_RNAs has a value which is a bool
-call_CDSs has a value which is a bool
-find_close_neighbors has a value which is a bool
-assign_functions_to_CDSs has a value which is a bool
+pipeline_stages has a value which is a reference to a list where each element is an AnnotationPipelineStage
 auth has a value which is a string
 
 
@@ -18337,7 +18890,7 @@ auth has a value which is a string
 =item Description
 
 ********************************************************************************
-    Functions relating to comparison of models
+    Functions relating to comparison of genomes
    	********************************************************************************
 
 
@@ -18515,6 +19068,354 @@ auth has a value which is a string
 a reference to a hash where the following keys are defined:
 genome_comparisons has a value which is a reference to a list where each element is a GenomeComparisonGenome
 function_comparisons has a value which is a reference to a list where each element is a GenomeCompareFunction
+auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 MetagenomeAnnotationOTUFunction
+
+=over 4
+
+
+
+=item Description
+
+********************************************************************************
+    Functions relating to construction of community models
+   	********************************************************************************
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+kbid has a value which is a string
+reference_genes has a value which is a reference to a list where each element is a string
+functional_role has a value which is a string
+abundance has a value which is an int
+confidence has a value which is a float
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+kbid has a value which is a string
+reference_genes has a value which is a reference to a list where each element is a string
+functional_role has a value which is a string
+abundance has a value which is an int
+confidence has a value which is a float
+
+
+=end text
+
+=back
+
+
+
+=head2 MetagenomeAnnotationOTU
+
+=over 4
+
+
+
+=item Description
+
+Structure for the "MetagenomeAnnotationOTU" object
+
+        string name - name of metagenome OTU
+        string kbid - KBase ID of OTU of metagenome object
+        string source_id - ID used for OTU in metagenome source
+        string source - source OTU ID
+        list<MetagenomeAnnotationOTUFunction> functions - list of functions in OTU
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+ave_confidence has a value which is a float
+ave_coverage has a value which is a float
+kbid has a value which is a string
+name has a value which is a string
+source_id has a value which is a string
+source has a value which is a string
+functions has a value which is a reference to a list where each element is a MetagenomeAnnotationOTUFunction
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+ave_confidence has a value which is a float
+ave_coverage has a value which is a float
+kbid has a value which is a string
+name has a value which is a string
+source_id has a value which is a string
+source has a value which is a string
+functions has a value which is a reference to a list where each element is a MetagenomeAnnotationOTUFunction
+
+
+=end text
+
+=back
+
+
+
+=head2 MetagenomeAnnotation
+
+=over 4
+
+
+
+=item Description
+
+Structure for the "MetagenomeAnnotation" object
+
+        string type - type of metagenome object
+        string name - name of metagenome object
+        string kbid - KBase ID of metagenome object
+        string source_id - ID used in metagenome source
+        string source - source of metagenome data
+        string confidence_type - type of confidence score
+        list<MetagenomeAnnotationOTU> otus - list of otus in metagenome
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+type has a value which is a string
+name has a value which is a string
+kbid has a value which is a string
+source_id has a value which is a string
+source has a value which is a string
+confidence_type has a value which is a string
+otus has a value which is a reference to a list where each element is a MetagenomeAnnotationOTU
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+type has a value which is a string
+name has a value which is a string
+kbid has a value which is a string
+source_id has a value which is a string
+source has a value which is a string
+confidence_type has a value which is a string
+otus has a value which is a reference to a list where each element is a MetagenomeAnnotationOTU
+
+
+=end text
+
+=back
+
+
+
+=head2 import_metagenome_annotation_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "import_metagenome_annotation" function.
+
+        string metaanno_uid - ID to save metagenome in workspace
+        workspace_id workspace - ID of workspace for metagenome object
+        string source_id - ID used in metagenome data source
+        string source - metagenome data source
+        string type - type of metagenome
+        string confidence_type - type of confidence score
+        string name - name of metagenome
+        list<tuple<list<string> genes,string functional_role,string otu,int abundance,float confidence,string confidence_type>> annotations;
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+metaanno_uid has a value which is a string
+workspace has a value which is a workspace_id
+source_id has a value which is a string
+source has a value which is a string
+type has a value which is a string
+confidence_type has a value which is a string
+name has a value which is a string
+annotations has a value which is a reference to a list where each element is a reference to a list containing 5 items:
+0: (genes) a reference to a list where each element is a string
+1: (functional_role) a string
+2: (otu) a string
+3: (abundance) an int
+4: (confidence) a float
+
+auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+metaanno_uid has a value which is a string
+workspace has a value which is a workspace_id
+source_id has a value which is a string
+source has a value which is a string
+type has a value which is a string
+confidence_type has a value which is a string
+name has a value which is a string
+annotations has a value which is a reference to a list where each element is a reference to a list containing 5 items:
+0: (genes) a reference to a list where each element is a string
+1: (functional_role) a string
+2: (otu) a string
+3: (abundance) an int
+4: (confidence) a float
+
+auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 models_to_community_model_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "models_to_community_model" function.
+
+        string model_uid - ID of community model
+        workspace_id workspace - workspace where community model should be saved
+        string name - name of community model
+        list<tuple<string model_uid,string model_ws,float abundance>> models - models to be merged into community model
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+model_uid has a value which is a string
+workspace has a value which is a workspace_id
+name has a value which is a string
+models has a value which is a reference to a list where each element is a reference to a list containing 3 items:
+0: (model_uid) a string
+1: (model_ws) a string
+2: (abundance) a float
+
+auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+model_uid has a value which is a string
+workspace has a value which is a workspace_id
+name has a value which is a string
+models has a value which is a reference to a list where each element is a reference to a list containing 3 items:
+0: (model_uid) a string
+1: (model_ws) a string
+2: (abundance) a float
+
+auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 metagenome_to_fbamodels_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "metagenome_to_fbamodel" function.
+
+        string model_uid - ID of community model
+        workspace_id workspace - workspace where community model should be saved
+        string name - name of community model
+        list<tuple<string model_uid,workspace_id model_ws,float abundance>> models - models to be merged into community model
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+model_uids has a value which is a reference to a hash where the key is a string and the value is a string
+workspace has a value which is a workspace_id
+metaanno_uid has a value which is a string
+metaanno_ws has a value which is a workspace_id
+min_abundance has a value which is a float
+min_confidence has a value which is a float
+max_otu_models has a value which is an int
+tail_model has a value which is a bool
+templates has a value which is a reference to a hash where the key is a string and the value is a reference to a list containing 2 items:
+0: (template_ws) a workspace_id
+1: (template_uid) a template_id
+
+auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+model_uids has a value which is a reference to a hash where the key is a string and the value is a string
+workspace has a value which is a workspace_id
+metaanno_uid has a value which is a string
+metaanno_ws has a value which is a workspace_id
+min_abundance has a value which is a float
+min_confidence has a value which is a float
+max_otu_models has a value which is an int
+tail_model has a value which is a bool
+templates has a value which is a reference to a hash where the key is a string and the value is a reference to a list containing 2 items:
+0: (template_ws) a workspace_id
+1: (template_uid) a template_id
+
 auth has a value which is a string
 
 
