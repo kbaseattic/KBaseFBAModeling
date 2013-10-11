@@ -12,7 +12,7 @@ use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand univer
 #Defining globals describing behavior
 my $primaryArgs = ["Model IDs (; delimiter)","Model workspaces (; delimiter)"];
 my $servercommand = "compare_models";
-my $script = "kbfba-compare-mdls";
+my $script = "fba-compare-mdls";
 my $translation = {};
 #Defining usage and options
 my $specs = [
@@ -46,8 +46,8 @@ if (!defined($output)) {
     		my $mdlcmp = $output->{model_comparisons}->[$j];
     		if (defined($rxncmp->{model_features}->{$mdlcmp->{workspace}."/".$mdlcmp->{model}})) {
     			$ftrs = join(";",@{$rxncmp->{model_features}->{$mdlcmp->{workspace}."/".$mdlcmp->{model}}});
+			push(@{$row},$ftrs);
     		}
-    		push(@{$row},$ftrs);
     	}
     	print join("\t",@{$row})."\n";
     }
