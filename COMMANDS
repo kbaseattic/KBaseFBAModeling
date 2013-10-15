@@ -55,5 +55,5 @@ fba-merge-models	modeling
 fba-metaanno-to-models	modeling
 ga-compare-genomes	genome_annotation
 ga-loadfasta	genome_annotation
-ga-seq-to-genomes	genome_annotation
+ga-seq-to-genome	genome_annotation
 fba-addphenotypetransporters	modeling
