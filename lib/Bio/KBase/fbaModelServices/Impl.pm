@@ -2517,6 +2517,7 @@ sub _buildModelFromFunctions {
 	    functions => $functions,
 	    id => $name
 	});
+	$mdl->annotation_uuid("B4159688-E9E9-11E2-87AF-43F64331C093");
 	$mdl->name($name);
 	return $mdl;
 }
@@ -15093,16 +15094,13 @@ sub metagenome_to_fbamodels
 	my $nummodels = 0;
 	for (my $i=0; $i < @{$sortedOtus}; $i++) {
 		my $otu = $sortedOtus->[$i];
-		print $otu->{name}."\t".$otu->{ave_coverage}."\n";
 		my $built = 0;
 		#Building OTU model if appropriate
 		if ($otu->{name} ne "tail" && $nummodels < $params->{max_otu_models} && $otu->{ave_coverage} >= $params->{min_abundance}) {
-			print $otu->{name}."\t".$otu->{ave_coverage}."\n";
 			my $mdlfunc = {};
 			for (my $j=0; $j < @{$otu->{functions}}; $j++) {
 				my $func = $otu->{functions}->[$j];
 				if ($self->_assess_confidence($metaanno->{confidence_type},$params->{confidence_threshold},$func->{confidence}) == 1) {
-					print "OTU2:".$func->{"functional_role"}."\n";
 					if (!defined($mdlfunc->{$func->{"functional_role"}})) {
 						$mdlfunc->{$func->{"functional_role"}} = 0;
 					}
@@ -15110,6 +15108,7 @@ sub metagenome_to_fbamodels
 				}
 			}
 			my $mdl = $self->_buildModelFromFunctions($map,$mdlfunc,"EnsembleModel");
+			print $otu->{name}."\t".$otu->{ave_coverage}."\t".@{$otu->{functions}}."\t".@{$mdl->modelreactions()}."\n";
 			#Saving OTU model if it's large enough
 			if (@{$mdl->modelreactions()} > $params->{min_reactions}) {
 				$nummodels++;
@@ -15154,9 +15153,7 @@ sub metagenome_to_fbamodels
 	#Building ensemble model
 	my $mdlfunc = {};
 	foreach my $function (keys(%{$functions})) {
-		print "Tail1:".$function."\n";
 		if ($self->_assess_confidence($metaanno->{confidence_type},$params->{confidence_threshold},$functions->{$function}->{confidence}) == 1) {
-			print "Tail2:".$function."\n";
 			if (!defined($mdlfunc->{$function})) {
 				$mdlfunc->{$function} = 0;
 			}
