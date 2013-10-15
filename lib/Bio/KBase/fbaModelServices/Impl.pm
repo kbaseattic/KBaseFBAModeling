@@ -2517,7 +2517,7 @@ sub _buildModelFromFunctions {
 	    functions => $functions,
 	    id => $name
 	});
-	$mdl->annotation_uuid("kbase/GenericGenome");
+	$mdl->annotation_uuid("B4159688-E9E9-11E2-87AF-43F64331C093");
 	$mdl->name($name);
 	return $mdl;
 }
