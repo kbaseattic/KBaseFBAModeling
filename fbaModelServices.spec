@@ -2348,12 +2348,13 @@ module fbaModelServices {
 		string kbid - unique kbase ID of the protein
 		string sourceid - ID of the source data for the protein
 		string sequence - sequence of the protein
-				
+	        string description - Description (annotation) of the protein (e.g. everything after the ID in a FASTA file)
 	*/
 	typedef structure {
 		string kbid;
 		string sourceid;
 		string sequence;
+		string description;
     } ProteinSetProtein;
 	/* Type spec for the "ProteinSet" object
 	
@@ -2427,16 +2428,17 @@ module fbaModelServices {
 	Code relating to import and analysis of TranscriptSets
    	*********************************************************************************/
 	/* Type spec for a "Transcript" subobject in the "TranscriptSet" object
-	
+
 		string kbid - unique kbase ID of the transcript
 		string sourceid - ID of the source data for the transcript
 		string sequence - sequence of the transcript
-				
+	        string description - description of the transcript (e.g. everything after the ID in the input FASTA file)
 	*/
 	typedef structure {
 		string kbid;
 		string sourceid;
 		string sequence;
+		string description;
     } TranscriptSetTranscript;
 	/* Type spec for the "TranscriptSet" object
 	
@@ -2517,12 +2519,13 @@ module fbaModelServices {
 		string kbid - unique kbase ID of the contig
 		string sourceid - ID of the source data for the contig
 		string sequence - sequence of the contig
-				
+	        string description - Description of the contig (e.g. everything after the ID in a FASTA file)
 	*/
 	typedef structure {
 		string kbid;
 		string sourceid;
 		string sequence;
+		string description;
     } ContigSetContig;
 	/* Type spec for the "ContigSet" object
 	

@@ -17666,6 +17666,7 @@ a reference to a hash where the following keys are defined:
 kbid has a value which is a string
 sourceid has a value which is a string
 sequence has a value which is a string
+description has a value which is a string
 
 </pre>
 
@@ -17677,6 +17678,7 @@ a reference to a hash where the following keys are defined:
 kbid has a value which is a string
 sourceid has a value which is a string
 sequence has a value which is a string
+description has a value which is a string
 
 
 =end text
@@ -17873,6 +17875,7 @@ a reference to a hash where the following keys are defined:
 kbid has a value which is a string
 sourceid has a value which is a string
 sequence has a value which is a string
+description has a value which is a string
 
 </pre>
 
@@ -17884,6 +17887,7 @@ a reference to a hash where the following keys are defined:
 kbid has a value which is a string
 sourceid has a value which is a string
 sequence has a value which is a string
+description has a value which is a string
 
 
 =end text
@@ -18082,6 +18086,7 @@ a reference to a hash where the following keys are defined:
 kbid has a value which is a string
 sourceid has a value which is a string
 sequence has a value which is a string
+description has a value which is a string
 
 </pre>
 
@@ -18093,6 +18098,7 @@ a reference to a hash where the following keys are defined:
 kbid has a value which is a string
 sourceid has a value which is a string
 sequence has a value which is a string
+description has a value which is a string
 
 
 =end text

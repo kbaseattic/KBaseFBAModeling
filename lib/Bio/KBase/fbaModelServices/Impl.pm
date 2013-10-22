@@ -2405,10 +2405,16 @@ sub _build_sequence_object {
 		if (length($array->[$i]) > 0) {
 			my $subarray = [split(/\|\|\|/,$array->[$i])];
 			if (@{$subarray} == 2) {
-				push(@{$object->{$fieldname}}, {
-					sourceid => $subarray->[0],
-					sequence => $subarray->[1]
-				});
+			    # This isn't strictly a standard but it gets it right when you download from RAST or the SEED at least (and probably genbank too)).
+			    my $description = "unknown";
+			    if( $subarray->[0] =~ /.*?\s(.+)/ ) {
+				$description = $1;
+			    }
+			    push(@{$object->{$fieldname}}, {
+				sourceid => $subarray->[0],
+				sequence => $subarray->[1],
+				description => $description
+				 });
 			}
 		}
 	}
@@ -11553,14 +11559,14 @@ sub ProteinSet_to_Genome
 		features => []
 	};
 	for (my $i=0; $i < @{$protObj->{proteins}}; $i++) {
-		push(@{$genome->{features}},{
-			protein_translation => $protObj->{proteins}->[$i]->{sequence},
+	    push(@{$genome->{features}},{
+		protein_translation => $protObj->{proteins}->[$i]->{sequence},
          	location => [],
-         	function => "unknown",
+         	function => $protObj->{proteins}->[$i]->{description},
          	aliases => [],
          	id => $kbid.".CDS.".$i,
          	annotations => []
-		});
+		 });
 	}
 	my $mapping = $self->_get_msobject("Mapping","kbase","default-mapping");
     ($genome,my $anno,$mapping,my $contigObj) = $self->_processGenomeObject($genome,$mapping,"ProteinSet_to_Genome");
@@ -22639,6 +22645,7 @@ a reference to a hash where the following keys are defined:
 kbid has a value which is a string
 sourceid has a value which is a string
 sequence has a value which is a string
+description has a value which is a string
 
 </pre>
 
@@ -22650,6 +22657,7 @@ a reference to a hash where the following keys are defined:
 kbid has a value which is a string
 sourceid has a value which is a string
 sequence has a value which is a string
+description has a value which is a string
 
 
 =end text
@@ -22846,6 +22854,7 @@ a reference to a hash where the following keys are defined:
 kbid has a value which is a string
 sourceid has a value which is a string
 sequence has a value which is a string
+description has a value which is a string
 
 </pre>
 
@@ -22857,6 +22866,7 @@ a reference to a hash where the following keys are defined:
 kbid has a value which is a string
 sourceid has a value which is a string
 sequence has a value which is a string
+description has a value which is a string
 
 
 =end text
@@ -23055,6 +23065,7 @@ a reference to a hash where the following keys are defined:
 kbid has a value which is a string
 sourceid has a value which is a string
 sequence has a value which is a string
+description has a value which is a string
 
 </pre>
 
@@ -23066,6 +23077,7 @@ a reference to a hash where the following keys are defined:
 kbid has a value which is a string
 sourceid has a value which is a string
 sequence has a value which is a string
+description has a value which is a string
 
 
 =end text

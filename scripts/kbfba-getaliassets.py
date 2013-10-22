@@ -27,4 +27,8 @@ object_type = args[0]
 
 input_params = { "object_type" : object_type  }
 
-print "\n".join(fbaClient.get_aliassets(input_params))
+output = fbaClient.get_aliassets(input_params)
+if len(output) == 0:
+    raise ValueError("ERROR: Unable to get aliassets for %s" %(object_type) )
+else:
+    print "\n".join(fbaClient.get_aliassets(input_params))
