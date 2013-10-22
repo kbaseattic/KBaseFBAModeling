@@ -2333,7 +2333,7 @@ Description:
 
 sub _error {
 	my($self,$msg,$method) = @_;
-	$msg = "ERROR{".$msg."}ERROR";
+	$msg = "_ERROR_".$msg."_ERROR_";
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => $method);
 }
 
