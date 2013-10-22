@@ -53,6 +53,15 @@ module fbaModelServices {
     /* indicates true or false values, false <= 0, true >=1 */
     /*typedef int bool;*/
     
+    /* KBase ID for a model reaction  */
+    typedef string mdlrxn_kbid;
+    
+    /* A string specifying a full workspace ID  */
+    typedef string ws_ref;
+    
+    /* A string specifying a KBase ID  */
+    typedef string kbase_id;
+    
     /* A string used as an ID for a workspace. Any string consisting of alphanumeric characters and "-" is acceptable  */
     typedef string workspace_id;
 	
@@ -1858,16 +1867,16 @@ module fbaModelServices {
 
     */
     typedef structure {
-	phenotype_set_id phenotypeSet;
-	workspace_id phenotypeSet_workspace;
-	fbamodel_id model;
-	workspace_id model_workspace;
-	fbamodel_id outmodel;
-	workspace_id workspace;
-	bool overwrite;
-	string auth;
-	bool all_transporters;
-	bool positive_transporters;
+		phenotype_set_id phenotypeSet;
+		workspace_id phenotypeSet_workspace;
+		fbamodel_id model;
+		workspace_id model_workspace;
+		fbamodel_id outmodel;
+		workspace_id workspace;
+		bool overwrite;
+		string auth;
+		bool all_transporters;
+		bool positive_transporters;
     } add_media_transporters_params;
 
     /*
@@ -1996,7 +2005,7 @@ module fbaModelServices {
         Queues an FBAModel gapfilling job in single media condition
     */
     funcdef queue_gapfill_model(gapfill_model_params input) returns (JobObject job);
-    
+        
     /* Input parameters for the "queue_gapgen_model" function.
 	
 		fbamodel_id model - ID of the model that gapgen should be run on (a required argument)
@@ -2236,6 +2245,101 @@ module fbaModelServices {
     */
     funcdef role_to_reactions(role_to_reactions_params params) returns (list<RoleComplexReactions> output);
 
+	/*********************************************************************************
+	Code relating to import and analysis of ProteinSets
+   	*********************************************************************************/
+	/* Object for holding reaction knockout sensitivity reaction data
+		
+		kbase_id kbid - KBase ID for reaction knockout sensitivity reaction
+		mdlrxn_id reaction - ID of model reaction
+		float growth_fraction - Fraction of wild-type growth after knockout
+		list<string> biomass_compounds  - List of biomass compounds that depend on the reaction
+		list<string> new_inactive_rxns - List of new reactions dependant upon reaction KO
+		list<string> new_essentials - List of new essential genes with reaction knockout
+	
+	*/
+	typedef structure {
+		kbase_id kbid;
+		mdlrxn_kbid reaction;
+		float growth_fraction;
+		bool delete;
+		bool deleted;
+		list<string> biomass_compounds;
+		list<string> new_inactive_rxns;
+		list<string> new_essentials;
+    } ReactionSensitivityAnalysisReaction;
+	/* Object for holding reaction knockout sensitivity results
+	
+		kbase_id kbid - KBase ID of reaction sensitivity object
+		ws_ref model_wsid - Workspace reference to associated model
+		string type - type of reaction KO sensitivity object
+		bool deleted_noncontributing_reactions - boolean indicating if noncontributing reactions were deleted
+		bool integrated_deletions_in_model - boolean indicating if deleted reactions were implemented in the model
+		list<ReactionSensitivityAnalysisReaction> reactions - list of results from sensitivity analysis for each reaction
+		
+	*/
+    typedef structure {
+		kbase_id kbid;
+		ws_ref model_wsid;
+		string type;
+		bool deleted_noncontributing_reactions;
+		bool integrated_deletions_in_model;
+		list<ReactionSensitivityAnalysisReaction> reactions;
+    } ReactionSensitivityAnalysis;
+	/* Input parameters for the "reaction_sensitivity_analysis" function.
+	
+		fbamodel_id model - ID of model to be analyzed (a required argument)
+		workspace_id model_ws - ID of workspace with model to be analyzed (an optional argument - default is value of workspace argument)
+		string kosensitivity_uid - Name of KOSensitivity object in workspace (an optional argument - default is KBase ID)
+		workspace_id workspace - ID of workspace where output and default inputs will be selected from (a required argument)
+		list<reaction_id> reactions_to_delete - list of reactions to delete in sensitiviity analysis; note, order of the reactions matters (a required argument)
+		string type - type of KO sensitivity analysis (an optional argument - default is "unknown")
+		bool delete_noncontributing_reactions - a boolean indicating if unuseful reactions should be deleted (an optional argument - default is "0")
+		bool integrate_deletions_in_model - a boolean indicating if deletion of noncontributing reactions should be integrated in the model (an optional argument - default is "0")
+		string auth  - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument)
+
+	*/
+    typedef structure {
+		fbamodel_id model;
+		workspace_id model_ws;
+		string rxn_sensitivity_uid;
+		workspace_id workspace;
+		list<reaction_id> reactions_to_delete;
+		string type;
+		bool delete_noncontributing_reactions;
+		bool integrate_deletions_in_model;
+		string auth;
+    } reaction_sensitivity_analysis_params;
+    /*
+        Queues a sensitivit analysis on the knockout of model reactions
+    */
+    funcdef reaction_sensitivity_analysis(reaction_sensitivity_analysis_params input) returns (JobObject job);
+	/* Input parameters for the "delete_noncontributing_reactions" function.
+	
+		fbamodel_id model - ID of model to be analyzed (a required argument)
+		workspace_id model_ws - ID of workspace with model to be analyzed (an optional argument - default is value of workspace argument)
+		string kosensitivity_uid - Name of KOSensitivity object in workspace (an optional argument - default is KBase ID)
+		workspace_id workspace - ID of workspace where output and default inputs will be selected from (a required argument)
+		list<reaction_id> reactions_to_delete - list of reactions to delete in sensitiviity analysis; note, order of the reactions matters (a required argument)
+		string type - type of KO sensitivity analysis (an optional argument - default is "unknown")
+		bool delete_noncontributing_reactions - a boolean indicating if unuseful reactions should be deleted (an optional argument - default is "0")
+		bool integrate_deletions_in_model - a boolean indicating if deletion of noncontributing reactions should be integrated in the model (an optional argument - default is "0")
+		string auth  - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument)
+
+	*/
+    typedef structure {
+		workspace_id rxn_sensitivity_ws;
+		string rxn_sensitivity;
+		workspace_id workspace;
+		fbamodel_id new_model_uid;
+		string new_rxn_sensitivity_uid;
+		string auth;
+    } delete_noncontributing_reactions_params;
+    /*
+        Queues a sensitivit analysis on the knockout of model reactions
+    */
+    funcdef delete_noncontributing_reactions(delete_noncontributing_reactions_params input) returns (object_metadata output);
+	
 	/*********************************************************************************
 	Code relating to import and analysis of ProteinSets
    	*********************************************************************************/

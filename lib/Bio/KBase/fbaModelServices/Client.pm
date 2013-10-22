@@ -6962,6 +6962,268 @@ sub role_to_reactions
 
 
 
+=head2 reaction_sensitivity_analysis
+
+  $job = $obj->reaction_sensitivity_analysis($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a reaction_sensitivity_analysis_params
+$job is a JobObject
+reaction_sensitivity_analysis_params is a reference to a hash where the following keys are defined:
+	model has a value which is a fbamodel_id
+	model_ws has a value which is a workspace_id
+	rxn_sensitivity_uid has a value which is a string
+	workspace has a value which is a workspace_id
+	reactions_to_delete has a value which is a reference to a list where each element is a reaction_id
+	type has a value which is a string
+	delete_noncontributing_reactions has a value which is a bool
+	integrate_deletions_in_model has a value which is a bool
+	auth has a value which is a string
+fbamodel_id is a string
+workspace_id is a string
+reaction_id is a string
+JobObject is a reference to a hash where the following keys are defined:
+	id has a value which is a job_id
+	type has a value which is a string
+	auth has a value which is a string
+	status has a value which is a string
+	jobdata has a value which is a reference to a hash where the key is a string and the value is a string
+	queuetime has a value which is a string
+	starttime has a value which is a string
+	completetime has a value which is a string
+	owner has a value which is a string
+	queuecommand has a value which is a string
+job_id is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a reaction_sensitivity_analysis_params
+$job is a JobObject
+reaction_sensitivity_analysis_params is a reference to a hash where the following keys are defined:
+	model has a value which is a fbamodel_id
+	model_ws has a value which is a workspace_id
+	rxn_sensitivity_uid has a value which is a string
+	workspace has a value which is a workspace_id
+	reactions_to_delete has a value which is a reference to a list where each element is a reaction_id
+	type has a value which is a string
+	delete_noncontributing_reactions has a value which is a bool
+	integrate_deletions_in_model has a value which is a bool
+	auth has a value which is a string
+fbamodel_id is a string
+workspace_id is a string
+reaction_id is a string
+JobObject is a reference to a hash where the following keys are defined:
+	id has a value which is a job_id
+	type has a value which is a string
+	auth has a value which is a string
+	status has a value which is a string
+	jobdata has a value which is a reference to a hash where the key is a string and the value is a string
+	queuetime has a value which is a string
+	starttime has a value which is a string
+	completetime has a value which is a string
+	owner has a value which is a string
+	queuecommand has a value which is a string
+job_id is a string
+
+
+=end text
+
+=item Description
+
+Queues a sensitivit analysis on the knockout of model reactions
+
+=back
+
+=cut
+
+sub reaction_sensitivity_analysis
+{
+    my($self, @args) = @_;
+
+# Authentication: none
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function reaction_sensitivity_analysis (received $n, expecting 1)");
+    }
+    {
+	my($input) = @args;
+
+	my @_bad_arguments;
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to reaction_sensitivity_analysis:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'reaction_sensitivity_analysis');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.reaction_sensitivity_analysis",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{code},
+					       method_name => 'reaction_sensitivity_analysis',
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method reaction_sensitivity_analysis",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'reaction_sensitivity_analysis',
+				       );
+    }
+}
+
+
+
+=head2 delete_noncontributing_reactions
+
+  $output = $obj->delete_noncontributing_reactions($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a delete_noncontributing_reactions_params
+$output is an object_metadata
+delete_noncontributing_reactions_params is a reference to a hash where the following keys are defined:
+	rxn_sensitivity_ws has a value which is a workspace_id
+	rxn_sensitivity has a value which is a string
+	workspace has a value which is a workspace_id
+	new_model_uid has a value which is a fbamodel_id
+	new_rxn_sensitivity_uid has a value which is a string
+	auth has a value which is a string
+workspace_id is a string
+fbamodel_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a delete_noncontributing_reactions_params
+$output is an object_metadata
+delete_noncontributing_reactions_params is a reference to a hash where the following keys are defined:
+	rxn_sensitivity_ws has a value which is a workspace_id
+	rxn_sensitivity has a value which is a string
+	workspace has a value which is a workspace_id
+	new_model_uid has a value which is a fbamodel_id
+	new_rxn_sensitivity_uid has a value which is a string
+	auth has a value which is a string
+workspace_id is a string
+fbamodel_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+=item Description
+
+Queues a sensitivit analysis on the knockout of model reactions
+
+=back
+
+=cut
+
+sub delete_noncontributing_reactions
+{
+    my($self, @args) = @_;
+
+# Authentication: none
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function delete_noncontributing_reactions (received $n, expecting 1)");
+    }
+    {
+	my($input) = @args;
+
+	my @_bad_arguments;
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to delete_noncontributing_reactions:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'delete_noncontributing_reactions');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.delete_noncontributing_reactions",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{code},
+					       method_name => 'delete_noncontributing_reactions',
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method delete_noncontributing_reactions",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'delete_noncontributing_reactions',
+				       );
+    }
+}
+
+
+
 =head2 fasta_to_ProteinSet
 
   $output = $obj->fasta_to_ProteinSet($params)
@@ -10208,7 +10470,7 @@ sub _validate_version {
 
 
 
-=head2 workspace_id
+=head2 mdlrxn_kbid
 
 =over 4
 
@@ -10219,6 +10481,99 @@ sub _validate_version {
 ********************************************************************************
     Universal simple type definitions
    	********************************************************************************
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 ws_ref
+
+=over 4
+
+
+
+=item Description
+
+A string specifying a full workspace ID
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 kbase_id
+
+=over 4
+
+
+
+=item Description
+
+A string specifying a KBase ID
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 workspace_id
+
+=over 4
+
+
+
+=item Description
+
+A string used as an ID for a workspace. Any string consisting of alphanumeric characters and "-" is acceptable
 
 
 =item Definition
@@ -17061,6 +17416,225 @@ auth has a value which is a string
 a reference to a hash where the following keys are defined:
 templateModel has a value which is a template_id
 workspace has a value which is a workspace_id
+auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 ReactionSensitivityAnalysisReaction
+
+=over 4
+
+
+
+=item Description
+
+********************************************************************************
+	Code relating to import and analysis of ProteinSets
+   	********************************************************************************
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+kbid has a value which is a kbase_id
+reaction has a value which is a mdlrxn_kbid
+growth_fraction has a value which is a float
+delete has a value which is a bool
+deleted has a value which is a bool
+biomass_compounds has a value which is a reference to a list where each element is a string
+new_inactive_rxns has a value which is a reference to a list where each element is a string
+new_essentials has a value which is a reference to a list where each element is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+kbid has a value which is a kbase_id
+reaction has a value which is a mdlrxn_kbid
+growth_fraction has a value which is a float
+delete has a value which is a bool
+deleted has a value which is a bool
+biomass_compounds has a value which is a reference to a list where each element is a string
+new_inactive_rxns has a value which is a reference to a list where each element is a string
+new_essentials has a value which is a reference to a list where each element is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 ReactionSensitivityAnalysis
+
+=over 4
+
+
+
+=item Description
+
+Object for holding reaction knockout sensitivity results
+
+        kbase_id kbid - KBase ID of reaction sensitivity object
+        ws_ref model_wsid - Workspace reference to associated model
+        string type - type of reaction KO sensitivity object
+        bool deleted_noncontributing_reactions - boolean indicating if noncontributing reactions were deleted
+        bool integrated_deletions_in_model - boolean indicating if deleted reactions were implemented in the model
+        list<ReactionSensitivityAnalysisReaction> reactions - list of results from sensitivity analysis for each reaction
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+kbid has a value which is a kbase_id
+model_wsid has a value which is a ws_ref
+type has a value which is a string
+deleted_noncontributing_reactions has a value which is a bool
+integrated_deletions_in_model has a value which is a bool
+reactions has a value which is a reference to a list where each element is a ReactionSensitivityAnalysisReaction
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+kbid has a value which is a kbase_id
+model_wsid has a value which is a ws_ref
+type has a value which is a string
+deleted_noncontributing_reactions has a value which is a bool
+integrated_deletions_in_model has a value which is a bool
+reactions has a value which is a reference to a list where each element is a ReactionSensitivityAnalysisReaction
+
+
+=end text
+
+=back
+
+
+
+=head2 reaction_sensitivity_analysis_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "reaction_sensitivity_analysis" function.
+
+        fbamodel_id model - ID of model to be analyzed (a required argument)
+        workspace_id model_ws - ID of workspace with model to be analyzed (an optional argument - default is value of workspace argument)
+        string kosensitivity_uid - Name of KOSensitivity object in workspace (an optional argument - default is KBase ID)
+        workspace_id workspace - ID of workspace where output and default inputs will be selected from (a required argument)
+        list<reaction_id> reactions_to_delete - list of reactions to delete in sensitiviity analysis; note, order of the reactions matters (a required argument)
+        string type - type of KO sensitivity analysis (an optional argument - default is "unknown")
+        bool delete_noncontributing_reactions - a boolean indicating if unuseful reactions should be deleted (an optional argument - default is "0")
+        bool integrate_deletions_in_model - a boolean indicating if deletion of noncontributing reactions should be integrated in the model (an optional argument - default is "0")
+        string auth  - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument)
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+model has a value which is a fbamodel_id
+model_ws has a value which is a workspace_id
+rxn_sensitivity_uid has a value which is a string
+workspace has a value which is a workspace_id
+reactions_to_delete has a value which is a reference to a list where each element is a reaction_id
+type has a value which is a string
+delete_noncontributing_reactions has a value which is a bool
+integrate_deletions_in_model has a value which is a bool
+auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+model has a value which is a fbamodel_id
+model_ws has a value which is a workspace_id
+rxn_sensitivity_uid has a value which is a string
+workspace has a value which is a workspace_id
+reactions_to_delete has a value which is a reference to a list where each element is a reaction_id
+type has a value which is a string
+delete_noncontributing_reactions has a value which is a bool
+integrate_deletions_in_model has a value which is a bool
+auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 delete_noncontributing_reactions_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "delete_noncontributing_reactions" function.
+
+        fbamodel_id model - ID of model to be analyzed (a required argument)
+        workspace_id model_ws - ID of workspace with model to be analyzed (an optional argument - default is value of workspace argument)
+        string kosensitivity_uid - Name of KOSensitivity object in workspace (an optional argument - default is KBase ID)
+        workspace_id workspace - ID of workspace where output and default inputs will be selected from (a required argument)
+        list<reaction_id> reactions_to_delete - list of reactions to delete in sensitiviity analysis; note, order of the reactions matters (a required argument)
+        string type - type of KO sensitivity analysis (an optional argument - default is "unknown")
+        bool delete_noncontributing_reactions - a boolean indicating if unuseful reactions should be deleted (an optional argument - default is "0")
+        bool integrate_deletions_in_model - a boolean indicating if deletion of noncontributing reactions should be integrated in the model (an optional argument - default is "0")
+        string auth  - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument)
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+rxn_sensitivity_ws has a value which is a workspace_id
+rxn_sensitivity has a value which is a string
+workspace has a value which is a workspace_id
+new_model_uid has a value which is a fbamodel_id
+new_rxn_sensitivity_uid has a value which is a string
+auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+rxn_sensitivity_ws has a value which is a workspace_id
+rxn_sensitivity has a value which is a string
+workspace has a value which is a workspace_id
+new_model_uid has a value which is a fbamodel_id
+new_rxn_sensitivity_uid has a value which is a string
 auth has a value which is a string
 
 
