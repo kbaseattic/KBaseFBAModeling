@@ -110,12 +110,14 @@ sub runFBACommand {
     my $opt = shift;
     my $serv = get_fba_client();
     my $output;
-	if ($opt->{showerror} == 0){
-	    eval {
-	        $output = $serv->$function($params);
-	    };
-	}else{
-	    $output = $serv->$function($params);
+    my $error;
+    eval {
+    	$output = $serv->$function($params);
+	};$error = $@ if $@;
+	if ($opt->{showerror} == 0 && defined($error)){
+	    print STDERR $error;
+	}elsif (defined($error) && $error =~ m/ERROR\{(.+)\}ERROR/) {
+		print STDERR $1."\n";
 	}
     return ($output);
 }

@@ -191,8 +191,7 @@ sub _authenticate {
 					user => $token->user_id
 				};
 			} else {
-				Bio::KBase::Exceptions::KBaseException->throw(error => "Invalid authorization token:".$auth,
-				method_name => '_setContext');
+				$self->_error("Invalid authorization token:".$auth,'_setContext');
 			}
 		}
 	} elsif ($self->{_accounttype} eq "seed") {
@@ -204,8 +203,7 @@ sub _authenticate {
 			password => $split->[1]
 		});
 		if (!defined($token) || $token =~ m/ERROR:/) {
-			Bio::KBase::Exceptions::KBaseException->throw(error => $token,
-			method_name => '_setContext');
+			$self->_error($token,'_setContext');
 		}
 		$token =~ s/\s/\t/;
 		$split = [split(/\t/,$token)];
@@ -497,8 +495,7 @@ sub _save_msobject {
 		});
 	}
 	if (!defined($objmeta)) {
-		my $msg = "Unable to save object:".$type."/".$ws."/".$id;
-		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => '_get_msobject');
+		$self->_error("Unable to save object:".$type."/".$ws."/".$id,'_get_msobject');
 	}
 	$obj->{_kbaseWSMeta}->{wsid} = $id;
 	$obj->{_kbaseWSMeta}->{ws} = $ws;
@@ -556,10 +553,7 @@ sub _get_genomeObj_from_CDM {
 	my $cdmi = $self->_cdmi();
     my $data = $cdmi->genomes_to_genome_data([$id]);
     if (!defined($data->{$id})) {
-    	Bio::KBase::Exceptions::ArgumentValidationError->throw(
-    		error => "Genome ".$id." not found!",
-			method_name => 'get_genomeobject'
-		);
+    	$self->_error("Genome ".$id." not found!",'get_genomeobject');
     }
     $data = $data->{$id};
     my $genomeObj = {
@@ -648,8 +642,7 @@ sub _get_genomeObj_from_SEED {
 		-data => [qw(gc-content dna-size name taxonomy domain genetic-code)]
 	});
 	if (!defined($data->{$id})) {
-    	my $msg = "Could not load data for PubSEED genome!";
-		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => '_get_genomeObj_from_SEED');
+    	$self->_error("Could not load data for PubSEED genome!",'_get_genomeObj_from_SEED');
 	}
 	my $genomeObj = {
 		id => $id,
@@ -731,8 +724,7 @@ sub _get_genomeObj_from_RAST {
 		getDNASequence => 1
 	});
     if (!defined($data->{features})) {
-    	my $msg = "Could not load data for rast genome!";
-		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => '_buildFBAObject');
+		$self->_error("Could not load data for rast genome!","_buildFBAObject");
 	}
 	my $genomeObj = {
 		id => $id,
@@ -914,8 +906,7 @@ sub _validateargs {
 	    $args = {};
 	}
 	if (ref($args) ne "HASH") {
-		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => "Arguments not hash",
-		method_name => '_validateargs');	
+		$self->_error("Arguments not hash",'_validateargs');
 	}
 	if (defined($substitutions) && ref($substitutions) eq "HASH") {
 		foreach my $original (keys(%{$substitutions})) {
@@ -930,8 +921,7 @@ sub _validateargs {
 		}
 	}
 	if (defined($args->{_error})) {
-		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => "Mandatory arguments ".join("; ",@{$args->{_error}})." missing.",
-		method_name => '_validateargs');
+		$self->_error("Mandatory arguments ".join("; ",@{$args->{_error}})." missing.",'_validateargs');
 	}
 	if (defined($optionalArguments)) {
 		foreach my $argument (keys(%{$optionalArguments})) {
@@ -989,8 +979,7 @@ sub _buildFBAObject {
 			id => $fbaFormulation->{media}
 		});
 		if (!defined($mediaObj)) {
-			my $msg = "Media object ".$fbaFormulation->{media}." not found in biochemistry!";
-			Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => '_buildFBAObject');
+			$self->_error("Media object ".$fbaFormulation->{media}." not found in biochemistry!","_buildFBAObject");
 		}
 		$media = $mediaObj->uuid();
 	}
@@ -1256,8 +1245,7 @@ sub _buildGapfillObject {
 	if (defined($formulation->{probabilisticAnnotation})) {
 		my $probanno = $self->_get_msobject("ProbAnno",$formulation->{probabilisticAnnotation_workspace},$formulation->{probabilisticAnnotation});
 		if (!defined($probanno)) {
-			Bio::KBase::Exceptions::ArgumentValidationError->throw(error => "Invalid probabilistic annotation object!",
-							       method_name => '_buildGapfillObject');	
+			$self->_error("Invalid probabilistic annotation object!","_buildGapfillObject");
 		}
 #		#Get probabilistic model
 #		my $ProbModel;
@@ -1349,8 +1337,7 @@ sub _buildGapGenObject {
 			id => $formulation->{refmedia}
 		});
 		if (!defined($mediaobj)) {
-			my $msg = "Media object ".$formulation->{refmedia}." not found in biochemistry!";
-			Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => '_buildFBAObject');
+			$self->_error("Media object ".$formulation->{refmedia}." not found in biochemistry!",'_buildFBAObject');
 		}
 		$media = $mediaobj->uuid();
 	}
@@ -1403,12 +1390,11 @@ sub _parseTerm {
 		$output->{enttype} = "Compound";
 		$obj = $model->searchForCompound("compounds",{id => $term->[2]});
 	} else {
-		my $msg = "Variable type ".$term->[1]." not recognized!";
-		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => '_buildFBAObject');
+		$self->_error("Variable type ".$term->[1]." not recognized!","_buildFBAObject");
 	}
 	if (!defined($obj)) {
 		my $msg = "Variable ".$term->[2]." not found!";
-		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => '_buildFBAObject');
+		$self->_error($msg,'_buildFBAObject');
 	}
 	$output->{uuid} = $obj->uuid(); 
 	return $output;
@@ -1430,11 +1416,11 @@ sub _parseBound {
 		$obj = $model->searchForCompound($bound->[3]);
 	} else {
 		my $msg = "Variable type ".$bound->[2]." not recognized!";
-		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => '_buildFBAObject');
+		$self->_error($msg,'_buildFBAObject');
 	}
 	if (!defined($obj)) {
 		my $msg = "Bound variable ".$bound->[3]." not found!";
-		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => '_buildFBAObject');
+		$self->_error($msg,'_buildFBAObject');
 	}
 	$output->{uuid} = $obj->uuid(); 
 	return $output;
@@ -2347,6 +2333,7 @@ Description:
 
 sub _error {
 	my($self,$msg,$method) = @_;
+	$msg = "ERROR{".$msg."}ERROR";
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => $method);
 }
 
@@ -4527,7 +4514,7 @@ sub get_biochemistry
 	});
 	if (!defined($aliasset)) {
 		my $msg = "id_type ".$input->{id_type}." not found for biochemistry compounds!";
-		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'get_biochemistry');
+		$self->_error($msg,'get_biochemistry');
 	}
 	my $aliases = $aliasset->aliasesByuuid();
     foreach my $cpd_info (@{$biochem->_compounds}) {
@@ -4550,7 +4537,7 @@ sub get_biochemistry
 	});
 	if (!defined($aliasset)) {
 		my $msg = "id_type ".$input->{id_type}." not found for biochemistry reactions!";
-		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'get_biochemistry');
+		$self->_error($msg,'get_biochemistry');
 	}
 	$aliases = $aliasset->aliasesByuuid();
     foreach my $rxn_info (@{$biochem->_reactions}) {
@@ -4694,7 +4681,7 @@ sub get_ETCDiagram
     my $model = $self->_get_msobject("Model",$input->{workspace},$input->{model});
     if (!defined($model)) {
     	my $msg = "Failed to retrieve model ".$input->{workspace}."/".$input->{model};
-    	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'get_ETCDiagram');
+    	$self->_error($msg,'get_ETCDiagram');
     }
     my $formulation = $self->_setDefaultFBAFormulation({
     	media => $input->{media},
@@ -4852,13 +4839,13 @@ sub import_probanno
     my $genomeObj = $self->_get_msobject("Genome",$input->{genome_workspace},$input->{genome});
     if (!defined($genomeObj)) {
     	my $msg = "Failed to retrieve genome ".$input->{genome_workspace}."/".$input->{genome};
-    	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'import_phenotypes');
+    	$self->_error($msg,'import_phenotypes');
     }
     #Retrieving the annotation object
     my $annotation = $self->_get_msobject("Annotation","NO_WORKSPACE",$genomeObj->{annotation_uuid});
     if (!defined($annotation)) {
     	my $msg = "Failed to retrieve annotation ".$input->{genome_workspace}."/".$input->{genome};
-    	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'import_phenotypes');
+    	$self->_error($msg,'import_phenotypes');
     }
     #Retrieving the mapping object
     my $map = $annotation->mapping();
@@ -4937,7 +4924,7 @@ sub import_probanno
     }
     my $meta = {};
 	if (length($msg) > 0 && $input->{ignore_errors} == 0) {
-		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'import_phenotypes');
+		$self->_error($msg,'import_phenotypes');
 	} elsif (length($msg) > 0) {
 		$object->{importErrors} = $msg;
 	}
@@ -5865,7 +5852,7 @@ sub import_fbamodel
 		$msg .= "Missing genes:".join(";",keys(%{$missingGenes}))."\n";
 	}
 	if (length($msg) > 0 && $input->{ignore_errors} == 0) {
-		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'import_fbamodel');
+		$self->_error($msg,'import_fbamodel');
 	}
 	#Saving imported model
 	$modelMeta = $self->_save_msobject($model,"Model",$input->{workspace},$input->{model},"import_fbamodel",$input->{overwrite});
@@ -6681,14 +6668,9 @@ sub addmedia
     		push(@{$missing},$input->{compounds}->[$i]);
     	}
     }
-    print "Found:".@{$found}."\n";
-    print "Missing:".@{$missing}."\n";
-    print "Found:".join(";",@{$found})."\n";
-    print "Missing:".join(";",@{$missing})."\n";
     #Checking that all compounds specified for media were found
 	if (defined($missing->[0])) {
-		my $msg = "Compounds specified for media not found: ".join(";",@{$missing});
-    	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'addmedia');
+		$self->_error("Compounds specified for media not found: ".join(";",@{$missing}),'addmedia');
 	}
     #Saving media in database
     $mediaMeta = $self->_save_msobject($media,"Media",$input->{workspace},$input->{media},"addmedia",$input->{overwrite});
@@ -6784,7 +6766,7 @@ sub export_media
     	 $med = $bio->queryObject("media",{id => $input->{media}});
     	 if (!defined($med)) {
     	 	my $msg = "Media ".$input->{media}." not found in base biochemistry!";
-			Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'export_media');
+			$self->_error($msg,'export_media');
     	 }
     } else {
     	$med = $self->_get_msobject("Media",$input->{workspace},$input->{media});
@@ -7038,7 +7020,7 @@ sub runfba
     my $fbaResult = $fba->runFBA();
     if (!defined($fbaResult)) {
     	my $msg = "FBA failed with no solution returned!";
-    	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'runfba');
+    	$self->_error($msg,'runfba');
     }
     if ($input->{add_to_model} == 1) {
     	$model->addLinkArrayItem("fbaFormulations",$fba);
@@ -7307,7 +7289,7 @@ sub import_phenotypes
     }
     if (!defined($genomeObj)) {
     	my $msg = "Failed to retrieve genome ".$input->{genome_workspace}."/".$input->{genome};
-    	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'import_phenotypes');
+    	$self->_error($msg,'import_phenotypes');
     }
     my $genehash = {};
     for (my $i=0; $i < @{$genomeObj->{features}}; $i++) {
@@ -7411,7 +7393,7 @@ sub import_phenotypes
     }
     my $meta = {};
 	if (length($msg) > 0 && $input->{ignore_errors} == 0) {
-		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'import_phenotypes');
+		$self->_error($msg,'import_phenotypes');
 	} elsif (length($msg) > 0) {
 		$object->{importErrors} = $msg;
 	}
@@ -7426,7 +7408,7 @@ sub import_phenotypes
 	});
 	if (!defined($objmeta)) {
 		my $msg = "Unable to save object:PhenotypeSet/".$input->{workspace}."/".$input->{id};
-		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'import_phenotypes');
+		$self->_error($msg,'import_phenotypes');
 	}
 	$output = $objmeta;
 	$self->_clearContext();
@@ -7675,7 +7657,7 @@ sub simulate_phenotypes
 	my $fbaResult = $fba->runFBA();
 	if (!defined($fbaResult) || @{$fbaResult->fbaPhenotypeSimultationResults()} == 0) {
     	my $msg = "Simulation of phenotypes failed to return results from FBA!";
-    	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'simulate_phenotypes');
+    	$self->_error($msg,'simulate_phenotypes');
     }
 	#Converting FBA results into simulated phenotype
     my $object = {
@@ -7963,7 +7945,7 @@ sub export_phenotypeSimulationSet
 		$output = $self->_phenotypeSimulationSet_to_html($obj);
 	} else {
 		my $msg = "Specified format ".$input->{format}." not recognized!\n";
-		Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'export_phenotypeSimulationSet');
+		$self->_error($msg,'export_phenotypeSimulationSet');
 	}
 	$self->_clearContext();
     #END export_phenotypeSimulationSet
@@ -8692,7 +8674,7 @@ sub queue_gapfill_model
 		my $gapfill = $self->_get_msobject("GapFill","NO_WORKSPACE",$input->{gapFill});
 		if (!defined($gapfill->fbaFormulation()->fbaResults()->[0])) {
 			my $msg = "Gapfilling failed!";
-			Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'queue_gapfill_model');
+			$self->_error($msg,'queue_gapfill_model');
 		}
 		$gapfill->parseGapfillingResults($gapfill->fbaFormulation()->fbaResults()->[0]);
 		if (!defined($gapfill->gapfillingSolutions()->[0])) {
@@ -8719,11 +8701,11 @@ sub queue_gapfill_model
 					};
 				} else {
 					my $msg = "Gapfilling completed, but no valid solutions found after 24 hours!";
-					Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'queue_gapfill_model');	
+					$self->_error($msg,'queue_gapfill_model');	
 				}	
 			} else {
 				my $msg = "Gapfilling completed, but no valid solutions found!";
-				Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'queue_gapfill_model');
+				$self->_error($msg,'queue_gapfill_model');
 			}
 		}
 		if ($input->{integrate_solution} == 1) {
@@ -9022,7 +9004,7 @@ sub queue_gapgen_model
 		my $gapgen = $self->_get_msobject("GapGen","NO_WORKSPACE",$input->{gapGen});
 		if (!defined($gapgen->fbaFormulation()->fbaResults())) {
 			my $msg = "Gap generation failed!";
-			Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'queue_gapgen_model');
+			$self->_error($msg,'queue_gapgen_model');
 		}
 		$gapgen->parseGapgenResults($gapgen->fbaFormulation()->fbaResults()->[0]);
 		if ($input->{integrate_solution} == 1 && defined($gapgen->gapgenSolutions()->[0])) {
@@ -9348,7 +9330,7 @@ sub queue_wildtype_phenotype_reconciliation
 		my $simPheno = $self->_get_msobject("PhenotypeSimulationSet",$input->{phenotypeSet_workspace},$input->{phenotypeSet});
 		if (!defined($simPheno->{phenotypeSimulations})) {
 			my $msg = "No phenotypes simulated!";
-			Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'queue_wildtype_phenotype_reconciliation');
+			$self->_error($msg,'queue_wildtype_phenotype_reconciliation');
 		}
 		#Queing up gapfill and gapgen jobs
 		#TODO: This block should be in a "safe save" block to prevent race conditions
@@ -9438,7 +9420,7 @@ sub queue_wildtype_phenotype_reconciliation
 				my $gapfill = $self->_get_msobject("GapFill",$input->{gapFill_workspace},$gf);
 				if (!defined($gapfill->fbaFormulation()->fbaResults())) {
 					my $msg = "Gap filling failed!";
-					Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'queue_gapgen_model');
+					$self->_error($msg,'queue_gapgen_model');
 				}
 				$gapfill->parseGapfillResults($gapfill->fbaFormulation()->fbaResults()->[0]);
 				my $output = $self->_save_msobject($gapfill,"GapFill",$input->{gapFill_workspace},$gf,"queue_gapgen_model");
@@ -9449,7 +9431,7 @@ sub queue_wildtype_phenotype_reconciliation
 				my $gapgen = $self->_get_msobject("GapGen",$input->{gapGen_workspace},$gg);
 				if (!defined($gapgen->fbaFormulation()->fbaResults())) {
 					my $msg = "Gap generation failed!";
-					Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'queue_gapgen_model');
+					$self->_error($msg,'queue_gapgen_model');
 				}
 				$gapgen->parseGapgenResults($gapgen->fbaFormulation()->fbaResults()->[0]);
 				my $output = $self->_save_msobject($gapgen,"GapGen",$input->{gapGen_workspace},$gg,"queue_gapgen_model");
@@ -10563,7 +10545,7 @@ sub run_job
 		    });
 	    };
     	my $msg = "FBA failed with no solution returned!";
-    	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => 'runfba');
+    	$self->_error($msg,'runfba');
     }
     #Saving the FBA by reference, overwriting the same object in the workspace
     $self->_save_msobject($fba,"FBA","NO_WORKSPACE",$fba->{_kbaseWSMeta}->{wsid},"run_job",1,$job->{jobdata}->{fbaref});
@@ -10708,7 +10690,7 @@ sub set_cofactors
 			$cpd->isCofactor($value);
 		} else {
 			my $msg = "Compound ".$cpdid." was not found in biochemistry database ".$input->{biochemistry_workspace}."/".$input->{biochemistry};
-			Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg, method_name => 'set_cofactors');
+			$self->_error($msg, 'set_cofactors');
 		}
 	}
 	
