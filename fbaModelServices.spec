@@ -2302,7 +2302,7 @@ module fbaModelServices {
     typedef structure {
 		fbamodel_id model;
 		workspace_id model_ws;
-		string rxn_sensitivity_uid;
+		string rxnsens_uid;
 		workspace_id workspace;
 		list<reaction_id> reactions_to_delete;
 		string type;
@@ -2977,6 +2977,85 @@ module fbaModelServices {
     */
     funcdef add_stimuli(add_stimuli_params params) returns (object_metadata output);
     
+    /* Input parameters for the "add_stimuli" function.
+	
+		string biochemid - ID of biochemistry with stimuli (optional)
+		string biochem_workspace - ID of workspace with biochemistry with stimuli (optional)
+		string stimuliid - ID for the stimuli to be created (optional)
+		string name - Name for the stimuli (required)
+		string abbreviation - Abbreviation for the stimuli (optional)
+		string type - Type of the stimuli (required)
+		list<string> compounds - Compounds associated with stimuli (optional)
+		string workspace - ID of workspace where all output objects will be stored (optional argument, default is current workspace)
+		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+		
+	*/
+	typedef structure {
+		string biochemid;
+		string biochem_workspace;
+		string stimuliid;
+		string name;
+		string abbreviation;
+		string type;
+		string description;
+		list<string> compounds;
+		string workspace;
+		string auth;
+    } add_stimuli_params;
+    /*
+		Adds a stimuli either to the central database or as an object in a workspace        
+    */
+    funcdef add_stimuli(add_stimuli_params params) returns (object_metadata output);
+    
+    typedef structure {
+		kbase_id kbid;
+		string name;
+		string abbreviation;
+		string description;
+		string type;
+		list<kbase_id> compound_kbids;
+    } Stimuli;
+    
+    typedef structure {
+		kbase_id kbid;
+		kbase_id stimuli_kbid;
+		bool is_inhibitor;
+		float strength;
+		float min_concentration;
+		float max_concentration;
+		list<kbase_id> regulator_kbids;	
+    } RegulatoryModelRegulonStimuli;
+    
+    typedef structure {
+		kbase_id kbid;
+		string name;
+		list<kbase_id> feature_kbids;
+		list<RegulatoryModelRegulonStimuli> stimuli;
+    } RegulatoryModelRegulon;
+    
+	typedef structure {
+		kbase_id kbid;
+		string name;
+		string type;
+		ws_ref genome_wsid;
+		list<RegulatoryModelRegulon> regulons;
+    } RegulatoryModel;
+	
+	typedef structure {
+		string regmodel_uid;
+		workspace_id workspace;
+		string genome;
+		workspace_id genome_ws;
+		string name;
+		string type;
+		list<tuple<string name,list<string> features,list<tuple<string stimuli,bool in_inhibitor,float strength,float min_conc,float max_conc,list<kbase_id> regulators>> stimuli>> regulons;
+		string auth;
+    } import_regulatory_model_params;
+    /*
+		Imports a regulatory model into the KBase workspace       
+    */
+    funcdef import_regulatory_model(import_regulatory_model_params params) returns (object_metadata output);
+	
     /*********************************************************************************
     Functions relating to comparison of models
    	*********************************************************************************/
