@@ -6978,7 +6978,7 @@ $job is a JobObject
 reaction_sensitivity_analysis_params is a reference to a hash where the following keys are defined:
 	model has a value which is a fbamodel_id
 	model_ws has a value which is a workspace_id
-	rxn_sensitivity_uid has a value which is a string
+	rxnsens_uid has a value which is a string
 	workspace has a value which is a workspace_id
 	reactions_to_delete has a value which is a reference to a list where each element is a reaction_id
 	type has a value which is a string
@@ -7012,7 +7012,7 @@ $job is a JobObject
 reaction_sensitivity_analysis_params is a reference to a hash where the following keys are defined:
 	model has a value which is a fbamodel_id
 	model_ws has a value which is a workspace_id
-	rxn_sensitivity_uid has a value which is a string
+	rxnsens_uid has a value which is a string
 	workspace has a value which is a workspace_id
 	reactions_to_delete has a value which is a reference to a list where each element is a reaction_id
 	type has a value which is a string
@@ -9681,6 +9681,302 @@ sub add_stimuli
         Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method add_stimuli",
 					    status_line => $self->{client}->status_line,
 					    method_name => 'add_stimuli',
+				       );
+    }
+}
+
+
+
+=head2 add_stimuli
+
+  $output = $obj->add_stimuli($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is an add_stimuli_params
+$output is an object_metadata
+add_stimuli_params is a reference to a hash where the following keys are defined:
+	biochemid has a value which is a string
+	biochem_workspace has a value which is a string
+	stimuliid has a value which is a string
+	name has a value which is a string
+	abbreviation has a value which is a string
+	type has a value which is a string
+	description has a value which is a string
+	compounds has a value which is a reference to a list where each element is a string
+	workspace has a value which is a string
+	auth has a value which is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is an add_stimuli_params
+$output is an object_metadata
+add_stimuli_params is a reference to a hash where the following keys are defined:
+	biochemid has a value which is a string
+	biochem_workspace has a value which is a string
+	stimuliid has a value which is a string
+	name has a value which is a string
+	abbreviation has a value which is a string
+	type has a value which is a string
+	description has a value which is a string
+	compounds has a value which is a reference to a list where each element is a string
+	workspace has a value which is a string
+	auth has a value which is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+
+=end text
+
+=item Description
+
+Adds a stimuli either to the central database or as an object in a workspace
+
+=back
+
+=cut
+
+sub add_stimuli
+{
+    my($self, @args) = @_;
+
+# Authentication: none
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function add_stimuli (received $n, expecting 1)");
+    }
+    {
+	my($params) = @args;
+
+	my @_bad_arguments;
+        (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to add_stimuli:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'add_stimuli');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.add_stimuli",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{code},
+					       method_name => 'add_stimuli',
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method add_stimuli",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'add_stimuli',
+				       );
+    }
+}
+
+
+
+=head2 import_regulatory_model
+
+  $output = $obj->import_regulatory_model($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is an import_regulatory_model_params
+$output is an object_metadata
+import_regulatory_model_params is a reference to a hash where the following keys are defined:
+	regmodel_uid has a value which is a string
+	workspace has a value which is a workspace_id
+	genome has a value which is a string
+	genome_ws has a value which is a workspace_id
+	name has a value which is a string
+	type has a value which is a string
+	regulons has a value which is a reference to a list where each element is a reference to a list containing 3 items:
+	0: (name) a string
+	1: (features) a reference to a list where each element is a string
+	2: (stimuli) a reference to a list where each element is a reference to a list containing 6 items:
+		0: (stimuli) a string
+		1: (in_inhibitor) a bool
+		2: (strength) a float
+		3: (min_conc) a float
+		4: (max_conc) a float
+		5: (regulators) a reference to a list where each element is a kbase_id
+
+
+	auth has a value which is a string
+workspace_id is a string
+kbase_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is an import_regulatory_model_params
+$output is an object_metadata
+import_regulatory_model_params is a reference to a hash where the following keys are defined:
+	regmodel_uid has a value which is a string
+	workspace has a value which is a workspace_id
+	genome has a value which is a string
+	genome_ws has a value which is a workspace_id
+	name has a value which is a string
+	type has a value which is a string
+	regulons has a value which is a reference to a list where each element is a reference to a list containing 3 items:
+	0: (name) a string
+	1: (features) a reference to a list where each element is a string
+	2: (stimuli) a reference to a list where each element is a reference to a list containing 6 items:
+		0: (stimuli) a string
+		1: (in_inhibitor) a bool
+		2: (strength) a float
+		3: (min_conc) a float
+		4: (max_conc) a float
+		5: (regulators) a reference to a list where each element is a kbase_id
+
+
+	auth has a value which is a string
+workspace_id is a string
+kbase_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+=item Description
+
+Imports a regulatory model into the KBase workspace
+
+=back
+
+=cut
+
+sub import_regulatory_model
+{
+    my($self, @args) = @_;
+
+# Authentication: none
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function import_regulatory_model (received $n, expecting 1)");
+    }
+    {
+	my($params) = @args;
+
+	my @_bad_arguments;
+        (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to import_regulatory_model:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'import_regulatory_model');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.import_regulatory_model",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{code},
+					       method_name => 'import_regulatory_model',
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method import_regulatory_model",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'import_regulatory_model',
 				       );
     }
 }
@@ -17557,7 +17853,7 @@ Input parameters for the "reaction_sensitivity_analysis" function.
 a reference to a hash where the following keys are defined:
 model has a value which is a fbamodel_id
 model_ws has a value which is a workspace_id
-rxn_sensitivity_uid has a value which is a string
+rxnsens_uid has a value which is a string
 workspace has a value which is a workspace_id
 reactions_to_delete has a value which is a reference to a list where each element is a reaction_id
 type has a value which is a string
@@ -17574,7 +17870,7 @@ auth has a value which is a string
 a reference to a hash where the following keys are defined:
 model has a value which is a fbamodel_id
 model_ws has a value which is a workspace_id
-rxn_sensitivity_uid has a value which is a string
+rxnsens_uid has a value which is a string
 workspace has a value which is a workspace_id
 reactions_to_delete has a value which is a reference to a list where each element is a reaction_id
 type has a value which is a string
@@ -19487,6 +19783,291 @@ type has a value which is a string
 description has a value which is a string
 compounds has a value which is a reference to a list where each element is a string
 workspace has a value which is a string
+auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 add_stimuli_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "add_stimuli" function.
+
+        string biochemid - ID of biochemistry with stimuli (optional)
+        string biochem_workspace - ID of workspace with biochemistry with stimuli (optional)
+        string stimuliid - ID for the stimuli to be created (optional)
+        string name - Name for the stimuli (required)
+        string abbreviation - Abbreviation for the stimuli (optional)
+        string type - Type of the stimuli (required)
+        list<string> compounds - Compounds associated with stimuli (optional)
+        string workspace - ID of workspace where all output objects will be stored (optional argument, default is current workspace)
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+biochemid has a value which is a string
+biochem_workspace has a value which is a string
+stimuliid has a value which is a string
+name has a value which is a string
+abbreviation has a value which is a string
+type has a value which is a string
+description has a value which is a string
+compounds has a value which is a reference to a list where each element is a string
+workspace has a value which is a string
+auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+biochemid has a value which is a string
+biochem_workspace has a value which is a string
+stimuliid has a value which is a string
+name has a value which is a string
+abbreviation has a value which is a string
+type has a value which is a string
+description has a value which is a string
+compounds has a value which is a reference to a list where each element is a string
+workspace has a value which is a string
+auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 Stimuli
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+kbid has a value which is a kbase_id
+name has a value which is a string
+abbreviation has a value which is a string
+description has a value which is a string
+type has a value which is a string
+compound_kbids has a value which is a reference to a list where each element is a kbase_id
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+kbid has a value which is a kbase_id
+name has a value which is a string
+abbreviation has a value which is a string
+description has a value which is a string
+type has a value which is a string
+compound_kbids has a value which is a reference to a list where each element is a kbase_id
+
+
+=end text
+
+=back
+
+
+
+=head2 RegulatoryModelRegulonStimuli
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+kbid has a value which is a kbase_id
+stimuli_kbid has a value which is a kbase_id
+is_inhibitor has a value which is a bool
+strength has a value which is a float
+min_concentration has a value which is a float
+max_concentration has a value which is a float
+regulator_kbids has a value which is a reference to a list where each element is a kbase_id
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+kbid has a value which is a kbase_id
+stimuli_kbid has a value which is a kbase_id
+is_inhibitor has a value which is a bool
+strength has a value which is a float
+min_concentration has a value which is a float
+max_concentration has a value which is a float
+regulator_kbids has a value which is a reference to a list where each element is a kbase_id
+
+
+=end text
+
+=back
+
+
+
+=head2 RegulatoryModelRegulon
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+kbid has a value which is a kbase_id
+name has a value which is a string
+feature_kbids has a value which is a reference to a list where each element is a kbase_id
+stimuli has a value which is a reference to a list where each element is a RegulatoryModelRegulonStimuli
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+kbid has a value which is a kbase_id
+name has a value which is a string
+feature_kbids has a value which is a reference to a list where each element is a kbase_id
+stimuli has a value which is a reference to a list where each element is a RegulatoryModelRegulonStimuli
+
+
+=end text
+
+=back
+
+
+
+=head2 RegulatoryModel
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+kbid has a value which is a kbase_id
+name has a value which is a string
+type has a value which is a string
+genome_wsid has a value which is a ws_ref
+regulons has a value which is a reference to a list where each element is a RegulatoryModelRegulon
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+kbid has a value which is a kbase_id
+name has a value which is a string
+type has a value which is a string
+genome_wsid has a value which is a ws_ref
+regulons has a value which is a reference to a list where each element is a RegulatoryModelRegulon
+
+
+=end text
+
+=back
+
+
+
+=head2 import_regulatory_model_params
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+regmodel_uid has a value which is a string
+workspace has a value which is a workspace_id
+genome has a value which is a string
+genome_ws has a value which is a workspace_id
+name has a value which is a string
+type has a value which is a string
+regulons has a value which is a reference to a list where each element is a reference to a list containing 3 items:
+0: (name) a string
+1: (features) a reference to a list where each element is a string
+2: (stimuli) a reference to a list where each element is a reference to a list containing 6 items:
+	0: (stimuli) a string
+	1: (in_inhibitor) a bool
+	2: (strength) a float
+	3: (min_conc) a float
+	4: (max_conc) a float
+	5: (regulators) a reference to a list where each element is a kbase_id
+
+
+auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+regmodel_uid has a value which is a string
+workspace has a value which is a workspace_id
+genome has a value which is a string
+genome_ws has a value which is a workspace_id
+name has a value which is a string
+type has a value which is a string
+regulons has a value which is a reference to a list where each element is a reference to a list containing 3 items:
+0: (name) a string
+1: (features) a reference to a list where each element is a string
+2: (stimuli) a reference to a list where each element is a reference to a list containing 6 items:
+	0: (stimuli) a string
+	1: (in_inhibitor) a bool
+	2: (strength) a float
+	3: (min_conc) a float
+	4: (max_conc) a float
+	5: (regulators) a reference to a list where each element is a kbase_id
+
+
 auth has a value which is a string
 
 

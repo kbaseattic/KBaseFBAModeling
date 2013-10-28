@@ -506,6 +506,22 @@ sub _save_msobject {
 	return $objmeta;
 }
 
+sub _instantiate_msobjects {
+	my($self,$object,$type) = @_;
+	my $class;
+	if (defined($self->_KBaseStore()->_mstypetrans()->{$type})) {
+    	$class = "ModelSEED::MS::".$type;
+    	$type = $self->_KBaseStore()->_mstypetrans()->{$type};
+    } elsif (defined($self->_wstypetrans()->{$type})) {
+    	$class = "ModelSEED::MS::".$self->_wstypetrans()->{$type};
+    }
+	if (ref($object) ne $class) {
+		$object = $class->new($object);
+	}
+	$object->parent($self->_KBaseStore());
+	return $object;
+}
+
 sub _get_msobject {
 	my($self,$type,$ws,$id) = @_;
 	my $ref = $ws."/".$id;
@@ -7850,7 +7866,7 @@ sub add_media_transporters
 	die "Must specify either all_transporters or positive_transporters.\n";
     }
 
-    my $output = $self->_save_msobject($model,"Model",$input->{workspace},$input->{outmodel},"add_media_transporters");
+    $output = $self->_save_msobject($model,"Model",$input->{workspace},$input->{outmodel},"add_media_transporters");
 
     #END add_media_transporters
     my @_bad_returns;
@@ -8629,13 +8645,14 @@ sub queue_gapfill_model
     my($job);
     #BEGIN queue_gapfill_model
     $self->_setContext($ctx,$input);
-	$input = $self->_validateargs($input,["model","workspace"],{
+	$input = $self->_validateargs($input,["model","workspace"],{		
+		full_model_object => 0,
 		model_workspace => $input->{workspace},
 		formulation => undef,
 		phenotypeSet => undef,
 		phenotypeSet_workspace => $input->{workspace},
 		integrate_solution => 0,
-		out_model => $input->{model},
+		out_model => undef,
 		gapFill => undef,
 		gapFill_workspace => $input->{workspace},
 		overwrite => 0,
@@ -8648,10 +8665,21 @@ sub queue_gapfill_model
 	$input->{formulation}->{totalTimeLimit} = $input->{totalTimeLimit};
 	#Checking is this is a postprocessing or initialization call
 	if (!defined($input->{gapFill})) {
+		my $model;
+		if ($input->{full_model_object} == 1) {
+			$model = $self->_instantiate_msobjects($input->{model},"Model");
+			if (!defined($input->{out_model})) {
+				$input->{out_model} = $model->id();
+				$input->{model_workspace} = $input->{workspace};
+			}
+		} else {
+			if (!defined($input->{out_model})) {
+				$input->{out_model} = $input->{model};
+			}
+			$model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
+		}
 		$self->_get_new_id($input->{model}.".gapfill.");
 		$input->{formulation} = $self->_setDefaultGapfillFormulation($input->{formulation});
-		#TODO: This block should be in a "safe save" block to prevent race conditions
-		my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
 		$input->{formulation}->{completeGapfill} = $input->{completeGapfill};
 		my $gapfill = $self->_buildGapfillObject($input->{formulation},$model);
 		$input->{gapFill} = $gapfill->uuid();
@@ -11064,7 +11092,7 @@ $job is a JobObject
 reaction_sensitivity_analysis_params is a reference to a hash where the following keys are defined:
 	model has a value which is a fbamodel_id
 	model_ws has a value which is a workspace_id
-	rxn_sensitivity_uid has a value which is a string
+	rxnsens_uid has a value which is a string
 	workspace has a value which is a workspace_id
 	reactions_to_delete has a value which is a reference to a list where each element is a reaction_id
 	type has a value which is a string
@@ -11098,7 +11126,7 @@ $job is a JobObject
 reaction_sensitivity_analysis_params is a reference to a hash where the following keys are defined:
 	model has a value which is a fbamodel_id
 	model_ws has a value which is a workspace_id
-	rxn_sensitivity_uid has a value which is a string
+	rxnsens_uid has a value which is a string
 	workspace has a value which is a workspace_id
 	reactions_to_delete has a value which is a reference to a list where each element is a reaction_id
 	type has a value which is a string
@@ -11150,6 +11178,85 @@ sub reaction_sensitivity_analysis
     my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
     my($job);
     #BEGIN reaction_sensitivity_analysis
+    $self->_setContext($ctx,$input);
+	$input = $self->_validateargs($input,["model","workspace","reactions_to_delete"],{
+		model_ws => $input->{workspace},
+		rxnsens_uid => undef,
+		type => "unknown",
+		delete_noncontributing_reactions => 0,
+		integrate_deletions_in_model => 0,
+		fba_ref => undef
+	});
+	if (!defined($input->{fba_ref})) {
+		my $fbaid = $self->_get_new_id($input->{model}.".fba.");
+		my $formulation = $self->_setDefaultFBAFormulation({});
+		my $model = $self->_get_msobject("Model",$input->{model_ws},$input->{model});
+		my $fba = $self->_buildFBAObject($formulation,$model,$input->{workspace},$input->{fba});
+		push(@{$fba->outputfiles()},"FBAExperimentOutput.txt");
+		if ($input->{delete_noncontributing_reactions} == 1) {
+			$fba->parameters()->{"deletion experiments"} = "";
+			for (my $i=0; $i < @{$input->{reactions_to_delete}}; $i ++) {
+				if (length($fba->parameters()->{"deletion experiments"}) > 0) {
+					$fba->parameters()->{"deletion experiments"} .= ";";
+				}
+				$fba->parameters()->{"deletion experiments"} .= $input->{reactions_to_delete}->[$i].":Complete:".$input->{reactions_to_delete}->[$i];
+			}
+		}
+		my $fbameta = $self->_save_msobject($fba,"FBA",$input->{workspace},$fbaid,"queue_runfba");
+		$input->{fba_ref} = $fbameta->[8];
+		my $jobdata = {
+			postprocess_command => "reaction_sensitivity_analysis",
+			postprocess_args => [$input],
+			fbaref => $input->{fba_ref}
+		};
+		$job = $self->_queueJob({
+			type => "FBA",
+			jobdata => $jobdata,
+			queuecommand => "reaction_sensitivity_analysis",
+			"state" => $self->_defaultJobState()
+		});
+	} else {
+		my $fba = $self->_get_msobject("FBA","NO_WORKSPACE",$input->{fba_ref});
+		my $kbid = $self->_get_new_id($input->{model}.".rxnsens.");
+		if (!defined($input->{rxnsens_uid})) {
+			$input->{rxnsens_uid} = $kbid;
+		}
+		my $object = {
+			kbid => $kbid,
+			model_wsid => $input->{model_ws}."/".$input->{model},
+			type => $input->{type},
+			deleted_noncontributing_reactions => $input->{deleted_noncontributing_reactions},
+			integrated_deletions_in_model => 0,
+			reactions => []
+		};
+		my $array = [split(/\n/,$fba->outputfiles()->{"FBAExperimentOutput.txt"})];
+		for (my $i=0; $i < @{$array}; $i++) {
+			my $row = [split(/\t/,$array->[$i])];
+			my $delete = 0;
+			if ($row->[7] eq "DELETED") {
+				$delete = 1;
+			}
+			push(@{$object->{reactions}},{
+				kbid => $object->{kbid}.".rxn.".$i,
+				reaction => $row->[0],
+				growth_fraction => $row->[5],
+				"delete" => $delete,
+				deleted => 0,
+				biomass_compounds => [split(/;/,$row->[6])],
+				new_inactive_rxns => [split(/;/,$row->[7])],
+				new_essentials => [split(/;/,$row->[8])]
+			});
+		}
+		$self->_save_msobject($object,"RxnSensitivity",$input->{workspace},$input->{rxnsens_uid},"reaction_sensitivity_analysis");
+		if ($input->{integrate_deletions_in_model} == 1) {
+			$self->delete_noncontributing_reactions({
+				rxn_sensitivity_ws => $input->{workspace},
+				rxn_sensitivity => $input->{rxnsens_uid},
+				workspace => $input->{workspace}
+			})
+		}
+	}
+	$self->_clearContext();
     #END reaction_sensitivity_analysis
     my @_bad_returns;
     (ref($job) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"job\" (value was \"$job\")");
@@ -11268,6 +11375,20 @@ sub delete_noncontributing_reactions
     my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
     my($output);
     #BEGIN delete_noncontributing_reactions
+    $self->_setContext($ctx,$input);
+	$input = $self->_validateargs($input,["rxn_sensitivity","workspace"],{
+		rxn_sensitivity_ws => $input->{workspace},
+		new_model_uid => undef,
+		new_rxn_sensitivity_uid => undef
+	});
+	my $rxnsens = $self->_get_msobject("RxnSensitivity",$input->{rxn_sensitivity_ws},$input->{rxn_sensitivity});
+	my $model = $self->_get_msobject("Model","NO_WORKSPACE",$rxnsens->{model_wsid});
+	for (my $i=0; $i < @{$rxnsens->{reactions}}; $i++) {
+		my $rxn = $model->queryObject("modelreactions",{id => $rxnsens->{reactions}->[$i]->{reaction}});
+		$model->remove("modelreactions",$rxn);
+	}
+	$self->_save_msobject($model,"Model","NO_WORKSPACE",$rxnsens->{model_wsid},"delete_noncontributing_reactions");
+	$self->_clearContext();
     #END delete_noncontributing_reactions
     my @_bad_returns;
     (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
@@ -12170,7 +12291,7 @@ sub ContigSet_to_Genome
 		features => []
 	};
 	my $mapping = $self->_get_msobject("Mapping","kbase","default-mapping");
-    ($genome,my $anno,$mapping,my $contigObj) = $self->_processGenomeObject($genome,$mapping,"TranscriptSet_to_Genome");
+    ($genome,my $anno,$mapping,$contigObj) = $self->_processGenomeObject($genome,$mapping,"TranscriptSet_to_Genome");
    	$output = $self->_save_msobject($genome,"Genome",$params->{workspace},$params->{uid},"TranscriptSet_to_Genome");
 	$self->_clearContext();
     #END ContigSet_to_Genome
@@ -14138,6 +14259,389 @@ sub add_stimuli
 	my $msg = "Invalid returns passed to add_stimuli:\n" . join("", map { "\t$_\n" } @_bad_returns);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
 							       method_name => 'add_stimuli');
+    }
+    return($output);
+}
+
+
+
+
+=head2 add_stimuli
+
+  $output = $obj->add_stimuli($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is an add_stimuli_params
+$output is an object_metadata
+add_stimuli_params is a reference to a hash where the following keys are defined:
+	biochemid has a value which is a string
+	biochem_workspace has a value which is a string
+	stimuliid has a value which is a string
+	name has a value which is a string
+	abbreviation has a value which is a string
+	type has a value which is a string
+	description has a value which is a string
+	compounds has a value which is a reference to a list where each element is a string
+	workspace has a value which is a string
+	auth has a value which is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is an add_stimuli_params
+$output is an object_metadata
+add_stimuli_params is a reference to a hash where the following keys are defined:
+	biochemid has a value which is a string
+	biochem_workspace has a value which is a string
+	stimuliid has a value which is a string
+	name has a value which is a string
+	abbreviation has a value which is a string
+	type has a value which is a string
+	description has a value which is a string
+	compounds has a value which is a reference to a list where each element is a string
+	workspace has a value which is a string
+	auth has a value which is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+
+=end text
+
+
+
+=item Description
+
+Adds a stimuli either to the central database or as an object in a workspace
+
+=back
+
+=cut
+
+sub add_stimuli
+{
+    my $self = shift;
+    my($params) = @_;
+
+    my @_bad_arguments;
+    (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"params\" (value was \"$params\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to add_stimuli:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'add_stimuli');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($output);
+    #BEGIN add_stimuli
+    $self->_setContext($ctx,$params);
+	$params = $self->_validateargs($params,["name","workspace"],{
+		biochemid => undef,
+		stimuliid => undef,
+		abbreviation => $params->{name},
+		description => "",
+		compounds => [],
+		type => undef
+	});
+	if (!defined($params->{type})) {
+		$params->{type} = "environmental";
+		if (@{$params->{compounds}} > 0) {
+			$params->{type} = "chemical";
+		}
+	}
+	my $allowableTypes = {
+		chemical => 1,environmental => 1
+	};
+	if (!defined($allowableTypes->{$params->{type}})) {
+		$self->_error("Input type ".$params->{type}." not recognized!","add_stimuli");
+	}
+	if (!defined($params->{stimuliid})) {
+		$params->{stimuliid} = $self->_get_new_id("stim.");
+	}
+	my $biochem;
+	if (defined($params->{biochemid})) {
+		$biochem = $self->_get_msobject("Biochemistry",$params->{biochem_workspace},$params->{biochemid});
+	} else {
+		$biochem = $self->_get_msobject("Biochemistry","kbase","default");
+	}
+	my $obj = {
+		description => $params->{stimuliid},
+		id => $params->{stimuliid},
+		name => $params->{name},
+		type => $params->{type},
+		abbreviation => $params->{abbreviation},
+		description => $params->{description},
+		compound_uuids => []
+	};
+	my $missingCpd;
+	if (defined($params->{compounds})) {
+		for (my $i=0; $i < @{$params->{compounds}}; $i++) {
+			my $cpd = $params->{compounds}->[$i];
+			my $cpdobj = $biochem->searchForCompound($cpd);
+			if (!defined($cpdobj)) {
+				push(@{$missingCpd},$cpd);
+			} else {
+				push(@{$obj->{compound_uuids}},$cpdobj->uuid());
+			}
+		}
+	}
+	if (defined($params->{biochemid})) {
+		$biochem->add("stimuli",$obj);
+		$output = $self->_save_msobject($biochem,"Biochemistry",$params->{biochem_workspace},$params->{biochemid},"add_stimuli");	
+	} else {
+		$output = $self->_save_msobject($obj,"Stimuli",$params->{workspace},$params->{stimuliid},"add_stimuli");
+	}
+	$self->_clearContext();
+    #END add_stimuli
+    my @_bad_returns;
+    (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to add_stimuli:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'add_stimuli');
+    }
+    return($output);
+}
+
+
+
+
+=head2 import_regulatory_model
+
+  $output = $obj->import_regulatory_model($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is an import_regulatory_model_params
+$output is an object_metadata
+import_regulatory_model_params is a reference to a hash where the following keys are defined:
+	regmodel_uid has a value which is a string
+	workspace has a value which is a workspace_id
+	genome has a value which is a string
+	genome_ws has a value which is a workspace_id
+	name has a value which is a string
+	type has a value which is a string
+	regulons has a value which is a reference to a list where each element is a reference to a list containing 3 items:
+	0: (name) a string
+	1: (features) a reference to a list where each element is a string
+	2: (stimuli) a reference to a list where each element is a reference to a list containing 6 items:
+		0: (stimuli) a string
+		1: (in_inhibitor) a bool
+		2: (strength) a float
+		3: (min_conc) a float
+		4: (max_conc) a float
+		5: (regulators) a reference to a list where each element is a kbase_id
+
+
+	auth has a value which is a string
+workspace_id is a string
+kbase_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is an import_regulatory_model_params
+$output is an object_metadata
+import_regulatory_model_params is a reference to a hash where the following keys are defined:
+	regmodel_uid has a value which is a string
+	workspace has a value which is a workspace_id
+	genome has a value which is a string
+	genome_ws has a value which is a workspace_id
+	name has a value which is a string
+	type has a value which is a string
+	regulons has a value which is a reference to a list where each element is a reference to a list containing 3 items:
+	0: (name) a string
+	1: (features) a reference to a list where each element is a string
+	2: (stimuli) a reference to a list where each element is a reference to a list containing 6 items:
+		0: (stimuli) a string
+		1: (in_inhibitor) a bool
+		2: (strength) a float
+		3: (min_conc) a float
+		4: (max_conc) a float
+		5: (regulators) a reference to a list where each element is a kbase_id
+
+
+	auth has a value which is a string
+workspace_id is a string
+kbase_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+
+
+=item Description
+
+Imports a regulatory model into the KBase workspace
+
+=back
+
+=cut
+
+sub import_regulatory_model
+{
+    my $self = shift;
+    my($params) = @_;
+
+    my @_bad_arguments;
+    (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"params\" (value was \"$params\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to import_regulatory_model:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'import_regulatory_model');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($output);
+    #BEGIN import_regulatory_model
+     $self->_setContext($ctx,$params);
+	$params = $self->_validateargs($params,["genome","workspace","regulators"],{
+		regmodel_uid => undef,
+		genome_ws => $params->{workspace},
+		name => undef,
+		type => undef
+	});
+	if (!defined($params->{type})) {
+		$params->{type} = "environmental";
+		if (@{$params->{compounds}} > 0) {
+			$params->{type} = "chemical";
+		}
+	}
+	my $allowableTypes = {
+		chemical => 1,environmental => 1
+	};
+	if (!defined($allowableTypes->{$params->{type}})) {
+		$self->_error("Input type ".$params->{type}." not recognized!","add_stimuli");
+	}
+	if (!defined($params->{stimuliid})) {
+		$params->{stimuliid} = $self->_get_new_id("stim.");
+	}
+	my $biochem;
+	if (defined($params->{biochemid})) {
+		$biochem = $self->_get_msobject("Biochemistry",$params->{biochem_workspace},$params->{biochemid});
+	} else {
+		$biochem = $self->_get_msobject("Biochemistry","kbase","default");
+	}
+	my $obj = {
+		description => $params->{stimuliid},
+		id => $params->{stimuliid},
+		name => $params->{name},
+		type => $params->{type},
+		abbreviation => $params->{abbreviation},
+		description => $params->{description},
+		compound_uuids => []
+	};
+	my $missingCpd;
+	if (defined($params->{compounds})) {
+		for (my $i=0; $i < @{$params->{compounds}}; $i++) {
+			my $cpd = $params->{compounds}->[$i];
+			my $cpdobj = $biochem->searchForCompound($cpd);
+			if (!defined($cpdobj)) {
+				push(@{$missingCpd},$cpd);
+			} else {
+				push(@{$obj->{compound_uuids}},$cpdobj->uuid());
+			}
+		}
+	}
+	if (defined($params->{biochemid})) {
+		$biochem->add("stimuli",$obj);
+		$output = $self->_save_msobject($biochem,"Biochemistry",$params->{biochem_workspace},$params->{biochemid},"add_stimuli");	
+	} else {
+			}
+	
+	$output = $self->_save_msobject($obj,"Stimuli",$params->{workspace},$params->{stimuliid},"add_stimuli");
+	$self->_clearContext();
+    #END import_regulatory_model
+    my @_bad_returns;
+    (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to import_regulatory_model:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'import_regulatory_model');
     }
     return($output);
 }
@@ -22536,7 +23040,7 @@ Input parameters for the "reaction_sensitivity_analysis" function.
 a reference to a hash where the following keys are defined:
 model has a value which is a fbamodel_id
 model_ws has a value which is a workspace_id
-rxn_sensitivity_uid has a value which is a string
+rxnsens_uid has a value which is a string
 workspace has a value which is a workspace_id
 reactions_to_delete has a value which is a reference to a list where each element is a reaction_id
 type has a value which is a string
@@ -22553,7 +23057,7 @@ auth has a value which is a string
 a reference to a hash where the following keys are defined:
 model has a value which is a fbamodel_id
 model_ws has a value which is a workspace_id
-rxn_sensitivity_uid has a value which is a string
+rxnsens_uid has a value which is a string
 workspace has a value which is a workspace_id
 reactions_to_delete has a value which is a reference to a list where each element is a reaction_id
 type has a value which is a string
@@ -24466,6 +24970,291 @@ type has a value which is a string
 description has a value which is a string
 compounds has a value which is a reference to a list where each element is a string
 workspace has a value which is a string
+auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 add_stimuli_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "add_stimuli" function.
+
+        string biochemid - ID of biochemistry with stimuli (optional)
+        string biochem_workspace - ID of workspace with biochemistry with stimuli (optional)
+        string stimuliid - ID for the stimuli to be created (optional)
+        string name - Name for the stimuli (required)
+        string abbreviation - Abbreviation for the stimuli (optional)
+        string type - Type of the stimuli (required)
+        list<string> compounds - Compounds associated with stimuli (optional)
+        string workspace - ID of workspace where all output objects will be stored (optional argument, default is current workspace)
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+biochemid has a value which is a string
+biochem_workspace has a value which is a string
+stimuliid has a value which is a string
+name has a value which is a string
+abbreviation has a value which is a string
+type has a value which is a string
+description has a value which is a string
+compounds has a value which is a reference to a list where each element is a string
+workspace has a value which is a string
+auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+biochemid has a value which is a string
+biochem_workspace has a value which is a string
+stimuliid has a value which is a string
+name has a value which is a string
+abbreviation has a value which is a string
+type has a value which is a string
+description has a value which is a string
+compounds has a value which is a reference to a list where each element is a string
+workspace has a value which is a string
+auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 Stimuli
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+kbid has a value which is a kbase_id
+name has a value which is a string
+abbreviation has a value which is a string
+description has a value which is a string
+type has a value which is a string
+compound_kbids has a value which is a reference to a list where each element is a kbase_id
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+kbid has a value which is a kbase_id
+name has a value which is a string
+abbreviation has a value which is a string
+description has a value which is a string
+type has a value which is a string
+compound_kbids has a value which is a reference to a list where each element is a kbase_id
+
+
+=end text
+
+=back
+
+
+
+=head2 RegulatoryModelRegulonStimuli
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+kbid has a value which is a kbase_id
+stimuli_kbid has a value which is a kbase_id
+is_inhibitor has a value which is a bool
+strength has a value which is a float
+min_concentration has a value which is a float
+max_concentration has a value which is a float
+regulator_kbids has a value which is a reference to a list where each element is a kbase_id
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+kbid has a value which is a kbase_id
+stimuli_kbid has a value which is a kbase_id
+is_inhibitor has a value which is a bool
+strength has a value which is a float
+min_concentration has a value which is a float
+max_concentration has a value which is a float
+regulator_kbids has a value which is a reference to a list where each element is a kbase_id
+
+
+=end text
+
+=back
+
+
+
+=head2 RegulatoryModelRegulon
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+kbid has a value which is a kbase_id
+name has a value which is a string
+feature_kbids has a value which is a reference to a list where each element is a kbase_id
+stimuli has a value which is a reference to a list where each element is a RegulatoryModelRegulonStimuli
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+kbid has a value which is a kbase_id
+name has a value which is a string
+feature_kbids has a value which is a reference to a list where each element is a kbase_id
+stimuli has a value which is a reference to a list where each element is a RegulatoryModelRegulonStimuli
+
+
+=end text
+
+=back
+
+
+
+=head2 RegulatoryModel
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+kbid has a value which is a kbase_id
+name has a value which is a string
+type has a value which is a string
+genome_wsid has a value which is a ws_ref
+regulons has a value which is a reference to a list where each element is a RegulatoryModelRegulon
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+kbid has a value which is a kbase_id
+name has a value which is a string
+type has a value which is a string
+genome_wsid has a value which is a ws_ref
+regulons has a value which is a reference to a list where each element is a RegulatoryModelRegulon
+
+
+=end text
+
+=back
+
+
+
+=head2 import_regulatory_model_params
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+regmodel_uid has a value which is a string
+workspace has a value which is a workspace_id
+genome has a value which is a string
+genome_ws has a value which is a workspace_id
+name has a value which is a string
+type has a value which is a string
+regulons has a value which is a reference to a list where each element is a reference to a list containing 3 items:
+0: (name) a string
+1: (features) a reference to a list where each element is a string
+2: (stimuli) a reference to a list where each element is a reference to a list containing 6 items:
+	0: (stimuli) a string
+	1: (in_inhibitor) a bool
+	2: (strength) a float
+	3: (min_conc) a float
+	4: (max_conc) a float
+	5: (regulators) a reference to a list where each element is a kbase_id
+
+
+auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+regmodel_uid has a value which is a string
+workspace has a value which is a workspace_id
+genome has a value which is a string
+genome_ws has a value which is a workspace_id
+name has a value which is a string
+type has a value which is a string
+regulons has a value which is a reference to a list where each element is a reference to a list containing 3 items:
+0: (name) a string
+1: (features) a reference to a list where each element is a string
+2: (stimuli) a reference to a list where each element is a reference to a list containing 6 items:
+	0: (stimuli) a string
+	1: (in_inhibitor) a bool
+	2: (strength) a float
+	3: (min_conc) a float
+	4: (max_conc) a float
+	5: (regulators) a reference to a list where each element is a kbase_id
+
+
 auth has a value which is a string
 
 
