@@ -1977,6 +1977,8 @@ module fbaModelServices {
 		phenotype_set_id phenotypeSet - ID of a phenotype set against which gapfilled model should be simulated (an optional argument: default is 'undef')
 		workspace_id phenotypeSet_workspace - workspace containing phenotype set to be simulated (an optional argument; default is the value of the workspace argument)
 		bool integrate_solution - a flag indicating if the first solution should be integrated in the model (an optional argument: default is '0')
+		bool sensitivity_analysis - a flag indicating if the sensitivity analysis on gapfilling solution
+		list<string> target_reactions - a list of reactions to activate with gapfilling
 		fbamodel_id out_model - ID where the gapfilled model will be saved (an optional argument: default is 'undef')
 		gapfill_id gapFill - ID to which gapfill solution will be saved (an optional argument: default is 'undef')
 		workspace_id workspace - workspace where gapfill results will be saved (a required argument)
@@ -1992,6 +1994,8 @@ module fbaModelServices {
 		phenotype_set_id phenotypeSet;
 		workspace_id phenotypeSet_workspace;
 		bool integrate_solution;
+		bool sensitivity_analysis;
+		list<string> target_reactions;
 		fbamodel_id out_model;
 		workspace_id workspace;
 		gapfill_id gapFill;
@@ -2948,36 +2952,6 @@ module fbaModelServices {
     Code relating to reconstruction, import, and analysis of regulatory models
    	*********************************************************************************/
 	/* Input parameters for the "add_stimuli" function.
-	
-		string biochemid - ID of biochemistry with stimuli (optional)
-		string biochem_workspace - ID of workspace with biochemistry with stimuli (optional)
-		string stimuliid - ID for the stimuli to be created (optional)
-		string name - Name for the stimuli (required)
-		string abbreviation - Abbreviation for the stimuli (optional)
-		string type - Type of the stimuli (required)
-		list<string> compounds - Compounds associated with stimuli (optional)
-		string workspace - ID of workspace where all output objects will be stored (optional argument, default is current workspace)
-		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
-		
-	*/
-	typedef structure {
-		string biochemid;
-		string biochem_workspace;
-		string stimuliid;
-		string name;
-		string abbreviation;
-		string type;
-		string description;
-		list<string> compounds;
-		string workspace;
-		string auth;
-    } add_stimuli_params;
-    /*
-		Adds a stimuli either to the central database or as an object in a workspace        
-    */
-    funcdef add_stimuli(add_stimuli_params params) returns (object_metadata output);
-    
-    /* Input parameters for the "add_stimuli" function.
 	
 		string biochemid - ID of biochemistry with stimuli (optional)
 		string biochem_workspace - ID of workspace with biochemistry with stimuli (optional)

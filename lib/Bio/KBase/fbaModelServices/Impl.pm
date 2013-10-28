@@ -1122,6 +1122,7 @@ sub _setDefaultGapfillFormulation {
 		$formulation = {};
 	}
 	$formulation = $self->_validateargs($formulation,[],{
+		target_reactions => [],
 		timePerSolution => 3600,
 		totalTimeLimit => 18000,
 		formulation => undef,
@@ -1237,6 +1238,12 @@ sub _buildGapfillObject {
 		my $rxnObj = $model->biochemistry()->searchForReaction($reaction);
 		if (defined($rxnObj)) {
 			$gapform->addLinkArrayItem("guaranteedReactions",$rxnObj);
+		}
+	}
+	foreach my $reaction (@{$formulation->{targeted_reactions}}) {
+		my $rxnObj = $model->biochemistry()->searchForReaction($reaction);
+		if (defined($rxnObj)) {
+			$gapform->addLinkArrayItem("targetedreactions",$rxnObj);
 		}
 	}
 	foreach my $reaction (@{$formulation->{blacklistedrxns}}) {
@@ -7337,47 +7344,40 @@ sub import_phenotypes
     	type => $input->{type}
     };
     #Validating media, genes, and compounds
-    my $missingMedia = [];
-    my $missingGenes = [];
-    my $missingCompounds = [];
+    my $missingMedia = {};
+    my $missingGenes = {};
+    my $missingCompounds = {};
     my $mediaChecked = {};
     my $cpdChecked = {};
-    my $geneChecked = {};
     for (my $i=0; $i < @{$input->{phenotypes}}; $i++) {
     	my $phenotype = $input->{phenotypes}->[$i];
     	#Validating gene IDs
     	my $allfound = 1;
     	for (my $j=0;$j < @{$phenotype->[0]};$j++) {
-    		if (!defined($geneChecked->{$phenotype->[0]->[$j]})) {
-	    		$geneChecked->{$phenotype->[0]->[$j]} = 1;
-	    		if (!defined($genehash->{$phenotype->[0]->[$j]})) {
-	    			push(@{$missingGenes},$phenotype->[0]->[$j]);
-	    			$allfound = 0;
-	    		} else {
-	    			$phenotype->[0]->[$j] = $genehash->{$phenotype->[0]->[$j]};
-	    		}
+    		if (!defined($genehash->{$phenotype->[0]->[$j]})) {
+    			$missingGenes->{$phenotype->[0]->[$j]} = 1;
+    			$allfound = 0;
+    		} else {
+    			$phenotype->[0]->[$j] = $genehash->{$phenotype->[0]->[$j]};
     		}
     	}
     	if ($allfound == 0) {
     		next;
     	}
     	#Validating media
-    	if (!defined($mediaChecked->{$phenotype->[2]}->{$phenotype->[1]})) {
-	    	$mediaChecked->{$phenotype->[2]}->{$phenotype->[1]} = 1;
-	    	if ($phenotype->[2] eq "NO_WORKSPACE") {
-	    		my $media = $bio->queryObject("media",{id => $phenotype->[1]});
-	    		if (!defined($media)) {
-	    			push(@{$missingMedia},$phenotype->[1]);
-	    			$allfound = 0;
-	    		}
-	    	} else {
-	    		try {
-	    			my $media = $self->_get_msobject("Media",$phenotype->[2],$phenotype->[1]);
-		    	} catch {
-		    		push(@{$missingMedia},$phenotype->[1]);
-		    		$allfound = 0;
-		    	};
-	    	}
+    	if ($phenotype->[2] eq "NO_WORKSPACE") {
+    		my $media = $bio->queryObject("media",{id => $phenotype->[1]});
+    		if (!defined($media)) {
+    			$missingMedia->{$phenotype->[1]} = 1;
+    			$allfound = 0;
+    		}
+    	} else {
+    		try {
+    			my $media = $self->_get_msobject("Media",$phenotype->[2],$phenotype->[1]);
+	    	} catch {
+	    		$missingMedia->{$phenotype->[1]} = 1;
+	    		$allfound = 0;
+	    	};
     	}
     	if ($allfound == 0) {
     		next;
@@ -7385,15 +7385,12 @@ sub import_phenotypes
     	#Validating compounds
     	$allfound = 1;
     	for (my $j=0;$j < @{$phenotype->[3]};$j++) {
-    		if (!defined($cpdChecked->{$phenotype->[3]->[$j]})) {
-	    		$cpdChecked->{$phenotype->[3]->[$j]} = 1;
-	    		my $cpd = $bio->searchForCompound($phenotype->[3]->[$j]);
-	    		if (!defined($cpd)) {
-	    			push(@{$missingCompounds},$phenotype->[3]->[$j]);
-	    			$allfound = 0;
-	    		} else {
-	    			$phenotype->[3]->[$j] = $cpd->id();
-	    		}
+    		my $cpd = $bio->searchForCompound($phenotype->[3]->[$j]);
+    		if (!defined($cpd)) {
+    			$missingCompounds->{$phenotype->[3]->[$j]} = 1;
+    			$allfound = 0;
+    		} else {
+    			$phenotype->[3]->[$j] = $cpd->id();
     		}
     	}
     	if ($allfound == 0) {
@@ -7404,14 +7401,14 @@ sub import_phenotypes
     }
     #Printing error if any entities could not be validated
     my $msg = "";
-    if (@{$missingCompounds} > 0) {
-    	$msg .= "Could not find compounds:".join(";",@{$missingCompounds})."\n";
+    if (keys(%{$missingCompounds}) > 0) {
+    	$msg .= "Could not find compounds:".join(";",keys(%{$missingCompounds}))."\n";
     }
-    if (@{$missingGenes} > 0) {
-    	$msg .= "Could not find genes:".join(";",@{$missingGenes})."\n";
+    if (keys(%{$missingGenes}) > 0) {
+    	$msg .= "Could not find genes:".join(";",keys(%{$missingGenes}))."\n";
     }
-    if (@{$missingMedia} > 0) {
-    	$msg .= "Could not find media:".join(";",@{$missingMedia})."\n";
+    if (keys(%{$missingMedia}) > 0) {
+    	$msg .= "Could not find media:".join(";",keys(%{$missingMedia}))."\n";
     }
     my $meta = {};
 	if (length($msg) > 0 && $input->{ignore_errors} == 0) {
@@ -8420,6 +8417,8 @@ gapfill_model_params is a reference to a hash where the following keys are defin
 	phenotypeSet has a value which is a phenotype_set_id
 	phenotypeSet_workspace has a value which is a workspace_id
 	integrate_solution has a value which is a bool
+	sensitivity_analysis has a value which is a bool
+	target_reactions has a value which is a reference to a list where each element is a string
 	out_model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
 	gapFill has a value which is a gapfill_id
@@ -8525,6 +8524,8 @@ gapfill_model_params is a reference to a hash where the following keys are defin
 	phenotypeSet has a value which is a phenotype_set_id
 	phenotypeSet_workspace has a value which is a workspace_id
 	integrate_solution has a value which is a bool
+	sensitivity_analysis has a value which is a bool
+	target_reactions has a value which is a reference to a list where each element is a string
 	out_model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
 	gapFill has a value which is a gapfill_id
@@ -8646,7 +8647,6 @@ sub queue_gapfill_model
     #BEGIN queue_gapfill_model
     $self->_setContext($ctx,$input);
 	$input = $self->_validateargs($input,["model","workspace"],{		
-		full_model_object => 0,
 		model_workspace => $input->{workspace},
 		formulation => undef,
 		phenotypeSet => undef,
@@ -8655,28 +8655,22 @@ sub queue_gapfill_model
 		out_model => undef,
 		gapFill => undef,
 		gapFill_workspace => $input->{workspace},
+		target_reactions => [],
+		sensitivity_analysis => 0,
 		overwrite => 0,
 		timePerSolution => 3600,
 		totalTimeLimit => 18000,
 		completeGapfill => 0,
 		solver => undef
 	});
+	$input->{formulation}->{target_reactions} = $input->{target_reactions};
 	$input->{formulation}->{timePerSolution} = $input->{timePerSolution};
 	$input->{formulation}->{totalTimeLimit} = $input->{totalTimeLimit};
 	#Checking is this is a postprocessing or initialization call
 	if (!defined($input->{gapFill})) {
-		my $model;
-		if ($input->{full_model_object} == 1) {
-			$model = $self->_instantiate_msobjects($input->{model},"Model");
-			if (!defined($input->{out_model})) {
-				$input->{out_model} = $model->id();
-				$input->{model_workspace} = $input->{workspace};
-			}
-		} else {
-			if (!defined($input->{out_model})) {
-				$input->{out_model} = $input->{model};
-			}
-			$model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
+		my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
+		if (!defined($input->{out_model})) {
+			$input->{out_model} = $input->{model};
 		}
 		$self->_get_new_id($input->{model}.".gapfill.");
 		$input->{formulation} = $self->_setDefaultGapfillFormulation($input->{formulation});
@@ -8685,7 +8679,6 @@ sub queue_gapfill_model
 		$input->{gapFill} = $gapfill->uuid();
 		push(@{$model->unintegratedGapfilling_uuids()},$gapfill->uuid());
 		my $modelmeta = $self->_save_msobject($model,"Model",$input->{workspace},$input->{out_model},"queue_gapfill_model");
-		#End "safe save" block
 		$gapfill->fbaFormulation()->model_uuid($model->uuid());
 		my $fbameta = $self->_save_msobject($gapfill->fbaFormulation(),"FBA","NO_WORKSPACE",$gapfill->fbaFormulation()->uuid(),"queue_gapfill_model",0,$gapfill->fbaFormulation()->uuid());
 		$gapfill->model_uuid($model->uuid());
@@ -14252,130 +14245,6 @@ sub add_stimuli
 		$output = $self->_save_msobject($obj,"Stimuli",$params->{workspace},$params->{stimuliid},"add_stimuli");
 	}
 	$self->_clearContext();
-    #END add_stimuli
-    my @_bad_returns;
-    (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
-    if (@_bad_returns) {
-	my $msg = "Invalid returns passed to add_stimuli:\n" . join("", map { "\t$_\n" } @_bad_returns);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'add_stimuli');
-    }
-    return($output);
-}
-
-
-
-
-=head2 add_stimuli
-
-  $output = $obj->add_stimuli($params)
-
-=over 4
-
-=item Parameter and return types
-
-=begin html
-
-<pre>
-$params is an add_stimuli_params
-$output is an object_metadata
-add_stimuli_params is a reference to a hash where the following keys are defined:
-	biochemid has a value which is a string
-	biochem_workspace has a value which is a string
-	stimuliid has a value which is a string
-	name has a value which is a string
-	abbreviation has a value which is a string
-	type has a value which is a string
-	description has a value which is a string
-	compounds has a value which is a reference to a list where each element is a string
-	workspace has a value which is a string
-	auth has a value which is a string
-object_metadata is a reference to a list containing 11 items:
-	0: (id) an object_id
-	1: (type) an object_type
-	2: (moddate) a timestamp
-	3: (instance) an int
-	4: (command) a string
-	5: (lastmodifier) a username
-	6: (owner) a username
-	7: (workspace) a workspace_id
-	8: (ref) a workspace_ref
-	9: (chsum) a string
-	10: (metadata) a reference to a hash where the key is a string and the value is a string
-object_id is a string
-object_type is a string
-timestamp is a string
-username is a string
-workspace_id is a string
-workspace_ref is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-$params is an add_stimuli_params
-$output is an object_metadata
-add_stimuli_params is a reference to a hash where the following keys are defined:
-	biochemid has a value which is a string
-	biochem_workspace has a value which is a string
-	stimuliid has a value which is a string
-	name has a value which is a string
-	abbreviation has a value which is a string
-	type has a value which is a string
-	description has a value which is a string
-	compounds has a value which is a reference to a list where each element is a string
-	workspace has a value which is a string
-	auth has a value which is a string
-object_metadata is a reference to a list containing 11 items:
-	0: (id) an object_id
-	1: (type) an object_type
-	2: (moddate) a timestamp
-	3: (instance) an int
-	4: (command) a string
-	5: (lastmodifier) a username
-	6: (owner) a username
-	7: (workspace) a workspace_id
-	8: (ref) a workspace_ref
-	9: (chsum) a string
-	10: (metadata) a reference to a hash where the key is a string and the value is a string
-object_id is a string
-object_type is a string
-timestamp is a string
-username is a string
-workspace_id is a string
-workspace_ref is a string
-
-
-=end text
-
-
-
-=item Description
-
-Adds a stimuli either to the central database or as an object in a workspace
-
-=back
-
-=cut
-
-sub add_stimuli
-{
-    my $self = shift;
-    my($params) = @_;
-
-    my @_bad_arguments;
-    (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"params\" (value was \"$params\")");
-    if (@_bad_arguments) {
-	my $msg = "Invalid arguments passed to add_stimuli:\n" . join("", map { "\t$_\n" } @_bad_arguments);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'add_stimuli');
-    }
-
-    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
-    my($output);
-    #BEGIN add_stimuli
     $self->_setContext($ctx,$params);
 	$params = $self->_validateargs($params,["name","workspace"],{
 		biochemid => undef,
@@ -22330,6 +22199,8 @@ Input parameters for the "queue_gapfill_model" function.
         phenotype_set_id phenotypeSet - ID of a phenotype set against which gapfilled model should be simulated (an optional argument: default is 'undef')
         workspace_id phenotypeSet_workspace - workspace containing phenotype set to be simulated (an optional argument; default is the value of the workspace argument)
         bool integrate_solution - a flag indicating if the first solution should be integrated in the model (an optional argument: default is '0')
+        bool sensitivity_analysis - a flag indicating if the sensitivity analysis on gapfilling solution
+        list<string> target_reactions - a list of reactions to activate with gapfilling
         fbamodel_id out_model - ID where the gapfilled model will be saved (an optional argument: default is 'undef')
         gapfill_id gapFill - ID to which gapfill solution will be saved (an optional argument: default is 'undef')
         workspace_id workspace - workspace where gapfill results will be saved (a required argument)
@@ -22351,6 +22222,8 @@ formulation has a value which is a GapfillingFormulation
 phenotypeSet has a value which is a phenotype_set_id
 phenotypeSet_workspace has a value which is a workspace_id
 integrate_solution has a value which is a bool
+sensitivity_analysis has a value which is a bool
+target_reactions has a value which is a reference to a list where each element is a string
 out_model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
 gapFill has a value which is a gapfill_id
@@ -22373,6 +22246,8 @@ formulation has a value which is a GapfillingFormulation
 phenotypeSet has a value which is a phenotype_set_id
 phenotypeSet_workspace has a value which is a workspace_id
 integrate_solution has a value which is a bool
+sensitivity_analysis has a value which is a bool
+target_reactions has a value which is a reference to a list where each element is a string
 out_model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
 gapFill has a value which is a gapfill_id
@@ -24935,69 +24810,6 @@ auth has a value which is a string
 ********************************************************************************
     Code relating to reconstruction, import, and analysis of regulatory models
    	********************************************************************************
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-biochemid has a value which is a string
-biochem_workspace has a value which is a string
-stimuliid has a value which is a string
-name has a value which is a string
-abbreviation has a value which is a string
-type has a value which is a string
-description has a value which is a string
-compounds has a value which is a reference to a list where each element is a string
-workspace has a value which is a string
-auth has a value which is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-biochemid has a value which is a string
-biochem_workspace has a value which is a string
-stimuliid has a value which is a string
-name has a value which is a string
-abbreviation has a value which is a string
-type has a value which is a string
-description has a value which is a string
-compounds has a value which is a reference to a list where each element is a string
-workspace has a value which is a string
-auth has a value which is a string
-
-
-=end text
-
-=back
-
-
-
-=head2 add_stimuli_params
-
-=over 4
-
-
-
-=item Description
-
-Input parameters for the "add_stimuli" function.
-
-        string biochemid - ID of biochemistry with stimuli (optional)
-        string biochem_workspace - ID of workspace with biochemistry with stimuli (optional)
-        string stimuliid - ID for the stimuli to be created (optional)
-        string name - Name for the stimuli (required)
-        string abbreviation - Abbreviation for the stimuli (optional)
-        string type - Type of the stimuli (required)
-        list<string> compounds - Compounds associated with stimuli (optional)
-        string workspace - ID of workspace where all output objects will be stored (optional argument, default is current workspace)
-        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
 
 =item Definition

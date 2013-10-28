@@ -4978,6 +4978,8 @@ gapfill_model_params is a reference to a hash where the following keys are defin
 	phenotypeSet has a value which is a phenotype_set_id
 	phenotypeSet_workspace has a value which is a workspace_id
 	integrate_solution has a value which is a bool
+	sensitivity_analysis has a value which is a bool
+	target_reactions has a value which is a reference to a list where each element is a string
 	out_model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
 	gapFill has a value which is a gapfill_id
@@ -5083,6 +5085,8 @@ gapfill_model_params is a reference to a hash where the following keys are defin
 	phenotypeSet has a value which is a phenotype_set_id
 	phenotypeSet_workspace has a value which is a workspace_id
 	integrate_solution has a value which is a bool
+	sensitivity_analysis has a value which is a bool
+	target_reactions has a value which is a reference to a list where each element is a string
 	out_model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
 	gapFill has a value which is a gapfill_id
@@ -9543,144 +9547,6 @@ sub adjust_template_biomass
         Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method adjust_template_biomass",
 					    status_line => $self->{client}->status_line,
 					    method_name => 'adjust_template_biomass',
-				       );
-    }
-}
-
-
-
-=head2 add_stimuli
-
-  $output = $obj->add_stimuli($params)
-
-=over 4
-
-=item Parameter and return types
-
-=begin html
-
-<pre>
-$params is an add_stimuli_params
-$output is an object_metadata
-add_stimuli_params is a reference to a hash where the following keys are defined:
-	biochemid has a value which is a string
-	biochem_workspace has a value which is a string
-	stimuliid has a value which is a string
-	name has a value which is a string
-	abbreviation has a value which is a string
-	type has a value which is a string
-	description has a value which is a string
-	compounds has a value which is a reference to a list where each element is a string
-	workspace has a value which is a string
-	auth has a value which is a string
-object_metadata is a reference to a list containing 11 items:
-	0: (id) an object_id
-	1: (type) an object_type
-	2: (moddate) a timestamp
-	3: (instance) an int
-	4: (command) a string
-	5: (lastmodifier) a username
-	6: (owner) a username
-	7: (workspace) a workspace_id
-	8: (ref) a workspace_ref
-	9: (chsum) a string
-	10: (metadata) a reference to a hash where the key is a string and the value is a string
-object_id is a string
-object_type is a string
-timestamp is a string
-username is a string
-workspace_id is a string
-workspace_ref is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-$params is an add_stimuli_params
-$output is an object_metadata
-add_stimuli_params is a reference to a hash where the following keys are defined:
-	biochemid has a value which is a string
-	biochem_workspace has a value which is a string
-	stimuliid has a value which is a string
-	name has a value which is a string
-	abbreviation has a value which is a string
-	type has a value which is a string
-	description has a value which is a string
-	compounds has a value which is a reference to a list where each element is a string
-	workspace has a value which is a string
-	auth has a value which is a string
-object_metadata is a reference to a list containing 11 items:
-	0: (id) an object_id
-	1: (type) an object_type
-	2: (moddate) a timestamp
-	3: (instance) an int
-	4: (command) a string
-	5: (lastmodifier) a username
-	6: (owner) a username
-	7: (workspace) a workspace_id
-	8: (ref) a workspace_ref
-	9: (chsum) a string
-	10: (metadata) a reference to a hash where the key is a string and the value is a string
-object_id is a string
-object_type is a string
-timestamp is a string
-username is a string
-workspace_id is a string
-workspace_ref is a string
-
-
-=end text
-
-=item Description
-
-Adds a stimuli either to the central database or as an object in a workspace
-
-=back
-
-=cut
-
-sub add_stimuli
-{
-    my($self, @args) = @_;
-
-# Authentication: none
-
-    if ((my $n = @args) != 1)
-    {
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
-							       "Invalid argument count for function add_stimuli (received $n, expecting 1)");
-    }
-    {
-	my($params) = @args;
-
-	my @_bad_arguments;
-        (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
-        if (@_bad_arguments) {
-	    my $msg = "Invalid arguments passed to add_stimuli:\n" . join("", map { "\t$_\n" } @_bad_arguments);
-	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-								   method_name => 'add_stimuli');
-	}
-    }
-
-    my $result = $self->{client}->call($self->{url}, {
-	method => "fbaModelServices.add_stimuli",
-	params => \@args,
-    });
-    if ($result) {
-	if ($result->is_error) {
-	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
-					       method_name => 'add_stimuli',
-					      );
-	} else {
-	    return wantarray ? @{$result->result} : $result->result->[0];
-	}
-    } else {
-        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method add_stimuli",
-					    status_line => $self->{client}->status_line,
-					    method_name => 'add_stimuli',
 				       );
     }
 }
@@ -17143,6 +17009,8 @@ Input parameters for the "queue_gapfill_model" function.
         phenotype_set_id phenotypeSet - ID of a phenotype set against which gapfilled model should be simulated (an optional argument: default is 'undef')
         workspace_id phenotypeSet_workspace - workspace containing phenotype set to be simulated (an optional argument; default is the value of the workspace argument)
         bool integrate_solution - a flag indicating if the first solution should be integrated in the model (an optional argument: default is '0')
+        bool sensitivity_analysis - a flag indicating if the sensitivity analysis on gapfilling solution
+        list<string> target_reactions - a list of reactions to activate with gapfilling
         fbamodel_id out_model - ID where the gapfilled model will be saved (an optional argument: default is 'undef')
         gapfill_id gapFill - ID to which gapfill solution will be saved (an optional argument: default is 'undef')
         workspace_id workspace - workspace where gapfill results will be saved (a required argument)
@@ -17164,6 +17032,8 @@ formulation has a value which is a GapfillingFormulation
 phenotypeSet has a value which is a phenotype_set_id
 phenotypeSet_workspace has a value which is a workspace_id
 integrate_solution has a value which is a bool
+sensitivity_analysis has a value which is a bool
+target_reactions has a value which is a reference to a list where each element is a string
 out_model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
 gapFill has a value which is a gapfill_id
@@ -17186,6 +17056,8 @@ formulation has a value which is a GapfillingFormulation
 phenotypeSet has a value which is a phenotype_set_id
 phenotypeSet_workspace has a value which is a workspace_id
 integrate_solution has a value which is a bool
+sensitivity_analysis has a value which is a bool
+target_reactions has a value which is a reference to a list where each element is a string
 out_model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
 gapFill has a value which is a gapfill_id
@@ -19748,69 +19620,6 @@ auth has a value which is a string
 ********************************************************************************
     Code relating to reconstruction, import, and analysis of regulatory models
    	********************************************************************************
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-biochemid has a value which is a string
-biochem_workspace has a value which is a string
-stimuliid has a value which is a string
-name has a value which is a string
-abbreviation has a value which is a string
-type has a value which is a string
-description has a value which is a string
-compounds has a value which is a reference to a list where each element is a string
-workspace has a value which is a string
-auth has a value which is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-biochemid has a value which is a string
-biochem_workspace has a value which is a string
-stimuliid has a value which is a string
-name has a value which is a string
-abbreviation has a value which is a string
-type has a value which is a string
-description has a value which is a string
-compounds has a value which is a reference to a list where each element is a string
-workspace has a value which is a string
-auth has a value which is a string
-
-
-=end text
-
-=back
-
-
-
-=head2 add_stimuli_params
-
-=over 4
-
-
-
-=item Description
-
-Input parameters for the "add_stimuli" function.
-
-        string biochemid - ID of biochemistry with stimuli (optional)
-        string biochem_workspace - ID of workspace with biochemistry with stimuli (optional)
-        string stimuliid - ID for the stimuli to be created (optional)
-        string name - Name for the stimuli (required)
-        string abbreviation - Abbreviation for the stimuli (optional)
-        string type - Type of the stimuli (required)
-        list<string> compounds - Compounds associated with stimuli (optional)
-        string workspace - ID of workspace where all output objects will be stored (optional argument, default is current workspace)
-        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
 
 =item Definition
