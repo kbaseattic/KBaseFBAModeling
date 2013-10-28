@@ -7850,7 +7850,7 @@ sub add_media_transporters
 	die "Must specify either all_transporters or positive_transporters.\n";
     }
 
-    my $output = $self->_save_msobject($model,"Model",$input->{workspace},$input->{outmodel},"add_media_transporters");
+    $output = $self->_save_msobject($model,"Model",$input->{workspace},$input->{outmodel},"add_media_transporters");
 
     #END add_media_transporters
     my @_bad_returns;
@@ -11569,7 +11569,7 @@ sub ProteinSet_to_Genome
 		 });
 	}
 	my $mapping = $self->_get_msobject("Mapping","kbase","default-mapping");
-    ($genome,my $anno,$mapping,my $contigObj) = $self->_processGenomeObject($genome,$mapping,"ProteinSet_to_Genome");
+    ($genome,my $anno,$mapping, my $contigObj) = $self->_processGenomeObject($genome,$mapping,"ProteinSet_to_Genome");
    	$output = $self->_save_msobject($genome,"Genome",$params->{workspace},$params->{uid},"ProteinSet_to_Genome");
 	$self->_clearContext();
     #END ProteinSet_to_Genome
@@ -12170,7 +12170,7 @@ sub ContigSet_to_Genome
 		features => []
 	};
 	my $mapping = $self->_get_msobject("Mapping","kbase","default-mapping");
-    ($genome,my $anno,$mapping,my $contigObj) = $self->_processGenomeObject($genome,$mapping,"TranscriptSet_to_Genome");
+    ($genome,my $anno,$mapping,$contigObj) = $self->_processGenomeObject($genome,$mapping,"TranscriptSet_to_Genome");
    	$output = $self->_save_msobject($genome,"Genome",$params->{workspace},$params->{uid},"TranscriptSet_to_Genome");
 	$self->_clearContext();
     #END ContigSet_to_Genome
