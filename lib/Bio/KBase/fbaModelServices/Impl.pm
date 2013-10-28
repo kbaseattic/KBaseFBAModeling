@@ -8735,6 +8735,12 @@ sub queue_gapfill_model
 				$self->_error($msg,'queue_gapfill_model');
 			}
 		}
+		if ($input->{completeGapfill} == 1) {
+			$input->{sensitivity_analysis} = 1;
+		}
+		if ($input->{sensitivity_analysis} == 1) {
+			$input->{integrate_solution} = 1;
+		}
 		if ($input->{integrate_solution} == 1) {
 			#TODO: This block should be in a "safe save" block to prevent race conditions
 			my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
@@ -8747,12 +8753,22 @@ sub queue_gapfill_model
 			    $rxnprobs = $self->_get_msobject("RxnProbs", $rxnprobsws, $rxnprobsid);
 			    $rxnprobsGPRArray = $self->_buildRxnProbsGPRArray($rxnprobs);
 			}
-			$model->integrateGapfillSolution({
+			my $report = $model->integrateGapfillSolution({
 				gapfillingFormulation => $gapfill,
 				solutionNum => 0,
 				rxnProbGpr => $rxnprobsGPRArray
 			});
 			my $modelmeta = $self->_save_msobject($model,"Model",$input->{workspace},$input->{out_model},"queue_gapfill_model");
+			if ($input->{sensitivity_analysis} == 1) {
+				$self->reaction_sensitivity_analysis({
+					model => $input->{out_model},
+					workspace => $input->{workspace},
+					reactions_to_delete => $report->{added},
+					type => "gapfill-sensitivity",
+					delete_noncontributing_reactions => 1,
+					integrate_deletions_in_model => 1,
+				});
+			}
 			#End "safe save" block
 		}
 		my $meta = $self->_save_msobject($gapfill,"GapFill","NO_WORKSPACE",$gapfill->uuid(),"queue_gapfill_model",1,$gapfill->uuid());
