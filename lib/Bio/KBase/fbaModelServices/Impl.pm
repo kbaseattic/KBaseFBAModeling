@@ -1223,6 +1223,7 @@ sub _buildGapfillObject {
 		noDeltaGMultiplier => $formulation->{nodeltagpen},
 		biomassTransporterMultiplier => $formulation->{biomasstranspen},
 		singleTransporterMultiplier => $formulation->{singletranspen},
+		targetedreactions => $formulation->{targeted_reactions},
 		transporterMultiplier => $formulation->{transpen},
 		mediaHypothesis => $self->_invert_boolean($formulation->{nomediahyp}),
 		#biomassHypothesis => $self->_invert_boolean($formulation->{nobiomasshyp}),
@@ -1238,12 +1239,6 @@ sub _buildGapfillObject {
 		my $rxnObj = $model->biochemistry()->searchForReaction($reaction);
 		if (defined($rxnObj)) {
 			$gapform->addLinkArrayItem("guaranteedReactions",$rxnObj);
-		}
-	}
-	foreach my $reaction (@{$formulation->{targeted_reactions}}) {
-		my $rxnObj = $model->biochemistry()->searchForReaction($reaction);
-		if (defined($rxnObj)) {
-			$gapform->addLinkArrayItem("targetedreactions",$rxnObj);
 		}
 	}
 	foreach my $reaction (@{$formulation->{blacklistedrxns}}) {
@@ -8668,6 +8663,13 @@ sub queue_gapfill_model
 	$input->{formulation}->{totalTimeLimit} = $input->{totalTimeLimit};
 	#Checking is this is a postprocessing or initialization call
 	if (!defined($input->{gapFill})) {
+		if (@{$input->{target_reactions}} > 0) {
+			$input->{formulation}->{targeted_reactions} = $input->{target_reactions};
+			$input->{completeGapfill} = 1;
+		}
+		if ($input->{completeGapfill} == 1) {
+			$input->{formulation}->{num_solutions} = 1;
+		}
 		my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
 		if (!defined($input->{out_model})) {
 			$input->{out_model} = $input->{model};
@@ -8760,7 +8762,7 @@ sub queue_gapfill_model
 			});
 			my $modelmeta = $self->_save_msobject($model,"Model",$input->{workspace},$input->{out_model},"queue_gapfill_model");
 			if ($input->{sensitivity_analysis} == 1) {
-				$self->reaction_sensitivity_analysis({
+				my $job = $self->reaction_sensitivity_analysis({
 					model => $input->{out_model},
 					workspace => $input->{workspace},
 					reactions_to_delete => $report->{added},
@@ -8768,6 +8770,7 @@ sub queue_gapfill_model
 					delete_noncontributing_reactions => 1,
 					integrate_deletions_in_model => 1,
 				});
+				print "Sensitivity job:".$job->{id}."\n";
 			}
 			#End "safe save" block
 		}
@@ -14203,64 +14206,6 @@ sub add_stimuli
     my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
     my($output);
     #BEGIN add_stimuli
-    $self->_setContext($ctx,$params);
-	$params = $self->_validateargs($params,["name","workspace"],{
-		biochemid => undef,
-		stimuliid => undef,
-		abbreviation => $params->{name},
-		description => "",
-		compounds => [],
-		type => undef
-	});
-	if (!defined($params->{type})) {
-		$params->{type} = "environmental";
-		if (@{$params->{compounds}} > 0) {
-			$params->{type} = "chemical";
-		}
-	}
-	my $allowableTypes = {
-		chemical => 1,environmental => 1
-	};
-	if (!defined($allowableTypes->{$params->{type}})) {
-		$self->_error("Input type ".$params->{type}." not recognized!","add_stimuli");
-	}
-	if (!defined($params->{stimuliid})) {
-		$params->{stimuliid} = $self->_get_new_id("stim.");
-	}
-	my $biochem;
-	if (defined($params->{biochemid})) {
-		$biochem = $self->_get_msobject("Biochemistry",$params->{biochem_workspace},$params->{biochemid});
-	} else {
-		$biochem = $self->_get_msobject("Biochemistry","kbase","default");
-	}
-	my $obj = {
-		description => $params->{stimuliid},
-		id => $params->{stimuliid},
-		name => $params->{name},
-		type => $params->{type},
-		abbreviation => $params->{abbreviation},
-		description => $params->{description},
-		compound_uuids => []
-	};
-	my $missingCpd;
-	if (defined($params->{compounds})) {
-		for (my $i=0; $i < @{$params->{compounds}}; $i++) {
-			my $cpd = $params->{compounds}->[$i];
-			my $cpdobj = $biochem->searchForCompound($cpd);
-			if (!defined($cpdobj)) {
-				push(@{$missingCpd},$cpd);
-			} else {
-				push(@{$obj->{compound_uuids}},$cpdobj->uuid());
-			}
-		}
-	}
-	if (defined($params->{biochemid})) {
-		$biochem->add("stimuli",$obj);
-		$output = $self->_save_msobject($biochem,"Biochemistry",$params->{biochem_workspace},$params->{biochemid},"add_stimuli");	
-	} else {
-		$output = $self->_save_msobject($obj,"Stimuli",$params->{workspace},$params->{stimuliid},"add_stimuli");
-	}
-	$self->_clearContext();
     $self->_setContext($ctx,$params);
 	$params = $self->_validateargs($params,["name","workspace"],{
 		biochemid => undef,
