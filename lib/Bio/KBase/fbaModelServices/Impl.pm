@@ -1208,6 +1208,9 @@ sub _setDefaultGapfillFormulation {
 sub _buildGapfillObject {
 	my ($self,$formulation,$model) = @_;
 	my $fbaid = Data::UUID->new()->create_str();
+	if (!defined($formulation->{targeted_reactions})) {
+		$formulation->{targeted_reactions} = [];
+	}
 	my $gapform = ModelSEED::MS::GapfillingFormulation->new({
 		uuid => Data::UUID->new()->create_str(),
 		model_uuid => $model->uuid(),
