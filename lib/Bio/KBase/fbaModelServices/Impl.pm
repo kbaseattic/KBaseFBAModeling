@@ -7344,6 +7344,7 @@ sub import_phenotypes
     my $missingCompounds = {};
     my $mediaChecked = {};
     my $cpdChecked = {};
+    my $mediaHash = {};
     for (my $i=0; $i < @{$input->{phenotypes}}; $i++) {
     	my $phenotype = $input->{phenotypes}->[$i];
     	#Validating gene IDs
@@ -7355,24 +7356,6 @@ sub import_phenotypes
     		} else {
     			$phenotype->[0]->[$j] = $genehash->{$phenotype->[0]->[$j]};
     		}
-    	}
-    	if ($allfound == 0) {
-    		next;
-    	}
-    	#Validating media
-    	if ($phenotype->[2] eq "NO_WORKSPACE") {
-    		my $media = $bio->queryObject("media",{id => $phenotype->[1]});
-    		if (!defined($media)) {
-    			$missingMedia->{$phenotype->[1]} = 1;
-    			$allfound = 0;
-    		}
-    	} else {
-    		try {
-    			my $media = $self->_get_msobject("Media",$phenotype->[2],$phenotype->[1]);
-	    	} catch {
-	    		$missingMedia->{$phenotype->[1]} = 1;
-	    		$allfound = 0;
-	    	};
     	}
     	if ($allfound == 0) {
     		next;
@@ -7391,9 +7374,59 @@ sub import_phenotypes
     	if ($allfound == 0) {
     		next;
     	}
+    	#Validating media
+    	if ($phenotype->[2] eq "NO_WORKSPACE") {
+    		my $media = $bio->queryObject("media",{id => $phenotype->[1]});
+    		if (!defined($media)) {
+    			$missingMedia->{$phenotype->[1]} = 1;
+    			$allfound = 0;
+    		}
+    	} else {
+    		if (!defined($mediaHash->{$phenotype->[2]}->{$phenotype->[1]})) {
+	    		$mediaHash->{$phenotype->[2]}->{$phenotype->[1]} = {
+	    			found => 0,
+	    			locs => []
+	    		};
+    		}
+    		my $loc = @{$object->{phenotypes}};
+    		push(@{$mediaHash->{$phenotype->[2]}->{$phenotype->[1]}->{locs}},$loc);
+    	}
+    	if ($allfound == 0) {
+    		next;
+    	}
     	#Adding phenotype to object
     	push(@{$object->{phenotypes}},$phenotype);
     }
+    my $mediaids = [];
+    my $mediawss = [];
+    my $types = [];
+    foreach my $workspace (keys(%{$mediaHash})) {
+    	foreach my $id (keys(%{$mediaHash->{$workspace}})) {
+    		push(@{$mediaids},$id);
+    		push(@{$mediawss},$workspace);
+    		push(@{$types},"Media");
+    	}
+    }
+    my $objs;
+    try {
+		$objs = $self->_workspaceServices()->get_objects({
+	    	ids => $mediaids,
+	    	types => $types,
+	    	workspaces => $mediawss
+	    });
+	} catch {
+		my $locs = [];
+		foreach my $workspace (keys(%{$mediaHash})) {
+	    	foreach my $id (keys(%{$mediaHash->{$workspace}})) {
+	    		$missingMedia->{$workspace."/".$id} = 1;
+	    		push(@{$locs},@{$mediaHash->{$workspace}->{$id}->{locs}});
+	    	}
+	    }
+	    $locs = [sort(@{$locs})];
+	    for (my $i=(@{$locs}-1); $i >= 0; $i--) {
+	    	splice(@{$object->{phenotypes}}, $locs->[$i], 1);	
+	    }
+	}  
     #Printing error if any entities could not be validated
     my $msg = "";
     if (keys(%{$missingCompounds}) > 0) {
