@@ -31,6 +31,7 @@ my $translation = {
 	solver => "solver"
 };
 my $gfTranslation = {
+	rxnsensitivity => "sensitivity_analysis",
 	numsol => "num_solutions",
 	nomediahyp => "nomediahyp",
 	nobiomasshyp => "nobiomasshyp",
@@ -70,6 +71,8 @@ my $specs = [
     [ 'modelout:s', 'ID for output model in workspace' ],
     [ 'intsol', 'Automatically integrate solution', { "default" => 0 } ],
     [ 'iterativegf|t', 'Gapfill all inactive reactions', { "default" => 0 } ],
+    [ 'targrxn|x:s@', 'Target reactions for iterative gapfilling (; delimiter)'],
+    [ 'rxnsensitivity|y', 'Flag indicates if sensitivity analysis of gapfill solutions should run'],
     [ 'timepersol:s', 'Maximum time spent per solution' ],
     [ 'timelimit:s', 'Maximum toal time' ],
     [ 'media|m:s', 'Media formulation for FBA (default is complete media)' ],
@@ -123,6 +126,12 @@ if (!defined($opt->{mediaws}) && defined($opt->{media})) {
 }
 if (defined($opt->{probanno}) && defined($opt->{probrxn})) {
     die "Attempt to pass probanno and probrxns objects in the same call. This is not allowed because probrxn is calcualted from probanno and could cause collisions";
+}
+if (defined($opt->{targrxn})) {
+	foreach my $terms (@{$opt->{targrxn}}) {
+		my $array = [split(/;/,$terms)];
+		push(@{$params->{target_reactions}},@{$array});
+	}
 }
 
 $params->{formulation} = {
