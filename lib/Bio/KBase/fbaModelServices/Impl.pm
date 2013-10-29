@@ -483,6 +483,7 @@ sub _save_msobject {
 			auth => $self->_authentication(),
 			replace => $overwrite
 		});
+		$self->_KBaseStore()->cache()->{$type}->{$reference} = $obj;
 	} else {
 		$objmeta = $self->_workspaceServices()->save_object({
 			id => $id,
@@ -493,6 +494,7 @@ sub _save_msobject {
 			auth => $self->_authentication(),
 			overwrite => $overwrite
 		});
+		$self->_KBaseStore()->cache()->{$type}->{$ws."/".$id} = $obj;
 	}
 	if (!defined($objmeta)) {
 		$self->_error("Unable to save object:".$type."/".$ws."/".$id,'_get_msobject');
@@ -2277,13 +2279,14 @@ Description:
 sub _queueJob {
 	my($self,$args) = @_;
 	if (!defined($args->{localjob})) {
-	return $self->_workspaceServices()->queue_job({
+	my $input = {
 		type => $args->{type},
 		jobdata => $args->{jobdata},
 		queuecommand => $args->{queuecommand},
 		"state" => $args->{"state"},
 		auth => $self->_authentication(),
-	});
+	};
+	return $self->_workspaceServices()->queue_job($input);
 	} else {
 		$args->{wsurl} = $self->_workspaceURL();
 		my $JSON = JSON::XS->new();
@@ -11240,18 +11243,21 @@ sub reaction_sensitivity_analysis
 		my $formulation = $self->_setDefaultFBAFormulation({});
 		my $model = $self->_get_msobject("Model",$input->{model_ws},$input->{model});
 		my $fba = $self->_buildFBAObject($formulation,$model,$input->{workspace},$input->{fba});
+		$fba->fva(1);
 		push(@{$fba->outputfiles()},"FBAExperimentOutput.txt");
-		if ($input->{delete_noncontributing_reactions} == 1) {
-			$fba->parameters()->{"deletion experiments"} = "";
-			for (my $i=0; $i < @{$input->{reactions_to_delete}}; $i ++) {
-				if (length($fba->parameters()->{"deletion experiments"}) > 0) {
-					$fba->parameters()->{"deletion experiments"} .= ";";
-				}
-				$fba->parameters()->{"deletion experiments"} .= $input->{reactions_to_delete}->[$i].":Complete:".$input->{reactions_to_delete}->[$i];
+		$fba->parameters()->{"deletion experiments"} = "";
+		for (my $i=0; $i < @{$input->{reactions_to_delete}}; $i ++) {
+			if (length($fba->parameters()->{"deletion experiments"}) > 0) {
+				$fba->parameters()->{"deletion experiments"} .= ";";
 			}
+			$fba->parameters()->{"deletion experiments"} .= $input->{reactions_to_delete}->[$i].":Complete:".$input->{reactions_to_delete}->[$i];
 		}
-		my $fbameta = $self->_save_msobject($fba,"FBA",$input->{workspace},$fbaid,"queue_runfba");
-		$input->{fba_ref} = $fbameta->[8];
+		if ($input->{delete_noncontributing_reactions} == 1) {
+			$fba->parameters()->{"delete noncontributing reactions"} = 1;
+		}
+		$fba->uuid(Data::UUID->new()->create_str());
+		my $fbameta = $self->_save_msobject($fba,"FBA","NO_WORKSPACE",$fba->uuid(),"reaction_sensitivity_analysis",0,$fba->uuid());
+		$input->{fba_ref} = $fba->uuid();
 		my $jobdata = {
 			postprocess_command => "reaction_sensitivity_analysis",
 			postprocess_args => [$input],
@@ -11264,6 +11270,7 @@ sub reaction_sensitivity_analysis
 			"state" => $self->_defaultJobState()
 		});
 	} else {
+		print $input->{fba_ref}."\n";
 		my $fba = $self->_get_msobject("FBA","NO_WORKSPACE",$input->{fba_ref});
 		my $kbid = $self->_get_new_id($input->{model}.".rxnsens.");
 		if (!defined($input->{rxnsens_uid})) {
@@ -11277,7 +11284,7 @@ sub reaction_sensitivity_analysis
 			integrated_deletions_in_model => 0,
 			reactions => []
 		};
-		my $array = [split(/\n/,$fba->outputfiles()->{"FBAExperimentOutput.txt"})];
+		my $array = $fba->fbaResults()->[0]->outputfiles()->{"FBAExperimentOutput.txt"};
 		for (my $i=0; $i < @{$array}; $i++) {
 			my $row = [split(/\t/,$array->[$i])];
 			my $delete = 0;
@@ -11303,6 +11310,7 @@ sub reaction_sensitivity_analysis
 				workspace => $input->{workspace}
 			})
 		}
+		$job = {};
 	}
 	$self->_clearContext();
     #END reaction_sensitivity_analysis
