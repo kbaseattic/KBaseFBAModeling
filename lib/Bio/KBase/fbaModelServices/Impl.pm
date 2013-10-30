@@ -11255,6 +11255,7 @@ sub reaction_sensitivity_analysis
 		if ($input->{delete_noncontributing_reactions} == 1) {
 			$fba->parameters()->{"delete noncontributing reactions"} = 1;
 		}
+		$fba->parameters()->{"optimize metabolite production if objective is zero"} = 1;
 		$fba->uuid(Data::UUID->new()->create_str());
 		my $fbameta = $self->_save_msobject($fba,"FBA","NO_WORKSPACE",$fba->uuid(),"reaction_sensitivity_analysis",0,$fba->uuid());
 		$input->{fba_ref} = $fba->uuid();
@@ -11285,22 +11286,27 @@ sub reaction_sensitivity_analysis
 			reactions => []
 		};
 		my $array = $fba->fbaResults()->[0]->outputfiles()->{"FBAExperimentOutput.txt"};
-		for (my $i=0; $i < @{$array}; $i++) {
+		for (my $i=1; $i < @{$array}; $i++) {
 			my $row = [split(/\t/,$array->[$i])];
-			my $delete = 0;
-			if ($row->[7] eq "DELETED") {
-				$delete = 1;
-			}
-			push(@{$object->{reactions}},{
-				kbid => $object->{kbid}.".rxn.".$i,
+			my $sensrxn = {
+				kbid => $object->{kbid}.".rxn.".($i-1),
 				reaction => $row->[0],
 				growth_fraction => $row->[5],
-				"delete" => $delete,
+				"delete" => 0,
 				deleted => 0,
-				biomass_compounds => [split(/;/,$row->[6])],
-				new_inactive_rxns => [split(/;/,$row->[7])],
+				biomass_compounds => [],
+				new_inactive_rxns => [],
 				new_essentials => [split(/;/,$row->[8])]
-			});
+			};
+			if ($row->[7] eq "DELETED") {
+				$sensrxn->{"delete"} = 1;
+			} else {
+				$sensrxn->{"new_inactive_rxns"} = [split(/;/,$row->[7])];
+			}
+			if ($row->[6] ne "NA") {
+				$sensrxn->{"biomass_compounds"} = [split(/;/,$row->[6])];
+			}
+			push(@{$object->{reactions}},$sensrxn);
 		}
 		$self->_save_msobject($object,"RxnSensitivity",$input->{workspace},$input->{rxnsens_uid},"reaction_sensitivity_analysis");
 		if ($input->{integrate_deletions_in_model} == 1) {
@@ -11440,10 +11446,24 @@ sub delete_noncontributing_reactions
 	my $rxnsens = $self->_get_msobject("RxnSensitivity",$input->{rxn_sensitivity_ws},$input->{rxn_sensitivity});
 	my $model = $self->_get_msobject("Model","NO_WORKSPACE",$rxnsens->{model_wsid});
 	for (my $i=0; $i < @{$rxnsens->{reactions}}; $i++) {
-		my $rxn = $model->queryObject("modelreactions",{id => $rxnsens->{reactions}->[$i]->{reaction}});
-		$model->remove("modelreactions",$rxn);
+		if ($rxnsens->{reactions}->[$i]->{"delete"} eq "1") {
+			my $rxn = $model->searchForReaction($rxnsens->{reactions}->[$i]->{reaction});
+			if (defined($rxn)) {
+				$model->remove("modelreactions",$rxn);
+			}
+			$rxnsens->{reactions}->[$i]->{"deleted"} = 1;
+		}
 	}
-	$self->_save_msobject($model,"Model","NO_WORKSPACE",$rxnsens->{model_wsid},"delete_noncontributing_reactions");
+	if (defined($input->{new_model_uid})) {
+		$output = $self->_save_msobject($model,"Model",$input->{workspace},$input->{new_model_uid},"delete_noncontributing_reactions");
+	} else {
+		$output = $self->_save_msobject($model,"Model","NO_WORKSPACE",$rxnsens->{model_wsid},"delete_noncontributing_reactions");
+	}
+	if (defined($input->{new_rxn_sensitivity_uid})) {
+		$self->_save_msobject($rxnsens,"RxnSensitivity",$input->{workspace},$input->{new_rxn_sensitivity_uid},"delete_noncontributing_reactions");
+	} else {
+		$self->_save_msobject($rxnsens,"RxnSensitivity",$input->{workspace},$rxnsens->{rxn_sensitivity},"delete_noncontributing_reactions");
+	}
 	$self->_clearContext();
     #END delete_noncontributing_reactions
     my @_bad_returns;

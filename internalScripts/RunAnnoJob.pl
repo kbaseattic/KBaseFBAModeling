@@ -31,7 +31,7 @@ if (!defined($job->{wsurl})) {
 	$job->{wsurl} = "http://kbase.us/services/workspace";
 }
 if (!defined($job->{fbaurl})) {
-	$job->{fbaurl} = "http://140.221.85.73:4043";
+	$job->{fbaurl} = "http://kbase.us/services/fba_model_services";
 }
 my $wsserv = Bio::KBase::workspaceService::Client->new($job->{wsurl});
 my $output = $wsserv->get_object({
