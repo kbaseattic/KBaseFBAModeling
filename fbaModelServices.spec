@@ -1977,7 +1977,6 @@ module fbaModelServices {
 		phenotype_set_id phenotypeSet - ID of a phenotype set against which gapfilled model should be simulated (an optional argument: default is 'undef')
 		workspace_id phenotypeSet_workspace - workspace containing phenotype set to be simulated (an optional argument; default is the value of the workspace argument)
 		bool integrate_solution - a flag indicating if the first solution should be integrated in the model (an optional argument: default is '0')
-		bool sensitivity_analysis - a flag indicating if the sensitivity analysis on gapfilling solution
 		list<string> target_reactions - a list of reactions to activate with gapfilling
 		fbamodel_id out_model - ID where the gapfilled model will be saved (an optional argument: default is 'undef')
 		gapfill_id gapFill - ID to which gapfill solution will be saved (an optional argument: default is 'undef')
@@ -1994,7 +1993,6 @@ module fbaModelServices {
 		phenotype_set_id phenotypeSet;
 		workspace_id phenotypeSet_workspace;
 		bool integrate_solution;
-		bool sensitivity_analysis;
 		list<string> target_reactions;
 		fbamodel_id out_model;
 		workspace_id workspace;
@@ -2250,7 +2248,7 @@ module fbaModelServices {
     funcdef role_to_reactions(role_to_reactions_params params) returns (list<RoleComplexReactions> output);
 
 	/*********************************************************************************
-	Code relating to import and analysis of ProteinSets
+	Code relating to assessing model sensitivity to reaction knockouts
    	*********************************************************************************/
 	/* Object for holding reaction knockout sensitivity reaction data
 		
@@ -2311,7 +2309,6 @@ module fbaModelServices {
 		list<reaction_id> reactions_to_delete;
 		string type;
 		bool delete_noncontributing_reactions;
-		bool integrate_deletions_in_model;
 		string auth;
     } reaction_sensitivity_analysis_params;
     /*
@@ -2327,7 +2324,6 @@ module fbaModelServices {
 		list<reaction_id> reactions_to_delete - list of reactions to delete in sensitiviity analysis; note, order of the reactions matters (a required argument)
 		string type - type of KO sensitivity analysis (an optional argument - default is "unknown")
 		bool delete_noncontributing_reactions - a boolean indicating if unuseful reactions should be deleted (an optional argument - default is "0")
-		bool integrate_deletions_in_model - a boolean indicating if deletion of noncontributing reactions should be integrated in the model (an optional argument - default is "0")
 		string auth  - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument)
 
 	*/

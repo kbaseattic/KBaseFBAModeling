@@ -8690,7 +8690,6 @@ sub queue_gapfill_model
 		gapFill => undef,
 		gapFill_workspace => $input->{workspace},
 		target_reactions => [],
-		sensitivity_analysis => 0,
 		overwrite => 0,
 		timePerSolution => 3600,
 		totalTimeLimit => 18000,
@@ -8776,12 +8775,6 @@ sub queue_gapfill_model
 				$self->_error($msg,'queue_gapfill_model');
 			}
 		}
-		if ($input->{completeGapfill} == 1) {
-			$input->{sensitivity_analysis} = 1;
-		}
-		if ($input->{sensitivity_analysis} == 1) {
-			$input->{integrate_solution} = 1;
-		}
 		if ($input->{integrate_solution} == 1) {
 			#TODO: This block should be in a "safe save" block to prevent race conditions
 			my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
@@ -8800,17 +8793,6 @@ sub queue_gapfill_model
 				rxnProbGpr => $rxnprobsGPRArray
 			});
 			my $modelmeta = $self->_save_msobject($model,"Model",$input->{workspace},$input->{out_model},"queue_gapfill_model");
-			if ($input->{sensitivity_analysis} == 1) {
-				my $job = $self->reaction_sensitivity_analysis({
-					model => $input->{out_model},
-					workspace => $input->{workspace},
-					reactions_to_delete => $report->{added},
-					type => "gapfill-sensitivity",
-					delete_noncontributing_reactions => 1,
-					integrate_deletions_in_model => 1,
-				});
-				print "Sensitivity job:".$job->{id}."\n";
-			}
 			#End "safe save" block
 		}
 		my $meta = $self->_save_msobject($gapfill,"GapFill","NO_WORKSPACE",$gapfill->uuid(),"queue_gapfill_model",1,$gapfill->uuid());
@@ -11235,7 +11217,6 @@ sub reaction_sensitivity_analysis
 		rxnsens_uid => undef,
 		type => "unknown",
 		delete_noncontributing_reactions => 0,
-		integrate_deletions_in_model => 0,
 		fba_ref => undef
 	});
 	if (!defined($input->{fba_ref})) {
@@ -11309,13 +11290,6 @@ sub reaction_sensitivity_analysis
 			push(@{$object->{reactions}},$sensrxn);
 		}
 		$self->_save_msobject($object,"RxnSensitivity",$input->{workspace},$input->{rxnsens_uid},"reaction_sensitivity_analysis");
-		if ($input->{integrate_deletions_in_model} == 1) {
-			$self->delete_noncontributing_reactions({
-				rxn_sensitivity_ws => $input->{workspace},
-				rxn_sensitivity => $input->{rxnsens_uid},
-				workspace => $input->{workspace}
-			})
-		}
 		$job = {};
 	}
 	$self->_clearContext();
@@ -11444,6 +11418,7 @@ sub delete_noncontributing_reactions
 		new_rxn_sensitivity_uid => undef
 	});
 	my $rxnsens = $self->_get_msobject("RxnSensitivity",$input->{rxn_sensitivity_ws},$input->{rxn_sensitivity});
+	$rxnsens->{integrated_deletions_in_model} = 1;
 	my $model = $self->_get_msobject("Model","NO_WORKSPACE",$rxnsens->{model_wsid});
 	for (my $i=0; $i < @{$rxnsens->{reactions}}; $i++) {
 		if ($rxnsens->{reactions}->[$i]->{"delete"} eq "1") {
