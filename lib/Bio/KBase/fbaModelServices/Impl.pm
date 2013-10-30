@@ -8720,7 +8720,7 @@ sub queue_gapfill_model
 		$input->{gapFill} = $gapfill->uuid();
 		push(@{$model->unintegratedGapfilling_uuids()},$gapfill->uuid());
 		my $modelmeta = $self->_save_msobject($model,"Model",$input->{workspace},$input->{out_model},"queue_gapfill_model");
-		$gapfill->fbaFormulation()->model_uuid($model->uuid());
+		$gapfill->fbaFormulation()->model_uuid($input->{model_workspace}."/".$input->{model});
 		my $fbameta = $self->_save_msobject($gapfill->fbaFormulation(),"FBA","NO_WORKSPACE",$gapfill->fbaFormulation()->uuid(),"queue_gapfill_model",0,$gapfill->fbaFormulation()->uuid());
 		$gapfill->model_uuid($model->uuid());
 		my $gapfillmeta = $self->_save_msobject($gapfill,"GapFill","NO_WORKSPACE",$gapfill->uuid(),"queue_gapfill_model",0,$gapfill->uuid());
@@ -11462,7 +11462,7 @@ sub delete_noncontributing_reactions
 	if (defined($input->{new_rxn_sensitivity_uid})) {
 		$self->_save_msobject($rxnsens,"RxnSensitivity",$input->{workspace},$input->{new_rxn_sensitivity_uid},"delete_noncontributing_reactions");
 	} else {
-		$self->_save_msobject($rxnsens,"RxnSensitivity",$input->{workspace},$rxnsens->{rxn_sensitivity},"delete_noncontributing_reactions");
+		$self->_save_msobject($rxnsens,"RxnSensitivity",$input->{workspace},$input->{rxn_sensitivity},"delete_noncontributing_reactions");
 	}
 	$self->_clearContext();
     #END delete_noncontributing_reactions
