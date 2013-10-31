@@ -11262,7 +11262,7 @@ sub reaction_sensitivity_analysis
 			kbid => $kbid,
 			model_wsid => $input->{model_ws}."/".$input->{model},
 			type => $input->{type},
-			deleted_noncontributing_reactions => $input->{deleted_noncontributing_reactions},
+			deleted_noncontributing_reactions => $input->{delete_noncontributing_reactions},
 			integrated_deletions_in_model => 0,
 			reactions => []
 		};
