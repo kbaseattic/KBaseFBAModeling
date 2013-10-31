@@ -6,6 +6,7 @@
 ########################################################################
 use strict;
 use warnings;
+use Data::Dumper;
 use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
 use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
@@ -39,22 +40,32 @@ open(my $fh, "<", $opt->{"Phenotype filename"}) || return;
 $opt->{"Phenotype filename"} = "";
 my $headingline = <$fh>;
 my $array = [split("\r",$headingline)];
+
 $headingline = shift(@{$array});
 chomp($headingline);
 my $data = [];
+
+
 for (my $i=0;$i < @{$array}; $i++) {
-	push(@{$data},[split(/\t/,$array->[$i])]);
+	push(@{$data},[split(/\s+/,$array->[$i])]);
 }
-my $headings = [split(/\t/,$headingline)];
+
+my $headings = [split(/\s+/,$headingline)];
+
 while (my $line = <$fh>) {
 	chomp($line);
-	push(@{$data},[split(/\t/,$line)]);
+	push(@{$data},[split(/\s+/,$line)]);
+
 }
 close($fh);
+
+
 my $headingColums;
 for (my $i=0;$i < @{$headings}; $i++) {
 	$headingColums->{$headings->[$i]} = $i;
+
 }
+
 foreach my $pheno (@{$data}) {
 	if (defined($headingColums->{media}) && defined($headingColums->{mediaws})) {
 		my $phenoobj = [
