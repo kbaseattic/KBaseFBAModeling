@@ -71,7 +71,7 @@ my $specs = [
     [ 'modelout:s', 'ID for output model in workspace' ],
     [ 'intsol', 'Automatically integrate solution', { "default" => 0 } ],
     [ 'iterativegf|t', 'Gapfill all inactive reactions', { "default" => 0 } ],
-    [ 'targrxn|x:s@', 'Target reactions for iterative gapfilling (; delimiter)'],
+    [ 'targrxn|x:s@', 'Gapfill to these reactions only (; delimiter)'],
     [ 'rxnsensitivity|y', 'Flag indicates if sensitivity analysis of gapfill solutions should run'],
     [ 'timepersol:s', 'Maximum time spent per solution' ],
     [ 'timelimit:s', 'Maximum toal time' ],

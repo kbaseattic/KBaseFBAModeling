@@ -8707,6 +8707,7 @@ sub queue_gapfill_model
 		}
 		if ($input->{completeGapfill} == 1) {
 			$input->{formulation}->{num_solutions} = 1;
+			$input->{integrate_solution} = 1;
 		}
 		my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
 		if (!defined($input->{out_model})) {
