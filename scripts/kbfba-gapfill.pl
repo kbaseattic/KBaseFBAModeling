@@ -113,7 +113,6 @@ my $specs = [
     [ 'thermoconst', 'Use full thermodynamic constraints' ],
     [ 'nothermoerror', 'No uncertainty in thermodynamic constraints' ],
     [ 'minthermoerror', 'Minimize uncertainty in thermodynamic constraints' ],
-    [ 'allrev', 'Treat all reactions as reversible', { "default" => 0 } ],
     [ 'objfraction:s', 'Fraction of objective for follow on analysis', { "default" => 0.1 }],
     [ 'notes:s', 'Notes for flux balance analysis' ],
     [ 'solver:s', 'Solver to use for gapfilling' ],
