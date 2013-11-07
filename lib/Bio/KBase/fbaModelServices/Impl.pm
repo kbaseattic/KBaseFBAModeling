@@ -2178,7 +2178,6 @@ sub _addPhenotypeMedia {
 	    }
 	    # Add transporters to the model for everything in the media
 	    if ( defined($mediaobj) ) {
-		print STDERR "Adding media ${media} to model...\n";
 		$model->addMediaReactions( { media => $mediaobj, biochemistry => $bio } );
 	    };
 	}
@@ -8755,7 +8754,18 @@ sub queue_gapfill_model
 			my $msg = "Gapfilling failed!";
 			$self->_error($msg,'queue_gapfill_model');
 		}
-		$gapfill->parseGapfillingResults($gapfill->fbaFormulation()->fbaResults()->[0]);
+		# If we fail in preliminary solving there's no point to restarting it and it will result in a misleading error message.
+		if ( !defined($gapfill->fbaFormulation()->fbaResults()->[-1]->outputfiles()->{"CompleteGapfillingOutput.txt"}->[1] ) ) {
+			my $msg = "Gapfilling failed to produce an output file!";
+			$self->_error($msg,'queue_gapfill_model');
+		}
+		my $line = $gapfill->fbaFormulation()->fbaResults()->[-1]->outputfiles()->{"CompleteGapfillingOutput.txt"}->[1];
+		if ( $line =~ /FAILED/ && $line =~ /Prelim/ ) {
+			my $msg = "Gapfilling failed in preliminary feasibility determination!";
+			$self->_error($msg,'queue_gapfill_model');
+		}
+
+		$gapfill->parseGapfillingResults($gapfill->fbaFormulation()->fbaResults()->[-1]);
 		if (!defined($gapfill->gapfillingSolutions()->[0])) {
 			if (defined($input->{jobid})) {
 				my $job = $self->_getJob($input->{jobid});

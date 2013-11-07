@@ -95,7 +95,7 @@ my $specs = [
     [ 'transpen:s', 'Penalty for transport reactions', {"default" => 1} ],
 	[ 'probrxn=s', 'ID of probabilistic reaction object' ],
 	[ 'probanno=s', 'ID of probabilistic annotation object' ],
-    [ 'probannows:s', 'Workspace with probabilistic annotation or probabilistic reaction' ],
+    [ 'probannows:s', 'Workspace with probabilistic annotation or probabilistic reaction', { "default" => workspace() } ],
     [ 'blacklist:s@', 'List of blacklisted reactions (; delimiter)' ],
     [ 'gauranteed:s@', 'List of gauranteed reactions (; delimiter)' ],
     [ 'allowedcmp:s@', 'List of allowed compartments (; delimiter)' ],
