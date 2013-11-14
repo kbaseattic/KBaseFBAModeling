@@ -24,6 +24,9 @@ my $translation = {
 };
 #Defining usage and options
 my $specs = [
+    [ "Genome_ID : ID for genome in workspace" ],
+    [ "Model file: Tab-delimited file with four columns: \'id\', \'direction\' (<,> or =), \'compartment\' (e.g. c0,e0), and \'gpr\' (use \"\" for empty GPR)." ],
+    [ "Biomass equation: A string representing the biomass equation (e.g. 'A --> B')"],
     [ 'modelid|m:s', 'ID for imported model in workspace' ],
     [ 'genomews:s', 'Workspace with genome object' ],
     [ 'ignoreerrors|i', 'Ignore errors encountered during load' ],
