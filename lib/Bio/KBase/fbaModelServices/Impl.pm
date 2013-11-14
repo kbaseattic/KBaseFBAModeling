@@ -1590,6 +1590,163 @@ sub _generate_fbameta {
 	];
 }
 
+=head3 _was_reaction_gapfilled
+
+Definition:
+    Bool = _was_reaction_gapfilled(ModelSEED::MS::ModelReaction)
+
+Description:
+    Returns 1 if the ModelReaction was a gapfilled reaction.
+    Returns 0 for any reaction originally in the model (even if the reversibility was changed by gapfill)
+
+=cut
+
+sub _was_reaction_gapfilled {
+    my ($self, $modelrxn) = @_;
+    my $proteins = $modelrxn->modelReactionProteins();
+    my $gapfilled = 0;
+    if (@{$proteins} == 0) {
+	$gapfilled = 1;
+    } elsif ( @{$proteins} >= 1 ) {
+	my $ok = 1;
+	foreach ( my $j=0; $j<@{$proteins}; $j++ ) {
+	    if ( $proteins->[$j]->complex_uuid() ne "00000000-0000-0000-0000-000000000000" || $proteins->[$j]->note() eq "spontaneous" || $proteins->[$j]->note() eq "universal" ) {
+		$ok = 0;
+		last;
+	    }
+	}
+	if ( $ok == 1 ) {
+	    $gapfilled = 1;
+	}
+    }   
+}
+
+=head3 get_gapfill_solution_reactions
+
+Definition:
+    Array_ref = _get_gapfill_solution_reactions(Gapfill_solution_id, ModelSEED::MS::Model)
+
+Description:
+    Get a GapFill object associated with a solution ID.
+    Returns an array ref contianing the ModelSEED IDs for each reaction.
+    Ignores reations that are not in the model and only adds each reaction once...
+    Also ignored reactions that were added as reversibility changes.
+
+Example:
+
+    Array_ref = _get_gapfill_solution_reactions(GAPFILL_REF.solution.0)
+
+=cut
+
+sub _get_gapfill_solution_reactions {
+    my ( $self, $solution_id, $model ) = @_;
+    my($gfid, $solid);
+
+    # Get a hash of the reactions in the model (was the reaction deleted after gapfill?)
+    # Also get a hash of all reactions ADDED by the combination of integrated gapfill solutions.
+    # This potentially is wrong if there are multiple integrated gapfill solutions that weren't done sequentially.
+    # We could use a more robust way of storing whether or not a reaction was a reversibility change due to gapfill.
+    my $model_rxnids = {};
+    my $gapfilled_rxnids = {};
+    my $modelrxns = $model->modelreactions();
+    for ( my $i=0; $i < @{$modelrxns}; $i++ ) {
+	if ( $self->_was_reaction_gapfilled($modelrxns->[$i]) == 1 ) {
+	    $gapfilled_rxnids->{ $modelrxns->[$i]->reaction()->id } = 1;
+	}
+	$model_rxnids->{ $modelrxns->[$i]->reaction()->id } = 1;
+    }
+
+    # Handle gapfill solution. Get all the reactions modified by the specified gapfill solution.
+    if ($solution_id =~ m/(.+)\.solution\.(.+)/) {
+	$gfid = $1;
+	$solid = $2;
+    } else { 
+	$self->_error("Specified gapfill solution ID did not have expected format GAPFILLID.solution.NUMBER", "_get_gapfill_solution_reactions");
+    }
+    my $gapfill = $self->_get_msobject("GapFill", "NO_WORKSPACE", $gfid);
+    my $gapfillSolutions = $gapfill->gapfillingSolutions();
+    if ( ! defined($gapfillSolutions) ) { 
+	$self->_error("Unable to find gapfill solution $solution_id", "_get_gapfill_solution_reactions");  
+    }
+    if ( @{$gapfillSolutions} <= $solid ) { 
+	$self->_error("Solution number $solid specified but there are fewer than that in the specified gapfill object (note that the solution numbers start at 0)", "_get_gapfill_solution_reactions"); 
+    }
+    my $desiredSolution = $gapfillSolutions->[$solid];
+    my $solutionReactions = $desiredSolution->gapfillingSolutionReactions();
+
+    # Get the desired list of reactions.
+    my $rxnids = [];
+    my $seenrxns = {};
+    for ( my $i=0; $i < @{$solutionReactions}; $i++ ) {
+	my $id = $solutionReactions->[$i]->reaction()->id;
+	# Is this reaction in the original model?
+	if ( ! defined($model_rxnids->{$id} ) ) {
+	    next;
+	}
+	# Was the reaction flagged as "gapfilled"? If not, it was a reversibility change and we should exclude it.
+	if ( ! defined($gapfilled_rxnids->{$id}) ) {
+	    next;
+	}
+	# Duplicates happen in the iterative gapfill solutions. We don't want them, and if it appeared both earlier and later then it is useful for a high-priority gapfill
+	# so we want to test it later.
+	if ( defined($seenrxns->{$id}) ) {
+	    next;
+	}
+	$seenrxns->{$id} = 1;
+	push(@{$rxnids}, $id);
+    }
+    # Reverse order - lower-priority gapfill solutions are tested for removal first.
+    @{$rxnids} = reverse(@{$rxnids});
+
+    return $rxnids;
+    
+}
+
+=head3 _sort_gapfill_solution_reactions
+
+Definition:
+    Array_ref = _sort_gapfill_solution_reactions(Array_ref, RxnProbs_id, RxnProbs_ws)
+
+Description:
+    (Stably) sort the reaction list by probability.
+
+Example:
+
+    Array_ref = _get_gapfill_solution_reactions(GAPFILL_REF.solution.0)
+
+=cut
+
+sub _sort_gapfill_solution_reactions {
+    my ($self, $rxnlist, $rxnprobs_id, $rxnprobs_workspace) = @_;
+    my $rxnprobdict = {};
+    # Build up the rxnprobs dictionary...
+    my $RxnProbs = $self->_get_msobject("RxnProbs", $rxnprobs_workspace, $rxnprobs_id);
+    for(my $i=0; $i<@{$RxnProbs->{reaction_probabilities}}; $i++) {
+	my $rxnarray = $RxnProbs->{reaction_probabilities}->[$i];
+        my $rxnid = $rxnarray->[0];
+	my $likelihood = $rxnarray->[1];
+	$rxnprobdict->{$rxnid} = $likelihood;
+    }
+
+    # Build an array of (reaction, likelihood) pairs
+    my $unsorted = [];
+    for(my $i=0; $i<@{$rxnlist}; $i++) {
+	my $singlearray = [];
+	if ( defined($rxnprobdict->{$rxnlist->[$i]}) ) {
+	    $singlearray = [ $rxnlist->[$i], $rxnprobdict->{$rxnlist->[$i]} ];
+	} else {
+	    $singlearray = [ $rxnlist->[$i], 0 ];
+	}
+	push(@$unsorted, [ @$singlearray ]);
+    }
+
+    # Do the sort
+    my $sorted = [];
+    @$sorted = map  { $_->[0] } sort { $a->[1] cmp $b->[1] } @$unsorted;
+    return $sorted;
+}
+
+
 sub _generate_gapmeta {
 	my ($self,$obj) = @_;
 	my $idarray = [split(/\//,$obj->uuid())];
@@ -2964,21 +3121,7 @@ sub get_models
     			definition => $rxn->definition(),
     			gapfilled => 0
     		};
-    		my $proteins = $rxn->modelReactionProteins();
-    		if (@{$proteins} == 0) {
-    			$rxndata->{gapfilled} = 1;
-	        } elsif ( @{$proteins} >= 1 ) {
-		    my $ok = 1;
-		    foreach ( my $j=0; $j<@{$proteins}; $j++ ) {
-			if ( $proteins->[$j]->complex_uuid() ne "00000000-0000-0000-0000-000000000000" || $proteins->[$j]->note() eq "spontaneous" || $proteins->[$j]->note() eq "universal" ) {
-			    $ok = 0;
-			    last;
-			}
-		    }
-		    if ( $ok == 1 ) {
-			$rxndata->{gapfilled} = 1;
-		    }
-		}
+		$rxndata->{gapfilled} = $self->_was_reaction_gapfilled($rxn);
     		push(@{$mdldata->{reactions}},$rxndata);
     	}
     	#Creating fbas, gapfills, and gapgens
@@ -11234,17 +11377,44 @@ sub reaction_sensitivity_analysis
     my($job);
     #BEGIN reaction_sensitivity_analysis
     $self->_setContext($ctx,$input);
-	$input = $self->_validateargs($input,["model","workspace","reactions_to_delete"],{
+	$input = $self->_validateargs($input,["model","workspace"],{
 		model_ws => $input->{workspace},
 		rxnsens_uid => undef,
 		type => "unknown",
 		delete_noncontributing_reactions => 0,
-		fba_ref => undef
+		fba_ref => undef,
+		reactions_to_delete => undef,
+		gapfill_solution_id => undef,
+		rxnprobs_id => undef,
+		rxnprobs_ws => $input->{workspace}
 	});
+    if ( ! ( defined($input->{reactions_to_delete}) || defined($input->{gapfill_solution_id}) ) ) {
+	my $msg = "Must specify either reactions_to_delete or a gapfill solution ID (if both are specified the gapfill solution is attemtped first)";
+	$self->_error($msg, "reaction_sensitivity_analysis");
+    }
 	if (!defined($input->{fba_ref})) {
+	    # If gapfill solution is defined we need to get the reactions associated with it.
+	    # We only try to get reactions that are acutally in the model.
+	    my $model = $self->_get_msobject("Model",$input->{model_ws},$input->{model});
+	    if ( defined($input->{gapfill_solution_id}) ) {
+		my $rxnlist = $self->_get_gapfill_solution_reactions($input->{gapfill_solution_id}, $model);
+		if ( @{$rxnlist} == 0 ) {
+		    my $msg = "No reactions in the specified gapfill solution were found in the model (did you integrate the gapfill solution first?)";
+		    $self->_error($msg, "reaction_sensitivity_analysis");
+		}
+		if ( defined($input->{rxnprobs_id}) ) {
+		    $rxnlist = $self->_sort_gapfill_solution_reactions($rxnlist, $input->{rxnprobs_id}, $input->{rxnprobs_ws});
+		}
+		if ( defined($input->{reactions_to_delete}) ) {
+		    push(  @{$input->{reactions_to_delete}}, @{$rxnlist} );
+		} else {
+		    $input->{reactions_to_delete} = $rxnlist;
+		}
+	    }
+
+
 		my $fbaid = $self->_get_new_id($input->{model}.".fba.");
 		my $formulation = $self->_setDefaultFBAFormulation({});
-		my $model = $self->_get_msobject("Model",$input->{model_ws},$input->{model});
 		my $fba = $self->_buildFBAObject($formulation,$model,$input->{workspace},$input->{fba});
 		$fba->fva(1);
 		push(@{$fba->outputfiles()},"FBAExperimentOutput.txt");
@@ -11288,6 +11458,11 @@ sub reaction_sensitivity_analysis
 			integrated_deletions_in_model => 0,
 			reactions => []
 		};
+		my $deletehash = {};
+		for (my $j=0; $j < @{$input->{reactions_to_delete}}; $j++ ) {
+		    $deletehash->{$input->{reactions_to_delete}->[$j]} = 1;
+		}
+
 		my $array = $fba->fbaResults()->[0]->outputfiles()->{"FBAExperimentOutput.txt"};
 		for (my $i=1; $i < @{$array}; $i++) {
 			my $row = [split(/\t/,$array->[$i])];
@@ -11304,7 +11479,19 @@ sub reaction_sensitivity_analysis
 			if ($row->[7] eq "DELETED") {
 				$sensrxn->{"delete"} = 1;
 			} else {
-				$sensrxn->{"new_inactive_rxns"} = [split(/;/,$row->[7])];
+			    # Eliminate reactions that were tested from the list of inactive reactions
+			    my $inactive_rxns = [split(/;/,$row->[7])];
+			    my $ok_rxns = [];
+			    for ( my $k=0; $k < @{$inactive_rxns}; $k++ ) {
+				if ( ! defined( $deletehash->{$inactive_rxns->[$k]} ) ) {
+				    push(@{$ok_rxns}, $inactive_rxns->[$k]);
+				}
+			    }
+			    if ( @{$ok_rxns} == 0 ) {
+				$sensrxn->{"delete"} = 1;
+			    } else {
+				$sensrxn->{"new_inactive_rxns"} = $ok_rxns;
+			    }
 			}
 			if ($row->[6] ne "NA") {
 				$sensrxn->{"biomass_compounds"} = [split(/;/,$row->[6])];
