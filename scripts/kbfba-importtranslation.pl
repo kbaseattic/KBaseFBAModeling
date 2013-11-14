@@ -22,6 +22,10 @@ my $translation = {
 };
 #Defining usage and options
 my $specs = [
+    [ 'Genome ID: ID for a genome in the workspace' ],
+    [ 'Translation file: Two-column tab-delimited file: alias (1st column) and feature ID (2nd column)'],
+    [ 'ID type: Any string (?)'],
+    [ "\n" ],
     [ 'genomews:s', 'Workspace with genome object' ],
     [ 'workspace|w:s', 'Workspace to save imported model in', { "default" => workspace() } ],
     [ 'overwrite|o', 'Overwrite any existing phenotypes with same name' ]
