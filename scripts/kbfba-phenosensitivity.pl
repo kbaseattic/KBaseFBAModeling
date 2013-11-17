@@ -6,7 +6,7 @@
 ########################################################################
 use strict;
 use warnings;
-use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
+use Bio::KBase::workspaceService::Helpers qw(printJobData auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
 use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Model ID","Phenotype set"];
@@ -152,5 +152,5 @@ if (!defined($output)) {
 	print "Phenotype sensitivity analysis failed!\n";
 } else {
 	print "Phenotype sensitivity analysis successful:\n";
-	printObjectMeta($output);
+	printJobData($output);
 }
