@@ -530,6 +530,9 @@ sub _get_msobject {
 	if ($ws eq "NO_WORKSPACE") {
 		$ref = $id;
 	}
+	if ($ws eq "kbase" && $id eq "default" && $type eq "Mapping") {
+		$id = "default-mapping";
+	}
 	my $obj = $self->_KBaseStore()->get_object($type,$ref);
 	if (!defined($self->_cachedBiochemistry()) && $type eq "Biochemistry" && $id eq "default" && $ws eq "kbase") {
 		$self->_cachedBiochemistry($obj);
@@ -537,7 +540,7 @@ sub _get_msobject {
 	#Processing genomes to automatically have an annotation object
 	if ($type eq "Genome") {
 		if (!defined($obj->{annotation_uuid})) {
-			my $mapping = $self->_get_msobject("Mapping","kbase","default");
+			my $mapping = $self->_get_msobject("Mapping","kbase","default-mapping");
 			($obj,my $annotation,$mapping,my $contigs) = $self->_processGenomeObject($obj,$mapping,"get_genome_object");
 			my $meta = $self->_save_msobject($obj,"Genome",$ws,$id,"get_genome_object");
 		}
@@ -3041,7 +3044,7 @@ sub get_models
     $input = $self->_validateargs($input,["models","workspaces"],{
 		id_type => "ModelSEED",
 		biochemistry => "default",
-		mapping => "mapping"
+		mapping => "default-mapping"
 	});
 	#Creating cache with the biochemistry, to ensure only one is created for all models
 	my $cache = {
@@ -3411,7 +3414,7 @@ sub get_fbas
     $input = $self->_validateargs($input,["fbas","workspaces"],{
 		id_type => "ModelSEED",
 		biochemistry => "default",
-		mapping => "default"
+		mapping => "default-mapping"
 	});
 	#Creating cache with the biochemistry, to ensure only one is created for all models
 	my $cache = {
@@ -3703,7 +3706,7 @@ sub get_gapfills
     $input = $self->_validateargs($input,["gapfills","workspaces"],{
 		id_type => "ModelSEED",
 		biochemistry => "default",
-		mapping => "default"
+		mapping => "default-mapping"
 	});
 	
     for (my $i=0; $i < @{$input->{gapfills}}; $i++) {
@@ -3954,7 +3957,7 @@ sub get_gapgens
     $input = $self->_validateargs($input,["gapgens","workspaces"],{
 		id_type => "ModelSEED",
 		biochemistry => "default",
-		mapping => "default"
+		mapping => "default-mapping"
 	});
 	#Creating cache with the biochemistry, to ensure only one is created for all models
 	my $cache = {
@@ -4076,7 +4079,7 @@ sub get_reactions
     $input = $self->_validateargs($input,["reactions"],{
     	id_type => "ModelSEED",
     	biochemistry => "default",
-		mapping => "default"
+		mapping => "default-mapping"
     });
 	my $biochem = $self->_get_msobject("Biochemistry","kbase",$input->{biochemistry});
 	$out_reactions = [];
@@ -4200,7 +4203,7 @@ sub get_compounds
     $input = $self->_validateargs($input,["compounds"],{
     	id_type => "all",
     	biochemistry => "default",
-		mapping => "default"
+		mapping => "default-mapping"
     });
 	my $biochem = $self->_get_msobject("Biochemistry","kbase",$input->{biochemistry});
 	$out_compounds = [];
@@ -4315,7 +4318,7 @@ sub get_alias
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["input_ids", "input_id_type", "output_id_type", "object_type"],{
         biochemistry => "default",
-	mapping => "default"
+	mapping => "default-mapping"
     });
 
     my $biochem = $self->_get_msobject("Biochemistry","kbase",$input->{biochemistry});
@@ -4415,7 +4418,7 @@ sub get_aliassets
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["object_type"],{
         biochemistry => "default",
-        mapping => "default"
+        mapping => "default-mapping"
 				  });
     my $biochem = $self->_get_msobject("Biochemistry","kbase",$input->{biochemistry});
 
@@ -4534,7 +4537,7 @@ sub get_media
 	$self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["medias","workspaces"],{
     	biochemistry => "default",
-		mapping => "default"
+		mapping => "default-mapping"
     });
 	my $biochem = $self->_get_msobject("Biochemistry","kbase",$input->{biochemistry});
 	$out_media = [];
@@ -5323,7 +5326,7 @@ sub genome_object_to_workspace
     $input = $self->_validateargs($input,["genomeobj","workspace"],{
     	uid => $input->{genomeobj}->{id},
     	mapping_workspace => "kbase",
-    	mapping => "default",
+    	mapping => "default-mapping",
     	overwrite => 0
     });
     #Processing genome object
@@ -5455,7 +5458,7 @@ sub genome_to_workspace
     $input = $self->_validateargs($input,["genome","workspace"],{
     	overwrite => 0,
     	mapping_workspace => "kbase",
-    	mapping => "default",
+    	mapping => "default-mapping",
     	sourceLogin => undef,
     	sourcePassword => undef,
     	source => "kbase",
@@ -5771,6 +5774,7 @@ sub genome_to_fbamodel
     my $annotation = $self->_get_msobject("Annotation","NO_WORKSPACE",$genome->{annotation_uuid});
     #Retrieving template model
     my $template;
+    $template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","GramPosModelTemplate");   
     if (defined($input->{templatemodel})) {
     	$template = $self->_get_msobject("ModelTemplate",$input->{templatemodel_workspace},$input->{templatemodel});
     } elsif ($input->{coremodel} == 1) {
@@ -6941,7 +6945,7 @@ sub export_media
     $self->_setContext($ctx,$input);
 	$input = $self->_validateargs($input,["media","workspace","format"],{
 		biochemistry => "default",
-		mapping => "default"
+		mapping => "default-mapping"
 	});
     my $med;
     my $bio = $self->_get_msobject("Biochemistry","kbase",$input->{biochemistry});
@@ -11389,27 +11393,27 @@ sub reaction_sensitivity_analysis
 		rxnprobs_ws => $input->{workspace}
 	});
     if ( ! ( defined($input->{reactions_to_delete}) || defined($input->{gapfill_solution_id}) ) ) {
-	my $msg = "Must specify either reactions_to_delete or a gapfill solution ID (if both are specified the gapfill solution is attemtped first)";
-	$self->_error($msg, "reaction_sensitivity_analysis");
+		my $msg = "Must specify either reactions_to_delete or a gapfill solution ID (if both are specified the gapfill solution is attemtped first)";
+		$self->_error($msg, "reaction_sensitivity_analysis");
     }
 	if (!defined($input->{fba_ref})) {
 	    # If gapfill solution is defined we need to get the reactions associated with it.
 	    # We only try to get reactions that are acutally in the model.
 	    my $model = $self->_get_msobject("Model",$input->{model_ws},$input->{model});
 	    if ( defined($input->{gapfill_solution_id}) ) {
-		my $rxnlist = $self->_get_gapfill_solution_reactions($input->{gapfill_solution_id}, $model);
-		if ( @{$rxnlist} == 0 ) {
-		    my $msg = "No reactions in the specified gapfill solution were found in the model (did you integrate the gapfill solution first?)";
-		    $self->_error($msg, "reaction_sensitivity_analysis");
-		}
-		if ( defined($input->{rxnprobs_id}) ) {
-		    $rxnlist = $self->_sort_gapfill_solution_reactions($rxnlist, $input->{rxnprobs_id}, $input->{rxnprobs_ws});
-		}
-		if ( defined($input->{reactions_to_delete}) ) {
-		    push(  @{$input->{reactions_to_delete}}, @{$rxnlist} );
-		} else {
-		    $input->{reactions_to_delete} = $rxnlist;
-		}
+			my $rxnlist = $self->_get_gapfill_solution_reactions($input->{gapfill_solution_id}, $model);
+			if ( @{$rxnlist} == 0 ) {
+			    my $msg = "No reactions in the specified gapfill solution were found in the model (did you integrate the gapfill solution first?)";
+			    $self->_error($msg, "reaction_sensitivity_analysis");
+			}
+			if ( defined($input->{rxnprobs_id}) ) {
+			    $rxnlist = $self->_sort_gapfill_solution_reactions($rxnlist, $input->{rxnprobs_id}, $input->{rxnprobs_ws});
+			}
+			if ( defined($input->{reactions_to_delete}) ) {
+			    push(  @{$input->{reactions_to_delete}}, @{$rxnlist} );
+			} else {
+			    $input->{reactions_to_delete} = $rxnlist;
+			}
 	    }
 
 
@@ -11444,7 +11448,6 @@ sub reaction_sensitivity_analysis
 			"state" => $self->_defaultJobState()
 		});
 	} else {
-		print $input->{fba_ref}."\n";
 		my $fba = $self->_get_msobject("FBA","NO_WORKSPACE",$input->{fba_ref});
 		my $kbid = $self->_get_new_id($input->{model}.".rxnsens.");
 		if (!defined($input->{rxnsens_uid})) {
@@ -11464,6 +11467,7 @@ sub reaction_sensitivity_analysis
 		}
 
 		my $array = $fba->fbaResults()->[0]->outputfiles()->{"FBAExperimentOutput.txt"};
+		my $inactiveRxns = {};
 		for (my $i=1; $i < @{$array}; $i++) {
 			my $row = [split(/\t/,$array->[$i])];
 			my $sensrxn = {
@@ -11483,20 +11487,34 @@ sub reaction_sensitivity_analysis
 			    my $inactive_rxns = [split(/;/,$row->[7])];
 			    my $ok_rxns = [];
 			    for ( my $k=0; $k < @{$inactive_rxns}; $k++ ) {
-				if ( ! defined( $deletehash->{$inactive_rxns->[$k]} ) ) {
-				    push(@{$ok_rxns}, $inactive_rxns->[$k]);
-				}
+					if ( ! defined( $deletehash->{$inactive_rxns->[$k]} ) ) {
+					    $inactiveRxns->{$inactive_rxns->[$k]}->{required}->{$row->[0]} = 1;
+					    push(@{$ok_rxns}, $inactive_rxns->[$k]);
+					}
 			    }
 			    if ( @{$ok_rxns} == 0 ) {
-				$sensrxn->{"delete"} = 1;
+					$sensrxn->{"delete"} = 1;
 			    } else {
-				$sensrxn->{"new_inactive_rxns"} = $ok_rxns;
+					$sensrxn->{"new_inactive_rxns"} = $ok_rxns;
 			    }
 			}
 			if ($row->[6] ne "NA") {
 				$sensrxn->{"biomass_compounds"} = [split(/;/,$row->[6])];
 			}
 			push(@{$object->{reactions}},$sensrxn);
+		}
+		for (my $i=0; $i < @{$object->{reactions}}; $i++) {
+			my $rxn = $object->{reactions}->[$i];
+			my $value = 1/@{$rxn->{new_inactive_rxns}};
+			$rxn->{normalized_activated_reaction_count} = 0;
+			for (my $j=0; $j < @{$rxn->{new_inactive_rxns}}; $j++) {
+				my $inactiveRxn = $inactiveRxns->{$rxn->{new_inactive_rxns}->[$j]};
+				$rxn->{normalized_activated_reaction_count} += 1/keys(%{$inactiveRxn->{required}});
+				if (!defined($inactiveRxn->{normalized_required_reaction_count})) {
+					$inactiveRxn->{normalized_required_reaction_count} = 0;
+				}
+				$inactiveRxns->{$rxn->{new_inactive_rxns}->[$j]}->{normalized_required_reaction_count} += $value;
+			}
 		}
 		$self->_save_msobject($object,"RxnSensitivity",$input->{workspace},$input->{rxnsens_uid},"reaction_sensitivity_analysis");
 		$job = {};
@@ -12853,7 +12871,7 @@ sub probanno_to_genome
 		pa_ws => $params->{workspace},
 		threshold => undef,
 		mapping_workspace => "kbase",
-		mapping => "default"
+		mapping => "default-mapping"
 	});
 	if (!defined($params->{g_id})) {
 		$params->{g_id} = $self->_get_new_id("kb|g.");
@@ -13031,7 +13049,7 @@ sub get_mapping
     #BEGIN get_mapping
     $self->_setContext($ctx,$params);
     my $input = $self->_validateargs($params,[],{
-		"map" => "default",
+		"map" => "default-mapping",
 		workspace => "kbase",
 	});
     my $map = $self->_get_msobject("Mapping",$input->{workspace},$input->{"map"});
@@ -13920,7 +13938,7 @@ sub import_template_fbamodel
     #BEGIN import_template_fbamodel
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["workspace"],{
-    	"map" => "default",
+    	"map" => "default-mapping",
     	mapping_workspace => "kbase",
     	templateReactions => [],
     	templateBiomass => [],
@@ -14882,7 +14900,7 @@ sub compare_models
 	my $modelhash = {};
 	my $rxnhash = {};
 	my $SubsysRoles = {};
-	my $map = $self->_get_msobject("Mapping","kbase","default");
+	my $map = $self->_get_msobject("Mapping","kbase","default-mapping");
 	my $rxnroles = {};
 	my $complexes = $map->complexes();
 	for (my $i=0; $i < @{$complexes}; $i++) {
@@ -15125,7 +15143,7 @@ sub compare_genomes
 	my $SubsysRoles = {};
 	my $GenomeHash = {};
 	my $FunctionHash = {};
-	my $map = $self->_get_msobject("Mapping","kbase","default");
+	my $map = $self->_get_msobject("Mapping","kbase","default-mapping");
 	my $rolesets = $map->rolesets();
 	for (my $i=0; $i < @{$rolesets}; $i++) {
 		my $roleset = $rolesets->[$i];
