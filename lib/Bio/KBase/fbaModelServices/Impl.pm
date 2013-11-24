@@ -221,6 +221,14 @@ sub _authenticate {
 			authentication => $auth,
 			user => $username
 		};
+	} elsif ($self->{_accounttype} eq "simple") {
+		if ($auth !~ m/^[a-zA-Z0-9_]*$/) {
+			$self->_error("Simple accounts must be alphanumeric!",'_setContext');
+		}
+		return {
+			authentication => $auth,
+			user => $auth
+		};
 	}
 }
 
@@ -419,9 +427,6 @@ sub _mssServer {
 
 sub _idServer {
 	my $self = shift;
-	if (!defined($self->{_idserver})) {
-		$self->{_idserver} = Bio::KBase::IDServer::Client->new( $self->{'_idserver-url'} );
-	}
     return $self->{_idserver};
 }
 
@@ -2733,6 +2738,9 @@ sub new
 
     if ((my $e = $ENV{KB_DEPLOYMENT_CONFIG}) && -e $ENV{KB_DEPLOYMENT_CONFIG}) {
 		my $service = $ENV{KB_SERVICE_NAME};
+		if (!defined($service)) {
+			$service = "fbaModelService";
+		}
 		if (defined($service)) {
 			my $c = Config::Simple->new();
 			$c->read($e);
@@ -2751,8 +2759,8 @@ sub new
     # was previously assigned to the params hash from the config object.
 
     for my $p (@{$paramlist}) {
-  	if (defined($options->{$p})) {
-		$params->{$p} = $options->{$p};
+  		if (defined($options->{$p})) {
+			$params->{$p} = $options->{$p};
         }
     }
 
@@ -2789,6 +2797,13 @@ sub new
     if (defined($options->{verbose})) {
     	set_verbose(1);
     }
+    if ($self->{'_idserver-url'} eq "impl") {
+		require "Bio/KBase/IDServer/Impl.pm";
+		$self->{_idserver} = Bio::KBase::IDServer::Impl->new();
+	} else {
+		$self->{_idserver} = Bio::KBase::IDServer::Client->new($self->{'_idserver-url'});
+	}
+    
     #END_CONSTRUCTOR
 
     if ($self->can('_init_instance'))
@@ -4556,8 +4571,8 @@ sub get_media
 			$new = {
                 id => $obj->id(),
                 name => $obj->name(),
-                pH => 7,
-                temperature => 298,
+                pH => 7,#TODO:Fix this
+                temperature => 298,#TODO:Fix this
                 media_compounds => [],
             };
             foreach my $mediaCompound (@{$obj->mediacompounds}) {
