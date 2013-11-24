@@ -22,18 +22,68 @@ my $translation = {
 	ignoreerrors => "ignore_errors",
 	overwrite => "overwrite"
 };
+
+my $manpage = 
+"
+NAME
+      kbfba-importfbamodel
+
+DESCRIPTION
+
+      Import an FBA Model from text and save the results as a Model object in a workspace.
+      The text file describes the reactions and gene-protein-reaction relationships (GPR)
+      in the model. Each row (except the header row) in the data file contains data for one
+      reaction.
+
+      The first line of the model file is required and contains the following four headers 
+      (in any order):
+
+      - id : The ID of the reaction in the model. It must match with one of the IDs or aliases
+             existing in the ModelSEED
+      - direction: > for forward, < for backward or = for reversible. Direction is relative to
+             the direction stored in the ModleSEED
+      - compartment: Compartment in which the reaction is found (e.g. c0 for 0'th cytosol)
+      - gpr: Gene-protein-reaction relationship in Boolean form.
+             The gene IDs in the GPR must match the IDs in the genome object.
+      
+      The biomass equation should be written as an equation with compound IDs recognizable by 
+      the modelSEED, for example:
+      
+      'atp + h2o --> adp + pi + h'
+
+      The following is an example data file (note 0 leave an empty space for gpr even if your reaction
+      does not have one). Note that some old versions of this tool will only work if you use 'or' or 'and', not
+      'OR' or 'AND', in the Boolean rules.
+
+      id   direction   compartment   gpr
+      rxn00001  =    c0    kb|g.0.peg.1
+      rxn00002  >    c0    
+      rxn00003  <    c0    kb|g.0.peg.2 or kb|g.0.peg.3
+
+EXAMPLES
+      Import an E coli model with 'biomass equation' atp + h2o --> adp + pi + h:
+
+      kbfba-importfbamodel 'kb|g.0.genome' 'kb|g.0.modelfile' 'atp + h2o --> adp + pi + h'
+
+SEE ALSO
+      kbfba-loadgenome
+      kbfba-runfba
+      kbfba-buildfbamodel
+
+AUTHORS
+      Christopher Henry
+
+";
+
 #Defining usage and options
 my $specs = [
-    [ "Genome_ID : ID for genome in workspace - should have aliases loaded to handle the GPR (see kbfba-importtranslation)" ],
-    [ "Model file: Tab-delimited file with four columns: \'id\', \'direction\' (<,> or =), \'compartment\' (e.g. c0,e0), and \'gpr\' (use \"\" for empty GPR)." ],
-    [ "Biomass equation: A string representing the biomass equation (e.g. 'A --> B')"],
     [ 'modelid|m:s', 'ID for imported model in workspace' ],
     [ 'genomews:s', 'Workspace with genome object' ],
     [ 'ignoreerrors|i', 'Ignore errors encountered during load' ],
     [ 'workspace|w:s', 'Workspace to save imported model in', { "default" => workspace() } ],
     [ 'overwrite|o', 'Overwrite any existing phenotypes with same name' ]
 ];
-my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
+my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation, $manpage);
 $params->{reactions} = [];
 if (!-e $opt->{"Model file"}) {
 	print "Could not find input model file!\n";

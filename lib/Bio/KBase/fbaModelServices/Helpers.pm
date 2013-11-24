@@ -60,6 +60,7 @@ sub universalFBAScriptCode {
     my $script = shift;
     my $primaryArgs = shift;
     my $translation = shift;
+    my $manpage = shift;
     $translation->{workspace} = "workspace";
     $translation->{auth} = "auth";
     #Setting arguments to "describe_options" function
@@ -77,7 +78,13 @@ sub universalFBAScriptCode {
     #Defining usage and options
 	my ($opt, $usage) = describe_options(@{$options});
 	if (defined($opt->{help})) {
-		print $usage;
+        if (defined($manpage)) {
+            print "SYNOPSIS\n      ".$usage;
+            print $manpage;
+        }
+        else {
+            print $usage;
+        }
 	    exit;
 	}
 	#Processing primary arguments

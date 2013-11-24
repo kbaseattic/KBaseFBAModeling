@@ -20,17 +20,50 @@ my $translation = {
 	auth => "auth",
 	overwrite => "overwrite"
 };
+
+my $manpage = 
+"
+NAME
+      kbfba-importtranslation
+
+DESCRIPTION
+
+      Adds aliases to an existing Genome file based on a translation file. This allows the user to
+      use those aliases as arguments to other functions that take genes as inputs.
+
+      The translation file is a tab-delimited file with two columns without any header row. The two 
+      columns must be in this order:
+
+      alias   feature ID
+
+      Feature ID is the ID of the gene in the Genome object and alias is the alias you wish to add. An
+      example translation file could look like this:
+
+
+      ECOLI_GENE1  kb|g.0.peg.1
+
+EXAMPLES
+
+      kbfba-importtranslation 'kb|g.0' 'kb|g.0.translationfile' 'madeup'
+
+SEE ALSO
+      kbfba-loadgenome
+      kbfba-runfba
+      kbfba-buildfbamodel
+
+AUTHORS
+      Christopher Henry
+
+";
+
+
 #Defining usage and options
 my $specs = [
-    [ 'Genome ID: ID for a genome in the workspace' ],
-    [ 'Translation file: Two-column tab-delimited file: alias (1st column) and feature ID (2nd column)'],
-    [ 'ID type: Any string (?)'],
-    [ "\n" ],
     [ 'genomews:s', 'Workspace with genome object' ],
     [ 'workspace|w:s', 'Workspace to save imported model in', { "default" => workspace() } ],
     [ 'overwrite|o', 'Overwrite any existing phenotypes with same name' ]
 ];
-my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
+my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation, $manpage);
 $params->{translations} = [];
 if (!-e $opt->{"Translation file"}) {
 	print "Could not find input translation file!\n";

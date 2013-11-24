@@ -2118,8 +2118,8 @@ sub _parseGPR {
 	my $self = shift;
 	my $gpr = shift;
 	$gpr =~ s/\|/___/g;
-	$gpr =~ s/\s+and\s+/;/g;
-	$gpr =~ s/\s+or\s+/:/g;
+	$gpr =~ s/\s+and\s+/;/ig;
+	$gpr =~ s/\s+or\s+/:/ig;
 	$gpr =~ s/\s+\)/)/g;
 	$gpr =~ s/\)\s+/)/g;
 	$gpr =~ s/\s+\(/(/g;
