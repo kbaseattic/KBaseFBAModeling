@@ -8,7 +8,7 @@ use Bio::KBase::fbaModelServices::Client;
 use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
 use parent qw(Exporter);
 our @EXPORT_OK = qw( fbaURL get_fba_client runFBACommand universalFBAScriptCode fbaTranslation roles_of_function );
-our $defaultURL = "http://kbase.us/services/fbaServices/";
+our $defaultURL = "https://kbase.us/services/KBaseFBAModeling";
 my $CurrentURL;
 
 sub get_fba_client {
