@@ -1535,11 +1535,11 @@ sub _parse_problem_report_solution($solution) {
     my $outarr = [];
     for( my $i=0; $i<@{$matches}; $i++ ) {
 	my $subarr = [];
-	if ( $matches->[$i] =~ /+/ ) {
-	    $subarr->[0] = ( $matches->[$i] =~ s/+// );
+	if ( $matches->[$i] =~ /\+/ ) {
+	    ( $subarr->[0] = $matches->[$i] ) =~ s/\+//;
 	    $subarr->[1] = ">";
 	} else {
-	    $subarr->[0] = ( $matches->[$i] =~ s/-// );
+	    ( $subarr->[0] = $matches->[$i] ) =~ s/-//;
 	    $subarr->[1] = "<";
 	}
 	push(@$outarr, $subarr);
@@ -11662,7 +11662,8 @@ sub filter_iterative_solutions
     # Apply the cutoff and flag reactions for deletion if they are part of a too-costly solution.
     for (my $i=1; $i<@{$problemReport}; $i++) {
 	my $prString = $problemReport->[$i];
-	my $spl = split(';', $prString);
+	my $spl = [];
+	@$spl = split(/;/, $prString);
 	my $obj = $spl->[1];
 	my $solution = $spl->[2];
 	# This should contain an array of (reactionID, direction) pairs.
@@ -11670,7 +11671,7 @@ sub filter_iterative_solutions
 	my $slnrxnarray = $self->_parse_problem_report_solution($solution);
 	my $numrxns = @{$slnrxnarray};
 	my $norm = $obj/$numrxns;
-	if ( $norm < $input->{cutoff} ) {
+	if ( $norm > $input->{cutoff} ) {
 	    for (my $j=0; $j<@{$slnrxnarray}; $j++) {
 		my $rxnid = $slnrxnarray->[$j]->[0];
 		my $dir = $slnrxnarray->[$j]->[1];
@@ -11686,6 +11687,7 @@ sub filter_iterative_solutions
 	    }
 	}
     }
+
     foreach my $key ( keys(%{$deleteDirections}) ) {
 	if ( $deleteDirections->{$key} eq "=" ) {
 	    # Both directions were flagged for deletion, so we just delete the reaction.
@@ -11711,14 +11713,14 @@ sub filter_iterative_solutions
 		# that gapfilling changed the reversibility of that reaction.
 		my($newdir);
 		if ( $deleteDirections->{$key} eq ">" ) { $newdir = "<"; }
-		else ( $newdir = ">" );
+		else { $newdir = ">"; }
 		$model->manualReactionAdjustment( { reaction => $key,
 						    direction => $newdir } );
 	    }
 	}
     }
 
-    $self->_save_msobject($model,"Model",$input->{workspace},$input->{outmodel},"filter_iterative_solutions");
+    $output = $self->_save_msobject($model,"Model",$input->{workspace},$input->{outmodel},"filter_iterative_solutions");
 
     #END filter_iterative_solutions
     my @_bad_returns;
