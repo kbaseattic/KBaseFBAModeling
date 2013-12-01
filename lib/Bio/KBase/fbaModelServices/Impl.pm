@@ -11689,18 +11689,18 @@ sub filter_iterative_solutions
     }
 
     foreach my $key ( keys(%{$deleteDirections}) ) {
+	my $modelrxn = $model->searchForReaction($key);
+	if ( ! defined($modelrxn) ) {
+	    # This could happen because of previous filtering (e.g. a normal reaction_sensitivity_analysis)
+	    print STDERR "WARNING: Reaction $key flagged for deletion but not found in model";
+	    next;
+	}
 	if ( $deleteDirections->{$key} eq "=" ) {
 	    # Both directions were flagged for deletion, so we just delete the reaction.
 	    $model->manualReactionAdjustment( { reaction => $key,
 						removeReaction => 1
 					      } );
 	} else {
-	    # Find reaction in the model
-	    my $modelrxn = $model->searchForReaction($key);
-	    if ( ! defined($modelrxn) ) {
-		print STDERR "WARNING: Reaction $key flagged for deletion but not found in model";
-		next;
-	    }
 	    # What is the direction in the model?
 	    my $modelrxndir = $modelrxn->direction();
 	    # Is the direction the same as deleteDirections?
