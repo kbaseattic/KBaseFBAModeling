@@ -163,6 +163,7 @@ ModelReaction is a reference to a hash where the following keys are defined:
 	compartment has a value which is a modelcompartment_id
 modelreaction_id is a string
 reaction_id is a string
+bool is an int
 feature_id is a string
 ModelCompound is a reference to a hash where the following keys are defined:
 	id has a value which is a modelcompound_id
@@ -265,6 +266,7 @@ ModelReaction is a reference to a hash where the following keys are defined:
 	compartment has a value which is a modelcompartment_id
 modelreaction_id is a string
 reaction_id is a string
+bool is an int
 feature_id is a string
 ModelCompound is a reference to a hash where the following keys are defined:
 	id has a value which is a modelcompound_id
@@ -339,8 +341,9 @@ sub get_models
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'get_models',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -389,6 +392,7 @@ FBA is a reference to a hash where the following keys are defined:
 	compoundFluxes has a value which is a reference to a list where each element is a CompoundFlux
 	geneAssertions has a value which is a reference to a list where each element is a GeneAssertion
 fbamodel_id is a string
+bool is an int
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
@@ -492,6 +496,7 @@ FBA is a reference to a hash where the following keys are defined:
 	compoundFluxes has a value which is a reference to a list where each element is a CompoundFlux
 	geneAssertions has a value which is a reference to a list where each element is a GeneAssertion
 fbamodel_id is a string
+bool is an int
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
@@ -607,8 +612,9 @@ sub get_fbas
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'get_fbas',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -652,6 +658,7 @@ GapFill is a reference to a hash where the following keys are defined:
 	formulation has a value which is a GapfillingFormulation
 	solutions has a value which is a reference to a list where each element is a GapFillSolution
 fbamodel_id is a string
+bool is an int
 GapfillingFormulation is a reference to a hash where the following keys are defined:
 	formulation has a value which is an FBAFormulation
 	num_solutions has a value which is an int
@@ -762,6 +769,7 @@ GapFill is a reference to a hash where the following keys are defined:
 	formulation has a value which is a GapfillingFormulation
 	solutions has a value which is a reference to a list where each element is a GapFillSolution
 fbamodel_id is a string
+bool is an int
 GapfillingFormulation is a reference to a hash where the following keys are defined:
 	formulation has a value which is an FBAFormulation
 	num_solutions has a value which is an int
@@ -889,8 +897,9 @@ sub get_gapfills
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'get_gapfills',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -934,6 +943,7 @@ GapGen is a reference to a hash where the following keys are defined:
 	formulation has a value which is a GapgenFormulation
 	solutions has a value which is a reference to a list where each element is a GapgenSolution
 fbamodel_id is a string
+bool is an int
 GapgenFormulation is a reference to a hash where the following keys are defined:
 	formulation has a value which is an FBAFormulation
 	refmedia has a value which is a media_id
@@ -1028,6 +1038,7 @@ GapGen is a reference to a hash where the following keys are defined:
 	formulation has a value which is a GapgenFormulation
 	solutions has a value which is a reference to a list where each element is a GapgenSolution
 fbamodel_id is a string
+bool is an int
 GapgenFormulation is a reference to a hash where the following keys are defined:
 	formulation has a value which is an FBAFormulation
 	refmedia has a value which is a media_id
@@ -1139,8 +1150,9 @@ sub get_gapgens
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'get_gapgens',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -1251,8 +1263,9 @@ sub get_reactions
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'get_reactions',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -1359,8 +1372,9 @@ sub get_compounds
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'get_compounds',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -1457,8 +1471,9 @@ sub get_alias
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'get_alias',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -1543,8 +1558,9 @@ sub get_aliassets
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'get_aliassets',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -1661,8 +1677,9 @@ sub get_media
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'get_media',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -1773,8 +1790,9 @@ sub get_biochemistry
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'get_biochemistry',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -1898,8 +1916,9 @@ sub get_ETCDiagram
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'get_ETCDiagram',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -1944,6 +1963,7 @@ annotationProbability is a reference to a list containing 3 items:
 	1: (function) a string
 	2: (probability) a float
 feature_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -1987,6 +2007,7 @@ annotationProbability is a reference to a list containing 3 items:
 	1: (function) a string
 	2: (probability) a float
 feature_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -2046,8 +2067,9 @@ sub import_probanno
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'import_probanno',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -2124,6 +2146,7 @@ annotation is a reference to a list containing 3 items:
 	1: (annotator) a string
 	2: (annotation_time) an int
 workspace_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -2199,6 +2222,7 @@ annotation is a reference to a list containing 3 items:
 	1: (annotator) a string
 	2: (annotation_time) an int
 workspace_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -2258,8 +2282,9 @@ sub genome_object_to_workspace
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'genome_object_to_workspace',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -2297,6 +2322,7 @@ genome_to_workspace_params is a reference to a hash where the following keys are
 	overwrite has a value which is a bool
 genome_id is a string
 workspace_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -2333,6 +2359,7 @@ genome_to_workspace_params is a reference to a hash where the following keys are
 	overwrite has a value which is a bool
 genome_id is a string
 workspace_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -2392,8 +2419,9 @@ sub genome_to_workspace
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'genome_to_workspace',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -2434,6 +2462,7 @@ translation is a reference to a list containing 2 items:
 	0: (foreign_id) a string
 	1: (feature) a feature_id
 feature_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -2473,6 +2502,7 @@ translation is a reference to a list containing 2 items:
 	0: (foreign_id) a string
 	1: (feature) a feature_id
 feature_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -2532,8 +2562,9 @@ sub add_feature_translation
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'add_feature_translation',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -2575,6 +2606,7 @@ genome_id is a string
 workspace_id is a string
 template_id is a string
 fbamodel_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -2615,6 +2647,7 @@ genome_id is a string
 workspace_id is a string
 template_id is a string
 fbamodel_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -2674,8 +2707,9 @@ sub genome_to_fbamodel
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'genome_to_fbamodel',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -2721,6 +2755,7 @@ import_fbamodel_params is a reference to a hash where the following keys are def
 genome_id is a string
 workspace_id is a string
 fbamodel_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -2765,6 +2800,7 @@ import_fbamodel_params is a reference to a hash where the following keys are def
 genome_id is a string
 workspace_id is a string
 fbamodel_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -2824,8 +2860,9 @@ sub import_fbamodel
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'import_fbamodel',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -2918,8 +2955,9 @@ sub export_fbamodel
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'export_fbamodel',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -3010,8 +3048,9 @@ sub export_object
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'export_object',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -3104,8 +3143,9 @@ sub export_genome
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'export_genome',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -3149,6 +3189,7 @@ fbamodel_id is a string
 workspace_id is a string
 reaction_id is a string
 compartment_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -3191,6 +3232,7 @@ fbamodel_id is a string
 workspace_id is a string
 reaction_id is a string
 compartment_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -3250,8 +3292,9 @@ sub adjust_model_reaction
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'adjust_model_reaction',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -3294,6 +3337,7 @@ workspace_id is a string
 biomass_id is a string
 compound_id is a string
 compartment_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -3335,6 +3379,7 @@ workspace_id is a string
 biomass_id is a string
 compound_id is a string
 compartment_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -3394,8 +3439,9 @@ sub adjust_biomass_reaction
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'adjust_biomass_reaction',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -3438,6 +3484,7 @@ addmedia_params is a reference to a hash where the following keys are defined:
 	auth has a value which is a string
 media_id is a string
 workspace_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -3479,6 +3526,7 @@ addmedia_params is a reference to a hash where the following keys are defined:
 	auth has a value which is a string
 media_id is a string
 workspace_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -3538,8 +3586,9 @@ sub addmedia
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'addmedia',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -3632,8 +3681,9 @@ sub export_media
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'export_media',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -3702,6 +3752,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -3786,6 +3837,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -3862,8 +3914,9 @@ sub runfba
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'runfba',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -3956,8 +4009,9 @@ sub export_fba
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'export_fba',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -4008,6 +4062,7 @@ Phenotype is a reference to a list containing 6 items:
 feature_id is a string
 media_id is a string
 compound_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -4057,6 +4112,7 @@ Phenotype is a reference to a list containing 6 items:
 feature_id is a string
 media_id is a string
 compound_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -4116,8 +4172,9 @@ sub import_phenotypes
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'import_phenotypes',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -4186,6 +4243,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -4270,6 +4328,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -4346,8 +4405,9 @@ sub simulate_phenotypes
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'simulate_phenotypes',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -4389,6 +4449,7 @@ add_media_transporters_params is a reference to a hash where the following keys 
 phenotype_set_id is a string
 workspace_id is a string
 fbamodel_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -4429,6 +4490,7 @@ add_media_transporters_params is a reference to a hash where the following keys 
 phenotype_set_id is a string
 workspace_id is a string
 fbamodel_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -4488,8 +4550,9 @@ sub add_media_transporters
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'add_media_transporters',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -4582,8 +4645,9 @@ sub export_phenotypeSimulationSet
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'export_phenotypeSimulationSet',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -4624,6 +4688,7 @@ fbamodel_id is a string
 workspace_id is a string
 gapfillsolution_id is a string
 gapgensolution_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -4663,6 +4728,7 @@ fbamodel_id is a string
 workspace_id is a string
 gapfillsolution_id is a string
 gapgensolution_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -4722,8 +4788,9 @@ sub integrate_reconciliation_solutions
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'integrate_reconciliation_solutions',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -4792,6 +4859,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -4871,6 +4939,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -4942,8 +5011,9 @@ sub queue_runfba
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'queue_runfba',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -4978,7 +5048,6 @@ gapfill_model_params is a reference to a hash where the following keys are defin
 	phenotypeSet has a value which is a phenotype_set_id
 	phenotypeSet_workspace has a value which is a workspace_id
 	integrate_solution has a value which is a bool
-	sensitivity_analysis has a value which is a bool
 	target_reactions has a value which is a reference to a list where each element is a string
 	out_model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
@@ -5037,6 +5106,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -5085,7 +5155,6 @@ gapfill_model_params is a reference to a hash where the following keys are defin
 	phenotypeSet has a value which is a phenotype_set_id
 	phenotypeSet_workspace has a value which is a workspace_id
 	integrate_solution has a value which is a bool
-	sensitivity_analysis has a value which is a bool
 	target_reactions has a value which is a reference to a list where each element is a string
 	out_model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
@@ -5144,6 +5213,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -5218,8 +5288,9 @@ sub queue_gapfill_model
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'queue_gapfill_model',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -5297,6 +5368,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -5386,6 +5458,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -5458,8 +5531,9 @@ sub queue_gapgen_model
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'queue_gapgen_model',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -5530,6 +5604,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -5646,6 +5721,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -5752,8 +5828,9 @@ sub queue_wildtype_phenotype_reconciliation
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'queue_wildtype_phenotype_reconciliation',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -5824,6 +5901,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -5940,6 +6018,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -6046,8 +6125,9 @@ sub queue_reconciliation_sensitivity_analysis
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'queue_reconciliation_sensitivity_analysis',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -6116,6 +6196,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -6230,6 +6311,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -6336,8 +6418,9 @@ sub queue_combine_wildtype_phenotype_reconciliation
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'queue_combine_wildtype_phenotype_reconciliation',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -6446,8 +6529,9 @@ sub jobs_done
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'jobs_done',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -6556,8 +6640,9 @@ sub run_job
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'run_job',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -6595,6 +6680,7 @@ set_cofactors_params is a reference to a hash where the following keys are defin
 compound_id is a string
 biochemistry_id is a string
 workspace_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -6631,6 +6717,7 @@ set_cofactors_params is a reference to a hash where the following keys are defin
 compound_id is a string
 biochemistry_id is a string
 workspace_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -6690,8 +6777,9 @@ sub set_cofactors
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'set_cofactors',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -6729,6 +6817,7 @@ find_reaction_synonyms_params is a reference to a hash where the following keys 
 reaction_synonyms_id is a string
 workspace_id is a string
 biochemistry_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -6765,6 +6854,7 @@ find_reaction_synonyms_params is a reference to a hash where the following keys 
 reaction_synonyms_id is a string
 workspace_id is a string
 biochemistry_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -6824,8 +6914,9 @@ sub find_reaction_synonyms
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'find_reaction_synonyms',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -6950,8 +7041,9 @@ sub role_to_reactions
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'role_to_reactions',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -6987,11 +7079,11 @@ reaction_sensitivity_analysis_params is a reference to a hash where the followin
 	reactions_to_delete has a value which is a reference to a list where each element is a reaction_id
 	type has a value which is a string
 	delete_noncontributing_reactions has a value which is a bool
-	integrate_deletions_in_model has a value which is a bool
 	auth has a value which is a string
 fbamodel_id is a string
 workspace_id is a string
 reaction_id is a string
+bool is an int
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
 	type has a value which is a string
@@ -7021,11 +7113,11 @@ reaction_sensitivity_analysis_params is a reference to a hash where the followin
 	reactions_to_delete has a value which is a reference to a list where each element is a reaction_id
 	type has a value which is a string
 	delete_noncontributing_reactions has a value which is a bool
-	integrate_deletions_in_model has a value which is a bool
 	auth has a value which is a string
 fbamodel_id is a string
 workspace_id is a string
 reaction_id is a string
+bool is an int
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
 	type has a value which is a string
@@ -7044,7 +7136,7 @@ job_id is a string
 
 =item Description
 
-Queues a sensitivit analysis on the knockout of model reactions
+Queues a sensitivity analysis on the knockout of model reactions
 
 =back
 
@@ -7080,8 +7172,9 @@ sub reaction_sensitivity_analysis
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'reaction_sensitivity_analysis',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -7090,6 +7183,143 @@ sub reaction_sensitivity_analysis
         Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method reaction_sensitivity_analysis",
 					    status_line => $self->{client}->status_line,
 					    method_name => 'reaction_sensitivity_analysis',
+				       );
+    }
+}
+
+
+
+=head2 filter_iterative_solutions
+
+  $output = $obj->filter_iterative_solutions($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a filter_iterative_solutions_params
+$output is an object_metadata
+filter_iterative_solutions_params is a reference to a hash where the following keys are defined:
+	model has a value which is a fbamodel_id
+	outmodel has a value which is a fbamodel_id
+	cutoff has a value which is a float
+	gapfillsln has a value which is a gapfillsolution_id
+	workspace has a value which is a workspace_id
+	input_model_ws has a value which is a workspace_id
+	auth has a value which is a string
+fbamodel_id is a string
+gapfillsolution_id is a string
+workspace_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a filter_iterative_solutions_params
+$output is an object_metadata
+filter_iterative_solutions_params is a reference to a hash where the following keys are defined:
+	model has a value which is a fbamodel_id
+	outmodel has a value which is a fbamodel_id
+	cutoff has a value which is a float
+	gapfillsln has a value which is a gapfillsolution_id
+	workspace has a value which is a workspace_id
+	input_model_ws has a value which is a workspace_id
+	auth has a value which is a string
+fbamodel_id is a string
+gapfillsolution_id is a string
+workspace_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+=item Description
+
+Apply a cutoff to remove high-cost iterations from an iterative gapfill run.
+
+=back
+
+=cut
+
+sub filter_iterative_solutions
+{
+    my($self, @args) = @_;
+
+# Authentication: none
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function filter_iterative_solutions (received $n, expecting 1)");
+    }
+    {
+	my($input) = @args;
+
+	my @_bad_arguments;
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to filter_iterative_solutions:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'filter_iterative_solutions');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.filter_iterative_solutions",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{error}->{code},
+					       method_name => 'filter_iterative_solutions',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method filter_iterative_solutions",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'filter_iterative_solutions',
 				       );
     }
 }
@@ -7176,7 +7406,7 @@ workspace_ref is a string
 
 =item Description
 
-Queues a sensitivit analysis on the knockout of model reactions
+Deleted flagged reactions from a RxnSensitivity object
 
 =back
 
@@ -7212,8 +7442,9 @@ sub delete_noncontributing_reactions
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'delete_noncontributing_reactions',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -7346,8 +7577,9 @@ sub fasta_to_ProteinSet
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'fasta_to_ProteinSet',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -7480,8 +7712,9 @@ sub ProteinSet_to_Genome
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'ProteinSet_to_Genome',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -7614,8 +7847,9 @@ sub fasta_to_TranscriptSet
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'fasta_to_TranscriptSet',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -7749,8 +7983,9 @@ sub TranscriptSet_to_Genome
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'TranscriptSet_to_Genome',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -7883,8 +8118,9 @@ sub fasta_to_ContigSet
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'fasta_to_ContigSet',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -8017,8 +8253,9 @@ sub ContigSet_to_Genome
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'ContigSet_to_Genome',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -8059,6 +8296,7 @@ AnnotationPipelineStage is a reference to a hash where the following keys are de
 	enable has a value which is a bool
 	parameters has a value which is a reference to a hash where the key is a string and the value is a string
 stage_id is a string
+bool is an int
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
 	type has a value which is a string
@@ -8093,6 +8331,7 @@ AnnotationPipelineStage is a reference to a hash where the following keys are de
 	enable has a value which is a bool
 	parameters has a value which is a reference to a hash where the key is a string and the value is a string
 stage_id is a string
+bool is an int
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
 	type has a value which is a string
@@ -8147,8 +8386,9 @@ sub annotate_workspace_Genome
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'annotate_workspace_Genome',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -8281,8 +8521,9 @@ sub probanno_to_genome
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'probanno_to_genome',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -8349,6 +8590,7 @@ ComplexRole is a reference to a list containing 4 items:
 	1: (roleType) a string
 	2: (optional_role) a bool
 	3: (triggering) a bool
+bool is an int
 
 </pre>
 
@@ -8397,6 +8639,7 @@ ComplexRole is a reference to a list containing 4 items:
 	1: (roleType) a string
 	2: (optional_role) a bool
 	3: (triggering) a bool
+bool is an int
 
 
 =end text
@@ -8439,8 +8682,9 @@ sub get_mapping
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'get_mapping',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -8481,6 +8725,7 @@ adjust_mapping_role_params is a reference to a hash where the following keys are
 	auth has a value which is a string
 mapping_id is a string
 workspace_id is a string
+bool is an int
 FunctionalRole is a reference to a hash where the following keys are defined:
 	id has a value which is a role_id
 	name has a value which is a string
@@ -8511,6 +8756,7 @@ adjust_mapping_role_params is a reference to a hash where the following keys are
 	auth has a value which is a string
 mapping_id is a string
 workspace_id is a string
+bool is an int
 FunctionalRole is a reference to a hash where the following keys are defined:
 	id has a value which is a role_id
 	name has a value which is a string
@@ -8561,8 +8807,9 @@ sub adjust_mapping_role
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'adjust_mapping_role',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -8602,6 +8849,7 @@ adjust_mapping_complex_params is a reference to a hash where the following keys 
 	auth has a value which is a string
 mapping_id is a string
 workspace_id is a string
+bool is an int
 Complex is a reference to a hash where the following keys are defined:
 	id has a value which is a complex_id
 	name has a value which is a string
@@ -8635,6 +8883,7 @@ adjust_mapping_complex_params is a reference to a hash where the following keys 
 	auth has a value which is a string
 mapping_id is a string
 workspace_id is a string
+bool is an int
 Complex is a reference to a hash where the following keys are defined:
 	id has a value which is a complex_id
 	name has a value which is a string
@@ -8689,8 +8938,9 @@ sub adjust_mapping_complex
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'adjust_mapping_complex',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -8733,6 +8983,7 @@ adjust_mapping_subsystem_params is a reference to a hash where the following key
 	auth has a value which is a string
 mapping_id is a string
 workspace_id is a string
+bool is an int
 Subsystem is a reference to a hash where the following keys are defined:
 	id has a value which is a subsystem_id
 	name has a value which is a string
@@ -8767,6 +9018,7 @@ adjust_mapping_subsystem_params is a reference to a hash where the following key
 	auth has a value which is a string
 mapping_id is a string
 workspace_id is a string
+bool is an int
 Subsystem is a reference to a hash where the following keys are defined:
 	id has a value which is a subsystem_id
 	name has a value which is a string
@@ -8819,8 +9071,9 @@ sub adjust_mapping_subsystem
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'adjust_mapping_subsystem',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -9005,8 +9258,9 @@ sub get_template_model
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'get_template_model',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -9074,6 +9328,7 @@ import_template_fbamodel_params is a reference to a hash where the following key
 mapping_id is a string
 workspace_id is a string
 template_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -9140,6 +9395,7 @@ import_template_fbamodel_params is a reference to a hash where the following key
 mapping_id is a string
 workspace_id is a string
 template_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -9199,8 +9455,9 @@ sub import_template_fbamodel
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'import_template_fbamodel',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -9243,6 +9500,7 @@ adjust_template_reaction_params is a reference to a hash where the following key
 	auth has a value which is a string
 template_id is a string
 workspace_id is a string
+bool is an int
 compartment_id is a string
 complex_id is a string
 TemplateReaction is a reference to a hash where the following keys are defined:
@@ -9278,6 +9536,7 @@ adjust_template_reaction_params is a reference to a hash where the following key
 	auth has a value which is a string
 template_id is a string
 workspace_id is a string
+bool is an int
 compartment_id is a string
 complex_id is a string
 TemplateReaction is a reference to a hash where the following keys are defined:
@@ -9331,8 +9590,9 @@ sub adjust_template_reaction
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'adjust_template_reaction',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -9396,6 +9656,7 @@ adjust_template_biomass_params is a reference to a hash where the following keys
 	auth has a value which is a string
 template_id is a string
 workspace_id is a string
+bool is an int
 compound_id is a string
 compartment_id is a string
 TemplateBiomass is a reference to a hash where the following keys are defined:
@@ -9468,6 +9729,7 @@ adjust_template_biomass_params is a reference to a hash where the following keys
 	auth has a value which is a string
 template_id is a string
 workspace_id is a string
+bool is an int
 compound_id is a string
 compartment_id is a string
 TemplateBiomass is a reference to a hash where the following keys are defined:
@@ -9537,8 +9799,9 @@ sub adjust_template_biomass
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'adjust_template_biomass',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -9675,8 +9938,9 @@ sub add_stimuli
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'add_stimuli',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -9725,6 +9989,7 @@ import_regulatory_model_params is a reference to a hash where the following keys
 
 	auth has a value which is a string
 workspace_id is a string
+bool is an int
 kbase_id is a string
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
@@ -9773,6 +10038,7 @@ import_regulatory_model_params is a reference to a hash where the following keys
 
 	auth has a value which is a string
 workspace_id is a string
+bool is an int
 kbase_id is a string
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
@@ -9833,8 +10099,9 @@ sub import_regulatory_model
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'import_regulatory_model',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -9895,6 +10162,7 @@ ModelCompareReaction is a reference to a hash where the following keys are defin
 	number_models has a value which is an int
 	fraction_models has a value which is a float
 reaction_id is a string
+bool is an int
 feature_id is a string
 
 </pre>
@@ -9938,6 +10206,7 @@ ModelCompareReaction is a reference to a hash where the following keys are defin
 	number_models has a value which is an int
 	fraction_models has a value which is a float
 reaction_id is a string
+bool is an int
 feature_id is a string
 
 
@@ -9981,8 +10250,9 @@ sub compare_models
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'compare_models',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -10037,6 +10307,7 @@ GenomeCompareFunction is a reference to a hash where the following keys are defi
 	subclass has a value which is a string
 	number_genomes has a value which is an int
 	fraction_genomes has a value which is a float
+bool is an int
 feature_id is a string
 
 </pre>
@@ -10074,6 +10345,7 @@ GenomeCompareFunction is a reference to a hash where the following keys are defi
 	subclass has a value which is a string
 	number_genomes has a value which is an int
 	fraction_genomes has a value which is a float
+bool is an int
 feature_id is a string
 
 
@@ -10117,8 +10389,9 @@ sub compare_genomes
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'compare_genomes',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -10265,8 +10538,9 @@ sub import_metagenome_annotation
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'import_metagenome_annotation',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -10413,8 +10687,9 @@ sub models_to_community_model
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'models_to_community_model',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -10559,8 +10834,9 @@ sub metagenome_to_fbamodels
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{code},
+					       code => $result->content->{error}->{code},
 					       method_name => 'metagenome_to_fbamodels',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
@@ -10632,7 +10908,7 @@ sub _validate_version {
 
 
 
-=head2 mdlrxn_kbid
+=head2 bool
 
 =over 4
 
@@ -10643,6 +10919,37 @@ sub _validate_version {
 ********************************************************************************
     Universal simple type definitions
    	********************************************************************************
+
+
+=item Definition
+
+=begin html
+
+<pre>
+an int
+</pre>
+
+=end html
+
+=begin text
+
+an int
+
+=end text
+
+=back
+
+
+
+=head2 mdlrxn_kbid
+
+=over 4
+
+
+
+=item Description
+
+KBase ID for a model reaction
 
 
 =item Definition
@@ -17009,7 +17316,6 @@ Input parameters for the "queue_gapfill_model" function.
         phenotype_set_id phenotypeSet - ID of a phenotype set against which gapfilled model should be simulated (an optional argument: default is 'undef')
         workspace_id phenotypeSet_workspace - workspace containing phenotype set to be simulated (an optional argument; default is the value of the workspace argument)
         bool integrate_solution - a flag indicating if the first solution should be integrated in the model (an optional argument: default is '0')
-        bool sensitivity_analysis - a flag indicating if the sensitivity analysis on gapfilling solution
         list<string> target_reactions - a list of reactions to activate with gapfilling
         fbamodel_id out_model - ID where the gapfilled model will be saved (an optional argument: default is 'undef')
         gapfill_id gapFill - ID to which gapfill solution will be saved (an optional argument: default is 'undef')
@@ -17032,7 +17338,6 @@ formulation has a value which is a GapfillingFormulation
 phenotypeSet has a value which is a phenotype_set_id
 phenotypeSet_workspace has a value which is a workspace_id
 integrate_solution has a value which is a bool
-sensitivity_analysis has a value which is a bool
 target_reactions has a value which is a reference to a list where each element is a string
 out_model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
@@ -17056,7 +17361,6 @@ formulation has a value which is a GapfillingFormulation
 phenotypeSet has a value which is a phenotype_set_id
 phenotypeSet_workspace has a value which is a workspace_id
 integrate_solution has a value which is a bool
-sensitivity_analysis has a value which is a bool
 target_reactions has a value which is a reference to a list where each element is a string
 out_model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
@@ -17602,7 +17906,7 @@ auth has a value which is a string
 =item Description
 
 ********************************************************************************
-	Code relating to import and analysis of ProteinSets
+	Code relating to assessing model sensitivity to reaction knockouts
    	********************************************************************************
 
 
@@ -17712,8 +18016,7 @@ Input parameters for the "reaction_sensitivity_analysis" function.
         workspace_id workspace - ID of workspace where output and default inputs will be selected from (a required argument)
         list<reaction_id> reactions_to_delete - list of reactions to delete in sensitiviity analysis; note, order of the reactions matters (a required argument)
         string type - type of KO sensitivity analysis (an optional argument - default is "unknown")
-        bool delete_noncontributing_reactions - a boolean indicating if unuseful reactions should be deleted (an optional argument - default is "0")
-        bool integrate_deletions_in_model - a boolean indicating if deletion of noncontributing reactions should be integrated in the model (an optional argument - default is "0")
+        bool delete_noncontributing_reactions - a boolean indicating if unuseful reactions should be deleted when running the analysis (an optional argument - default is "0")
         string auth  - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument)
 
 
@@ -17730,7 +18033,6 @@ workspace has a value which is a workspace_id
 reactions_to_delete has a value which is a reference to a list where each element is a reaction_id
 type has a value which is a string
 delete_noncontributing_reactions has a value which is a bool
-integrate_deletions_in_model has a value which is a bool
 auth has a value which is a string
 
 </pre>
@@ -17747,7 +18049,60 @@ workspace has a value which is a workspace_id
 reactions_to_delete has a value which is a reference to a list where each element is a reaction_id
 type has a value which is a string
 delete_noncontributing_reactions has a value which is a bool
-integrate_deletions_in_model has a value which is a bool
+auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 filter_iterative_solutions_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "filter_iterative_solutions" function.
+fbamodel_id model - Model ID for which to filter iterative gapfill solutions (a required argument)
+fbamodel_id outmodel - ModelID to which to save the filtered results (by default the filtered model is given the same ID as the input model)
+float cutoff - Cutoff for cost per reaction above which to remove iterative gapfill solution reactions (a required argument)
+gapfillsolution_id gapfillsln - Gapfill_solution ID (UUID.solution.#) containing the iterative gapfill solutions to filter (a required argument)
+string auth - The authorization token of the KBase account with workspace permissions.
+workspace_id workspace - ID of workspace where output and default inputs will be selected from (a required argument)
+workspace_id input_model_ws - ID of workspace containing the input model
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+model has a value which is a fbamodel_id
+outmodel has a value which is a fbamodel_id
+cutoff has a value which is a float
+gapfillsln has a value which is a gapfillsolution_id
+workspace has a value which is a workspace_id
+input_model_ws has a value which is a workspace_id
+auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+model has a value which is a fbamodel_id
+outmodel has a value which is a fbamodel_id
+cutoff has a value which is a float
+gapfillsln has a value which is a gapfillsolution_id
+workspace has a value which is a workspace_id
+input_model_ws has a value which is a workspace_id
 auth has a value which is a string
 
 
@@ -17766,16 +18121,12 @@ auth has a value which is a string
 =item Description
 
 Input parameters for the "delete_noncontributing_reactions" function.
-
-        fbamodel_id model - ID of model to be analyzed (a required argument)
-        workspace_id model_ws - ID of workspace with model to be analyzed (an optional argument - default is value of workspace argument)
-        string kosensitivity_uid - Name of KOSensitivity object in workspace (an optional argument - default is KBase ID)
-        workspace_id workspace - ID of workspace where output and default inputs will be selected from (a required argument)
-        list<reaction_id> reactions_to_delete - list of reactions to delete in sensitiviity analysis; note, order of the reactions matters (a required argument)
-        string type - type of KO sensitivity analysis (an optional argument - default is "unknown")
-        bool delete_noncontributing_reactions - a boolean indicating if unuseful reactions should be deleted (an optional argument - default is "0")
-        bool integrate_deletions_in_model - a boolean indicating if deletion of noncontributing reactions should be integrated in the model (an optional argument - default is "0")
-        string auth  - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument)
+workspace_id workspae - Workspace for outputs and default inputs (a required argument)
+workspace_id rxn_sensitivity_ws - Workspace for reaction sensitivity object used as input
+string rxn_sensitivity - Reaction sensitivity ID
+fbamodel_id new_model_uid - ID for output model with noncontributing reactions deleted
+string new_rxn_sensitivity_uid - ID for rxnsensitivity object with bits set to indicate reactions were deleted
+string auth - Authorization token for user (must have appropriate permissions to read and write objects)
 
 
 =item Definition
