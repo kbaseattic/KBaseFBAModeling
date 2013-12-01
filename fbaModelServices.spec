@@ -51,7 +51,7 @@ module fbaModelServices {
     Universal simple type definitions
    	*********************************************************************************/
     /* indicates true or false values, false <= 0, true >=1 */
-    /*typedef int bool;*/
+    typedef int bool;
     
     /* KBase ID for a model reaction  */
     typedef string mdlrxn_kbid;
