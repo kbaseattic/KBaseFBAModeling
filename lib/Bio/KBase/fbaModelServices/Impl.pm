@@ -11671,7 +11671,7 @@ sub filter_iterative_solutions
 	my $slnrxnarray = $self->_parse_problem_report_solution($solution);
 	my $numrxns = @{$slnrxnarray};
 	my $norm = $obj/$numrxns;
-	if ( $norm > $input->{cutoff} ) {
+	if ( $norm < $input->{cutoff} ) {
 	    for (my $j=0; $j<@{$slnrxnarray}; $j++) {
 		my $rxnid = $slnrxnarray->[$j]->[0];
 		my $dir = $slnrxnarray->[$j]->[1];
@@ -11692,7 +11692,7 @@ sub filter_iterative_solutions
 	my $modelrxn = $model->searchForReaction($key);
 	if ( ! defined($modelrxn) ) {
 	    # This could happen because of previous filtering (e.g. a normal reaction_sensitivity_analysis)
-	    print STDERR "WARNING: Reaction $key flagged for deletion but not found in model";
+#	    print STDERR "WARNING: Reaction $key flagged for deletion but not found in model";
 	    next;
 	}
 	if ( $deleteDirections->{$key} eq "=" ) {
@@ -11707,7 +11707,7 @@ sub filter_iterative_solutions
 	    if ( $modelrxndir eq $deleteDirections->{$key} ) {
 		# If YES, delete the reaction.
 		$model->manualReactionAdjustment( { reaction => $key,
-						    removeReaction => 1 } )
+						    removeReaction => 1 } );
 	    } elsif ( $modelrxndir eq "=" ) {
 		# If the model reaction is reversible we assume this means
 		# that gapfilling changed the reversibility of that reaction.
