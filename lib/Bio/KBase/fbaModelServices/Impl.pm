@@ -1567,7 +1567,7 @@ sub _parse_gapfillsolution_id{
 # Get a MS::GapfillSolution object from a model given its ID
 sub _get_gapfill_solution{
     my ($self, $solution_id, $model) = @_;
-    my $parsedsolution = $self->_parse_solution_id($solution_id);
+    my $parsedsolution = $self->_parse_gapfillsolution_id($solution_id);
     my $gfid = $parsedsolution->[0];
     my $solid = $parsedsolution->[1];
     my $gapfill = $self->_get_msobject("GapFill", "NO_WORKSPACE", $gfid);
@@ -1622,9 +1622,11 @@ sub _get_gapfill_solution_reactions {
 
     # Get the desired list of reactions.
     my $rxnids = [];
+    my $directions = [];
     my $seenrxns = {};
     for ( my $i=0; $i < @{$solutionReactions}; $i++ ) {
 	my $id = $solutionReactions->[$i]->reaction()->id;
+	my $modelDirection = $solutionReactions->[$i]->direction;
 	# Is this reaction in the original model?
 	if ( ! defined($model_rxnids->{$id} ) ) {
 	    next;
@@ -1638,6 +1640,15 @@ sub _get_gapfill_solution_reactions {
 	if ( defined($seenrxns->{$id}) ) {
 	    next;
 	}
+	my ($dirstring);
+	if ( $modelDirection eq ">" ) {
+	    $dirstring = "+";
+	} elsif ( $modelDirection eq "<" ) {
+	    $dirstring = "-";
+	} else {
+	    self->_error("ERROR: Direction for gapfill solution reaction was not < or > (this should never happen)", "_get_gapfill_solution_reactions");
+	}
+	$id = $dirstring.$id;
 	$seenrxns->{$id} = 1;
 	push(@{$rxnids}, $id);
     }
@@ -1654,16 +1665,13 @@ Definition:
     Array_ref = _sort_gapfill_solution_reactions(Array_ref, RxnProbs_id, RxnProbs_ws)
 
 Description:
-    (Stably) sort the reaction list by probability.
-
-Example:
-
-    Array_ref = _get_gapfill_solution_reactions(GAPFILL_REF.solution.0)
+    (Stably) sort the reaction list by probability. Sort directions the same way.
+    Returns the sorted list of reactions
 
 =cut
 
 sub _sort_gapfill_solution_reactions {
-    my ($self, $rxnlist, $rxnprobs_id, $rxnprobs_workspace) = @_;
+    my ($self, $rxnlist, $directions, $rxnprobs_id, $rxnprobs_workspace) = @_;
     my $rxnprobdict = {};
     # Build up the rxnprobs dictionary...
     my $RxnProbs = $self->_get_msobject("RxnProbs", $rxnprobs_workspace, $rxnprobs_id);
@@ -1674,7 +1682,7 @@ sub _sort_gapfill_solution_reactions {
 	$rxnprobdict->{$rxnid} = $likelihood;
     }
 
-    # Build an array of (reaction, likelihood) pairs
+    # Build an array of (reaction, likelihood, direction) sets
     my $unsorted = [];
     for(my $i=0; $i<@{$rxnlist}; $i++) {
 	my $singlearray = [];
@@ -1686,9 +1694,9 @@ sub _sort_gapfill_solution_reactions {
 	push(@$unsorted, [ @$singlearray ]);
     }
 
-    # Do the sort
     my $sorted = [];
-    @$sorted = map  { $_->[0] } sort { $a->[1] cmp $b->[1] } @$unsorted;
+    @$sorted = map { $_->[0] } sort { $a->[1] cmp $b->[1] } @$unsorted;
+
     return $sorted;
 }
 
@@ -11409,11 +11417,26 @@ sub reaction_sensitivity_analysis
 		my $msg = "Must specify either reactions_to_delete or a gapfill solution ID (if both are specified the gapfill solution is attemtped first)";
 		$self->_error($msg, "reaction_sensitivity_analysis");
     }
+    # If the user does not specify a sign we add both directions to the list of things to delete.
+    my $processedReactions = [];
+    if ( defined($input->{reactions_to_delete}) ) {
+	for ( my $i=0; $i<@{$input->{reactions_to_delete}}; $i++) { 
+	    my $rxn = $input->{reactions_to_delete}->[$i];
+	    if ( $rxn =~ /^[+-]/ ) {
+		push(@$processedReactions, $rxn);
+	    } else {
+		push(@$processedReactions, "+".$rxn);
+		push(@$processedReactions, "-".$rxn);
+	    }
+	}
+    }
+    $input->{reactions_to_delete} = $processedReactions;
 	if (!defined($input->{fba_ref})) {
 	    # If gapfill solution is defined we need to get the reactions associated with it.
 	    # We only try to get reactions that are acutally in the model.
 	    my $model = $self->_get_msobject("Model",$input->{model_ws},$input->{model});
 	    if ( defined($input->{gapfill_solution_id}) ) {
+		        # Note - this automatically changes the names to '+-' stuff
 			my $rxnlist = $self->_get_gapfill_solution_reactions($input->{gapfill_solution_id}, $model);
 			if ( @{$rxnlist} == 0 ) {
 			    my $msg = "No reactions in the specified gapfill solution were found in the model (did you integrate the gapfill solution first?)";
@@ -11436,7 +11459,7 @@ sub reaction_sensitivity_analysis
 		$fba->fva(1);
 		push(@{$fba->outputfiles()},"FBAExperimentOutput.txt");
 		$fba->parameters()->{"deletion experiments"} = "";
-		for (my $i=0; $i < @{$input->{reactions_to_delete}}; $i ++) {
+		for (my $i=0; $i < @{$input->{reactions_to_delete}}; $i++) {
 			if (length($fba->parameters()->{"deletion experiments"}) > 0) {
 				$fba->parameters()->{"deletion experiments"} .= ";";
 			}
@@ -11483,12 +11506,20 @@ sub reaction_sensitivity_analysis
 		my $inactiveRxns = {};
 		for (my $i=1; $i < @{$array}; $i++) {
 			my $row = [split(/\t/,$array->[$i])];
+			my ($direction, $rxnid);
+			($rxnid = $row->[0]) =~ s/[+-]//;
+			if ( $row->[0] =~ /^\+/ ) {
+			    $direction = ">";
+			} elsif ( $row->[0] =~ /^-/ ) {
+			    $direction = "<";
+			}
 			my $sensrxn = {
 				kbid => $object->{kbid}.".rxn.".($i-1),
-				reaction => $row->[0],
+				reaction => $rxnid,
 				growth_fraction => $row->[5],
 				"delete" => 0,
 				deleted => 0,
+				direction => $direction,
 				biomass_compounds => [],
 				new_inactive_rxns => [],
 				new_essentials => [split(/;/,$row->[8])]
@@ -11496,10 +11527,10 @@ sub reaction_sensitivity_analysis
 			if ($row->[7] eq "DELETED") {
 				$sensrxn->{"delete"} = 1;
 			} else {
-			    # Eliminate reactions that were tested for deletion from the list of inactive reactions
 			    my $inactive_rxns = [split(/;/,$row->[7])];
 			    my $ok_rxns = [];
 			    for ( my $k=0; $k < @{$inactive_rxns}; $k++ ) {
+				# Eliminate reactions that were tested for deletion from the list of inactive reactions
 					if ( ! defined( $deletehash->{$inactive_rxns->[$k]} ) ) {
 					    $inactiveRxns->{$inactive_rxns->[$k]}->{required}->{$row->[0]} = 1;
 					    push(@{$ok_rxns}, $inactive_rxns->[$k]);
@@ -11863,7 +11894,24 @@ sub delete_noncontributing_reactions
 		if ($rxnsens->{reactions}->[$i]->{"delete"} eq "1") {
 			my $rxn = $model->searchForReaction($rxnsens->{reactions}->[$i]->{reaction});
 			if (defined($rxn)) {
+			    if ($rxn->direction eq $rxnsens->{reactions}->[$i]->direction) {
 				$model->remove("modelreactions",$rxn);
+			    } else {
+				# Change from a reversible reaction to an irreversible one
+				# (if model has < and rxnsensitivity had > or vice versa we just ignore it, maybe it was just already deleted somewhere else)
+				if ( $rxn->direction eq "=" ) {
+				    # This should never happen but just in case
+				    if ( $rxnsens->{reactions}->[$i]->direction eq "=" ) {
+					$model->remove("modelreactions", $rxn);
+				    } elsif ( $rxnsens->{reactions}->[$i]->direction eq ">" ) {
+					$model->manualReactionAdjustment( { reaction => $rxnsens->{reactions}->[$i]->{reaction},
+									    direction => "<" } );
+				    } elsif ( $rxnsens->{reactions}->[$i]->direction eq "<" ) {
+					$model->manualReactionAdjustment( { reaction => $rxnsens->{reactions}->[$i]->{reaction},
+									    direction => ">" } );
+				    }
+				}
+			    }
 			}
 			$rxnsens->{reactions}->[$i]->{"deleted"} = 1;
 		}

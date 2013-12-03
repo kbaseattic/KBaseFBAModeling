@@ -36,8 +36,8 @@ DESCRIPTION
       and identifies a) the growth rate upon removing the reaction and b) any reactions in the network that are inactivated when a given
       reaction is removed. There are two different inputs you can provide to this function:
 
-      1: You can provide a list of reactions (optionally with direction - by default both directions are tested) using --rxnstotest. Reactions
-         will be tested in the order in which they appear.
+      1: You can provide a list of reactions (optionally with direction specified by + or -. By default both directions are tested)  Reactions
+         will be tested in the order in which they appear. To do this use --rxnstotest.
 
       --rxnstotest '+rxn00001;-rxn00002'
 
