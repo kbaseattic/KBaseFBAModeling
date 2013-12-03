@@ -1665,7 +1665,7 @@ Definition:
     Array_ref = _sort_gapfill_solution_reactions(Array_ref, RxnProbs_id, RxnProbs_ws)
 
 Description:
-    (Stably) sort the reaction list by probability. Sort directions the same way.
+    (Stably) sort the reaction list by probability.
     Returns the sorted list of reactions
 
 =cut
@@ -1682,7 +1682,7 @@ sub _sort_gapfill_solution_reactions {
 	$rxnprobdict->{$rxnid} = $likelihood;
     }
 
-    # Build an array of (reaction, likelihood, direction) sets
+    # Build an array of (reaction, likelihood) sets
     my $unsorted = [];
     for(my $i=0; $i<@{$rxnlist}; $i++) {
 	my $singlearray = [];
