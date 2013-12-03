@@ -1671,7 +1671,7 @@ Description:
 =cut
 
 sub _sort_gapfill_solution_reactions {
-    my ($self, $rxnlist, $directions, $rxnprobs_id, $rxnprobs_workspace) = @_;
+    my ($self, $rxnlist, $rxnprobs_id, $rxnprobs_workspace) = @_;
     my $rxnprobdict = {};
     # Build up the rxnprobs dictionary...
     my $RxnProbs = $self->_get_msobject("RxnProbs", $rxnprobs_workspace, $rxnprobs_id);
