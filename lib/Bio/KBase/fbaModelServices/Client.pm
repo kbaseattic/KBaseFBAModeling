@@ -7077,13 +7077,18 @@ reaction_sensitivity_analysis_params is a reference to a hash where the followin
 	rxnsens_uid has a value which is a string
 	workspace has a value which is a workspace_id
 	reactions_to_delete has a value which is a reference to a list where each element is a reaction_id
-	type has a value which is a string
+	gapfill_solution_id has a value which is a gapfillsolution_id
 	delete_noncontributing_reactions has a value which is a bool
+	rxnprobs_id has a value which is a rxnprob_id
+	rxnprobs_ws has a value which is a workspace_id
+	type has a value which is a string
 	auth has a value which is a string
 fbamodel_id is a string
 workspace_id is a string
 reaction_id is a string
+gapfillsolution_id is a string
 bool is an int
+rxnprob_id is a string
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
 	type has a value which is a string
@@ -7111,13 +7116,18 @@ reaction_sensitivity_analysis_params is a reference to a hash where the followin
 	rxnsens_uid has a value which is a string
 	workspace has a value which is a workspace_id
 	reactions_to_delete has a value which is a reference to a list where each element is a reaction_id
-	type has a value which is a string
+	gapfill_solution_id has a value which is a gapfillsolution_id
 	delete_noncontributing_reactions has a value which is a bool
+	rxnprobs_id has a value which is a rxnprob_id
+	rxnprobs_ws has a value which is a workspace_id
+	type has a value which is a string
 	auth has a value which is a string
 fbamodel_id is a string
 workspace_id is a string
 reaction_id is a string
+gapfillsolution_id is a string
 bool is an int
+rxnprob_id is a string
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
 	type has a value which is a string
@@ -18000,6 +18010,37 @@ reactions has a value which is a reference to a list where each element is a Rea
 
 
 
+=head2 rxnprob_id
+
+=over 4
+
+
+
+=item Description
+
+ID for a RxnProbs T.O. (defined in the probabilistic annotation spec)
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
 =head2 reaction_sensitivity_analysis_params
 
 =over 4
@@ -18012,11 +18053,14 @@ Input parameters for the "reaction_sensitivity_analysis" function.
 
         fbamodel_id model - ID of model to be analyzed (a required argument)
         workspace_id model_ws - ID of workspace with model to be analyzed (an optional argument - default is value of workspace argument)
-        string kosensitivity_uid - Name of KOSensitivity object in workspace (an optional argument - default is KBase ID)
+        string rxnsens_uid - Name of RxnSensitivity object in workspace (an optional argument - default is KBase ID)
         workspace_id workspace - ID of workspace where output and default inputs will be selected from (a required argument)
-        list<reaction_id> reactions_to_delete - list of reactions to delete in sensitiviity analysis; note, order of the reactions matters (a required argument)
-        string type - type of KO sensitivity analysis (an optional argument - default is "unknown")
+        list<reaction_id> reactions_to_delete - list of reactions to delete in sensitiviity analysis; note, order of the reactions matters (a required argument unless gapfill solution ID is provided)                
+        gapfillsolution_id gapfill_solution_id - A Gapfill solution ID. If provided, all reactions in the provided solution will be tested for deletion.
         bool delete_noncontributing_reactions - a boolean indicating if unuseful reactions should be deleted when running the analysis (an optional argument - default is "0")
+        rxnprob_id rxnprobs_id - ID for a RxnProbs object in a workspace. If provided less likely reactions will be tested for deletion first in the sensitivity analysis (optional).
+        workspace_id rxnprobs_ws - Workspace in which the RxnProbs object is located (optional - default is the value of the workspace argument).
+        string type - type of Reaction sensitivity analysis (an optional argument - default is "unknown")
         string auth  - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument)
 
 
@@ -18031,8 +18075,11 @@ model_ws has a value which is a workspace_id
 rxnsens_uid has a value which is a string
 workspace has a value which is a workspace_id
 reactions_to_delete has a value which is a reference to a list where each element is a reaction_id
-type has a value which is a string
+gapfill_solution_id has a value which is a gapfillsolution_id
 delete_noncontributing_reactions has a value which is a bool
+rxnprobs_id has a value which is a rxnprob_id
+rxnprobs_ws has a value which is a workspace_id
+type has a value which is a string
 auth has a value which is a string
 
 </pre>
@@ -18047,8 +18094,11 @@ model_ws has a value which is a workspace_id
 rxnsens_uid has a value which is a string
 workspace has a value which is a workspace_id
 reactions_to_delete has a value which is a reference to a list where each element is a reaction_id
-type has a value which is a string
+gapfill_solution_id has a value which is a gapfillsolution_id
 delete_noncontributing_reactions has a value which is a bool
+rxnprobs_id has a value which is a rxnprob_id
+rxnprobs_ws has a value which is a workspace_id
+type has a value which is a string
 auth has a value which is a string
 
 

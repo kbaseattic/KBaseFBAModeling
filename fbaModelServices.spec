@@ -2288,17 +2288,23 @@ module fbaModelServices {
 		bool integrated_deletions_in_model;
 		list<ReactionSensitivityAnalysisReaction> reactions;
     } ReactionSensitivityAnalysis;
+
+    /* ID for a RxnProbs T.O. (defined in the probabilistic annotation spec) */
+    typedef string rxnprob_id;
+
 	/* Input parameters for the "reaction_sensitivity_analysis" function.
 	
 		fbamodel_id model - ID of model to be analyzed (a required argument)
 		workspace_id model_ws - ID of workspace with model to be analyzed (an optional argument - default is value of workspace argument)
-		string kosensitivity_uid - Name of KOSensitivity object in workspace (an optional argument - default is KBase ID)
+		string rxnsens_uid - Name of RxnSensitivity object in workspace (an optional argument - default is KBase ID)
 		workspace_id workspace - ID of workspace where output and default inputs will be selected from (a required argument)
-		list<reaction_id> reactions_to_delete - list of reactions to delete in sensitiviity analysis; note, order of the reactions matters (a required argument)
-		string type - type of KO sensitivity analysis (an optional argument - default is "unknown")
+		list<reaction_id> reactions_to_delete - list of reactions to delete in sensitiviity analysis; note, order of the reactions matters (a required argument unless gapfill solution ID is provided)		
+		gapfillsolution_id gapfill_solution_id - A Gapfill solution ID. If provided, all reactions in the provided solution will be tested for deletion.
 		bool delete_noncontributing_reactions - a boolean indicating if unuseful reactions should be deleted when running the analysis (an optional argument - default is "0")
+		rxnprob_id rxnprobs_id - ID for a RxnProbs object in a workspace. If provided less likely reactions will be tested for deletion first in the sensitivity analysis (optional).
+		workspace_id rxnprobs_ws - Workspace in which the RxnProbs object is located (optional - default is the value of the workspace argument).
+		string type - type of Reaction sensitivity analysis (an optional argument - default is "unknown")
 		string auth  - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument)
-
 	*/
     typedef structure {
 		fbamodel_id model;
@@ -2306,8 +2312,11 @@ module fbaModelServices {
 		string rxnsens_uid;
 		workspace_id workspace;
 		list<reaction_id> reactions_to_delete;
-		string type;
+		gapfillsolution_id gapfill_solution_id;
 		bool delete_noncontributing_reactions;
+		rxnprob_id rxnprobs_id;
+		workspace_id rxnprobs_ws;
+		string type;
 		string auth;
     } reaction_sensitivity_analysis_params;
     /*
