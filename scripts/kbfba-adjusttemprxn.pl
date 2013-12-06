@@ -22,7 +22,9 @@ my $translation = {
 	"new" => "new",
 	"delete" => "delete",
 	auth => "auth",
-	clearComplexes => "clearComplexes"
+	clearcomplexes => "clearComplexes",
+	complexestoadd => "complexesToAdd",
+	complexestoremove => "complexesToRemove"
 };
 #Defining usage and options
 my $specs = [
@@ -31,21 +33,17 @@ my $specs = [
     [ 'type=s', 'Type of template reaction' ],
     [ 'new', 'Create new biomass reaction' ],
     [ 'delete', 'Delete specified biomass reaction' ],
-    [ 'clearComplexes', 'Clear all complexes mapped to reaction' ],
-    [ 'complexesToAdd=s@', 'Complexes to add to reaction (; delimited)' ],
-    [ 'complexesToRemove=s@', 'Complexes to remove from reaction (; delimited)' ],
+    [ 'clearcomplexes', 'Clear all complexes mapped to reaction' ],
+    [ 'complexestoadd=s', 'Complexes to add to reaction (; delimited)' ],
+    [ 'complexestoremove=s', 'Complexes to remove from reaction (; delimited)' ],
     [ 'workspace|w=s', 'Workspace to save FBA results', { "default" => workspace() } ],
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
-if (defined($opt->{complexesToAdd})) {
-	foreach my $cpx (@{$opt->{complexesToAdd}}) {
-		push(@{$params->{complexesToAdd}},split(/;/,$cpx));
-	}
+if (defined($opt->{complexestoadd})) {
+	$params->{complexesToAdd} = [split(/;/,$opt->{complexestoadd})];
 }
-if (defined($opt->{complexesToRemove})) {
-	foreach my $cpx (@{$opt->{complexesToRemove}}) {
-		push(@{$params->{complexesToRemove}},split(/;/,$cpx));
-	}
+if (defined($opt->{complexestoremove})) {
+    $params->{complexesToRemove} = [split(/;/,$opt->{complexesToRemove})];
 }
 #Calling the server
 my $output = runFBACommand($params,$servercommand,$opt);

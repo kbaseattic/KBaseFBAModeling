@@ -14363,6 +14363,7 @@ sub adjust_template_biomass
     	lipid => $bio->lipid(),
     	compounds => $bio->compoundTuples()
     };
+    $self->_save_msobject($tempmdl,"ModelTemplate",$input->{workspace},$input->{templateModel},"adjust_template_biomass");
     #END adjust_template_biomass
     my @_bad_returns;
     (ref($output) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
