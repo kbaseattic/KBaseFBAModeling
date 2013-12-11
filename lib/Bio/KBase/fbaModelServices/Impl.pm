@@ -2324,28 +2324,52 @@ Description:
 sub _addPhenotypeMedia {
     my($self, $model, $pheno, $positiveonly) = @_;
     my $bio = $model->biochemistry();
+    my $ex = $bio->queryObject("compartments", { name => "Extracellular"});
+    if (!defined($ex)) {
+        my $msg = "Could not find extracellular compartment in biochemistry object";
+        $self->_error($msg,'simulate_phenotypes');
+    }
+    my $ex_uuid = $ex->uuid();
+
+    # Find all of the transporter reactions in the model biochemistry.
+    my $bio_rxns = $bio->reactions();
+	$self->{_bio_transporters} = [];
+	for (my $i=0; $i<@{$bio_rxns}; $i++) {
+	    if ( $bio_rxns->[$i]->isTransport() ) {
+	        push(@{$self->{_bio_transporters}}, $bio_rxns->[$i]);
+	    }
+	}
+    # Find the transporter reactions in the model.
+    my $model_transporters = $model->findTransporterReactions();
+
     my $mediaChecked = {};
     for (my $i=0; $i < @{$pheno->{phenotypes}};$i++) {
-	# If we only want to add media for POSITIVE phenotypes we need to check the growth rate
-	# and make sure it isn't 0.
-	if ( $positiveonly && ( $pheno->{phenotypes}->[$i]->[4] eq "0" ) ) {
-	     next;
-	}
-	my $media = $pheno->{phenotypes}->[$i]->[2]."/".$pheno->{phenotypes}->[$i]->[1];
-	if (!defined($mediaChecked->{$media})) {
-	    $mediaChecked->{$media} = 1;
-	    my($mediaobj);
-	    if ($pheno->{phenotypes}->[$i]->[2] eq "NO_WORKSPACE") {
-		$mediaobj = $bio->queryObject("media",{id => $pheno->{phenotypes}->[$i]->[1]});
-	    } else {
-		$mediaobj = $self->_get_msobject("Media",$pheno->{phenotypes}->[$i]->[2],$pheno->{phenotypes}->[$i]->[1]);
-		$bio->add("media",$mediaobj);
-	    }
-	    # Add transporters to the model for everything in the media
-	    if ( defined($mediaobj) ) {
-		$model->addMediaReactions( { media => $mediaobj, biochemistry => $bio } );
-	    };
-	}
+		# If we only want to add media for POSITIVE phenotypes we need to check the growth rate
+		# and make sure it isn't 0.
+		if ( $positiveonly && ( $pheno->{phenotypes}->[$i]->[4] eq "0" ) ) {
+		     next;
+		}
+		my $media = $pheno->{phenotypes}->[$i]->[2]."/".$pheno->{phenotypes}->[$i]->[1];
+		if (!defined($mediaChecked->{$media})) {
+		    $mediaChecked->{$media} = 1;
+		    my($mediaobj);
+		    if ($pheno->{phenotypes}->[$i]->[2] eq "NO_WORKSPACE") {
+                $mediaobj = $bio->queryObject("media",{id => $pheno->{phenotypes}->[$i]->[1]});
+		    } else {
+				$mediaobj = $self->_get_msobject("Media",$pheno->{phenotypes}->[$i]->[2],$pheno->{phenotypes}->[$i]->[1]);
+				$bio->add("media",$mediaobj);
+		    }
+
+		    # Add transporters to the model for everything in the media
+		    if ( defined($mediaobj) ) {
+				$model->addTransportersFromMedia( {
+					media => $mediaobj,
+					model_transporters => $model_transporters,
+					bio_transporters => $self->{_bio_transporters},
+					ex_uuid => $ex_uuid
+				} );
+		    };
+		}
     }
     return $model;
 }
@@ -7869,7 +7893,7 @@ sub simulate_phenotypes
 	#Retrieving model
 	my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
 	#Creating FBAFormulation Object
-        if ( $input->{all_transporters} ) {
+    if ( $input->{all_transporters} ) {
 	    $model = $self->_addPhenotypeMedia($model, $pheno, 0);
 	} elsif ( $input->{positive_transporters} ) {
 	    $model = $self->_addPhenotypeMedia($model, $pheno, 1);
