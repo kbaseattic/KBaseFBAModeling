@@ -7219,7 +7219,16 @@ sub runfba
 	$fba->fluxMinimization($input->{minimizeflux});
 	$fba->findMinimalMedia($input->{findminmedia});
     #Running FBA
-    my $fbaResult = $fba->runFBA();
+    my $fbaResult;
+    eval {
+		local $SIG{ALRM} = sub { die "FBA timed out! Model likely contains numerical instability!" };
+		alarm 600;
+		$fbaResult = $fba->runFBA();
+		alarm 0;
+	};
+	if ($@) {
+		$self->_error($@,'runfba');
+    }
     if (!defined($fbaResult)) {
     	my $msg = "FBA failed with no solution returned!";
     	$self->_error($msg,'runfba');
