@@ -1611,10 +1611,15 @@ sub _get_gapfill_solution_reactions {
     my $gapfilled_rxnids = {};
     my $modelrxns = $model->modelreactions();
     for ( my $i=0; $i < @{$modelrxns}; $i++ ) {
-	if ( $self->_was_reaction_gapfilled($modelrxns->[$i]) == 1 ) {
-	    $gapfilled_rxnids->{ $modelrxns->[$i]->reaction()->id } = 1;
+	my $dir = $modelrxns->[$i]->direction;
+	if ( $dir eq "=" ) {
+	    $model_rxnids->{ "+".$modelrxns->[$i]->reaction()->id } = 1;
+	    $model_rxnids->{ "-".$modelrxns->[$i]->reaction()->id } = 1;
+	} elsif ( $dir eq ">" ) {
+	    $model_rxnids->{ "+".$modelrxns->[$i]->reaction()->id } = 1;
+	} elsif ( $dir eq "<" ) {
+	    $model_rxnids->{ "-".$modelrxns->[$i]->reaction()->id } = 1;
 	}
-	$model_rxnids->{ $modelrxns->[$i]->reaction()->id } = 1;
     }
 
     my $desiredSolution = $self->_get_gapfill_solution($solution_id, $model);
@@ -1627,19 +1632,6 @@ sub _get_gapfill_solution_reactions {
     for ( my $i=0; $i < @{$solutionReactions}; $i++ ) {
 	my $id = $solutionReactions->[$i]->reaction()->id;
 	my $modelDirection = $solutionReactions->[$i]->direction;
-	# Is this reaction in the original model?
-	if ( ! defined($model_rxnids->{$id} ) ) {
-	    next;
-	}
-	# Was the reaction flagged as "gapfilled"? If not, it was a reversibility change and we should exclude it.
-	if ( ! defined($gapfilled_rxnids->{$id}) ) {
-	    next;
-	}
-	# Duplicates happen in the iterative gapfill solutions. We don't want them, and if it appeared both earlier and later then it is useful for a high-priority gapfill
-	# so we want to test it later.
-	if ( defined($seenrxns->{$id}) ) {
-	    next;
-	}
 	my ($dirstring);
 	if ( $modelDirection eq ">" ) {
 	    $dirstring = "+";
@@ -1649,6 +1641,16 @@ sub _get_gapfill_solution_reactions {
 	    self->_error("ERROR: Direction for gapfill solution reaction was not < or > (this should never happen)", "_get_gapfill_solution_reactions");
 	}
 	$id = $dirstring.$id;
+
+	# Is this reaction in the original model?
+	if ( ! defined($model_rxnids->{$id} ) ) {
+	    next;
+	}
+	# Duplicates happen in the iterative gapfill solutions. We don't want them, and if it appeared both earlier and later then it is useful for a high-priority gapfill
+	# so we want to test it later.
+	if ( defined($seenrxns->{$id}) ) {
+	    next;
+	}
 	$seenrxns->{$id} = 1;
 	push(@{$rxnids}, $id);
     }
@@ -1679,7 +1681,8 @@ sub _sort_gapfill_solution_reactions {
 	my $rxnarray = $RxnProbs->{reaction_probabilities}->[$i];
         my $rxnid = $rxnarray->[0];
 	my $likelihood = $rxnarray->[1];
-	$rxnprobdict->{$rxnid} = $likelihood;
+	$rxnprobdict->{"+".$rxnid} = $likelihood;
+	$rxnprobdict->{"-".$rxnid} = $likelihood;
     }
 
     # Build an array of (reaction, likelihood) sets
