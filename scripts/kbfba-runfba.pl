@@ -70,7 +70,7 @@ my $specs = [
     [ 'allrev', 'Treat all reactions as reversible', { "default" => 0 } ],
     [ 'objfraction:s', 'Fraction of objective for follow on analysis', { "default" => 0.1 }],
     [ 'fva', 'Run flux variability analysis' ],
-    [ 'simko', 'Simulate singel gene KO' ],
+    [ 'simko', 'Simulate single gene KO' ],
     [ 'minfluxes', 'Minimize fluxes from FBA' ],
     [ 'findminmedia', 'Find minimal media' ],
     [ 'addtomodel', 'Add FBA to model' ],
