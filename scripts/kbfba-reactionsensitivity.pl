@@ -87,11 +87,16 @@ my $specs = [
 
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation, $manpage);
 
+my $ok = 0;
 if ( defined($opt->{rxnstotest}) ) {
     $params->{reactions_to_delete} = [split(/;/,$opt->{"rxnstotest"})];
-} elsif ( defined($opt->{gapfill}) ) {
+    $ok = 1;
+} 
+if ( defined($opt->{gapfill}) ) {
     $params->{gapfill_solution_id} = $opt->{gapfill};
-} else {
+    $ok = 1;
+} 
+if ( $ok == 0 ) {
     die "Must specify either a list of reactions to delete or a gapfill solution ID\n";
 }
 
