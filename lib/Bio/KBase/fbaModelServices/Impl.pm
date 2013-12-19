@@ -11567,10 +11567,10 @@ sub reaction_sensitivity_analysis
 			    my $ok_rxns = [];
 			    for ( my $k=0; $k < @{$inactive_rxns}; $k++ ) {
 				# Eliminate reactions that were tested for deletion from the list of inactive reactions
-					if ( ! defined( $deletehash->{$inactive_rxns->[$k]} ) ) {
-					    $inactiveRxns->{$inactive_rxns->[$k]}->{required}->{$row->[0]} = 1;
-					    push(@{$ok_rxns}, $inactive_rxns->[$k]);
-					}
+				if ( ! defined( $deletehash->{$inactive_rxns->[$k]} ) ) {
+				    $inactiveRxns->{$inactive_rxns->[$k]}->{required}->{$row->[0]} = 1;
+				    push(@{$ok_rxns}, $inactive_rxns->[$k]);
+				}
 			    }
 			    if ( @{$ok_rxns} == 0 ) {
 					$sensrxn->{"delete"} = 1;
@@ -11585,6 +11585,9 @@ sub reaction_sensitivity_analysis
 		}
 		for (my $i=0; $i < @{$object->{reactions}}; $i++) {
 			my $rxn = $object->{reactions}->[$i];
+			if ( @{$rxn->{new_inactive_rxns}} == 0 ) {
+			    continue;
+			}
 			my $value = 1/@{$rxn->{new_inactive_rxns}};
 			$rxn->{normalized_activated_reaction_count} = 0;
 			for (my $j=0; $j < @{$rxn->{new_inactive_rxns}}; $j++) {

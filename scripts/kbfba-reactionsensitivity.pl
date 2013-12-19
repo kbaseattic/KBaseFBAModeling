@@ -51,7 +51,7 @@ DESCRIPTION
       --rxnprobs: If a rxnprobs object is specified, gapfill solution reactions will be tested for removal in order from least likelihood to most likelihood.
 
       --deleterxns: By default the analysis will replace each reaction (necessary or not) before testing the next one in the list.
-      By specifying --deleterxns), the sensitivity analysis will NOT replace 'unnecessary' reactions before testing the next reaction. Thus
+      By specifying --deleterxns, the sensitivity analysis will NOT replace 'unnecessary' reactions before testing the next reaction. Thus
       other reactions in the model that were previously 'unnecessary' could become necessary and be kept if they appear later in the list.
       
       If --deleterxns is specified you can actually remove the reactions flagged for deletion using kbfba-delete_noncontributing_reactions.
@@ -60,16 +60,16 @@ DESCRIPTION
 
 EXAMPLES
 
-      kbfba-reactionsensitivity --rxnstotest '+rxn00001;-rxn00002' MyModel
-      kbfba-reactionsensitivity --gapfill 'GapfillID'.solution.0 MyModel
+      > kbfba-reactionsensitivity --rxnstotest '+rxn00001;-rxn00002' MyModel
+      > kbfba-reactionsensitivity --gapfill 'GapfillID'.solution.0 MyModel
 
 SEE ALSO
-
+      kbfba-gapfill
+      kbfba-delete_noncontributing_reactions
 
 AUTHORS
       Christopher Henry
       Matthew Benedict
-
 ";
 
 

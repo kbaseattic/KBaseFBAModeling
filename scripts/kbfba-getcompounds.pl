@@ -52,7 +52,7 @@ my $specs = [
     [ 'idtype|i:s', 'Type of ID (default is to search all alias sets)' ],
     [ 'pretty|p', 'Pretty print output' ]
 ];
-my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
+my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation,$manpage);
 $params->{compounds} = [split(/;/,$opt->{"Compound IDs (; delimiter)"})];
 #Calling the server
 my $output = runFBACommand($params,$servercommand,$opt);
