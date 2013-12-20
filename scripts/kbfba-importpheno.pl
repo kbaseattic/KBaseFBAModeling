@@ -83,17 +83,11 @@ $headingline = shift(@{$array});
 chomp($headingline);
 my $data = [];
 
-
-for (my $i=0;$i < @{$array}; $i++) {
-	push(@{$data},[split(/\s+/,$array->[$i])]);
-}
-
 my $headings = [split(/\s+/,$headingline)];
 
 while (my $line = <$fh>) {
 	chomp($line);
 	push(@{$data},[split(/\s+/,$line)]);
-
 }
 close($fh);
 
@@ -101,7 +95,6 @@ close($fh);
 my $headingColums;
 for (my $i=0;$i < @{$headings}; $i++) {
 	$headingColums->{$headings->[$i]} = $i;
-
 }
 
 foreach my $pheno (@{$data}) {
@@ -115,13 +108,16 @@ foreach my $pheno (@{$data}) {
 		];
 		if (defined($headingColums->{geneko})) {
 			if (defined($pheno->[$headingColums->{geneko}])) {
+
 				if ($pheno->[$headingColums->{geneko}] eq "none") {
 					$phenoobj->[0] = [];
 				} else {
 					$phenoobj->[0] = [split(/\;/,$pheno->[$headingColums->{geneko}])];
 				}
 			}
+
 		}
+
 		if (defined($headingColums->{addtlCpd})) {
 			if (!defined($pheno->[$headingColums->{addtlCpd}]) || $pheno->[$headingColums->{addtlCpd}] eq "none") {
 				$phenoobj->[3] = [];
@@ -129,11 +125,14 @@ foreach my $pheno (@{$data}) {
 				$phenoobj->[3] = [split(/\;/,$pheno->[$headingColums->{addtlCpd}])];
 			}
 		}
+
 		push(@{$params->{phenotypes}},$phenoobj);
 	}
 }
+
 #Calling the server
 my $output = runFBACommand($params,$servercommand,$opt);
+
 #Checking output and report results
 if (!defined($output)) {
 	print "Phenotype import failed!\n";
