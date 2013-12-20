@@ -2250,44 +2250,90 @@ module fbaModelServices {
 	/*********************************************************************************
 	Code relating to assessing model sensitivity to reaction knockouts
    	*********************************************************************************/
+	/*
+	  @id kbsub
+	*/
+	typedef string kb_sub_id;
+	
+	/*
+	  @id kb
+	*/
+	typedef string kb_id;
+	
+	/*
+	  @id ws
+	*/
+	typedef string ws_id;
+	
+	/*
+	  @id wssub
+	*/
+	typedef string ws_sub_id;
+	
+	/* ReactionSensitivityAnalysisCorrectedReaction object
+		
+		kb_sub_id kbid - KBase ID for reaction knockout corrected reaction
+		ws_sub_id model_reaction_wsid - ID of model reaction
+		float normalized_required_reaction_count - Normalized count of reactions required for this reaction to function
+		list<ws_sub_id> required_reactions - list of reactions required for this reaction to function
+		
+		@searchable ws_subset kbid model_reaction_kbid required_reactions
+		@optional
+		
+	*/
+	typedef structure {
+		kb_sub_id kbid;
+		ws_sub_id model_reaction_wsid;
+		float normalized_required_reaction_count;
+		list<ws_sub_id> required_reactions;
+    } ReactionSensitivityAnalysisCorrectedReaction;
+	
 	/* Object for holding reaction knockout sensitivity reaction data
 		
-		kbase_id kbid - KBase ID for reaction knockout sensitivity reaction
-		mdlrxn_id reaction - ID of model reaction
+		kb_sub_id kbid - KBase ID for reaction knockout sensitivity reaction
+		ws_sub_id model_reaction_wsid - ID of model reaction
+		bool delete - indicates if reaction is to be deleted
+		bool deleted - indicates if the reaction has been deleted
 		float growth_fraction - Fraction of wild-type growth after knockout
-		list<string> biomass_compounds  - List of biomass compounds that depend on the reaction
-		list<string> new_inactive_rxns - List of new reactions dependant upon reaction KO
-		list<string> new_essentials - List of new essential genes with reaction knockout
+		float normalized_activated_reaction_count - Normalized number of activated reactions
+		list<ws_sub_id> biomass_compounds  - List of biomass compounds that depend on the reaction
+		list<ws_sub_id> new_inactive_rxns - List of new reactions dependant upon reaction KO
+		list<ws_sub_id> new_essentials - List of new essential genes with reaction knockout
 	
 	*/
 	typedef structure {
-		kbase_id kbid;
-		mdlrxn_kbid reaction;
+		kb_sub_id kbid;
+		ws_sub_id model_reaction_wsid;
 		float growth_fraction;
 		bool delete;
 		bool deleted;
-		list<string> biomass_compounds;
-		list<string> new_inactive_rxns;
-		list<string> new_essentials;
+		float normalized_activated_reaction_count;
+		list<ws_sub_id> biomass_compounds;
+		list<ws_sub_id> new_inactive_rxns;
+		list<ws_sub_id> new_essentials;
     } ReactionSensitivityAnalysisReaction;
+	
 	/* Object for holding reaction knockout sensitivity results
 	
-		kbase_id kbid - KBase ID of reaction sensitivity object
-		ws_ref model_wsid - Workspace reference to associated model
+		kb_id kbid - KBase ID of reaction sensitivity object
+		ws_id model_wsid - Workspace reference to associated model
 		string type - type of reaction KO sensitivity object
 		bool deleted_noncontributing_reactions - boolean indicating if noncontributing reactions were deleted
 		bool integrated_deletions_in_model - boolean indicating if deleted reactions were implemented in the model
-		list<ReactionSensitivityAnalysisReaction> reactions - list of results from sensitivity analysis for each reaction
+		list<ReactionSensitivityAnalysisReaction> reactions - list of sensitivity data for tested reactions
+		list<ReactionSensitivityAnalysisCorrectedReaction> corrected_reactions - list of reactions dependant upon tested reactions
 		
 	*/
     typedef structure {
-		kbase_id kbid;
-		ws_ref model_wsid;
+		kb_id kbid;
+		ws_id model_wsid;
 		string type;
 		bool deleted_noncontributing_reactions;
 		bool integrated_deletions_in_model;
 		list<ReactionSensitivityAnalysisReaction> reactions;
+		list<ReactionSensitivityAnalysisCorrectedReaction> corrected_reactions;
     } ReactionSensitivityAnalysis;
+	
 	/* Input parameters for the "reaction_sensitivity_analysis" function.
 	
 		fbamodel_id model - ID of model to be analyzed (a required argument)
