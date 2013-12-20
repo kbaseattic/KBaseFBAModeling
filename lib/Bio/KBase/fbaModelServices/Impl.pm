@@ -8922,20 +8922,28 @@ sub queue_gapfill_model
 	} else {
 		my $gapfill = $self->_get_msobject("GapFill","NO_WORKSPACE",$input->{gapFill});
 		if (!defined($gapfill->fbaFormulation()->fbaResults()->[0])) {
-			my $msg = "Gapfilling failed!";
+			my $msg = "Gapfilling failed to produce any results. Check gapfilling infrastructure!";
 			$self->_error($msg,'queue_gapfill_model');
 		}
 		# If we fail in preliminary solving there's no point to restarting it and it will result in a misleading error message.
-		if ( !defined($gapfill->fbaFormulation()->fbaResults()->[-1]->outputfiles()->{"CompleteGapfillingOutput.txt"}->[1] ) ) {
-			my $msg = "Gapfilling failed to produce an output file!";
+		my $gfoutput = $gapfill->fbaFormulation()->fbaResults()->[-1]->outputfiles()->{"CompleteGapfillingOutput.txt"};
+		if ( !defined($gfoutput->[1] ) ) {
+			my $msg = "Gapfilling failed to produce an output file. Check gapfilling infrastructure!";
 			$self->_error($msg,'queue_gapfill_model');
 		}
-		my $line = $gapfill->fbaFormulation()->fbaResults()->[-1]->outputfiles()->{"CompleteGapfillingOutput.txt"}->[1];
-		if ( $line =~ /FAILED/ && $line =~ /Prelim/ ) {
-			my $msg = "Gapfilling failed in preliminary feasibility determination!";
-			$self->_error($msg,'queue_gapfill_model');
+		for (my $i=0; $i < @{$gfoutput}; $i++) {
+			my $line = $gfoutput->[$i];
+			if ($line =~ /FAILED/ && $line =~ /Prelim/ && $line =~ /bio\d+/) {
+				my $array = [split(/\t/,$line)];
+				my $msg;
+				if (defined($array->[6])) {
+					$msg = "Gapfilling failed in preliminary feasibility determination. The following biomass compounds appear to be problematic: ".$array->[6]."!";
+				} else {
+					$msg = "Gapfilling failed in preliminary feasibility determination.";
+				}
+				$self->_error($msg,'queue_gapfill_model');
+			}
 		}
-
 		$gapfill->parseGapfillingResults($gapfill->fbaFormulation()->fbaResults()->[-1]);
 		if (!defined($gapfill->gapfillingSolutions()->[0])) {
 			if (defined($input->{jobid})) {
@@ -10776,21 +10784,25 @@ sub run_job
     my($job);
     #BEGIN run_job
     $self->_setContext($ctx,$input);
-    $input = $self->_validateargs($input,["job"],{});
+    $input = $self->_validateargs($input,["job"],{usecpx => 0});
     $job = $self->_getJob($input->{job});
     eval {
 	    $self->_workspaceServices()->set_job_status({
 		   	jobid => $job->{id},
 		   	status => "running",
 		   	auth => $self->_authentication(),
-		   	currentStatus => $job->{status}
+		   	currentStatus => $job->{status},
 	    });
     };
     my $fba = $self->_get_msobject("FBA","NO_WORKSPACE",$job->{jobdata}->{fbaref});
+    if ($input->{usecpx} == 1) {
+    	$job->{jobdata}->{solver} = "CPLEX";
+    }
     if (defined($job->{jobdata}->{newgapfilltime})) {
     	$fba->parameters()->{"CPLEX solver time limit"} = $job->{jobdata}->{newgapfilltime};
     	$fba->parameters()->{"Recursive MILP timeout"} = $job->{jobdata}->{newgapfilltime}-100;
-    } elsif (defined($job->{jobdata}->{solver})) {
+    } 
+    if (defined($job->{jobdata}->{solver})) {
     	$fba->parameters()->{MFASolver} = $job->{jobdata}->{solver};
     }
     my $fbaResult = $fba->runFBA();
