@@ -51,7 +51,7 @@ module fbaModelServices {
     Universal simple type definitions
    	*********************************************************************************/
     /* indicates true or false values, false <= 0, true >=1 */
-    /*typedef int bool;*/
+    typedef int bool;
     
     /* KBase ID for a model reaction  */
     typedef string mdlrxn_kbid;
@@ -2333,19 +2333,23 @@ module fbaModelServices {
 		list<ReactionSensitivityAnalysisReaction> reactions;
 		list<ReactionSensitivityAnalysisCorrectedReaction> corrected_reactions;
     } ReactionSensitivityAnalysis;
-	
+
+    /* ID for a RxnProbs T.O. (defined in the probabilistic annotation spec) */
+    typedef string rxnprob_id;
+
 	/* Input parameters for the "reaction_sensitivity_analysis" function.
 	
 		fbamodel_id model - ID of model to be analyzed (a required argument)
 		workspace_id model_ws - ID of workspace with model to be analyzed (an optional argument - default is value of workspace argument)
-		string kosensitivity_uid - Name of KOSensitivity object in workspace (an optional argument - default is KBase ID)
+		string rxnsens_uid - Name of RxnSensitivity object in workspace (an optional argument - default is KBase ID)
 		workspace_id workspace - ID of workspace where output and default inputs will be selected from (a required argument)
-		list<reaction_id> reactions_to_delete - list of reactions to delete in sensitiviity analysis; note, order of the reactions matters (a required argument)
-		string type - type of KO sensitivity analysis (an optional argument - default is "unknown")
-		bool delete_noncontributing_reactions - a boolean indicating if unuseful reactions should be deleted (an optional argument - default is "0")
-		bool integrate_deletions_in_model - a boolean indicating if deletion of noncontributing reactions should be integrated in the model (an optional argument - default is "0")
+		list<reaction_id> reactions_to_delete - list of reactions to delete in sensitiviity analysis; note, order of the reactions matters (a required argument unless gapfill solution ID is provided)		
+		gapfillsolution_id gapfill_solution_id - A Gapfill solution ID. If provided, all reactions in the provided solution will be tested for deletion.
+		bool delete_noncontributing_reactions - a boolean indicating if unuseful reactions should be deleted when running the analysis (an optional argument - default is "0")
+		rxnprob_id rxnprobs_id - ID for a RxnProbs object in a workspace. If provided less likely reactions will be tested for deletion first in the sensitivity analysis (optional).
+		workspace_id rxnprobs_ws - Workspace in which the RxnProbs object is located (optional - default is the value of the workspace argument).
+		string type - type of Reaction sensitivity analysis (an optional argument - default is "unknown")
 		string auth  - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument)
-
 	*/
     typedef structure {
 		fbamodel_id model;
@@ -2353,25 +2357,49 @@ module fbaModelServices {
 		string rxnsens_uid;
 		workspace_id workspace;
 		list<reaction_id> reactions_to_delete;
-		string type;
+		gapfillsolution_id gapfill_solution_id;
 		bool delete_noncontributing_reactions;
+		rxnprob_id rxnprobs_id;
+		workspace_id rxnprobs_ws;
+		string type;
 		string auth;
     } reaction_sensitivity_analysis_params;
     /*
-        Queues a sensitivit analysis on the knockout of model reactions
+        Queues a sensitivity analysis on the knockout of model reactions
     */
     funcdef reaction_sensitivity_analysis(reaction_sensitivity_analysis_params input) returns (JobObject job);
-	/* Input parameters for the "delete_noncontributing_reactions" function.
-	
-		fbamodel_id model - ID of model to be analyzed (a required argument)
-		workspace_id model_ws - ID of workspace with model to be analyzed (an optional argument - default is value of workspace argument)
-		string kosensitivity_uid - Name of KOSensitivity object in workspace (an optional argument - default is KBase ID)
-		workspace_id workspace - ID of workspace where output and default inputs will be selected from (a required argument)
-		list<reaction_id> reactions_to_delete - list of reactions to delete in sensitiviity analysis; note, order of the reactions matters (a required argument)
-		string type - type of KO sensitivity analysis (an optional argument - default is "unknown")
-		bool delete_noncontributing_reactions - a boolean indicating if unuseful reactions should be deleted (an optional argument - default is "0")
-		string auth  - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument)
 
+        /* Input parameters for the "filter_iterative_solutions" function.
+	        fbamodel_id model - Model ID for which to filter iterative gapfill solutions (a required argument)
+		fbamodel_id outmodel - ModelID to which to save the filtered results (by default the filtered model is given the same ID as the input model)
+		float cutoff - Cutoff for cost per reaction above which to remove iterative gapfill solution reactions (a required argument)
+		gapfillsolution_id gapfillsln - Gapfill_solution ID (UUID.solution.#) containing the iterative gapfill solutions to filter (a required argument)
+                string auth - The authorization token of the KBase account with workspace permissions.
+                workspace_id workspace - ID of workspace where output and default inputs will be selected from (a required argument)
+		workspace_id input_model_ws - ID of workspace containing the input model 
+		*/
+    typedef structure {
+	fbamodel_id model;
+	fbamodel_id outmodel;
+	float cutoff;
+	gapfillsolution_id gapfillsln;
+	workspace_id workspace;
+	workspace_id input_model_ws;
+	string auth;
+    } filter_iterative_solutions_params;
+
+    /* 
+        Apply a cutoff to remove high-cost iterations from an iterative gapfill run.
+	*/
+   funcdef filter_iterative_solutions(filter_iterative_solutions_params input) returns (object_metadata output);
+
+	/* Input parameters for the "delete_noncontributing_reactions" function.
+	      workspace_id workspae - Workspace for outputs and default inputs (a required argument)
+	      workspace_id rxn_sensitivity_ws - Workspace for reaction sensitivity object used as input
+	      string rxn_sensitivity - Reaction sensitivity ID
+	      fbamodel_id new_model_uid - ID for output model with noncontributing reactions deleted
+	      string new_rxn_sensitivity_uid - ID for rxnsensitivity object with bits set to indicate reactions were deleted
+	      string auth - Authorization token for user (must have appropriate permissions to read and write objects)
 	*/
     typedef structure {
 		workspace_id rxn_sensitivity_ws;
@@ -2382,7 +2410,7 @@ module fbaModelServices {
 		string auth;
     } delete_noncontributing_reactions_params;
     /*
-        Queues a sensitivit analysis on the knockout of model reactions
+        Deleted flagged reactions from a RxnSensitivity object
     */
     funcdef delete_noncontributing_reactions(delete_noncontributing_reactions_params input) returns (object_metadata output);
 	

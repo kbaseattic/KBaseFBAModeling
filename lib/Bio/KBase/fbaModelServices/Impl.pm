@@ -831,101 +831,6 @@ sub _processGenomeObject {
 	return ($genome,$anno,$mapping,$contigObj);
 }
 
-#sub _buildProbModel {
-#	my($self,$probanno,$modelid,$defaultProb,$command) = @_;
-#	if (!defined($modelid)) {
-#		$modelid = $self->_get_new_id($input->{genome}.".probmdl.");
-#	}
-#	# Create a new FBA model.
-#    my $model = ModelSEED::MS::Model->new({
-#		id => $input->{model},
-#		name => $input->{model},
-#		version => 1,
-#		type => "ProbModel",
-#		growth => 0,
-#		status => "", 
-#		current => 1,
-#		#mapping_uuid => $annotation->mapping_uuid(),
-#		#mapping => $annotation->mapping(),
-#		#biochemistry_uuid => $annotation->mapping()->biochemistry_uuid(),
-#		#biochemistry => $biochem,
-#		#annotation_uuid => $annotation->uuid(),
-#		#annotation => $annotation
-#	});
-#    # Retrieve the genome object from workspace.
-#    my $genome = $self->_get_msobject("Genome",$input->{genome_workspace},$input->{genome});
-#    # Retrieve annotation specified by genome.
-#    my $annotation = $self->_get_msobject("Annotation","NO_WORKSPACE",$genome->{annotation_uuid});
-#    # Retrieve biochemistry though annotation.
-#    my $biochem = $annotation->mapping()->biochemistry();
-#	# Build a hash from the array of blacklisted reactions.  These reactions are not added to the model.
-#	my $gfform = $self->_setDefaultGapfillFormulation({});
-#	my $blhash;
-#	foreach my $rxn (@{$gfform->{blacklistedrxns}}) {
-#		$blhash->{$rxn} = 1;
-#	}
-#	# Build a hash from the array of guaranteed reactions.  These reactions are always added to the model.
-#	my $grhash;
-#	foreach my $rxn (@{$gfform->{gauranteedrxns}}) {
-#		$grhash->{$rxn} = 1;
-#	}		
-#	#######################################
-#	my $input_list = [ ];
-#	foreach my $rxnprob (@{$input->{reaction_probs}}) {
-#		push($input_list, $rxnprob->[0]);		
-#	}
-#	my $field_list = [ "source_id" ];
-#	my $idhash = $self->_cdmi()->get_entity_Reaction($input_list, $field_list);
-#		
-#	# Build a hash from the array of reaction probabilities keyed by ModelSEED id.
-#	my $rxnhash;
-#	foreach my $rxnprob (@{$input->{reaction_probs}}) {
-#		my $kbid = $rxnprob->[0];
-#		my $val = $idhash->{$kbid};
-#		$rxnhash->{$val->{"source_id"}} = { probability => $rxnprob->[1], genes => $rxnprob->[2] };
-#	}
-#	#######################################
-#	
-#	# Run the list of all reactions in the Biochemistry object.
-#	# Add the reaction to the model if it is on the guaranteed list or is mass balanced and
-#	# is not blacklisted.  Set the probability from the input reaction probabilities list or
-#	# use the default probability if the reaction is not in the input list.
-#	my $rxns = $biochem->reactions();
-#	foreach my $rxn (@{$rxns}) {
-#		my $id = $rxn->id();
-#		my $add = 0;
-#		if (defined($grhash->{$id})) {
-#			$add = 1;
-#		} elsif (!defined($blhash->{$id})) {
-#			if ($rxn->status() eq "OK") { # Reaction is mass balanced
-#				$add = 1;
-#			}
-#		}
-#		my $reagents = $rxn->reagents();
-#		my $numReagents = @$reagents;
-#		if ($numReagents == 0) { # Skip reactions that have zero reagents.
-#			$add = 0;
-#		}
-#		if ($add) {
-#			my $mdlrxn = $model->addReactionToModel({
-#				reaction => $rxn
-#			});
-#			my $rxnprob = $rxnhash->{$id};
-#			if (defined($rxnprob)) {
-#				$mdlrxn->probability($rxnprob->{probability});
-#			}
-#			else {
-#				$mdlrxn->probability($defaultProb);
-#			}
-#		}
-#	}
-#	# Model uuid and model id will be set to WS values during save
-#	$modelMeta = $self->_save_msobject($model,"Model","NO_WORKSPACE",$modelid,$command,1);
-#	$probanno->{probmodel_uuid} = $modelMeta->[8];
-#	$probannoMeta = $self->_save_msobject($probanno,"ProbAnno",$object->{_kbaseWSMeta}->{ws},$object->{_kbaseWSMeta}->{wsid},$command,1);
-#	return $model;
-#}
-
 sub _validateargs {
 	my ($self,$args,$mandatoryArguments,$optionalArguments,$substitutions) = @_;
 	if (!defined($args)) {
@@ -1278,13 +1183,6 @@ sub _buildGapfillObject {
 		if (!defined($probanno)) {
 			$self->_error("Invalid probabilistic annotation object!","_buildGapfillObject");
 		}
-#		#Get probabilistic model
-#		my $ProbModel;
-#		if (!defined($probanno->{probmodel_uuid})) {
-#			$ProbModel = $self->_buildProbModel($probanno);
-#		} else {
-#			$ProbModel = $self->_get_msobject("Model","NO_WORKSPACE",$probanno->{probmodel_uuid});
-#		}
 		# Calculate the reaction probabilities from the probabilistic annotation.
 		# The output RxnProbs object is saved by reference via the "NO_WORKSPACE" workspace.
 		# TODO Do we need to specify a model template here?
@@ -1629,6 +1527,61 @@ sub _was_reaction_gapfilled {
     }   
 }
 
+# Get an array if (rxnid, direction) pairs from the third element of a line in ProblemReport.txt
+sub _parse_problem_report_solution($solution) {
+    my ($self, $str) = @_;
+    my $matches = [];
+    @$matches = ( $str =~ /([+-]rxn\d+)/g );
+    my $outarr = [];
+    for( my $i=0; $i<@{$matches}; $i++ ) {
+	my $subarr = [];
+	if ( $matches->[$i] =~ /\+/ ) {
+	    ( $subarr->[0] = $matches->[$i] ) =~ s/\+//;
+	    $subarr->[1] = ">";
+	} else {
+	    ( $subarr->[0] = $matches->[$i] ) =~ s/-//;
+	    $subarr->[1] = "<";
+	}
+	push(@$outarr, $subarr);
+    }
+    return $outarr;
+}
+
+# Parse a gapfill solution ID into (gapfill UUID, solution number)
+sub _parse_gapfillsolution_id{
+    my ($self, $solution_id) = @_;
+    my($gfid, $solid);
+    # Handle gapfill solution. Get all the reactions modified by the specified gapfill solution.
+    if ($solution_id =~ m/(.+)\.solution\.(.+)/) {
+	$gfid = $1;
+	$solid = $2;
+    } else { 
+	$self->_error("Specified gapfill solution ID did not have expected format GAPFILLID.solution.NUMBER", "_get_gapfill_solution");
+    }
+    my $result = [];
+    $result->[0] = $gfid;
+    $result->[1] = $solid;
+    return $result;
+}
+
+# Get a MS::GapfillSolution object from a model given its ID
+sub _get_gapfill_solution{
+    my ($self, $solution_id, $model) = @_;
+    my $parsedsolution = $self->_parse_gapfillsolution_id($solution_id);
+    my $gfid = $parsedsolution->[0];
+    my $solid = $parsedsolution->[1];
+    my $gapfill = $self->_get_msobject("GapFill", "NO_WORKSPACE", $gfid);
+    my $gapfillSolutions = $gapfill->gapfillingSolutions();
+    if ( ! defined($gapfillSolutions) ) { 
+	$self->_error("Unable to find gapfill solution $solution_id", "_get_gapfill_solution");  
+    }
+    if ( @{$gapfillSolutions} <= $solid ) { 
+	$self->_error("Solution number $solid specified but there are fewer than that in the specified gapfill object (note that the solution numbers start at 0)", "_get_gapfill_solution"); 
+    }
+    my $desiredSolution = $gapfillSolutions->[$solid];
+    return $desiredSolution;
+}
+
 =head3 get_gapfill_solution_reactions
 
 Definition:
@@ -1658,41 +1611,39 @@ sub _get_gapfill_solution_reactions {
     my $gapfilled_rxnids = {};
     my $modelrxns = $model->modelreactions();
     for ( my $i=0; $i < @{$modelrxns}; $i++ ) {
-	if ( $self->_was_reaction_gapfilled($modelrxns->[$i]) == 1 ) {
-	    $gapfilled_rxnids->{ $modelrxns->[$i]->reaction()->id } = 1;
+	my $dir = $modelrxns->[$i]->direction;
+	if ( $dir eq "=" ) {
+	    $model_rxnids->{ "+".$modelrxns->[$i]->reaction()->id } = 1;
+	    $model_rxnids->{ "-".$modelrxns->[$i]->reaction()->id } = 1;
+	} elsif ( $dir eq ">" ) {
+	    $model_rxnids->{ "+".$modelrxns->[$i]->reaction()->id } = 1;
+	} elsif ( $dir eq "<" ) {
+	    $model_rxnids->{ "-".$modelrxns->[$i]->reaction()->id } = 1;
 	}
-	$model_rxnids->{ $modelrxns->[$i]->reaction()->id } = 1;
     }
 
-    # Handle gapfill solution. Get all the reactions modified by the specified gapfill solution.
-    if ($solution_id =~ m/(.+)\.solution\.(.+)/) {
-	$gfid = $1;
-	$solid = $2;
-    } else { 
-	$self->_error("Specified gapfill solution ID did not have expected format GAPFILLID.solution.NUMBER", "_get_gapfill_solution_reactions");
-    }
-    my $gapfill = $self->_get_msobject("GapFill", "NO_WORKSPACE", $gfid);
-    my $gapfillSolutions = $gapfill->gapfillingSolutions();
-    if ( ! defined($gapfillSolutions) ) { 
-	$self->_error("Unable to find gapfill solution $solution_id", "_get_gapfill_solution_reactions");  
-    }
-    if ( @{$gapfillSolutions} <= $solid ) { 
-	$self->_error("Solution number $solid specified but there are fewer than that in the specified gapfill object (note that the solution numbers start at 0)", "_get_gapfill_solution_reactions"); 
-    }
-    my $desiredSolution = $gapfillSolutions->[$solid];
+    my $desiredSolution = $self->_get_gapfill_solution($solution_id, $model);
     my $solutionReactions = $desiredSolution->gapfillingSolutionReactions();
 
     # Get the desired list of reactions.
     my $rxnids = [];
+    my $directions = [];
     my $seenrxns = {};
     for ( my $i=0; $i < @{$solutionReactions}; $i++ ) {
 	my $id = $solutionReactions->[$i]->reaction()->id;
+	my $modelDirection = $solutionReactions->[$i]->direction;
+	my ($dirstring);
+	if ( $modelDirection eq ">" ) {
+	    $dirstring = "+";
+	} elsif ( $modelDirection eq "<" ) {
+	    $dirstring = "-";
+	} else {
+	    self->_error("ERROR: Direction for gapfill solution reaction was not < or > (this should never happen)", "_get_gapfill_solution_reactions");
+	}
+	$id = $dirstring.$id;
+
 	# Is this reaction in the original model?
 	if ( ! defined($model_rxnids->{$id} ) ) {
-	    next;
-	}
-	# Was the reaction flagged as "gapfilled"? If not, it was a reversibility change and we should exclude it.
-	if ( ! defined($gapfilled_rxnids->{$id}) ) {
 	    next;
 	}
 	# Duplicates happen in the iterative gapfill solutions. We don't want them, and if it appeared both earlier and later then it is useful for a high-priority gapfill
@@ -1717,10 +1668,7 @@ Definition:
 
 Description:
     (Stably) sort the reaction list by probability.
-
-Example:
-
-    Array_ref = _get_gapfill_solution_reactions(GAPFILL_REF.solution.0)
+    Returns the sorted list of reactions
 
 =cut
 
@@ -1733,10 +1681,11 @@ sub _sort_gapfill_solution_reactions {
 	my $rxnarray = $RxnProbs->{reaction_probabilities}->[$i];
         my $rxnid = $rxnarray->[0];
 	my $likelihood = $rxnarray->[1];
-	$rxnprobdict->{$rxnid} = $likelihood;
+	$rxnprobdict->{"+".$rxnid} = $likelihood;
+	$rxnprobdict->{"-".$rxnid} = $likelihood;
     }
 
-    # Build an array of (reaction, likelihood) pairs
+    # Build an array of (reaction, likelihood) sets
     my $unsorted = [];
     for(my $i=0; $i<@{$rxnlist}; $i++) {
 	my $singlearray = [];
@@ -1748,9 +1697,9 @@ sub _sort_gapfill_solution_reactions {
 	push(@$unsorted, [ @$singlearray ]);
     }
 
-    # Do the sort
     my $sorted = [];
-    @$sorted = map  { $_->[0] } sort { $a->[1] cmp $b->[1] } @$unsorted;
+    @$sorted = map { $_->[0] } sort { $a->[1] cmp $b->[1] } @$unsorted;
+
     return $sorted;
 }
 
@@ -2324,28 +2273,52 @@ Description:
 sub _addPhenotypeMedia {
     my($self, $model, $pheno, $positiveonly) = @_;
     my $bio = $model->biochemistry();
+    my $ex = $bio->queryObject("compartments", { name => "Extracellular"});
+    if (!defined($ex)) {
+        my $msg = "Could not find extracellular compartment in biochemistry object";
+        $self->_error($msg,'simulate_phenotypes');
+    }
+    my $ex_uuid = $ex->uuid();
+
+    # Find all of the transporter reactions in the model biochemistry.
+    my $bio_rxns = $bio->reactions();
+	$self->{_bio_transporters} = [];
+	for (my $i=0; $i<@{$bio_rxns}; $i++) {
+	    if ( $bio_rxns->[$i]->isTransport() ) {
+	        push(@{$self->{_bio_transporters}}, $bio_rxns->[$i]);
+	    }
+	}
+    # Find the transporter reactions in the model.
+    my $model_transporters = $model->findTransporterReactions();
+
     my $mediaChecked = {};
     for (my $i=0; $i < @{$pheno->{phenotypes}};$i++) {
-	# If we only want to add media for POSITIVE phenotypes we need to check the growth rate
-	# and make sure it isn't 0.
-	if ( $positiveonly && ( $pheno->{phenotypes}->[$i]->[4] eq "0" ) ) {
-	     next;
-	}
-	my $media = $pheno->{phenotypes}->[$i]->[2]."/".$pheno->{phenotypes}->[$i]->[1];
-	if (!defined($mediaChecked->{$media})) {
-	    $mediaChecked->{$media} = 1;
-	    my($mediaobj);
-	    if ($pheno->{phenotypes}->[$i]->[2] eq "NO_WORKSPACE") {
-		$mediaobj = $bio->queryObject("media",{id => $pheno->{phenotypes}->[$i]->[1]});
-	    } else {
-		$mediaobj = $self->_get_msobject("Media",$pheno->{phenotypes}->[$i]->[2],$pheno->{phenotypes}->[$i]->[1]);
-		$bio->add("media",$mediaobj);
-	    }
-	    # Add transporters to the model for everything in the media
-	    if ( defined($mediaobj) ) {
-		$model->addMediaReactions( { media => $mediaobj, biochemistry => $bio } );
-	    };
-	}
+		# If we only want to add media for POSITIVE phenotypes we need to check the growth rate
+		# and make sure it isn't 0.
+		if ( $positiveonly && ( $pheno->{phenotypes}->[$i]->[4] eq "0" ) ) {
+		     next;
+		}
+		my $media = $pheno->{phenotypes}->[$i]->[2]."/".$pheno->{phenotypes}->[$i]->[1];
+		if (!defined($mediaChecked->{$media})) {
+		    $mediaChecked->{$media} = 1;
+		    my($mediaobj);
+		    if ($pheno->{phenotypes}->[$i]->[2] eq "NO_WORKSPACE") {
+                $mediaobj = $bio->queryObject("media",{id => $pheno->{phenotypes}->[$i]->[1]});
+		    } else {
+				$mediaobj = $self->_get_msobject("Media",$pheno->{phenotypes}->[$i]->[2],$pheno->{phenotypes}->[$i]->[1]);
+				$bio->add("media",$mediaobj);
+		    }
+
+		    # Add transporters to the model for everything in the media
+		    if ( defined($mediaobj) ) {
+				$model->addTransportersFromMedia( {
+					media => $mediaobj,
+					model_transporters => $model_transporters,
+					bio_transporters => $self->{_bio_transporters},
+					ex_uuid => $ex_uuid
+				} );
+		    };
+		}
     }
     return $model;
 }
@@ -2891,6 +2864,7 @@ ModelReaction is a reference to a hash where the following keys are defined:
 	compartment has a value which is a modelcompartment_id
 modelreaction_id is a string
 reaction_id is a string
+bool is an int
 feature_id is a string
 ModelCompound is a reference to a hash where the following keys are defined:
 	id has a value which is a modelcompound_id
@@ -2993,6 +2967,7 @@ ModelReaction is a reference to a hash where the following keys are defined:
 	compartment has a value which is a modelcompartment_id
 modelreaction_id is a string
 reaction_id is a string
+bool is an int
 feature_id is a string
 ModelCompound is a reference to a hash where the following keys are defined:
 	id has a value which is a modelcompound_id
@@ -3219,6 +3194,7 @@ FBA is a reference to a hash where the following keys are defined:
 	compoundFluxes has a value which is a reference to a list where each element is a CompoundFlux
 	geneAssertions has a value which is a reference to a list where each element is a GeneAssertion
 fbamodel_id is a string
+bool is an int
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
@@ -3322,6 +3298,7 @@ FBA is a reference to a hash where the following keys are defined:
 	compoundFluxes has a value which is a reference to a list where each element is a CompoundFlux
 	geneAssertions has a value which is a reference to a list where each element is a GeneAssertion
 fbamodel_id is a string
+bool is an int
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
@@ -3492,6 +3469,7 @@ GapFill is a reference to a hash where the following keys are defined:
 	formulation has a value which is a GapfillingFormulation
 	solutions has a value which is a reference to a list where each element is a GapFillSolution
 fbamodel_id is a string
+bool is an int
 GapfillingFormulation is a reference to a hash where the following keys are defined:
 	formulation has a value which is an FBAFormulation
 	num_solutions has a value which is an int
@@ -3602,6 +3580,7 @@ GapFill is a reference to a hash where the following keys are defined:
 	formulation has a value which is a GapfillingFormulation
 	solutions has a value which is a reference to a list where each element is a GapFillSolution
 fbamodel_id is a string
+bool is an int
 GapfillingFormulation is a reference to a hash where the following keys are defined:
 	formulation has a value which is an FBAFormulation
 	num_solutions has a value which is an int
@@ -3775,6 +3754,7 @@ GapGen is a reference to a hash where the following keys are defined:
 	formulation has a value which is a GapgenFormulation
 	solutions has a value which is a reference to a list where each element is a GapgenSolution
 fbamodel_id is a string
+bool is an int
 GapgenFormulation is a reference to a hash where the following keys are defined:
 	formulation has a value which is an FBAFormulation
 	refmedia has a value which is a media_id
@@ -3869,6 +3849,7 @@ GapGen is a reference to a hash where the following keys are defined:
 	formulation has a value which is a GapgenFormulation
 	solutions has a value which is a reference to a list where each element is a GapgenSolution
 fbamodel_id is a string
+bool is an int
 GapgenFormulation is a reference to a hash where the following keys are defined:
 	formulation has a value which is an FBAFormulation
 	refmedia has a value which is a media_id
@@ -4937,6 +4918,7 @@ annotationProbability is a reference to a list containing 3 items:
 	1: (function) a string
 	2: (probability) a float
 feature_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -4980,6 +4962,7 @@ annotationProbability is a reference to a list containing 3 items:
 	1: (function) a string
 	2: (probability) a float
 feature_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -5215,6 +5198,7 @@ annotation is a reference to a list containing 3 items:
 	1: (annotator) a string
 	2: (annotation_time) an int
 workspace_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -5290,6 +5274,7 @@ annotation is a reference to a list containing 3 items:
 	1: (annotator) a string
 	2: (annotation_time) an int
 workspace_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -5386,6 +5371,7 @@ genome_to_workspace_params is a reference to a hash where the following keys are
 	overwrite has a value which is a bool
 genome_id is a string
 workspace_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -5422,6 +5408,7 @@ genome_to_workspace_params is a reference to a hash where the following keys are
 	overwrite has a value which is a bool
 genome_id is a string
 workspace_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -5530,6 +5517,7 @@ translation is a reference to a list containing 2 items:
 	0: (foreign_id) a string
 	1: (feature) a feature_id
 feature_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -5569,6 +5557,7 @@ translation is a reference to a list containing 2 items:
 	0: (foreign_id) a string
 	1: (feature) a feature_id
 feature_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -5683,6 +5672,7 @@ genome_id is a string
 workspace_id is a string
 template_id is a string
 fbamodel_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -5723,6 +5713,7 @@ genome_id is a string
 workspace_id is a string
 template_id is a string
 fbamodel_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -5859,6 +5850,7 @@ import_fbamodel_params is a reference to a hash where the following keys are def
 genome_id is a string
 workspace_id is a string
 fbamodel_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -5903,6 +5895,7 @@ import_fbamodel_params is a reference to a hash where the following keys are def
 genome_id is a string
 workspace_id is a string
 fbamodel_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -6377,6 +6370,7 @@ fbamodel_id is a string
 workspace_id is a string
 reaction_id is a string
 compartment_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -6419,6 +6413,7 @@ fbamodel_id is a string
 workspace_id is a string
 reaction_id is a string
 compartment_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -6585,6 +6580,7 @@ workspace_id is a string
 biomass_id is a string
 compound_id is a string
 compartment_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -6626,6 +6622,7 @@ workspace_id is a string
 biomass_id is a string
 compound_id is a string
 compartment_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -6733,6 +6730,7 @@ addmedia_params is a reference to a hash where the following keys are defined:
 	auth has a value which is a string
 media_id is a string
 workspace_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -6774,6 +6772,7 @@ addmedia_params is a reference to a hash where the following keys are defined:
 	auth has a value which is a string
 media_id is a string
 workspace_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -7046,6 +7045,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -7130,6 +7130,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -7377,6 +7378,7 @@ Phenotype is a reference to a list containing 6 items:
 feature_id is a string
 media_id is a string
 compound_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -7426,6 +7428,7 @@ Phenotype is a reference to a list containing 6 items:
 feature_id is a string
 media_id is a string
 compound_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -7714,6 +7717,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -7798,6 +7802,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -7878,7 +7883,7 @@ sub simulate_phenotypes
 	#Retrieving model
 	my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
 	#Creating FBAFormulation Object
-        if ( $input->{all_transporters} ) {
+    if ( $input->{all_transporters} ) {
 	    $model = $self->_addPhenotypeMedia($model, $pheno, 0);
 	} elsif ( $input->{positive_transporters} ) {
 	    $model = $self->_addPhenotypeMedia($model, $pheno, 1);
@@ -7967,6 +7972,7 @@ add_media_transporters_params is a reference to a hash where the following keys 
 phenotype_set_id is a string
 workspace_id is a string
 fbamodel_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -8007,6 +8013,7 @@ add_media_transporters_params is a reference to a hash where the following keys 
 phenotype_set_id is a string
 workspace_id is a string
 fbamodel_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -8222,6 +8229,7 @@ fbamodel_id is a string
 workspace_id is a string
 gapfillsolution_id is a string
 gapgensolution_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -8261,6 +8269,7 @@ fbamodel_id is a string
 workspace_id is a string
 gapfillsolution_id is a string
 gapgensolution_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -8429,6 +8438,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -8508,6 +8518,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -8632,7 +8643,6 @@ gapfill_model_params is a reference to a hash where the following keys are defin
 	phenotypeSet has a value which is a phenotype_set_id
 	phenotypeSet_workspace has a value which is a workspace_id
 	integrate_solution has a value which is a bool
-	sensitivity_analysis has a value which is a bool
 	target_reactions has a value which is a reference to a list where each element is a string
 	out_model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
@@ -8691,6 +8701,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -8739,7 +8750,6 @@ gapfill_model_params is a reference to a hash where the following keys are defin
 	phenotypeSet has a value which is a phenotype_set_id
 	phenotypeSet_workspace has a value which is a workspace_id
 	integrate_solution has a value which is a bool
-	sensitivity_analysis has a value which is a bool
 	target_reactions has a value which is a reference to a list where each element is a string
 	out_model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
@@ -8798,6 +8808,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -9077,6 +9088,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -9166,6 +9178,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -9359,6 +9372,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -9475,6 +9489,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -9793,6 +9808,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -9909,6 +9925,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -10267,6 +10284,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -10381,6 +10399,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -10861,6 +10880,7 @@ set_cofactors_params is a reference to a hash where the following keys are defin
 compound_id is a string
 biochemistry_id is a string
 workspace_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -10897,6 +10917,7 @@ set_cofactors_params is a reference to a hash where the following keys are defin
 compound_id is a string
 biochemistry_id is a string
 workspace_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -11007,6 +11028,7 @@ find_reaction_synonyms_params is a reference to a hash where the following keys 
 reaction_synonyms_id is a string
 workspace_id is a string
 biochemistry_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -11043,6 +11065,7 @@ find_reaction_synonyms_params is a reference to a hash where the following keys 
 reaction_synonyms_id is a string
 workspace_id is a string
 biochemistry_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -11333,13 +11356,18 @@ reaction_sensitivity_analysis_params is a reference to a hash where the followin
 	rxnsens_uid has a value which is a string
 	workspace has a value which is a workspace_id
 	reactions_to_delete has a value which is a reference to a list where each element is a reaction_id
-	type has a value which is a string
+	gapfill_solution_id has a value which is a gapfillsolution_id
 	delete_noncontributing_reactions has a value which is a bool
-	integrate_deletions_in_model has a value which is a bool
+	rxnprobs_id has a value which is a rxnprob_id
+	rxnprobs_ws has a value which is a workspace_id
+	type has a value which is a string
 	auth has a value which is a string
 fbamodel_id is a string
 workspace_id is a string
 reaction_id is a string
+gapfillsolution_id is a string
+bool is an int
+rxnprob_id is a string
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
 	type has a value which is a string
@@ -11367,13 +11395,18 @@ reaction_sensitivity_analysis_params is a reference to a hash where the followin
 	rxnsens_uid has a value which is a string
 	workspace has a value which is a workspace_id
 	reactions_to_delete has a value which is a reference to a list where each element is a reaction_id
-	type has a value which is a string
+	gapfill_solution_id has a value which is a gapfillsolution_id
 	delete_noncontributing_reactions has a value which is a bool
-	integrate_deletions_in_model has a value which is a bool
+	rxnprobs_id has a value which is a rxnprob_id
+	rxnprobs_ws has a value which is a workspace_id
+	type has a value which is a string
 	auth has a value which is a string
 fbamodel_id is a string
 workspace_id is a string
 reaction_id is a string
+gapfillsolution_id is a string
+bool is an int
+rxnprob_id is a string
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
 	type has a value which is a string
@@ -11394,7 +11427,7 @@ job_id is a string
 
 =item Description
 
-Queues a sensitivit analysis on the knockout of model reactions
+Queues a sensitivity analysis on the knockout of model reactions
 
 =back
 
@@ -11432,11 +11465,26 @@ sub reaction_sensitivity_analysis
 		my $msg = "Must specify either reactions_to_delete or a gapfill solution ID (if both are specified the gapfill solution is attemtped first)";
 		$self->_error($msg, "reaction_sensitivity_analysis");
     }
+    # If the user does not specify a sign we add both directions to the list of things to delete.
+    my $processedReactions = [];
+    if ( defined($input->{reactions_to_delete}) ) {
+	for ( my $i=0; $i<@{$input->{reactions_to_delete}}; $i++) { 
+	    my $rxn = $input->{reactions_to_delete}->[$i];
+	    if ( $rxn =~ /^[+-]/ ) {
+		push(@$processedReactions, $rxn);
+	    } else {
+		push(@$processedReactions, "+".$rxn);
+		push(@$processedReactions, "-".$rxn);
+	    }
+	}
+    }
+    $input->{reactions_to_delete} = $processedReactions;
 	if (!defined($input->{fba_ref})) {
 	    # If gapfill solution is defined we need to get the reactions associated with it.
 	    # We only try to get reactions that are acutally in the model.
 	    my $model = $self->_get_msobject("Model",$input->{model_ws},$input->{model});
 	    if ( defined($input->{gapfill_solution_id}) ) {
+		        # Note - this automatically changes the names to '+-' stuff
 			my $rxnlist = $self->_get_gapfill_solution_reactions($input->{gapfill_solution_id}, $model);
 			if ( @{$rxnlist} == 0 ) {
 			    my $msg = "No reactions in the specified gapfill solution were found in the model (did you integrate the gapfill solution first?)";
@@ -11459,7 +11507,7 @@ sub reaction_sensitivity_analysis
 		$fba->fva(1);
 		push(@{$fba->outputfiles()},"FBAExperimentOutput.txt");
 		$fba->parameters()->{"deletion experiments"} = "";
-		for (my $i=0; $i < @{$input->{reactions_to_delete}}; $i ++) {
+		for (my $i=0; $i < @{$input->{reactions_to_delete}}; $i++) {
 			if (length($fba->parameters()->{"deletion experiments"}) > 0) {
 				$fba->parameters()->{"deletion experiments"} .= ";";
 			}
@@ -11506,41 +11554,54 @@ sub reaction_sensitivity_analysis
 		my $inactiveRxns = {};
 		for (my $i=1; $i < @{$array}; $i++) {
 			my $row = [split(/\t/,$array->[$i])];
+			my ($direction, $rxnid);
+			($rxnid = $row->[0]) =~ s/[+-]//;
+			if ( $row->[0] =~ /^\+/ ) {
+			    $direction = ">";
+			} elsif ( $row->[0] =~ /^-/ ) {
+			    $direction = "<";
+			}
 			my $sensrxn = {
 				kbid => $object->{kbid}.".rxn.".($i-1),
-				reaction => $row->[0],
+				reaction => $rxnid,
 				growth_fraction => $row->[5],
 				"delete" => 0,
 				deleted => 0,
+				direction => $direction,
 				biomass_compounds => [],
 				new_inactive_rxns => [],
 				new_essentials => [split(/;/,$row->[8])]
 			};
 			if ($row->[7] eq "DELETED") {
-				$sensrxn->{"delete"} = 1;
+			    $sensrxn->{"delete"} = 1;
 			} else {
-			    # Eliminate reactions that were tested from the list of inactive reactions
+			    my $growth_fraction = $row->[5];
 			    my $inactive_rxns = [split(/;/,$row->[7])];
 			    my $ok_rxns = [];
 			    for ( my $k=0; $k < @{$inactive_rxns}; $k++ ) {
-					if ( ! defined( $deletehash->{$inactive_rxns->[$k]} ) ) {
-					    $inactiveRxns->{$inactive_rxns->[$k]}->{required}->{$row->[0]} = 1;
-					    push(@{$ok_rxns}, $inactive_rxns->[$k]);
-					}
+				# Eliminate reactions that were tested for deletion from the list of inactive reactions
+				if ( ! defined( $deletehash->{$inactive_rxns->[$k]} ) ) {
+				    $inactiveRxns->{$inactive_rxns->[$k]}->{required}->{$row->[0]} = 1;
+				    push(@{$ok_rxns}, $inactive_rxns->[$k]);
+				}
 			    }
-			    if ( @{$ok_rxns} == 0 ) {
-					$sensrxn->{"delete"} = 1;
-			    } else {
-					$sensrxn->{"new_inactive_rxns"} = $ok_rxns;
+			    # TODO - this cutoff should match the one in the MFA toolkit.
+			    if ( @{$ok_rxns} == 0 && $growth_fraction > 0.00001) {
+				$sensrxn->{"delete"} = 1;
+			    } elsif ( @{$ok_rxns} > 0 ) {
+				$sensrxn->{"new_inactive_rxns"} = $ok_rxns;
 			    }
 			}
 			if ($row->[6] ne "NA") {
-				$sensrxn->{"biomass_compounds"} = [split(/;/,$row->[6])];
+			    $sensrxn->{"biomass_compounds"} = [split(/;/,$row->[6])];
 			}
 			push(@{$object->{reactions}},$sensrxn);
 		}
 		for (my $i=0; $i < @{$object->{reactions}}; $i++) {
 			my $rxn = $object->{reactions}->[$i];
+			if ( @{$rxn->{new_inactive_rxns}} == 0 ) {
+			    next;
+			}
 			my $value = 1/@{$rxn->{new_inactive_rxns}};
 			$rxn->{normalized_activated_reaction_count} = 0;
 			for (my $j=0; $j < @{$rxn->{new_inactive_rxns}}; $j++) {
@@ -11565,6 +11626,206 @@ sub reaction_sensitivity_analysis
 							       method_name => 'reaction_sensitivity_analysis');
     }
     return($job);
+}
+
+
+
+
+=head2 filter_iterative_solutions
+
+  $output = $obj->filter_iterative_solutions($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a filter_iterative_solutions_params
+$output is an object_metadata
+filter_iterative_solutions_params is a reference to a hash where the following keys are defined:
+	model has a value which is a fbamodel_id
+	outmodel has a value which is a fbamodel_id
+	cutoff has a value which is a float
+	gapfillsln has a value which is a gapfillsolution_id
+	workspace has a value which is a workspace_id
+	input_model_ws has a value which is a workspace_id
+	auth has a value which is a string
+fbamodel_id is a string
+gapfillsolution_id is a string
+workspace_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a filter_iterative_solutions_params
+$output is an object_metadata
+filter_iterative_solutions_params is a reference to a hash where the following keys are defined:
+	model has a value which is a fbamodel_id
+	outmodel has a value which is a fbamodel_id
+	cutoff has a value which is a float
+	gapfillsln has a value which is a gapfillsolution_id
+	workspace has a value which is a workspace_id
+	input_model_ws has a value which is a workspace_id
+	auth has a value which is a string
+fbamodel_id is a string
+gapfillsolution_id is a string
+workspace_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+
+
+=item Description
+
+Apply a cutoff to remove high-cost iterations from an iterative gapfill run.
+
+=back
+
+=cut
+
+sub filter_iterative_solutions
+{
+    my $self = shift;
+    my($input) = @_;
+
+    my @_bad_arguments;
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to filter_iterative_solutions:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'filter_iterative_solutions');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($output);
+    #BEGIN filter_iterative_solutions
+    $self->_setContext($ctx,$input);
+    $input = $self->_validateargs($input,["model","workspace", "cutoff", "gapfillsln"],{
+	input_model_ws => $input->{workspace},
+	outmodel => $input->{model}	
+    });
+
+    my $model = $self->_get_msobject("Model",$input->{input_model_ws},$input->{model});
+    my $parsedid = $self->_parse_gapfillsolution_id($input->{gapfillsln});
+    my $gapfill = $self->_get_msobject("GapFill", "NO_WORKSPACE", $parsedid->[0]);
+    my $problemReport = $gapfill->fbaFormulation()->fbaResults()->[0]->outputfiles()->{"ProblemReport.txt"};
+    # Map from reaction ID to the direction to delete in the model...
+    my $deleteDirections = {};
+    # Parse the ProblemReport.txt to get a list of reactions aded to the model to actiave each inactive reaction.
+    # Start at 1 to skip the header
+    # Apply the cutoff and flag reactions for deletion if they are part of a too-costly solution.
+    for (my $i=1; $i<@{$problemReport}; $i++) {
+	my $prString = $problemReport->[$i];
+	my $spl = [];
+	@$spl = split(/;/, $prString);
+	my $obj = $spl->[1];
+	my $solution = $spl->[2];
+	# This should contain an array of (reactionID, direction) pairs.
+	# Direction should be > or <
+	my $slnrxnarray = $self->_parse_problem_report_solution($solution);
+	my $numrxns = @{$slnrxnarray};
+	my $norm = $obj/$numrxns;
+	# Remove high-cost pathways.
+	if ( $norm > $input->{cutoff} ) {
+	    for (my $j=0; $j<@{$slnrxnarray}; $j++) {
+		my $rxnid = $slnrxnarray->[$j]->[0];
+		my $dir = $slnrxnarray->[$j]->[1];
+		if ( defined($deleteDirections->{$rxnid} )) {
+		    if ( ( $deleteDirections->{$rxnid} eq  $dir ) ) {
+			next;
+		    } else {
+			$deleteDirections->{$rxnid} = "=";
+		    }
+		} else {
+		    $deleteDirections->{$rxnid} = $dir;
+		}
+	    }
+	}
+    }
+
+    foreach my $key ( keys(%{$deleteDirections}) ) {
+	my $modelrxn = $model->searchForReaction($key);
+	if ( ! defined($modelrxn) ) {
+	    # This could happen because of previous filtering (e.g. a normal reaction_sensitivity_analysis)
+#	    print STDERR "WARNING: Reaction $key flagged for deletion but not found in model";
+	    next;
+	}
+	if ( $deleteDirections->{$key} eq "=" ) {
+	    # Both directions were flagged for deletion, so we just delete the reaction.
+	    $model->manualReactionAdjustment( { reaction => $key,
+						removeReaction => 1
+					      } );
+	} else {
+	    # What is the direction in the model?
+	    my $modelrxndir = $modelrxn->direction();
+	    # Is the direction the same as deleteDirections?
+	    if ( $modelrxndir eq $deleteDirections->{$key} ) {
+		# If YES, delete the reaction.
+		$model->manualReactionAdjustment( { reaction => $key,
+						    removeReaction => 1 } );
+	    } elsif ( $modelrxndir eq "=" ) {
+		# If the model reaction is reversible we assume this means
+		# that gapfilling changed the reversibility of that reaction.
+		my($newdir);
+		if ( $deleteDirections->{$key} eq ">" ) { $newdir = "<"; }
+		else { $newdir = ">"; }
+		$model->manualReactionAdjustment( { reaction => $key,
+						    direction => $newdir } );
+	    }
+	}
+    }
+
+    $output = $self->_save_msobject($model,"Model",$input->{workspace},$input->{outmodel},"filter_iterative_solutions");
+
+    #END filter_iterative_solutions
+    my @_bad_returns;
+    (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to filter_iterative_solutions:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'filter_iterative_solutions');
+    }
+    return($output);
 }
 
 
@@ -11652,7 +11913,7 @@ workspace_ref is a string
 
 =item Description
 
-Queues a sensitivit analysis on the knockout of model reactions
+Deleted flagged reactions from a RxnSensitivity object
 
 =back
 
@@ -11687,7 +11948,27 @@ sub delete_noncontributing_reactions
 		if ($rxnsens->{reactions}->[$i]->{"delete"} eq "1") {
 			my $rxn = $model->searchForReaction($rxnsens->{reactions}->[$i]->{reaction});
 			if (defined($rxn)) {
+			    if ( ! defined($rxnsens->{reactions}->[$i]->{direction} ) ) {
+				# For reverse compatibility with old RxnSensitivity objects
+				$model->remove("modelreactions", $rxn);
+			    } elsif ($rxn->direction eq $rxnsens->{reactions}->[$i]->{direction}) {
 				$model->remove("modelreactions",$rxn);
+			    } else {
+				# Change from a reversible reaction to an irreversible one
+				# (if model has < and rxnsensitivity had > or vice versa we just ignore it, maybe it was just already deleted somewhere else)
+				if ( $rxn->direction eq "=" ) {
+				    # This should never happen but just in case
+				    if ( $rxnsens->{reactions}->[$i]->{direction} eq "=" ) {
+					$model->remove("modelreactions", $rxn);
+				    } elsif ( $rxnsens->{reactions}->[$i]->{direction} eq ">" ) {
+					$model->manualReactionAdjustment( { reaction => $rxnsens->{reactions}->[$i]->{reaction},
+									    direction => "<" } );
+				    } elsif ( $rxnsens->{reactions}->[$i]->{direction} eq "<" ) {
+					$model->manualReactionAdjustment( { reaction => $rxnsens->{reactions}->[$i]->{reaction},
+									    direction => ">" } );
+				    }
+				}
+			    }
 			}
 			$rxnsens->{reactions}->[$i]->{"deleted"} = 1;
 		}
@@ -12648,6 +12929,7 @@ AnnotationPipelineStage is a reference to a hash where the following keys are de
 	enable has a value which is a bool
 	parameters has a value which is a reference to a hash where the key is a string and the value is a string
 stage_id is a string
+bool is an int
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
 	type has a value which is a string
@@ -12682,6 +12964,7 @@ AnnotationPipelineStage is a reference to a hash where the following keys are de
 	enable has a value which is a bool
 	parameters has a value which is a reference to a hash where the key is a string and the value is a string
 stage_id is a string
+bool is an int
 JobObject is a reference to a hash where the following keys are defined:
 	id has a value which is a job_id
 	type has a value which is a string
@@ -13005,6 +13288,7 @@ ComplexRole is a reference to a list containing 4 items:
 	1: (roleType) a string
 	2: (optional_role) a bool
 	3: (triggering) a bool
+bool is an int
 
 </pre>
 
@@ -13053,6 +13337,7 @@ ComplexRole is a reference to a list containing 4 items:
 	1: (roleType) a string
 	2: (optional_role) a bool
 	3: (triggering) a bool
+bool is an int
 
 
 =end text
@@ -13170,6 +13455,7 @@ adjust_mapping_role_params is a reference to a hash where the following keys are
 	auth has a value which is a string
 mapping_id is a string
 workspace_id is a string
+bool is an int
 FunctionalRole is a reference to a hash where the following keys are defined:
 	id has a value which is a role_id
 	name has a value which is a string
@@ -13200,6 +13486,7 @@ adjust_mapping_role_params is a reference to a hash where the following keys are
 	auth has a value which is a string
 mapping_id is a string
 workspace_id is a string
+bool is an int
 FunctionalRole is a reference to a hash where the following keys are defined:
 	id has a value which is a role_id
 	name has a value which is a string
@@ -13318,6 +13605,7 @@ adjust_mapping_complex_params is a reference to a hash where the following keys 
 	auth has a value which is a string
 mapping_id is a string
 workspace_id is a string
+bool is an int
 Complex is a reference to a hash where the following keys are defined:
 	id has a value which is a complex_id
 	name has a value which is a string
@@ -13351,6 +13639,7 @@ adjust_mapping_complex_params is a reference to a hash where the following keys 
 	auth has a value which is a string
 mapping_id is a string
 workspace_id is a string
+bool is an int
 Complex is a reference to a hash where the following keys are defined:
 	id has a value which is a complex_id
 	name has a value which is a string
@@ -13466,6 +13755,7 @@ adjust_mapping_subsystem_params is a reference to a hash where the following key
 	auth has a value which is a string
 mapping_id is a string
 workspace_id is a string
+bool is an int
 Subsystem is a reference to a hash where the following keys are defined:
 	id has a value which is a subsystem_id
 	name has a value which is a string
@@ -13500,6 +13790,7 @@ adjust_mapping_subsystem_params is a reference to a hash where the following key
 	auth has a value which is a string
 mapping_id is a string
 workspace_id is a string
+bool is an int
 Subsystem is a reference to a hash where the following keys are defined:
 	id has a value which is a subsystem_id
 	name has a value which is a string
@@ -13859,6 +14150,7 @@ import_template_fbamodel_params is a reference to a hash where the following key
 mapping_id is a string
 workspace_id is a string
 template_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -13925,6 +14217,7 @@ import_template_fbamodel_params is a reference to a hash where the following key
 mapping_id is a string
 workspace_id is a string
 template_id is a string
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -14046,6 +14339,7 @@ adjust_template_reaction_params is a reference to a hash where the following key
 	auth has a value which is a string
 template_id is a string
 workspace_id is a string
+bool is an int
 compartment_id is a string
 complex_id is a string
 TemplateReaction is a reference to a hash where the following keys are defined:
@@ -14081,6 +14375,7 @@ adjust_template_reaction_params is a reference to a hash where the following key
 	auth has a value which is a string
 template_id is a string
 workspace_id is a string
+bool is an int
 compartment_id is a string
 complex_id is a string
 TemplateReaction is a reference to a hash where the following keys are defined:
@@ -14213,6 +14508,7 @@ adjust_template_biomass_params is a reference to a hash where the following keys
 	auth has a value which is a string
 template_id is a string
 workspace_id is a string
+bool is an int
 compound_id is a string
 compartment_id is a string
 TemplateBiomass is a reference to a hash where the following keys are defined:
@@ -14285,6 +14581,7 @@ adjust_template_biomass_params is a reference to a hash where the following keys
 	auth has a value which is a string
 template_id is a string
 workspace_id is a string
+bool is an int
 compound_id is a string
 compartment_id is a string
 TemplateBiomass is a reference to a hash where the following keys are defined:
@@ -14615,6 +14912,7 @@ import_regulatory_model_params is a reference to a hash where the following keys
 
 	auth has a value which is a string
 workspace_id is a string
+bool is an int
 kbase_id is a string
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
@@ -14663,6 +14961,7 @@ import_regulatory_model_params is a reference to a hash where the following keys
 
 	auth has a value which is a string
 workspace_id is a string
+bool is an int
 kbase_id is a string
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
@@ -14828,6 +15127,7 @@ ModelCompareReaction is a reference to a hash where the following keys are defin
 	number_models has a value which is an int
 	fraction_models has a value which is a float
 reaction_id is a string
+bool is an int
 feature_id is a string
 
 </pre>
@@ -14871,6 +15171,7 @@ ModelCompareReaction is a reference to a hash where the following keys are defin
 	number_models has a value which is an int
 	fraction_models has a value which is a float
 reaction_id is a string
+bool is an int
 feature_id is a string
 
 
@@ -15103,6 +15404,7 @@ GenomeCompareFunction is a reference to a hash where the following keys are defi
 	subclass has a value which is a string
 	number_genomes has a value which is an int
 	fraction_genomes has a value which is a float
+bool is an int
 feature_id is a string
 
 </pre>
@@ -15140,6 +15442,7 @@ GenomeCompareFunction is a reference to a hash where the following keys are defi
 	subclass has a value which is a string
 	number_genomes has a value which is an int
 	fraction_genomes has a value which is a float
+bool is an int
 feature_id is a string
 
 
@@ -16086,7 +16389,7 @@ sub version {
 
 
 
-=head2 mdlrxn_kbid
+=head2 bool
 
 =over 4
 
@@ -16097,6 +16400,37 @@ sub version {
 ********************************************************************************
     Universal simple type definitions
    	********************************************************************************
+
+
+=item Definition
+
+=begin html
+
+<pre>
+an int
+</pre>
+
+=end html
+
+=begin text
+
+an int
+
+=end text
+
+=back
+
+
+
+=head2 mdlrxn_kbid
+
+=over 4
+
+
+
+=item Description
+
+KBase ID for a model reaction
 
 
 =item Definition
@@ -22463,7 +22797,6 @@ Input parameters for the "queue_gapfill_model" function.
         phenotype_set_id phenotypeSet - ID of a phenotype set against which gapfilled model should be simulated (an optional argument: default is 'undef')
         workspace_id phenotypeSet_workspace - workspace containing phenotype set to be simulated (an optional argument; default is the value of the workspace argument)
         bool integrate_solution - a flag indicating if the first solution should be integrated in the model (an optional argument: default is '0')
-        bool sensitivity_analysis - a flag indicating if the sensitivity analysis on gapfilling solution
         list<string> target_reactions - a list of reactions to activate with gapfilling
         fbamodel_id out_model - ID where the gapfilled model will be saved (an optional argument: default is 'undef')
         gapfill_id gapFill - ID to which gapfill solution will be saved (an optional argument: default is 'undef')
@@ -22486,7 +22819,6 @@ formulation has a value which is a GapfillingFormulation
 phenotypeSet has a value which is a phenotype_set_id
 phenotypeSet_workspace has a value which is a workspace_id
 integrate_solution has a value which is a bool
-sensitivity_analysis has a value which is a bool
 target_reactions has a value which is a reference to a list where each element is a string
 out_model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
@@ -22510,7 +22842,6 @@ formulation has a value which is a GapfillingFormulation
 phenotypeSet has a value which is a phenotype_set_id
 phenotypeSet_workspace has a value which is a workspace_id
 integrate_solution has a value which is a bool
-sensitivity_analysis has a value which is a bool
 target_reactions has a value which is a reference to a list where each element is a string
 out_model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
@@ -23056,7 +23387,7 @@ auth has a value which is a string
 =item Description
 
 ********************************************************************************
-	Code relating to import and analysis of ProteinSets
+	Code relating to assessing model sensitivity to reaction knockouts
    	********************************************************************************
 
 
@@ -23150,6 +23481,37 @@ reactions has a value which is a reference to a list where each element is a Rea
 
 
 
+=head2 rxnprob_id
+
+=over 4
+
+
+
+=item Description
+
+ID for a RxnProbs T.O. (defined in the probabilistic annotation spec)
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
 =head2 reaction_sensitivity_analysis_params
 
 =over 4
@@ -23162,12 +23524,14 @@ Input parameters for the "reaction_sensitivity_analysis" function.
 
         fbamodel_id model - ID of model to be analyzed (a required argument)
         workspace_id model_ws - ID of workspace with model to be analyzed (an optional argument - default is value of workspace argument)
-        string kosensitivity_uid - Name of KOSensitivity object in workspace (an optional argument - default is KBase ID)
+        string rxnsens_uid - Name of RxnSensitivity object in workspace (an optional argument - default is KBase ID)
         workspace_id workspace - ID of workspace where output and default inputs will be selected from (a required argument)
-        list<reaction_id> reactions_to_delete - list of reactions to delete in sensitiviity analysis; note, order of the reactions matters (a required argument)
-        string type - type of KO sensitivity analysis (an optional argument - default is "unknown")
-        bool delete_noncontributing_reactions - a boolean indicating if unuseful reactions should be deleted (an optional argument - default is "0")
-        bool integrate_deletions_in_model - a boolean indicating if deletion of noncontributing reactions should be integrated in the model (an optional argument - default is "0")
+        list<reaction_id> reactions_to_delete - list of reactions to delete in sensitiviity analysis; note, order of the reactions matters (a required argument unless gapfill solution ID is provided)                
+        gapfillsolution_id gapfill_solution_id - A Gapfill solution ID. If provided, all reactions in the provided solution will be tested for deletion.
+        bool delete_noncontributing_reactions - a boolean indicating if unuseful reactions should be deleted when running the analysis (an optional argument - default is "0")
+        rxnprob_id rxnprobs_id - ID for a RxnProbs object in a workspace. If provided less likely reactions will be tested for deletion first in the sensitivity analysis (optional).
+        workspace_id rxnprobs_ws - Workspace in which the RxnProbs object is located (optional - default is the value of the workspace argument).
+        string type - type of Reaction sensitivity analysis (an optional argument - default is "unknown")
         string auth  - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument)
 
 
@@ -23182,9 +23546,11 @@ model_ws has a value which is a workspace_id
 rxnsens_uid has a value which is a string
 workspace has a value which is a workspace_id
 reactions_to_delete has a value which is a reference to a list where each element is a reaction_id
-type has a value which is a string
+gapfill_solution_id has a value which is a gapfillsolution_id
 delete_noncontributing_reactions has a value which is a bool
-integrate_deletions_in_model has a value which is a bool
+rxnprobs_id has a value which is a rxnprob_id
+rxnprobs_ws has a value which is a workspace_id
+type has a value which is a string
 auth has a value which is a string
 
 </pre>
@@ -23199,9 +23565,65 @@ model_ws has a value which is a workspace_id
 rxnsens_uid has a value which is a string
 workspace has a value which is a workspace_id
 reactions_to_delete has a value which is a reference to a list where each element is a reaction_id
-type has a value which is a string
+gapfill_solution_id has a value which is a gapfillsolution_id
 delete_noncontributing_reactions has a value which is a bool
-integrate_deletions_in_model has a value which is a bool
+rxnprobs_id has a value which is a rxnprob_id
+rxnprobs_ws has a value which is a workspace_id
+type has a value which is a string
+auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 filter_iterative_solutions_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "filter_iterative_solutions" function.
+fbamodel_id model - Model ID for which to filter iterative gapfill solutions (a required argument)
+fbamodel_id outmodel - ModelID to which to save the filtered results (by default the filtered model is given the same ID as the input model)
+float cutoff - Cutoff for cost per reaction above which to remove iterative gapfill solution reactions (a required argument)
+gapfillsolution_id gapfillsln - Gapfill_solution ID (UUID.solution.#) containing the iterative gapfill solutions to filter (a required argument)
+string auth - The authorization token of the KBase account with workspace permissions.
+workspace_id workspace - ID of workspace where output and default inputs will be selected from (a required argument)
+workspace_id input_model_ws - ID of workspace containing the input model
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+model has a value which is a fbamodel_id
+outmodel has a value which is a fbamodel_id
+cutoff has a value which is a float
+gapfillsln has a value which is a gapfillsolution_id
+workspace has a value which is a workspace_id
+input_model_ws has a value which is a workspace_id
+auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+model has a value which is a fbamodel_id
+outmodel has a value which is a fbamodel_id
+cutoff has a value which is a float
+gapfillsln has a value which is a gapfillsolution_id
+workspace has a value which is a workspace_id
+input_model_ws has a value which is a workspace_id
 auth has a value which is a string
 
 
@@ -23220,16 +23642,12 @@ auth has a value which is a string
 =item Description
 
 Input parameters for the "delete_noncontributing_reactions" function.
-
-        fbamodel_id model - ID of model to be analyzed (a required argument)
-        workspace_id model_ws - ID of workspace with model to be analyzed (an optional argument - default is value of workspace argument)
-        string kosensitivity_uid - Name of KOSensitivity object in workspace (an optional argument - default is KBase ID)
-        workspace_id workspace - ID of workspace where output and default inputs will be selected from (a required argument)
-        list<reaction_id> reactions_to_delete - list of reactions to delete in sensitiviity analysis; note, order of the reactions matters (a required argument)
-        string type - type of KO sensitivity analysis (an optional argument - default is "unknown")
-        bool delete_noncontributing_reactions - a boolean indicating if unuseful reactions should be deleted (an optional argument - default is "0")
-        bool integrate_deletions_in_model - a boolean indicating if deletion of noncontributing reactions should be integrated in the model (an optional argument - default is "0")
-        string auth  - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument)
+workspace_id workspae - Workspace for outputs and default inputs (a required argument)
+workspace_id rxn_sensitivity_ws - Workspace for reaction sensitivity object used as input
+string rxn_sensitivity - Reaction sensitivity ID
+fbamodel_id new_model_uid - ID for output model with noncontributing reactions deleted
+string new_rxn_sensitivity_uid - ID for rxnsensitivity object with bits set to indicate reactions were deleted
+string auth - Authorization token for user (must have appropriate permissions to read and write objects)
 
 
 =item Definition
