@@ -11561,8 +11561,9 @@ sub reaction_sensitivity_analysis
 				new_essentials => [split(/;/,$row->[8])]
 			};
 			if ($row->[7] eq "DELETED") {
-				$sensrxn->{"delete"} = 1;
+			    $sensrxn->{"delete"} = 1;
 			} else {
+			    my $growth_fraction = $row->[5];
 			    my $inactive_rxns = [split(/;/,$row->[7])];
 			    my $ok_rxns = [];
 			    for ( my $k=0; $k < @{$inactive_rxns}; $k++ ) {
@@ -11572,21 +11573,22 @@ sub reaction_sensitivity_analysis
 				    push(@{$ok_rxns}, $inactive_rxns->[$k]);
 				}
 			    }
-			    if ( @{$ok_rxns} == 0 ) {
-					$sensrxn->{"delete"} = 1;
-			    } else {
-					$sensrxn->{"new_inactive_rxns"} = $ok_rxns;
+			    # TODO - this cutoff should match the one in the MFA toolkit.
+			    if ( @{$ok_rxns} == 0 && $growth_fraction > 0.00001) {
+				$sensrxn->{"delete"} = 1;
+			    } elsif ( @{$ok_rxns} > 0 ) {
+				$sensrxn->{"new_inactive_rxns"} = $ok_rxns;
 			    }
 			}
 			if ($row->[6] ne "NA") {
-				$sensrxn->{"biomass_compounds"} = [split(/;/,$row->[6])];
+			    $sensrxn->{"biomass_compounds"} = [split(/;/,$row->[6])];
 			}
 			push(@{$object->{reactions}},$sensrxn);
 		}
 		for (my $i=0; $i < @{$object->{reactions}}; $i++) {
 			my $rxn = $object->{reactions}->[$i];
 			if ( @{$rxn->{new_inactive_rxns}} == 0 ) {
-			    continue;
+			    next;
 			}
 			my $value = 1/@{$rxn->{new_inactive_rxns}};
 			$rxn->{normalized_activated_reaction_count} = 0;
@@ -11751,7 +11753,8 @@ sub filter_iterative_solutions
 	my $slnrxnarray = $self->_parse_problem_report_solution($solution);
 	my $numrxns = @{$slnrxnarray};
 	my $norm = $obj/$numrxns;
-	if ( $norm < $input->{cutoff} ) {
+	# Remove high-cost pathways.
+	if ( $norm > $input->{cutoff} ) {
 	    for (my $j=0; $j<@{$slnrxnarray}; $j++) {
 		my $rxnid = $slnrxnarray->[$j]->[0];
 		my $dir = $slnrxnarray->[$j]->[1];
@@ -11933,19 +11936,22 @@ sub delete_noncontributing_reactions
 		if ($rxnsens->{reactions}->[$i]->{"delete"} eq "1") {
 			my $rxn = $model->searchForReaction($rxnsens->{reactions}->[$i]->{reaction});
 			if (defined($rxn)) {
-			    if ($rxn->direction eq $rxnsens->{reactions}->[$i]->direction) {
+			    if ( ! defined($rxnsens->{reactions}->[$i]->{direction} ) ) {
+				# For reverse compatibility with old RxnSensitivity objects
+				$model->remove("modelreactions", $rxn);
+			    } elsif ($rxn->direction eq $rxnsens->{reactions}->[$i]->{direction}) {
 				$model->remove("modelreactions",$rxn);
 			    } else {
 				# Change from a reversible reaction to an irreversible one
 				# (if model has < and rxnsensitivity had > or vice versa we just ignore it, maybe it was just already deleted somewhere else)
 				if ( $rxn->direction eq "=" ) {
 				    # This should never happen but just in case
-				    if ( $rxnsens->{reactions}->[$i]->direction eq "=" ) {
+				    if ( $rxnsens->{reactions}->[$i]->{direction} eq "=" ) {
 					$model->remove("modelreactions", $rxn);
-				    } elsif ( $rxnsens->{reactions}->[$i]->direction eq ">" ) {
+				    } elsif ( $rxnsens->{reactions}->[$i]->{direction} eq ">" ) {
 					$model->manualReactionAdjustment( { reaction => $rxnsens->{reactions}->[$i]->{reaction},
 									    direction => "<" } );
-				    } elsif ( $rxnsens->{reactions}->[$i]->direction eq "<" ) {
+				    } elsif ( $rxnsens->{reactions}->[$i]->{direction} eq "<" ) {
 					$model->manualReactionAdjustment( { reaction => $rxnsens->{reactions}->[$i]->{reaction},
 									    direction => ">" } );
 				    }
