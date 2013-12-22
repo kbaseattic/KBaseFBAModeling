@@ -24,7 +24,8 @@ my $translation = {
 	workspace => "workspace",
 	addtomodel => "add_to_model",
 	auth => "auth",
-	overwrite => "overwrite"
+	overwrite => "overwrite",
+	biomass => "biomass"
 };
 my $fbaTranslation = {
 	media => "media",
@@ -42,7 +43,7 @@ my $fbaTranslation = {
 	addlcpd => "additionalcpds",
 	prommodel => "prommodel",
 	prommodelws => "prommodel_workspace",
-	modelws => "model_workspace"
+	modelws => "model_workspace",
 };
 #Defining usage and options
 my $specs = [
@@ -52,6 +53,7 @@ my $specs = [
     [ 'modelws:s', 'Workspace with model' ],
     [ 'addlcpd|c:s@', 'Additional compounds (; delimiter)' ],
     [ 'maximize:s', 'Maximize objective', { "default" => 1 } ],
+	[ 'biomass|b:s', 'Target biomass (bio1 is default)' ],
 	[ 'objterms:s@', 'Objective terms' ],
 	[ 'geneko:s@', 'List of gene KO (; delimiter)' ],
 	[ 'rxnko:s@', 'List of reaction KO (; delimiter)' ],

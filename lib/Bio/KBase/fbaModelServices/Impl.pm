@@ -1528,7 +1528,7 @@ sub _was_reaction_gapfilled {
 }
 
 # Get an array if (rxnid, direction) pairs from the third element of a line in ProblemReport.txt
-sub _parse_problem_report_solution($solution) {
+sub _parse_problem_report_solution {
     my ($self, $str) = @_;
     my $matches = [];
     @$matches = ( $str =~ /([+-]rxn\d+)/g );
@@ -1548,7 +1548,7 @@ sub _parse_problem_report_solution($solution) {
 }
 
 # Parse a gapfill solution ID into (gapfill UUID, solution number)
-sub _parse_gapfillsolution_id{
+sub _parse_gapfillsolution_id {
     my ($self, $solution_id) = @_;
     my($gfid, $solid);
     # Handle gapfill solution. Get all the reactions modified by the specified gapfill solution.
@@ -7206,7 +7206,8 @@ sub runfba
 		model_workspace => $input->{workspace},
 		fba => undef,
 		add_to_model => 0,
-		overwrite => 0
+		overwrite => 0,
+		biomass => undef
 	});
 	if (!defined($input->{fba})) {
 		$input->{fba} = $self->_get_new_id($input->{model}.".fba.");
@@ -7219,6 +7220,18 @@ sub runfba
 	$fba->comboDeletions($input->{simulateko});
 	$fba->fluxMinimization($input->{minimizeflux});
 	$fba->findMinimalMedia($input->{findminmedia});
+	if (defined($input->{biomass}) && $fba->readableObjective() =~ m/\{\s+bio1\s+\}/) {
+		my $bio = $model->searchForBiomass($input->{biomass});
+		if (defined($bio)) {
+			$fba->remove("fbaObjectiveTerms",$fba->fbaObjectiveTerms()->[0]);
+			$fba->add("fbaObjectiveTerms",{
+				coefficient => 1,
+				variableType => 'flux',
+				entityType => "biomass",
+				entity_uuid => $bio->uuid(),
+			});
+		}			
+	}
     #Running FBA
     my $fbaResult;
     eval {
@@ -8953,6 +8966,8 @@ sub queue_gapfill_model
 					$msg = "Gapfilling failed in preliminary feasibility determination.";
 				}
 				$self->_error($msg,'queue_gapfill_model');
+			} elsif ($line =~ /FAILED/ && $line =~ /bio\d+/) {
+				$self->_error("Gapfilling failed with no solutions!",'queue_gapfill_model');
 			}
 		}
 		$gapfill->parseGapfillingResults($gapfill->fbaFormulation()->fbaResults()->[-1]);
