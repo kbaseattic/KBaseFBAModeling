@@ -8935,7 +8935,8 @@ sub queue_gapfill_model
 			fbaref => $gapfill->fbaFormulation()->uuid()
 		};
 		if (defined($input->{solver})) {
-			$jobdata->{solver} = $input->{solver};
+		    # All valid solvers are UPPER CASE.
+			$jobdata->{solver} = uc($input->{solver});
 		}
 	    $job = $self->_queueJob({
 			type => "FBA",
