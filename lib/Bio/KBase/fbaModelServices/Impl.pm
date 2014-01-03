@@ -23393,7 +23393,7 @@ auth has a value which is a string
 
 
 
-=head2 ReactionSensitivityAnalysisReaction
+=head2 kb_sub_id
 
 =over 4
 
@@ -23411,15 +23411,143 @@ auth has a value which is a string
 =begin html
 
 <pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 kb_id
+
+=over 4
+
+
+
+=item Description
+
+@id kb
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 ws_id
+
+=over 4
+
+
+
+=item Description
+
+@id ws
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 ws_sub_id
+
+=over 4
+
+
+
+=item Description
+
+@id wssub
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 ReactionSensitivityAnalysisCorrectedReaction
+
+=over 4
+
+
+
+=item Description
+
+ReactionSensitivityAnalysisCorrectedReaction object
+
+kb_sub_id kbid - KBase ID for reaction knockout corrected reaction
+ws_sub_id model_reaction_wsid - ID of model reaction
+float normalized_required_reaction_count - Normalized count of reactions required for this reaction to function
+list<ws_sub_id> required_reactions - list of reactions required for this reaction to function
+
+@searchable ws_subset kbid model_reaction_kbid required_reactions
+@optional
+
+
+=item Definition
+
+=begin html
+
+<pre>
 a reference to a hash where the following keys are defined:
-kbid has a value which is a kbase_id
-reaction has a value which is a mdlrxn_kbid
-growth_fraction has a value which is a float
-delete has a value which is a bool
-deleted has a value which is a bool
-biomass_compounds has a value which is a reference to a list where each element is a string
-new_inactive_rxns has a value which is a reference to a list where each element is a string
-new_essentials has a value which is a reference to a list where each element is a string
+kbid has a value which is a kb_sub_id
+model_reaction_wsid has a value which is a ws_sub_id
+normalized_required_reaction_count has a value which is a float
+required_reactions has a value which is a reference to a list where each element is a ws_sub_id
 
 </pre>
 
@@ -23428,14 +23556,71 @@ new_essentials has a value which is a reference to a list where each element is 
 =begin text
 
 a reference to a hash where the following keys are defined:
-kbid has a value which is a kbase_id
-reaction has a value which is a mdlrxn_kbid
+kbid has a value which is a kb_sub_id
+model_reaction_wsid has a value which is a ws_sub_id
+normalized_required_reaction_count has a value which is a float
+required_reactions has a value which is a reference to a list where each element is a ws_sub_id
+
+
+=end text
+
+=back
+
+
+
+=head2 ReactionSensitivityAnalysisReaction
+
+=over 4
+
+
+
+=item Description
+
+Object for holding reaction knockout sensitivity reaction data
+
+kb_sub_id kbid - KBase ID for reaction knockout sensitivity reaction
+ws_sub_id model_reaction_wsid - ID of model reaction
+bool delete - indicates if reaction is to be deleted
+bool deleted - indicates if the reaction has been deleted
+float growth_fraction - Fraction of wild-type growth after knockout
+float normalized_activated_reaction_count - Normalized number of activated reactions
+list<ws_sub_id> biomass_compounds  - List of biomass compounds that depend on the reaction
+list<ws_sub_id> new_inactive_rxns - List of new reactions dependant upon reaction KO
+list<ws_sub_id> new_essentials - List of new essential genes with reaction knockout
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+kbid has a value which is a kb_sub_id
+model_reaction_wsid has a value which is a ws_sub_id
 growth_fraction has a value which is a float
 delete has a value which is a bool
 deleted has a value which is a bool
-biomass_compounds has a value which is a reference to a list where each element is a string
-new_inactive_rxns has a value which is a reference to a list where each element is a string
-new_essentials has a value which is a reference to a list where each element is a string
+normalized_activated_reaction_count has a value which is a float
+biomass_compounds has a value which is a reference to a list where each element is a ws_sub_id
+new_inactive_rxns has a value which is a reference to a list where each element is a ws_sub_id
+new_essentials has a value which is a reference to a list where each element is a ws_sub_id
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+kbid has a value which is a kb_sub_id
+model_reaction_wsid has a value which is a ws_sub_id
+growth_fraction has a value which is a float
+delete has a value which is a bool
+deleted has a value which is a bool
+normalized_activated_reaction_count has a value which is a float
+biomass_compounds has a value which is a reference to a list where each element is a ws_sub_id
+new_inactive_rxns has a value which is a reference to a list where each element is a ws_sub_id
+new_essentials has a value which is a reference to a list where each element is a ws_sub_id
 
 
 =end text
@@ -23454,12 +23639,13 @@ new_essentials has a value which is a reference to a list where each element is 
 
 Object for holding reaction knockout sensitivity results
 
-        kbase_id kbid - KBase ID of reaction sensitivity object
-        ws_ref model_wsid - Workspace reference to associated model
+        kb_id kbid - KBase ID of reaction sensitivity object
+        ws_id model_wsid - Workspace reference to associated model
         string type - type of reaction KO sensitivity object
         bool deleted_noncontributing_reactions - boolean indicating if noncontributing reactions were deleted
         bool integrated_deletions_in_model - boolean indicating if deleted reactions were implemented in the model
-        list<ReactionSensitivityAnalysisReaction> reactions - list of results from sensitivity analysis for each reaction
+        list<ReactionSensitivityAnalysisReaction> reactions - list of sensitivity data for tested reactions
+        list<ReactionSensitivityAnalysisCorrectedReaction> corrected_reactions - list of reactions dependant upon tested reactions
 
 
 =item Definition
@@ -23468,12 +23654,13 @@ Object for holding reaction knockout sensitivity results
 
 <pre>
 a reference to a hash where the following keys are defined:
-kbid has a value which is a kbase_id
-model_wsid has a value which is a ws_ref
+kbid has a value which is a kb_id
+model_wsid has a value which is a ws_id
 type has a value which is a string
 deleted_noncontributing_reactions has a value which is a bool
 integrated_deletions_in_model has a value which is a bool
 reactions has a value which is a reference to a list where each element is a ReactionSensitivityAnalysisReaction
+corrected_reactions has a value which is a reference to a list where each element is a ReactionSensitivityAnalysisCorrectedReaction
 
 </pre>
 
@@ -23482,12 +23669,13 @@ reactions has a value which is a reference to a list where each element is a Rea
 =begin text
 
 a reference to a hash where the following keys are defined:
-kbid has a value which is a kbase_id
-model_wsid has a value which is a ws_ref
+kbid has a value which is a kb_id
+model_wsid has a value which is a ws_id
 type has a value which is a string
 deleted_noncontributing_reactions has a value which is a bool
 integrated_deletions_in_model has a value which is a bool
 reactions has a value which is a reference to a list where each element is a ReactionSensitivityAnalysisReaction
+corrected_reactions has a value which is a reference to a list where each element is a ReactionSensitivityAnalysisCorrectedReaction
 
 
 =end text
