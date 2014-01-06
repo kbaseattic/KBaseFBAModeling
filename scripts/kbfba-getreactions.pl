@@ -48,7 +48,7 @@ my $translation = {
 };
 #Defining usage and options
 my $specs = [
-    [ 'idtype|i:s', 'Type of ID' ],
+    [ 'idtype|i:s', 'Type of ID (default is to search all alias sets)' ],
     [ 'pretty|p', 'Pretty print output' ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation,$manpage);

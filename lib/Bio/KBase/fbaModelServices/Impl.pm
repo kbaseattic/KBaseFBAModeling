@@ -4073,7 +4073,7 @@ sub get_reactions
     #BEGIN get_reactions
 	$self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["reactions"],{
-    	id_type => "ModelSEED",
+        id_type => "all",
     	biochemistry => "default",
 		mapping => "default-mapping"
     });
@@ -4081,7 +4081,12 @@ sub get_reactions
 	$out_reactions = [];
 	for (my $i=0; $i < @{$input->{reactions}}; $i++) {
 		my $rxn = $input->{reactions}->[$i];
-		my $obj = $biochem->getObjectByAlias("reactions",$rxn,$input->{id_type});
+		my $obj;
+		if ($input->{id_type} eq "all") {
+			$obj = $biochem->getObjectByAlias("reactions",$rxn);
+		} else {
+			$obj = $biochem->getObjectByAlias("reactions",$rxn,$input->{id_type});
+		}
 		my $new;
 		if (defined($obj)) {
 			$new = {
