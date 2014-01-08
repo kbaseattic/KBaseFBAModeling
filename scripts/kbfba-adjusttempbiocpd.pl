@@ -77,7 +77,7 @@ my $specs = [
     [ 'coef=s', 'Coefficient of template biomass compound' ],
     [ 'coeftype=s', 'Coefficient type of template biomass compound' ],
     [ 'class=s', 'Class of template biomass compound' ],
-    [ 'universal', 'Indicates if template biomass compound should be universal' ],
+    [ 'universal', 'Indicates if template biomass compound should be universal', { "default" => 1 } ],
     [ 'linkcpds=s@', 'Compounds linked to current compound (; delimited)' ],
     [ 'workspace|w=s', 'Workspace with template model', { "default" => workspace() } ],
 ];
