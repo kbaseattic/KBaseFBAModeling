@@ -4,6 +4,7 @@ use Data::Dumper;
 use Moose;
 use JSON;
 use Bio::KBase::Log;
+use Bio::KBase::AuthToken;
 
 extends 'RPC::Any::Server::JSONRPC::PSGI';
 
@@ -87,6 +88,76 @@ our %return_counts = (
         'version' => 1,
 );
 
+our %method_authentication = (
+        'get_models' => 'optional',
+        'get_fbas' => 'optional',
+        'get_gapfills' => 'optional',
+        'get_gapgens' => 'optional',
+        'get_reactions' => 'optional',
+        'get_compounds' => 'optional',
+        'get_alias' => 'optional',
+        'get_aliassets' => 'optional',
+        'get_media' => 'optional',
+        'get_biochemistry' => 'optional',
+        'get_ETCDiagram' => 'optional',
+        'import_probanno' => 'required',
+        'genome_object_to_workspace' => 'required',
+        'genome_to_workspace' => 'required',
+        'add_feature_translation' => 'required',
+        'genome_to_fbamodel' => 'required',
+        'import_fbamodel' => 'required',
+        'export_fbamodel' => 'optional',
+        'export_object' => 'optional',
+        'export_genome' => 'optional',
+        'adjust_model_reaction' => 'required',
+        'adjust_biomass_reaction' => 'required',
+        'addmedia' => 'required',
+        'export_media' => 'optional',
+        'runfba' => 'required',
+        'export_fba' => 'optional',
+        'import_phenotypes' => 'required',
+        'simulate_phenotypes' => 'required',
+        'add_media_transporters' => 'required',
+        'export_phenotypeSimulationSet' => 'optional',
+        'integrate_reconciliation_solutions' => 'required',
+        'queue_runfba' => 'required',
+        'queue_gapfill_model' => 'required',
+        'queue_gapgen_model' => 'required',
+        'queue_wildtype_phenotype_reconciliation' => 'required',
+        'queue_reconciliation_sensitivity_analysis' => 'required',
+        'queue_combine_wildtype_phenotype_reconciliation' => 'required',
+        'jobs_done' => 'required',
+        'run_job' => 'required',
+        'set_cofactors' => 'required',
+        'find_reaction_synonyms' => 'optional',
+        'role_to_reactions' => 'optional',
+        'reaction_sensitivity_analysis' => 'required',
+        'filter_iterative_solutions' => 'required',
+        'delete_noncontributing_reactions' => 'required',
+        'fasta_to_ProteinSet' => 'required',
+        'ProteinSet_to_Genome' => 'required',
+        'fasta_to_TranscriptSet' => 'required',
+        'TranscriptSet_to_Genome' => 'required',
+        'fasta_to_ContigSet' => 'required',
+        'ContigSet_to_Genome' => 'required',
+        'annotate_workspace_Genome' => 'required',
+        'probanno_to_genome' => 'required',
+        'get_mapping' => 'optional',
+        'adjust_mapping_role' => 'required',
+        'adjust_mapping_complex' => 'required',
+        'adjust_mapping_subsystem' => 'required',
+        'get_template_model' => 'optional',
+        'import_template_fbamodel' => 'required',
+        'adjust_template_reaction' => 'required',
+        'adjust_template_biomass' => 'required',
+        'add_stimuli' => 'required',
+        'import_regulatory_model' => 'required',
+        'compare_models' => 'optional',
+        'compare_genomes' => 'optional',
+        'import_metagenome_annotation' => 'required',
+        'models_to_community_model' => 'required',
+        'metagenome_to_fbamodels' => 'required',
+);
 
 
 sub _build_valid_methods
@@ -285,7 +356,37 @@ sub call_method {
     
     my $args = $data->{arguments};
 
-    # Service fbaModelServices does not require authentication.
+{
+    # Service fbaModelServices requires authentication.
+
+    my $method_auth = $method_authentication{$method};
+    $ctx->authenticated(0);
+    if ($method_auth eq 'none')
+    {
+	# No authentication required here. Move along.
+    }
+    else
+    {
+	my $token = $self->_plack_req->header("Authorization");
+
+	if (!$token && $method_auth eq 'required')
+	{
+	    $self->exception('PerlError', "Authentication required for fbaModelServices but no authentication header was passed");
+	}
+
+	my $auth_token = Bio::KBase::AuthToken->new(token => $token, ignore_authrc => 1);
+	my $valid = $auth_token->validate();
+	# Only throw an exception if authentication was required and it fails
+	if ($method_auth eq 'required' && !$valid)
+	{
+	    $self->exception('PerlError', "Token validation failed: " . $auth_token->error_message);
+	} elsif ($valid) {
+	    $ctx->authenticated(1);
+	    $ctx->user_id($auth_token->user_id);
+	    $ctx->token( $token);
+	}
+    }
+}
     my $new_isa = $self->get_package_isa($module);
     no strict 'refs';
     local @{"${module}::ISA"} = @$new_isa;

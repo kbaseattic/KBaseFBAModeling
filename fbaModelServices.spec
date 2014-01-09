@@ -1200,8 +1200,9 @@ module fbaModelServices {
     /*
     	Returns model data for input ids
     */
+    authentication optional;
     funcdef get_models(get_models_params input) returns (list<FBAModel> out_models);
-
+	
 	/* Input parameters for the "get_fbas" function.
 	
 		list<fba_id> fbas - a list of the FBA study IDs for the FBA studies to be returned (a required argument)
@@ -1219,8 +1220,9 @@ module fbaModelServices {
     /*
     	Returns data for the requested flux balance analysis formulations
     */
+    authentication optional;
     funcdef get_fbas(get_fbas_params input) returns (list<FBA> out_fbas);
-
+	
 	/* Input parameters for the "get_gapfills" function.
 	
 		list<gapfill_id> gapfills - a list of the gapfill study IDs for the gapfill studies to be returned (a required argument)
@@ -1238,8 +1240,9 @@ module fbaModelServices {
     /*
     	Returns data for the requested gap filling simulations
     */
+    authentication optional;
     funcdef get_gapfills(get_gapfills_params input) returns (list<GapFill> out_gapfills);
-
+	
 	/* Input parameters for the "get_gapgens" function.
 	
 		list<gapgen_id> gapgens - a list of the gapgen study IDs for the gapgen studies to be returned (a required argument)
@@ -1257,8 +1260,9 @@ module fbaModelServices {
     /*
     	Returns data for the requested gap generation simulations
     */
+    authentication optional;
     funcdef get_gapgens(get_gapgens_params input) returns (list<GapGen> out_gapgens);
-
+	
 	/* Input parameters for the "get_reactions" function.
 	
 		list<reaction_id> reactions - a list of the reaction IDs for the reactions to be returned (a required argument)
@@ -1274,8 +1278,9 @@ module fbaModelServices {
     /*
     	Returns data for the requested reactions
     */
+    authentication optional;
     funcdef get_reactions(get_reactions_params input) returns (list<Reaction> out_reactions);
-
+	
 	/* 
 	        Input parameters for the "get_compounds" function.	
 		list<compound_id> compounds - a list of the compound IDs for the compounds to be returned (a required argument)
@@ -1291,8 +1296,9 @@ module fbaModelServices {
     /*
     	Returns data for the requested compounds
     */
+    authentication optional;
     funcdef get_compounds(get_compounds_params input) returns (list<Compound> out_compounds);
-
+	
     /* Input parameters for the get_alias function
 
                 string object_type    - The type of object (e.g. Compound or Reaction)
@@ -1303,11 +1309,11 @@ module fbaModelServices {
     */
 
     typedef structure {
-	string object_type;
-	string input_id_type;
-	string output_id_type;
-	list<string> input_ids;
-	string auth;
+		string object_type;
+		string input_id_type;
+		string output_id_type;
+		list<string> input_ids;
+		string auth;
     } get_alias_params;
 
     /* Output for get_alias function
@@ -1317,13 +1323,14 @@ module fbaModelServices {
 
     */
     typedef structure {
-	string original_id;
-	list<string> aliases;
+		string original_id;
+		list<string> aliases;
     } get_alias_outputs;
 
     /* Turns one compound I into another of a different type */
+    authentication optional;
     funcdef get_alias(get_alias_params input) returns (list<get_alias_outputs> output);
-
+	
     /* Input parameters for the get_aliassets function
 
               string auth; - The authentication token of the KBase account (optional)
@@ -1337,7 +1344,9 @@ module fbaModelServices {
     /* 
          Get possible types of aliases (alias sets) 
     */
+    authentication optional;
     funcdef get_aliassets(get_aliassets_params input) returns ( list<string> aliassets );
+    
     
     /* Input parameters for the "get_media" function.
 	
@@ -1354,6 +1363,7 @@ module fbaModelServices {
     /*
     	Returns data for the requested media formulations
     */
+    authentication optional;
     funcdef get_media(get_media_params input) returns (list<Media> out_media);
 
 	/* Input parameters for the "get_biochemistry" function.
@@ -1373,6 +1383,7 @@ module fbaModelServices {
     /*
     	Returns biochemistry object
     */
+    authentication optional;
     funcdef get_biochemistry(get_biochemistry_params input) returns (Biochemistry out_biochemistry);
 	
 	/* Input parameters for the "get_ETCDiagram" function.
@@ -1395,7 +1406,9 @@ module fbaModelServices {
         This function retrieves an ETC diagram for the input model operating in the input media condition
     	The model must grow on the specified media in order to return a working ETC diagram
     */
+    authentication optional;
     funcdef get_ETCDiagram (get_ETCDiagram_params input) returns (ETCDiagramSpecs output);
+    
 	/*********************************************************************************
     Code relating to reconstruction of metabolic models
    	*********************************************************************************/
@@ -1423,6 +1436,7 @@ module fbaModelServices {
     /*
         Loads an input genome object into the workspace.
     */
+    authentication required;
     funcdef import_probanno(import_probanno_params input) returns (object_metadata probannoMeta);
     
     /* Input parameters for the "genome_object_to_workspace" function.
@@ -1444,6 +1458,7 @@ module fbaModelServices {
     /*
         Loads an input genome object into the workspace.
     */
+    authentication required;
     funcdef genome_object_to_workspace(genome_object_to_workspace_params input) returns (object_metadata genomeMeta);
     
     /* Input parameters for the "genome_to_workspace" function.
@@ -1468,6 +1483,7 @@ module fbaModelServices {
     /*
         Retrieves a genome from the CDM and saves it as a genome object in the workspace.
     */
+    authentication required;
     funcdef genome_to_workspace(genome_to_workspace_params input) returns (object_metadata genomeMeta);
     
     /* A link between a KBase gene ID and the ID for the same gene in another database
@@ -1498,6 +1514,7 @@ module fbaModelServices {
     /*
         Adds a new set of alternative feature IDs to the specified genome typed object
     */
+    authentication required;
     funcdef add_feature_translation(add_feature_translation_params input) returns (object_metadata genomeMeta);
     
     /* Input parameters for the "genome_to_fbamodel" function.
@@ -1527,6 +1544,7 @@ module fbaModelServices {
     /*
         Build a genome-scale metabolic model based on annotations in an input genome typed object
     */
+    authentication required;
     funcdef genome_to_fbamodel (genome_to_fbamodel_params input) returns (object_metadata modelMeta);
 	
 	/* Input parameters for the "import_fbamodel" function.
@@ -1555,8 +1573,9 @@ module fbaModelServices {
     /*
         Import a model from an input table of model and gene IDs
     */
+    authentication required;
     funcdef import_fbamodel(import_fbamodel_params input) returns (object_metadata modelMeta);
-		
+	
     /* Input parameters for the "export_fbamodel" function.
 	
 		fbamodel_id model - ID of the model to be exported (a required argument)
@@ -1574,6 +1593,7 @@ module fbaModelServices {
     /*
         This function exports the specified FBAModel to a specified format (sbml,html)
     */
+    authentication optional;
     funcdef export_fbamodel(export_fbamodel_params input) returns (string output);
     
     /* Input parameters for the "export_object" function.
@@ -1593,8 +1613,9 @@ module fbaModelServices {
     /*
         This function prints the object pointed to by the input reference in the specified format
     */
+    authentication optional;
     funcdef export_object(export_object_params input) returns (string output);
-
+	
 	/* Input parameters for the "export_genome" function.
 	
 		genome_id genome - ID of the genome to be exported (a required argument)
@@ -1612,8 +1633,9 @@ module fbaModelServices {
     /*
         This function exports the specified FBAModel to a specified format (sbml,html)
     */
+    authentication optional;
     funcdef export_genome(export_genome_params input) returns (string output);
-
+	
     /* Input parameters for the "adjust_model_reaction" function.
 	
 		fbamodel_id model - ID of model to be adjusted
@@ -1648,6 +1670,7 @@ module fbaModelServices {
     /*
         Enables the manual addition of a reaction to model
     */
+    authentication required;
     funcdef adjust_model_reaction(adjust_model_reaction_params input) returns (object_metadata modelMeta);
     
     /* Input parameters for the "adjust_biomass_reaction" function.
@@ -1676,6 +1699,7 @@ module fbaModelServices {
     /*
         Enables the manual adjustment of model biomass reaction
     */
+    authentication required;
     funcdef adjust_biomass_reaction(adjust_biomass_reaction_params input) returns (object_metadata modelMeta);
     
     /*********************************************************************************
@@ -1713,6 +1737,7 @@ module fbaModelServices {
     /*
         Add media condition to workspace
     */
+    authentication required;
     funcdef addmedia(addmedia_params input) returns (object_metadata mediaMeta);
     
     /* Input parameters for the "export_media" function.
@@ -1732,6 +1757,7 @@ module fbaModelServices {
     /*
         Exports media in specified format (html,readable)
     */
+    authentication optional;
     funcdef export_media(export_media_params input) returns (string output);
     
     /* Input parameters for the "addmedia" function.
@@ -1768,6 +1794,7 @@ module fbaModelServices {
     /*
         Run flux balance analysis and return ID of FBA object with results 
     */
+    authentication required;
     funcdef runfba(runfba_params input) returns (object_metadata fbaMeta);
     
     /* Input parameters for the "addmedia" function.
@@ -1787,6 +1814,7 @@ module fbaModelServices {
     /*
         Export an FBA solution for viewing
     */
+    authentication optional;
     funcdef export_fba(export_fba_params input) returns (string output);
     
     /*********************************************************************************
@@ -1817,6 +1845,7 @@ module fbaModelServices {
     /*
         Loads the specified phenotypes into the workspace
     */
+    authentication required;
     funcdef import_phenotypes(import_phenotypes_params input) returns (object_metadata output);
     
     /* Input parameters for the "simulate_phenotypes" function.
@@ -1850,6 +1879,7 @@ module fbaModelServices {
     /*
         Simulates the specified phenotype set
     */
+    authentication required;
     funcdef simulate_phenotypes (simulate_phenotypes_params input) returns (object_metadata output);
     
     /* Input parameters for the add_media_transporters function.
@@ -1883,8 +1913,9 @@ module fbaModelServices {
          Adds transporters for media in a PhenotypeSet to a model
 	 
     */
+    authentication required;
     funcdef add_media_transporters (add_media_transporters_params input) returns (object_metadata output);
-
+	
     /* Input parameters for the "export_phenotypeSimulationSet" function.
 	
 		phenotypeSimulationSet_id phenotypeSimultationSet - ID of the phenotype simulation set to be exported (a required argument)
@@ -1902,6 +1933,7 @@ module fbaModelServices {
     /*
         Export a PhenotypeSimulationSet for viewing
     */
+    authentication optional;
     funcdef export_phenotypeSimulationSet (export_phenotypeSimulationSet_params input) returns (string output);
     
     /* Input parameters for the "integrate_reconciliation_solutions" function.
@@ -1928,6 +1960,7 @@ module fbaModelServices {
     /*
         Integrates the specified gapfill and gapgen solutions into the specified model
     */
+    authentication required;
     funcdef integrate_reconciliation_solutions(integrate_reconciliation_solutions_params input) returns (object_metadata modelMeta);
     
     /*********************************************************************************
@@ -1967,9 +2000,10 @@ module fbaModelServices {
 	/*
         Queues an FBA job in a single media condition
     */
+	authentication required;
 	funcdef queue_runfba(queue_runfba_params input) returns (JobObject job);
    
-   /* Input parameters for the "queue_gapfill_model" function.
+	/* Input parameters for the "queue_gapfill_model" function.
 	
 		fbamodel_id model - ID of the model that gapfill should be run on (a required argument)
 		workspace_id model_workspace - workspace where model for gapfill should be run (an optional argument; default is the value of the workspace argument)
@@ -2006,8 +2040,9 @@ module fbaModelServices {
     /*
         Queues an FBAModel gapfilling job in single media condition
     */
+    authentication required;
     funcdef queue_gapfill_model(gapfill_model_params input) returns (JobObject job);
-        
+    
     /* Input parameters for the "queue_gapgen_model" function.
 	
 		fbamodel_id model - ID of the model that gapgen should be run on (a required argument)
@@ -2042,6 +2077,7 @@ module fbaModelServices {
     /*
         Queues an FBAModel gapfilling job in single media condition
     */
+    authentication required;
     funcdef queue_gapgen_model(gapgen_model_params input) returns (JobObject job);
     
     /* Input parameters for the "queue_wildtype_phenotype_reconciliation" function.
@@ -2082,6 +2118,7 @@ module fbaModelServices {
     /*
         Queues an FBAModel reconciliation job
     */
+    authentication required;
     funcdef queue_wildtype_phenotype_reconciliation(wildtype_phenotype_reconciliation_params input) returns (JobObject job);
     
     /* Input parameters for the "queue_reconciliation_sensitivity_analysis" function.
@@ -2119,6 +2156,7 @@ module fbaModelServices {
     /*
         Queues an FBAModel reconciliation job
     */
+    authentication required;
     funcdef queue_reconciliation_sensitivity_analysis(wildtype_phenotype_reconciliation_params input) returns (JobObject job);
     
     /* Input parameters for the "queue_combine_wildtype_phenotype_reconciliation" function.
@@ -2157,8 +2195,9 @@ module fbaModelServices {
     /*
         Queues an FBAModel reconciliation job
     */
+    authentication required;
     funcdef queue_combine_wildtype_phenotype_reconciliation(combine_wildtype_phenotype_reconciliation_params input) returns (JobObject job);
-        
+    
     /* Input parameters for the "jobs_done" function.
 	
 		job_id job - ID of the job object (a required argument)
@@ -2172,6 +2211,7 @@ module fbaModelServices {
 	/*
         Mark specified job as complete and run postprocessing
     */
+	authentication required;
 	funcdef jobs_done(jobs_done_params input) returns (JobObject job);
 	
 	/* Input parameters for the "run_job" function.
@@ -2187,6 +2227,7 @@ module fbaModelServices {
 	/*
         Runs specified job
     */
+	authentication required;
 	funcdef run_job(run_job_params input) returns (JobObject job);
 	
 	/* Input parameters for the "set_cofactors" function.
@@ -2207,7 +2248,7 @@ module fbaModelServices {
 		bool overwrite;
 		string auth;
 	} set_cofactors_params;
-		
+	authentication required;	
 	funcdef set_cofactors(set_cofactors_params input) returns (object_metadata output);
 	
 	/* Input parameters for the "find_reaction_synonyms" function.
@@ -2228,7 +2269,7 @@ module fbaModelServices {
 		bool overwrite;
 		string auth;
 	} find_reaction_synonyms_params;
-
+	authentication optional;
 	funcdef find_reaction_synonyms(find_reaction_synonyms_params input) returns (object_metadata output);		
 	
 	/* Input parameters for the "role_to_reactions" function.
@@ -2245,8 +2286,9 @@ module fbaModelServices {
     /*
         Retrieves a list of roles mapped to reactions based on input template model
     */
+    authentication optional;
     funcdef role_to_reactions(role_to_reactions_params params) returns (list<RoleComplexReactions> output);
-
+	
 	/*********************************************************************************
 	Code relating to assessing model sensitivity to reaction knockouts
    	*********************************************************************************/
@@ -2367,8 +2409,9 @@ module fbaModelServices {
     /*
         Queues a sensitivity analysis on the knockout of model reactions
     */
+    authentication required;
     funcdef reaction_sensitivity_analysis(reaction_sensitivity_analysis_params input) returns (JobObject job);
-
+	
         /* Input parameters for the "filter_iterative_solutions" function.
 	        fbamodel_id model - Model ID for which to filter iterative gapfill solutions (a required argument)
 		fbamodel_id outmodel - ModelID to which to save the filtered results (by default the filtered model is given the same ID as the input model)
@@ -2391,8 +2434,9 @@ module fbaModelServices {
     /* 
         Apply a cutoff to remove high-cost iterations from an iterative gapfill run.
 	*/
-   funcdef filter_iterative_solutions(filter_iterative_solutions_params input) returns (object_metadata output);
-
+	authentication required;
+	funcdef filter_iterative_solutions(filter_iterative_solutions_params input) returns (object_metadata output);
+	
 	/* Input parameters for the "delete_noncontributing_reactions" function.
 	      workspace_id workspae - Workspace for outputs and default inputs (a required argument)
 	      workspace_id rxn_sensitivity_ws - Workspace for reaction sensitivity object used as input
@@ -2412,6 +2456,7 @@ module fbaModelServices {
     /*
         Deleted flagged reactions from a RxnSensitivity object
     */
+    authentication required;
     funcdef delete_noncontributing_reactions(delete_noncontributing_reactions_params input) returns (object_metadata output);
 	
 	/*********************************************************************************
@@ -2471,7 +2516,9 @@ module fbaModelServices {
     /*
 		Loads a fasta file as a ProteinSet object in the workspace       
     */
+    authentication required;
     funcdef fasta_to_ProteinSet(fasta_to_ProteinSet_params params) returns (object_metadata output);
+    
     /* Input parameters for the "ProteinSet_to_Genome" function.
 	
 		string ProteinSet_uid - ID to be assigned to the ProteinSet (required argument)
@@ -2497,7 +2544,9 @@ module fbaModelServices {
     /*
 		Creates a Genome associated with the ProteinSet object. You cannot recall genes on this genome.  
     */
+    authentication required;
     funcdef ProteinSet_to_Genome(ProteinSet_to_Genome_params params) returns (object_metadata output);
+    
 	/*********************************************************************************
 	Code relating to import and analysis of TranscriptSets
    	*********************************************************************************/
@@ -2557,7 +2606,9 @@ module fbaModelServices {
     /*
 		Loads a fasta file as a TranscriptSet object in the workspace       
     */
+    authentication required;
     funcdef fasta_to_TranscriptSet(fasta_to_Transcripts_params params) returns (object_metadata output);
+    
     /* Input parameters for the "TranscriptSet_to_Genome" function.
 	
 		string TranscriptSet_uid - user ID to be assigned to the TranscriptSet (required argument)
@@ -2584,7 +2635,9 @@ module fbaModelServices {
 		Creates a Genome associated with the TranscriptSet object
 		Cannot do global genome structure comparison with such a genome   
     */
+    authentication required;
     funcdef TranscriptSet_to_Genome(TranscriptSet_to_Genome_params params) returns (object_metadata output);
+    
 	/*********************************************************************************
 	Code relating to import and analysis of Contigs
    	*********************************************************************************/
@@ -2644,7 +2697,9 @@ module fbaModelServices {
     /*
 		Loads a fasta file as a ContigSet object in the workspace       
     */
+    authentication required;
     funcdef fasta_to_ContigSet(fasta_to_Transcripts_params params) returns (object_metadata output);
+    
 	/* Input parameters for the "ContigSet_to_Genome" function.
 	
 		string ContigSet_uid - ID to be assigned to the ContigSet (required argument)
@@ -2670,7 +2725,9 @@ module fbaModelServices {
     /*
 		Creates a genome associated with the ContigSet object   
     */
+    authentication required;
     funcdef ContigSet_to_Genome(ContigSet_to_Genome_params params) returns (object_metadata output);
+    
 	/*********************************************************************************
 	Code relating to workspace versions of genome analysis algorithms
    	*********************************************************************************/
@@ -2716,7 +2773,9 @@ module fbaModelServices {
     /*
 		Create a job that runs the genome annotation pipeline on a genome object in a workspace
     */
+    authentication required;
     funcdef annotate_workspace_Genome(annotate_workspace_Genome_params params) returns (JobObject job);
+    
 	/*********************************************************************************
 	Code relating to analysis of probabilistic annotations
    	*********************************************************************************/
@@ -2741,6 +2800,7 @@ module fbaModelServices {
     /*
 		Converts a probabilistic annotation into a genome with the same annotations        
     */
+    authentication required;
     funcdef probanno_to_genome(probanno_to_genome_params params) returns (object_metadata output);
 	
 	/*********************************************************************************
@@ -2790,8 +2850,9 @@ module fbaModelServices {
     /*
 		Annotates contigs object creating a genome object        
     */
+    authentication optional;
     funcdef get_mapping(get_mapping_params params) returns (Mapping output);
-    	
+    
 	/* Input parameters for the "adjust_mapping_role" function.
 	
 		mapping_id map - ID of the mapping object to be edited
@@ -2821,6 +2882,7 @@ module fbaModelServices {
     /*
         An API function supporting the curation of functional roles in a mapping object
     */
+    authentication required;
     funcdef adjust_mapping_role(adjust_mapping_role_params params) returns (FunctionalRole output);
 	
 	/* Input parameters for the "adjust_mapping_complex" function.
@@ -2851,6 +2913,7 @@ module fbaModelServices {
     /*
         An API function supporting the curation of complexes in a mapping object
     */
+    authentication required;
     funcdef adjust_mapping_complex(adjust_mapping_complex_params params) returns (Complex output);
 	
 	/* Input parameters for the "adjust_mapping_subsystem" function.
@@ -2886,6 +2949,7 @@ module fbaModelServices {
     /*
         An API function supporting the curation of subsystems in a mapping object
     */
+    authentication required;
     funcdef adjust_mapping_subsystem(adjust_mapping_subsystem_params params) returns (Subsystem output);
 	
 	/*********************************************************************************
@@ -2938,6 +3002,7 @@ module fbaModelServices {
     /*
 		Retrieves the specified template model        
     */
+    authentication optional;
     funcdef get_template_model(get_template_model_params params) returns (TemplateModel output);
 	
 	/* Input parameters for the "import_template_fbamodel" function.
@@ -2971,6 +3036,7 @@ module fbaModelServices {
     /*
         Import a template model from an input table of template reactions and biomass components
     */
+    authentication required;
     funcdef import_template_fbamodel(import_template_fbamodel_params input) returns (object_metadata modelMeta);
 	
 	typedef structure {
@@ -2990,8 +3056,9 @@ module fbaModelServices {
     /*
 		Modifies a reaction of a template model       
     */
+    authentication required;
     funcdef adjust_template_reaction(adjust_template_reaction_params params) returns (TemplateReaction output);
-
+	
 	typedef structure {
 		template_id templateModel;
 		workspace_id workspace;
@@ -3016,6 +3083,7 @@ module fbaModelServices {
     /*
 		Modifies the biomass of a template model        
     */
+    authentication required;
     funcdef adjust_template_biomass(adjust_template_biomass_params params) returns (TemplateBiomass output);
 	
 	/*********************************************************************************
@@ -3049,7 +3117,9 @@ module fbaModelServices {
     /*
 		Adds a stimuli either to the central database or as an object in a workspace        
     */
+    authentication required;
     funcdef add_stimuli(add_stimuli_params params) returns (object_metadata output);
+    
     
     typedef structure {
 		kbase_id kbid;
@@ -3098,6 +3168,7 @@ module fbaModelServices {
     /*
 		Imports a regulatory model into the KBase workspace       
     */
+    authentication required;
     funcdef import_regulatory_model(import_regulatory_model_params params) returns (object_metadata output);
 	
     /*********************************************************************************
@@ -3181,6 +3252,7 @@ module fbaModelServices {
     /*
 		Compares the specified models and computes unique reactions and core reactions
     */
+    authentication optional;
     funcdef compare_models(compare_models_params params) returns (ModelComparisonData output);
    	
    	/*********************************************************************************
@@ -3258,6 +3330,7 @@ module fbaModelServices {
     /*
 		Compares the specified genomes and computes unique features and core features
     */
+    authentication optional;
     funcdef compare_genomes(compare_genomes_params params) returns (GenomeComparisonData output);
    	
    	/*********************************************************************************
@@ -3349,6 +3422,7 @@ module fbaModelServices {
     /*
 		Imports metagenome annotation data into a metagenome annotation object
     */
+    authentication required;
     funcdef import_metagenome_annotation(import_metagenome_annotation_params params) returns (object_metadata output);
    	
    	/* Input parameters for the "models_to_community_model" function.
@@ -3371,6 +3445,7 @@ module fbaModelServices {
     /*
 		Combines multiple single genome models into a single community model
     */
+    authentication required;
     funcdef models_to_community_model(import_metagenome_annotation_params params) returns (object_metadata output);
    	
    	/* Input parameters for the "metagenome_to_fbamodel" function.
@@ -3398,5 +3473,6 @@ module fbaModelServices {
     /*
 		Constructs models from metagenome annotation OTUs
     */
+    authentication required;
     funcdef metagenome_to_fbamodels(metagenome_to_fbamodels_params params) returns (list<object_metadata> outputs);
 };

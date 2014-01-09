@@ -5,6 +5,7 @@ use strict;
 use Data::Dumper;
 use URI;
 use Bio::KBase::Exceptions;
+use Bio::KBase::AuthToken;
 
 # Client version should match Impl version
 # This is a Semantic Version number,
@@ -77,6 +78,20 @@ sub new
 	url => $url,
     };
 
+    #
+    # This module requires authentication.
+    #
+    # We create an auth token, passing through the arguments that we were (hopefully) given.
+
+    {
+	my $token = Bio::KBase::AuthToken->new(@args);
+	
+	if (!$token->error_message)
+	{
+	    $self->{token} = $token->token;
+	    $self->{client}->{token} = $token->token;
+	}
+    }
 
     my $ua = $self->{client}->ua;	 
     my $timeout = $ENV{CDMI_TIMEOUT} || (30 * 60);	 
@@ -315,7 +330,7 @@ sub get_models
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: optional
 
     if ((my $n = @args) != 1)
     {
@@ -586,7 +601,7 @@ sub get_fbas
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: optional
 
     if ((my $n = @args) != 1)
     {
@@ -871,7 +886,7 @@ sub get_gapfills
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: optional
 
     if ((my $n = @args) != 1)
     {
@@ -1124,7 +1139,7 @@ sub get_gapgens
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: optional
 
     if ((my $n = @args) != 1)
     {
@@ -1237,7 +1252,7 @@ sub get_reactions
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: optional
 
     if ((my $n = @args) != 1)
     {
@@ -1346,7 +1361,7 @@ sub get_compounds
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: optional
 
     if ((my $n = @args) != 1)
     {
@@ -1445,7 +1460,7 @@ sub get_alias
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: optional
 
     if ((my $n = @args) != 1)
     {
@@ -1532,7 +1547,7 @@ sub get_aliassets
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: optional
 
     if ((my $n = @args) != 1)
     {
@@ -1651,7 +1666,7 @@ sub get_media
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: optional
 
     if ((my $n = @args) != 1)
     {
@@ -1764,7 +1779,7 @@ sub get_biochemistry
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: optional
 
     if ((my $n = @args) != 1)
     {
@@ -1890,7 +1905,7 @@ sub get_ETCDiagram
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: optional
 
     if ((my $n = @args) != 1)
     {
@@ -2041,7 +2056,7 @@ sub import_probanno
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: required
 
     if ((my $n = @args) != 1)
     {
@@ -2256,7 +2271,7 @@ sub genome_object_to_workspace
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: required
 
     if ((my $n = @args) != 1)
     {
@@ -2393,7 +2408,7 @@ sub genome_to_workspace
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: required
 
     if ((my $n = @args) != 1)
     {
@@ -2536,7 +2551,7 @@ sub add_feature_translation
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: required
 
     if ((my $n = @args) != 1)
     {
@@ -2681,7 +2696,7 @@ sub genome_to_fbamodel
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: required
 
     if ((my $n = @args) != 1)
     {
@@ -2834,7 +2849,7 @@ sub import_fbamodel
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: required
 
     if ((my $n = @args) != 1)
     {
@@ -2929,7 +2944,7 @@ sub export_fbamodel
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: optional
 
     if ((my $n = @args) != 1)
     {
@@ -3022,7 +3037,7 @@ sub export_object
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: optional
 
     if ((my $n = @args) != 1)
     {
@@ -3117,7 +3132,7 @@ sub export_genome
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: optional
 
     if ((my $n = @args) != 1)
     {
@@ -3266,7 +3281,7 @@ sub adjust_model_reaction
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: required
 
     if ((my $n = @args) != 1)
     {
@@ -3413,7 +3428,7 @@ sub adjust_biomass_reaction
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: required
 
     if ((my $n = @args) != 1)
     {
@@ -3560,7 +3575,7 @@ sub addmedia
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: required
 
     if ((my $n = @args) != 1)
     {
@@ -3655,7 +3670,7 @@ sub export_media
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: optional
 
     if ((my $n = @args) != 1)
     {
@@ -3888,7 +3903,7 @@ sub runfba
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: required
 
     if ((my $n = @args) != 1)
     {
@@ -3983,7 +3998,7 @@ sub export_fba
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: optional
 
     if ((my $n = @args) != 1)
     {
@@ -4146,7 +4161,7 @@ sub import_phenotypes
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: required
 
     if ((my $n = @args) != 1)
     {
@@ -4379,7 +4394,7 @@ sub simulate_phenotypes
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: required
 
     if ((my $n = @args) != 1)
     {
@@ -4524,7 +4539,7 @@ sub add_media_transporters
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: required
 
     if ((my $n = @args) != 1)
     {
@@ -4619,7 +4634,7 @@ sub export_phenotypeSimulationSet
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: optional
 
     if ((my $n = @args) != 1)
     {
@@ -4762,7 +4777,7 @@ sub integrate_reconciliation_solutions
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: required
 
     if ((my $n = @args) != 1)
     {
@@ -4985,7 +5000,7 @@ sub queue_runfba
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: required
 
     if ((my $n = @args) != 1)
     {
@@ -5262,7 +5277,7 @@ sub queue_gapfill_model
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: required
 
     if ((my $n = @args) != 1)
     {
@@ -5505,7 +5520,7 @@ sub queue_gapgen_model
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: required
 
     if ((my $n = @args) != 1)
     {
@@ -5802,7 +5817,7 @@ sub queue_wildtype_phenotype_reconciliation
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: required
 
     if ((my $n = @args) != 1)
     {
@@ -6099,7 +6114,7 @@ sub queue_reconciliation_sensitivity_analysis
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: required
 
     if ((my $n = @args) != 1)
     {
@@ -6392,7 +6407,7 @@ sub queue_combine_wildtype_phenotype_reconciliation
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: required
 
     if ((my $n = @args) != 1)
     {
@@ -6503,7 +6518,7 @@ sub jobs_done
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: required
 
     if ((my $n = @args) != 1)
     {
@@ -6614,7 +6629,7 @@ sub run_job
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: required
 
     if ((my $n = @args) != 1)
     {
@@ -6751,7 +6766,7 @@ sub set_cofactors
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: required
 
     if ((my $n = @args) != 1)
     {
@@ -6888,7 +6903,7 @@ sub find_reaction_synonyms
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: optional
 
     if ((my $n = @args) != 1)
     {
@@ -7015,7 +7030,7 @@ sub role_to_reactions
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: optional
 
     if ((my $n = @args) != 1)
     {
@@ -7156,7 +7171,7 @@ sub reaction_sensitivity_analysis
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: required
 
     if ((my $n = @args) != 1)
     {
@@ -7293,7 +7308,7 @@ sub filter_iterative_solutions
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: required
 
     if ((my $n = @args) != 1)
     {
@@ -7426,7 +7441,7 @@ sub delete_noncontributing_reactions
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: required
 
     if ((my $n = @args) != 1)
     {
@@ -7561,7 +7576,7 @@ sub fasta_to_ProteinSet
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: required
 
     if ((my $n = @args) != 1)
     {
@@ -7696,7 +7711,7 @@ sub ProteinSet_to_Genome
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: required
 
     if ((my $n = @args) != 1)
     {
@@ -7831,7 +7846,7 @@ sub fasta_to_TranscriptSet
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: required
 
     if ((my $n = @args) != 1)
     {
@@ -7967,7 +7982,7 @@ sub TranscriptSet_to_Genome
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: required
 
     if ((my $n = @args) != 1)
     {
@@ -8102,7 +8117,7 @@ sub fasta_to_ContigSet
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: required
 
     if ((my $n = @args) != 1)
     {
@@ -8237,7 +8252,7 @@ sub ContigSet_to_Genome
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: required
 
     if ((my $n = @args) != 1)
     {
@@ -8370,7 +8385,7 @@ sub annotate_workspace_Genome
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: required
 
     if ((my $n = @args) != 1)
     {
@@ -8505,7 +8520,7 @@ sub probanno_to_genome
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: required
 
     if ((my $n = @args) != 1)
     {
@@ -8666,7 +8681,7 @@ sub get_mapping
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: optional
 
     if ((my $n = @args) != 1)
     {
@@ -8791,7 +8806,7 @@ sub adjust_mapping_role
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: required
 
     if ((my $n = @args) != 1)
     {
@@ -8922,7 +8937,7 @@ sub adjust_mapping_complex
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: required
 
     if ((my $n = @args) != 1)
     {
@@ -9055,7 +9070,7 @@ sub adjust_mapping_subsystem
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: required
 
     if ((my $n = @args) != 1)
     {
@@ -9242,7 +9257,7 @@ sub get_template_model
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: optional
 
     if ((my $n = @args) != 1)
     {
@@ -9439,7 +9454,7 @@ sub import_template_fbamodel
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: required
 
     if ((my $n = @args) != 1)
     {
@@ -9574,7 +9589,7 @@ sub adjust_template_reaction
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: required
 
     if ((my $n = @args) != 1)
     {
@@ -9783,7 +9798,7 @@ sub adjust_template_biomass
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: required
 
     if ((my $n = @args) != 1)
     {
@@ -9922,7 +9937,7 @@ sub add_stimuli
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: required
 
     if ((my $n = @args) != 1)
     {
@@ -10083,7 +10098,7 @@ sub import_regulatory_model
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: required
 
     if ((my $n = @args) != 1)
     {
@@ -10234,7 +10249,7 @@ sub compare_models
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: optional
 
     if ((my $n = @args) != 1)
     {
@@ -10373,7 +10388,7 @@ sub compare_genomes
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: optional
 
     if ((my $n = @args) != 1)
     {
@@ -10522,7 +10537,7 @@ sub import_metagenome_annotation
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: required
 
     if ((my $n = @args) != 1)
     {
@@ -10671,7 +10686,7 @@ sub models_to_community_model
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: required
 
     if ((my $n = @args) != 1)
     {
@@ -10818,7 +10833,7 @@ sub metagenome_to_fbamodels
 {
     my($self, @args) = @_;
 
-# Authentication: none
+# Authentication: required
 
     if ((my $n = @args) != 1)
     {
@@ -17907,7 +17922,7 @@ auth has a value which is a string
 
 
 
-=head2 ReactionSensitivityAnalysisReaction
+=head2 kb_sub_id
 
 =over 4
 
@@ -17925,15 +17940,143 @@ auth has a value which is a string
 =begin html
 
 <pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 kb_id
+
+=over 4
+
+
+
+=item Description
+
+@id kb
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 ws_id
+
+=over 4
+
+
+
+=item Description
+
+@id ws
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 ws_sub_id
+
+=over 4
+
+
+
+=item Description
+
+@id wssub
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 ReactionSensitivityAnalysisCorrectedReaction
+
+=over 4
+
+
+
+=item Description
+
+ReactionSensitivityAnalysisCorrectedReaction object
+
+kb_sub_id kbid - KBase ID for reaction knockout corrected reaction
+ws_sub_id model_reaction_wsid - ID of model reaction
+float normalized_required_reaction_count - Normalized count of reactions required for this reaction to function
+list<ws_sub_id> required_reactions - list of reactions required for this reaction to function
+
+@searchable ws_subset kbid model_reaction_kbid required_reactions
+@optional
+
+
+=item Definition
+
+=begin html
+
+<pre>
 a reference to a hash where the following keys are defined:
-kbid has a value which is a kbase_id
-reaction has a value which is a mdlrxn_kbid
-growth_fraction has a value which is a float
-delete has a value which is a bool
-deleted has a value which is a bool
-biomass_compounds has a value which is a reference to a list where each element is a string
-new_inactive_rxns has a value which is a reference to a list where each element is a string
-new_essentials has a value which is a reference to a list where each element is a string
+kbid has a value which is a kb_sub_id
+model_reaction_wsid has a value which is a ws_sub_id
+normalized_required_reaction_count has a value which is a float
+required_reactions has a value which is a reference to a list where each element is a ws_sub_id
 
 </pre>
 
@@ -17942,14 +18085,71 @@ new_essentials has a value which is a reference to a list where each element is 
 =begin text
 
 a reference to a hash where the following keys are defined:
-kbid has a value which is a kbase_id
-reaction has a value which is a mdlrxn_kbid
+kbid has a value which is a kb_sub_id
+model_reaction_wsid has a value which is a ws_sub_id
+normalized_required_reaction_count has a value which is a float
+required_reactions has a value which is a reference to a list where each element is a ws_sub_id
+
+
+=end text
+
+=back
+
+
+
+=head2 ReactionSensitivityAnalysisReaction
+
+=over 4
+
+
+
+=item Description
+
+Object for holding reaction knockout sensitivity reaction data
+
+kb_sub_id kbid - KBase ID for reaction knockout sensitivity reaction
+ws_sub_id model_reaction_wsid - ID of model reaction
+bool delete - indicates if reaction is to be deleted
+bool deleted - indicates if the reaction has been deleted
+float growth_fraction - Fraction of wild-type growth after knockout
+float normalized_activated_reaction_count - Normalized number of activated reactions
+list<ws_sub_id> biomass_compounds  - List of biomass compounds that depend on the reaction
+list<ws_sub_id> new_inactive_rxns - List of new reactions dependant upon reaction KO
+list<ws_sub_id> new_essentials - List of new essential genes with reaction knockout
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+kbid has a value which is a kb_sub_id
+model_reaction_wsid has a value which is a ws_sub_id
 growth_fraction has a value which is a float
 delete has a value which is a bool
 deleted has a value which is a bool
-biomass_compounds has a value which is a reference to a list where each element is a string
-new_inactive_rxns has a value which is a reference to a list where each element is a string
-new_essentials has a value which is a reference to a list where each element is a string
+normalized_activated_reaction_count has a value which is a float
+biomass_compounds has a value which is a reference to a list where each element is a ws_sub_id
+new_inactive_rxns has a value which is a reference to a list where each element is a ws_sub_id
+new_essentials has a value which is a reference to a list where each element is a ws_sub_id
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+kbid has a value which is a kb_sub_id
+model_reaction_wsid has a value which is a ws_sub_id
+growth_fraction has a value which is a float
+delete has a value which is a bool
+deleted has a value which is a bool
+normalized_activated_reaction_count has a value which is a float
+biomass_compounds has a value which is a reference to a list where each element is a ws_sub_id
+new_inactive_rxns has a value which is a reference to a list where each element is a ws_sub_id
+new_essentials has a value which is a reference to a list where each element is a ws_sub_id
 
 
 =end text
@@ -17968,12 +18168,13 @@ new_essentials has a value which is a reference to a list where each element is 
 
 Object for holding reaction knockout sensitivity results
 
-        kbase_id kbid - KBase ID of reaction sensitivity object
-        ws_ref model_wsid - Workspace reference to associated model
+        kb_id kbid - KBase ID of reaction sensitivity object
+        ws_id model_wsid - Workspace reference to associated model
         string type - type of reaction KO sensitivity object
         bool deleted_noncontributing_reactions - boolean indicating if noncontributing reactions were deleted
         bool integrated_deletions_in_model - boolean indicating if deleted reactions were implemented in the model
-        list<ReactionSensitivityAnalysisReaction> reactions - list of results from sensitivity analysis for each reaction
+        list<ReactionSensitivityAnalysisReaction> reactions - list of sensitivity data for tested reactions
+        list<ReactionSensitivityAnalysisCorrectedReaction> corrected_reactions - list of reactions dependant upon tested reactions
 
 
 =item Definition
@@ -17982,12 +18183,13 @@ Object for holding reaction knockout sensitivity results
 
 <pre>
 a reference to a hash where the following keys are defined:
-kbid has a value which is a kbase_id
-model_wsid has a value which is a ws_ref
+kbid has a value which is a kb_id
+model_wsid has a value which is a ws_id
 type has a value which is a string
 deleted_noncontributing_reactions has a value which is a bool
 integrated_deletions_in_model has a value which is a bool
 reactions has a value which is a reference to a list where each element is a ReactionSensitivityAnalysisReaction
+corrected_reactions has a value which is a reference to a list where each element is a ReactionSensitivityAnalysisCorrectedReaction
 
 </pre>
 
@@ -17996,12 +18198,13 @@ reactions has a value which is a reference to a list where each element is a Rea
 =begin text
 
 a reference to a hash where the following keys are defined:
-kbid has a value which is a kbase_id
-model_wsid has a value which is a ws_ref
+kbid has a value which is a kb_id
+model_wsid has a value which is a ws_id
 type has a value which is a string
 deleted_noncontributing_reactions has a value which is a bool
 integrated_deletions_in_model has a value which is a bool
 reactions has a value which is a reference to a list where each element is a ReactionSensitivityAnalysisReaction
+corrected_reactions has a value which is a reference to a list where each element is a ReactionSensitivityAnalysisCorrectedReaction
 
 
 =end text
