@@ -22,15 +22,15 @@ for (my $i=0; $i < @{$objectlist}; $i++) {
 		}
 		if ($currentproc == $index) {
 			my $OutputArray;
-			my $command = "perl TransferWorkspaceObject.pl ../../KBaseDeploy/kb-workspaceroot.ini \"".$objectlist->[$i]."\"";
+			my $command = "perl TransferWorkspaceObject.pl ../../KBaseDeploy/kb-workspaceroot.ini \"".$objectlist->[$i]."\" 2> /dev/null";
 			push(@{$OutputArray},`$command`);
 			my $found = 0;
 			for (my $i=0; $i < @{$OutputArray}; $i++) {
 				if ($OutputArray->[$i] =~ m/^Success/) {
-					print $OutputArray->[$i]."\n";
+					print $OutputArray->[$i];
 					$found = 1;
 				} elsif ($OutputArray->[$i] =~ m/^Failed/) {
-					print $OutputArray->[$i]."\n";
+					print $OutputArray->[$i];
 					$found = 1;
 				}
 			}
