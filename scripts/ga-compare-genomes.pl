@@ -30,7 +30,16 @@ if (!defined($output)) {
 	print join("\t",('Genome', 'Workspace', 'Genome name', 'Taxonomy', 'Features','Core functions','Noncore functions'))."\n";
     for (my $i=0; $i < @{$output->{genome_comparisons}}; $i++) {
     	my $gencmp = $output->{genome_comparisons}->[$i];
-    	print join("\t",($gencmp->{genome},$gencmp->{workspace},$gencmp->{genome_name},$gencmp->{taxonomy},$gencmp->{features},$gencmp->{core_functions},$gencmp->{noncore_functions}))."\n";
+    	my $items = [qw(genome workspace genome_name taxonomy features core_functions noncore_functions)];
+    	foreach my $item (@{$items}) {
+    		if (defined($gencmp->{$item})) {
+    			print $gencmp->{$item};
+    		}
+    		if ($item ne "noncore_functions") {
+    			print "\t";
+    		}
+    	}
+    	print "\n";
     }
     print "\n\n";
     my $columns = ['Functional role','Core','Subsystem','Class','Subclass','Number genomes','Fraction genomes'];
@@ -40,7 +49,15 @@ if (!defined($output)) {
     print join("\t",@{$columns})."\n";
     for (my $i=0; $i < @{$output->{function_comparisons}}; $i++) {
     	my $funccomp = $output->{function_comparisons}->[$i];
-    	my $row = [$funccomp->{role},$funccomp->{core},$funccomp->{subsystem},$funccomp->{class},$funccomp->{subclass},$funccomp->{number_genomes},$funccomp->{fraction_genomes}];
+    	my $items = [qw(role core subsytem primclass subclass number_genomes fraction_genomes)];
+    	my $row = [];
+    	foreach my $item (@{$items}) {
+    		if (defined($funccomp->{$item})) {
+    			push(@{$row},$funccomp->{$item});
+    		} else {
+    			push(@{$row},"");
+    		}
+    	}
     	for (my $j=0; $j < @{$output->{genome_comparisons}}; $j++) {
     		my $ftrs = "";
     		my $gencmp = $output->{genome_comparisons}->[$j];

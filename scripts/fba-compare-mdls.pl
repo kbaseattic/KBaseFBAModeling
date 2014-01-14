@@ -30,7 +30,16 @@ if (!defined($output)) {
 	print join("\t",('Model', 'Workspace', 'Model name', 'Genome', 'Genome name','Gapfilled reactions', 'Core reactions','Noncore reactions'))."\n";
     for (my $i=0; $i < @{$output->{model_comparisons}}; $i++) {
     	my $mdlcmp = $output->{model_comparisons}->[$i];
-    	print join("\t",($mdlcmp->{model},$mdlcmp->{workspace},$mdlcmp->{model_name},$mdlcmp->{genome},$mdlcmp->{genome_name},$mdlcmp->{gapfilled_reactions},$mdlcmp->{core_reactions},$mdlcmp->{noncore_reactions}))."\n";
+    	my $items = [qw(model workspace model_name genome genome_name gapfilled_reactions core_reactions noncore_reactions)];
+    	foreach my $item (@{$items}) {
+    		if (defined($mdlcmp->{$item})) {
+    			print $mdlcmp->{$item};
+    		}
+    		if ($item ne "noncore_reactions") {
+    			print "\t";
+    		}
+    	}
+    	print "\n";
     }
     print "\n\n";
     my $columns = ['Reaction','Compartment', 'Equation','Core','Role','Subsystem','Class','Subclass','Number models','Fraction models'];
@@ -40,13 +49,21 @@ if (!defined($output)) {
     print join("\t",@{$columns})."\n";
     for (my $i=0; $i < @{$output->{reaction_comparisons}}; $i++) {
     	my $rxncmp = $output->{reaction_comparisons}->[$i];
-    	my $row = [$rxncmp->{reaction},$rxncmp->{compartment},$rxncmp->{equation},$rxncmp->{core},$rxncmp->{role},$rxncmp->{subsystem},$rxncmp->{class},$rxncmp->{subclass},$rxncmp->{number_models},$rxncmp->{fraction_models}];
+    	my $items = [qw(reaction compartment equation core role subsytem primclass subclass number_models fraction_models)];
+    	my $row = [];
+    	foreach my $item (@{$items}) {
+    		if (defined($rxncmp->{$item})) {
+    			push(@{$row},$rxncmp->{$item});
+    		} else {
+    			push(@{$row},"");
+    		}
+    	}
     	for (my $j=0; $j < @{$output->{model_comparisons}}; $j++) {
     		my $ftrs = "";
     		my $mdlcmp = $output->{model_comparisons}->[$j];
     		if (defined($rxncmp->{model_features}->{$mdlcmp->{workspace}."/".$mdlcmp->{model}})) {
     			$ftrs = join(";",@{$rxncmp->{model_features}->{$mdlcmp->{workspace}."/".$mdlcmp->{model}}});
-			push(@{$row},$ftrs);
+				push(@{$row},$ftrs);
     		}
     	}
     	print join("\t",@{$row})."\n";

@@ -28,7 +28,7 @@ my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translat
 $params->{models} = [];
 if (defined($opt->{fromfile}) && $opt->{fromfile} == 1) {
 	if (!-e $opt->{"Models (workspace/ID/abundance) or Filename"}) {
-		print "Could not find input phenotype file!\n";
+		print "Could not find input model list file!\n";
 		exit();
 	}
 	open(my $fh, "<", $opt->{"Models (workspace/ID/abundance) or Filename"}) || return;
