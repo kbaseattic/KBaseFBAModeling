@@ -2,7 +2,7 @@
 
 use strict;
 use Config::Simple;
-use Bio::KBase::workspaceService::Client;
+use Bio::KBase::workspaceService::Impl;
 use Bio::KBase::workspace::Client;
 use ModelSEED::KBaseStore;
 use JSON::XS;
@@ -28,7 +28,8 @@ if (!-e $config) {
 my $c = Config::Simple->new();
 $c->read($config);
 
-my $wserv = Bio::KBase::workspaceService::Client->new($c->param("kbclientconfig.wsurl"));
+#my $wserv = Bio::KBase::workspaceService::Client->new($c->param("kbclientconfig.wsurl"));
+my $wserv = Bio::KBase::workspaceService::Impl->new();
 my $wsderv = Bio::KBase::workspace::Client->new($c->param("kbclientconfig.wsdurl"),$c->param("kbclientconfig.auth"));
 my $idserv = Bio::KBase::IDServer::Client->new($c->param("kbclientconfig.idurl"));
 
