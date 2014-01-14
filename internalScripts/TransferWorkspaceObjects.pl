@@ -7,7 +7,7 @@ use Bio::KBase::workspace::Client;
 use ModelSEED::KBaseStore;
 use JSON::XS;
 use Bio::KBase::ObjectAPI::KBaseStore;
-
+$|=1;
 my $config = $ARGV[0];
 my $directory = $ARGV[1];
 my $multiprocess = $ARGV[2];
