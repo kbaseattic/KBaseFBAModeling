@@ -266,6 +266,12 @@ sub serializeToDB {
 			} elsif ($name eq "annotations") {
 				my $dataitem = $self->$name();
 				for (my $i=0; $i < @{$dataitem}; $i++) {
+					if (!defined($dataitem->[$i]->[1])) {
+						$data->{$name}->[$i]->[1] = "";
+					}
+					if (!defined($dataitem->[$i]->[0])) {
+						$data->{$name}->[$i]->[0] = "";
+					}
 					$data->{$name}->[$i]->[2] = $dataitem->[$i]->[2]+0;
 				}
 			} elsif ($name eq "location") {
