@@ -612,7 +612,7 @@ for (my $i=0; $i < @{$objectlist}; $i++) {
 			eval {
 				$ContigObj->save($array->[1]."/".$array->[2].".contigset");
 				print "Success:".$array->[1]."/".$array->[2].".contigset\n";
-			}; print "Failed:".$array->[1]."/".$array->[2].".contigset\n\n".$@."\n\n" if $@;
+			}; print "Failed:".$array->[1]."/".$array->[2].".contigset\n" if $@;
 			$genomedata->{contigset_ref} = $ContigObj->_reference();
 		}
 		my $GenomeObj = Bio::KBase::ObjectAPI::KBaseGenomes::Genome->new($genomedata);
@@ -621,7 +621,7 @@ for (my $i=0; $i < @{$objectlist}; $i++) {
 		eval {
 			$GenomeObj->save($array->[1]."/".$array->[2]);
 			print "Success:".$array->[1]."/".$array->[2]."/".$obj->{"_kbaseWSMeta"}->{wsinst}."\n";
-		}; print "Failed:".$array->[1]."/".$array->[2]."/".$obj->{"_kbaseWSMeta"}->{wsinst}."\n\n".$@."\n\n" if $@;
+		}; print "Failed:".$array->[1]."/".$array->[2]."/".$obj->{"_kbaseWSMeta"}->{wsinst}."\n" if $@;
 	}
 	}
 }
