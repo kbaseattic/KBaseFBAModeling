@@ -22,7 +22,7 @@ for (my $i=0; $i < @{$objectlist}; $i++) {
 		}
 		if ($currentproc == $index) {
 			my $OutputArray;
-			my $command = "perl TransferWorkspaceObjects.pl ../../KBaseDeploy/kb-workspaceroot.ini \"".$objectlist->[$i]."\"";
+			my $command = "perl TransferWorkspaceObject.pl ../../KBaseDeploy/kb-workspaceroot.ini \"".$objectlist->[$i]."\"";
 			push(@{$OutputArray},`$command`);
 			my $found = 0;
 			for (my $i=0; $i < @{$OutputArray}; $i++) {
