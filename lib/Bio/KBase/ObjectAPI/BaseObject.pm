@@ -263,6 +263,11 @@ sub serializeToDB {
 		if (defined($self->$name())) {
 			if ($item->{type} eq "Int" || $item->{type} eq "Num") {
 				$data->{$name} = $self->$name()+0;
+			} elsif ($name eq "annotations") {
+				my $dataitem = $self->$name();
+				for (my $i=0; $i < @{$dataitem}; $i++) {
+					$data->{$name}->[$i]->[2] = $dataitem->[$i]->[2]+0;
+				}
 			} elsif ($name eq "location") {
 				my $dataitem = $self->$name();
 				for (my $i=0; $i < @{$dataitem}; $i++) {
