@@ -97,7 +97,7 @@ my $specs = [
 	[ 'probanno=s', 'ID of probabilistic annotation object' ],
     [ 'probannows:s', 'Workspace with probabilistic annotation or probabilistic reaction', { "default" => workspace() } ],
     [ 'blacklist:s@', 'List of blacklisted reactions (; delimiter)' ],
-    [ 'gauranteed:s@', 'List of gauranteed reactions (; delimiter)' ],
+    [ 'guaranteed:s@', 'List of guaranteed reactions (; delimiter)' ],
     [ 'allowedcmp:s@', 'List of allowed compartments (; delimiter)' ],
 	[ 'maximize:s', 'Maximize objective', { "default" => 1 } ],
 	[ 'objterms:s@', 'Objective terms (; delimiter)' ],
@@ -201,8 +201,8 @@ if (defined($opt->{blacklist})) {
 		push(@{$params->{formulation}->{blacklistedrxns}},@{$array});
 	}
 }
-if (defined($opt->{gauranteed})) {
-	foreach my $terms (@{$opt->{gauranteed}}) {
+if (defined($opt->{guaranteed})) {
+	foreach my $terms (@{$opt->{guaranteed}}) {
 		my $array = [split(/;/,$terms)];
 		push(@{$params->{formulation}->{gauranteedrxns}},@{$array});
 	}
