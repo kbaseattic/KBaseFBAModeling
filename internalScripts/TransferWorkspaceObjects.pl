@@ -49,6 +49,9 @@ my $newstore = Bio::KBase::ObjectAPI::KBaseStore->new({
 my $objectlist = Bio::KBase::ObjectAPI::utilities::LOADFILE($ARGV[1]."/ObjectList.txt");
 my $currentproc = -1;
 for (my $i=0; $i < @{$objectlist}; $i++) {
+	$Bio::KBase::workspaceService::Server::CallContext = {_override => {_authentication => ""}};
+	$oldstore->cache({});
+	$newstore->cache({});
 	my $array = [split(/\t/,$objectlist->[$i])];
 	if (!defined($targettype) || $array->[0] eq $targettype) {
 	$currentproc++;
