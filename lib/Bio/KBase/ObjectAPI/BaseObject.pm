@@ -268,9 +268,13 @@ sub serializeToDB {
 				for (my $i=0; $i < @{$dataitem}; $i++) {
 					if (!defined($dataitem->[$i]->[1])) {
 						$data->{$name}->[$i]->[1] = "";
+					} else {
+						$data->{$name}->[$i]->[1] = $dataitem->[$i]->[1];
 					}
 					if (!defined($dataitem->[$i]->[0])) {
 						$data->{$name}->[$i]->[0] = "";
+					} else {
+						$data->{$name}->[$i]->[0] = $dataitem->[$i]->[0];
 					}
 					$data->{$name}->[$i]->[2] = $dataitem->[$i]->[2]+0;
 				}
