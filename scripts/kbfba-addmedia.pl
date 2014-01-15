@@ -5,11 +5,11 @@ use Data::Dumper;
 use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
 use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
-my $primaryArgs = ["Media ID"];
+my $primaryArgs = ["Media ID>  <Compounds/input media file"];
 my $servercommand = "addmedia";
 my $script = "kbfba-addmedia";
 my $translation = {
-    "Media ID" => "media",
+    "Media ID>  <Compounds/input media file" => "media",
     name => "name",
     compounds => "compounds",
     concentrations => "concentrations",
@@ -26,7 +26,7 @@ my $translation = {
  
 #Defining usage and options
 my $specs = [
-    [ 'input=s', 'Name of file with media information (format Mg 0.05 -100 100)' ],
+    [ 'input=s', 'Name of file with media information (format Mg 0.05 -100 100 or cpd12345 0.05 -100 100)' ],
     [ 'compounds=s', 'Compound list (; delimiter)' ],
     [ 'concentrations=s', 'Compound concentrations (; delimiter)' ],
     [ 'minflux=s', 'Compound minimum fluxes (; delimiter)' ],
@@ -49,6 +49,7 @@ my @media_Array;
 
 
 my $in_fh;
+
 if ($opt->{input}) {
     open($in_fh, "<", $opt->{input}) or die "Cannot open input file";
 } 
@@ -115,7 +116,7 @@ if (!defined($output) ) {
 }
 elsif (!defined($params->{compounds}->[0])) {
 
-    print "Media creation failed, compounds not found or did not used the --compounds flag!\n";
+    print "Media creation failed, compounds not found or did not used the --compounds or --input flag!\n";
 
 }
 
