@@ -11,21 +11,24 @@ use Try::Tiny;
 use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
 use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand universalFBAScriptCode roles_of_function );
 #Defining globals describing behavior
-my $primaryArgs = [];
+my $primaryArgs = ["Input File"];
 my $script = "fba-roles-rxns-pegs-of-models";
-my $translation = {};
+
+my $translation = {
+};
+
 #Defining usage and options
 my $specs = [
-    [ 'input=s', 'Name of file with input' ],
+    [  'File Name with the input format (Genome  Model  workspace)' ],
 ];
+
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
 
 my $in_fh;
-if ($opt->{input}) {
-    open($in_fh, "<", $opt->{input}) or die "Cannot open input file: $!";
-} else {
-    $in_fh = \*STDIN;
-}
+if ($opt->{"Input File"}) {
+    open($in_fh, "<", $opt->{"Input File"}) or die "Cannot open input file: $!";
+} 
+
 
 while (defined($_ = <$in_fh>)){
 	chop;
