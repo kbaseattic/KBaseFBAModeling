@@ -10,9 +10,23 @@ if (!defined($multiprocess)) {
 	$multiprocess = "1:0";
 }
 my $targettype = $ARGV[2];
-(my $numprocs,my $index) = split(/:/,$multiprocess);
-my $objectlist = Bio::KBase::ObjectAPI::utilities::LOADFILE($directory."/ObjectList.txt");
+my $runtype = $ARGV[3];
+my $objectlist;
 my $successobj = [];
+(my $numprocs,my $index) = split(/:/,$multiprocess);
+if (defined($runtype) && $runtype eq "rr") {
+	$objectlist = Bio::KBase::ObjectAPI::utilities::LOADFILE($directory."/".$targettype."-".$index."-fail.txt");
+	$successobj = Bio::KBase::ObjectAPI::utilities::LOADFILE($directory."/".$targettype."-".$index."-success.txt");
+} else {
+	$objectlist = Bio::KBase::ObjectAPI::utilities::LOADFILE($directory."/ObjectList.txt");
+}
+
+my $wslist = Bio::KBase::ObjectAPI::utilities::LOADFILE($directory."/WorkspaceList.txt");
+my $wshash = {};
+for (my $i=0; $i < @{$wslist}; $i++) {
+	my $array = [split(/\t/,$wslist->[$i])];
+	$wshash->{$array->[0]} = $array->[1];
+}
 my $failobj = [];
 my $errors = [];
 my $currentproc = -1;
@@ -27,17 +41,18 @@ for (my $i=0; $i < @{$objectlist}; $i++) {
 		}
 		if ($currentproc == $index) {
 			my $OutputArray;
-			my $command = "perl TransferWorkspaceObject.pl ../../KBaseDeploy/kb-workspaceroot.ini \"".$objectlist->[$i]."\" 2> /dev/null";
+			$array->[3] = $wshash->{$array->[1]};
+			my $command = "perl TransferWorkspaceObject.pl ../../KBaseDeploy/kb-workspaceroot.ini \"".join("\t",@{$array})."\" 2> ".$directory."/".$targettype."-".$index."-temperror.txt";
 			push(@{$OutputArray},`$command`);
 			my $found = 0;
 			for (my $j=0; $j < @{$OutputArray}; $j++) {
 				if ($OutputArray->[$j] =~ m/^Success:(.+)/) {
 					$object = $1;
-					push(@{$successobj},$object);
+					push(@{$successobj},$objectlist->[$i]);
 					$found = 1;
 				} elsif ($OutputArray->[$j] =~ m/^Failed:(.+)/) {
 					$object = $1;
-					push(@{$failobj},$object);
+					push(@{$failobj},$objectlist->[$i]);
 					$found = 1;
 				} elsif ($OutputArray->[$j] =~ m/^ERROR_MESSAGE(.+)/) {
 					$error = $1."\n";
@@ -53,12 +68,15 @@ for (my $i=0; $i < @{$objectlist}; $i++) {
 						}
 						$j++;
 					}
-					push(@{$errors},$object);
+					push(@{$errors},$objectlist->[$i]);
 					push(@{$errors},$error);
 				}
 			}
 			if ($found == 0) {
-				print "Failed:".$objectlist->[$i]."\n";
+				my $errordata = Bio::KBase::ObjectAPI::utilities::LOADFILE($directory."/".$targettype."-".$index."-temperror.txt");
+				push(@{$errors},"TRANSFERFAIL:".$objectlist->[$i]);
+				push(@{$errors},@{$errordata});
+				push(@{$failobj},$objectlist->[$i]);
 			}
 		}
 	}
