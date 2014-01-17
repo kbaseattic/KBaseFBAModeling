@@ -43,11 +43,13 @@ for (my $i=0; $i < @{$objectlist}; $i++) {
 					$error = $1."\n";
 					my $continue = 1;
 					while ($continue == 1) {
-						if ($OutputArray->[$i] =~ m/(.+)END_ERROR_MESSAGE/) {
+						if (defined($OutputArray->[$i]) && $OutputArray->[$i] =~ m/(.+)END_ERROR_MESSAGE/) {
 							$error .= $1;
 							$continue = 0;
-						} else {
+						} elsif (defined($OutputArray->[$i]) {
 							$error .= $OutputArray->[$i]."\n";
+						} elsif ($i >= @{$OutputArray}) {
+							$continue = 0;
 						}
 						$i++;
 					}
