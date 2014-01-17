@@ -325,7 +325,6 @@ module KBaseFBA {
 		bool integrated;
 		int integrated_solution;
 		media_ref media_ref;
-		list<feature_ref> ko_refs;
     } ModelGapfill;
     
     /* 
@@ -339,7 +338,6 @@ module KBaseFBA {
 		bool integrated;
 		int integrated_solution;
 		media_ref media_ref;
-		list<feature_ref> ko_refs;
     } ModelGapgen;
     
     /* 
@@ -666,6 +664,7 @@ module KBaseFBA {
     typedef structure {
     	gapfill_id id;
     	fba_ref fba_ref;
+    	media_ref media_ref;
     	fbamodel_ref fbamodel_ref;
     	probanno_ref probanno_ref;
     	

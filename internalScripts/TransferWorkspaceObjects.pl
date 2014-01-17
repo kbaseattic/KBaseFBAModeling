@@ -12,7 +12,12 @@ if (!defined($multiprocess)) {
 my $targettype = $ARGV[2];
 (my $numprocs,my $index) = split(/:/,$multiprocess);
 my $objectlist = Bio::KBase::ObjectAPI::utilities::LOADFILE($directory."/ObjectList.txt");
+my $successobj = [];
+my $failobj = [];
+my $errors = [];
 my $currentproc = -1;
+my $object;
+my $error;
 for (my $i=0; $i < @{$objectlist}; $i++) {
 	my $array = [split(/\t/,$objectlist->[$i])];
 	if (!defined($targettype) || $array->[0] eq $targettype) {
@@ -26,12 +31,27 @@ for (my $i=0; $i < @{$objectlist}; $i++) {
 			push(@{$OutputArray},`$command`);
 			my $found = 0;
 			for (my $i=0; $i < @{$OutputArray}; $i++) {
-				if ($OutputArray->[$i] =~ m/^Success/) {
-					print $OutputArray->[$i];
+				if ($OutputArray->[$i] =~ m/^Success:(.+)/) {
+					$object = $1;
+					push(@{$successobj},$object);
 					$found = 1;
-				} elsif ($OutputArray->[$i] =~ m/^Failed/) {
-					print $OutputArray->[$i];
+				} elsif ($OutputArray->[$i] =~ m/^Failed:(.+)/) {
+					$object = $1;
+					push(@{$failobj},$object);
 					$found = 1;
+				} elsif ($OutputArray->[$i] =~ m/^ERROR_MESSAGE(.+)/) {
+					$error = $1."\n";
+					my $continue = 1;
+					while ($continue == 1) {
+						if ($OutputArray->[$i] =~ m/(.+)END_ERROR_MESSAGE/) {
+							$error .= $1;
+							$continue = 0;
+						} else {
+							$error .= $OutputArray->[$i]."\n";
+						}
+					}
+					push(@{$errors},$object);
+					push(@{$errors},$error);
 				}
 			}
 			if ($found == 0) {
@@ -40,5 +60,8 @@ for (my $i=0; $i < @{$objectlist}; $i++) {
 		}
 	}
 }
+Bio::KBase::ObjectAPI::utilities::PRINTFILE($directory."/".$targettype."-".$index."-success.txt",$successobj);
+Bio::KBase::ObjectAPI::utilities::PRINTFILE($directory."/".$targettype."-".$index."-fail.txt",$failobj);
+Bio::KBase::ObjectAPI::utilities::PRINTFILE($directory."/".$targettype."-".$index."-errors.txt",$errors);
 
 1;

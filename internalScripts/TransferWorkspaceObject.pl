@@ -2,7 +2,7 @@
 
 use strict;
 use Config::Simple;
-use Bio::KBase::workspaceService::Impl;
+use Bio::KBase::workspaceService::Client;
 use Bio::KBase::workspace::Client;
 use ModelSEED::KBaseStore;
 use JSON::XS;
@@ -23,13 +23,13 @@ if (!-e $config) {
 my $c = Config::Simple->new();
 $c->read($config);
 
-#my $wserv = Bio::KBase::workspaceService::Client->new($c->param("kbclientconfig.wsurl"));
-my $wserv = Bio::KBase::workspaceService::Impl->new({
-	"mongodb-database" => "workspace_service",
-	"mssserver-url" => "http://biologin-4.mcs.anl.gov:7050",
-	"idserver-url" => "http://kbase.us/service/idserver",
-	"mongodb-host" => "mongodb.kbase.us"
-});
+my $wserv = Bio::KBase::workspaceService::Client->new($c->param("kbclientconfig.wsurl"));
+#my $wserv = Bio::KBase::workspaceService::Impl->new({
+#	"mongodb-database" => "workspace_service",
+#	"mssserver-url" => "http://biologin-4.mcs.anl.gov:7050",
+#	"idserver-url" => "http://kbase.us/service/idserver",
+#	"mongodb-host" => "mongodb.kbase.us"
+#});
 my $wsderv = Bio::KBase::workspace::Client->new($c->param("kbclientconfig.wsdurl"),$c->param("kbclientconfig.auth"));
 my $idserv = Bio::KBase::IDServer::Client->new($c->param("kbclientconfig.idurl"));
 
@@ -42,7 +42,7 @@ my $newstore = Bio::KBase::ObjectAPI::KBaseStore->new({
 });
 
 $Bio::KBase::workspaceService::Server::CallContext = {_override => {_authentication => ""}};
-my $array = [split(/\t/,$object)];
+my $array = [split(/[\t;]/,$object)];
 my $obj = $oldstore->get_object($array->[0],$array->[1]."/".$array->[2]);
 my $provenance = [{
 	"time" => $array->[5]."+0000",
@@ -85,11 +85,102 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 	my $NewPhenoSimSet = Bio::KBase::ObjectAPI::KBasePhenotypes::PhenotypeSimulationSet->new($data);
 	eval {
 		$NewPhenoSimSet->save($array->[1]."/".$array->[2]);
-		print "Success:".$array->[1]."/".$array->[2]."/".$obj>{"_kbaseWSMeta"}->{wsinst}."\n";
-	}; print "Failed:".$array->[1]."/".$array->[2]."/".$obj>{"_kbaseWSMeta"}->{wsinst}."\n" if $@;
+		print "Success:".$array->[1]."/".$array->[2]."/".$obj->{"_kbaseWSMeta"}->{wsinst}."\n";
+	};
+	if ($@) {
+		print "Failed:".$array->[1]."/".$array->[2]."/".$obj->{"_kbaseWSMeta"}->{wsinst}."\n" ;
+		print "ERROR_MESSAGE".$@."END_ERROR_MESSAGE\n";
+	}
 } elsif ($array->[0] eq "FBAModel") {
-	#Gapfilling
-	#Gapgeneration
+	my $genomehash;
+	my $kbid;
+	if (defined($obj->kbid())) {
+		$kbid = $obj->kbid();
+	} else {
+		$kbid = "kb|fbamdl.".$idserv->allocate_id_range("kb|fbamdl",1);
+	}
+	my $data = {
+		id => $kbid,
+		gapfillings => [],
+		gapgens => [],
+		biomasses => [],
+		compartments => [],
+		modelcompounds => [],
+		modelreactions => []
+	};
+	if (defined($obj->annotation_uuid())) {
+		my $class = $obj->annotation()->classifyGenomeFromAnnotation();
+    	my $template;
+    	if ($class eq "Gram positive") {
+    		$template = $newstore->get_object("KBaseTemplateModels/GramPosModelTemplate");
+       	} elsif ($class eq "Plant") {
+       		$template = $newstore->get_object("KBaseTemplateModels/PlantModelTemplate");
+    	} else {
+    		$template = $newstore->get_object("KBaseTemplateModels/GramNegModelTemplate");
+    	}
+    	if (defined($genomehash->{$obj->annotation_uuid()})) {;
+			my $genome = $newstore->get_object($genomehash->{$obj->annotation_uuid()});
+			$data->{genome_ref} = $genome->_reference();
+    	}
+		$data->{template_ref} = $template->_reference();
+	}
+	if (defined($obj->id()) && !defined($obj->source_id())) {
+		$obj->source_id($obj->id());
+	}
+	if (!defined($obj->source_id())) {
+		$obj->source_id($kbid);
+		$obj->source("KBase");
+	}
+	my $list = [qw(source_id source name type)];
+	foreach my $item (@{$list}) {
+		if (defined($obj->$item())) {
+			$data->{$item} = $obj->$item();
+		}
+	}
+	my $gfs = $obj->integratedGapfillings();
+	for (my $i=0; $i < @{$gfs}; $i++) {
+		my $gf = TranslateGapfilling($gfs->[$i]);
+		push(@{$data->{gapfillings}},{
+			gapfill_id => $gf->id(),
+			gapfill_ref => $gf->_reference(),
+			integrated => 1,
+			integrated_solution => $obj->integratedGapfillingSolutions()->{$gfs->[$i]->uuid()},
+			media_ref => $gf->media_ref(),
+		});
+	}
+	$gfs = $obj->unintegratedGapfillings();
+	for (my $i=0; $i < @{$gfs}; $i++) {
+		my $gf = TranslateGapfilling($gfs->[$i]);
+		push(@{$data->{gapfillings}},{
+			gapfill_id => $gf->id(),
+			gapfill_ref => $gf->_reference(),
+			integrated => 0,
+			integrated_solution => 0,
+			media_ref => $gf->media_ref(),
+		});
+	}
+	my $ggs = $obj->integratedGapgens();
+	for (my $i=0; $i < @{$ggs}; $i++) {
+		my $gg = TranslateGapgen($ggs->[$i]);
+		push(@{$data->{gapgens}},{
+			gapgen_id => $gg->id(),
+			gapgen_ref => $gg->_reference(),
+			integrated => 1,
+			integrated_solution => $obj->integratedGapgenSolutions()->{$ggs->[$i]->uuid()},
+			media_ref => $gg->media_ref(),
+		});
+	}
+	$ggs = $obj->unintegratedGapgens();
+	for (my $i=0; $i < @{$ggs}; $i++) {
+		my $gg = TranslateGapgen($ggs->[$i]);
+		push(@{$data->{gapgens}},{
+			gapgen_id => $gg->id(),
+			gapgen_ref => $gg->_reference(),
+			integrated => 0,
+			integrated_solution => 0,
+			media_ref => $gg->media_ref(),
+		});
+	}
 } elsif ($array->[0] eq "FBA") {
 	my $model = $newstore->get_object("FBAModel",$obj->model_uuid());
 	my $data = {
@@ -130,11 +221,15 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 	my $NewFBA = Bio::KBase::ObjectAPI::KBaseFBA::FBA->new($data);
 	eval {
 		$NewFBA->save($array->[1]."/".$array->[2]);
-		print "Success:".$array->[1]."/".$array->[2]."/".$obj>{"_kbaseWSMeta"}->{wsinst}."\n";
-	}; print "Failed:".$array->[1]."/".$array->[2]."/".$obj>{"_kbaseWSMeta"}->{wsinst}."\n" if $@;
+		print "Success:".$array->[1]."/".$array->[2]."/".$obj->{"_kbaseWSMeta"}->{wsinst}."\n";
+	};
+	if ($@) {
+		print "Failed:".$array->[1]."/".$array->[2]."/".$obj->{"_kbaseWSMeta"}->{wsinst}."\n" ;
+		print "ERROR_MESSAGE".$@."END_ERROR_MESSAGE\n";
+	}
 } elsif ($array->[0] eq "ModelTemplate") {
-	my $mapping = $newstore->get_object("Mapping","kbase/default-mapping");
-	my $biochem = $newstore->get_object("Biochemistry","kbase/default");
+	my $mapping = $newstore->get_object("kbase/default-mapping");
+	my $biochem = $newstore->get_object("kbase/default");
 	my $data = {
 		id => "kb|mdltmp.".$idserv->allocate_id_range("kb|mdltmp",1),
 		domain => $obj->domain(),
@@ -145,21 +240,76 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 		templateBiomasses => []
 	};
 	my $temprxns = $obj->templateReactions();
+	my $rxncount = 1;
 	foreach my $temprxn (@{$temprxns}) {
 		my $newrxn = {
+			id => $data->{id}.".temprxn.".$rxncount,
+			type => $temprxn->type(),
+			direction => $temprxn->direction(),
 			reaction_ref => $biochem->_reference()."/reactions/id/".$temprxn->reaction()->id(),
-			compartment_ref => $biochem->_reference()."/compartments/id/".$temprxn->compartment()->id(),,
+			compartment_ref => $biochem->_reference()."/compartments/id/".$temprxn->compartment()->id(),
+			complex_refs => []
 		};
+		$rxncount++;
 		my $complexes = $temprxn->complexes();
 		foreach my $complex (@{$complexes}) {
 			push(@{$newrxn->{complex_refs}},$mapping->_reference()."/complexes/id/".$complex->id());
 		}
+		push(@{$data->{templateReactions}},$newrxn);
+	}
+	my $tempbios = $obj->templateBiomasses();
+	my $biocount = 1;
+	foreach my $tempbio (@{$tempbios}) {
+		my $newtempbio = {
+			id => $data->{id}.".tempbio.".$biocount,
+			templateBiomassComponents => []
+		};
+		my $list = [qw(name type other dna rna protein lipid cellwall cofactor energy)];
+		foreach my $item (@{$list}) {
+			if (defined($tempbio->$item())) {
+				if ($item eq "name" || $item eq "type") {
+					$newtempbio->{$item} = $tempbio->$item();
+				} else {
+					$newtempbio->{$item} = $tempbio->$item()+0;
+				}
+			}
+		}
+		$biocount++;
+		my $tempbiocomps = $tempbio->templateBiomassComponents();
+		my $count = 1;
+		foreach my $tempbiocomp (@{$tempbiocomps}) {
+			my $newtempbiocomp = {
+				id => $newtempbio->{id}.".tempbiocomp.".$count,
+    			class => $tempbiocomp->class(),
+    			compound_ref => $biochem->_reference()."/compounds/id/".$tempbiocomp->compound()->id(),
+    			compartment_ref => $biochem->_reference()."/compartments/id/".$tempbiocomp->compartment()->id(),
+    			coefficientType => $tempbiocomp->coefficientType(),
+    			coefficient => $tempbiocomp->coefficient()+0,
+    			linked_compound_refs => [],
+    			link_coefficients => $tempbiocomp->linkCoefficients()
+			};
+			for (my $i=0; $i < @{$newtempbiocomp->{link_coefficients}}; $i++) {
+				$newtempbiocomp->{link_coefficients}->[$i] = $newtempbiocomp->{link_coefficients}->[$i]+0;
+			}
+			$count++;
+			my $linkedcpds = $tempbiocomp->linkedCompounds();
+			foreach my $linkcpd (@{$linkedcpds}) {
+				push(@{$newtempbiocomp->{linked_compound_refs}},$biochem->_reference()."/compounds/id/".$linkcpd->id());
+			}
+			push(@{$newtempbio->{templateBiomassComponents}},$newtempbiocomp);
+		}
+		push(@{$data->{templateBiomasses}},$newtempbio);
 	}
 	my $NewModelTemplate = Bio::KBase::ObjectAPI::KBaseFBA::ModelTemplate->new($data);
+	$NewModelTemplate->parent($newstore);
 	eval {
 		$NewModelTemplate->save($array->[1]."/".$array->[2]);
-		print "Success:".$array->[1]."/".$array->[2]."/".$obj>{"_kbaseWSMeta"}->{wsinst}."\n";
-	}; print "Failed:".$array->[1]."/".$array->[2]."/".$obj>{"_kbaseWSMeta"}->{wsinst}."\n" if $@;
+		print "Success:".$array->[1]."/".$array->[2]."/".$obj->{"_kbaseWSMeta"}->{wsinst}."\n";
+	};
+	if ($@) {
+		print "Failed:".$array->[1]."/".$array->[2]."/".$obj->{"_kbaseWSMeta"}->{wsinst}."\n" ;
+		print "ERROR_MESSAGE".$@."END_ERROR_MESSAGE\n";
+	}
 } elsif ($array->[0] eq "PhenotypeSet") {
 	my $data = {phenotypes => []};
 	my $list = [qw(id name source source_id importErrors)];
@@ -192,8 +342,12 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 	my $NewPhenoSet = Bio::KBase::ObjectAPI::KBasePhenotypes::PhenotypeSet->new($data);
 	eval {
 		$NewPhenoSet->save($array->[1]."/".$array->[2]);
-		print "Success:".$array->[1]."/".$array->[2]."/".$obj>{"_kbaseWSMeta"}->{wsinst}."\n";
-	}; print "Failed:".$array->[1]."/".$array->[2]."/".$obj>{"_kbaseWSMeta"}->{wsinst}."\n" if $@;
+		print "Success:".$array->[1]."/".$array->[2]."/".$obj->{"_kbaseWSMeta"}->{wsinst}."\n";
+	};
+	if ($@) {
+		print "Failed:".$array->[1]."/".$array->[2]."/".$obj->{"_kbaseWSMeta"}->{wsinst}."\n" ;
+		print "ERROR_MESSAGE".$@."END_ERROR_MESSAGE\n";
+	}
 } elsif ($array->[0] eq "Mapping") {
 	my $data = {
 		id => "kb|mapping.".$idserv->allocate_id_range("kb|mapping",1),
@@ -211,7 +365,7 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 		my $list = [qw(id name seedfeature)];
 		foreach my $item (@{$list}) {
 			if (defined($role->$item())) {
-				$data->{$item} = $role->$item();
+				$newrole->{$item} = $role->$item();
 			}
 		}
 		push(@{$data->{roles}},$newrole);
@@ -222,7 +376,7 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 		my $list = [qw(id name class subclass type)];
 		foreach my $item (@{$list}) {
 			if (defined($roleset->$item())) {
-				$data->{$item} = $roleset->$item();
+				$newss->{$item} = $roleset->$item();
 			}
 		}
 		my $roles = $roleset->roles();
@@ -247,7 +401,9 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 			foreach my $item (@{$list}) {
 				if (defined($cpxrole->$item())) {
 					if ($item eq "optional") {
-						$newcpxrole->{optionalRole} = $cpxrole->optional();
+						$newcpxrole->{optionalRole} = $cpxrole->optional()+0;
+					} elsif ($item eq "triggering") {
+						$newcpxrole->{$item} = $cpxrole->triggering()+0;
 					} else {
 						$newcpxrole->{$item} = $cpxrole->$item();
 					}
@@ -266,30 +422,35 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 			my $uuids = $aliases->{$alias};
 			foreach my $uuid (@{$uuids}) {
 				my $function;
-				my $prefix;
 				if ($set->attribute() eq "complexes") {
 					$function = "complex_aliases";
-					$prefix = "~/complexes/id/";
 				} elsif ($set->attribute() eq "subsystems") {
 					$function = "subsystem_aliases";
-					$prefix = "~/subsystems/id/";
 				} elsif ($set->attribute() eq "roles") {
 					$function = "role_aliases";
-					$prefix = "~/roles/id/";
 				}
 				if (defined($function)) {
-					push(@{$data->{$function}->{$prefix.$obj->getObject($set->attribute(),$uuid)->id()}->{$set->name()}},$alias);
+					push(@{$data->{$function}->{$obj->getObject($set->attribute(),$uuid)->id()}->{$set->name()}},$alias);
 				}
 			}
 		}
 	}
 	my $NewMapping = Bio::KBase::ObjectAPI::KBaseOntology::Mapping->new($data);
+	$NewMapping->parent($newstore);
 	eval {
 		$NewMapping->save($array->[1]."/".$array->[2]);
-		print "Success:".$array->[1]."/".$array->[2]."/".$obj>{"_kbaseWSMeta"}->{wsinst}."\n";
-	}; print "Failed:".$array->[1]."/".$array->[2]."/".$obj>{"_kbaseWSMeta"}->{wsinst}."\n" if $@;
+		print "Success:".$array->[1]."/".$array->[2]."/".$obj->{"_kbaseWSMeta"}->{wsinst}."\n";
+	};
+	if ($@) {
+		print "Failed:".$array->[1]."/".$array->[2]."/".$obj->{"_kbaseWSMeta"}->{wsinst}."\n" ;
+		print "ERROR_MESSAGE".$@."END_ERROR_MESSAGE\n";
+	}
 } elsif ($array->[0] eq "Media") {
-	my $bioobj = $newstore->get_object("Biochemistry","kbase/default");
+	my $bioobj = $newstore->get_object("kbase/default");
+	print "Retrieved new biochemistry!\n";
+	my $origbio = $oldstore->get_object("Biochemistry","kbase/default");
+	print "Retrieved old biochemistry!\n";
+	$obj->parent($origbio);
 	my $data = {id => "kb|media.".$idserv->allocate_id_range("kb|media",1),mediacompounds => []};
 	my $list = [qw(isDefined isMinimal name type)];
 	foreach my $item (@{$list}) {
@@ -302,16 +463,21 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 	foreach my $mediacomp (@{$mediacompounds}) {
 		my $newcomp = {};
 		$newcomp->{compound_ref} = $bioobj->_reference()."/compounds/id/".$mediacomp->compound()->id();
-		$newcomp->{concentration} = $mediacomp->concentration();
-		$newcomp->{maxFlux} = $mediacomp->maxFlux();
-		$newcomp->{minFlux} = $mediacomp->minFlux();
+		$newcomp->{concentration} = $mediacomp->concentration()+0;
+		$newcomp->{maxFlux} = $mediacomp->maxFlux()+0;
+		$newcomp->{minFlux} = $mediacomp->minFlux()+0;
 		push(@{$data->{mediacompounds}},$newcomp);
 	}
 	my $NewMedia = Bio::KBase::ObjectAPI::KBaseBiochem::Media->new($data);
+	$NewMedia->parent($newstore);
 	eval {
 		$NewMedia->save($array->[1]."/".$array->[2]);
-		print "Success:".$array->[1]."/".$array->[2]."/".$obj>{"_kbaseWSMeta"}->{wsinst}."\n";
-	}; print "Failed:".$array->[1]."/".$array->[2]."/".$obj>{"_kbaseWSMeta"}->{wsinst}."\n" if $@;
+		print "Success:".$array->[1]."/".$array->[2]."/".$obj->{"_kbaseWSMeta"}->{wsinst}."\n";
+	};
+	if ($@) {
+		print "Failed:".$array->[1]."/".$array->[2]."/".$obj->{"_kbaseWSMeta"}->{wsinst}."\n" ;
+		print "ERROR_MESSAGE".$@."END_ERROR_MESSAGE\n";
+	}
 } elsif ($array->[0] eq "Biochemistry") {
 	my $biochemstruct;
 	eval {
@@ -340,7 +506,11 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 		eval {
 			$NewBiochemStruct->save($array->[1]."/".$array->[2].".biochemstruct");
 			print "Success:".$array->[1]."/".$array->[2].".biochemstruct\n";
-		}; print "Failed:".$array->[1]."/".$array->[2].".biochemstruct\n" if $@;
+		};
+		if ($@) {
+			print "Failed:".$array->[1]."/".$array->[2].".biochemstruct\n";
+			print "ERROR_MESSAGE".$@."END_ERROR_MESSAGE\n";
+		}
 	}
 	my $data = {
 		id => "kb|biochem.".$idserv->allocate_id_range("kb|biochem",1),
@@ -389,21 +559,38 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 	my $compounds = $obj->compounds();
 	for (my $i=0;$i < @{$compounds}; $i++) {
 		my $data = {};
-		#md5 
-		my $list = [qw(id isCofactor name abbreviation formula unchargedFormula mass defaultCharge deltaG deltaGErr pkas pkbs)];
+		my $list = [qw(id isCofactor name abbreviation formula unchargedFormula mass defaultCharge deltaG deltaGErr)];
 		foreach my $item (@{$list}) {
 			if (defined($compounds->[$i]->$item())) {
 				$data->{$item} = $compounds->[$i]->$item();
 			}
 		}
+		foreach my $pk (keys(%{$compounds->[$i]->pkas()})) {
+			my $array = $compounds->[$i]->pkas()->{$pk};
+			foreach my $atom (@{$array}) {
+				$atom = $atom+0;
+				$pk = $pk+0;
+				push(@{$data->{pkas}->{$atom}},$pk);
+			}
+		}
+		foreach my $pk (keys(%{$compounds->[$i]->pkbs()})) {
+			my $array = $compounds->[$i]->pkbs()->{$pk};
+			foreach my $atom (@{$array}) {
+				$atom = $atom+0;
+				$pk = $pk+0;
+				push(@{$data->{pkbs}->{$atom}},$pk);
+			}
+		}
 		if (defined($compounds->[$i]->cues())) {
 			my $cues = $compounds->[$i]->cues();
 			foreach my $cue (keys(%{$cues})) {
-				my $cueobj = $obj->getObject($cue);
+				my $cueobj = $obj->getObject("cues",$cue);
 				$data->{cues}->{"~/cues/id/".$cueobj->name()} = $cues->{$cue};
 			}
 		}
-		$data->{abstractCompound_ref} = "~/compounds/id/".$compounds->[$i]->abstractCompound()->id();
+		if (defined($compounds->[$i]->abstractCompound_uuid())) {
+			$data->{abstractCompound_ref} = "~/compounds/id/".$compounds->[$i]->abstractCompound()->id();
+		}
 		foreach my $compcpd (@{$compounds->[$i]->comprisedOfCompounds()}) {
 			push(@{$data->{comprisedOfCompound_refs}},"~/compounds/id/".$compcpd->id());
 		};
@@ -419,7 +606,7 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 	my $reactions = $obj->reactions();
 	for (my $i=0;$i < @{$reactions}; $i++) {
 		my $data = {reagents => []};
-		my $list = [qw(deltaGErr deltaG defaultProtons name abbreviation direction thermoReversibility status)];
+		my $list = [qw(id deltaGErr deltaG defaultProtons name abbreviation direction thermoReversibility status)];
 		foreach my $item (@{$list}) {
 			if (defined($reactions->[$i]->$item())) {
 				$data->{$item} = $reactions->[$i]->$item();
@@ -428,7 +615,7 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 		if (defined($reactions->[$i]->cues())) {
 			my $cues = $reactions->[$i]->cues();
 			foreach my $cue (keys(%{$cues})) {
-				my $cueobj = $obj->getObject($cue);
+				my $cueobj = $obj->getObject("cues",$cue);
 				$data->{cues}->{"~/cues/id/".$cueobj->name()} = $cues->{$cue};
 			}
 		}
@@ -439,11 +626,13 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 				$newreagent->{compound_ref} = "~/compounds/id/".$reagent->compound()->id();
 				$newreagent->{compartment_ref} = "~/compartments/id/".$reagent->compartment()->id();
 				$newreagent->{coefficient} = $reagent->coefficient();
-				$newreagent->{isCofactor} = $reagent->isCofactor();
+				$newreagent->{isCofactor} = $reagent->isCofactor()+0;
 				push(@{$data->{reagents}},$newreagent);
 			}
 		}
-		$data->{abstractReaction_ref} = "~/reactions/id/".$reactions->[$i]->abstractReaction()->id();
+		if (defined($reactions->[$i]->abstractReaction_uuid())) {
+			$data->{abstractReaction_ref} = "~/reactions/id/".$reactions->[$i]->abstractReaction()->id();
+		}
 		$NewBiochem->add("reactions",$data);
 	}
 	my $reactionSets = $obj->reactionSets();
@@ -490,7 +679,7 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 					$function = "compound_aliases";
 				}
 				if (defined($function)) {
-					push(@{$NewBiochem->$function()->{"~/".$set->attribute()."/id/".$obj->getObject($set->attribute(),$uuid)->id()}->{$set->name()}},$alias);
+					push(@{$NewBiochem->$function()->{$obj->getObject($set->attribute(),$uuid)->id()}->{$set->name()}},$alias);
 				}
 			}
 		}
@@ -498,8 +687,12 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 	$NewBiochem->parent($newstore);
 	eval {
 		$NewBiochem->save($array->[1]."/".$array->[2]);
-		print "Success:".$array->[1]."/".$array->[2]."/".$obj>{"_kbaseWSMeta"}->{wsinst}."\n";
-	}; print "Failed:".$array->[1]."/".$array->[2]."/".$obj>{"_kbaseWSMeta"}->{wsinst}."\n" if $@;
+		print "Success:".$array->[1]."/".$array->[2]."/".$obj->{"_kbaseWSMeta"}->{wsinst}."\n";
+	};
+	if ($@) {
+		print "Failed:".$array->[1]."/".$array->[2]."/".$obj->{"_kbaseWSMeta"}->{wsinst}."\n" ;
+		print "ERROR_MESSAGE".$@."END_ERROR_MESSAGE\n";
+	}
 } elsif ($array->[0] eq "Genome") {
 	if ($obj->{id} !~ m/kb\|/) {
 		$obj->{id} = "kb|g.".$idserv->allocate_id_range("kb|g",1);
@@ -597,7 +790,11 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 		eval {
 			$ContigObj->save($array->[1]."/".$array->[2].".contigset");
 			print "Success:".$array->[1]."/".$array->[2].".contigset\n";
-		}; print "Failed:".$array->[1]."/".$array->[2].".contigset\n" if $@;
+		};
+		if ($@) {
+			print "Failed:".$array->[1]."/".$array->[2].".contigset\n" ;
+			print "ERROR_MESSAGE".$@."END_ERROR_MESSAGE\n";
+		}
 		$genomedata->{contigset_ref} = $ContigObj->_reference();
 	}
 	my $GenomeObj = Bio::KBase::ObjectAPI::KBaseGenomes::Genome->new($genomedata);
@@ -606,7 +803,11 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 	eval {
 		$GenomeObj->save($array->[1]."/".$array->[2]);
 		print "Success:".$array->[1]."/".$array->[2]."/".$obj->{"_kbaseWSMeta"}->{wsinst}."\n";
-	}; print "Failed:".$array->[1]."/".$array->[2]."/".$obj->{"_kbaseWSMeta"}->{wsinst}."\n" if $@;
+	};
+	if ($@) {
+		print "Failed:".$array->[1]."/".$array->[2]."/".$obj->{"_kbaseWSMeta"}->{wsinst}."\n" ;
+		print "ERROR_MESSAGE".$@."END_ERROR_MESSAGE\n";
+	}
 }
 
 1;

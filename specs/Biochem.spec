@@ -126,7 +126,8 @@ module KBaseBiochem {
     
     /* 
     	Compound object
-    	 
+    	
+    	@optional md5 formula unchargedFormula mass deltaG deltaGErr abstractCompound_ref comprisedOfCompound_refs structure_ref cues pkas pkbs
 		@searchable ws_subset id isCofactor name abbreviation md5 formula unchargedFormula mass defaultCharge deltaG abstractCompound_ref comprisedOfCompound_refs structure_ref cues
     */
     typedef structure {
@@ -145,8 +146,8 @@ module KBaseBiochem {
     	list<compound_ref> comprisedOfCompound_refs;
     	structure_ref structure_ref;
     	mapping<cue_ref,float> cues;
-    	mapping<int,float> pkas;
-    	mapping<int,float> pkbs;
+    	mapping<int,list<float>> pkas;
+    	mapping<int,list<float>> pkbs;
     } Compound;
     
     /* 
@@ -164,6 +165,7 @@ module KBaseBiochem {
     /* 
     	Reaction object
     	
+    	@optional md5 deltaG deltaGErr abstractReaction_ref cues
 		@searchable ws_subset id name abbreviation md5 direction thermoReversibility status defaultProtons deltaG abstractReaction_ref cues
 		@searchable ws_subset reagents.[*].(compound_ref,compartment_ref,coefficient,isCofactor)
     */
@@ -196,7 +198,8 @@ module KBaseBiochem {
     
     /* 
     	Cue object
-    	 
+    	
+    	@optional mass deltaGErr deltaG defaultCharge structure_key structure_data structure_type
 		@searchable ws_subset structure_key id name abbreviation formula unchargedFormula mass defaultCharge deltaG smallMolecule priority structure_key structure_data
     */
     typedef structure {
@@ -275,9 +278,9 @@ module KBaseBiochem {
     	
     	@optional description name
     	@searchable ws_subset compartments.[*].(id,name,hierarchy)
-    	@searchable ws_subset compounds.[*].(id,isCofactor,name,abbreviation,md5,formula,unchargedFormula,mass,defaultCharge,deltaG,abstractCompound_ref,comprisedOfCompound_refs,structure_ref,cues)
-    	@searchable ws_subset reactions.[*].(name,abbreviation,md5,direction,thermoReversibility,status,defaultProtons,deltaG,abstractReaction_ref,cues,reagents.[*].(compound_ref,compartment_ref,coefficient,isCofactor))
-    	@searchable ws_subset cues.[*].(id,name,abbreviation,formula,unchargedFormula,mass,defaultCharge,deltaG,smallMolecule,priority,structure_key,structure_type)
+    	@searchable ws_subset compounds.[*].(id,isCofactor,name,abbreviation,formula,unchargedFormula,abstractCompound_ref,comprisedOfCompound_refs)
+    	@searchable ws_subset reactions.[*].(id,name,abbreviation,defaultProtons,abstractReaction_ref,reagents.[*].(compound_ref))
+    	@searchable ws_subset cues.[*].(id,name,abbreviation,formula,unchargedFormula,smallMolecule,priority)
     	@searchable ws_subset reactionSets.[*].(id,name,class,reaction_refs,type)
     	@searchable ws_subset compoundSets.[*].(id,name,class,compound_refs,type)
     */

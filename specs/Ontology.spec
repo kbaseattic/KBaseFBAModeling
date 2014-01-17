@@ -31,7 +31,7 @@ module KBaseOntology {
     /* 
     	Role object containing data relating to functional role
     	    	
-    	@optional name
+    	@optional name seedfeature
     	@searchable ws_subset id seedfeature name
     */
     typedef structure {

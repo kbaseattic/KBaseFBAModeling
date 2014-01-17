@@ -111,9 +111,9 @@ sub get_objects {
 				$objid->{workspace} = $array->[0];
 			}
 			if ($array->[1] =~ m/^\d+$/) {
-				$objid->{objid} = $array->[0];
+				$objid->{objid} = $array->[1];
 			} else {
-				$objid->{name} = $array->[0];
+				$objid->{name} = $array->[1];
 			}
 			if (defined($array->[2])) {
 				$objid->{ver} = $array->[2];
@@ -122,11 +122,15 @@ sub get_objects {
 		}
 		my $objdatas = $self->workspace()->get_objects($objids);
 		for (my $i=0; $i < @{$objdatas}; $i++) {
-			my $info = $objdatas->[$i]->{info}->[2];
-			my $class = "Bio::KBase::ObjectAPI::".join("::",split(/\./,$info->[2]));
-			$self->cache()->{$newrefs->[$i]} = $class->new($objdatas->[$i]->{data}->{uuid});
-			$self->cache()->{$newrefs->[$i]}->_reference($info->[6]."/".$info->[0]."/".$info->[4]);
-			$self->uuid_refs()->{$self->cache()->{$newrefs->[$i]}->uuid()} = $info->[6]."/".$info->[0]."/".$info->[4];
+			my $info = $objdatas->[$i]->{info};
+			if ($info->[2] =~ m/^(.+)\.(.+)-/) {
+				my $module = $1;
+				my $type = $2;
+				my $class = "Bio::KBase::ObjectAPI::".$module."::".$type;
+				$self->cache()->{$newrefs->[$i]} = $class->new($objdatas->[$i]->{data});
+				$self->cache()->{$newrefs->[$i]}->_reference($info->[6]."/".$info->[0]."/".$info->[4]);
+				$self->uuid_refs()->{$self->cache()->{$newrefs->[$i]}->uuid()} = $info->[6]."/".$info->[0]."/".$info->[4];
+			}
 		}
 	}
 	#Gathering objects out of the cache
@@ -139,7 +143,7 @@ sub get_objects {
 
 sub get_object {
     my ($self,$ref) = @_;
-    return $self->get_objects([$ref]);
+    return $self->get_objects([$ref])->[0];
 }
 
 sub save_object {
@@ -185,12 +189,14 @@ sub save_objects {
     	}
     	my $listout;
     	if (defined($self->user_override()) && length($self->user_override()) > 0) {
+    		print "Now saving!\n";
     		$listout = $self->workspace()->administer({
     			"command" => "saveObjects",
     			"user" => $self->user_override(),
     			"params" => $input
     		});
     	} else {
+    		print "Now saving!\n";
     		$listout = $self->workspace()->save_objects($input);
     	}    	
 	    #Placing output into a hash of references pointing to object infos

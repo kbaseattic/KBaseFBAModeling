@@ -260,9 +260,19 @@ sub serializeToDB {
     my $attributes = $self->_attributes();
     foreach my $item (@{$attributes}) {
     	my $name = $item->{name};
+    	if ($name eq "isCofactor") {
+    		if ($self->$name() != 0 && $self->$name() != 1) {
+				$self->$name(0);
+    		}
+    	}
 		if (defined($self->$name())) {
-			if ($item->{type} eq "Int" || $item->{type} eq "Num") {
+			if ($item->{type} eq "Int" || $item->{type} eq "Num" || $item->{type} eq "Bool") {
 				$data->{$name} = $self->$name()+0;
+			} elsif ($name eq "cues") {
+				$data->{$name} = $self->$name();
+				foreach my $cue (keys(%{$data->{$name}})) {
+					$data->{$name}->{$cue} = $data->{$name}->{$cue}+0;
+				}
 			} elsif ($name eq "annotations") {
 				my $dataitem = $self->$name();
 				for (my $i=0; $i < @{$dataitem}; $i++) {
@@ -295,6 +305,7 @@ sub serializeToDB {
     foreach my $item (@{$subobjects}) {
     	my $name = "_".$item->{name};
     	my $arrayRef = $self->$name();
+    	$data->{$item->{name}} = [];
     	foreach my $subobject (@{$arrayRef}) {
 			if ($subobject->{created} == 1) {
 				push(@{$data->{$item->{name}}},$subobject->{object}->serializeToDB());	

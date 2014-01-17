@@ -8,7 +8,6 @@
 use strict;
 use LWP::Simple qw(getstore);
 use File::Temp qw(tempfile);
-use Bio::KBase::ObjectAPI::Classifier;
 use Bio::KBase::ObjectAPI::KBaseOntology::DB::Mapping;
 package Bio::KBase::ObjectAPI::KBaseOntology::Mapping;
 use Class::Autouse qw(
@@ -97,14 +96,14 @@ sub addAlias {
     my $args = Bio::KBase::ObjectAPI::Util::utilities::args(["attribute","aliasName","alias","uuid"], {}, @_);
 	my $idhash;
 	my $aliasHash;
-	if ($attribute eq "roles") {
-		$idhash = $self->role_aliases()
+	if ($args->{attribute} eq "roles") {
+		$idhash = $self->role_aliases();
 		$aliasHash = $self->rolesByAlias();
-	} elsif ($attribute eq "complexes") {
-		$idhash = $self->complex_aliases()
+	} elsif ($args->{attribute} eq "complexes") {
+		$idhash = $self->complex_aliases();
 		$aliasHash = $self->complexesByAlias();
-	} elsif ($attribute eq "subsystems") {
-		$idhash = $self->subsystem_aliases()
+	} elsif ($args->{attribute} eq "subsystems") {
+		$idhash = $self->subsystem_aliases();
 		$aliasHash = $self->subsystemsByAlias();
 	}
 	if (!defined($aliasHash->{$args->{aliasName}}->{$args->{alias}}->{$args->{uuid}})) {
@@ -118,14 +117,14 @@ sub removeAlias {
     my $args = Bio::KBase::ObjectAPI::Util::utilities::args(["attribute","aliasName","alias","uuid"], {}, @_);
 	my $idhash;
 	my $aliasHash;
-	if ($attribute eq "roles") {
-		$idhash = $self->role_aliases()
+	if ($args->{attribute} eq "roles") {
+		$idhash = $self->role_aliases();
 		$aliasHash = $self->rolesByAlias();
-	} elsif ($attribute eq "complexes") {
-		$idhash = $self->complex_aliases()
+	} elsif ($args->{attribute} eq "complexes") {
+		$idhash = $self->complex_aliases();
 		$aliasHash = $self->complexesByAlias();
-	} elsif ($attribute eq "subsystems") {
-		$idhash = $self->subsystem_aliases()
+	} elsif ($args->{attribute} eq "subsystems") {
+		$idhash = $self->subsystem_aliases();
 		$aliasHash = $self->subsystemsByAlias();
 	}
 	if (defined($idhash->{$args->{uuid}})) {
