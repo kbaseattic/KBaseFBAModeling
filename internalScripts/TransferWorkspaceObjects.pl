@@ -49,6 +49,7 @@ for (my $i=0; $i < @{$objectlist}; $i++) {
 						} else {
 							$error .= $OutputArray->[$i]."\n";
 						}
+						$i++;
 					}
 					push(@{$errors},$object);
 					push(@{$errors},$error);
