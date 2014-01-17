@@ -30,28 +30,28 @@ for (my $i=0; $i < @{$objectlist}; $i++) {
 			my $command = "perl TransferWorkspaceObject.pl ../../KBaseDeploy/kb-workspaceroot.ini \"".$objectlist->[$i]."\" 2> /dev/null";
 			push(@{$OutputArray},`$command`);
 			my $found = 0;
-			for (my $i=0; $i < @{$OutputArray}; $i++) {
-				if ($OutputArray->[$i] =~ m/^Success:(.+)/) {
+			for (my $j=0; $j < @{$OutputArray}; $j++) {
+				if ($OutputArray->[$j] =~ m/^Success:(.+)/) {
 					$object = $1;
 					push(@{$successobj},$object);
 					$found = 1;
-				} elsif ($OutputArray->[$i] =~ m/^Failed:(.+)/) {
+				} elsif ($OutputArray->[$j] =~ m/^Failed:(.+)/) {
 					$object = $1;
 					push(@{$failobj},$object);
 					$found = 1;
-				} elsif ($OutputArray->[$i] =~ m/^ERROR_MESSAGE(.+)/) {
+				} elsif ($OutputArray->[$j] =~ m/^ERROR_MESSAGE(.+)/) {
 					$error = $1."\n";
 					my $continue = 1;
 					while ($continue == 1) {
-						if (defined($OutputArray->[$i]) && $OutputArray->[$i] =~ m/(.+)END_ERROR_MESSAGE/) {
+						if (defined($OutputArray->[$j]) && $OutputArray->[$j] =~ m/(.+)END_ERROR_MESSAGE/) {
 							$error .= $1;
 							$continue = 0;
-						} elsif (defined($OutputArray->[$i]) {
-							$error .= $OutputArray->[$i]."\n";
-						} elsif ($i >= @{$OutputArray}) {
+						} elsif (defined($OutputArray->[$j])) {
+							$error .= $OutputArray->[$j]."\n";
+						} elsif ($j >= @{$OutputArray}) {
 							$continue = 0;
 						}
-						$i++;
+						$j++;
 					}
 					push(@{$errors},$object);
 					push(@{$errors},$error);
