@@ -616,6 +616,7 @@ module KBaseFBA {
     	bool gprHypothesis;
     	bool reactionRemovalHypothesis;
     	
+    	media_ref media_ref;
     	media_ref referenceMedia_ref;
     	
     	int timePerSolution;

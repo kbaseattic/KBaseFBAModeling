@@ -2,8 +2,8 @@
 
 use strict;
 use Config::Simple;
-#use Bio::KBase::workspaceService::Client;
-use Bio::KBase::workspaceService::Impl;
+use Bio::KBase::workspaceService::Client;
+#use Bio::KBase::workspaceService::Impl;
 use Bio::KBase::workspace::Client;
 use ModelSEED::KBaseStore;
 use JSON::XS;
@@ -24,13 +24,13 @@ if (!-e $config) {
 my $c = Config::Simple->new();
 $c->read($config);
 
-#my $wserv = Bio::KBase::workspaceService::Client->new($c->param("kbclientconfig.wsurl"));
-my $wserv = Bio::KBase::workspaceService::Impl->new({
-	"mongodb-database" => "workspace_service",
-	"mssserver-url" => "http://biologin-4.mcs.anl.gov:7050",
-	"idserver-url" => "http://kbase.us/service/idserver",
-	"mongodb-host" => "mongodb.kbase.us"
-});
+my $wserv = Bio::KBase::workspaceService::Client->new($c->param("kbclientconfig.wsurl"));
+#my $wserv = Bio::KBase::workspaceService::Impl->new({
+#	"mongodb-database" => "workspace_service",
+#	"mssserver-url" => "http://biologin-4.mcs.anl.gov:7050",
+#	"idserver-url" => "http://kbase.us/service/idserver",
+#	"mongodb-host" => "mongodb.kbase.us"
+#});
 my $wsderv = Bio::KBase::workspace::Client->new($c->param("kbclientconfig.wsdurl"),$c->param("kbclientconfig.auth"));
 my $idserv = Bio::KBase::IDServer::Client->new($c->param("kbclientconfig.idurl"));
 
@@ -93,6 +93,7 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 		print "ERROR_MESSAGE".$@."END_ERROR_MESSAGE\n";
 	}
 } elsif ($array->[0] eq "FBAModel") {
+	my $biochem = $newstore->get_object("kbase/default");
 	my $genomehash;
 	my $kbid;
 	if (defined($obj->kbid())) {
@@ -105,10 +106,11 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 		gapfillings => [],
 		gapgens => [],
 		biomasses => [],
-		compartments => [],
+		modelcompartments => [],
 		modelcompounds => [],
 		modelreactions => []
 	};
+	my $genome;
 	if (defined($obj->annotation_uuid())) {
 		my $class = $obj->annotation()->classifyGenomeFromAnnotation();
     	my $template;
@@ -120,7 +122,7 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
     		$template = $newstore->get_object("KBaseTemplateModels/GramNegModelTemplate");
     	}
     	if (defined($genomehash->{$obj->annotation_uuid()})) {;
-			my $genome = $newstore->get_object($genomehash->{$obj->annotation_uuid()});
+			$genome = $newstore->get_object($genomehash->{$obj->annotation_uuid()});
 			$data->{genome_ref} = $genome->_reference();
     	}
 		$data->{template_ref} = $template->_reference();
@@ -138,9 +140,123 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 			$data->{$item} = $obj->$item();
 		}
 	}
+	my $compartments = $obj->modelcompartments();
+	for (my $i=0; $i < @{$compartments}; $i++) {
+		my $compartment = $compartments->[$i];
+		my $newcomp = {
+			id => $compartment->id(),
+			compartment_ref => $biochem->_reference()."/compartments/id/".$compartment->compartment()->id(),
+			compartmentIndex => $compartment->compartmentIndex()+0,
+			pH => $compartment->pH()+0,
+			potential => $compartment->potential()+0,
+			label => $compartment->label()
+		};
+		push(@{$data->{modelcompartments}},$newcomp);
+	}
+	my $compounds = $obj->modelcompounds();
+	for (my $i=0; $i < @{$compounds}; $i++) {
+		my $cpd = $compounds->[$i];
+		my $newcpd = {
+			id => $cpd->id(),
+			compound_ref => $biochem->_reference()."/compounds/id/".$cpd->compound()->id(),
+			name => $cpd->name(),
+			charge => $cpd->charge()+1,
+			formula => $cpd->formula(),
+			modelcompartment_ref => "~/compartments/id/".$cpd->modelcompartment()->id(),
+		};
+		push(@{$data->{modelcompounds}},$newcpd);
+	}
+	my $biomasses = $obj->biomasses();
+	for (my $i=0; $i < @{$biomasses}; $i++) {
+		my $bio = $biomasses->[$i];
+		my $newbio = {
+			id => $bio->id(),
+			name => $bio->name(),
+			other => $bio->other()+0,
+			dna => $bio->dna()+0,
+			rna => $bio->rna()+0,
+			protein => $bio->protein()+0,
+			cellwall => $bio->cellwall()+0,
+			lipid => $bio->lipid()+0,
+			cofactor => $bio->cofactor()+0,
+			energy => $bio->energy()+0,
+			biomasscompounds => []
+		};
+		my $biocpds = $bio->biomasscompounds();
+		for (my $j=0; $j < @{$biocpds}; $j++) {
+			my $biocpd = $biocpds->[$j];
+			my $newbiocpd = {
+				modelcompound_ref => "~/modelcompounds/id/".$biocpd->modelcompound()->id(),
+				coefficient => $biocpd->coefficient(),
+			};
+			push(@{$newbio->{biomasscompounds}},$newbiocpd);
+		}
+		push(@{$data->{biomasses}},$newbio);
+	}
+	my $modelrxns = $obj->modelreactions();
+	for (my $i=0; $i < @{$modelrxns}; $i++) {
+		my $rxn = $modelrxns->[$i];
+		my $newrxn = {
+			id => $rxn->id(),
+			reaction_ref => $biochem->_reference()."/reactions/id/".$rxn->reaction()->id(),
+			direction => $rxn->direction(),
+			protons => $rxn->protons()+0,
+			modelcompartment_ref => "~/modelcompartments/id/".$rxn->modelcompartment()->id(),
+			probability => -1,
+			modelReactionReagents => [],
+			modelReactionProteins => []
+		};
+		my $rgts = $rxn->modelReactionReagents();
+		for (my $j=0; $j < @{$rgts}; $j++) {
+			my $rgt = $rgts->[$j];
+			my $newrgt = {
+				modelcompound_ref => "~/modelcompounds/id/".$rgt->modelcompound()->id(),
+				coefficient => $rgt->coefficient(),
+			};
+			push(@{$newrxn->{modelReactionReagents}},$newrgt);
+		}
+		my $prots = $rxn->modelReactionProteins();
+		for (my $j=0; $j < @{$prots}; $j++) {
+			my $prot = $prots->[$j];
+			my $newprot = {
+				note => $prot->note(),
+				modelReactionProteinSubunits => []
+			};
+			my $subunits = $prot->modelReactionProteinSubunits();
+			for (my $k=0; $k < @{$subunits}; $k++) {
+				my $subunit = $subunits->[$k];
+				my $newsubunit = {
+					role => $subunit->role()->name(),
+					triggering => $subunit->triggering(),
+					optionalSubunit => $subunit->optional(),
+					note  => $subunit->note(),
+					feature_refs => [],
+				};
+				my $features = $subunit->modelReactionProteinSubunitGenes();
+				for (my $m=0; $m < @{$features}; $m++) {
+					my $feature = $features->[$m];
+					push(@{$newsubunit->feature_refs()},$genome->_reference()."/features/id/".$feature->id());
+				}
+				push(@{$newprot->{modelReactionProteinSubunits}},$newsubunit);
+			}
+			push(@{$newprot->{modelReactionProteins}},$newprot);
+		}
+		push(@{$data->{modelreactions}},$newrxn);
+	}
+	my $NewModel = Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->new($data);
+	eval {
+		$NewModel->save($array->[1]."/".$array->[2]);
+		print "Success:".$array->[1]."/".$array->[2]."/".$obj->{"_kbaseWSMeta"}->{wsinst}."\n";
+	};
+	if ($@) {
+		print "Failed:".$array->[1]."/".$array->[2]."/".$obj->{"_kbaseWSMeta"}->{wsinst}."\n" ;
+		print "ERROR_MESSAGE".$@."END_ERROR_MESSAGE\n";
+	}
 	my $gfs = $obj->integratedGapfillings();
+	my $count = 1;
 	for (my $i=0; $i < @{$gfs}; $i++) {
-		my $gf = TranslateGapfilling($gfs->[$i]);
+		my $gf = translate_gapfilling($gfs->[$i],$NewModel->_reference(),$genome->_reference(),$biochem->_reference(),$array->[1],$array->[2].".gf.".$count,$NewModel->id().".gf.".$count);
+		$count++;
 		push(@{$data->{gapfillings}},{
 			gapfill_id => $gf->id(),
 			gapfill_ref => $gf->_reference(),
@@ -151,7 +267,8 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 	}
 	$gfs = $obj->unintegratedGapfillings();
 	for (my $i=0; $i < @{$gfs}; $i++) {
-		my $gf = TranslateGapfilling($gfs->[$i]);
+		my $gf = translate_gapfilling($gfs->[$i],$NewModel->_reference(),$genome->_reference(),$biochem->_reference(),$array->[1],$array->[2].".gf.".$count,$NewModel->id().".gf.".$count);
+		$count++;
 		push(@{$data->{gapfillings}},{
 			gapfill_id => $gf->id(),
 			gapfill_ref => $gf->_reference(),
@@ -160,9 +277,11 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 			media_ref => $gf->media_ref(),
 		});
 	}
+	$count = 1;
 	my $ggs = $obj->integratedGapgens();
 	for (my $i=0; $i < @{$ggs}; $i++) {
-		my $gg = TranslateGapgen($ggs->[$i]);
+		my $gg = translate_gapfilling($ggs->[$i],$NewModel->_reference(),$genome->_reference(),$biochem->_reference(),$array->[1],$array->[2].".gg.".$count,$NewModel->id().".gg.".$count);
+		$count++;
 		push(@{$data->{gapgens}},{
 			gapgen_id => $gg->id(),
 			gapgen_ref => $gg->_reference(),
@@ -173,7 +292,8 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 	}
 	$ggs = $obj->unintegratedGapgens();
 	for (my $i=0; $i < @{$ggs}; $i++) {
-		my $gg = TranslateGapgen($ggs->[$i]);
+		my $gg = translate_gapfilling($ggs->[$i],$NewModel->_reference(),$genome->_reference(),$biochem->_reference(),$array->[1],$array->[2].".gg.".$count,$NewModel->id().".gg.".$count);
+		$count++;
 		push(@{$data->{gapgens}},{
 			gapgen_id => $gg->id(),
 			gapgen_ref => $gg->_reference(),
@@ -182,52 +302,21 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 			media_ref => $gg->media_ref(),
 		});
 	}
-} elsif ($array->[0] eq "FBA") {
-	my $model = $newstore->get_object("FBAModel",$obj->model_uuid());
-	my $data = {
-		id => "kb|fba.".$idserv->allocate_id_range("kb|fba",1),
-		compoundflux_objterms => {},
-		reactionflux_objterms => {},
-		biomassflux_objterms => {},
-		FBAConstraints => [],
-		FBAReactionBounds => [],
-		FBACompoundBounds => [],
-		FBACompoundVariables => [],
-		FBAReactionVariables => [],
-		FBABiomassVariables => [],
-		FBAPromResults => [],
-		FBADeletionResults => [],
-		FBAMinimalMediaResults => [],
-		FBAMetaboliteProductionResults => [],
-	};
-	my $list = [qw(uptakeLimits inputfiles parameters drainfluxUseVariables fluxUseVariables decomposeReversibleDrainFlux decomposeReversibleFlux PROMKappa defaultMinDrainFlux defaultMaxDrainFlux defaultMaxFlux objectiveConstraintFraction comboDeletions numberOfSolutions maximizeObjective minimizeErrorThermodynamicConstraints noErrorThermodynamicConstraints thermodynamicConstraints fva fluxMinimization findMinimalMedia allReversible simpleThermoConstraints)];
-	foreach my $item (@{$list}) {
-		if (defined($obj->$item())) {
-			$data->{$item} = $obj->$item();
+	if (@{$NewModel->gapgens()} > 0 && @{$NewModel->gapfillings()} > 0) {
+		eval {
+			$NewModel->save($array->[1]."/".$array->[2]);
+			print "Success:".$array->[1]."/".$array->[2]."/".$obj->{"_kbaseWSMeta"}->{wsinst}."/final\n";
+		};
+		if ($@) {
+			print "Failed:".$array->[1]."/".$array->[2]."/".$obj->{"_kbaseWSMeta"}->{wsinst}."/final\n" ;
+			print "ERROR_MESSAGE".$@."END_ERROR_MESSAGE\n";
 		}
 	}
-	if (defined($obj->fbaResults()->[0])) {
-		$data->{objectiveValue} = $obj->fbaResults()->[0]->objectiveValue();
-		$data->{outputfiles} = $obj->fbaResults()->[0]->outputfiles();
-	}		
-	#regmodel_ref regmodel_ref;
-	#fbamodel_ref fbamodel_ref;
-	#prommodel_ref prommodel_ref;
-	#media_ref media_ref;
-	#phenotypeset_ref phenotypeset_ref;
-	#list<feature_ref> geneKO_refs;
-	#list<modelreaction_ref> reactionKO_refs;
-	#list<compound_ref> additionalCpd_refs;
-	#phenotypesimulationset_ref phenotypesimulationset_ref;
-	my $NewFBA = Bio::KBase::ObjectAPI::KBaseFBA::FBA->new($data);
-	eval {
-		$NewFBA->save($array->[1]."/".$array->[2]);
-		print "Success:".$array->[1]."/".$array->[2]."/".$obj->{"_kbaseWSMeta"}->{wsinst}."\n";
-	};
-	if ($@) {
-		print "Failed:".$array->[1]."/".$array->[2]."/".$obj->{"_kbaseWSMeta"}->{wsinst}."\n" ;
-		print "ERROR_MESSAGE".$@."END_ERROR_MESSAGE\n";
-	}
+} elsif ($array->[0] eq "FBA") {
+	my $biochem = $newstore->get_object("kbase/default");
+	my $model = $newstore->get_object($obj->model_uuid());
+	my $id = $model->id().".fba.".$idserv->allocate_id_range($model->id().".fba.",1);
+	my $fba = translate_fba($obj,$model->_reference(),$biochem->_reference(),$array->[1],$array->[2],$id);
 } elsif ($array->[0] eq "ModelTemplate") {
 	my $mapping = $newstore->get_object("kbase/default-mapping");
 	my $biochem = $newstore->get_object("kbase/default");
@@ -807,6 +896,360 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 	};
 	if ($@) {
 		print "Failed:".$array->[1]."/".$array->[2]."/".$obj->{"_kbaseWSMeta"}->{wsinst}."\n" ;
+		print "ERROR_MESSAGE".$@."END_ERROR_MESSAGE\n";
+	}
+}
+
+sub translate_gapfill {
+	my ($oldgf,$modelref,$genomeref,$biochemref,$ws,$wsid,$id) = @_;
+	my $fba = translate_fba($oldgf->fbaFormulation(),$modelref,$genomeref,$biochemref,$ws,$wsid.".fba",$id.".fba");
+	my $newgf = {
+		id => $id,
+    	fba_ref => $fba->_reference(),
+    	media_ref => $fba->media_ref(),
+    	fbamodel_ref => $modelref,
+    	reactionMultipliers => {},
+    	gapfillingSolutions => [],
+    	guaranteedReaction_refs => [],
+    	targetedreaction_refs => [],
+    	blacklistedReaction_refs => [],
+    	allowableCompartment_refs => []
+	};	
+    my $items = [qw(totalTimeLimit timePerSolution transporterMultiplier singleTransporterMultiplier biomassTransporterMultiplier noDeltaGMultiplier noStructureMultiplier deltaGMultiplier directionalityMultiplier drainFluxMultiplier reactionActivationBonus completeGapfill balancedReactionsOnly mediaHypothesis biomassHypothesis gprHypothesis reactionAdditionHypothesis)];	
+	foreach my $item (@{$items}) {
+		if (defined($oldgf->$item())) {
+			$newgf->{$item} = $oldgf->$item();
+		}
+	}
+	$items = $oldgf->guaranteedReactions();
+	foreach my $item (@{$items}) {
+		push(@{$newgf->{guaranteedReaction_refs}},$biochemref."/reactions/id/".$item->id());
+	}
+	$items = $oldgf->targetedreactions();
+	foreach my $item (@{$items}) {
+		push(@{$newgf->{targetedreaction_refs}},$biochemref."/reactions/id/".$item->id());
+	}
+	$items = $oldgf->blacklistedReactions();
+	foreach my $item (@{$items}) {
+		push(@{$newgf->{blacklistedReaction_refs}},$biochemref."/reactions/id/".$item->id());
+	}
+	$items = $oldgf->allowableCompartments();
+	foreach my $item (@{$items}) {
+		push(@{$newgf->{allowableCompartment_refs}},$biochemref."/compartments/id/".$item->id());
+	}
+	my $solutions = $oldgf->gapfillingSolutions();
+	my $count = 1;
+	foreach my $solution (@{$solutions}) {
+		my $newsolution = {
+			id => $newgf->{id}.".sol.".$count,
+    		solutionCost => $solution->solutionCost(),
+    		suboptimal => $solution->suboptimal(),
+    		integrated => $solution->integrated(),
+    		gapfillingSolutionReactions => [],
+    		biomassRemoval_refs => [],
+    		mediaSupplement_refs => [],
+    		koRestore_refs => []
+		};
+		$count++;
+		$items = $solution->biomassRemovals();
+		foreach my $item (@{$items}) {
+			push(@{$newsolution->{biomassRemoval_refs}},$biochemref."/compounds/id/".$item->id());
+		}
+		$items = $solution->mediaSupplements();
+		foreach my $item (@{$items}) {
+			push(@{$newsolution->{mediaSupplement_refs}},$biochemref."/compounds/id/".$item->id());
+		}
+		$items = $solution->koRestores();
+		foreach my $item (@{$items}) {
+			push(@{$newsolution->{koRestore_refs}},$biochemref."/reactions/id/".$item->id());
+		}
+		my $reactions = $solution->gapfillingSolutionReactions();
+		my $rcount = 1;
+		foreach my $reaction (@{$reactions}) {		
+			$rcount++;
+			my $newreaction = {
+				reaction_ref => $biochemref."/reactions/id/".$reaction->reaction()->id(),
+    			compartment_ref => $biochemref."/compartments/id/".$reaction->compartment()->id(),
+    			direction => $reaction->direction(),
+    			candidateFeature_refs => []
+			};
+			push(@{$newsolution->{gapfillingSolutionReactions}},$newreaction);
+		}
+		push(@{$newgf->{gapfillingSolutions}},$newsolution);
+	}
+	my $newobj = Bio::KBase::ObjectAPI::KBaseFBA::Gapfilling->new($newgf);
+	$newobj->parent($newstore);
+	eval {
+		$newobj->save($ws."/".$wsid,{hidden => 1});
+		print "Success:".$ws."/".$wsid."/".$oldgf->{"_kbaseWSMeta"}->{wsinst}."\n";
+	};
+	if ($@) {
+		print "Failed:".$ws."/".$wsid."/".$oldgf->{"_kbaseWSMeta"}->{wsinst}."\n" ;
+		print "ERROR_MESSAGE".$@."END_ERROR_MESSAGE\n";
+	}
+	return $newobj;
+}
+
+sub translate_gapgen {
+	my ($oldgg,$modelref,$genomeref,$biochemref,$ws,$wsid,$id) = @_;
+	my $fba = translate_fba($oldgg->fbaFormulation(),$modelref,$genomeref,$biochemref,$ws,$wsid.".fba",$id.".fba");
+	my $newgg = {
+		id => $id,
+    	fba_ref => $fba->_reference(),
+    	media_ref => $fba->media_ref(),
+    	referenceMedia_ref => $biochemref."/media/id/".$oldgg->referenceMedia()->id(),
+    	fbamodel_ref => $modelref,
+    	gapgenSolutions => []
+	};
+	my $items = [qw(totalTimeLimit timePerSolution mediaHypothesis biomassHypothesis gprHypothesis reactionRemovalHypothesis)];	
+	foreach my $item (@{$items}) {
+		if (defined($oldgg->$item())) {
+			$newgg->{$item} = $oldgg->$item();
+		}
+	}
+	my $solutions = $oldgg->gapgenSolutions();
+	my $count = 1;
+	foreach my $solution (@{$solutions}) {
+		my $newsolution = {
+			id => $newgg->{id}.".sol.".$count,
+    		solutionCost => $solution->solutionCost(),
+    		suboptimal => $solution->suboptimal(),
+    		integrated => $solution->integrated(),
+    		gapgenSolutionReactions => [],
+    		biomassSuppplement_refs => [],
+    		mediaRemoval_refs => [],
+    		additionalKO_refs => []
+		};
+		$count++;
+		$items = $solution->biomassSuppplements();
+		foreach my $item (@{$items}) {
+			push(@{$newsolution->{biomassSuppplement_refs}},$modelref."/modelcompounds/id/".$item->id());
+		}
+		$items = $solution->mediaRemovals();
+		foreach my $item (@{$items}) {
+			push(@{$newsolution->{mediaRemoval_refs}},$modelref."/modelcompounds/id/".$item->id());
+		}
+		$items = $solution->additionalKOs();
+		foreach my $item (@{$items}) {
+			push(@{$newsolution->{additionalKO_refs}},$modelref."/modelreactions/id/".$item->id());
+		}
+		my $reactions = $solution->gapgenSolutionReactions();
+		foreach my $reaction (@{$reactions}) {		
+			my $newreaction = {
+				modelreaction_ref => $modelref."/modelreactions/id/".$reaction->id(),
+				direction => $reaction->direction()
+			};
+			push(@{$newsolution->{gapgenSolutionReactions}},$newreaction);
+		}
+		push(@{$newgg->{gapgenSolutions}},$newsolution);
+	}
+	my $newobj = Bio::KBase::ObjectAPI::KBaseFBA::Gapgeneration->new($newgg);
+	$newobj->parent($newstore);
+	eval {
+		$newobj->save($ws."/".$wsid,{hidden => 1});
+		print "Success:".$ws."/".$wsid."/".$oldgg->{"_kbaseWSMeta"}->{wsinst}."\n";
+	};
+	if ($@) {
+		print "Failed:".$ws."/".$wsid."/".$oldgg->{"_kbaseWSMeta"}->{wsinst}."\n" ;
+		print "ERROR_MESSAGE".$@."END_ERROR_MESSAGE\n";
+	}
+	return $newobj;
+}
+
+sub translate_fba {
+	my ($oldfba,$modelref,$genomeref,$biochemref,$ws,$wsid,$id) = @_;
+	my $data = {
+		id => $id,
+		fbamodel_ref => $modelref,
+		compoundflux_objterms => {},
+		reactionflux_objterms => {},
+		biomassflux_objterms => {},
+		FBAConstraints => [],
+		FBAReactionBounds => [],
+		FBACompoundBounds => [],
+		FBACompoundVariables => [],
+		FBAReactionVariables => [],
+		FBABiomassVariables => [],
+		FBAPromResults => [],
+		FBADeletionResults => [],
+		FBAMinimalMediaResults => [],
+		FBAMetaboliteProductionResults => [],
+	};
+	if ($oldfba->media_uuid() =~ m/(.+)\/(.+)/) {
+		my $media = $newstore->get_object($oldfba->media_uuid());
+		$data->{media_ref} = $media->_reference();
+	} else {
+		my $media = $newstore->get_object("KBaseMedia/".$oldfba->media()->id());
+		$data->{media_ref} = $media->_reference();
+	}
+	my $list = [qw(uptakeLimits inputfiles parameters drainfluxUseVariables fluxUseVariables decomposeReversibleDrainFlux decomposeReversibleFlux PROMKappa defaultMinDrainFlux defaultMaxDrainFlux defaultMaxFlux objectiveConstraintFraction comboDeletions numberOfSolutions maximizeObjective minimizeErrorThermodynamicConstraints noErrorThermodynamicConstraints thermodynamicConstraints fva fluxMinimization findMinimalMedia allReversible simpleThermoConstraints)];
+	foreach my $item (@{$list}) {
+		if (defined($obj->$item())) {
+			$data->{$item} = $obj->$item();
+		}
+	}
+	my $items = $oldfba->geneKOs();
+	foreach my $item (@{$items}) {
+		push(@{$data->{geneKO_refs}},$genomeref."/features/id/".$item->id());
+	}
+	$items = $oldfba->reactionKOs();
+	foreach my $item (@{$items}) {
+		push(@{$data->{reactionKO_refs}},$biochemref."/reactions/id/".$item->id());
+	}
+	$items = $oldfba->additionalCpds();
+	foreach my $item (@{$items}) {
+		push(@{$data->{additionalCpd_refs}},$biochemref."/compounds/id/".$item->id());
+	}
+	$items = $oldfba->fbaObjectiveTerms();
+	foreach my $item (@{$items}) {
+		if ($item->entityType() eq "ModelCompound") {
+			$data->{compoundflux_objterms}->{$item->entity()->id()} = $item->coefficient();
+		} elsif ($item->entityType() eq "ModelReaction") {
+			$data->{reactionflux_objterms}->{$item->entity()->id()} = $item->coefficient();
+		} elsif ($item->entityType() eq "Biomass") {
+			$data->{biomassflux_objterms}->{$item->entity()->id()} = $item->coefficient();
+		}
+	}
+	my $constraints = $oldfba->FBAConstraints();
+	foreach my $constraint (@{$constraints}) {
+		my $newconst = {
+			name => $constraint->name(),
+	    	rhs => $constraint->rhs(),
+	    	sign  => $constraint->sign(),
+	    	compound_terms => {},
+	    	reaction_terms => {},
+	    	biomass_terms => {}
+		};
+		my $variables = $constraint->fbaConstraintVariables();
+		foreach my $variable (@{$variables}) {
+			if ($variable->entityType() eq "ModelCompound") {
+				$newconst->{compound_terms}->{$variable->entity()->id()} = $variable->coefficient();
+			} elsif ($variable->entityType() eq "ModelReaction") {
+				$newconst->{reaction_terms}->{$variable->entity()->id()} = $variable->coefficient();
+			} elsif ($variable->entityType() eq "Biomass") {
+				$newconst->{biomass_terms}->{$variable->entity()->id()} = $variable->coefficient();
+			}
+		}
+		push(@{$data->{FBAConstraints}},$newconst);
+	}
+	my $bounds = $oldfba->FBAReactionBounds();
+	foreach my $bound (@{$bounds}) {
+		my $newbound = {
+			modelreaction_ref => $modelref."/modelreactions/id/".$bound->modelreaction()->id(),
+			variableType => $bound->variableType(),
+			upperBound => $bound->upperBound(),
+			lowerBound => $bound->lowerBound()
+		};
+		push(@{$data->{FBAReactionBounds}},$newbound);
+	}
+	$bounds = $oldfba->FBACompoundBounds();
+	foreach my $bound (@{$bounds}) {
+		my $newbound = {
+			modelcompound_ref => $modelref."/modelcompounds/id/".$bound->modelcompound()->id(),
+			variableType => $bound->variableType(),
+			upperBound => $bound->upperBound(),
+			lowerBound => $bound->lowerBound()
+		};
+		push(@{$data->{FBACompoundBound}},$newbound);
+	}
+	if (defined($oldfba->fbaResults()->[0])) {
+		$data->{objectiveValue} = $oldfba->fbaResults()->[0]->objectiveValue();
+		$data->{outputfiles} = $oldfba->fbaResults()->[0]->outputfiles();
+		my $objects = $oldfba->fbaResults()->[0]->fbaCompoundVariables();
+		foreach my $object (@{$objects}) {
+			my $newobj = {
+				modelcompound_ref => $object->modelcompound()->id(),
+    			variableType => $object->variableType(),
+    			upperBound => $object->upperBound(),
+    			lowerBound => $object->lowerBound(),
+    			class => $object->class(),
+    			min => $object->min(),
+    			max => $object->max(),
+    			value => $object->value(),
+			};
+			push(@{$data->{FBACompoundVariables}},$newobj);
+		}
+		$objects = $oldfba->fbaResults()->[0]->fbaReactionVariables();
+		foreach my $object (@{$objects}) {
+			my $newobj = {
+				modelreaction_ref => $object->modelreaction()->id(),
+    			variableType => $object->variableType(),
+    			upperBound => $object->upperBound(),
+    			lowerBound => $object->lowerBound(),
+    			class => $object->class(),
+    			min => $object->min(),
+    			max => $object->max(),
+    			value => $object->value(),
+			};
+			push(@{$data->{FBAReactionVariables}},$newobj);
+		}
+		$objects = $oldfba->fbaResults()->[0]->fbaBiomassVariables();
+		foreach my $object (@{$objects}) {
+			my $newobj = {
+				biomass_ref => $object->biomass()->id(),
+    			variableType => $object->variableType(),
+    			upperBound => $object->upperBound(),
+    			lowerBound => $object->lowerBound(),
+    			class => $object->class(),
+    			min => $object->min(),
+    			max => $object->max(),
+    			value => $object->value(),
+			};
+			push(@{$data->{FBABiomassVariables}},$newobj);
+		}
+		$objects = $oldfba->fbaResults()->[0]->fbaPromResults();
+		foreach my $object (@{$objects}) {
+			my $newobj = {
+				objectFraction => $object->objectFraction(),
+    			alpha => $object->alpha(),
+    			beta => $object->beta()
+			};
+			push(@{$data->{FBAPromResults}},$newobj);
+		}
+		$objects = $oldfba->fbaResults()->[0]->fbaDeletionResults();
+		foreach my $object (@{$objects}) {
+			my $newobj = {
+				feature_refs => [],
+    			growthFraction => $object->growthFraction()
+			};
+			$items = $object->genekos();
+			foreach my $item (@{$items}) {
+				push(@{$newobj->{feature_refs}},$genomeref."/features/id/".$item->id());
+			}
+			push(@{$newobj->{FBADeletionResults}},$newobj);
+		}
+		$objects = $oldfba->fbaResults()->[0]->minimalMediaResults();
+		foreach my $object (@{$objects}) {
+			my $newobj = {
+				essentialNutrient_refs => [],
+    			optionalNutrient_refs => [],
+			};
+			$items = $object->essentialNutrients();
+			foreach my $item (@{$items}) {
+				push(@{$newobj->{essentialNutrient_refs}},$biochemref."/compounds/id/".$item->id());
+			}
+			$items = $object->optionalNutrients();
+			foreach my $item (@{$items}) {
+				push(@{$newobj->{optionalNutrient_refs}},$biochemref."/compounds/id/".$item->id());
+			}
+			push(@{$data->{FBAMinimalMediaResults}},$newobj);
+		}
+		$objects = $oldfba->fbaResults()->[0]->fbaMetaboliteProductionResults();
+		foreach my $object (@{$objects}) {
+			my $newobj = {
+				modelcompound_ref => $modelref."/modelcompounds/id/".$object->modelcompound()->id(),
+    			maximumProduction => $object->maximumProduction()
+			};
+			push(@{$data->{FBAMetaboliteProductionResults}},$newobj);
+		}
+	}
+	my $NewFBA = Bio::KBase::ObjectAPI::KBaseFBA::FBA->new($data);
+	eval {
+		$NewFBA->save($ws."/".$wsid);
+		print "Success:".$ws."/".$wsid."/".$obj->{"_kbaseWSMeta"}->{wsinst}."\n";
+	};
+	if ($@) {
+		print "Failed:".$ws."/".$wsid."/".$obj->{"_kbaseWSMeta"}->{wsinst}."\n" ;
 		print "ERROR_MESSAGE".$@."END_ERROR_MESSAGE\n";
 	}
 }
