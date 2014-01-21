@@ -42,7 +42,7 @@ for (my $i=0; $i < @{$objectlist}; $i++) {
 		if ($currentproc == $index) {
 			my $OutputArray;
 			$array->[3] = $wshash->{$array->[1]};
-			my $command = "perl TransferWorkspaceObject.pl ../../KBaseDeploy/kb-workspaceroot.ini \"".join("\t",@{$array})."\" 2> ".$directory."/".$targettype."-".$index."-temperror.txt";
+			my $command = "perl TransferWorkspaceObject.pl ../../KBaseDeploy/kb-workspaceroot.ini \"".join("\t",@{$array})."\" ".$directory."/GenomeAnno.txt 2> ".$directory."/".$targettype."-".$index."-temperror.txt";
 			push(@{$OutputArray},`$command`);
 			my $found = 0;
 			for (my $j=0; $j < @{$OutputArray}; $j++) {

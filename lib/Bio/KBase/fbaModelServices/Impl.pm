@@ -66,22 +66,18 @@ use Bio::KBase::CDMI::CDMIClient;
 use Bio::KBase::AuthToken;
 use Bio::KBase::workspaceService::Client;
 use Bio::KBase::probabilistic_annotation::Client;
-use ModelSEED::KBaseStore;
+use Bio::KBase::ObjectAPI::KBaseStore;
 use Data::UUID;
-use ModelSEED::MS::Biochemistry;
-use ModelSEED::MS::Mapping;
-use ModelSEED::MS::Annotation;
-use ModelSEED::MS::Model;
-use ModelSEED::MS::Utilities::GlobalFunctions;
-use ModelSEED::MS::Factories::ExchangeFormatFactory;
-use ModelSEED::MS::GapfillingFormulation;
-use ModelSEED::MS::GapgenFormulation;
-use ModelSEED::MS::FBAFormulation;
-use ModelSEED::MS::FBAProblem;
-use ModelSEED::MS::ModelTemplate;
-use ModelSEED::MS::PROMModel;;
-use ModelSEED::MS::Metadata::Definitions;
-use ModelSEED::utilities qw( args verbose set_verbose translateArrayOptions);
+use Bio::KBase::ObjectAPI::KBaseBiochem::Biochemistry;
+use Bio::KBase::ObjectAPI::KBaseOntology::Mapping;
+use Bio::KBase::ObjectAPI::KBaseGenomes::Genome;
+use Bio::KBase::ObjectAPI::KBaseFBA::FBAModel;
+use Bio::KBase::ObjectAPI::GlobalFunctions;
+use Bio::KBase::ObjectAPI::KBaseFBA::Gapfilling;
+use Bio::KBase::ObjectAPI::KBaseFBA::Gapgeneration;
+use Bio::KBase::ObjectAPI::KBaseFBA::FBA;
+use Bio::KBase::ObjectAPI::KBaseFBA::ModelTemplate;
+use Bio::KBase::ObjectAPI::utilities qw( args verbose set_verbose translateArrayOptions);
 use Try::Tiny;
 use Data::Dumper;
 use Config::Simple;
@@ -141,22 +137,42 @@ sub _resetCachedBiochemistry {
 }
 
 sub _resetKBaseStore {
-	my ($self) = @_;
+	my ($self,$params) = @_;
 	delete $self->{_kbasestore};
 	if (defined($self->_authentication())) {
-		$self->{_kbasestore} = ModelSEED::KBaseStore->new({
-			auth => $self->_authentication(),
+		$self->{_kbasestore} = Bio::KBase::ObjectAPI::KBaseStore->new({
+			provenance => {
+				"time" => DateTime->now()->datetime()."+0000",
+				service_ver => $VERSION,
+				service => $self->_getContext()->module(),
+				method => $self->_getContext()->method(),
+				method_params => [$params],
+				input_ws_objects => [],
+				resolved_ws_objects => [],
+				intermediate_incoming => [],
+				intermediate_outgoing => []
+			},
 			workspace => $self->_workspaceServices()
 		});
 	} else {
-		$self->{_kbasestore} = ModelSEED::KBaseStore->new({
-			auth => "",
+		$self->{_kbasestore} = Bio::KBase::ObjectAPI::KBaseStore->new({
+			provenance => {
+				"time" => DateTime->now()->datetime()."+0000",
+				service_ver => $VERSION,
+				service => $self->_getContext()->module(),
+				method => $self->_getContext()->method(),
+				method_params => [$params],
+				input_ws_objects => [],
+				resolved_ws_objects => [],
+				intermediate_incoming => [],
+				intermediate_outgoing => []
+			},
 			workspace => $self->_workspaceServices()
 		});
 	}
 	if (defined($self->_cachedBiochemistry())) {
 		$self->_resetCachedBiochemistry();
-		$self->{_kbasestore}->cache()->{Biochemistry}->{"kbase/default"} = $self->_cachedBiochemistry();
+		$self->{_kbasestore}->cache()->{"kbase/default"} = $self->_cachedBiochemistry();
 	}
 }
 
@@ -242,7 +258,7 @@ sub _setContext {
 	if (defined($params->{probanno_url})) {
 		$self->_getContext()->{_override}->{_probanno_url} = $params->{probanno_url};
 	}
-	$self->_resetKBaseStore();
+	$self->_resetKBaseStore($params);
     if (defined($params->{auth}) && length($params->{auth}) > 0) {
 		if (!defined($self->_getContext()->{_override}) || $self->_getContext()->{_override}->{_authentication} ne $params->{auth}) {
 			my $output = $self->_authenticate($params->{auth});
@@ -467,95 +483,46 @@ sub _myURL {
 }
 
 sub _save_msobject {
-	my($self,$obj,$type,$ws,$id,$command,$overwrite,$reference) = @_;
+	my($self,$obj,$type,$ws,$id,$params) = @_;
 	my $data;
-	if (defined($obj->{_kbaseWSMeta})) {
-		delete $obj->{_kbaseWSMeta};
-	}
-	if (ref($obj) =~ m/ModelSEED::MS::/) {
+	if (ref($obj) =~ m/Bio::KBase::ObjectAPI::/) {
 		$data = $obj->serializeToDB();
+		return $self->_KBaseStore()->save_object($data,$ws."/".$id,$params);
 	} else {
 		$data = $obj;
+		my $input = {
+			objects => [{
+				data => $data,
+				type => "Unspecified",
+				provenance => $self->_KBaseStore()->provenance()
+			}],
+		};
+		if ($ws  =~ m/^\d+$/) {
+    		$input->{id} = $ws;
+    	} else {
+    		$input->{workspace} = $ws;
+    	}
+		if ($id =~ m/^\d+$/) {
+			$input->{objects}->[0]->{objid} = $id;
+		} else {
+			$input->{objects}->[0]->{name} = $id;
+		}
+		my $listout = $self->_KBaseStore()->workspace()->save_objects($input);
+    	return $listout->[0];
 	}
-	my $objmeta;
-	if ($ws eq "NO_WORKSPACE") {
-		$objmeta = $self->_workspaceServices()->save_object_by_ref({
-			reference => $reference,
-			id => $id,
-			type => $type,
-			data => $data,
-			command => $command,
-			auth => $self->_authentication(),
-			replace => $overwrite
-		});
-		$self->_KBaseStore()->cache()->{$type}->{$reference} = $obj;
-	} else {
-		$objmeta = $self->_workspaceServices()->save_object({
-			id => $id,
-			type => $type,
-			data => $data,
-			workspace => $ws,
-			command => $command,
-			auth => $self->_authentication(),
-			overwrite => $overwrite
-		});
-		$self->_KBaseStore()->cache()->{$type}->{$ws."/".$id} = $obj;
-	}
-	if (!defined($objmeta)) {
-		$self->_error("Unable to save object:".$type."/".$ws."/".$id,'_get_msobject');
-	}
-	$obj->{_kbaseWSMeta}->{wsid} = $id;
-	$obj->{_kbaseWSMeta}->{ws} = $ws;
-	$obj->{_kbaseWSMeta}->{wsinst} = $objmeta->[3];	
-	if ($type eq "Model" || $type eq "Mapping" || $type eq "Annotation" || $type eq "Biochemistry") {
-		$obj->uuid($objmeta->[8]);
-	}
-	return $objmeta;
-}
-
-sub _instantiate_msobjects {
-	my($self,$object,$type) = @_;
-	my $class;
-	if (defined($self->_KBaseStore()->_mstypetrans()->{$type})) {
-    	$class = "ModelSEED::MS::".$type;
-    	$type = $self->_KBaseStore()->_mstypetrans()->{$type};
-    } elsif (defined($self->_wstypetrans()->{$type})) {
-    	$class = "ModelSEED::MS::".$self->_wstypetrans()->{$type};
-    }
-	if (ref($object) ne $class) {
-		$object = $class->new($object);
-	}
-	$object->parent($self->_KBaseStore());
-	return $object;
 }
 
 sub _get_msobject {
 	my($self,$type,$ws,$id) = @_;
 	my $ref = $ws."/".$id;
-	if ($ws eq "NO_WORKSPACE") {
-		$ref = $id;
-	}
 	if ($ws eq "kbase" && $id eq "default" && $type eq "Mapping") {
 		$id = "default-mapping";
 	}
-	my $obj = $self->_KBaseStore()->get_object($type,$ref);
+	my $obj = $self->_KBaseStore()->get_object($ref);
 	if (!defined($self->_cachedBiochemistry()) && $type eq "Biochemistry" && $id eq "default" && $ws eq "kbase") {
 		$self->_cachedBiochemistry($obj);
 	}
-	#Processing genomes to automatically have an annotation object
-	if ($type eq "Genome") {
-		if (!defined($obj->{annotation_uuid})) {
-			my $mapping = $self->_get_msobject("Mapping","kbase","default-mapping");
-			($obj,my $annotation,$mapping,my $contigs) = $self->_processGenomeObject($obj,$mapping,"get_genome_object");
-			my $meta = $self->_save_msobject($obj,"Genome",$ws,$id,"get_genome_object");
-		}
-	}
 	return $obj;
-}
-
-sub _getMSObjectsByRef {
-	my($self,$type,$ids) = @_;
-	return $self->_KBaseStore()->get_objects($type,$ids);
 }
 
 sub _set_uuid_by_idws {
@@ -5324,15 +5291,75 @@ sub genome_object_to_workspace
     #BEGIN genome_object_to_workspace
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["genomeobj","workspace"],{
-    	uid => $input->{genomeobj}->{id},
-    	mapping_workspace => "kbase",
-    	mapping => "default-mapping",
-    	overwrite => 0
+    	uid => $input->{genomeobj}->{id}
     });
     #Processing genome object
-    my $mapping = $self->_get_msobject("Mapping",$input->{mapping_workspace},$input->{mapping});
-    ($input->{genomeobj},my $anno,$mapping,my $contigObj) = $self->_processGenomeObject($input->{genomeobj},$mapping,"genome_object_to_workspace");
-    $genomeMeta = $self->_save_msobject($input->{genomeobj},"Genome",$input->{workspace},$input->{uid},"genome_object_to_workspace",$input->{overwrite});
+	my $genome = $input->{genomeobj};
+	if (!defined($genome->{scientific_name})) {
+		$genome->{scientific_name} = $genome->{id};
+	}
+	if (defined($genome->{gc})) {
+		$genome->{gc_content} = $genome->{gc};
+	}
+	if (defined($genome->{contigs})) {
+		my $label = "dna";
+		if (defined($genome->{contigs}->[0]->{seq})) {
+			$label = "seq";
+		}
+		$genome->{num_contigs} = @{$genome->{contigs}};
+		my $sortedcontigs = [sort { $a->{$label} cmp $b->{$label} } @{$genome->{contigs}}];
+		my $str = "";
+		for (my $i=0; $i < @{$sortedcontigs}; $i++) {
+			if (length($str) > 0) {
+				$str .= ";";
+			}
+			$str .= $sortedcontigs->[$i]->{$label};
+			
+		}
+		$genome->{dna_size} = length($str);
+		$genome->{md5} = Digest::MD5::md5_hex($str);
+		my $contigset = {
+			id => $self->_idServer()->register_ids("kb|contigset","md5hash",[$contigset->{md5}]),
+			name => $genome->{scientific_name},
+			md5 => $genome->{md5},
+			source_id => $genome->{source_id},
+			source => $genome->{source},
+			type => "Organism",
+			contigs => []
+		};
+		for (my $i=0; $i < @{$oldcontigs->{contigs}}; $i++) {
+			push(@{$genomedata->{contig_ids}},$oldcontigs->{contigs}->[$i]->{id});
+			push(@{$genomedata->{contig_lengths}},length($oldcontigs->{contigs}->[$i]->{$label}));
+			my $md5 = Digest::MD5::md5_hex($oldcontigs->{contigs}->[$i]->{$label});
+			push(@{$newdata->{contigs}},{
+				id => $oldcontigs->{contigs}->[$i]->{id},
+				"length" => length($oldcontigs->{contigs}->[$i]->{$label}),
+				md5 => $md5,
+				sequence => $oldcontigs->{contigs}->[$i]->{$label},
+				name => $oldcontigs->{contigs}->[$i]->{id}
+			});
+		}
+		my $ContigObj = Bio::KBase::ObjectAPI::KBaseGenomes::ContigSet->new($contigset);
+		$self->_save_msobject($ContigObj,"ContigSet",$input->{workspace},$input->{uid}.".contigset",{hidden => 1});
+		$genome->{contigset_ref} = $ContigObj->_reference();
+	}
+	if (defined($genome->{features})) {
+		for (my $i=0; $i < @{$genome->{features}}; $i++) {
+			my $ftr = $genome->{features}->[$i];
+			if (!defined($ftr->{type}) && $ftr->{id} =~ m/(\w+)\.\d+$/) {
+				$ftr->{type} = $1;
+			}
+			if (defined($ftr->{protein_translation})) {
+				$ftr->{protein_translation_length} = length($ftr->{protein_translation});
+				$ftr->{md5} = Digest::MD5::md5_hex($ftr->{protein_translation});
+			}
+			if (defined($ftr->{dna_sequence})) {
+				$ftr->{dna_sequence_length} = length($ftr->{dna_sequence});
+			}
+		}
+	}
+	my $GenomeObj = Bio::KBase::ObjectAPI::KBaseGenomes::Genome->new($genome);
+	$genomeMeta = $self->_save_msobject($GenomeObj,"Genome",$input->{workspace},$input->{uid});
 	$self->_clearContext();
     #END genome_object_to_workspace
     my @_bad_returns;
@@ -5458,14 +5485,10 @@ sub genome_to_workspace
     #BEGIN genome_to_workspace
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["genome","workspace"],{
-    	overwrite => 0,
-    	mapping_workspace => "kbase",
-    	mapping => "default-mapping",
     	sourceLogin => undef,
     	sourcePassword => undef,
     	source => "kbase",
     });
-    my $mapping = $self->_get_msobject("Mapping",$input->{mapping_workspace},$input->{mapping});
     my $genomeObj;
     if ($input->{source} eq "kbase") {
     	$genomeObj = $self->_get_genomeObj_from_CDM($input->{genome});
@@ -5474,8 +5497,7 @@ sub genome_to_workspace
     } elsif ($input->{source} eq "rast") {
     	$genomeObj = $self->_get_genomeObj_from_RAST($input->{genome},$input->{sourceLogin},$input->{sourcePassword});
     }
-    ($genomeObj,my $anno,$mapping,my $contigObj) = $self->_processGenomeObject($genomeObj,$mapping,"genome_to_workspace");
-    $genomeMeta = $self->_save_msobject($genomeObj,"Genome",$input->{workspace},$genomeObj->{id},"genome_to_workspace",$input->{overwrite});
+	$genomeMeta = $self->_save_msobject($genomeObj,"Genome",$input->{workspace},$genomeObj->{id});
 	$self->_clearContext();
     #END genome_to_workspace
     my @_bad_returns;
@@ -5606,9 +5628,7 @@ sub add_feature_translation
     my($genomeMeta);
     #BEGIN add_feature_translation
     $self->_setContext($ctx,$input);
-    $input = $self->_validateargs($input,["genome","workspace","translations","id_type"],{
-    	overwrite => 0
-    });
+    $input = $self->_validateargs($input,["genome","workspace","translations","id_type"],{});
     my $genome = $self->_get_msobject("Genome",$input->{workspace},$input->{genome});
     my $aliases;
     for (my $i=0; $i < @{$input->{translations}}; $i++) {

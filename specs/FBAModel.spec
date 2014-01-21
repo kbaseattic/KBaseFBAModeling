@@ -381,8 +381,9 @@ module KBaseFBA {
     	string name;
     	float rhs;
     	string sign;
-    	mapping<modelcompound_ref,float> compound_terms;
-    	mapping<modelreaction_ref,float> reaction_terms;
+    	mapping<modelcompound_id,float> compound_terms;
+    	mapping<modelreaction_id,float> reaction_terms;
+    	mapping<biomass_id,float> biomass_terms;
 	} FBAConstraint;
     
     /* 
