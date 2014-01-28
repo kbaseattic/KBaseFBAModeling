@@ -57,10 +57,6 @@ Returns an HTML document for the object.
 
 =head3 Object Traversal
 
-=head4 getAlias
-
-=head4 getAliases
-
 =head4 defaultNameSpace
 
 =head4 getLinkedObject
@@ -272,6 +268,16 @@ sub serializeToDB {
 				$data->{$name} = $self->$name();
 				foreach my $cue (keys(%{$data->{$name}})) {
 					$data->{$name}->{$cue} = $data->{$name}->{$cue}+0;
+				}
+			} elsif ($name =~ m/_objterms$/) {
+				$data->{$name} = {};
+				foreach my $key (keys(%{$self->$name()})) {
+					$data->{$name}->{$key} = $self->$name()->{$key}+0;
+				}
+			} elsif ($name =~ m/^parameters$/) {
+				$data->{$name} = {};
+				foreach my $key (keys(%{$self->$name()})) {
+					$data->{$name}->{$key} = $self->$name()->{$key}."";
 				}
 			} elsif ($name eq "annotations") {
 				my $dataitem = $self->$name();
@@ -503,7 +509,7 @@ sub _getReadableAttributes {
 	my $attributesSO = [];
 	my $priorityRS = {};
 	my $attributesRS = [];
-	my $class = 'Bio::KBase::ObjectAPI::'.$self->_type();
+	my $class = 'Bio::KBase::ObjectAPI::'.$self->_module().'::'.$self->_class();
 	foreach my $attr ( $class->meta->get_all_attributes ) {
 		if ($attr->isa('Bio::KBase::ObjectAPI::Attribute::Typed') && $attr->printOrder() != -1 && ($attr->type() eq "attribute" || $attr->type() eq "msdata")) {
 			push(@{$attributes},$attr->name());
@@ -584,16 +590,18 @@ sub getLinkedObject {
     my ($self, $ref) = @_;
 	if ($ref =~ m/^~$/) {
 		return $self->topparent();
-	} elsif ($ref =~ m/^~\/(\w+)\/(\w+)\/(\w+)$/) {
+	} elsif ($ref =~ m/^~\/(\w+)\/(\w+)\/([\w\.\|]+)$/) {
 		return $self->topparent()->queryObject($1,{$2 => $3});
 	} elsif ($ref =~ m/^[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}$/) {
 		return $self->store()->getObjectByUUID($ref);
-	} elsif ($ref =~ m/^([A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12})\/(\w+)\/(\w+)\/(\w+)$/) {
+	} elsif ($ref =~ m/^([A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12})\/(\w+)\/(\w+)\/([\w\.\|]+)$/) {
 		return $self->store()->getObjectByUUID($1)->queryObject($2,{$3 => $4});
 	} elsif ($ref =~ m/^\w+\/\w+\/\w+$/) {
     	return $self->store()->get_object($ref);
-    } elsif ($ref =~ m/^(\w+\/\w+\/\w+)\/(\w+)\/(\w+)\/(\w+)$/) {
+    } elsif ($ref =~ m/^(\w+\/\w+\/\w+)\/(\w+)\/(\w+)\/([\w\.\|]+)$/) {
     	return $self->store()->get_object($1)->queryObject($2,{$3 => $4});
+    } elsif ($ref =~ m/^\w+\/\w+$/) {
+    	return $self->store()->get_object($ref);
     }
     Bio::KBase::ObjectAPI::utilities::error("Unrecognized reference format:".$ref);
 }

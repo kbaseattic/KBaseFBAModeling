@@ -8,12 +8,12 @@ use strict;
 use warnings;
 use JSON;
 use Text::Table;
-use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::workspace::ScriptHelpers qw(get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Media IDs (; delimiter)","Workspace IDs (; delimiter)"];
 my $servercommand = "get_media";
-my $script = "kbfba-getmedia";
+my $script = "fba-getmedia";
 my $translation = {};
 #Defining usage and options
 my $specs = [

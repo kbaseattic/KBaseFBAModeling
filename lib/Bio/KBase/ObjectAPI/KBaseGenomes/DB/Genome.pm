@@ -18,38 +18,38 @@ has parent => (is => 'rw', isa => 'Ref', weak_ref => 1, type => 'parent', metacl
 # ATTRIBUTES:
 has uuid => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_uuid');
 has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_reference');
-has source => (is => 'rw', isa => 'Str', printOrder => '8', required => 1, type => 'attribute', metaclass => 'Typed');
+has source => (is => 'rw', isa => 'Str', printOrder => '1', required => 1, type => 'attribute', metaclass => 'Typed');
 has transcriptset_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has contigset_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has dna_size => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has domain => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has contigset_ref => (is => 'rw', isa => 'Str', printOrder => '11', type => 'attribute', metaclass => 'Typed');
+has dna_size => (is => 'rw', isa => 'Int', printOrder => '6', type => 'attribute', metaclass => 'Typed');
+has domain => (is => 'rw', isa => 'Str', printOrder => '4', type => 'attribute', metaclass => 'Typed');
 has contig_lengths => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
 has contig_ids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
 has proteinset_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has publications => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
-has id => (is => 'rw', isa => 'Str', printOrder => '1', required => 1, type => 'attribute', metaclass => 'Typed');
-has num_contigs => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has source_id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
-has gc_content => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has taxonomy => (is => 'rw', isa => 'Str', printOrder => '4', default => '', type => 'attribute', metaclass => 'Typed');
-has scientific_name => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has genetic_code => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
+has num_contigs => (is => 'rw', isa => 'Int', printOrder => '7', type => 'attribute', metaclass => 'Typed');
+has source_id => (is => 'rw', isa => 'Str', printOrder => '2', required => 1, type => 'attribute', metaclass => 'Typed');
+has gc_content => (is => 'rw', isa => 'Num', printOrder => '9', type => 'attribute', metaclass => 'Typed');
+has taxonomy => (is => 'rw', isa => 'Str', printOrder => '8', default => '', type => 'attribute', metaclass => 'Typed');
+has scientific_name => (is => 'rw', isa => 'Str', printOrder => '3', type => 'attribute', metaclass => 'Typed');
+has genetic_code => (is => 'rw', isa => 'Int', printOrder => '5', type => 'attribute', metaclass => 'Typed');
 has md5 => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has complete => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has complete => (is => 'rw', isa => 'Int', printOrder => '10', type => 'attribute', metaclass => 'Typed');
 
 
 # SUBOBJECTS:
-has features => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(Feature)', metaclass => 'Typed', reader => '_features', printOrder => '-1');
+has features => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(Feature)', metaclass => 'Typed', reader => '_features', printOrder => '0');
 
 
 # LINKS:
 has transcriptset => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,TranscriptSet,transcriptset_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_transcriptset', clearer => 'clear_transcriptset', isa => 'Ref', weak_ref => 1);
 has contigset => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,ContigSet,contigset_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_contigset', clearer => 'clear_contigset', isa => 'Bio::KBase::ObjectAPI::KBaseGenomes::ContigSet', weak_ref => 1);
-has proteinset => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,ProteinSet,proteinset_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_proteinset', clearer => 'clear_proteinset', isa => 'Ref', weak_ref => 1);
+has proteinset => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,ProteinSet,proteinset_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_proteinset', clearer => 'clear_proteinset', isa => 'Bio::KBase::ObjectAPI::KBaseGenomes::ProteinSet', weak_ref => 1);
 
 
 # BUILDERS:
-sub _build_reference { return my ($self) = @_;$self->uuid(); }
+sub _build_reference { my ($self) = @_;return $self->uuid(); }
 sub _build_uuid { return Data::UUID->new()->create_str(); }
 sub _build_transcriptset {
 	 my ($self) = @_;
@@ -75,7 +75,7 @@ sub _top { return 1; }
 my $attributes = [
           {
             'req' => 1,
-            'printOrder' => 8,
+            'printOrder' => 1,
             'name' => 'source',
             'default' => undef,
             'type' => 'Str',
@@ -91,21 +91,21 @@ my $attributes = [
           },
           {
             'req' => 0,
-            'printOrder' => -1,
+            'printOrder' => 11,
             'name' => 'contigset_ref',
             'type' => 'Str',
             'perm' => 'rw'
           },
           {
             'req' => 0,
-            'printOrder' => -1,
+            'printOrder' => 6,
             'name' => 'dna_size',
             'type' => 'Int',
             'perm' => 'rw'
           },
           {
             'req' => 0,
-            'printOrder' => -1,
+            'printOrder' => 4,
             'name' => 'domain',
             'type' => 'Str',
             'perm' => 'rw'
@@ -143,7 +143,7 @@ my $attributes = [
           },
           {
             'req' => 1,
-            'printOrder' => 1,
+            'printOrder' => 0,
             'name' => 'id',
             'default' => undef,
             'type' => 'Str',
@@ -152,28 +152,28 @@ my $attributes = [
           },
           {
             'req' => 0,
-            'printOrder' => -1,
+            'printOrder' => 7,
             'name' => 'num_contigs',
             'type' => 'Int',
             'perm' => 'rw'
           },
           {
             'req' => 1,
-            'printOrder' => 0,
+            'printOrder' => 2,
             'name' => 'source_id',
             'type' => 'Str',
             'perm' => 'rw'
           },
           {
             'req' => 0,
-            'printOrder' => -1,
+            'printOrder' => 9,
             'name' => 'gc_content',
             'type' => 'Num',
             'perm' => 'rw'
           },
           {
             'req' => 0,
-            'printOrder' => 4,
+            'printOrder' => 8,
             'name' => 'taxonomy',
             'default' => '',
             'type' => 'Str',
@@ -182,14 +182,14 @@ my $attributes = [
           },
           {
             'req' => 0,
-            'printOrder' => -1,
+            'printOrder' => 3,
             'name' => 'scientific_name',
             'type' => 'Str',
             'perm' => 'rw'
           },
           {
             'req' => 0,
-            'printOrder' => -1,
+            'printOrder' => 5,
             'name' => 'genetic_code',
             'type' => 'Int',
             'perm' => 'rw'
@@ -203,7 +203,7 @@ my $attributes = [
           },
           {
             'req' => 0,
-            'printOrder' => -1,
+            'printOrder' => 10,
             'name' => 'complete',
             'type' => 'Int',
             'perm' => 'rw'
@@ -250,8 +250,8 @@ my $links = [
             'clearer' => 'clear_proteinset',
             'name' => 'proteinset',
             'method' => 'ProteinSet',
-            'class' => 'ProteinSet',
-            'module' => undef
+            'class' => 'Bio::KBase::ObjectAPI::KBaseGenomes::ProteinSet',
+            'module' => 'KBaseGenomes'
           }
         ];
 
@@ -272,7 +272,7 @@ sub _links {
 
 my $subobjects = [
           {
-            'printOrder' => -1,
+            'printOrder' => 0,
             'name' => 'features',
             'type' => 'child',
             'class' => 'Feature',

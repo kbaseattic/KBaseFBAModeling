@@ -2,12 +2,12 @@
    
 use strict;
 use Data::Dumper;
-use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::workspace::ScriptHelpers qw(printObjectInfo get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Media ID>  <Compounds/input media file"];
 my $servercommand = "addmedia";
-my $script = "kbfba-addmedia";
+my $script = "fba-addmedia";
 my $translation = {
     "Media ID>  <Compounds/input media file" => "media",
     name => "name",
@@ -122,6 +122,6 @@ elsif (!defined($params->{compounds}->[0])) {
 
  else {
     print "Successfully added media to workspace:\n";
-    printObjectMeta($output);
+    printObjectInfo($output);
 }
  

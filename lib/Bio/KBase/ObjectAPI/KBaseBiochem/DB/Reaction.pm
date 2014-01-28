@@ -19,7 +19,7 @@ has uuid => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass =>
 has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_reference');
 has deltaG => (is => 'rw', isa => 'Num', printOrder => '8', type => 'attribute', metaclass => 'Typed');
 has status => (is => 'rw', isa => 'Str', printOrder => '10', default => 'unknown', type => 'attribute', metaclass => 'Typed');
-has thermoReversibility => (is => 'rw', isa => 'Str', printOrder => '6',default => '=', type => 'attribute', metaclass => 'Typed');
+has thermoReversibility => (is => 'rw', isa => 'Str', printOrder => '6', default => '=', type => 'attribute', metaclass => 'Typed');
 has name => (is => 'rw', isa => 'Str', printOrder => '1', default => '', type => 'attribute', metaclass => 'Typed');
 has cues => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
 has defaultProtons => (is => 'rw', isa => 'Num', printOrder => '7', type => 'attribute', metaclass => 'Typed');
@@ -40,7 +40,7 @@ has abstractReaction => (is => 'rw', type => 'link(Biochemistry,reactions,abstra
 
 
 # BUILDERS:
-sub _build_reference { return my ($self) = @_;$self->parent()->_reference().'/reactions/id/'.$self->id(); }
+sub _build_reference { my ($self) = @_;return $self->parent()->_reference().'/reactions/id/'.$self->id(); }
 sub _build_uuid { my ($self) = @_;return $self->_reference(); }
 sub _build_abstractReaction {
 	 my ($self) = @_;
@@ -68,7 +68,7 @@ my $attributes = [
             'req' => 0,
             'printOrder' => 10,
             'name' => 'status',
-            'default' => undef,
+            'default' => 'unknown',
             'type' => 'Str',
             'description' => undef,
             'perm' => 'rw'
@@ -77,7 +77,7 @@ my $attributes = [
             'req' => 0,
             'printOrder' => 6,
             'name' => 'thermoReversibility',
-            'default' => undef,
+            'default' => '=',
             'type' => 'Str',
             'description' => undef,
             'perm' => 'rw'

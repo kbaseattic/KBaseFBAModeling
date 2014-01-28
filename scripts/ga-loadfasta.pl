@@ -6,8 +6,8 @@
 ########################################################################
 use strict;
 use warnings;
-use Bio::KBase::workspaceService::Helpers qw(printJobData auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::workspace::ScriptHelpers qw(printObjectInfo printJobData get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Filename"];
 my $servercommand = "fasta_to_ContigSet";
@@ -33,7 +33,7 @@ my $specs = [
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
 if (defined($opt->{transcripts}) && $opt->{transcripts} == 1) {
-	$servercommand = "fasta_to_TranscriptSet";
+	$params->{type} = "Transcripts";
 } elsif (defined($opt->{proteins}) && $opt->{proteins} == 1) {
 	$servercommand = "fasta_to_ProteinSet";
 }
@@ -55,5 +55,5 @@ if (!defined($output)) {
 	print "Loading of FASTA data to workspace failed!\n";
 } else {
 	print "Data loaded to workspace:\n";
-	printObjectMeta($output);
+	printObjectInfo($output);
 }

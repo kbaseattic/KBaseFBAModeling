@@ -7,9 +7,9 @@
 package Bio::KBase::ObjectAPI::KBaseFBA::DB::FBAModel;
 use Bio::KBase::ObjectAPI::IndexedObject;
 use Bio::KBase::ObjectAPI::KBaseFBA::Biomass;
-use Bio::KBase::ObjectAPI::KBaseFBA::ModelCompartment;
 use Bio::KBase::ObjectAPI::KBaseFBA::ModelGapgen;
 use Bio::KBase::ObjectAPI::KBaseFBA::ModelCompound;
+use Bio::KBase::ObjectAPI::KBaseFBA::ModelCompartment;
 use Bio::KBase::ObjectAPI::KBaseFBA::ModelReaction;
 use Bio::KBase::ObjectAPI::KBaseFBA::ModelGapfill;
 use Moose;
@@ -36,9 +36,9 @@ has type => (is => 'rw', isa => 'Str', printOrder => '5', default => 'Singlegeno
 
 # SUBOBJECTS:
 has biomasses => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(Biomass)', metaclass => 'Typed', reader => '_biomasses', printOrder => '0');
-has compartments => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(ModelCompartment)', metaclass => 'Typed', reader => '_compartments', printOrder => '-1');
 has gapgens => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(ModelGapgen)', metaclass => 'Typed', reader => '_gapgens', printOrder => '-1');
 has modelcompounds => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(ModelCompound)', metaclass => 'Typed', reader => '_modelcompounds', printOrder => '2');
+has modelcompartments => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(ModelCompartment)', metaclass => 'Typed', reader => '_modelcompartments', printOrder => '1');
 has modelreactions => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(ModelReaction)', metaclass => 'Typed', reader => '_modelreactions', printOrder => '3');
 has gapfillings => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(ModelGapfill)', metaclass => 'Typed', reader => '_gapfillings', printOrder => '-1');
 
@@ -51,7 +51,7 @@ has metagenome_otu => (is => 'rw', type => 'link(Metagenome,otus,metagenome_otu_
 
 
 # BUILDERS:
-sub _build_reference { return my ($self) = @_;$self->uuid(); }
+sub _build_reference { my ($self) = @_;return $self->uuid(); }
 sub _build_uuid { return Data::UUID->new()->create_str(); }
 sub _build_metagenome {
 	 my ($self) = @_;
@@ -237,13 +237,6 @@ my $subobjects = [
           },
           {
             'printOrder' => -1,
-            'name' => 'compartments',
-            'type' => 'child',
-            'class' => 'ModelCompartment',
-            'module' => 'KBaseFBA'
-          },
-          {
-            'printOrder' => -1,
             'name' => 'gapgens',
             'type' => 'child',
             'class' => 'ModelGapgen',
@@ -256,6 +249,16 @@ my $subobjects = [
             'default' => undef,
             'description' => undef,
             'class' => 'ModelCompound',
+            'type' => 'child',
+            'module' => 'KBaseFBA'
+          },
+          {
+            'req' => undef,
+            'printOrder' => 1,
+            'name' => 'modelcompartments',
+            'default' => undef,
+            'description' => undef,
+            'class' => 'ModelCompartment',
             'type' => 'child',
             'module' => 'KBaseFBA'
           },
@@ -278,7 +281,7 @@ my $subobjects = [
           }
         ];
 
-my $subobject_map = {biomasses => 0, compartments => 1, gapgens => 2, modelcompounds => 3, modelreactions => 4, gapfillings => 5};
+my $subobject_map = {biomasses => 0, gapgens => 1, modelcompounds => 2, modelcompartments => 3, modelreactions => 4, gapfillings => 5};
 sub _subobjects {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -297,10 +300,6 @@ around 'biomasses' => sub {
 	 my ($orig, $self) = @_;
 	 return $self->_build_all_objects('biomasses');
 };
-around 'compartments' => sub {
-	 my ($orig, $self) = @_;
-	 return $self->_build_all_objects('compartments');
-};
 around 'gapgens' => sub {
 	 my ($orig, $self) = @_;
 	 return $self->_build_all_objects('gapgens');
@@ -308,6 +307,10 @@ around 'gapgens' => sub {
 around 'modelcompounds' => sub {
 	 my ($orig, $self) = @_;
 	 return $self->_build_all_objects('modelcompounds');
+};
+around 'modelcompartments' => sub {
+	 my ($orig, $self) = @_;
+	 return $self->_build_all_objects('modelcompartments');
 };
 around 'modelreactions' => sub {
 	 my ($orig, $self) = @_;

@@ -1,12 +1,11 @@
 ########################################################################
-# Bio::KBase::ObjectAPI::KBaseBiochem::DB::BiochemistryStructures - This is the moose object corresponding to the KBaseBiochem.BiochemistryStructures object
+# Bio::KBase::ObjectAPI::KBaseGenomes::DB::ProbabilisticAnnotation - This is the moose object corresponding to the KBaseGenomes.ProbabilisticAnnotation object
 # Authors: Christopher Henry, Scott Devoid, Paul Frybarger
 # Contact email: chenry@mcs.anl.gov
 # Development location: Mathematics and Computer Science Division, Argonne National Lab
 ########################################################################
-package Bio::KBase::ObjectAPI::KBaseBiochem::DB::BiochemistryStructures;
+package Bio::KBase::ObjectAPI::KBaseGenomes::DB::ProbabilisticAnnotation;
 use Bio::KBase::ObjectAPI::IndexedObject;
-use Bio::KBase::ObjectAPI::KBaseBiochem::CompoundStructure;
 use Moose;
 use namespace::autoclean;
 extends 'Bio::KBase::ObjectAPI::IndexedObject';
@@ -18,36 +17,54 @@ has parent => (is => 'rw', isa => 'Ref', weak_ref => 1, type => 'parent', metacl
 # ATTRIBUTES:
 has uuid => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_uuid');
 has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_reference');
-has name => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has skipped_features => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
+has genome_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has roleset_probabilities => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub {return {};}, type => 'attribute', metaclass => 'Typed');
 has id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
-has description => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-
-
-# SUBOBJECTS:
-has structures => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(CompoundStructure)', metaclass => 'Typed', reader => '_structures', printOrder => '0');
 
 
 # LINKS:
+has genome => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,Genome,genome_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_genome', clearer => 'clear_genome', isa => 'Bio::KBase::ObjectAPI::KBaseGenomes::Genome', weak_ref => 1);
 
 
 # BUILDERS:
 sub _build_reference { my ($self) = @_;return $self->uuid(); }
 sub _build_uuid { return Data::UUID->new()->create_str(); }
+sub _build_genome {
+	 my ($self) = @_;
+	 return $self->getLinkedObject($self->genome_ref());
+}
 
 
 # CONSTANTS:
 sub __version__ { return $VERSION; }
-sub _type { return 'KBaseBiochem.BiochemistryStructures'; }
-sub _module { return 'KBaseBiochem'; }
-sub _class { return 'BiochemistryStructures'; }
+sub _type { return 'KBaseGenomes.ProbabilisticAnnotation'; }
+sub _module { return 'KBaseGenomes'; }
+sub _class { return 'ProbabilisticAnnotation'; }
 sub _top { return 1; }
 
 my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'name',
+            'name' => 'skipped_features',
+            'default' => 'sub {return [];}',
+            'type' => 'ArrayRef',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'genome_ref',
             'type' => 'Str',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'roleset_probabilities',
+            'default' => 'sub {return {};}',
+            'type' => 'HashRef',
             'perm' => 'rw'
           },
           {
@@ -56,17 +73,10 @@ my $attributes = [
             'name' => 'id',
             'type' => 'Str',
             'perm' => 'rw'
-          },
-          {
-            'req' => 0,
-            'printOrder' => -1,
-            'name' => 'description',
-            'type' => 'Str',
-            'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {name => 0, id => 1, description => 2};
+my $attribute_map = {skipped_features => 0, genome_ref => 1, roleset_probabilities => 2, id => 3};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -81,9 +91,19 @@ sub _attributes {
 	 }
 }
 
-my $links = [];
+my $links = [
+          {
+            'attribute' => 'genome_ref',
+            'parent' => 'Bio::KBase::ObjectAPI::KBaseStore',
+            'clearer' => 'clear_genome',
+            'name' => 'genome',
+            'method' => 'Genome',
+            'class' => 'Bio::KBase::ObjectAPI::KBaseGenomes::Genome',
+            'module' => 'KBaseGenomes'
+          }
+        ];
 
-my $link_map = {};
+my $link_map = {genome => 0};
 sub _links {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -98,20 +118,9 @@ sub _links {
 	 }
 }
 
-my $subobjects = [
-          {
-            'req' => undef,
-            'printOrder' => 0,
-            'name' => 'structures',
-            'default' => undef,
-            'description' => undef,
-            'class' => 'CompoundStructure',
-            'type' => 'child',
-            'module' => 'KBaseBiochem'
-          }
-        ];
+my $subobjects = [];
 
-my $subobject_map = {structures => 0};
+my $subobject_map = {};
 sub _subobjects {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -125,12 +134,5 @@ sub _subobjects {
 	 	 return $subobjects;
 	 }
 }
-# SUBOBJECT READERS:
-around 'structures' => sub {
-	 my ($orig, $self) = @_;
-	 return $self->_build_all_objects('structures');
-};
-
-
 __PACKAGE__->meta->make_immutable;
 1;

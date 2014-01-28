@@ -6,12 +6,12 @@
 ########################################################################
 use strict;
 use warnings;
-use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::workspace::ScriptHelpers qw(printObjectInfo get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Model"];
 my $servercommand = "runfba";
-my $script = "kbfba-runfba";
+my $script = "fba-runfba";
 my $translation = {
 	Model => "model",
 	modelws => "model_workspace",
@@ -169,5 +169,5 @@ if (!defined($output)) {
 	print "Flux balance analysis failed!\n";
 } else {
 	print "Flux balance analysis successful:\n";
-	printObjectMeta($output);
+	printObjectInfo($output);
 }

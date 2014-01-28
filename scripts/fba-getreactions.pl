@@ -7,34 +7,30 @@
 use strict;
 use warnings;
 use JSON;
-use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::workspace::ScriptHelpers qw( get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $manpage =
 "
 NAME
-      kbfba-getreactions - Get reaction information by ID
+      fba-getreactions - Get reaction information by ID
 
 DESCRIPTION
       This function will get information on one or a list of reactions.
-      By default, the list of reactions should be SEED IDs. However,
-      KEGG, Name, and other types are accessible by specifying the
+      The list of reactions can be SEED IDs, KEGG, Name, and other alias.
       approriate type with --idtype.
 
       Provided information includes reversibility, estimated Gibbs energy
       of reaction, equation in ModelSEED and human-readable format, and EC numbers.
-
-      Use kbfba-getaliassets to get a list of valid ID types.
-
 EXAMPLES
       Get information on 'rxn00001' and pretty-print the results
-      > kbfba-getreactions -p rxn00001
+      > fba-getreactions -p rxn00001
       
       Get information on reacton 'inorganic diphosphatase' (same reaction as rxn00001)
-      > kbfba-getreactions -p --idtype name 'inorganic diphosphatase'
+      > fba-getreactions -p 'inorganic diphosphatase'
 
 SEE ALSO
-      kbfba-getaliassets
+      fba-getaliassets
 
 AUTHORS
       Christopher Henry
@@ -42,7 +38,7 @@ AUTHORS
 
 my $primaryArgs = ["Reaction IDs (; delimiter)"];
 my $servercommand = "get_reactions";
-my $script = "kbfba-getreactions";
+my $script = "fba-getreactions";
 my $translation = {
 	idtype => "id_type"
 };

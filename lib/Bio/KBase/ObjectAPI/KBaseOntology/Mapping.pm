@@ -22,7 +22,6 @@ extends 'Bio::KBase::ObjectAPI::KBaseOntology::DB::Mapping';
 # ADDITIONAL ATTRIBUTES:
 #***********************************************************************************************************
 has roleReactionHash => ( is => 'rw', isa => 'HashRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildroleReactionHash' );
-has typeClassifier => ( is => 'rw', isa => 'Bio::KBase::ObjectAPI::Classifier',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildtypeClassifier' );
 has roleComplexHash => ( is => 'rw', isa => 'HashRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildroleComplexHash' );
 has rolesByAlias => ( is => 'rw', isa => 'HashRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildrolesByAlias' );
 has subsystemsByAlias => ( is => 'rw', isa => 'HashRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildsubsystemsByAlias' );
@@ -62,26 +61,44 @@ sub _buildroleComplexHash {
 	}
 	return $roleComplexHash;
 }
-sub _buildtypeClassifier {
-    my ($self) = @_;
-    my $class = $self->queryObject("mappingClassifiers",{
-		name => "GramStain",
-		type => "Bayesian"
-	});
-	if (defined($class)) {
-		return $class->classifier();
+sub _buildrolesByAlias {
+	my ($self) = @_;
+	my $hash = {};
+	my $aliases = $self->role_aliases();
+	foreach my $objid (keys(%{$aliases})) {
+		foreach my $aliastype (keys(%{$aliases->{$objid}})) {
+			for my $alias (@{$aliases->{$objid}->{$aliastype}}) {
+				$hash->{$aliastype}->{$alias}->{$objid} = 1; 
+			}
+		}
 	}
-    my ($fh1, $classifierFile) = File::Temp::tempfile();
-    close($fh1);
-    my $status = LWP::Simple::getstore("http://bioseed.mcs.anl.gov/~chenry/ModelSEED/classifier.txt", $classifierFile);
-    die "Unable to fetch from model_seed\n" unless($status == 200);        
-	my $exchange_factory = Bio::KBase::ObjectAPI::Factories::ExchangeFormatFactory->new();
-	my ($classifier,$mapping) = $exchange_factory->buildClassifier({
-		filename => $classifierFile,
-		name => "GramStrain",
-		mapping => $self
-	});
-	return $classifier;
+	return $hash;
+}
+sub _buildsubsystemsByAlias {
+	my ($self) = @_;
+	my $hash = {};
+	my $aliases = $self->subsystem_aliases();
+	foreach my $objid (keys(%{$aliases})) {
+		foreach my $aliastype (keys(%{$aliases->{$objid}})) {
+			for my $alias (@{$aliases->{$objid}->{$aliastype}}) {
+				$hash->{$aliastype}->{$alias}->{$objid} = 1; 
+			}
+		}
+	}
+	return $hash;
+}
+sub _buildcomplexesByAlias {
+	my ($self) = @_;
+	my $hash = {};
+	my $aliases = $self->complex_aliases();
+	foreach my $objid (keys(%{$aliases})) {
+		foreach my $aliastype (keys(%{$aliases->{$objid}})) {
+			for my $alias (@{$aliases->{$objid}->{$aliastype}}) {
+				$hash->{$aliastype}->{$alias}->{$objid} = 1; 
+			}
+		}
+	}
+	return $hash;
 }
 
 #***********************************************************************************************************

@@ -277,6 +277,9 @@ sub _buildIndex {
 	if ($att =~ m/^682F57E0/) {
 		Bio::KBase::ObjectAPI::utilities::error("Bad call to _buildIndex!");
 	}
+	if ($att eq "aliasSets") {
+		Bio::KBase::ObjectAPI::utilities::error("Bad call to _buildIndex!");
+	}
 	my $method = "_$att";
 	my $subobjs = $self->$method();
 	if (@{$subobjs} > 0) {

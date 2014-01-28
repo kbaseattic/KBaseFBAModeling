@@ -29,7 +29,7 @@ has compartment => (is => 'rw', type => 'link(Biochemistry,compartments,compartm
 
 
 # BUILDERS:
-sub _build_reference { return my ($self) = @_;$self->parent()->_reference().'/compartments/id/'.$self->id(); }
+sub _build_reference { my ($self) = @_;return $self->parent()->_reference().'/modelcompartments/id/'.$self->id(); }
 sub _build_uuid { my ($self) = @_;return $self->_reference(); }
 sub _build_compartment {
 	 my ($self) = @_;

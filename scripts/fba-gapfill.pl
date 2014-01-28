@@ -6,12 +6,12 @@
 ########################################################################
 use strict;
 use warnings;
-use Bio::KBase::workspaceService::Helpers qw(printJobData auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::workspace::ScriptHelpers qw(get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta printObjectInfo);
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(printJobData get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Model"];
 my $servercommand = "queue_gapfill_model";
-my $script = "kbfba-gapfill";
+my $script = "fba-gapfill";
 my $translation = {
 	Model => "model",
 	modelws => "model_workspace",
@@ -117,7 +117,6 @@ my $specs = [
     [ 'notes:s', 'Notes for flux balance analysis' ],
     [ 'solver:s', 'Solver to use for gapfilling' ],
     [ 'workspace|w:s', 'Workspace to save FBA results', { "default" => workspace() } ],
-    [ 'overwrite|o', 'Overwrite any existing FBA with same name' ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
 if (!defined($opt->{mediaws}) && defined($opt->{media})) {

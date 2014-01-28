@@ -6,13 +6,13 @@
 ########################################################################
 use strict;
 use warnings;
-use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::workspace::ScriptHelpers qw(printObjectInfo get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(get_fba_client runFBACommand universalFBAScriptCode );
 
 my $manpage =
 "
 NAME
-      kbfba-buildfbamodel - Build a draft FBA model from an annotated genome
+      fba-buildfbamodel - Build a draft FBA model from an annotated genome
 
 DESCRIPTION
       This function builds a draft metabolic model from an annotated genome.
@@ -31,13 +31,13 @@ DESCRIPTION
 
 EXAMPLES
       Build a draft model for E. coli, save results to 'kb|g.0.model'
-      > kbfba-buildfbamodel 'kb|g.0' --model 'kb|g.0.model'
+      > fba-buildfbamodel 'kb|g.0' --model 'kb|g.0.model'
 
 SEE ALSO
-      kbfba-loadgenome
-      kbfba-runfba
-      kbfba-gapfill
-      kbfba-adjusttemprxn
+      fba-loadgenome
+      fba-runfba
+      fba-gapfill
+      fba-adjusttemprxn
 
 AUTHORS
       Christopher Henry
@@ -47,7 +47,7 @@ AUTHORS
 #Defining globals describing behavior
 my $primaryArgs = ["Genome"];
 my $servercommand = "genome_to_fbamodel";
-my $script = "kbfba-buildfbamodel";
+my $script = "fba-buildfbamodel";
 my $translation = {
 	Genome => "genome",
 	genomews => "genome_workspace",
@@ -77,5 +77,5 @@ if (!defined($output)) {
 	print "Model generation failed!\n";
 } else {
 	print "Model successfully generated in workspace:\n";
-	printObjectMeta($output);
+	printObjectInfo($output);
 }

@@ -5320,6 +5320,293 @@ sub queue_gapfill_model
 
 
 
+=head2 gapfill_model
+
+  $modelMeta = $obj->gapfill_model($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a gapfill_model_params
+$modelMeta is an object_metadata
+gapfill_model_params is a reference to a hash where the following keys are defined:
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
+	formulation has a value which is a GapfillingFormulation
+	phenotypeSet has a value which is a phenotype_set_id
+	phenotypeSet_workspace has a value which is a workspace_id
+	integrate_solution has a value which is a bool
+	target_reactions has a value which is a reference to a list where each element is a string
+	out_model has a value which is a fbamodel_id
+	workspace has a value which is a workspace_id
+	gapFill has a value which is a gapfill_id
+	timePerSolution has a value which is an int
+	totalTimeLimit has a value which is an int
+	auth has a value which is a string
+	overwrite has a value which is a bool
+	completeGapfill has a value which is a bool
+fbamodel_id is a string
+workspace_id is a string
+GapfillingFormulation is a reference to a hash where the following keys are defined:
+	formulation has a value which is an FBAFormulation
+	num_solutions has a value which is an int
+	nomediahyp has a value which is a bool
+	nobiomasshyp has a value which is a bool
+	nogprhyp has a value which is a bool
+	nopathwayhyp has a value which is a bool
+	allowunbalanced has a value which is a bool
+	activitybonus has a value which is a float
+	drainpen has a value which is a float
+	directionpen has a value which is a float
+	nostructpen has a value which is a float
+	unfavorablepen has a value which is a float
+	nodeltagpen has a value which is a float
+	biomasstranspen has a value which is a float
+	singletranspen has a value which is a float
+	transpen has a value which is a float
+	blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
+	gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
+	allowedcmps has a value which is a reference to a list where each element is a compartment_id
+	probabilisticAnnotation has a value which is a probanno_id
+	probabilisticAnnotation_workspace has a value which is a workspace_id
+FBAFormulation is a reference to a hash where the following keys are defined:
+	media has a value which is a media_id
+	additionalcpds has a value which is a reference to a list where each element is a compound_id
+	prommodel has a value which is a prommodel_id
+	prommodel_workspace has a value which is a workspace_id
+	media_workspace has a value which is a workspace_id
+	objfraction has a value which is a float
+	allreversible has a value which is a bool
+	maximizeObjective has a value which is a bool
+	objectiveTerms has a value which is a reference to a list where each element is a term
+	geneko has a value which is a reference to a list where each element is a feature_id
+	rxnko has a value which is a reference to a list where each element is a reaction_id
+	bounds has a value which is a reference to a list where each element is a bound
+	constraints has a value which is a reference to a list where each element is a constraint
+	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
+	defaultmaxflux has a value which is a float
+	defaultminuptake has a value which is a float
+	defaultmaxuptake has a value which is a float
+	simplethermoconst has a value which is a bool
+	thermoconst has a value which is a bool
+	nothermoerror has a value which is a bool
+	minthermoerror has a value which is a bool
+media_id is a string
+compound_id is a string
+prommodel_id is a string
+bool is an int
+term is a reference to a list containing 3 items:
+	0: (coefficient) a float
+	1: (varType) a string
+	2: (variable) a string
+feature_id is a string
+reaction_id is a string
+bound is a reference to a list containing 4 items:
+	0: (min) a float
+	1: (max) a float
+	2: (varType) a string
+	3: (variable) a string
+constraint is a reference to a list containing 4 items:
+	0: (rhs) a float
+	1: (sign) a string
+	2: (terms) a reference to a list where each element is a term
+	3: (name) a string
+compartment_id is a string
+probanno_id is a string
+phenotype_set_id is a string
+gapfill_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a gapfill_model_params
+$modelMeta is an object_metadata
+gapfill_model_params is a reference to a hash where the following keys are defined:
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
+	formulation has a value which is a GapfillingFormulation
+	phenotypeSet has a value which is a phenotype_set_id
+	phenotypeSet_workspace has a value which is a workspace_id
+	integrate_solution has a value which is a bool
+	target_reactions has a value which is a reference to a list where each element is a string
+	out_model has a value which is a fbamodel_id
+	workspace has a value which is a workspace_id
+	gapFill has a value which is a gapfill_id
+	timePerSolution has a value which is an int
+	totalTimeLimit has a value which is an int
+	auth has a value which is a string
+	overwrite has a value which is a bool
+	completeGapfill has a value which is a bool
+fbamodel_id is a string
+workspace_id is a string
+GapfillingFormulation is a reference to a hash where the following keys are defined:
+	formulation has a value which is an FBAFormulation
+	num_solutions has a value which is an int
+	nomediahyp has a value which is a bool
+	nobiomasshyp has a value which is a bool
+	nogprhyp has a value which is a bool
+	nopathwayhyp has a value which is a bool
+	allowunbalanced has a value which is a bool
+	activitybonus has a value which is a float
+	drainpen has a value which is a float
+	directionpen has a value which is a float
+	nostructpen has a value which is a float
+	unfavorablepen has a value which is a float
+	nodeltagpen has a value which is a float
+	biomasstranspen has a value which is a float
+	singletranspen has a value which is a float
+	transpen has a value which is a float
+	blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
+	gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
+	allowedcmps has a value which is a reference to a list where each element is a compartment_id
+	probabilisticAnnotation has a value which is a probanno_id
+	probabilisticAnnotation_workspace has a value which is a workspace_id
+FBAFormulation is a reference to a hash where the following keys are defined:
+	media has a value which is a media_id
+	additionalcpds has a value which is a reference to a list where each element is a compound_id
+	prommodel has a value which is a prommodel_id
+	prommodel_workspace has a value which is a workspace_id
+	media_workspace has a value which is a workspace_id
+	objfraction has a value which is a float
+	allreversible has a value which is a bool
+	maximizeObjective has a value which is a bool
+	objectiveTerms has a value which is a reference to a list where each element is a term
+	geneko has a value which is a reference to a list where each element is a feature_id
+	rxnko has a value which is a reference to a list where each element is a reaction_id
+	bounds has a value which is a reference to a list where each element is a bound
+	constraints has a value which is a reference to a list where each element is a constraint
+	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
+	defaultmaxflux has a value which is a float
+	defaultminuptake has a value which is a float
+	defaultmaxuptake has a value which is a float
+	simplethermoconst has a value which is a bool
+	thermoconst has a value which is a bool
+	nothermoerror has a value which is a bool
+	minthermoerror has a value which is a bool
+media_id is a string
+compound_id is a string
+prommodel_id is a string
+bool is an int
+term is a reference to a list containing 3 items:
+	0: (coefficient) a float
+	1: (varType) a string
+	2: (variable) a string
+feature_id is a string
+reaction_id is a string
+bound is a reference to a list containing 4 items:
+	0: (min) a float
+	1: (max) a float
+	2: (varType) a string
+	3: (variable) a string
+constraint is a reference to a list containing 4 items:
+	0: (rhs) a float
+	1: (sign) a string
+	2: (terms) a reference to a list where each element is a term
+	3: (name) a string
+compartment_id is a string
+probanno_id is a string
+phenotype_set_id is a string
+gapfill_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+=item Description
+
+
+
+=back
+
+=cut
+
+sub gapfill_model
+{
+    my($self, @args) = @_;
+
+# Authentication: required
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function gapfill_model (received $n, expecting 1)");
+    }
+    {
+	my($input) = @args;
+
+	my @_bad_arguments;
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to gapfill_model:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'gapfill_model');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.gapfill_model",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{error}->{code},
+					       method_name => 'gapfill_model',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method gapfill_model",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'gapfill_model',
+				       );
+    }
+}
+
+
+
 =head2 queue_gapgen_model
 
   $job = $obj->queue_gapgen_model($input)
@@ -7484,6 +7771,145 @@ sub delete_noncontributing_reactions
 
 
 
+=head2 annotate_workspace_Genome
+
+  $output = $obj->annotate_workspace_Genome($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is an annotate_workspace_Genome_params
+$output is an object_metadata
+annotate_workspace_Genome_params is a reference to a hash where the following keys are defined:
+	Genome_uid has a value which is a string
+	Genome_ws has a value which is a string
+	new_uid has a value which is a string
+	workspace has a value which is a workspace_id
+	annotation_parameters has a value which is an AnnotationParameters
+	auth has a value which is a string
+workspace_id is a string
+AnnotationParameters is a reference to a hash where the following keys are defined:
+	call_genes has a value which is a bool
+	annotate_genes has a value which is a bool
+bool is an int
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is an annotate_workspace_Genome_params
+$output is an object_metadata
+annotate_workspace_Genome_params is a reference to a hash where the following keys are defined:
+	Genome_uid has a value which is a string
+	Genome_ws has a value which is a string
+	new_uid has a value which is a string
+	workspace has a value which is a workspace_id
+	annotation_parameters has a value which is an AnnotationParameters
+	auth has a value which is a string
+workspace_id is a string
+AnnotationParameters is a reference to a hash where the following keys are defined:
+	call_genes has a value which is a bool
+	annotate_genes has a value which is a bool
+bool is an int
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+=item Description
+
+Create a job that runs the genome annotation pipeline on a genome object in a workspace
+
+=back
+
+=cut
+
+sub annotate_workspace_Genome
+{
+    my($self, @args) = @_;
+
+# Authentication: required
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function annotate_workspace_Genome (received $n, expecting 1)");
+    }
+    {
+	my($params) = @args;
+
+	my @_bad_arguments;
+        (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to annotate_workspace_Genome:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'annotate_workspace_Genome');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.annotate_workspace_Genome",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{error}->{code},
+					       method_name => 'annotate_workspace_Genome',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method annotate_workspace_Genome",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'annotate_workspace_Genome',
+				       );
+    }
+}
+
+
+
 =head2 fasta_to_ProteinSet
 
   $output = $obj->fasta_to_ProteinSet($params)
@@ -7640,8 +8066,12 @@ ProteinSet_to_Genome_params is a reference to a hash where the following keys ar
 	auth has a value which is a string
 	scientific_name has a value which is a string
 	domain has a value which is a string
-	genetic_code has a value which is an int
+	annotation_parameters has a value which is an AnnotationParameters
 workspace_id is a string
+AnnotationParameters is a reference to a hash where the following keys are defined:
+	call_genes has a value which is a bool
+	annotate_genes has a value which is a bool
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -7676,8 +8106,12 @@ ProteinSet_to_Genome_params is a reference to a hash where the following keys ar
 	auth has a value which is a string
 	scientific_name has a value which is a string
 	domain has a value which is a string
-	genetic_code has a value which is an int
+	annotation_parameters has a value which is an AnnotationParameters
 workspace_id is a string
+AnnotationParameters is a reference to a hash where the following keys are defined:
+	call_genes has a value which is a bool
+	annotate_genes has a value which is a bool
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -7754,277 +8188,6 @@ sub ProteinSet_to_Genome
 
 
 
-=head2 fasta_to_TranscriptSet
-
-  $output = $obj->fasta_to_TranscriptSet($params)
-
-=over 4
-
-=item Parameter and return types
-
-=begin html
-
-<pre>
-$params is a fasta_to_Transcripts_params
-$output is an object_metadata
-fasta_to_Transcripts_params is a reference to a hash where the following keys are defined:
-	uid has a value which is a string
-	fasta has a value which is a string
-	workspace has a value which is a workspace_id
-	auth has a value which is a string
-	name has a value which is a string
-	sourceid has a value which is a string
-	source has a value which is a string
-	type has a value which is a string
-workspace_id is a string
-object_metadata is a reference to a list containing 11 items:
-	0: (id) an object_id
-	1: (type) an object_type
-	2: (moddate) a timestamp
-	3: (instance) an int
-	4: (command) a string
-	5: (lastmodifier) a username
-	6: (owner) a username
-	7: (workspace) a workspace_id
-	8: (ref) a workspace_ref
-	9: (chsum) a string
-	10: (metadata) a reference to a hash where the key is a string and the value is a string
-object_id is a string
-object_type is a string
-timestamp is a string
-username is a string
-workspace_ref is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-$params is a fasta_to_Transcripts_params
-$output is an object_metadata
-fasta_to_Transcripts_params is a reference to a hash where the following keys are defined:
-	uid has a value which is a string
-	fasta has a value which is a string
-	workspace has a value which is a workspace_id
-	auth has a value which is a string
-	name has a value which is a string
-	sourceid has a value which is a string
-	source has a value which is a string
-	type has a value which is a string
-workspace_id is a string
-object_metadata is a reference to a list containing 11 items:
-	0: (id) an object_id
-	1: (type) an object_type
-	2: (moddate) a timestamp
-	3: (instance) an int
-	4: (command) a string
-	5: (lastmodifier) a username
-	6: (owner) a username
-	7: (workspace) a workspace_id
-	8: (ref) a workspace_ref
-	9: (chsum) a string
-	10: (metadata) a reference to a hash where the key is a string and the value is a string
-object_id is a string
-object_type is a string
-timestamp is a string
-username is a string
-workspace_ref is a string
-
-
-=end text
-
-=item Description
-
-Loads a fasta file as a TranscriptSet object in the workspace
-
-=back
-
-=cut
-
-sub fasta_to_TranscriptSet
-{
-    my($self, @args) = @_;
-
-# Authentication: required
-
-    if ((my $n = @args) != 1)
-    {
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
-							       "Invalid argument count for function fasta_to_TranscriptSet (received $n, expecting 1)");
-    }
-    {
-	my($params) = @args;
-
-	my @_bad_arguments;
-        (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
-        if (@_bad_arguments) {
-	    my $msg = "Invalid arguments passed to fasta_to_TranscriptSet:\n" . join("", map { "\t$_\n" } @_bad_arguments);
-	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-								   method_name => 'fasta_to_TranscriptSet');
-	}
-    }
-
-    my $result = $self->{client}->call($self->{url}, {
-	method => "fbaModelServices.fasta_to_TranscriptSet",
-	params => \@args,
-    });
-    if ($result) {
-	if ($result->is_error) {
-	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{error}->{code},
-					       method_name => 'fasta_to_TranscriptSet',
-					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
-					      );
-	} else {
-	    return wantarray ? @{$result->result} : $result->result->[0];
-	}
-    } else {
-        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method fasta_to_TranscriptSet",
-					    status_line => $self->{client}->status_line,
-					    method_name => 'fasta_to_TranscriptSet',
-				       );
-    }
-}
-
-
-
-=head2 TranscriptSet_to_Genome
-
-  $output = $obj->TranscriptSet_to_Genome($params)
-
-=over 4
-
-=item Parameter and return types
-
-=begin html
-
-<pre>
-$params is a TranscriptSet_to_Genome_params
-$output is an object_metadata
-TranscriptSet_to_Genome_params is a reference to a hash where the following keys are defined:
-	TranscriptSet_uid has a value which is a string
-	TranscriptSet_ws has a value which is a workspace_id
-	workspace has a value which is a workspace_id
-	uid has a value which is a string
-	auth has a value which is a string
-	scientific_name has a value which is a string
-	domain has a value which is a string
-	genetic_code has a value which is an int
-workspace_id is a string
-object_metadata is a reference to a list containing 11 items:
-	0: (id) an object_id
-	1: (type) an object_type
-	2: (moddate) a timestamp
-	3: (instance) an int
-	4: (command) a string
-	5: (lastmodifier) a username
-	6: (owner) a username
-	7: (workspace) a workspace_id
-	8: (ref) a workspace_ref
-	9: (chsum) a string
-	10: (metadata) a reference to a hash where the key is a string and the value is a string
-object_id is a string
-object_type is a string
-timestamp is a string
-username is a string
-workspace_ref is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-$params is a TranscriptSet_to_Genome_params
-$output is an object_metadata
-TranscriptSet_to_Genome_params is a reference to a hash where the following keys are defined:
-	TranscriptSet_uid has a value which is a string
-	TranscriptSet_ws has a value which is a workspace_id
-	workspace has a value which is a workspace_id
-	uid has a value which is a string
-	auth has a value which is a string
-	scientific_name has a value which is a string
-	domain has a value which is a string
-	genetic_code has a value which is an int
-workspace_id is a string
-object_metadata is a reference to a list containing 11 items:
-	0: (id) an object_id
-	1: (type) an object_type
-	2: (moddate) a timestamp
-	3: (instance) an int
-	4: (command) a string
-	5: (lastmodifier) a username
-	6: (owner) a username
-	7: (workspace) a workspace_id
-	8: (ref) a workspace_ref
-	9: (chsum) a string
-	10: (metadata) a reference to a hash where the key is a string and the value is a string
-object_id is a string
-object_type is a string
-timestamp is a string
-username is a string
-workspace_ref is a string
-
-
-=end text
-
-=item Description
-
-Creates a Genome associated with the TranscriptSet object
-Cannot do global genome structure comparison with such a genome
-
-=back
-
-=cut
-
-sub TranscriptSet_to_Genome
-{
-    my($self, @args) = @_;
-
-# Authentication: required
-
-    if ((my $n = @args) != 1)
-    {
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
-							       "Invalid argument count for function TranscriptSet_to_Genome (received $n, expecting 1)");
-    }
-    {
-	my($params) = @args;
-
-	my @_bad_arguments;
-        (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
-        if (@_bad_arguments) {
-	    my $msg = "Invalid arguments passed to TranscriptSet_to_Genome:\n" . join("", map { "\t$_\n" } @_bad_arguments);
-	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-								   method_name => 'TranscriptSet_to_Genome');
-	}
-    }
-
-    my $result = $self->{client}->call($self->{url}, {
-	method => "fbaModelServices.TranscriptSet_to_Genome",
-	params => \@args,
-    });
-    if ($result) {
-	if ($result->is_error) {
-	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{error}->{code},
-					       method_name => 'TranscriptSet_to_Genome',
-					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
-					      );
-	} else {
-	    return wantarray ? @{$result->result} : $result->result->[0];
-	}
-    } else {
-        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method TranscriptSet_to_Genome",
-					    status_line => $self->{client}->status_line,
-					    method_name => 'TranscriptSet_to_Genome',
-				       );
-    }
-}
-
-
-
 =head2 fasta_to_ContigSet
 
   $output = $obj->fasta_to_ContigSet($params)
@@ -8036,9 +8199,9 @@ sub TranscriptSet_to_Genome
 =begin html
 
 <pre>
-$params is a fasta_to_Transcripts_params
+$params is a fasta_to_ContigSet_params
 $output is an object_metadata
-fasta_to_Transcripts_params is a reference to a hash where the following keys are defined:
+fasta_to_ContigSet_params is a reference to a hash where the following keys are defined:
 	uid has a value which is a string
 	fasta has a value which is a string
 	workspace has a value which is a workspace_id
@@ -8072,9 +8235,9 @@ workspace_ref is a string
 
 =begin text
 
-$params is a fasta_to_Transcripts_params
+$params is a fasta_to_ContigSet_params
 $output is an object_metadata
-fasta_to_Transcripts_params is a reference to a hash where the following keys are defined:
+fasta_to_ContigSet_params is a reference to a hash where the following keys are defined:
 	uid has a value which is a string
 	fasta has a value which is a string
 	workspace has a value which is a workspace_id
@@ -8182,7 +8345,12 @@ ContigSet_to_Genome_params is a reference to a hash where the following keys are
 	scientific_name has a value which is a string
 	domain has a value which is a string
 	genetic_code has a value which is an int
+	annotation_parameters has a value which is an AnnotationParameters
 workspace_id is a string
+AnnotationParameters is a reference to a hash where the following keys are defined:
+	call_genes has a value which is a bool
+	annotate_genes has a value which is a bool
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -8218,7 +8386,12 @@ ContigSet_to_Genome_params is a reference to a hash where the following keys are
 	scientific_name has a value which is a string
 	domain has a value which is a string
 	genetic_code has a value which is an int
+	annotation_parameters has a value which is an AnnotationParameters
 workspace_id is a string
+AnnotationParameters is a reference to a hash where the following keys are defined:
+	call_genes has a value which is a bool
+	annotate_genes has a value which is a bool
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -8289,139 +8462,6 @@ sub ContigSet_to_Genome
         Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method ContigSet_to_Genome",
 					    status_line => $self->{client}->status_line,
 					    method_name => 'ContigSet_to_Genome',
-				       );
-    }
-}
-
-
-
-=head2 annotate_workspace_Genome
-
-  $job = $obj->annotate_workspace_Genome($params)
-
-=over 4
-
-=item Parameter and return types
-
-=begin html
-
-<pre>
-$params is an annotate_workspace_Genome_params
-$job is a JobObject
-annotate_workspace_Genome_params is a reference to a hash where the following keys are defined:
-	Genome_uid has a value which is a string
-	Genome_ws has a value which is a string
-	new_uid has a value which is a string
-	workspace has a value which is a workspace_id
-	pipeline_stages has a value which is a reference to a list where each element is an AnnotationPipelineStage
-	auth has a value which is a string
-workspace_id is a string
-AnnotationPipelineStage is a reference to a hash where the following keys are defined:
-	id has a value which is a stage_id
-	enable has a value which is a bool
-	parameters has a value which is a reference to a hash where the key is a string and the value is a string
-stage_id is a string
-bool is an int
-JobObject is a reference to a hash where the following keys are defined:
-	id has a value which is a job_id
-	type has a value which is a string
-	auth has a value which is a string
-	status has a value which is a string
-	jobdata has a value which is a reference to a hash where the key is a string and the value is a string
-	queuetime has a value which is a string
-	starttime has a value which is a string
-	completetime has a value which is a string
-	owner has a value which is a string
-	queuecommand has a value which is a string
-job_id is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-$params is an annotate_workspace_Genome_params
-$job is a JobObject
-annotate_workspace_Genome_params is a reference to a hash where the following keys are defined:
-	Genome_uid has a value which is a string
-	Genome_ws has a value which is a string
-	new_uid has a value which is a string
-	workspace has a value which is a workspace_id
-	pipeline_stages has a value which is a reference to a list where each element is an AnnotationPipelineStage
-	auth has a value which is a string
-workspace_id is a string
-AnnotationPipelineStage is a reference to a hash where the following keys are defined:
-	id has a value which is a stage_id
-	enable has a value which is a bool
-	parameters has a value which is a reference to a hash where the key is a string and the value is a string
-stage_id is a string
-bool is an int
-JobObject is a reference to a hash where the following keys are defined:
-	id has a value which is a job_id
-	type has a value which is a string
-	auth has a value which is a string
-	status has a value which is a string
-	jobdata has a value which is a reference to a hash where the key is a string and the value is a string
-	queuetime has a value which is a string
-	starttime has a value which is a string
-	completetime has a value which is a string
-	owner has a value which is a string
-	queuecommand has a value which is a string
-job_id is a string
-
-
-=end text
-
-=item Description
-
-Create a job that runs the genome annotation pipeline on a genome object in a workspace
-
-=back
-
-=cut
-
-sub annotate_workspace_Genome
-{
-    my($self, @args) = @_;
-
-# Authentication: required
-
-    if ((my $n = @args) != 1)
-    {
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
-							       "Invalid argument count for function annotate_workspace_Genome (received $n, expecting 1)");
-    }
-    {
-	my($params) = @args;
-
-	my @_bad_arguments;
-        (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
-        if (@_bad_arguments) {
-	    my $msg = "Invalid arguments passed to annotate_workspace_Genome:\n" . join("", map { "\t$_\n" } @_bad_arguments);
-	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-								   method_name => 'annotate_workspace_Genome');
-	}
-    }
-
-    my $result = $self->{client}->call($self->{url}, {
-	method => "fbaModelServices.annotate_workspace_Genome",
-	params => \@args,
-    });
-    if ($result) {
-	if ($result->is_error) {
-	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{error}->{code},
-					       method_name => 'annotate_workspace_Genome',
-					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
-					      );
-	} else {
-	    return wantarray ? @{$result->result} : $result->result->[0];
-	}
-    } else {
-        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method annotate_workspace_Genome",
-					    status_line => $self->{client}->status_line,
-					    method_name => 'annotate_workspace_Genome',
 				       );
     }
 }
@@ -18416,7 +18456,7 @@ auth has a value which is a string
 
 
 
-=head2 ProteinSetProtein
+=head2 AnnotationParameters
 
 =over 4
 
@@ -18425,7 +18465,7 @@ auth has a value which is a string
 =item Description
 
 ********************************************************************************
-	Code relating to import and analysis of ProteinSets
+	Code relating to workspace versions of genome analysis algorithms
    	********************************************************************************
 
 
@@ -18435,10 +18475,8 @@ auth has a value which is a string
 
 <pre>
 a reference to a hash where the following keys are defined:
-kbid has a value which is a string
-sourceid has a value which is a string
-sequence has a value which is a string
-description has a value which is a string
+call_genes has a value which is a bool
+annotate_genes has a value which is a bool
 
 </pre>
 
@@ -18447,10 +18485,8 @@ description has a value which is a string
 =begin text
 
 a reference to a hash where the following keys are defined:
-kbid has a value which is a string
-sourceid has a value which is a string
-sequence has a value which is a string
-description has a value which is a string
+call_genes has a value which is a bool
+annotate_genes has a value which is a bool
 
 
 =end text
@@ -18459,7 +18495,7 @@ description has a value which is a string
 
 
 
-=head2 ProteinSet
+=head2 annotate_workspace_Genome_params
 
 =over 4
 
@@ -18467,12 +18503,14 @@ description has a value which is a string
 
 =item Description
 
-Type spec for the "ProteinSet" object
+Input parameters for the "annotate_workspace_Genome" function.
 
-        string kbid - unique kbase ID of the protein set
-        string name - name of the protein set
-        string type - type of the protein set (values are: Organism,Environment,Collection)
-        list<ProteinSetProtein> proteins - list of proteins in the protein set
+string Genome_uid - user ID to be assigned to the Genome (required argument)
+string Genome_ws - workspace with genome for annotation (optional; workspace argument will be used if no genome workspace is provided)
+string new_uid - new ID to assign to annotated genome (optional; original genome will be overwritten if no new uid is provided)
+workspace_id workspace - ID of workspace with Genome (required argument)
+AnnotationParameters parameters - parameters for running annotation job
+string auth - the authentication token of the KBase account changing workspace permissions
 
 
 =item Definition
@@ -18481,12 +18519,12 @@ Type spec for the "ProteinSet" object
 
 <pre>
 a reference to a hash where the following keys are defined:
-kbid has a value which is a string
-name has a value which is a string
-sourceid has a value which is a string
-source has a value which is a string
-type has a value which is a string
-proteins has a value which is a reference to a list where each element is a ProteinSetProtein
+Genome_uid has a value which is a string
+Genome_ws has a value which is a string
+new_uid has a value which is a string
+workspace has a value which is a workspace_id
+annotation_parameters has a value which is an AnnotationParameters
+auth has a value which is a string
 
 </pre>
 
@@ -18495,12 +18533,12 @@ proteins has a value which is a reference to a list where each element is a Prot
 =begin text
 
 a reference to a hash where the following keys are defined:
-kbid has a value which is a string
-name has a value which is a string
-sourceid has a value which is a string
-source has a value which is a string
-type has a value which is a string
-proteins has a value which is a reference to a list where each element is a ProteinSetProtein
+Genome_uid has a value which is a string
+Genome_ws has a value which is a string
+new_uid has a value which is a string
+workspace has a value which is a workspace_id
+annotation_parameters has a value which is an AnnotationParameters
+auth has a value which is a string
 
 
 =end text
@@ -18517,16 +18555,9 @@ proteins has a value which is a reference to a list where each element is a Prot
 
 =item Description
 
-Input parameters for the "fasta_to_ProteinSet" function.
-
-        string uid - user assigned ID for the protein set (optional)
-        string fasta - string with sequence data from fasta file (required argument)
-        workspace_id workspace - ID of workspace for storing objects (required argument)
-        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
-        string name - name of the protein data (optional)
-        string sourceid - source ID of the protein data (optional)
-        string source - source of the protein data (optional)
-        string type - type of the protein set (optional)
+********************************************************************************
+	Code relating to import and analysis of ProteinSets
+   	********************************************************************************
 
 
 =item Definition
@@ -18600,7 +18631,7 @@ uid has a value which is a string
 auth has a value which is a string
 scientific_name has a value which is a string
 domain has a value which is a string
-genetic_code has a value which is an int
+annotation_parameters has a value which is an AnnotationParameters
 
 </pre>
 
@@ -18616,313 +18647,7 @@ uid has a value which is a string
 auth has a value which is a string
 scientific_name has a value which is a string
 domain has a value which is a string
-genetic_code has a value which is an int
-
-
-=end text
-
-=back
-
-
-
-=head2 TranscriptSetTranscript
-
-=over 4
-
-
-
-=item Description
-
-********************************************************************************
-	Code relating to import and analysis of TranscriptSets
-   	********************************************************************************
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-kbid has a value which is a string
-sourceid has a value which is a string
-sequence has a value which is a string
-description has a value which is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-kbid has a value which is a string
-sourceid has a value which is a string
-sequence has a value which is a string
-description has a value which is a string
-
-
-=end text
-
-=back
-
-
-
-=head2 TranscriptSet
-
-=over 4
-
-
-
-=item Description
-
-Type spec for the "TranscriptSet" object
-
-        string kbid - unique kbase ID of the transcript set
-        string name - name of the transcript set
-        string type - type of the transcript set (values are: Organism,Environment,Collection)
-        string sourceid - source ID of the TranscriptSet data
-        string source - source of the TranscriptSet data
-        list<TranscriptSetTranscript> transcripts - list of transcripts in the transcript set
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-kbid has a value which is a string
-name has a value which is a string
-sourceid has a value which is a string
-source has a value which is a string
-type has a value which is a string
-transcripts has a value which is a reference to a list where each element is a TranscriptSetTranscript
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-kbid has a value which is a string
-name has a value which is a string
-sourceid has a value which is a string
-source has a value which is a string
-type has a value which is a string
-transcripts has a value which is a reference to a list where each element is a TranscriptSetTranscript
-
-
-=end text
-
-=back
-
-
-
-=head2 fasta_to_Transcripts_params
-
-=over 4
-
-
-
-=item Description
-
-Input parameters for the "fasta_to_Transcripts" function.
-
-        string uid - user assigned ID for the TranscriptSet (optional)
-        string fasta - string with sequence data from fasta file (required argument)
-        workspace_id workspace - ID of workspace for storing objects (required argument)
-        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
-        string name - name of the TranscriptSet data (optional)
-        string sourceid - source ID of the TranscriptSet data (optional)
-        string source - source of the TranscriptSet data (optional)
-        string type - type of the TranscriptSet (optional)
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-uid has a value which is a string
-fasta has a value which is a string
-workspace has a value which is a workspace_id
-auth has a value which is a string
-name has a value which is a string
-sourceid has a value which is a string
-source has a value which is a string
-type has a value which is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-uid has a value which is a string
-fasta has a value which is a string
-workspace has a value which is a workspace_id
-auth has a value which is a string
-name has a value which is a string
-sourceid has a value which is a string
-source has a value which is a string
-type has a value which is a string
-
-
-=end text
-
-=back
-
-
-
-=head2 TranscriptSet_to_Genome_params
-
-=over 4
-
-
-
-=item Description
-
-Input parameters for the "TranscriptSet_to_Genome" function.
-
-        string TranscriptSet_uid - user ID to be assigned to the TranscriptSet (required argument)
-        workspace_id TranscriptSet_ws - ID of workspace with the TranscriptSet (optional argument; default is value of workspace argument)
-        string uid - user assigned ID for the Genome (optional)
-        workspace_id workspace - ID of workspace for storing objects (required argument)
-        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
-        string scientific_name - scientific name to assign to genome
-        string domain - domain of life for genome
-        int genetic_code - genetic code to assign to genome
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-TranscriptSet_uid has a value which is a string
-TranscriptSet_ws has a value which is a workspace_id
-workspace has a value which is a workspace_id
-uid has a value which is a string
-auth has a value which is a string
-scientific_name has a value which is a string
-domain has a value which is a string
-genetic_code has a value which is an int
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-TranscriptSet_uid has a value which is a string
-TranscriptSet_ws has a value which is a workspace_id
-workspace has a value which is a workspace_id
-uid has a value which is a string
-auth has a value which is a string
-scientific_name has a value which is a string
-domain has a value which is a string
-genetic_code has a value which is an int
-
-
-=end text
-
-=back
-
-
-
-=head2 ContigSetContig
-
-=over 4
-
-
-
-=item Description
-
-********************************************************************************
-	Code relating to import and analysis of Contigs
-   	********************************************************************************
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-kbid has a value which is a string
-sourceid has a value which is a string
-sequence has a value which is a string
-description has a value which is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-kbid has a value which is a string
-sourceid has a value which is a string
-sequence has a value which is a string
-description has a value which is a string
-
-
-=end text
-
-=back
-
-
-
-=head2 ContigSet
-
-=over 4
-
-
-
-=item Description
-
-Type spec for the "ContigSet" object
-
-        string kbid - unique kbase ID of the contig set
-        string name - name of the contig set
-        string type - type of the contig set (values are: Organism,Environment,Collection)
-        string sourceid - source ID of the TranscriptSet data
-        string source - source of the TranscriptSet data
-        list<ContigSetContig> contigs - list of contigs in the transcript set
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-kbid has a value which is a string
-name has a value which is a string
-sourceid has a value which is a string
-source has a value which is a string
-type has a value which is a string
-contigs has a value which is a reference to a list where each element is a ContigSetContig
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-kbid has a value which is a string
-name has a value which is a string
-sourceid has a value which is a string
-source has a value which is a string
-type has a value which is a string
-contigs has a value which is a reference to a list where each element is a ContigSetContig
+annotation_parameters has a value which is an AnnotationParameters
 
 
 =end text
@@ -18939,16 +18664,9 @@ contigs has a value which is a reference to a list where each element is a Conti
 
 =item Description
 
-Input parameters for the "fasta_to_ContigSet" function.
-
-        string uid - user assigned ID for the ContigSet (optional)
-        string fasta - string with sequence data from fasta file (required argument)
-        workspace_id workspace - ID of workspace for storing objects (required argument)
-        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
-        string name - name of the ContigSet data (optional)
-        string sourceid - source ID of the ContigSet data (optional)
-        string source - source of the ContigSet data (optional)
-        string type - type of the ContigSet (optional)
+********************************************************************************
+	Code relating to import and analysis of Contigs
+   	********************************************************************************
 
 
 =item Definition
@@ -19007,6 +18725,7 @@ Input parameters for the "ContigSet_to_Genome" function.
         string scientific_name - scientific name to assign to genome
         string domain - domain of life for genome
         int genetic_code - genetic code to assign to genome
+        AnnotationParameters annotation_parameters - parameters for annotation of the genome
 
 
 =item Definition
@@ -19023,6 +18742,7 @@ auth has a value which is a string
 scientific_name has a value which is a string
 domain has a value which is a string
 genetic_code has a value which is an int
+annotation_parameters has a value which is an AnnotationParameters
 
 </pre>
 
@@ -19039,132 +18759,7 @@ auth has a value which is a string
 scientific_name has a value which is a string
 domain has a value which is a string
 genetic_code has a value which is an int
-
-
-=end text
-
-=back
-
-
-
-=head2 stage_id
-
-=over 4
-
-
-
-=item Description
-
-********************************************************************************
-	Code relating to workspace versions of genome analysis algorithms
-   	********************************************************************************
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a string
-</pre>
-
-=end html
-
-=begin text
-
-a string
-
-=end text
-
-=back
-
-
-
-=head2 AnnotationPipelineStage
-
-=over 4
-
-
-
-=item Description
-
-stage_id id - ID of stage of analysis to run
-bool enable - boolean indicating the stage should be run
-mapping<string,string> parameters - parameters for the analysis stage
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-id has a value which is a stage_id
-enable has a value which is a bool
-parameters has a value which is a reference to a hash where the key is a string and the value is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-id has a value which is a stage_id
-enable has a value which is a bool
-parameters has a value which is a reference to a hash where the key is a string and the value is a string
-
-
-=end text
-
-=back
-
-
-
-=head2 annotate_workspace_Genome_params
-
-=over 4
-
-
-
-=item Description
-
-Input parameters for the "annotate_workspace_Genome" function.
-
-string Genome_uid - user ID to be assigned to the Genome (required argument)
-string Genome_ws - workspace with genome for annotation (optional; workspace argument will be used if no genome workspace is provided)
-string new_uid - new ID to assign to annotated genome (optional; original genome will be overwritten if no new uid is provided)
-workspace_id workspace - ID of workspace with Genome (required argument)
-list<AnnotationPipelineStage> pipeline_stages - list of annotation pipeline steps to run
-string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-Genome_uid has a value which is a string
-Genome_ws has a value which is a string
-new_uid has a value which is a string
-workspace has a value which is a workspace_id
-pipeline_stages has a value which is a reference to a list where each element is an AnnotationPipelineStage
-auth has a value which is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-Genome_uid has a value which is a string
-Genome_ws has a value which is a string
-new_uid has a value which is a string
-workspace has a value which is a workspace_id
-pipeline_stages has a value which is a reference to a list where each element is an AnnotationPipelineStage
-auth has a value which is a string
+annotation_parameters has a value which is an AnnotationParameters
 
 
 =end text

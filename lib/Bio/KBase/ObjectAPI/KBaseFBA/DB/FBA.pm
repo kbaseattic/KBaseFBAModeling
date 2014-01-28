@@ -85,7 +85,7 @@ has media => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,Media,
 has phenotypesimulationset => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,PhenotypeSimulationSet,phenotypesimulationset_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_phenotypesimulationset', clearer => 'clear_phenotypesimulationset', isa => 'Bio::KBase::ObjectAPI::KBasePhenotypes::PhenotypeSimulationSet', weak_ref => 1);
 has phenotypeset => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,PhenotypeSet,phenotypeset_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_phenotypeset', clearer => 'clear_phenotypeset', isa => 'Bio::KBase::ObjectAPI::KBasePhenotypes::PhenotypeSet', weak_ref => 1);
 has geneKOs => (is => 'rw', type => 'link(Genome,features,geneKO_refs)', metaclass => 'Typed', lazy => 1, builder => '_build_geneKOs', clearer => 'clear_geneKOs', isa => 'ArrayRef');
-has additionalCpds => (is => 'rw', type => 'link(Biochemistry,compounds,additionalCpd_refs)', metaclass => 'Typed', lazy => 1, builder => '_build_additionalCpds', clearer => 'clear_additionalCpds', isa => 'ArrayRef');
+has additionalCpds => (is => 'rw', type => 'link(FBAModel,modelcompounds,additionalCpd_refs)', metaclass => 'Typed', lazy => 1, builder => '_build_additionalCpds', clearer => 'clear_additionalCpds', isa => 'ArrayRef');
 has prommodel => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,PROMModel,prommodel_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_prommodel', clearer => 'clear_prommodel', isa => 'Ref', weak_ref => 1);
 has fbamodel => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,FBAModel,fbamodel_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_fbamodel', clearer => 'clear_fbamodel', isa => 'Bio::KBase::ObjectAPI::KBaseFBA::FBAModel', weak_ref => 1);
 has regmodel => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,RegModel,regmodel_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_regmodel', clearer => 'clear_regmodel', isa => 'Ref', weak_ref => 1);
@@ -93,7 +93,7 @@ has reactionKOs => (is => 'rw', type => 'link(FBAModel,modelreactions,reactionKO
 
 
 # BUILDERS:
-sub _build_reference { return my ($self) = @_;$self->uuid(); }
+sub _build_reference { my ($self) = @_;return $self->uuid(); }
 sub _build_uuid { return Data::UUID->new()->create_str(); }
 sub _build_media {
 	 my ($self) = @_;
@@ -523,14 +523,14 @@ my $links = [
             'field' => 'id'
           },
           {
-            'parent' => 'Biochemistry',
+            'parent' => 'FBAModel',
             'name' => 'additionalCpds',
             'attribute' => 'additionalCpd_refs',
             'array' => 1,
             'clearer' => 'clear_additionalCpds',
-            'class' => 'Bio::KBase::ObjectAPI::KBaseBiochem::Compound',
-            'method' => 'compounds',
-            'module' => 'KBaseBiochem',
+            'class' => 'Bio::KBase::ObjectAPI::KBaseFBA::ModelCompound',
+            'method' => 'modelcompounds',
+            'module' => 'KBaseFBA',
             'field' => 'id'
           },
           {

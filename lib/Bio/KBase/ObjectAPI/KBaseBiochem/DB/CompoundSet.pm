@@ -28,7 +28,7 @@ has compounds => (is => 'rw', type => 'link(Biochemistry,compounds,compound_refs
 
 
 # BUILDERS:
-sub _build_reference { return my ($self) = @_;$self->parent()->_reference().'/compoundSets/id/'.$self->id(); }
+sub _build_reference { my ($self) = @_;return $self->parent()->_reference().'/compoundSets/id/'.$self->id(); }
 sub _build_uuid { my ($self) = @_;return $self->_reference(); }
 sub _build_compounds {
 	 my ($self) = @_;

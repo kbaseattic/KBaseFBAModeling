@@ -6,12 +6,12 @@
 ########################################################################
 use strict;
 use warnings;
-use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::workspace::ScriptHelpers qw(printObjectInfo get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Genome ID","Filename","ID type"];
 my $servercommand = "add_feature_translation";
-my $script = "kbfba-addaliases";
+my $script = "fba-addaliases";
 my $translation = {
 	"Genome ID" => "genome",
 	"ID type" => "id_type",
@@ -42,5 +42,5 @@ if (!defined($output)) {
 	print "Alias addition failed!\n";
 } else {
 	print "Additional aliases successfully integrated:\n";
-	printObjectMeta($output);
+	printObjectInfo($output);
 }

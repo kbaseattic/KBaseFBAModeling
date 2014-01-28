@@ -6,28 +6,25 @@
 ########################################################################
 use strict;
 use warnings;
-use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::workspace::ScriptHelpers qw( get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(printJobData get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
-my $primaryArgs = ["Genome ID","Format (html,json,readable)"];
-my $servercommand = "export_genome";
-my $script = "kbfba-exportgenome";
+my $primaryArgs = ["Job ID"];
+my $servercommand = "run_job";
+my $script = "kbfba-runjob";
 my $translation = {
-	"Format (html,json,readable)" => "format",
-	"Genome ID" => "genome",
-	workspace => "workspace",
+	"Job ID" => "job",
 	auth => "auth",
+	usecpx => "usecpx"
 };
-#Defining usage and options
-my $specs = [
-    [ 'workspace|w:s', 'Workspace with genome', { "default" => workspace() } ]
-];
+my $specs = [[ 'usecpx|u', 'Run with alternative solver' ]];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
 #Calling the server
 my $output = runFBACommand($params,$servercommand,$opt);
 #Checking output and report results
 if (!defined($output)) {
-	print "Genome export failed!\n";
+	print "Job run failed!\n";
 } else {
-	print $output;
+	print "Successfully ran job:\n";
+	printJobData($output);
 }

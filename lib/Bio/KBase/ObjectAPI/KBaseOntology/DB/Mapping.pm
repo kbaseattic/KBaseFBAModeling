@@ -37,7 +37,7 @@ has complexes => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { retur
 
 
 # BUILDERS:
-sub _build_reference { return my ($self) = @_;$self->uuid(); }
+sub _build_reference { my ($self) = @_;return $self->uuid(); }
 sub _build_uuid { return Data::UUID->new()->create_str(); }
 
 

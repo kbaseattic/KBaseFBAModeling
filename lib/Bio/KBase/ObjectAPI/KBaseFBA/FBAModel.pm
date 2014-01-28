@@ -50,7 +50,7 @@ sub _buildfeatureHash {
 		my $rxn = $rxns->[$i];
 		my $ftrs = $rxn->featureUUIDs();
 		foreach my $ftr (@{$ftrs}) {
-			$ftrhash->{$ftr}->{$rxn->uuid()} = $rxn;
+			$ftrhash->{$ftr}->{$rxn->_reference()} = $rxn;
 		}
 	}
 	return $ftrhash;
@@ -63,186 +63,6 @@ sub _buildfeatureHash {
 #***********************************************************************************************************
 # FUNCTIONS:
 #***********************************************************************************************************
-
-=head3 findCreateEquivalentCompartment
-
-Definition:
-	void Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->findCreateEquivalentCompartment({
-		modelcompartment => Bio::KBase::ObjectAPI::KBaseFBA::ModelCompartment(REQ),
-		create => 0/1(1)
-	});
-Description:
-	Search for an equivalent comparment for the input model compartment
-
-=cut
-
-sub findCreateEquivalentCompartment {
-	my $self = shift;
-	my $args = Bio::KBase::ObjectAPI::utilities::args(["modelcompartment"], {create => 1}, @_);
-	my $mdlcmp = $args->{modelcompartment};
-	my $cmp = $self->queryObject("modelcompartments",{
-		label => $mdlcmp->label()
-	});
-	if (!defined($cmp) && $args->{create} == 1) {
-		my $biocmp = $self->biochemistry()->findCreateEquivalentCompartment({
-			compartment => $mdlcmp->compartment(),
-			create => 1
-		});
-		$cmp = $self->addCompartmentToModel({
-			compartment => $biocmp,
-			pH => $mdlcmp->pH(),
-			potential => $mdlcmp->potential(),
-			compartmentIndex => $mdlcmp->compartmentIndex(),
-		});
-	}
-	$mdlcmp->mapped_uuid($cmp->uuid());
-	$cmp->mapped_uuid($mdlcmp->uuid());
-	return $cmp;
-}
-
-=head3 findCreateEquivalentCompound
-
-Definition:
-	void Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->findCreateEquivalentCompound({
-		modelcompound => Bio::KBase::ObjectAPI::KBaseFBA::ModelCompound(REQ),
-		modelcompartment => Bio::KBase::ObjectAPI::KBaseFBA::ModelCompartment(REQ),
-		create => 0/1(1)
-	});
-Description:
-	Search for an equivalent compound for the input model compound
-
-=cut
-
-sub findCreateEquivalentCompound {
-    my $self = shift;
-	my $args = Bio::KBase::ObjectAPI::utilities::args(["modelcompound"], {create => 1}, @_);
-	my $inmdlcpd = $args->{modelcompound};
-	my $outcpd = $self->queryObject("modelcompounds",{
-		name => $inmdlcpd->name(),
-		modelCompartmentLabel => $inmdlcpd->modelCompartmentLabel()
-	});
-	if (!defined($outcpd) && $args->{create} == 1) {
-		my $mdlcmp = $self->findCreateEquivalentCompartment({
-			modelcompartment => $inmdlcpd->modelcompartment(),
-			create => 1
-		});
-		my $cpd = $self->biochemistry()->findCreateEquivalentCompound({
-			compound => $inmdlcpd->compound(),
-			create => 1
-		});
-		$outcpd = $self->addCompoundToModel({
-			compound => $cpd,
-			modelCompartment => $mdlcmp,
-			charge => $inmdlcpd->charge(),
-			formula => $inmdlcpd->formula()
-		});
-	}
-	$inmdlcpd->mapped_uuid($outcpd->uuid());
-	$outcpd->mapped_uuid($inmdlcpd->uuid());
-	return $outcpd;
-}
-
-=head3 findCreateEquivalentReaction
-
-Definition:
-	void Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->findCreateEquivalentReaction({
-		modelreaction => Bio::KBase::ObjectAPI::KBaseFBA::ModelReaction(REQ),
-		create => 0/1(1)
-	});
-Description:
-	Search for an equivalent reaction for the input model reaction
-
-=cut
-
-sub findCreateEquivalentReaction {
-    my $self = shift;
-    my $args = Bio::KBase::ObjectAPI::utilities::args( ["modelreaction"], { create => 1 }, @_ );
-	my $inmdlrxn = $args->{modelreaction};
-	my $outrxn = $self->queryObject("modelreactions",{
-		definition => $inmdlrxn->definition(),
-	});
-	if (!defined($outrxn) && $args->{create} == 1) {
-		my $biorxn = $self->biochemistry()->findCreateEquivalentReaction({
-			reaction => $inmdlrxn->reaction(),
-			create => 1
-		});
-		my $mdlcmp = $self->findCreateEquivalentCompartment({
-			modelcompartment => $inmdlrxn->modelcompartment()
-		});
-		$outrxn = $self->add("modelreactions",{
-			reaction_uuid => $biorxn->uuid(),
-			direction => $inmdlrxn->direction(),
-			protons => $inmdlrxn->protons(),
-			modelcompartment_uuid => $mdlcmp->uuid()
-		});
-		my $rgts = $inmdlrxn->modelReactionReagents();
-		for (my $i=0; $i < @{$rgts}; $i++) {
-			my $rgt = $rgts->[$i];
-			my $mdlcpd = $self->findCreateEquivalentCompound({
-				modelcompound => $rgt->modelcompound()
-			});
-			$outrxn->add("modelReactionReagents",{
-				modelcompound_uuid => $mdlcpd->uuid(),
-				coefficient => $rgt->coefficient()
-			});
-		}
-		my $prots = $inmdlrxn->modelReactionProteins();
-		for (my $i=0; $i < @{$prots}; $i++) {
-			my $prot = $prots->[$i];
-			$outrxn->add("modelReactionProteins",$prot->serializeToDB());
-		}
-	}
-	$inmdlrxn->mapped_uuid($outrxn->uuid());
-	$outrxn->mapped_uuid($inmdlrxn->uuid());
-	return $outrxn;
-}
-
-=head3 findCreateEquivalentBiomass
-
-Definition:
-	void Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->findCreateEquivalentBiomass({
-		biomass => Bio::KBase::ObjectAPI::KBaseFBA::Biomass(REQ),
-		create => 0/1(1)
-	});
-Description:
-	Search for an equivalent biomass for the input model biomass
-
-=cut
-
-sub findCreateEquivalentBiomass {
-    my $self = shift;
-    my $args = Bio::KBase::ObjectAPI::utilities::args( ["biomass"], { create => 1 }, @_ );
-	my $inmdlbio = $args->{biomass};
-	my $outbio = $self->queryObject("biomasses",{
-		definition => $inmdlbio->definition()
-	});
-	if (!defined($outbio) && $args->{create} == 1) {
-		$outbio = $self->add("biomasses",{
-			name => $inmdlbio->name(),
-			dna => $inmdlbio->dna(),
-			rna => $inmdlbio->rna(),
-			protein => $inmdlbio->protein(),
-			cellwall => $inmdlbio->cellwall(),
-			lipid => $inmdlbio->lipid(),
-			cofactor => $inmdlbio->cofactor(),
-			energy => $inmdlbio->energy()
-		});
-		my $cpds = $inmdlbio->biomasscompounds();
-		for (my $i=0; $i < @{$cpds}; $i++) {
-			my $rgt = $cpds->[$i];
-			my $mdlcpd = $self->findCreateEquivalentCompound({
-				modelcompound => $rgt->modelcompound()
-			});
-			$outbio->add("biomasscompounds",{
-				modelcompound_uuid => $mdlcpd->uuid(),
-				coefficient => $rgt->coefficient()
-			});
-		}
-	}
-	$inmdlbio->mapped_uuid($outbio->uuid());
-	$outbio->mapped_uuid($inmdlbio->uuid());
-	return $outbio;
-}
 
 =head3 addMediaReactions
 
@@ -269,14 +89,14 @@ sub addMediaReactions {
     if (!defined($ex)) {
 	die "Unable to find extracellular compartment in biochemistry object...";
     }
-    my $ex_uuid = $ex->uuid();
+    my $ex_uuid = $ex->_reference();
 
     # Generate lists of transporters
     my $model_rxns = $self->modelreactions();
     my $model_transporters = [];
     for (my $i=0; $i<@{$model_rxns}; $i++) {
 	# convert ModelReaction TO to Reaction TO (note - should I be using ModelReaction directly? Not sure how to do that at this point)
-	my $rxn = $self->getLinkedObject('Biochemistry', 'reactions', $model_rxns->[$i]->reaction_uuid());
+	my $rxn = $self->getLinkedObject('Biochemistry', 'reactions', $model_rxns->[$i]->reaction_ref());
 	if ( $rxn->isTransport() ) {
 	    push(@{$model_transporters},$rxn);
 	}
@@ -292,7 +112,7 @@ sub addMediaReactions {
     # Now we try to see if the extracellular versions of each media compound are present...
     my $media_cpds = $media->mediacompounds();
     for (my $i = 0; $i < @{$media_cpds}; $i++) {
-	my $cpd_uuid = $media_cpds->[$i]->compound_uuid();
+	my $cpd_uuid = $media_cpds->[$i]->compound_ref();
 	my $cpd_name = $media_cpds->[$i]->compound()->id();
 	# See if the extracellular version of this compound is in any of our reactions. If it is, 
 	# we are OK with it. If not we need to get a reaction that has this property out of the biochemistry object
@@ -330,476 +150,6 @@ sub addMediaReactions {
     }
 }
 
-=head3 mergeModel
-
-Definition:
-	void Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->mergeModel({
-		model => Bio::KBase::ObjectAPI::KBaseFBA::FBAModel(REQ)
-	});
-Description:
-	Merges in the input model with the current model, combining namespace and eliminating redundant compounds and reactions
-
-=cut
-
-sub mergeModel {
-    my $self = shift;
-    my $args = Bio::KBase::ObjectAPI::utilities::args( ["model"], {}, @_ );
-	my $mdl = $args->{model};
-	my $cmps = $mdl->modelcompartments();
-	for (my $i = 0; $i < @{$cmps}; $i++) {
-		my $mdlcmp = $cmps->[$i];
-		my $cmp = $self->findCreateEquivalentCompartment({modelcompartment => $mdlcmp,create => 1});
-	}
-	my $cpds = $mdl->modelcompounds();
-	for (my $i = 0; $i < @{$cpds}; $i++) {
-		my $mdlcpd = $cpds->[$i];
-		my $cpd = $self->findCreateEquivalentCompound({modelcompound => $mdlcpd,create => 1});
-	}
-	my $rxns = $mdl->modelreactions();
-	for (my $i = 0; $i < @{$rxns}; $i++) {
-		my $mdlrxn = $rxns->[$i];
-		my $rxn = $self->findCreateEquivalentReaction({modelreaction => $mdlrxn,create => 1});
-	}
-	my $bios = $mdl->biomasses();
-	for (my $i = 0; $i < @{$bios}; $i++) {
-		my $mdlbio = $bios->[$i];
-		my $bio = $self->findCreateEquivalentBiomass({biomass => $mdlbio,create => 1});
-	}
-}
-
-=head3 buildModelFromAnnotation
-Definition:
-	Bio::KBase::ObjectAPI::KBaseFBA::ModelReaction = Bio::KBase::ObjectAPI::KBaseFBA::ModelReaction->buildModelFromAnnotation({
-		annotation => $self->annotation(),
-		mapping => $self->mapping(),
-	});
-Description:
-	Clears existing compounds, reactions, compartments, and biomass and rebuilds model from annotation
-
-=cut
-
-sub buildModelFromAnnotation {
-    my $self = shift;
-	my $args = Bio::KBase::ObjectAPI::utilities::args([],{
-		annotation => $self->annotation(),
-		mapping => $self->mapping(),
-		verbose => 0
-					      }, @_);
-	my $mapping = $args->{mapping};
-	my $annotaton = $args->{annotation};
-	my $biochem = $mapping->biochemistry();
-	my $roleFeatures;
-	my $features = $annotaton->features();
-    warn "Processing " . scalar(@$features) . " features...\n" if($args->{verbose});
-	for (my $i=0; $i < @{$features}; $i++) {
-		my $ftr = $features->[$i];
-		my $ftrroles = $ftr->featureroles();
-		for (my $j=0; $j < @{$ftrroles}; $j++) {
-			my $ftrrole = $ftrroles->[$j];
-			push(@{$roleFeatures->{$ftrrole->role_uuid()}->{$ftrrole->compartment()}},$ftr);
-		}
-	}
-    warn "Constructing reactions...\n" if($args->{verbose});
-
-    my %Found_Roles=();
-    my %Found_Rxns=();
-
-	my $complexes = $mapping->complexes();
-	for (my $i=0; $i < @{$complexes};$i++) {
-		my $cpx = $complexes->[$i];
-		my $compartments;
-		my $complexreactions = $cpx->reactions();
-		my $complexroles = $cpx->complexroles();
-		for (my $j=0; $j < @{$complexroles}; $j++) {
-			my $cpxrole = $complexroles->[$j];
-			if (defined($roleFeatures->{$cpxrole->role_uuid()})) {
-			    $Found_Roles{$cpxrole->role()->name()}=1;
-				foreach my $compartment (keys(%{$roleFeatures->{$cpxrole->role_uuid()}})) {
-					my $origcomp = $compartment;
-					if ($compartment eq "u") {
-						$compartment = "c";
-					}
-					if ($cpxrole->triggering() == 1) {
-						$compartments->{$compartment}->{present} = 1;
-					}
-					$compartments->{$compartment}->{subunits}->{$cpxrole->role_uuid()}->{triggering} = $cpxrole->triggering();
-					$compartments->{$compartment}->{subunits}->{$cpxrole->role_uuid()}->{optional} = $cpxrole->optional();
-					foreach my $feature (@{$roleFeatures->{$cpxrole->role_uuid()}->{$origcomp}}) {
-						$compartments->{$compartment}->{subunits}->{$cpxrole->role_uuid()}->{genes}->{$feature->uuid()} = $feature;	
-					}
-				}
-			}
-		}
-		for (my $j=0; $j < @{$complexroles}; $j++) {
-			my $cpxrole = $complexroles->[$j];
-			if (!defined($roleFeatures->{$cpxrole->role_uuid()}) && $cpxrole->optional() == 0) {
-				foreach my $cmp (keys(%{$compartments})) {
-					if ($compartments->{$cmp}->{present} == 1) {
-						$compartments->{$cmp}->{subunits}->{$cpxrole->role_uuid()}->{triggering} = $cpxrole->triggering();
-						$compartments->{$cmp}->{subunits}->{$cpxrole->role_uuid()}->{optional} = $cpxrole->optional();
-						$compartments->{$cmp}->{subunits}->{$cpxrole->role_uuid()}->{note} = "Complex-based-gapfilling";
-					}
-				}
-			}
-		}
-		foreach my $cmp (keys(%{$compartments})) {
-			if ($compartments->{$cmp}->{present} == 1) {
-				for (my $j=0; $j < @{$complexreactions}; $j++) {
-					my $cpxrxn = $complexreactions->[$j];
-					$Found_Rxns{$cpxrxn->uuid()}=1;
-
-					my $override = undef;
-					if ($cmp ne "c") {
-						my $biocmp = $self->biochemistry()->queryObject("compartments",{id => $cmp});
-						$override = $self->addCompartmentToModel({
-							compartment => $biocmp
-						});
-					}
-					my $mdlrxn = $self->addReactionToModel({
-						reaction => $cpxrxn,
-						direction => $cpxrxn->thermoReversibility(),
-						overrideCompartment => $override
-					});
-					$mdlrxn->addModelReactionProtein({
-						proteinDataTree => $compartments->{$cmp},
-						complex_uuid => $cpx->uuid()
-					});
-				}
-			}
-		}
-	}
-	my $universalReactions = $mapping->universalReactions();
-	foreach my $universalRxn (@{$universalReactions}) {
-		my $mdlrxn = $self->addReactionToModel({
-			reaction => $universalRxn->reaction(),
-			direction => $universalRxn->reaction()->thermoReversibility()
-		});
-		$mdlrxn->addModelReactionProtein({
-			proteinDataTree => {note => "Universal reaction"},
-			complex_uuid => "00000000-0000-0000-0000-000000000000"
-		});
-	}
-	my $bio = $self->createStandardFBABiomass({
-		annotation => $self->annotation(),
-		mapping => $self->mapping(),
-		isplant => $args->{isplant},
-	});
-
-    warn scalar(keys %Found_Roles)," found, creating ",scalar(keys %Found_Rxns)," reactions in the model\n" if($args->{verbose});
-}
-
-=head3 buildModelByLayers
-
-Definition:
-	void Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->buildModelByLayers({
-		
-	});
-Description:
-	
-=cut
-
-sub buildModelByLayers {
-	my ($self,$args) = @_;
-	my $bios = $self->biomasses();
-	for (my $i=0; $i <@{$bios};$i++) {
-		my $bio = $bios->[$i];
-		print $bio->name();
-	}
-}
-
-=head3 createStandardFBABiomass
-Definition:
-	Bio::KBase::ObjectAPI::KBaseFBA::Biomass = Bio::KBase::ObjectAPI::KBaseFBA::Biomass->createStandardFBABiomass({
-		mapping => $self->mapping()
-	});
-Description:
-	Creates a new biomass based on the annotation
-
-=cut
-
-sub createStandardFBABiomass {
-    my $self = shift;
-    my $args = Bio::KBase::ObjectAPI::utilities::args([], {
-		annotation => $self->annotation(),
-		mapping => $self->mapping(),
-		isplant => 0,
-	}, @_);
-	my $anno = $args->{annotation};
-	my $mapping = $args->{mapping};
-	my $biochem = $mapping->biochemistry();
-	my $count = @{$self->biomasses()};
-	my $bio = $self->add("biomasses",{
-		name => $self->name()." auto biomass",
-		id => "bio".($count+1)
-	});
-	my $phylum = "";
-    if(!$args->{isplant}){
-	$phylum=$anno->classifyGenomeFromAnnotation();
-    }else{
-	$phylum = "Plant";
-    }
-
-    my @templates=@{$mapping->biomassTemplates()};
-	my $template = $mapping->queryObject("biomassTemplates",{class => $phylum});
-	if (!defined($template)) {
-		print "Could not find biomass template for type:".$phylum."\n";
-		$template = $mapping->queryObject("biomassTemplates",{class => "Unknown"});
-	}
-	my $list = ["dna","rna","protein","lipid","cellwall","cofactor","energy"];
-	for (my $i=0; $i < @{$list}; $i++) {
-		my $function = $list->[$i];
-		$bio->$function($template->$function());
-	}
-	$bio->energy(40);
-
-	my $biomassComps;
-	my $biomassCompByUUID;
-	my $biomassTemplateComponents = $template->biomassTemplateComponents();
-	my $coef;
-	my $cpdHash;
-	for (my $i=0; $i < @{$biomassTemplateComponents}; $i++) {
-		my $tmpComp = $biomassTemplateComponents->[$i];
-		$biomassCompByUUID->{$tmpComp->uuid()} = $tmpComp;
-		if ($self->testBiomassCondition({
-				condition => $tmpComp->condition(),
-				annotation => $args->{annotation}
-			}) == 1) {
-			$biomassComps->{$tmpComp->class()}->{$tmpComp->uuid()} = $tmpComp->coefficient();
-			$cpdHash->{$tmpComp->compound_uuid()} = $tmpComp->compound();
-			$coef->{$tmpComp->compound_uuid()} = 0;
-		}
-	}
-	my $gc = $anno->genomes()->[0]->gc();
-	if ($gc > 1) {
-		$gc = 0.01*$gc;	
-	}
-
-	#Setting fractions to appropriate levels
-	foreach my $class (keys(%{$biomassComps})) {
-		my $fractionTotal = 0;
-		foreach my $templateCompUUID (keys(%{$biomassComps->{$class}})) {
-			my $templateComp = $biomassCompByUUID->{$templateCompUUID};
-			if ($templateComp->coefficientType() eq "FRACTION") {
-				$fractionTotal++;
-			}
-		}
-		my $totalMass = 0;
-		foreach my $templateCompUUID (keys(%{$biomassComps->{$class}})) {
-			my $templateComp = $biomassCompByUUID->{$templateCompUUID};
-			if ($templateComp->coefficientType() eq "FRACTION") {
-				$biomassComps->{$class}->{$templateCompUUID} = -1/$fractionTotal;
-			} elsif ($class eq "dna") {
-				if ($templateComp->compound()->id() eq "cpd00241" || $templateComp->compound()->id() eq "cpd00356") {
-					$biomassComps->{$class}->{$templateCompUUID} = -1*$gc/2;
-				} else {
-					$biomassComps->{$class}->{$templateCompUUID} = -1*(1-$gc)/2;
-				}
-			}
-			if ($class ne "energy" && $class ne "macromolecule") {
-				my $mass = 0.001*$templateComp->compound()->mass();
-				if (!defined($mass) || $mass == 0) {
-					$mass = 0.001;
-				}
-				if ($biomassComps->{$class}->{$templateCompUUID} < 0) {
-					$totalMass += -1*$mass*$biomassComps->{$class}->{$templateCompUUID};
-				}
-			}
-		}
-		if ($totalMass == 0) {
-			$totalMass = 1;	
-		}
-		foreach my $templateCompUUID (keys(%{$biomassComps->{$class}})) {
-			my $templateComp = $biomassCompByUUID->{$templateCompUUID};
-			if ($class eq "energy") {
-				$biomassComps->{$class}->{$templateCompUUID} = $biomassComps->{$class}->{$templateCompUUID}*$bio->energy();
-			} elsif ($class ne "macromolecule") {
-				$biomassComps->{$class}->{$templateCompUUID} = $biomassComps->{$class}->{$templateCompUUID}*$bio->$class()/$totalMass;
-			}
-			$coef->{$templateComp->compound_uuid()} += $biomassComps->{$class}->{$templateCompUUID};
-		}
-	}
-
-	#Setting coefficients for dependant biomass components
-	foreach my $class (keys(%{$biomassComps})) {
-		foreach my $templateCompUUID (keys(%{$biomassComps->{$class}})) {
-			my $templateComp = $biomassCompByUUID->{$templateCompUUID};
-			if ($templateComp->coefficientType() ne "FRACTION" && $templateComp->coefficientType() ne "NUMBER") {
-				my $array = [split(/,/,$templateComp->coefficientType())];
-				$biomassComps->{$class}->{$templateCompUUID} = 0;
-				for (my $i=0; $i < @{$array}; $i++) {
-					if (defined($coef->{$array->[$i]})) {
-						$biomassComps->{$class}->{$templateCompUUID} += -1*($coef->{$array->[$i]});
-					}
-				}
-				$coef->{$templateComp->compound_uuid()} = $biomassComps->{$class}->{$templateCompUUID};
-			}
-		}
-	}
-
-	#Setting biomass components
-	foreach my $cpd_uuid (keys(%{$coef})) {
-		my $cmp = $biochem->queryObject("compartments",{id => "c"});
-		my $mdlcmp = $self->addCompartmentToModel({compartment => $cmp,pH => 7,potential => 0,compartmentIndex => 0});
-		my $mdlcpd = $self->addCompoundToModel({
-			compound => $cpdHash->{$cpd_uuid},
-			modelCompartment => $mdlcmp,
-		});
-		if ($coef->{$cpd_uuid} != 0) {
-			$bio->add("biomasscompounds",{
-				modelcompound_uuid => $mdlcpd->uuid(),
-				coefficient => $coef->{$cpd_uuid}
-			});
-		}
-	}
-	return $bio;
-}
-
-=head3 testBiomassCondition
-
-Definition:
-	Bio::KBase::ObjectAPI::KBaseFBA::FBAModel = Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->testBiomassCondition({
-		condition => REQUIRED,
-		annotation => $self->annotation()
-	});
-Description:
-	Tests if the organism satisfies the conditions for inclusion of the compound in the model biomass reaction
-
-=cut
-
-sub testBiomassCondition {
-    my $self = shift;
-    my $args = Bio::KBase::ObjectAPI::utilities::args(["condition"],{ annotation => $self->annotation() }, @_);
-	if ($args->{condition} ne "UNIVERSAL") {
-		my $Class = $args->{annotation}->genomes()->[0]->class();
-		my $Name = $args->{annotation}->genomes()->[0]->name();
-		my $RoleHash;
-		my $features = $args->{annotation}->features();
-		for (my $i=0; $i < @{$features}; $i++) {
-			my $ftr = $features->[$i];
-			my $featureroles = $ftr->featureroles();
-			for (my $j=0; $j < @{$featureroles}; $j++) {
-				$RoleHash->{$featureroles->[$j]->role()->name()} = 1;
-			}
-		}
-		my $VariantHash;
-		my $subsystemStates = $args->{annotation}->subsystemStates();
-		for (my $i=0; $i < @{$subsystemStates}; $i++) {
-			$VariantHash->{$subsystemStates->[$i]->name()} = $subsystemStates->[$i]->variant();
-		}
-		my $Criteria = $args->{condition};
-		my $End = 0;
-		while ($End == 0) {
-			if ($Criteria =~ m/^(.+)(AND)\{([^{^}]+)\}(.+)$/ || $Criteria =~ m/^(AND)\{([^{^}]+)\}$/ || $Criteria =~ m/^(.+)(OR)\{([^{^}]+)\}(.+)$/ || $Criteria =~ m/^(OR)\{([^{^}]+)\}$/) {
-				my $Start = "";
-				my $End = "";
-				my $Condition = $1;
-				my $Data = $2;
-				if ($1 ne "AND" && $1 ne "OR") {
-					$Start = $1;
-					$End = $4;
-					$Condition = $2;
-					$Data = $3;
-				}
-				my $Result = "YES";
-				if ($Condition eq "OR") {
-					$Result = "NO";
-				}
-				my @Array = split(/\|/,$Data);
-				for (my $j=0; $j < @Array; $j++) {
-					if ($Array[$j] eq "YES" && $Condition eq "OR") {
-						$Result = "YES";
-						last;
-					} elsif ($Array[$j] eq "NO" && $Condition eq "AND") {
-						$Result = "NO";
-						last;
-					} elsif ($Array[$j] =~ m/^COMPOUND:(.+)/) {
-						$Result = "YES";
-						last;
-					} elsif ($Array[$j] =~ m/^NAME:(.+)/) {
-						my $Comparison = $1;
-						if ((!defined($Comparison) || !defined($Name) || $Name =~ m/$Comparison/) && $Condition eq "OR") {
-							$Result = "YES";
-							last;
-						} elsif (defined($Comparison) && defined($Name) && $Name !~ m/$Comparison/ && $Condition eq "AND") {
-							$Result = "NO";
-							last;
-						}
-					} elsif ($Array[$j] =~ m/^!NAME:(.+)/) {
-						my $Comparison = $1;
-						if ((!defined($Comparison) || !defined($Name) || $Name !~ m/$Comparison/) && $Condition eq "OR") {
-							$Result = "YES";
-							last;
-						} elsif (defined($Comparison) && defined($Name) && $Name =~ m/$Comparison/ && $Condition eq "AND") {
-							$Result = "NO";
-							last;
-						}
-					} elsif ($Array[$j] =~ m/^SUBSYSTEM:(.+)/) {
-						my @SubsystemArray = split(/`/,$1);
-						if (defined($VariantHash->{$SubsystemArray[0]}) && $VariantHash->{$SubsystemArray[0]} ne -1 && $Condition eq "OR") {
-							$Result = "YES";
-							last;
-						} elsif ((!defined($VariantHash->{$SubsystemArray[0]}) || $VariantHash->{$SubsystemArray[0]} eq -1) && $Condition eq "AND") {
-							$Result = "NO";
-							last;
-						}
-					} elsif ($Array[$j] =~ m/^!SUBSYSTEM:(.+)/) {
-						my @SubsystemArray = split(/`/,$1);
-						if ((!defined($VariantHash->{$SubsystemArray[0]}) || $VariantHash->{$SubsystemArray[0]} eq -1) && $Condition eq "OR") {
-							$Result = "YES";
-							last;
-						} elsif (defined($VariantHash->{$SubsystemArray[0]}) && $VariantHash->{$SubsystemArray[0]} ne -1 && $Condition eq "AND") {
-							$Result = "NO";
-							last;
-						}
-					} elsif ($Array[$j] =~ m/^ROLE:(.+)/) {
-						if (defined($RoleHash->{$1}) && $Condition eq "OR") {
-							$Result = "YES";
-							last;
-						} elsif (!defined($RoleHash->{$1}) && $Condition eq "AND") {
-							$Result = "NO";
-							last;
-						}
-					} elsif ($Array[$j] =~ m/^!ROLE:(.+)/) {
-						if (!defined($RoleHash->{$1}) && $Condition eq "OR") {
-							$Result = "YES";
-							last;
-						} elsif (defined($RoleHash->{$1}) && $Condition eq "AND") {
-							$Result = "NO";
-							last;
-						}
-					} elsif ($Array[$j] =~ m/^CLASS:(.+)/) {
-						if ($Class eq $1 && $Condition eq "OR") {
-							$Result = "YES";
-							last;
-						} elsif ($Class ne $1 && $Condition eq "AND") {
-							$Result = "NO";
-							last;
-						}
-					} elsif ($Array[$j] =~ m/^!CLASS:(.+)/) {
-						if ($Class ne $1 && $Condition eq "OR") {
-							$Result = "YES";
-							last;
-						} elsif ($Class eq $1 && $Condition eq "AND") {
-							$Result = "NO";
-							last;
-						}
-					}
-				}
-				$Criteria = $Start.$Result.$End;
-			} else {
-				$End = 1;
-				last;
-			}
-		}
-		if ($Criteria eq "YES") {
-			return 1;	
-		} else {
-			return 0;	
-		}
-	}
-	return 1;
-}
-
 =head3 addReactionToModel
 
 Definition:
@@ -831,15 +181,15 @@ sub addReactionToModel {
 		$mdlcmp = $self->addCompartmentToModel({compartment => $rxn->compartment(),pH => 7,potential => 0,compartmentIndex => 0});
 	}
 	my $mdlrxn = $self->queryObject("modelreactions",{
-		reaction_uuid => $rxn->uuid(),
-		modelcompartment_uuid => $mdlcmp->uuid()
+		reaction_ref => $rxn->_reference(),
+		modelcompartment_ref => $mdlcmp->_reference()
 	});
 	if (!defined($mdlrxn)) {
 		$mdlrxn = $self->add("modelreactions",{
-			reaction_uuid => $rxn->uuid(),
+			reaction_ref => $rxn->_reference(),
 			direction => $args->{direction},
 			protons => $rxn->defaultProtons(),
-			modelcompartment_uuid => $mdlcmp->uuid(),
+			modelcompartment_ref => $mdlcmp->_reference(),
 		});
 		my $rgts = $rxn->reagents();
 		for (my $i=0; $i < @{$rgts}; $i++) {
@@ -852,7 +202,7 @@ sub addReactionToModel {
 			});
 			$mdlrxn->addReagentToReaction({
 				coefficient => $coefficient,
-				modelcompound_uuid => $mdlcpd->uuid()
+				modelcompound_ref => $mdlcpd->_reference()
 			});
 		}
 		$mdlrxn->setGPRFromArray({"gpr" => [[$args->{gpr}]]});
@@ -881,10 +231,11 @@ sub addCompartmentToModel {
 		potential => 0,
 		compartmentIndex => 0
 	}, @_);
-	my $mdlcmp = $self->queryObject("modelcompartments",{compartment_uuid => $args->{compartment}->uuid(),compartmentIndex => $args->{compartmentIndex}});
+	my $mdlcmp = $self->queryObject("modelcompartments",{compartment_ref => $args->{compartment}->_reference(),compartmentIndex => $args->{compartmentIndex}});
 	if (!defined($mdlcmp)) {
 		$mdlcmp = $self->add("modelcompartments",{
-			compartment_uuid => $args->{compartment}->uuid(),
+			id => $args->{compartment}->id().$args->{compartmentIndex},
+			compartment_ref => $args->{compartment}->_reference(),
 			label => $args->{compartment}->id().$args->{compartmentIndex},
 			pH => $args->{pH},
 			compartmentIndex => $args->{compartmentIndex},
@@ -913,7 +264,7 @@ sub addCompoundToModel {
 		charge => undef,
 		formula => undef
 	}, @_);
-	my $mdlcpd = $self->queryObject("modelcompounds",{compound_uuid => $args->{compound}->uuid(),modelcompartment_uuid => $args->{modelCompartment}->uuid()});
+	my $mdlcpd = $self->queryObject("modelcompounds",{compound_ref => $args->{compound}->_reference(),modelcompartment_ref => $args->{modelCompartment}->_reference()});
 	if (!defined($mdlcpd)) {
 		if (!defined($args->{charge})) {
 			$args->{charge} = $args->{compound}->defaultCharge();
@@ -922,8 +273,8 @@ sub addCompoundToModel {
 			$args->{formula} = $args->{compound}->formula();
 		}
 		$mdlcpd = $self->add("modelcompounds",{
-			modelcompartment_uuid => $args->{modelCompartment}->uuid(),
-			compound_uuid => $args->{compound}->uuid(),
+			modelcompartment_ref => $args->{modelCompartment}->_reference(),
+			compound_ref => $args->{compound}->_reference(),
 			charge => $args->{charge},
 			formula => $args->{formula},
 		});
@@ -1032,7 +383,7 @@ sub manualReactionAdjustment {
 		    	Bio::KBase::ObjectAPI::utilities::error("Compartment ".$args->{compartment}." not found in biochemistry!");
 		    }
 		    my $mdlcmp = $self->queryObject("modelcompartments",{
-		    	compartment_uuid => $cmp->uuid(),
+		    	compartment_ref => $cmp->_reference(),
 		    	compartmentIndex => $args->{compartmentIndex}
 		    });
 		    if (!defined($mdlcmp)) {
@@ -1329,7 +680,7 @@ sub printExchange {
     my $self = shift;
 	my $output = "Model{";
 	$output .= "attributes(id\tname\ttype\tannotation\tmapping\tbiochemistry){\n";
-	$output .= $self->id()."\t".$self->name()."\t".$self->type()."\t".$self->annotation_uuid()."\t".$self->mapping_uuid()."\t".$self->biochemistry_uuid()."\n";
+	$output .= $self->id()."\t".$self->name()."\t".$self->type()."\t".$self->genome_ref()."\t".$self->template_ref()."\n";
 	$output .= "}\n";
 	$output .= "compartments(id\tname\tph\tpotential){\n";
 	my $comps = $self->modelcompartments();
@@ -1466,7 +817,9 @@ sub htmlComponents {
 	};
 	$headingsOne = ["Integrated","Gapfill simulation","Media","Solution","Cost","Gapfilled reaction","Biomass removal","Media supplement"];
         $dataOne = [];
-	foreach my $gf (@{$self->integratedGapfillings()}) {
+	my $mgfs = $self->gapfillings();
+	foreach my $mgf (@{$mgfs}) {
+		my $gf = $mgf->gapfill();
 		if (defined($gf->gapfillingSolutions()->[0])) {
 			my $count = 0;
 			foreach my $sol (@{$gf->gapfillingSolutions()}) {
@@ -1495,43 +848,11 @@ sub htmlComponents {
 				if ($sol->integrated() == 1) {
 					$integrated	= "Yes";
 				}
-                                push(@$dataOne, [ $integrated, $gf->uuid(), $gf->fbaFormulation()->media()->uuid(), $count, $sol->solutionCost(), $rxns, $bios, $medias ]);
+                                push(@$dataOne, [ $integrated, $gf->id(), $gf->fbaFormulation()->media()->_reference(), $count, $sol->solutionCost(), $rxns, $bios, $medias ]);
 				$count++;
 			}
 		} else {
-                    push(@$dataOne, [ "No", $gf->uuid(), $gf->fbaFormulation()->media()->uuid(), "None", "None", "None", "None", "None" ]);
-		}
-	}
-	foreach my $gf (@{$self->unintegratedGapfillings()}) {
-		if (defined($gf->gapfillingSolutions()->[0])) {
-			my $count = 0;
-			foreach my $sol (@{$gf->gapfillingSolutions()}) {
-				my $rxns = "";
-				my $bios = "";
-				my $medias = "";
-				foreach my $rxn (@{$sol->gapfillingSolutionReactions()}) {
-					if (length($rxns)) {
-						$rxns .= "<br>";
-					}
-					$rxns .= $rxn->reaction()->id().":".$rxn->reaction()->definition();
-				}
-				foreach my $cpd (@{$sol->mediaSupplements()}) {
-					if (length($medias)) {
-						$medias .= "<br>";
-					}
-					$medias .= $cpd->id().":".$cpd->name();
-				}
-				foreach my $bio (@{$sol->biomassRemovals()}) {
-					if (length($bios)) {
-						$bios .= "<br>";
-					}
-					$bios .= $bio->id().":".$bio->name();
-				}
-                                push(@$dataOne, [ "No", $gf->uuid(), $gf->fbaFormulation()->media()->uuid(), $count, $sol->solutionCost(), $rxns, $bios, $medias ]);
-				$count++;
-			}
-		} else {
-                        push(@$dataOne, [ "No", $gf->uuid(), $gf->fbaFormulation()->media()->uuid(), "None", "None", "None", "None", "None" ]);
+                    push(@$dataOne, [ "No", $gf->id(), $gf->fbaFormulation()->media()->_reference(), "None", "None", "None", "None", "None" ]);
 		}
 	}
 	$output->{tabs}->{"tab-6"} = {
@@ -1540,7 +861,9 @@ sub htmlComponents {
 	};
 	$headingsOne = ["Integrated","Gapgen simulation","Media","Solution","Cost","Removed reaction","Biomass addition","Media removal"];
         $dataOne = [];
-	foreach my $gg (@{$self->integratedGapgens()}) {
+	my $mggs = $self->gapgens();
+	foreach my $mgg (@{$mggs}) {
+		my $gg = $mgg->gapgen();
 		if (defined($gg->gapgenSolutions()->[0])) {
 			my $count = 0;
 			foreach my $sol (@{$gg->gapgenSolutions()}) {
@@ -1569,43 +892,11 @@ sub htmlComponents {
 				if ($sol->integrated() == 1) {
 					$integrated	= "Yes";
 				}
-                                push(@$dataOne, [ $integrated, $gg->uuid(), $gg->fbaFormulation()->media()->uuid(), $count, $sol->solutionCost(), $rxns, $bios, $medias ]);
+                                push(@$dataOne, [ $integrated, $gg->id(), $gg->fbaFormulation()->media()->_reference(), $count, $sol->solutionCost(), $rxns, $bios, $medias ]);
 				$count++;
 			}
 		} else {
-                        push(@$dataOne, [ "No", $gg->uuid(), $gg->fbaFormulation()->media()->uuid(), "None", "None", "None", "None", "None" ]);
-		}
-	}
-	foreach my $gg (@{$self->unintegratedGapgens()}) {
-		if (defined($gg->gapgenSolutions()->[0])) {
-			my $count = 0;
-			foreach my $sol (@{$gg->gapgenSolutions()}) {
-				my $rxns = "";
-				my $bios = "";
-				my $medias = "";
-				foreach my $rxn (@{$sol->gapgenSolutionReactions()}) {
-					if (length($rxns)) {
-						$rxns .= "<br>";
-					}
-					$rxns .= $rxn->modelreaction()->id().":".$rxn->reaction()->definition();
-				}
-				foreach my $cpd (@{$sol->mediaRemovals()}) {
-					if (length($medias)) {
-						$medias .= "<br>";
-					}
-					$medias .= $cpd->id().":".$cpd->name();
-				}
-				foreach my $bio (@{$sol->biomassSupplements()}) {
-					if (length($bios)) {
-						$bios .= "<br>";
-					}
-					$bios .= $bio->id().":".$bio->name();
-				}
-                                push(@$dataOne, [ "No", $gg->uuid(), $gg->fbaFormulation()->media()->uuid(), $count, $sol->solutionCost(), $rxns, $bios, $medias ]);
-				$count++;
-			}
-		} else {
-                        push(@$dataOne, [ "No", $gg->uuid(), $gg->fbaFormulation()->media()->uuid(), "None", "None", "None", "None", "None" ]);
+                        push(@$dataOne, [ "No", $gg->id(), $gg->fbaFormulation()->media()->_reference(), "None", "None", "None", "None", "None" ]);
 		}
 	}
 	$output->{tabs}->{"tab-7"} = {
@@ -1684,8 +975,8 @@ sub printExcel {
 	for (my $i=0; $i < @{$ftrs}; $i++) {
 		my $ftr = $ftrs->[$i];
 		my $reactionList = [];
-		foreach my $rxnuuid (keys(%{$ftrHash->{$ftr->uuid()}})) {
-			push(@{$reactionList},$ftrHash->{$ftr->uuid()}->{$rxnuuid}->id());
+		foreach my $rxnuuid (keys(%{$ftrHash->{$ftr->_reference()}})) {
+			push(@{$reactionList},$ftrHash->{$ftr->_reference()}->{$rxnuuid}->id());
 		}
 		$sheet->write_row($i+1,0,[$ftr->id(),$ftr->type(),$ftr->roleList(),$ftr->contig(),$ftr->start(),$ftr->stop(),$ftr->direction(),join("|",@{$reactionList})]);
 	}
@@ -1711,7 +1002,7 @@ sub printCytoSEED {
 	sub compound_to_results {
 	    my ($compound, $abstract_compounds, $modelid) = @_;
 	   	my $abstractCpd;
-	    if (defined($compound->abstractCompound_uuid) && $compound->abstractCompound_uuid =~ m/[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}/) {
+	    if (defined($compound->abstractCompound_ref) && $compound->abstractCompound_ref =~ m/[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}/) {
 	    	$abstractCpd = $compound->abstractCompound();
 	    }
 	    $abstract_compounds->{$abstractCpd->id()} = 1 if defined $abstractCpd;
@@ -1731,7 +1022,7 @@ sub printCytoSEED {
 	sub reaction_to_results {
 	    my ($reaction, $modelreaction, $abstract_reactions, $modelid) = @_;
 	    my $abstractRxn;
-	    if (defined($reaction->abstractReaction_uuid) && $reaction->abstractReaction_uuid =~ m/[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}/) {
+	    if (defined($reaction->abstractReaction_ref) && $reaction->abstractReaction_ref =~ m/[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}/) {
 	    	$abstractRxn = $reaction->abstractReaction();
 	    }
 	    $abstract_reactions->{$abstractRxn->id()} = 1 if defined $abstractRxn;
@@ -2024,8 +1315,8 @@ sub gapfillModel {
 		fbaFormulation => $args->{fbaFormulation}
 	});
 	if (defined($solution)) {
-		push(@{$self->fbaFormulation_uuids()},$args->{gapfillingFormulation}->fbaFormulation_uuid());
-		push(@{$self->unintegratedGapfilling_uuids()},$args->{gapfillingFormulation}->uuid());
+		push(@{$self->fbaFormulation_refs()},$args->{gapfillingFormulation}->fbaFormulation_ref());
+		push(@{$self->unintegratedGapfilling_refs()},$args->{gapfillingFormulation}->_reference());
 		return $solution;	
 	}
 	return;
@@ -2066,7 +1357,7 @@ sub integrateGapfillSolution {
             my $biomass = $self->biomasses()->[0];
 			my $biocpds = $biomass->biomasscompounds();
 			foreach my $biocpd (@{$biocpds}) {
-				if ($biocpd->modelcompound()->uuid() eq $rem) {
+				if ($biocpd->modelcompound()->_reference() eq $rem) {
 					Bio::KBase::ObjectAPI::utilities::verbose(
 						"Removing ".$biocpd->modelcompound()->id()." from model biomass."
 					);
@@ -2081,7 +1372,7 @@ sub integrateGapfillSolution {
 	for (my $i=0; $i < @{$rxns}; $i++) {
 		my $rxn = $rxns->[$i];
 		my $rxnid = $rxn->reaction()->id();
-		my $mdlrxn = $self->queryObject("modelreactions",{reaction_uuid => $rxn->reaction_uuid()});
+		my $mdlrxn = $self->queryObject("modelreactions",{reaction_ref => $rxn->reaction_ref()});
 		if (defined($mdlrxn) && $rxn->direction() ne $mdlrxn->direction()) {
 			Bio::KBase::ObjectAPI::utilities::verbose(
 				"Making ".$mdlrxn->id()." reversible."
@@ -2106,7 +1397,7 @@ sub integrateGapfillSolution {
 	#Checking if gapfilling formulation is in the unintegrated list 
 	$self->removeLinkArrayItem("unintegratedGapfillings",$gf);
 	$self->addLinkArrayItem("integratedGapfillings",$gf);
-	$self->integratedGapfillingSolutions()->{$gf->uuid()} = $num;
+	$self->integratedGapfillingSolutions()->{$gf->_reference()} = $num;
 	return $IntegrationReport;
 }
 
@@ -2130,8 +1421,8 @@ sub gapgenModel {
 		fbaFormulation => $args->{fbaFormulation}
 	});
 	if (defined($solution)) {
-		push(@{$self->fbaFormulation_uuids()},$args->{gapgenFormulation}->fbaFormulation_uuid());
-		push(@{$self->gapgenFormulation_uuids()},$args->{gapgenFormulation}->uuid());
+		push(@{$self->fbaFormulation_refs()},$args->{gapgenFormulation}->fbaFormulation_ref());
+		push(@{$self->gapgenFormulation_refs()},$args->{gapgenFormulation}->_reference());
 		return $solution;	
 	}
 	return;
@@ -2178,7 +1469,7 @@ sub integrateGapgenSolution {
 	#Checking if gapfilling formulation is in the unintegrated list 
 	$self->removeLinkArrayItem("unintegratedGapgens",$gg);
 	$self->addLinkArrayItem("integratedGapgens",$gg);
-	$self->integratedGapgenSolutions()->{$gg->uuid()} = $num;
+	$self->integratedGapgenSolutions()->{$gg->_reference()} = $num;
 }
 
 sub printExchangeFormat {
@@ -2685,8 +1976,8 @@ sub searchForCompound {
     	return undef;
     }
     return $self->queryObject("modelcompounds",{
-    	modelcompartment_uuid => $mdlcmp->uuid(),
-    	compound_uuid => $cpd->uuid()
+    	modelcompartment_ref => $mdlcmp->_reference(),
+    	compound_ref => $cpd->_reference()
     });
 }
 
@@ -2743,8 +2034,8 @@ sub searchForReaction {
     	return undef;
     }
     return $self->queryObject("modelreactions",{
-    	modelcompartment_uuid => $mdlcmp->uuid(),
-    	reaction_uuid => $reaction->uuid()
+    	modelcompartment_ref => $mdlcmp->_reference(),
+    	reaction_ref => $reaction->_reference()
     });
 }
 

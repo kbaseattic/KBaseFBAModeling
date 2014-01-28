@@ -26,9 +26,9 @@ sub _buildcompoundTuples {
 	for (my $i=0; $i <@{$cpds}; $i++) {
 		my $cpd = $cpds->[$i];
 		my $links = [];
-		my $linkcpds = $cpd->linkedCompounds();
+		my $linkcpds = $cpd->linked_compounds();
 		for (my $j=0;$j < @{$linkcpds};$j++) {
-			push(@{$links},[$cpd->linkCoefficients()->[$j],$linkcpds->[$j]->id()]);
+			push(@{$links},[$cpd->link_coefficients()->[$j],$linkcpds->[$j]->id()]);
 		}
 		push(@{$compounds},[
 			$cpd->compound()->id(),$cpd->compartment()->id(),$cpd->class(),$cpd->universal(),$cpd->coefficientType(),$cpd->coefficient(),
@@ -49,7 +49,6 @@ sub addBioToModel {
     my $self = shift;
 	my $args = Bio::KBase::ObjectAPI::utilities::args(["gc","model"],{}, @_);
 	my $mdl = $args->{model};
-	my $biochem = $mdl->biochemistry();
 	my $gc = $args->{gc};
 	if ($gc > 1) {
 		$gc = 0.01*$gc;	
@@ -88,98 +87,82 @@ sub addBioToModel {
 	#Identifying included compounds and adding up components and mass in each class
 	for (my $i=0; $i < @{$comps}; $i++) {
 		my $comp = $comps->[$i];
-		my $include = 0;
-		if ($comp->universal() == 1) {
-			$include = 1;
-		} else {	
-			if (!defined($classifiers->{$comp->classifier_uuid()})) {
-				my $class = $comp->classifier()->classifyAnnotation({
-					annotation => $args->{annotation}
-				});
-				$classifiers->{$comp->classifier_uuid()} = $class->uuid();
+		$classHash->{$comp->class()} = 1;
+		push(@{$includedComps},$comp);
+		if ($comp->coefficientType() eq "MOLFRACTION") {
+			if (!defined($classMolFraction->{$comp->class()})) {
+				$classMolFraction->{$comp->class()} = 0;
 			}
-			if ($classifiers->{$comp->classifier_uuid()} eq $comp->classifierClassification_uuid()) {
-				$include = 1;	
+			$classMolFraction->{$comp->class()} += -1*$comp->coefficient();
+			if (defined($comp->compound()->mass()) && $comp->compound()->mass() > 0) {
+				if (!defined($classMW->{$comp->class()})) {
+					$classMW->{$comp->class()} = 0;
+				}
+				$classMW->{$comp->class()} += -1*$comp->compound()->mass()*$comp->coefficient();
 			}
-		}
-		if ($include == 1) {
-			$classHash->{$comp->class()} = 1;
-			push(@{$includedComps},$comp);
-			if ($comp->coefficientType() eq "MOLFRACTION") {
-				if (!defined($classMolFraction->{$comp->class()})) {
-					$classMolFraction->{$comp->class()} = 0;
-				}
-				$classMolFraction->{$comp->class()} += -1*$comp->coefficient();
-				if (defined($comp->compound()->mass()) && $comp->compound()->mass() > 0) {
-					if (!defined($classMW->{$comp->class()})) {
-						$classMW->{$comp->class()} = 0;
-					}
-					$classMW->{$comp->class()} += -1*$comp->compound()->mass()*$comp->coefficient();
-				}
-			} elsif ($comp->coefficientType() eq "MASSFRACTION") {
-				if (!defined($comp->compound()->mass()) || $comp->compound()->mass() == 0) {
-					Bio::KBase::ObjectAPI::utilities::error("Biomass template with MASSFRACTION of compound with no mass.");
-				}
-				if (!defined($classMassFraction->{$comp->class()})) {
-					$classMassFraction->{$comp->class()} = 0;
-				}
-				$classMassFraction->{$comp->class()} += -1*$comp->coefficient();
-				my $class = $comp->class();
-				if (!defined($classMassFractionMoles->{$comp->class()})) {
-					$classMassFractionMoles->{$comp->class()} = 0;
-				}
-				$classMassFractionMoles->{$comp->class()} += -1*$comp->coefficient()*$self->$class()/$comp->compound()->mass();
-			} elsif ($comp->coefficientType() eq "AT") {
-				if (!defined($classMolFraction->{$comp->class()})) {
-					$classMolFraction->{$comp->class()} = 0;
-				}
-				$classMolFraction->{$comp->class()} += (1-$gc)/2;
-				if (defined($comp->compound()->mass()) && $comp->compound()->mass() > 0) {
-					if (!defined($classMW->{$comp->class()})) {
-						$classMW->{$comp->class()} = 0;
-					}
-					$classMW->{$comp->class()} += $comp->compound()->mass()*(1-$gc)/2;
-				}
-			} elsif ($comp->coefficientType() eq "GC") {
-				if (!defined($classMolFraction->{$comp->class()})) {
-					$classMolFraction->{$comp->class()} = 0;
-				}
-				$classMolFraction->{$comp->class()} += $gc/2;
-				if (defined($comp->compound()->mass()) && $comp->compound()->mass() > 0) {
-					if (!defined($classMW->{$comp->class()})) {
-						$classMW->{$comp->class()} = 0;
-					}
-					$classMW->{$comp->class()} += $comp->compound()->mass()*$gc/2;
-				}
-			} elsif ($comp->coefficientType() eq "MULTIPLIER") {
-				#DO NOTHING
-			} elsif ($comp->coefficientType() eq "EXACT") {
-				#DO NOTHING
-			} elsif ($comp->coefficientType() eq "MOLSPLIT") {
-				if (!defined($classMolSplitCount->{$comp->class()})) {
-					$classMolSplitCount->{$comp->class()} = 0;
-				}
-				$classMolSplitCount->{$comp->class()}++;
-				if (defined($comp->compound()->mass()) && $comp->compound()->mass() > 0) {
-					if (!defined($classMolSplitMW->{$comp->class()})) {
-						$classMolSplitMW->{$comp->class()} = 0;
-					}
-					$classMolSplitMW->{$comp->class()} += $comp->compound()->mass();
-				}
-			} elsif ($comp->coefficientType() eq "MASSSPLIT") {
-				if (!defined($comp->compound()->mass()) || $comp->compound()->mass() == 0) {
-					Bio::KBase::ObjectAPI::utilities::error("Biomass template with MASSFRACTION of compound with no mass.");
-				}
-				if (!defined($classMassSplitCount->{$comp->class()})) {
-					$classMassSplitCount->{$comp->class()} = 0;
-				}
-				$classMassSplitCount->{$comp->class()}++;
-				my $class = $comp->class();
-				if (!defined($classMassSplitMol->{$comp->class()})) {
-					$classMassSplitMol->{$comp->class()} = 0;
-				}
-				$classMassSplitMol->{$comp->class()} += $self->$class()/$comp->compound()->mass();
+		} elsif ($comp->coefficientType() eq "MASSFRACTION") {
+			if (!defined($comp->compound()->mass()) || $comp->compound()->mass() == 0) {
+				Bio::KBase::ObjectAPI::utilities::error("Biomass template with MASSFRACTION of compound with no mass.");
 			}
+			if (!defined($classMassFraction->{$comp->class()})) {
+				$classMassFraction->{$comp->class()} = 0;
+			}
+			$classMassFraction->{$comp->class()} += -1*$comp->coefficient();
+			my $class = $comp->class();
+			if (!defined($classMassFractionMoles->{$comp->class()})) {
+				$classMassFractionMoles->{$comp->class()} = 0;
+			}
+			$classMassFractionMoles->{$comp->class()} += -1*$comp->coefficient()*$self->$class()/$comp->compound()->mass();
+		} elsif ($comp->coefficientType() eq "AT") {
+			if (!defined($classMolFraction->{$comp->class()})) {
+				$classMolFraction->{$comp->class()} = 0;
+			}
+			$classMolFraction->{$comp->class()} += (1-$gc)/2;
+			if (defined($comp->compound()->mass()) && $comp->compound()->mass() > 0) {
+				if (!defined($classMW->{$comp->class()})) {
+					$classMW->{$comp->class()} = 0;
+				}
+				$classMW->{$comp->class()} += $comp->compound()->mass()*(1-$gc)/2;
+			}
+		} elsif ($comp->coefficientType() eq "GC") {
+			if (!defined($classMolFraction->{$comp->class()})) {
+				$classMolFraction->{$comp->class()} = 0;
+			}
+			$classMolFraction->{$comp->class()} += $gc/2;
+			if (defined($comp->compound()->mass()) && $comp->compound()->mass() > 0) {
+				if (!defined($classMW->{$comp->class()})) {
+					$classMW->{$comp->class()} = 0;
+				}
+				$classMW->{$comp->class()} += $comp->compound()->mass()*$gc/2;
+			}
+		} elsif ($comp->coefficientType() eq "MULTIPLIER") {
+			#DO NOTHING
+		} elsif ($comp->coefficientType() eq "EXACT") {
+			#DO NOTHING
+		} elsif ($comp->coefficientType() eq "MOLSPLIT") {
+			if (!defined($classMolSplitCount->{$comp->class()})) {
+				$classMolSplitCount->{$comp->class()} = 0;
+			}
+			$classMolSplitCount->{$comp->class()}++;
+			if (defined($comp->compound()->mass()) && $comp->compound()->mass() > 0) {
+				if (!defined($classMolSplitMW->{$comp->class()})) {
+					$classMolSplitMW->{$comp->class()} = 0;
+				}
+				$classMolSplitMW->{$comp->class()} += $comp->compound()->mass();
+			}
+		} elsif ($comp->coefficientType() eq "MASSSPLIT") {
+			if (!defined($comp->compound()->mass()) || $comp->compound()->mass() == 0) {
+				Bio::KBase::ObjectAPI::utilities::error("Biomass template with MASSFRACTION of compound with no mass.");
+			}
+			if (!defined($classMassSplitCount->{$comp->class()})) {
+				$classMassSplitCount->{$comp->class()} = 0;
+			}
+			$classMassSplitCount->{$comp->class()}++;
+			my $class = $comp->class();
+			if (!defined($classMassSplitMol->{$comp->class()})) {
+				$classMassSplitMol->{$comp->class()} = 0;
+			}
+			$classMassSplitMol->{$comp->class()} += $self->$class()/$comp->compound()->mass();
 		}
 	}
 	foreach my $class (keys(%{$classHash})) {
@@ -249,33 +232,33 @@ sub addBioToModel {
 		}
 		#Adding compound to total biomass compound hash
 		my $cpd = $comp->compound();
-		if (!defined($compoundHash->{$cpd->uuid()}->{$comp->compartment_uuid()})) {
-			$compoundHash->{$cpd->uuid()}->{$comp->compartment_uuid()} = 0;
+		if (!defined($compoundHash->{$comp->compound_ref()}->{$comp->compartment_ref()})) {
+			$compoundHash->{$comp->compound_ref()}->{$comp->compartment_ref()} = 0;
 		}
-		$compoundHash->{$cpd->uuid()}->{$comp->compartment_uuid()} += $coef;
+		$compoundHash->{$comp->compound_ref()}->{$comp->compartment_ref()} += $coef;
 		#Adding linked compounds to total biomass compound hash
-		my $cpds = $comp->linkedCompounds();
+		my $cpds = $comp->linked_compound_refs();
 		for (my $j=0; $j < @{$cpds}; $j++) {
 			$cpd = $cpds->[$j];
-			if (!defined($compoundHash->{$cpd->uuid()}->{$comp->compartment_uuid()})) {
-				$compoundHash->{$cpd->uuid()}->{$comp->compartment_uuid()} = 0;
+			if (!defined($compoundHash->{$cpd}->{$comp->compartment_ref()})) {
+				$compoundHash->{$cpd}->{$comp->compartment_ref()} = 0;
 			}
-			$compoundHash->{$cpd->uuid()}->{$comp->compartment_uuid()} += $coef*$comp->linkCoefficients()->[$j];
+			$compoundHash->{$cpd}->{$comp->compartment_ref()} += $coef*$comp->link_coefficients()->[$j];
 		}
 	}
 	#Setting biomass components
 	foreach my $cpd_uuid (keys(%{$compoundHash})) {
 		foreach my $cmp_uuid (keys(%{$compoundHash->{$cpd_uuid}})) {
 			if ($compoundHash->{$cpd_uuid}->{$cmp_uuid} != 0) {
-				my $cpd = $biochem->getObject("compounds",$cpd_uuid);
-				my $cmp = $biochem->getObject("compartments",$cmp_uuid);
+				my $cpd = $self->getLinkedObject($cpd_uuid);
+				my $cmp = $self->getLinkedObject($cmp_uuid);
 				my $mdlcmp = $mdl->addCompartmentToModel({compartment => $cmp,pH => 7,potential => 0,compartmentIndex => 0});
 				my $mdlcpd = $mdl->addCompoundToModel({
 					compound => $cpd,
 					modelCompartment => $mdlcmp,
 				});
 				$bio->add("biomasscompounds",{
-					modelcompound_uuid => $mdlcpd->uuid(),
+					modelcompound_ref => $mdlcpd->_reference(),
 					coefficient => $compoundHash->{$cpd_uuid}->{$cmp_uuid}
 				});
 			}

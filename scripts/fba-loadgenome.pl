@@ -7,16 +7,15 @@
 use strict;
 use warnings;
 use JSON::XS;
-use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::workspace::ScriptHelpers qw( printObjectInfo get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Genome file | Genome ID"];
-my $script = "kbfba-loadgenome";
+my $script = "fba-loadgenome";
 my $translation = {
 	"Genome file | Genome ID" => "genome",
 	workspace => "workspace",
 	auth => "auth",
-	overwrite => "overwrite",
 	login => "sourceLogin",
 	password => "sourcePassword",
 	mappingws => "mapping_workspace",
@@ -32,7 +31,6 @@ my $specs = [
 	[ 'mapping|m:s', 'Mapping to be used with loaded genome'],
 	[ 'mappingws:s', 'Workspace of mapping to be used with loaded genome'],
     [ 'workspace|w:s', 'Workspace to load genome into', { "default" => workspace() } ],
-    [ 'overwrite|o', 'Overwrite existing genome with same name' ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
 #Calling the server
@@ -64,5 +62,5 @@ if (!defined($output)) {
 	print "Genome failed to load to workspace!\n";
 } else {
 	print "Genome successfully loaded to workspace:\n";
-	printObjectMeta($output);
+	printObjectInfo($output);
 }

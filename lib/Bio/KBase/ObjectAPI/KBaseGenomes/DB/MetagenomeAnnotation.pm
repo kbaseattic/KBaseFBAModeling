@@ -1,11 +1,12 @@
 ########################################################################
-# Bio::KBase::ObjectAPI::KBaseGenomes::DB::ProteinFamily - This is the moose object corresponding to the KBaseGenomes.ProteinFamily object
+# Bio::KBase::ObjectAPI::KBaseGenomes::DB::MetagenomeAnnotation - This is the moose object corresponding to the KBaseGenomes.MetagenomeAnnotation object
 # Authors: Christopher Henry, Scott Devoid, Paul Frybarger
 # Contact email: chenry@mcs.anl.gov
 # Development location: Mathematics and Computer Science Division, Argonne National Lab
 ########################################################################
-package Bio::KBase::ObjectAPI::KBaseGenomes::DB::ProteinFamily;
+package Bio::KBase::ObjectAPI::KBaseGenomes::DB::MetagenomeAnnotation;
 use Bio::KBase::ObjectAPI::BaseObject;
+use Bio::KBase::ObjectAPI::KBaseGenomes::MetagenomeAnnotationOTU;
 use Moose;
 use namespace::autoclean;
 extends 'Bio::KBase::ObjectAPI::BaseObject';
@@ -16,94 +17,66 @@ has parent => (is => 'rw', isa => 'Ref', weak_ref => 1, type => 'parent', metacl
 # ATTRIBUTES:
 has uuid => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_uuid');
 has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_reference');
-has query_end => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has score => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has subject_end => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has release_version => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has subject_begin => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has subject_db => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has evalue => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has subject_description => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has query_begin => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has source => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has source_id => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has name => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has confidence_type => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has type => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has id => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+
+
+# SUBOBJECTS:
+has otus => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(MetagenomeAnnotationOTU)', metaclass => 'Typed', reader => '_otus', printOrder => '-1');
 
 
 # LINKS:
 
 
 # BUILDERS:
-sub _build_reference { my ($self) = @_;return $self->parent()->_reference().'/protein_families/id/'.$self->id(); }
+sub _build_reference { my ($self) = @_;return $self->parent()->_reference().'//id/'.$self->id(); }
 sub _build_uuid { my ($self) = @_;return $self->_reference(); }
 
 
 # CONSTANTS:
-sub _type { return 'KBaseGenomes.ProteinFamily'; }
+sub _type { return 'KBaseGenomes.MetagenomeAnnotation'; }
 sub _module { return 'KBaseGenomes'; }
-sub _class { return 'ProteinFamily'; }
+sub _class { return 'MetagenomeAnnotation'; }
 sub _top { return 0; }
 
 my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'query_end',
-            'type' => 'Int',
-            'perm' => 'rw'
-          },
-          {
-            'req' => 0,
-            'printOrder' => -1,
-            'name' => 'score',
-            'type' => 'Num',
-            'perm' => 'rw'
-          },
-          {
-            'req' => 0,
-            'printOrder' => -1,
-            'name' => 'subject_end',
-            'type' => 'Int',
-            'perm' => 'rw'
-          },
-          {
-            'req' => 0,
-            'printOrder' => -1,
-            'name' => 'release_version',
+            'name' => 'source',
             'type' => 'Str',
             'perm' => 'rw'
           },
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'subject_begin',
-            'type' => 'Int',
-            'perm' => 'rw'
-          },
-          {
-            'req' => 0,
-            'printOrder' => -1,
-            'name' => 'subject_db',
+            'name' => 'source_id',
             'type' => 'Str',
             'perm' => 'rw'
           },
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'evalue',
-            'type' => 'Num',
-            'perm' => 'rw'
-          },
-          {
-            'req' => 0,
-            'printOrder' => -1,
-            'name' => 'subject_description',
+            'name' => 'name',
             'type' => 'Str',
             'perm' => 'rw'
           },
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'query_begin',
-            'type' => 'Int',
+            'name' => 'confidence_type',
+            'type' => 'Str',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'type',
+            'type' => 'Str',
             'perm' => 'rw'
           },
           {
@@ -115,7 +88,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {query_end => 0, score => 1, subject_end => 2, release_version => 3, subject_begin => 4, subject_db => 5, evalue => 6, subject_description => 7, query_begin => 8, id => 9};
+my $attribute_map = {source => 0, source_id => 1, name => 2, confidence_type => 3, type => 4, id => 5};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -147,9 +120,17 @@ sub _links {
 	 }
 }
 
-my $subobjects = [];
+my $subobjects = [
+          {
+            'printOrder' => -1,
+            'name' => 'otus',
+            'type' => 'child',
+            'class' => 'MetagenomeAnnotationOTU',
+            'module' => 'KBaseGenomes'
+          }
+        ];
 
-my $subobject_map = {};
+my $subobject_map = {otus => 0};
 sub _subobjects {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -163,5 +144,12 @@ sub _subobjects {
 	 	 return $subobjects;
 	 }
 }
+# SUBOBJECT READERS:
+around 'otus' => sub {
+	 my ($orig, $self) = @_;
+	 return $self->_build_all_objects('otus');
+};
+
+
 __PACKAGE__->meta->make_immutable;
 1;

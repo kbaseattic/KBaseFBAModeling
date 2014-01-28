@@ -23,7 +23,7 @@ has complexIDs => ( is => 'rw', isa => 'ArrayRef',printOrder => '-1', type => 'm
 #***********************************************************************************************************
 sub _buildsearchname {
 	my ($self) = @_;
-	return Bio::KBase::ObjectAPI::Utilities::GlobalFunctions::convertRoleToSearchRole($self->name());
+	return Bio::KBase::ObjectAPI::utilities::convertRoleToSearchRole($self->name());
 }
 sub _buildreactions {
 	my ($self) = @_;

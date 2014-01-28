@@ -23,6 +23,11 @@ module KBaseGenomes {
 	*/
     typedef string Feature_ref;
     /*
+		Reference to a Genome object in the workspace
+		@id ws KBaseGenomes.Genome
+	*/
+    typedef string genome_ref;
+    /*
 		Reference to a source_id
 		@id external
 	*/
@@ -33,6 +38,21 @@ module KBaseGenomes {
 	*/
     typedef string Genome_id;
     /*
+		KBase ProteinSet ID
+		@id kb
+	*/
+    typedef string ProteinSet_id;
+	/*
+		ProbabilisticAnnotation ID
+		@id kb
+	*/
+	typedef string ProbabilisticAnnotation_id;
+	/*
+		Genome protein ID
+		@id external
+	*/
+    typedef string Protein_id;
+	/*
 		Genome feature ID
 		@id external
 	*/
@@ -91,7 +111,7 @@ module KBaseGenomes {
 
 		contigset_id id - unique kbase ID of the contig set
 		string name - name of the contig set
-		string type - type of the contig set (values are: Organism,Environment,Collection)
+		string type - type of the contig set (values are: Genome,Transcripts,Environment,Collection)
 		source_id source_id - source ID of the contig set
 		string source - source of the contig set
 		list<Contig> contigs - list of contigs in the contig set
@@ -132,10 +152,7 @@ module KBaseGenomes {
 		a "location" refers to a list of regions of DNA on contigs
     */
     typedef list<region_of_dna> location;
-    /*
-		a notation by a curator of the genome object
-    */
-    typedef tuple<string comment, string annotator, int annotation_time> annotation;
+    
     /*
 	Structure for a publication (from ER API)
 	also want to capture authors, journal name (not in ER)
@@ -172,7 +189,7 @@ module KBaseGenomes {
     */
     typedef tuple<Feature_id scored_fid, float score> coexpressed_fid;
     
-   /*
+   	/*
 	Structure for a protein family
 		@optional query_begin query_end subject_begin subject_end score evalue subject_description release_version
     */
@@ -189,6 +206,11 @@ module KBaseGenomes {
 		float evalue;
     } ProteinFamily;
 
+	/*
+		a notation by a curator of the genome object
+    */
+    typedef tuple<string comment, string annotator, int annotation_time> annotation;
+	
 	/*
     	Structure for a single feature of a Feature
 	Should genome_id contain the genome_id in the Genome object,
@@ -256,4 +278,139 @@ module KBaseGenomes {
 		ProteinSet_ref proteinset_ref;
 		TranscriptSet_ref transcriptset_ref;
     } Genome;
+    
+	/* Type spec for the "Protein" object
+	
+		Protein_id id - unique external ID of protein
+		string function - annotated function for protein
+		string md5 - md5 hash of protein sequence
+		string sequence - amino acid sequence of protein
+		int length - length of protein
+		list<ProteinFamily> protein_families - families to which the protein belongs
+		list<string> aliases - aliases for the protein
+		list<annotation> annotations - curator annotations on protein
+		list<subsystem_data> subsystem_data;
+		
+		@optional function
+    	@searchable ws_subset id md5 function length aliases
+	*/
+	typedef structure {
+		Protein_id id;
+		string function;
+		string md5;
+		string sequence;
+		int length;
+		list<ProteinFamily> protein_families;
+		list<string> aliases;
+		list<annotation> annotations;
+    } Protein;
+   
+   /* Type spec for the "ProteinSet" object
+
+		proteinset_id id - unique kbase ID of the protein set
+		string name - name of the protein set
+		string type - type of the protein set (values are: Organism,Environment,Collection)
+		source_id source_id - source ID of the protein set
+		string source - source of the protein set
+		list<Protein> proteins - list of proteins in the protein set
+		fasta_ref fasta_ref - reference to fasta file from which contig set were read
+
+		@optional name type fasta_ref
+    	@searchable ws_subset proteins.[*].(id,md5,function,length,aliases) md5 id name source_id source type
+	*/
+	typedef structure {
+		ProteinSet_id id;
+		string name;
+		string md5;
+		source_id source_id;
+		string source;
+		string type;
+		Fasta_ref fasta_ref;
+		list<Protein> proteins;
+    } ProteinSet;
+    
+    /*
+       A function_probability is a (annotation, probability) pair associated with a gene
+       An annotation is a "///"-delimited list of roles that could be associated with that gene.
+    */
+    typedef tuple<string annotation, float probability> function_probability;
+
+    /* Object to carry alternative functions and probabilities for genes in a genome    
+
+        probanno_id id - ID of the probabilistic annotation object    
+        genome_ref genome_ref - reference to genome probabilistic annotation was built for
+        mapping<feature_id, list<function_probability>> roleset_probabilities - mapping of features to list of alternative function_probability objects
+        list<feature_id> skipped_features - list of features in genome with no probability
+        
+    	@searchable ws_subset id genome_ref skipped_features
+        
+    */
+    typedef structure {
+		ProbabilisticAnnotation_id id;
+		genome_ref genome_ref;
+		mapping<Feature_id,list<function_probability>> roleset_probabilities;
+		list<Feature_id> skipped_features;
+    } ProbabilisticAnnotation;
+    
+    /* Structure for the "MetagenomeAnnotationOTUFunction" object
+		
+		list<string> reference_genes - list of genes associated with hit
+		string functional_role - annotated function
+		string kbid - kbase ID of OTU function in metagenome
+		int abundance - number of hits with associated role and OTU
+		float confidence - confidence of functional role hit
+		string confidence_type - type of functional role hit
+		
+    	@searchable ws_subset id abundance confidence functional_role
+	*/
+    typedef structure {
+		string id;
+		list<string> reference_genes;
+		string functional_role;
+		int abundance;
+		float confidence;
+    } MetagenomeAnnotationOTUFunction;
+     
+    /* Structure for the "MetagenomeAnnotationOTU" object
+	
+		string name - name of metagenome OTU
+		string kbid - KBase ID of OTU of metagenome object
+		string source_id - ID used for OTU in metagenome source
+		string source - source OTU ID
+		list<MetagenomeAnnotationOTUFunction> functions - list of functions in OTU
+		
+    	@searchable ws_subset id name source_id source functions.[*].(id,abundance,confidence,functional_role) 
+
+	*/
+    typedef structure {
+    	float ave_confidence;
+		float ave_coverage;
+		string id;
+		string name;
+		string source_id;
+		string source;
+		list<MetagenomeAnnotationOTUFunction> functions;
+    } MetagenomeAnnotationOTU;
+    
+    /* Structure for the "MetagenomeAnnotation" object
+	
+		string type - type of metagenome object
+		string name - name of metagenome object
+		string kbid - KBase ID of metagenome object
+		string source_id - ID used in metagenome source
+		string source - source of metagenome data
+		string confidence_type - type of confidence score
+		list<MetagenomeAnnotationOTU> otus - list of otus in metagenome
+		
+    	@searchable ws_subset type name id source_id source confidence_type otus.[*].(id,name,source_id,source,functions.[*].(id,abundance,confidence,functional_role))
+	*/
+    typedef structure {
+		string type;
+		string name;
+		string id;
+		string source_id;
+		string source;
+		string confidence_type;
+		list<MetagenomeAnnotationOTU> otus;
+    } MetagenomeAnnotation;
 };

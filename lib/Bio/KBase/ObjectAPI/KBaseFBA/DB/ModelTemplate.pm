@@ -19,6 +19,7 @@ has parent => (is => 'rw', isa => 'Ref', weak_ref => 1, type => 'parent', metacl
 # ATTRIBUTES:
 has uuid => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_uuid');
 has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_reference');
+has biochemistry_ref => (is => 'rw', isa => 'Str', printOrder => '-1', default => 'kbase/default', type => 'attribute', metaclass => 'Typed');
 has name => (is => 'rw', isa => 'Str', printOrder => '1', required => 1, type => 'attribute', metaclass => 'Typed');
 has domain => (is => 'rw', isa => 'Str', printOrder => '2', required => 1, type => 'attribute', metaclass => 'Typed');
 has mapping_ref => (is => 'rw', isa => 'Str', printOrder => '3', required => 1, type => 'attribute', metaclass => 'Typed');
@@ -32,12 +33,17 @@ has templateReactions => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub
 
 
 # LINKS:
+has biochemistry => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,Biochemistry,biochemistry_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_biochemistry', clearer => 'clear_biochemistry', isa => 'Bio::KBase::ObjectAPI::KBaseBiochem::Biochemistry', weak_ref => 1);
 has mapping => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,Mapping,mapping_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_mapping', clearer => 'clear_mapping', isa => 'Bio::KBase::ObjectAPI::KBaseOntology::Mapping', weak_ref => 1);
 
 
 # BUILDERS:
-sub _build_reference { return my ($self) = @_;$self->uuid(); }
+sub _build_reference { my ($self) = @_;return $self->uuid(); }
 sub _build_uuid { return Data::UUID->new()->create_str(); }
+sub _build_biochemistry {
+	 my ($self) = @_;
+	 return $self->getLinkedObject($self->biochemistry_ref());
+}
 sub _build_mapping {
 	 my ($self) = @_;
 	 return $self->getLinkedObject($self->mapping_ref());
@@ -52,6 +58,14 @@ sub _class { return 'ModelTemplate'; }
 sub _top { return 1; }
 
 my $attributes = [
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'biochemistry_ref',
+            'default' => 'kbase/default',
+            'type' => 'Str',
+            'perm' => 'rw'
+          },
           {
             'req' => 1,
             'printOrder' => 1,
@@ -97,7 +111,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {name => 0, domain => 1, mapping_ref => 2, id => 3, modelType => 4};
+my $attribute_map = {biochemistry_ref => 0, name => 1, domain => 2, mapping_ref => 3, id => 4, modelType => 5};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -114,6 +128,15 @@ sub _attributes {
 
 my $links = [
           {
+            'attribute' => 'biochemistry_ref',
+            'parent' => 'Bio::KBase::ObjectAPI::KBaseStore',
+            'clearer' => 'clear_biochemistry',
+            'name' => 'biochemistry',
+            'method' => 'Biochemistry',
+            'class' => 'Bio::KBase::ObjectAPI::KBaseBiochem::Biochemistry',
+            'module' => 'KBaseBiochem'
+          },
+          {
             'attribute' => 'mapping_ref',
             'parent' => 'Bio::KBase::ObjectAPI::KBaseStore',
             'clearer' => 'clear_mapping',
@@ -124,7 +147,7 @@ my $links = [
           }
         ];
 
-my $link_map = {mapping => 0};
+my $link_map = {biochemistry => 0, mapping => 1};
 sub _links {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {

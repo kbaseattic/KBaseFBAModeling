@@ -38,7 +38,7 @@ has reads => (is => 'rw', type => 'link(,,reads_ref)', metaclass => 'Typed', laz
 
 
 # BUILDERS:
-sub _build_reference { return my ($self) = @_;$self->uuid(); }
+sub _build_reference { my ($self) = @_;return $self->uuid(); }
 sub _build_uuid { return Data::UUID->new()->create_str(); }
 sub _build_fasta {
 	 my ($self) = @_;

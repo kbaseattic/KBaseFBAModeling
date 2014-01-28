@@ -22,20 +22,16 @@ has exchangeGPRString => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 
 #***********************************************************************************************************
 sub _buildgprString {
 	my ($self) = @_;
-	if (@{$self->modelReactionProteinSubunitGenes()} == 0) {
-		#if (length($self->note()) > 0) {
-		#	return $self->note();
-		#}
-		return "Unknown";
-	}
+	
 	my $gpr = "";
-	foreach my $gene (@{$self->modelReactionProteinSubunitGenes()}) {
+	my $ftrs = $self->features();
+	foreach my $gene (@{$ftrs}) {
 		if (length($gpr) > 0) {
 			$gpr .= " or ";	
 		}
-		$gpr .= $gene->feature()->id();
+		$gpr .= $gene->id();
 	}
-	if (@{$self->modelReactionProteinSubunitGenes()} > 1) {
+	if (@{$ftrs} > 1) {
 		$gpr = "(".$gpr.")";	
 	}
 	return $gpr;
@@ -43,18 +39,18 @@ sub _buildgprString {
 sub _buildexchangeGPRString {
 	my ($self) = @_;
 	my $gpr = "";
-	if (!defined($self->role_uuid()) || $self->role_uuid() =~ m/^[0\-]+$/) {
+	if (!defined($self->role()) || $self->role() =~ m/^[0\-]+$/) {
 		$gpr .= "{";
 	} else {
 		$gpr .= "{";
 	}
-	my $features = $self->modelReactionProteinSubunitGenes();
+	my $features = $self->features();
 	my $fgpr = "";
 	foreach my $feature (@{$features}) {
 		if (length($fgpr) > 0) {
 			$fgpr .= "/";
 		}
-		$fgpr .= $feature->feature()->id();
+		$fgpr .= $feature->id();
 	}
 	$gpr .= $fgpr;
 	$gpr .= "}";

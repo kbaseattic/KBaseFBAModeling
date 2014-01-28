@@ -82,7 +82,7 @@ sub _buildmapped_uuid {
 }
 sub _buildcompartment {
 	my ($self) = @_;
-	my $comp = $self->biochemistry()->queryObject("compartments",{name => "Cytosol"});
+	my $comp = $self->parent()->queryObject("compartments",{name => "Cytosol"});
 	if (!defined($comp)) {
 		Bio::KBase::ObjectAPI::utilities::error("Could not find cytosol compartment in biochemistry!");	
 	}
@@ -103,9 +103,9 @@ sub _buildisTransport {
 	if (!defined($rgts->[0])) {
 		return 0;	
 	}
-	my $cmp = $rgts->[0]->compartment_uuid();
+	my $cmp = $rgts->[0]->compartment_ref();
 	for (my $i=0; $i < @{$rgts}; $i++) {
-		if ($rgts->[$i]->compartment_uuid() ne $cmp) {
+		if ($rgts->[$i]->compartment_ref() ne $cmp) {
 			return 1;
 		}
 	}
@@ -130,12 +130,8 @@ sub getAliases {
     return [] unless(defined($setName));
     my $output = [];
     my $aliases = $self->parent()->reaction_aliases()->{$self->id()};
-    if (defined($aliases)) {
-    	foreach my $alias (@{$aliases}) {
-    		if ($alias->[0] eq $setName) {
-    			push(@{$output},$alias->[1]);
-    		}
-    	}
+    if (defined($aliases) && defined($aliases->{$setName})) {
+    	return $aliases->{$setName};
     }
     return $output;
 }
@@ -145,8 +141,8 @@ sub allAliases {
     my $output = [];
     my $aliases = $self->parent()->reaction_aliases()->{$self->id()};
     if (defined($aliases)) {
-    	foreach my $alias (@{$aliases}) {
-    		push(@{$output},$alias->[1]);
+    	foreach my $set (keys(%{$aliases})) {
+    		push(@{$output},@{$aliases->{$set}});
     	}
     }
     return $output;
@@ -155,9 +151,9 @@ sub allAliases {
 sub hasAlias {
     my ($self,$alias,$setName) = @_;
     my $aliases = $self->parent()->reaction_aliases()->{$self->id()};
-    if (defined($aliases)) {
-    	foreach my $alias (@{$aliases}) {
-    		if ($alias->[0] eq $setName && $alias->[1] eq $alias) {
+    if (defined($aliases) && defined($aliases->{$setName})) {
+    	foreach my $searchalias (@{$aliases->{$setName}}) {
+    		if ($searchalias eq $alias) {
     			return 1;
     		}
     	}
@@ -180,7 +176,7 @@ sub hasReagent {
 	return 0;	
     }
     for (my $i=0; $i < @{$rgts}; $i++) {
-	if ($rgts->[$i]->compound_uuid() eq $rgt_uuid) {
+	if ($rgts->[$i]->compound_ref() eq $rgt_uuid) {
 	    return 1;
 	}
     }
@@ -202,7 +198,7 @@ sub hasReagentInCompartment {
 	return 0;	
     }
     for (my $i=0; $i < @{$rgts}; $i++) {
-	if ($rgts->[$i]->compound_uuid() eq $rgt_uuid && $rgts->[$i]->compartment_uuid() eq $cmp_uuid) {
+	if ($rgts->[$i]->compound_ref() eq $rgt_uuid && $rgts->[$i]->compartment_ref() eq $cmp_uuid) {
 	    return 1;
 	}
     }
@@ -226,16 +222,16 @@ sub createEquation {
 	my $rgt = $self->reagents();
 	my $rgtHash;
         my $rxnCompID = $self->compartment()->id();
-        my $hcpd = $self->biochemistry()->checkForProton();
+        my $hcpd = $self->parent()->checkForProton();
  	if (!defined($hcpd) && $args->{hashed}==1) {
 	    Bio::KBase::ObjectAPI::utilities::error("Could not find proton in biochemistry!");
 	}
-        my $wcpd = $self->biochemistry()->checkForWater();
+        my $wcpd = $self->parent()->checkForWater();
  	if (!defined($wcpd) && $args->{water}==1) {
 	    Bio::KBase::ObjectAPI::utilities::error("Could not find water in biochemistry!");
 	}
 	for (my $i=0; $i < @{$rgt}; $i++) {
-		my $id = $rgt->[$i]->compound_uuid();
+		my $id = $rgt->[$i]->compound_ref();
 		next if $args->{hashed}==1 && $id eq $hcpd->uuid() && !$self->isTransport();
 		next if $args->{hashed}==1 && $args->{water}==1 && $id eq $wcpd->uuid();
 		if ($args->{format} eq "name" || $args->{format} eq "id") {
@@ -273,7 +269,7 @@ sub createEquation {
 	for (my $i=0; $i < @{$sortedCpd}; $i++) {
 	    my $printId=$sortedCpd->[$i];
 	    if($args->{format} eq "formula"){
-		$printId=$self->biochemistry()->getObject("compounds",$sortedCpd->[$i])->formula();
+		$printId=$self->parent()->getObject("compounds",$sortedCpd->[$i])->formula();
 	    }
 		my $comps = [sort(keys(%{$rgtHash->{$sortedCpd->[$i]}}))];
 		for (my $j=0; $j < @{$comps}; $j++) {
@@ -399,8 +395,8 @@ sub loadFromEquation {
 	        # Do not include reagents with zero coefficients
 	        next if $cpdCmpHash->{$cpduuid}->{$cmpuuid} == 0;
 	        $self->add("reagents", {
-	            compound_uuid               => $cpduuid,
-	            compartment_uuid            => $cmpuuid,
+	            compound_ref               => $cpduuid,
+	            compartment_ref            => $cmpuuid,
 	            coefficient                 => $cpdCmpHash->{$cpduuid}->{$cmpuuid},
 	            isCofactor                  => 0,
 			   });
@@ -434,12 +430,12 @@ sub checkReactionCueBalance {
     #balance out reagents in case of 'cpderror'
     my %reagents=();
     foreach my $rgt (@$rgts){
-	$reagents{$rgt->compound_uuid()}+=$rgt->coefficient();
+	$reagents{$rgt->compound_ref()}+=$rgt->coefficient();
     }
 
     #balance out cues
     my %Cues=();
-    foreach my $rgt ( grep { $reagents{$_->compound_uuid()} != 0 } @$rgts ){
+    foreach my $rgt ( grep { $reagents{$_->compound_ref()} != 0 } @$rgts ){
 	my %cues = %{$rgt->compound()->cues()};
 	foreach my $cue (keys %cues){
 	    $Cues{$cue}+=($cues{$cue}*$rgt->coefficient());
@@ -534,7 +530,7 @@ sub estimateThermoReversibility{
     my ($rct_min,$rct_max)=(0.0,0.0);
     my ($pdt_min,$pdt_max)=(0.0,0.0);
     foreach my $rgt (@{$self->reagents()}){
-	next if $rgt->compound_uuid() eq $biochem->checkForProton()->uuid() || $rgt->compound_uuid() eq $biochem->checkForWater()->uuid();
+	next if $rgt->compound_ref() eq $biochem->checkForProton()->uuid() || $rgt->compound_ref() eq $biochem->checkForWater()->uuid();
 
 	my ($tmx,$tmn)=($max,$min);
 	if($rgt->compartment->id() eq "e"){
@@ -646,13 +642,11 @@ sub estimateThermoReversibility{
 
     my $Source="None";
     foreach my $src ("KEGG","MetaCyc","ModelSEED"){
-	if($biochem->queryObject("aliasSets",{name=>$src,attribute=>"compounds"})){
 	    my $cpdObj = $biochem->getObjectByAlias("compounds",$PhoIDs{"Pi"}{$src},$src);
 	    if($cpdObj){
-		$Source=$src;
-		last;
-	    }
-	}
+			$Source=$src;
+			last;
+		}
     }
     if($Source eq "None"){
 	Bio::KBase::ObjectAPI::utilities::verbose("Cannot use heuristics with atypical biochemistry aliases");
@@ -674,9 +668,9 @@ sub estimateThermoReversibility{
     my $Contains_Protons=0;
     foreach my $rgt (@{$self->reagents()}){
         $Comps{$rgt->compartment()->id()}=1;
-        $Contains_Protons=1 if $rgt->compartment()->id() ne "c" && $rgt->compound_uuid() eq $biochem->checkForProton()->uuid();
+        $Contains_Protons=1 if $rgt->compartment()->id() ne "c" && $rgt->compound_ref() eq $biochem->checkForProton()->uuid();
 	foreach my $cpd (keys %PhoIDs){
-	    $PhoHash{$cpd} += $rgt->coefficient() if $PhoIDs{$cpd}{"UUID"} eq $rgt->compound_uuid();
+	    $PhoHash{$cpd} += $rgt->coefficient() if $PhoIDs{$cpd}{"UUID"} eq $rgt->compound_ref();
 	}
     }
 
@@ -718,12 +712,12 @@ sub estimateThermoReversibility{
     my $conc=0.001;
     my $rgt_total=0.0;
     foreach my $rgt (@{$self->reagents()}){
-	next if $rgt->compound_uuid() eq $biochem->checkForProton()->uuid() || $rgt->compound_uuid() eq $biochem->checkForWater()->uuid();
+	next if $rgt->compound_ref() eq $biochem->checkForProton()->uuid() || $rgt->compound_ref() eq $biochem->checkForWater()->uuid();
         my $tconc=$conc;
-        if($rgt->compound_uuid() eq $GasIDs{"CO2"}{"UUID"}){
+        if($rgt->compound_ref() eq $GasIDs{"CO2"}{"UUID"}){
             $tconc=0.0001;
         }
-        if($rgt->compound_uuid() eq $GasIDs{"O2"}{"UUID"} || $rgt->compound_uuid() eq $GasIDs{"H2"}{"UUID"}){
+        if($rgt->compound_ref() eq $GasIDs{"O2"}{"UUID"} || $rgt->compound_ref() eq $GasIDs{"H2"}{"UUID"}){
             $tconc=0.000001;
         }
         $rgt_total+=($rgt->coefficient()*log($tconc));
@@ -783,7 +777,7 @@ sub estimateThermoReversibility{
 
     my $LowE_total=0;
     foreach my $rgt (@{$self->reagents()}){
-	if(exists($LowEUUIDs{$rgt->compound_uuid()})){
+	if(exists($LowEUUIDs{$rgt->compound_ref()})){
 	    $LowE_total += $rgt->coefficient();
 	}
     }
@@ -837,8 +831,8 @@ sub checkReactionMassChargeBalance {
     my $protonCompHash=();
     my $compHash=();
     my $cpdCmpCount=();
-    my $hcpd=$self->biochemistry()->checkForProton();
-    my $wcpd=$self->biochemistry()->checkForWater();
+    my $hcpd=$self->parent()->checkForProton();
+    my $wcpd=$self->parent()->checkForWater();
 
     #check for the one reaction which is truly empty
     if(scalar(@$rgts)==0){
@@ -854,7 +848,7 @@ sub checkReactionMassChargeBalance {
     #after merging compounds.  The duplicate reagents need to be removed before balancing
     #reaction
     foreach my $rgt (@$rgts){
-	$cpdCmpCount->{$rgt->compound_uuid()."_".$rgt->compartment_uuid()}++;
+	$cpdCmpCount->{$rgt->compound_ref()."_".$rgt->compartment_ref()}++;
     }
 
     if(scalar( grep { $cpdCmpCount->{$_} > 1 } keys %$cpdCmpCount)>0){
@@ -866,7 +860,7 @@ sub checkReactionMassChargeBalance {
 	    my $rgtUUIDs="";
 
 	    foreach my $rgt (@$rgts){
-		if($rgt->compartment_uuid() eq $cmpt && $rgt->compound_uuid() eq $cpd){
+		if($rgt->compartment_ref() eq $cmpt && $rgt->compound_ref() eq $cpd){
 		    $coefficient+=$rgt->coefficient();
 
 		    if(!$rgtUUIDs){
@@ -880,7 +874,7 @@ sub checkReactionMassChargeBalance {
 	    $rgts = $self->reagents();
 
 	    foreach my $rgt (@$rgts){
-		if($rgt->compound_uuid()."_".$rgt->compartment_uuid() eq $rgtUUIDs){
+		if($rgt->compound_ref()."_".$rgt->compartment_ref() eq $rgtUUIDs){
 		    $rgt->coefficient($coefficient);
 		}
 	    }
@@ -891,11 +885,11 @@ sub checkReactionMassChargeBalance {
 		my $rgt = $rgts->[$i];
 
 		#Check for protons/water
-		$protonCompHash->{$rgt->compartment_uuid()}=$rgt->compartment() if $rgt->compound_uuid() eq $hcpd->uuid();
-		$waterCompHash->{$rgt->compartment_uuid()}=$rgt->compartment() if $args->{rebalanceWater} && $rgt->compound_uuid() eq $wcpd->uuid();
-		$compHash->{$rgt->compartment_uuid()}=$rgt->compartment();
+		$protonCompHash->{$rgt->compartment_ref()}=$rgt->compartment() if $rgt->compound_ref() eq $hcpd->uuid();
+		$waterCompHash->{$rgt->compartment_ref()}=$rgt->compartment() if $args->{rebalanceWater} && $rgt->compound_ref() eq $wcpd->uuid();
+		$compHash->{$rgt->compartment_ref()}=$rgt->compartment();
 
-		$cpdCmpCount->{$rgt->compound_uuid()."_".$rgt->compartment_uuid()}++;
+		$cpdCmpCount->{$rgt->compound_ref()."_".$rgt->compartment_ref()}++;
 
 		#Problems are: compounds with noformula, polymers (see next line), and reactions with duplicate compounds in the same compartment
 		#Latest KEGG formulas for polymers contain brackets and 'n', older ones contain '*'
@@ -958,8 +952,8 @@ sub checkReactionMassChargeBalance {
 		}
 	    }
 	    
-	    $self->add("reagents", {compound_uuid => $wcpd->uuid(),
-				    compartment_uuid => $compUuid,
+	    $self->add("reagents", {compound_ref => $wcpd->uuid(),
+				    compartment_ref => $compUuid,
 				    coefficient => -1*$imbalancedAtoms->{"O"},
 				    isCofactor => 0});
 	    
@@ -978,7 +972,7 @@ sub checkReactionMassChargeBalance {
 	    
 	    my $rgts = $self->reagents();
 	    for(my $i=0;$i<scalar(@$rgts);$i++){
-		if($rgts->[$i]->compound_uuid() eq $wcpd->uuid() && $rgts->[$i]->compartment_uuid() eq $compUuid){
+		if($rgts->[$i]->compound_ref() eq $wcpd->uuid() && $rgts->[$i]->compartment_ref() eq $compUuid){
 		    my $coeff=$rgts->[$i]->coefficient();
 		    $rgts->[$i]->coefficient($coeff+(-1*$imbalancedAtoms->{"O"}));
 		}
@@ -1009,8 +1003,8 @@ sub checkReactionMassChargeBalance {
 		}
 	    }
 	    
-	    $self->add("reagents", {compound_uuid => $hcpd->uuid(),
-				    compartment_uuid => $compUuid,
+	    $self->add("reagents", {compound_ref => $hcpd->uuid(),
+				    compartment_ref => $compUuid,
 				    coefficient => -1*$imbalancedAtoms->{"H"},
 				    isCofactor => 0});
 	    
@@ -1029,7 +1023,7 @@ sub checkReactionMassChargeBalance {
 	    
 	    my $rgts = $self->reagents();
 	    for(my $i=0;$i<scalar(@$rgts);$i++){
-		if($rgts->[$i]->compound_uuid() eq $hcpd->uuid() && $rgts->[$i]->compartment_uuid() eq $compUuid){
+		if($rgts->[$i]->compound_ref() eq $hcpd->uuid() && $rgts->[$i]->compartment_ref() eq $compUuid){
 		    my $coeff=$rgts->[$i]->coefficient();
 		    $rgts->[$i]->coefficient($coeff+(-1*$imbalancedAtoms->{"H"}));
 		}
@@ -1080,7 +1074,7 @@ sub checkForDuplicateReagents{
     my $self=shift;
     my %cpdCmpCount=();
     foreach my $rgt (@{$self->reagents()}){
-	$cpdCmpCount{$rgt->compound_uuid()."_".$rgt->compartment_uuid()}++;
+	$cpdCmpCount{$rgt->compound_ref()."_".$rgt->compartment_ref()}++;
     }
 
     if(scalar( grep { $cpdCmpCount{$_} >1 } keys %cpdCmpCount)>0){

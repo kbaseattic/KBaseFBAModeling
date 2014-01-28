@@ -527,46 +527,43 @@ sub PRINTHTMLTABLE {
     return join("\n", @$html);
 }
 
-=head3 MODELSEEDCORE
+=head3 MFATOOLKIT_JOB_DIRECTORY
 
 Definition:
-	string = Bio::KBase::ObjectAPI::utilities::MODELSEEDCORE();
+	string = Bio::KBase::ObjectAPI::utilities::MFATOOLKIT_JOB_DIRECTORY(string input);
 Description:
-	This function converts the job specifications into a ModelDriver command and runs it
+	Getter setter for where the MFAToolkit job data should go
 Example:
 
 =cut
 
-sub MODELSEEDCORE {
-	return $ENV{MODEL_SEED_CORE};
+sub MFATOOLKIT_JOB_DIRECTORY {
+	my ($input) = @_;
+	if (defined($input)) {
+		$ENV{MFATOOLKIT_JOB_DIRECTORY} = $input;
+	}
+	if (!defined($ENV{MFATOOLKIT_JOB_DIRECTORY})) {
+		$ENV{MFATOOLKIT_JOB_DIRECTORY} = "/tmp/fbajobs/";
+	}
+	return $ENV{MFATOOLKIT_JOB_DIRECTORY};
 }
 
-=head3 GLPK
+=head3 MFATOOLKIT_BINARY
 
 Definition:
-	string = Bio::KBase::ObjectAPI::utilities::GLPK();
+	string = Bio::KBase::ObjectAPI::utilities::MFATOOLKIT_BINARY(string input);
 Description:
-	Returns location of glpk executable
+	Getter setter for where the MFAToolkit binary is located
 Example:
 
 =cut
 
-sub GLPK {
-	return $ENV{GLPK};
-}
-
-=head3 CPLEX
-
-Definition:
-	string = Bio::KBase::ObjectAPI::utilities::CPLEX();
-Description:
-	Returns location of cplex executable
-Example:
-
-=cut
-
-sub CPLEX {
-	return $ENV{CPLEX};
+sub MFATOOLKIT_BINARY {
+	my ($input) = @_;
+	if (defined($input)) {
+		$ENV{MFATOOLKIT_BINARY} = $input;
+	}
+	return $ENV{MFATOOLKIT_BINARY};
 }
 
 =head3 parseArrayString
@@ -633,6 +630,23 @@ sub translateArrayOptions {
 		$output = [split($args->{delimiter},$args->{option})];
 	}
 	return $output;
+}
+
+=head3 convertRoleToSearchRole
+Definition:
+	string:searchrole = Bio::KBase::ObjectAPI::Utilities::convertRoleToSearchRole->(string rolename);
+Description:
+	Converts the input role name into a search name by removing spaces, capitalization, EC numbers, and some punctuation.
+
+=cut
+
+sub convertRoleToSearchRole {
+	my ($rolename) = @_;
+	$rolename = lc($rolename);
+	$rolename =~ s/[\d\-]+\.[\d\-]+\.[\d\-]+\.[\d\-]+//g;
+	$rolename =~ s/\s//g;
+	$rolename =~ s/\#.*$//g;
+	return $rolename;
 }
 
 1;

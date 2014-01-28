@@ -90,7 +90,7 @@ has user_override => ( is => 'rw', isa => 'Str',default => "");
 sub get_objects {
 	my ($self,$refs) = @_;
 	#Checking cache for objects
-	my $newrefs;
+	my $newrefs = [];
 	for (my $i=0; $i < @{$refs}; $i++) {
 		if (!defined($self->cache()->{$refs->[$i]})) {
     		push(@{$newrefs},$refs->[$i]);
@@ -128,6 +128,8 @@ sub get_objects {
 				my $type = $2;
 				my $class = "Bio::KBase::ObjectAPI::".$module."::".$type;
 				$self->cache()->{$newrefs->[$i]} = $class->new($objdatas->[$i]->{data});
+				$self->cache()->{$info->[6]."/".$info->[0]."/".$info->[4]} = $self->cache()->{$newrefs->[$i]};
+				$self->cache()->{$newrefs->[$i]}->parent($self);
 				$self->cache()->{$newrefs->[$i]}->_reference($info->[6]."/".$info->[0]."/".$info->[4]);
 				$self->uuid_refs()->{$self->cache()->{$newrefs->[$i]}->uuid()} = $info->[6]."/".$info->[0]."/".$info->[4];
 			}
@@ -196,7 +198,6 @@ sub save_objects {
     			"params" => $input
     		});
     	} else {
-    		print "Now saving!\n";
     		$listout = $self->workspace()->save_objects($input);
     	}    	
 	    #Placing output into a hash of references pointing to object infos

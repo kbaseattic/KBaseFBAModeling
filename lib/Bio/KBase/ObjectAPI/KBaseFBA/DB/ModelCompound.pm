@@ -26,11 +26,11 @@ has id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => '
 
 # LINKS:
 has compound => (is => 'rw', type => 'link(Biochemistry,compounds,compound_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_compound', clearer => 'clear_compound', isa => 'Bio::KBase::ObjectAPI::KBaseBiochem::Compound', weak_ref => 1);
-has modelcompartment => (is => 'rw', type => 'link(FBAModel,modelcompartments,modelcompartment_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_modelcompartment', clearer => 'clear_modelcompartment', isa => 'Ref', weak_ref => 1);
+has modelcompartment => (is => 'rw', type => 'link(FBAModel,modelcompartments,modelcompartment_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_modelcompartment', clearer => 'clear_modelcompartment', isa => 'Bio::KBase::ObjectAPI::KBaseFBA::ModelCompartment', weak_ref => 1);
 
 
 # BUILDERS:
-sub _build_reference { return my ($self) = @_;$self->parent()->_reference().'/modelcompounds/id/'.$self->id(); }
+sub _build_reference { my ($self) = @_;return $self->parent()->_reference().'/modelcompounds/id/'.$self->id(); }
 sub _build_uuid { my ($self) = @_;return $self->_reference(); }
 sub _build_compound {
 	 my ($self) = @_;
@@ -132,9 +132,9 @@ my $links = [
             'name' => 'modelcompartment',
             'attribute' => 'modelcompartment_ref',
             'clearer' => 'clear_modelcompartment',
-            'class' => 'FBAModel',
+            'class' => 'Bio::KBase::ObjectAPI::KBaseFBA::ModelCompartment',
             'method' => 'modelcompartments',
-            'module' => undef,
+            'module' => 'KBaseFBA',
             'field' => 'id'
           }
         ];

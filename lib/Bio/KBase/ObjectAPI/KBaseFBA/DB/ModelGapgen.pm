@@ -16,25 +16,19 @@ has parent => (is => 'rw', isa => 'Ref', weak_ref => 1, type => 'parent', metacl
 # ATTRIBUTES:
 has uuid => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_uuid');
 has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_reference');
-has ko_refs => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
+has integrated_solution => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has gapgen_id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 has media_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has gapgen_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has integrated => (is => 'rw', isa => 'Bool', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has integrated_solution => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has gapgen_id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
-has kos => (is => 'rw', type => 'link(Genome,features,ko_refs)', metaclass => 'Typed', lazy => 1, builder => '_build_kos', clearer => 'clear_kos', isa => 'ArrayRef');
 has media => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,Media,media_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_media', clearer => 'clear_media', isa => 'Bio::KBase::ObjectAPI::KBaseBiochem::Media', weak_ref => 1);
 has gapgen => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,GapgenFormulation,gapgen_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_gapgen', clearer => 'clear_gapgen', isa => 'Ref', weak_ref => 1);
 
 
 # BUILDERS:
-sub _build_kos {
-	 my ($self) = @_;
-	 return $self->getLinkedObjectArray($self->ko_refs());
-}
 sub _build_media {
 	 my ($self) = @_;
 	 return $self->getLinkedObject($self->media_ref());
@@ -55,9 +49,15 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'ko_refs',
-            'default' => 'sub {return [];}',
-            'type' => 'ArrayRef',
+            'name' => 'integrated_solution',
+            'type' => 'Int',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 1,
+            'printOrder' => 0,
+            'name' => 'gapgen_id',
+            'type' => 'Str',
             'perm' => 'rw'
           },
           {
@@ -80,24 +80,10 @@ my $attributes = [
             'name' => 'integrated',
             'type' => 'Bool',
             'perm' => 'rw'
-          },
-          {
-            'req' => 0,
-            'printOrder' => -1,
-            'name' => 'integrated_solution',
-            'type' => 'Int',
-            'perm' => 'rw'
-          },
-          {
-            'req' => 1,
-            'printOrder' => 0,
-            'name' => 'gapgen_id',
-            'type' => 'Str',
-            'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {ko_refs => 0, media_ref => 1, gapgen_ref => 2, integrated => 3, integrated_solution => 4, gapgen_id => 5};
+my $attribute_map = {integrated_solution => 0, gapgen_id => 1, media_ref => 2, gapgen_ref => 3, integrated => 4};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -113,17 +99,6 @@ sub _attributes {
 }
 
 my $links = [
-          {
-            'parent' => 'Genome',
-            'name' => 'kos',
-            'attribute' => 'ko_refs',
-            'array' => 1,
-            'clearer' => 'clear_kos',
-            'class' => 'Bio::KBase::ObjectAPI::KBaseGenomes::Feature',
-            'method' => 'features',
-            'module' => 'KBaseGenomes',
-            'field' => 'id'
-          },
           {
             'attribute' => 'media_ref',
             'parent' => 'Bio::KBase::ObjectAPI::KBaseStore',
@@ -144,7 +119,7 @@ my $links = [
           }
         ];
 
-my $link_map = {kos => 0, media => 1, gapgen => 2};
+my $link_map = {media => 0, gapgen => 1};
 sub _links {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {

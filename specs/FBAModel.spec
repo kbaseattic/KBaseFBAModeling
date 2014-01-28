@@ -14,6 +14,11 @@ module KBaseFBA {
 	*/
     typedef string mapping_ref;
     /*
+		Reference to a biochemistry object
+		@id ws KBaseBiochem.Biochemistry
+	*/
+    typedef string Biochemistry_ref;
+    /*
 		Template biomass ID
 		@id external
 	*/
@@ -65,7 +70,7 @@ module KBaseFBA {
     typedef string feature_ref;
 	/*
 		Reference to a gapgen object
-		@id ws KBaseFBA.GapgenFormulation
+		@id ws KBaseFBA.Gapgeneration
 	*/
     typedef string gapgen_ref;
     /*
@@ -75,7 +80,7 @@ module KBaseFBA {
     typedef string fba_ref;
 	/*
 		Reference to a gapfilling object
-		@id ws KBaseFBA.GapfillingFormulation
+		@id ws KBaseFBA.Gapfilling
 	*/
     typedef string gapfill_ref;
 	/*
@@ -317,7 +322,7 @@ module KBaseFBA {
     /* 
     	ModelGapfill object
     	 
-		@searchable ws_subset gapfill_id gapfill_ref integrated media_ref ko_refs
+		@searchable ws_subset gapfill_id gapfill_ref integrated media_ref
     */
     typedef structure {
 		gapfill_id gapfill_id;
@@ -330,7 +335,7 @@ module KBaseFBA {
     /* 
     	ModelGapgen object
     	
-		@searchable ws_subset gapgen_id gapgen_ref integrated media_ref ko_refs
+		@searchable ws_subset gapgen_id gapgen_ref integrated media_ref
     */
     typedef structure {
     	gapgen_id gapgen_id;
@@ -345,8 +350,8 @@ module KBaseFBA {
     	
     	@optional metagenome_otu_ref metagenome_ref genome_ref
     	@searchable ws_subset id source_id source name type genome_ref metagenome_ref metagenome_otu_ref template_ref
-    	@searchable ws_subset gapfillings.[*].(gapfill_id,gapfill_ref,integrated,media_ref,integrated_solution,ko_refs) 
-    	@searchable ws_subset gapgens.[*].(gapgen_id,gapgen_ref,integrated,media_ref,integrated_solution,ko_refs) 
+    	@searchable ws_subset gapfillings.[*].(gapfill_id,gapfill_ref,integrated,media_ref,integrated_solution) 
+    	@searchable ws_subset gapgens.[*].(gapgen_id,gapgen_ref,integrated,media_ref,integrated_solution) 
     	@searchable ws_subset biomasses.[*].(id,name,other,dna,rna,protein,cellwall,lipid,cofactor,energy,biomasscompounds.[*].(modelcompound_ref,coefficient)) 
     	@searchable ws_subset modelcompartments.[*].(id,compartment_ref,compartmentIndex,label,pH,potential) 
     	@searchable ws_subset modelcompounds.[*].(id,compound_ref,name,charge,formula,modelcompartment_ref)
@@ -502,6 +507,7 @@ module KBaseFBA {
     /* 
     	FBA object holds the formulation and results of a flux balance analysis study
     	
+    	@optional PROMKappa phenotypesimulationset_ref objectiveValue phenotypeset_ref prommodel_ref regmodel_ref
     	@searchable ws_subset comboDeletions id fva fluxMinimization findMinimalMedia allReversible simpleThermoConstraints thermodynamicConstraints noErrorThermodynamicConstraints minimizeErrorThermodynamicConstraints
     	@searchable ws_subset regmodel_ref fbamodel_ref prommodel_ref media_ref phenotypeset_ref geneKO_refs reactionKO_refs additionalCpd_refs objectiveValue phenotypesimulationset_ref
     	@searchable ws_subset FBAConstraints.[*].(name,rhs,sign,compound_terms,reaction_terms) 
@@ -527,9 +533,9 @@ module KBaseFBA {
 		bool minimizeErrorThermodynamicConstraints;
 		
 		bool maximizeObjective;
-		mapping<modelcompound_ref,float> compoundflux_objterms;
-    	mapping<modelreaction_ref,float> reactionflux_objterms;
-		mapping<biomass_ref,float> biomassflux_objterms;
+		mapping<modelcompound_id,float> compoundflux_objterms;
+    	mapping<modelreaction_id,float> reactionflux_objterms;
+		mapping<biomass_id,float> biomassflux_objterms;
 		
 		int comboDeletions;
 		int numberOfSolutions;
@@ -552,18 +558,18 @@ module KBaseFBA {
 		phenotypeset_ref phenotypeset_ref;
 		list<feature_ref> geneKO_refs;
 		list<modelreaction_ref> reactionKO_refs;
-		list<compound_ref> additionalCpd_refs;
+		list<modelcompound_ref> additionalCpd_refs;
 		mapping<string,float> uptakeLimits;
 		
 		mapping<string,string> parameters;
-		mapping<string,string> inputfiles;
+		mapping<string,list<string>> inputfiles;
 		
 		list<FBAConstraint> FBAConstraints;
 		list<FBAReactionBound> FBAReactionBounds;
 		list<FBACompoundBound> FBACompoundBounds;
 			
 		float objectiveValue;
-		mapping<string,string> outputfiles;
+		mapping<string,list<string>> outputfiles;
 		phenotypesimulationset_ref phenotypesimulationset_ref;
 
 		list<FBACompoundVariable> FBACompoundVariables;
@@ -604,6 +610,7 @@ module KBaseFBA {
     /* 
     	GapGeneration object holds data on formulation and solutions from gapgen analysis
     	
+    	@optional fba_ref totalTimeLimit timePerSolution media_ref referenceMedia_ref gprHypothesis reactionRemovalHypothesis biomassHypothesis mediaHypothesis
     	@searchable ws_subset id totalTimeLimit timePerSolution referenceMedia_ref fbamodel_ref fba_ref reactionRemovalHypothesis gprHypothesis biomassHypothesis mediaHypothesis
     	@searchable ws_subset gapgenSolutions.[*].(id,suboptimal,gapgenSolutionReactions.[*].(modelreaction_ref,direction),integrated,biomassSuppplement_refs,mediaRemoval_refs,additionalKO_refs)    	
     */
@@ -660,6 +667,7 @@ module KBaseFBA {
     /* 
     	GapFilling object holds data on the formulations and solutions of a gapfilling analysis
     	
+    	@optional totalTimeLimit timePerSolution transporterMultiplier singleTransporterMultiplier biomassTransporterMultiplier noDeltaGMultiplier noStructureMultiplier deltaGMultiplier directionalityMultiplier drainFluxMultiplier reactionActivationBonus allowableCompartment_refs blacklistedReaction_refs targetedreaction_refs guaranteedReaction_refs completeGapfill balancedReactionsOnly reactionAdditionHypothesis gprHypothesis biomassHypothesis mediaHypothesis fba_ref media_ref probanno_ref
     	@searchable ws_subset id totalTimeLimit timePerSolution transporterMultiplier singleTransporterMultiplier biomassTransporterMultiplier noDeltaGMultiplier noStructureMultiplier deltaGMultiplier directionalityMultiplier drainFluxMultiplier reactionActivationBonus allowableCompartment_refs blacklistedReaction_refs targetedreaction_refs guaranteedReaction_refs completeGapfill balancedReactionsOnly reactionAdditionHypothesis gprHypothesis biomassHypothesis fba_ref fbamodel_ref probanno_ref mediaHypothesis
     	@searchable ws_subset gapfillingSolutions.[*].(id,suboptimal,integrated,solutionCost,koRestore_refs,biomassRemoval_refs,mediaSupplement_refs,gapfillingSolutionReactions.[*].(reaction_ref,compartment_ref,direction,candidateFeature_refs))
     */
@@ -767,6 +775,7 @@ module KBaseFBA {
     	string modelType;
     	string domain;
     	mapping_ref mapping_ref;
+    	Biochemistry_ref biochemistry_ref;
     	
     	list<TemplateReaction> templateReactions;
     	list<TemplateBiomass> templateBiomasses;

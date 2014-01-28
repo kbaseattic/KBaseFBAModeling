@@ -22,11 +22,9 @@ has abbreviation => ( is => 'rw', isa => 'Str',printOrder => '2', type => 'msdat
 has modelCompartmentLabel => ( is => 'rw', isa => 'Str',printOrder => '4', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildmodelCompartmentLabel' );
 has gprString => ( is => 'rw', isa => 'Str',printOrder => '6', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildgprString' );
 has exchangeGPRString => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildexchangeGPRString' );
-has id => ( is => 'rw', isa => 'Str',printOrder => '1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildid' );
 has missingStructure => ( is => 'rw', isa => 'Bool',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildmissingStructure' );
 has biomassTransporter => ( is => 'rw', isa => 'Bool',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildbiomassTransporter' );
 has isTransporter => ( is => 'rw', isa => 'Bool',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildisTransporter' );
-has mapped_uuid  => ( is => 'rw', isa => 'ModelSEED::uuid',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildmapped_uuid' );
 has translatedDirection  => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildtranslatedDirection' );
 has featureIDs  => ( is => 'rw', isa => 'ArrayRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildfeatureIDs' );
 has featureUUIDs  => ( is => 'rw', isa => 'ArrayRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildfeatureUUIDs' );
@@ -34,10 +32,6 @@ has featureUUIDs  => ( is => 'rw', isa => 'ArrayRef',printOrder => '-1', type =>
 #***********************************************************************************************************
 # BUILDERS:
 #***********************************************************************************************************
-sub _buildid {
-	my ($self) = @_;
-	return $self->reaction()->id()."_".$self->modelCompartmentLabel();
-}
 sub _buildname {
 	my ($self) = @_;
 	return $self->reaction->name()."_".$self->modelCompartmentLabel();
@@ -157,8 +151,8 @@ sub _buildbiomassTransporter {
 		if ($rgt->modelcompound()->isBiomassCompound() == 1) {
 			for (my $j=$i+1; $j < @{$rgts}; $j++) {
 				my $rgtc = $rgts->[$j];
-				if ($rgt->modelcompound()->compound_uuid() eq $rgtc->modelcompound()->compound_uuid()) {
-					if ($rgt->modelcompound()->modelcompartment_uuid() ne $rgtc->modelcompound()->modelcompartment_uuid()) {
+				if ($rgt->modelcompound()->compound_ref() eq $rgtc->modelcompound()->compound_ref()) {
+					if ($rgt->modelcompound()->modelcompartment_ref() ne $rgtc->modelcompound()->modelcompartment_ref()) {
 						return 1;
 					}
 				}
@@ -173,16 +167,13 @@ sub _buildisTransporter {
 	my $initrgt = $rgts->[0];
 	for (my $i=1; $i < @{$rgts}; $i++) {
 		my $rgt = $rgts->[$i];
-		if ($rgt->modelcompound()->modelcompartment_uuid() ne $initrgt->modelcompound()->modelcompartment_uuid()) {
+		if ($rgt->modelcompound()->modelcompartment_ref() ne $initrgt->modelcompound()->modelcompartment_ref()) {
 			return 1;	
 		}
 	}
 	return 0;
 }
-sub _buildmapped_uuid {
-	my ($self) = @_;
-	return "00000000-0000-0000-0000-000000000000";
-}
+
 sub _buildtranslatedDirection {
 	my ($self) = @_;
 	if ($self->direction() eq "=") {
@@ -199,8 +190,8 @@ sub _buildfeatureIDs {
 	my $featureHash = {};
 	foreach my $protein (@{$self->modelReactionProteins()}) {
 		foreach my $subunit (@{$protein->modelReactionProteinSubunits()}) {
-			foreach my $gene (@{$subunit->modelReactionProteinSubunitGenes()}) {
-				$featureHash->{$gene->feature()->id()} = 1;
+			foreach my $gene (@{$subunit->features()}) {
+				$featureHash->{$gene->id()} = 1;
 			}
 		}
 	}
@@ -211,8 +202,8 @@ sub _buildfeatureUUIDs {
 	my $featureHash = {};
 	foreach my $protein (@{$self->modelReactionProteins()}) {
 		foreach my $subunit (@{$protein->modelReactionProteinSubunits()}) {
-			foreach my $gene (@{$subunit->modelReactionProteinSubunitGenes()}) {
-				$featureHash->{$gene->feature()->uuid()} = 1;
+			foreach my $gene (@{$subunit->features()}) {
+				$featureHash->{$gene->_reference()} = 1;
 			}
 		}
 	}
@@ -240,16 +231,16 @@ Description:
 
 sub addReagentToReaction {
     my $self = shift;
-    my $args = Bio::KBase::ObjectAPI::utilities::args(["coefficient","modelcompound_uuid"],{}, @_);
+    my $args = Bio::KBase::ObjectAPI::utilities::args(["coefficient","modelcompound_ref"],{}, @_);
 	my $rgts = $self->modelReactionReagents();
 	for (my $i=0; $i < @{$rgts}; $i++) {
-		if ($rgts->[$i]->modelcompound_uuid() eq $args->{modelcompound_uuid}) {
-			return $self->modelReactionReagents()->[$i];
+		if ($rgts->[$i]->modelcompound_ref() eq $args->{modelcompound_ref}) {
+			return $rgts->[$i];
 		}
 	}
 	my $mdlrxnrgt = $self->add("modelReactionReagents",{
 		coefficient => $args->{coefficient},
-		modelcompound_uuid => $args->{modelcompound_uuid}
+		modelcompound_ref => $args->{modelcompound_ref}
 	});
 	return $mdlrxnrgt;
 }
@@ -267,43 +258,38 @@ Description:
 
 sub addModelReactionProtein {
     my $self = shift;
-    my $args = Bio::KBase::ObjectAPI::utilities::args(["proteinDataTree","complex_uuid"], {}, @_);
+    my $args = Bio::KBase::ObjectAPI::utilities::args(["proteinDataTree"], {complex_ref => ""}, @_);
 	my $prots = $self->modelReactionProteins();
 	for (my $i=0; $i < @{$prots}; $i++) {
-		if ($prots->[$i]->complex_uuid() eq $args->{complex_uuid}) {
+		if ($prots->[$i]->complex_ref() eq $args->{complex_ref}) {
 			return $prots->[$i];
 		}
 	}
-	my $protdata = {complex_uuid => $args->{complex_uuid}};
+	my $protdata = {complex_ref => $args->{complex_ref},modelReactionProteinSubunits => []};
 	if (defined($args->{proteinDataTree}->{note})) {
 		$protdata->{note} = $args->{proteinDataTree}->{note};
 	}
 	if (defined($args->{proteinDataTree}->{subunits})) {
-		my $subunitData;
 		foreach my $subunit (keys(%{$args->{proteinDataTree}->{subunits}})) {
 			my $data = {
 				triggering => $args->{proteinDataTree}->{subunits}->{$subunit}->{triggering},
-				optional => $args->{proteinDataTree}->{subunits}->{$subunit}->{optional},
-				role_uuid => $subunit
+				optionalSubunit => $args->{proteinDataTree}->{subunits}->{$subunit}->{optionalRole},
+				role => $subunit,
+				feature_refs => [],
+				note => ""
 			};
 			if (defined($args->{proteinDataTree}->{subunits}->{$subunit}->{note})) {
 				$data->{note} = $args->{proteinDataTree}->{subunits}->{$subunit}->{note};
 			}
 			if (defined($args->{proteinDataTree}->{subunits}->{$subunit}->{genes})) {
-				my $genelist;
 				foreach my $gene (keys(%{$args->{proteinDataTree}->{subunits}->{$subunit}->{genes}})) {
-					push(@{$genelist},{
-						feature_uuid => $gene
-					});
+					push(@{$data->{feature_refs}},$gene);
 				}
-				$data->{modelReactionProteinSubunitGenes} = $genelist; 
 			}
-			push(@{$subunitData},$data);
+			push(@{$protdata->{modelReactionProteinSubunits}},$data);
 		}
-		$protdata->{modelReactionProteinSubunits} = $subunitData;
 	}
-	my $mdlrxnprot = $self->add("modelReactionProteins",$protdata);
-	return $mdlrxnprot;
+	return $self->add("modelReactionProteins",$protdata);
 }
 
 =head3 setGPRFromArray
@@ -327,7 +313,6 @@ sub setGPRFromArray {
 	for (my $i=0; $i < @{$args->{gpr}}; $i++) {
     	if (defined($args->{gpr}->[$i]) && ref($args->{gpr}->[$i]) eq "ARRAY") {
 	    	my $prot = $self->add("modelReactionProteins",{
-	    		complex_uuid => "00000000-0000-0000-0000-000000000000",
 	    		note => "Manually specified GPR"
 	    	});
 	    	for (my $j=0; $j < @{$args->{gpr}->[$i]}; $j++) {
@@ -342,11 +327,10 @@ sub setGPRFromArray {
 					    }
 					    else {
 						my $subunit = $prot->add("modelReactionProteinSubunits",{
-						    role_uuid => "00000000-0000-0000-0000-000000000000",
 						    triggering => 0,
 						    optional => 0,
 						    note => "Manually specified GPR"});
-						$subunit->add("modelReactionProteinSubunitGenes",{feature_uuid => $ftrObj->uuid()});
+						$subunit->add("modelReactionProteinSubunitGenes",{feature_ref => $ftrObj->_reference()});
 					    }
 		    			}
 		    		}

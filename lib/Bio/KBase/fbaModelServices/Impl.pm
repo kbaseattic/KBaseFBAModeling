@@ -61,27 +61,34 @@ uniquely identifies a workspace among all workspaces.
 
 #BEGIN_HEADER
 use URI;
+use ModelSEED::Client::SAP;
 use Bio::KBase::IDServer::Client;
 use Bio::KBase::CDMI::CDMIClient;
 use Bio::KBase::AuthToken;
 use Bio::KBase::workspaceService::Client;
 use Bio::KBase::probabilistic_annotation::Client;
+use Bio::KBase::GenomeAnnotation::Client;
 use Bio::KBase::ObjectAPI::KBaseStore;
 use Data::UUID;
 use Bio::KBase::ObjectAPI::KBaseBiochem::Biochemistry;
+use Bio::KBase::ObjectAPI::KBaseBiochem::Media;
 use Bio::KBase::ObjectAPI::KBaseOntology::Mapping;
 use Bio::KBase::ObjectAPI::KBaseGenomes::Genome;
+use Bio::KBase::ObjectAPI::KBaseGenomes::ContigSet;
+use Bio::KBase::ObjectAPI::KBaseGenomes::ProteinSet;
 use Bio::KBase::ObjectAPI::KBaseFBA::FBAModel;
-use Bio::KBase::ObjectAPI::GlobalFunctions;
+#use Bio::KBase::ObjectAPI::GlobalFunctions;
 use Bio::KBase::ObjectAPI::KBaseFBA::Gapfilling;
 use Bio::KBase::ObjectAPI::KBaseFBA::Gapgeneration;
 use Bio::KBase::ObjectAPI::KBaseFBA::FBA;
 use Bio::KBase::ObjectAPI::KBaseFBA::ModelTemplate;
+use Bio::KBase::workspaceService::Client;
 use Bio::KBase::ObjectAPI::utilities qw( args verbose set_verbose translateArrayOptions);
 use Try::Tiny;
 use Data::Dumper;
 use Config::Simple;
 use Digest::MD5;
+use LWP::Simple "getstore";
 
 sub _authentication {
 	my($self) = @_;
@@ -108,7 +115,6 @@ sub _cachedBiochemistry {
 	my ($self,$biochemistry) = @_;
 	if (defined($biochemistry)) {
 		$self->{_cachedbiochemistry} = $biochemistry;
-		$self->{_initialBiochemistryCounts}->{Media} = @{$biochemistry->media()};
 		$self->{_initialBiochemistryCounts}->{Compounds} = @{$biochemistry->compounds()};
 		$self->{_initialBiochemistryCounts}->{Reactions} = @{$biochemistry->reactions()};
 	}
@@ -139,34 +145,44 @@ sub _resetCachedBiochemistry {
 sub _resetKBaseStore {
 	my ($self,$params) = @_;
 	delete $self->{_kbasestore};
-	if (defined($self->_authentication())) {
+	my @calldata = caller(2);
+	my $temp = [split(/:/,$calldata[3])];
+	$temp = pop(@{$temp});
+	my $newparams = {};
+	foreach my $param (keys(%{$params})) {
+		if ($param ne "fasta") {
+			$newparams->{$param} = $params->{$param};
+		}
+	}
+	if (defined($self->_authentication())) {	
 		$self->{_kbasestore} = Bio::KBase::ObjectAPI::KBaseStore->new({
-			provenance => {
+			provenance => [{
 				"time" => DateTime->now()->datetime()."+0000",
 				service_ver => $VERSION,
-				service => $self->_getContext()->module(),
-				method => $self->_getContext()->method(),
-				method_params => [$params],
+				service => "KBaseFBAModeling",
+				method => $temp,
+				method_params => [$newparams],
 				input_ws_objects => [],
 				resolved_ws_objects => [],
 				intermediate_incoming => [],
 				intermediate_outgoing => []
-			},
+			}],
 			workspace => $self->_workspaceServices()
 		});
+		exit();
 	} else {
 		$self->{_kbasestore} = Bio::KBase::ObjectAPI::KBaseStore->new({
-			provenance => {
+			provenance => [{
 				"time" => DateTime->now()->datetime()."+0000",
 				service_ver => $VERSION,
-				service => $self->_getContext()->module(),
-				method => $self->_getContext()->method(),
-				method_params => [$params],
+				service => "KBaseFBAModeling",
+				method => $temp,
+				method_params => [$newparams],
 				input_ws_objects => [],
 				resolved_ws_objects => [],
 				intermediate_incoming => [],
 				intermediate_outgoing => []
-			},
+			}],
 			workspace => $self->_workspaceServices()
 		});
 	}
@@ -339,91 +355,6 @@ sub _modify_annotation_from_probanno {
     return ($annotation,$mapping);
 }
 
-sub _translate_genome_to_annotation {
-    my($self,$genome,$mapping) = @_;
-   	if (!defined($genome->{gc}) || !defined($genome->{size})) {
-   		$genome->{gc} = 0.5;
-   		$genome->{size} = 0;
-   		my $contigs = [];
-   		if (defined($genome->{contigs})) {
-   			$contigs = $genome->{contigs};
-   		} elsif (defined($genome->{contigs_uuid})) {
-   			my $obj = $self->_get_msobject("GenomeContigs","NO_WORKSPACE",$genome->{contigs_uuid});
-   			$contigs = $obj->{contigs};
-   		}
-   		for ( my $i = 0 ; $i < @{ $contigs } ; $i++ ) {
-			my $dna = $contigs->[$i]->{dna};
-			$genome->{size} += length($dna);
-			for ( my $j = 0 ; $j < length($dna) ; $j++ ) {
-				if ( substr( $dna, $j, 1 ) =~ m/[gcGC]/ ) {
-					$genome->{gc}++;
-				}
-			}
-		}
-		if ($genome->{size} > 0) {
-			$genome->{gc} = $genome->{gc}/$genome->{size};
-		} else {
-			$genome->{gc} = 0.5;
-		}
-   	}
-    #Creating the annotation from the input genome object
-	if (!defined($genome->{scientific_name})) {
-		$genome->{scientific_name} = $genome->{id};
-	}
-	my $annotation = ModelSEED::MS::Annotation->new({
-	  name         => $genome->{scientific_name},
-	  mapping_uuid => $mapping->uuid(),
-	  mapping      => $mapping,
-	  genomes      => [{
-		 name => $genome->{scientific_name},
-		 source   => "KBase",
-		 id       => $genome->{id},
-		 cksum    => "unknown",
-		 class    => "unknown",
-		 taxonomy => $genome->{domain},
-		 etcType  => "unknown",
-		 size     => $genome->{size},
-		 gc       => $genome->{gc}
-	  }]
-	});
-	for ( my $i = 0 ; $i < @{ $genome->{features} } ; $i++ ) {
-		my $ftr = $genome->{features}->[$i];
-		my $newftr = $annotation->add("features",{
-			 id          => $ftr->{id},
-			 type        => $ftr->{type},
-			 sequence    => $ftr->{protein_translation},
-			 genome_uuid => $annotation->genomes()->[0]->uuid(),
-			 start       => $ftr->{location}->[0]->[1],
-			 stop        =>
-			   ( $ftr->{location}->[0]->[1] + $ftr->{location}->[0]->[3] ),
-			 contig    => $ftr->{location}->[0]->[0],
-			 direction => $ftr->{location}->[0]->[2],
-		});
-		my $output = ModelSEED::MS::Utilities::GlobalFunctions::functionToRoles(
-			$ftr->{function}
-		);
-		if ( defined( $output->{roles} ) ) {
-			for ( my $j = 0 ; $j < @{ $output->{roles} } ; $j++ ) {
-				my $role = $mapping->queryObject( "roles",{
-					name => $output->{roles}->[$j]
-				});
-				if ( !defined($role) ) {
-					$role = $mapping->add( "roles",{
-						name => $output->{roles}->[$j]
-					});
-				}
-				$newftr->add("featureroles",{
-					 role_uuid   => $role->uuid(),
-					 compartment => join(";",@{$output->{compartments}}),
-					 delimiter   => $output->{delimiter},
-					 comment     => $output->{comment}
-				});
-			}
-		}
-	}
-	return $annotation;
-}
-
 sub _cdmi {
 	my $self = shift;
 	if (!defined($self->{_cdmi})) {
@@ -444,6 +375,16 @@ sub _mssServer {
 sub _idServer {
 	my $self = shift;
     return $self->{_idserver};
+}
+
+sub _gaserv {
+	my $self = shift;
+    return $self->{_gaserver};
+}
+
+sub _jobserv {
+	my $self = shift;
+    return $self->{_jobserver};
 }
 
 sub _workspaceServices {
@@ -486,8 +427,7 @@ sub _save_msobject {
 	my($self,$obj,$type,$ws,$id,$params) = @_;
 	my $data;
 	if (ref($obj) =~ m/Bio::KBase::ObjectAPI::/) {
-		$data = $obj->serializeToDB();
-		return $self->_KBaseStore()->save_object($data,$ws."/".$id,$params);
+		return $self->_KBaseStore()->save_object($obj,$ws."/".$id,$params);
 	} else {
 		$data = $obj;
 		my $input = {
@@ -525,22 +465,6 @@ sub _get_msobject {
 	return $obj;
 }
 
-sub _set_uuid_by_idws {
-	my($self,$id,$ws) = @_;
-	if ($ws eq "NO_WORKSPACE") {
-		return $id;
-	}
-	return $ws."/".$id;
-}
-
-sub _get_object_by_uuid {
-	my($self,$type,$uuid) = @_;
-	if ($uuid =~ m/(.+)\/([^\/]+)$/) {
-		return $self->_get_msobject($type,$1,$2);
-	}
-	return $self->_get_msobject($type,"NO_WORKSPACE",$uuid);
-}
-
 sub _get_genomeObj_from_CDM {
 	my($self,$id,$asNew) = @_;
 	my $cdmi = $self->_cdmi();
@@ -548,16 +472,23 @@ sub _get_genomeObj_from_CDM {
     if (!defined($data->{$id})) {
     	$self->_error("Genome ".$id." not found!",'get_genomeobject');
     }
-    $data = $data->{$id};
     my $genomeObj = {
 		id => $id,
-		scientific_name => $data->{scientific_name},
-		genetic_code => $data->{genetic_code},
-		domain => undef,
-		source => undef,
-		source_id => undef,
-		contigs => [],
-		features => []
+		scientific_name => $data->{$id}->{scientific_name},
+		domain => "Bacteria",
+		genetic_code => $data->{$id}->{genetic_code},
+		dna_size => $data->{$id}->{dna_size},
+		num_contigs => $data->{$id}->{contigs},
+		contig_lengths => [],
+		contig_ids => [],
+		source => "KBase",
+		source_id => $id,
+		md5 => $data->{$id}->{genome_md5},
+		taxonomy => $data->{$id}->{taxonomy},
+		gc_content => $data->{$id}->{gc_content},
+		complete => $data->{$id}->{complete},
+		publications => [],
+		features => [],
     };
     $data = $self->_cdmi()->get_relationship_IsComposedOf([$id],["domain","source_id"], [], ["id"]);
     if (defined($data->[0])) {
@@ -568,63 +499,70 @@ sub _get_genomeObj_from_CDM {
     		$genomeObj->{source_id} = $data->[0]->[0]->{source_id};
     	}
     }
-   	for (my $i=0; $i < @{$data}; $i++) {
-    	if (defined($data->[$i]->[2]->{id})) {
-	    	my $contig = {
-	    		id => $data->[$i]->[2]->{id},
-	    		dna => undef
-	    	};
-	    	my $seqData = $self->_cdmi()->contigs_to_sequences([$data->[$i]->[2]->{id}]);
-	    	if (defined($seqData->{$data->[$i]->[2]->{id}})) {
-	    		$contig->{dna} = $seqData->{$data->[$i]->[2]->{id}};
-	    	}
-	    	push(@{$genomeObj->{contigs}},$contig);
-    	}
+    $data = $cdmi->genomes_to_contigs([$id]);
+    my $contigset = {
+    	id => $self->_idServer()->register_ids("kb|contigset","md5hash",[$genomeObj->{md5}])->{$genomeObj->{md5}},
+		name => $genomeObj->{scientific_name},
+		md5 => $genomeObj->{md5},
+		source_id => $genomeObj->{source_id},
+		source => $genomeObj->{source},
+		type => "Organism",
+		contigs => []
+    };
+    for (my $i=0; $i < @{$data->{$id}}; $i++) {
+    	my $seqData = $cdmi->contigs_to_sequences([$data->{$id}->[$i]]);
+    	push(@{$contigset->{contigs}},{
+    		id => $data->{$id}->[$i],
+			"length" => length($seqData->{$data->{$id}->[$i]}),
+			md5 => Digest::MD5::md5_hex($seqData->{$data->{$id}->[$i]}),
+			sequence => $seqData->{$data->{$id}->[$i]},
+			name => $data->{$id}->[$i]
+    	});
    	}
-   	#$data = $self->_cdmi()->get_relationship_WasSubmittedBy([$id],[], ["id"], ["id"]);
-    #if (defined($data->[0])) {
-    #	if (defined($data->[0]->[2]->{id})) {
-    #		$genomeObj->{source} = $data->[0]->[2]->{id};
-    #	}
-    #}
-  	my $genomeFtrs = $self->_cdmi()->genomes_to_fids([$id],[]);
+    my $ContigObj = Bio::KBase::ObjectAPI::KBaseGenomes::ContigSet->new($contigset);
+    my $genomeFtrs = $cdmi->genomes_to_fids([$id],[]);
 	my $features = $genomeFtrs->{$id};
-  	my $fidAnnotationHash = $self->_cdmi()->fids_to_annotations($features);
-  	my $fidProteinSequences = $self->_cdmi()->fids_to_protein_sequences($features);
-  	my $fidDataHash = $self->_cdmi()->fids_to_feature_data($features);
+  	my $fidAnnotationHash = $cdmi->fids_to_annotations($features);
+  	my $fidProteinSequences = $cdmi->fids_to_protein_sequences($features);
+  	my $fidDataHash = $cdmi->fids_to_feature_data($features);
   	for (my $i=0; $i < @{$features};$i++) {
   		my $ftr = $features->[$i];
   		my $ftrdata = $fidDataHash->{$ftr};
   		my $feature = {
   			id => $ftr,
-  			location => $ftrdata->{feature_location},
-  			function => $ftrdata->{feature_function},
-  			aliases => [],
-  			annotations => []
+			location => $ftrdata->{feature_location},
+			function => $ftrdata->{feature_function},
+			publications => [],
+			subsystems => [],
+			protein_families => [],
+			aliases => [],
+			annotations => [],
+			subsystem_data => [],
+			regulon_data => [],
+			atomic_regulons => [],
+			coexpressed_fids => [],
+			co_occurring_fids => []
   		};
+  		for (my $j=0; $j < @{$ftrdata->{feature_location}}; $j++) {
+  			$feature->{location}->[$j]->[1] = $feature->{location}->[$j]->[1]+0;
+			$feature->{location}->[$j]->[3] = $feature->{location}->[$j]->[3]+0;
+  		}
   		if (defined($fidAnnotationHash->{$ftr})) {
   			$feature->{annotations} = $fidAnnotationHash->{$ftr};
-  		}
+  		}	
   		if (defined($fidProteinSequences->{$ftr})) {
   			$feature->{protein_translation} = $fidProteinSequences->{$ftr};
-  		}
-  		
+  			$feature->{protein_translation_length} = length($feature->{protein_translation});
+  			$feature->{dna_sequence_length} = 3*$feature->{protein_translation_length};
+  			$feature->{md5} = Digest::MD5::md5_hex($feature->{protein_translation});
+  		}	
+  		if ($ftr =~ m/(\w+)\.\d+$/) {
+			$feature->{type} = $1;
+		}	
   		push(@{$genomeObj->{features}},$feature);
   	}
-  	my $size = 0;
-	my $gc   = 0;
-	for ( my $i = 0 ; $i < @{ $genomeObj->{contigs} } ; $i++ ) {
-		my $dna = $genomeObj->{contigs}->[$i]->{dna};
-		$size += length($dna);
-		for ( my $j = 0 ; $j < length($dna) ; $j++ ) {
-			if ( substr( $dna, $j, 1 ) =~ m/[gcGC]/ ) {
-				$gc++;
-			}
-		}
-	}
-	$genomeObj->{gc} = $gc;
-	$genomeObj->{size} = $size;
-	return $genomeObj;
+    my $genomeObj = Bio::KBase::ObjectAPI::KBaseGenomes::Genome->new($genomeObj);
+	return [$genomeObj,$ContigObj];
 }
 
 sub _get_genomeObj_from_SEED {
@@ -635,25 +573,33 @@ sub _get_genomeObj_from_SEED {
 		-data => [qw(gc-content dna-size name taxonomy domain genetic-code)]
 	});
 	if (!defined($data->{$id})) {
-    	$self->_error("Could not load data for PubSEED genome!",'_get_genomeObj_from_SEED');
-	}
-	my $genomeObj = {
-		id => $id,
+    	$self->_error("PubSEED genome ".$id." not found!",'get_genomeobject');
+    }
+    my $genomeObj = {
+		id => $self->_idServer()->register_ids("kb|g","SEED",[$id])->{$id},
 		scientific_name => $data->{$id}->[2],
-		genetic_code => $data->{$id}->[5],
 		domain => $data->{$id}->[4],
-		size => $data->{$id}->[1],
-		gc => $data->{$id}->[0],
-		taxonomy => $data->{$id}->[3],
+		genetic_code => $data->{$id}->[5],
+		dna_size => $data->{$id}->[1],
+		num_contigs => 0,
+		contig_lengths => [],
+		contig_ids => [],
 		source => "PubSEED",
 		source_id => $id,
-		contigs => [],
-		features => []
+		taxonomy => $data->{$id}->[3],
+		gc_content => $data->{$id}->[0]/100,
+		complete => 1,
+		publications => [],
+		features => [],
+    };
+    my $contigset = {
+		name => $genomeObj->{scientific_name},
+		source_id => $genomeObj->{source_id},
+		source => $genomeObj->{source},
+		type => "Organism",
+		contigs => []
     };
 	my $featureHash = $sapsvr->all_features({-ids => $id});
-	if (!defined($featureHash->{$id})) {
-		die "Could not load features for pubseed genome: $id";
-	}
 	my $genomeHash = $sapsvr->genome_contigs({
 		-ids => [$id]
 	});
@@ -666,19 +612,55 @@ sub _get_genomeObj_from_SEED {
 		-ids => $contigList
 	});
 	foreach my $key (keys(%{$contigHash})) {
-		push(@{$genomeObj->{contigs}},{
+		$genomeObj->{num_contigs}++;
+		push(@{$genomeObj->{contig_ids}},$key);
+		push(@{$genomeObj->{contig_lengths}},length($contigHash->{$key}));
+		push(@{$contigset->{contigs}},{
 			id => $key,
-	    	dna => $contigHash->{$key}
+			"length" => length($contigHash->{$key}),
+			md5 => Digest::MD5::md5_hex($contigHash->{$key}),
+			sequence => $contigHash->{$key},
+			name => $key
 		});
 	}
+	my $sortedcontigs = [sort { $a->{sequence} cmp $b->{sequence} } @{$contigset->{contigs}}];
+	my $str = "";
+	for (my $i=0; $i < @{$sortedcontigs}; $i++) {
+		if (length($str) > 0) {
+			$str .= ";";
+		}
+		$str .= $sortedcontigs->[$i]->{sequence};	
+	}
+	$genomeObj->{md5} = Digest::MD5::md5_hex($str);
+	$contigset->{md5} = $genomeObj->{md5};
+	$contigset->{id} = $self->_idServer()->register_ids("kb|contigset","md5hash",[$contigset->{md5}])->{$contigset->{md5}};
 	for (my $i=0; $i < @{$featureList}; $i++) {
 		my $feature = {
   			id => $featureList->[$i],
-  			location => undef,
-  			function => undef,
-  			aliases => [],
-  			annotations => []
+			type => "peg",
+			publications => [],
+			subsystems => [],
+			protein_families => [],
+			aliases => [],
+			annotations => [],
+			subsystem_data => [],
+			regulon_data => [],
+			atomic_regulons => [],
+			coexpressed_fids => [],
+			co_occurring_fids => []
   		};
+  		if ($featureList->[$i] =~ m/\.([^\.]+)\.\d+$/) {
+  			$feature->{type} = $1;
+  		}
+		if (defined($functions->{$featureList->[$i]})) {
+			$feature->{function} = $functions->{$featureList->[$i]};
+		}
+		if (defined($sequences->{$featureList->[$i]})) {
+			$feature->{protein_translation} = $sequences->{$featureList->[$i]};
+			$feature->{protein_translation_length} = length($feature->{protein_translation});
+  			$feature->{dna_sequence_length} = 3*$feature->{protein_translation_length};
+  			$feature->{md5} = Digest::MD5::md5_hex($feature->{protein_translation});
+		}
   		if (defined($locations->{$featureList->[$i]}->[0])) {
 			for (my $j=0; $j < @{$locations->{$featureList->[$i]}}; $j++) {
 				my $loc = $locations->{$featureList->[$i]}->[$j];
@@ -691,80 +673,96 @@ sub _get_genomeObj_from_SEED {
 					} else {
 						$feature->{location}->[$j] = [$array->[1],$2,"+",($4-$2)];
 					}
+					$feature->{location}->[$j]->[1] = $feature->{location}->[$j]->[1]+0;
+					$feature->{location}->[$j]->[3] = $feature->{location}->[$j]->[3]+0;
 				}
 			}
 			
 		}
-		if (defined($functions->{$featureList->[$i]})) {
-			$feature->{function} = $functions->{$featureList->[$i]};
-		}
-		if (defined($sequences->{$featureList->[$i]})) {
-			$feature->{protein_translation} = $sequences->{$featureList->[$i]};
-		}
   		push(@{$genomeObj->{features}},$feature);	
 	}
-	return $genomeObj;
+	my $ContigObj = Bio::KBase::ObjectAPI::KBaseGenomes::ContigSet->new($contigset);
+	my $genomeObj = Bio::KBase::ObjectAPI::KBaseGenomes::Genome->new($genomeObj);
+	return [$genomeObj,$ContigObj];
 }
 
 sub _get_genomeObj_from_RAST {
 	my($self,$id,$username,$password) = @_;
 	my $mssvr = $self->_mssServer();
 	my $data = $mssvr->getRastGenomeData({
-		genome      => $id,
+		genome => $id,
 		username => $username,
 		password => $password,
 		getSequences => 1,
 		getDNASequence => 1
 	});
-    if (!defined($data->{features})) {
-		$self->_error("Could not load data for rast genome!","_buildFBAObject");
-	}
+    if (!defined($data->{owner})) {
+    	$self->_error("RAST genome ".$id." not found!",'get_genomeobject');
+    }
 	my $genomeObj = {
-		id => $id,
+		id => $self->_idServer()->register_ids("kb|g","RAST",[$id])->{$id},
 		scientific_name => $data->{name},
-		genetic_code => "11",#TODO
-		domain => $data->{taxonomy},#TODO
-		size => $data->{size},
-		gc => 0,
+		domain => $data->{taxonomy},
+		genetic_code => 11,
+		dna_size => $data->{size},
+		num_contigs => 0,
+		contig_lengths => [],
+		contig_ids => [],
 		source => "RAST",
 		source_id => $id,
-		contigs => [],
-		features => []
+		taxonomy => $data->{taxonomy},
+		gc_content => 0.5,
+		complete => 1,
+		publications => [],
+		features => [],
     };
-    if (defined($data->{DNAsequence})) {
-    	for (my $i=0; $i < @{$data->{DNAsequence}}; $i++) {
-    		push(@{$genomeObj->{contigs}},{
-    			id => $id.".contig.".$i,
-	    		dna => $data->{DNAsequence}->[$i]
-    		});
-    	}
-    	my $size = 0;
-    	for ( my $i = 0 ; $i < @{ $genomeObj->{contigs} } ; $i++ ) {
-			my $dna = $genomeObj->{contigs}->[$i]->{dna};
-			$size += length($dna);
-			for ( my $j = 0 ; $j < length($dna) ; $j++ ) {
-				if ( substr( $dna, $j, 1 ) =~ m/[gcGC]/ ) {
-					$genomeObj->{gc}++;
-				}
-			}
-		}
-		if ($size > 0) {
-			$genomeObj->{gc} = $genomeObj->{gc}/$size;
-		} else {
-			$genomeObj->{gc} = 0.5;
-		}
-    }
+    my $contigset = {
+		name => $genomeObj->{scientific_name},
+		source_id => $genomeObj->{source_id},
+		source => $genomeObj->{source},
+		type => "Organism",
+		contigs => []
+    };
+    my $contighash = {};
 	for (my $i=0; $i < @{$data->{features}}; $i++) {
 		my $ftr = $data->{features}->[$i];
 		my $feature = {
   			id => $ftr->{ID}->[0],
-  			location => [],
-  			function => "",
-  			aliases => [],
-  			annotations => []
+			type => "peg",
+			publications => [],
+			subsystems => [],
+			protein_families => [],
+			aliases => [],
+			annotations => [],
+			subsystem_data => [],
+			regulon_data => [],
+			atomic_regulons => [],
+			coexpressed_fids => [],
+			co_occurring_fids => [],
+			protein_translation_length => 0,
+			protein_translation => "",
+			dna_sequence_length => 0,
+			md5 => ""
   		};
+  		if ($ftr->{ID}->[0] =~ m/\.([^\.]+)\.\d+$/) {
+  			$feature->{type} = $1;
+  		}
+  		if (defined($ftr->{SEQUENCE})) {
+			$feature->{protein_translation} = $ftr->{SEQUENCE}->[0];
+			$feature->{protein_translation_length} = length($feature->{protein_translation});
+  			$feature->{dna_sequence_length} = 3*$feature->{protein_translation_length};
+  			$feature->{md5} = Digest::MD5::md5_hex($feature->{protein_translation});
+		}
+		if (defined($ftr->{ROLES})) {
+			$feature->{function} = join(" / ",@{$ftr->{ROLES}});
+		}
   		if (defined($ftr->{LOCATION}->[0]) && $ftr->{LOCATION}->[0] =~ m/^(.+)_(\d+)([\+\-_])(\d+)$/) {
 			my $contigData = $1;
+			if (!defined($contighash->{$contigData})) {
+				$contighash->{$contigData} = $2;
+			} elsif ($2 > $contighash->{$contigData}) {
+				$contighash->{$contigData} = $2;
+			}
 			if ($3 eq "-" || $3 eq "+") {
 				$feature->{location} = [[$contigData,$2,$3,$4]];
 			} elsif ($2 > $4) {
@@ -772,30 +770,58 @@ sub _get_genomeObj_from_RAST {
 			} else {
 				$feature->{location} = [[$contigData,$2,"+",($4-$2)]];
 			}
-		}
-  		if (defined($ftr->{SEQUENCE})) {
-			$feature->{protein_translation} = $ftr->{SEQUENCE}->[0];
-		}
-		if (defined($ftr->{ROLES})) {
-			$feature->{function} = join(" / ",@{$ftr->{ROLES}});
+			$feature->{location}->[0]->[1] = $feature->{location}->[0]->[1]+0;
+			$feature->{location}->[0]->[3] = $feature->{location}->[0]->[3]+0;
 		}
   		push(@{$genomeObj->{features}},$feature);
 	}
-	return $genomeObj;
-}
-
-sub _processGenomeObject {
-	my($self,$genome,$mapping,$command) = @_;
-	my $anno = $self->_translate_genome_to_annotation($genome,$mapping);
-	my $meta = $self->_save_msobject($mapping,"Mapping","NO_WORKSPACE",$genome->{id}.".anno.mapping",$command);
-	$anno->mapping_uuid($meta->[8]);
-	$meta = $self->_save_msobject($anno,"Annotation","NO_WORKSPACE",$genome->{id}.".anno",$command);
-	$genome->{annotation_uuid} = $meta->[8];
-	my $contigObj = {contigs => $genome->{contigs}};
-	$meta = $self->_save_msobject($contigObj,"GenomeContigs","NO_WORKSPACE",$genome->{id}.".contigs",$command);
-	$genome->{contigs_uuid} = $meta->[8];
-	delete $genome->{contigs};
-	return ($genome,$anno,$mapping,$contigObj);
+	my $ContigObj;
+	if (defined($data->{DNAsequence}->[0])) {
+    	my $gccount = 0;
+    	my $size = 0;
+    	for (my $i=0; $i < @{$data->{DNAsequence}}; $i++) {
+    		my $closest;
+    		foreach my $key (keys(%{$contighash})) {
+    			my $dist = abs(length($data->{DNAsequence}->[$i]) - $contighash->{$key});
+    			my $closestdist = abs(length($data->{DNAsequence}->[$i]) - $contighash->{$closest});
+    			if (!defined($closest) || $dist < $closestdist) {
+    				$closest = $key;
+    			}
+    		}
+    		push(@{$contigset->{contigs}},{
+    			id => $closest,
+				"length" => length($data->{DNAsequence}->[$i]),
+				md5 => Digest::MD5::md5_hex($data->{DNAsequence}->[$i]),
+				sequence => $data->{DNAsequence}->[$i],
+				name => $closest
+    		});
+    		push(@{$genomeObj->{contig_lengths}},length($data->{DNAsequence}->[$i]));
+    		$size += length($data->{DNAsequence}->[$i]);
+    		push(@{$genomeObj->{contig_ids}},$closest);
+			for ( my $j = 0 ; $j < length($data->{DNAsequence}->[$i]) ; $j++ ) {
+				if ( substr( $data->{DNAsequence}->[$i], $j, 1 ) =~ m/[gcGC]/ ) {
+					$gccount++;
+				}
+			}
+    	}
+    	if ($size > 0) {
+			$genomeObj->{gc_content} = $$gccount/$size;
+		}
+		my $sortedcontigs = [sort { $a->{sequence} cmp $b->{sequence} } @{$contigset->{contigs}}];
+		my $str = "";
+		for (my $i=0; $i < @{$sortedcontigs}; $i++) {
+			if (length($str) > 0) {
+				$str .= ";";
+			}
+			$str .= $sortedcontigs->[$i]->{sequence};	
+		}
+		$genomeObj->{md5} = Digest::MD5::md5_hex($str);
+		$contigset->{md5} = $genomeObj->{md5};
+		$contigset->{id} = $self->_idServer()->register_ids("kb|contigset","md5hash",[$contigset->{md5}])->{$contigset->{md5}};
+    	$ContigObj = Bio::KBase::ObjectAPI::KBaseGenomes::ContigSet->new($contigset);
+	}
+	$genomeObj = Bio::KBase::ObjectAPI::KBaseGenomes::Genome->new($genomeObj);
+	return [$genomeObj,$ContigObj];
 }
 
 sub _validateargs {
@@ -838,7 +864,7 @@ sub _setDefaultFBAFormulation {
 	}
 	$fbaFormulation = $self->_validateargs($fbaFormulation,[],{
 		media => "Complete",
-		media_workspace => "NO_WORKSPACE",
+		media_workspace => "KBaseMedia",
 		objfraction => 0.1,
 		allreversible => 0,
 		maximizeObjective => 1,
@@ -859,143 +885,182 @@ sub _setDefaultFBAFormulation {
 		nothermoerror => 0,
 		minthermoerror => 0,
 		prommodel => undef,
-		prommodel_workspace => undef
+		prommodel_workspace => undef,
+		regmodel => undef,
+		regmodel_workspace => undef
 	});
 	return $fbaFormulation;
 }
 
 sub _buildFBAObject {
-	my ($self,$fbaFormulation,$model,$workspace,$id) = @_;
+	my ($self,$fbaFormulation,$model) = @_;
 	#Parsing media
-	my $media;
-	if ($fbaFormulation->{media_workspace} ne "NO_WORKSPACE") {
-		my $mediaobj = $self->_get_msobject("Media",$fbaFormulation->{media_workspace},$fbaFormulation->{media});
-		$model->biochemistry()->add("media",$mediaobj);
-		$media = $fbaFormulation->{media_workspace}."/".$fbaFormulation->{media};
-	} else {
-		my $mediaObj = $model->biochemistry()->queryObject("media",{
-			id => $fbaFormulation->{media}
-		});
-		if (!defined($mediaObj)) {
-			$self->_error("Media object ".$fbaFormulation->{media}." not found in biochemistry!","_buildFBAObject");
-		}
-		$media = $mediaObj->uuid();
-	}
-	my $fbaid = $workspace."/".$id;
-	if ($workspace eq "NO_WORKSPACE") {
-		$fbaid = $id;
-	}
+	my $mediaobj = $self->_get_msobject("Media",$fbaFormulation->{media_workspace},$fbaFormulation->{media});
 	#Building FBAFormulation object
-	my $form = ModelSEED::MS::FBAFormulation->new({
-		uuid => $fbaid,
-		model_uuid => $model->uuid(),
-		model => $model,
-		media_uuid => $media,
-		type => "singlegrowth",
-		notes => "",
+	my $fbaobj = Bio::KBase::ObjectAPI::KBaseFBA::FBA->new({
+		id => $self->_get_new_id($model->id().".fba."),
+		fva => 0,
+		fluxMinimization => 0,
+		findMinimalMedia => 0,
+		allReversible => $fbaFormulation->{allreversible},
 		simpleThermoConstraints => $fbaFormulation->{simplethermoconst},
 		thermodynamicConstraints => $fbaFormulation->{thermoconst},
 		noErrorThermodynamicConstraints => $fbaFormulation->{nothermoerror},
 		minimizeErrorThermodynamicConstraints => $fbaFormulation->{minthermoerror},
-		fva => 0,
+		maximizeObjective => $fbaFormulation->{maximizeObjective},
+		compoundflux_objterms => {},
+    	reactionflux_objterms => {},
+		biomassflux_objterms => {},
 		comboDeletions => 0,
-		fluxMinimization => 0,
-		findMinimalMedia => 0,
+		numberOfSolutions => 1,
 		objectiveConstraintFraction => $fbaFormulation->{objfraction},
-		allReversible => $fbaFormulation->{allreversible},
-		uptakeLimits => $fbaFormulation->{uptakelim},
 		defaultMaxFlux => $fbaFormulation->{defaultmaxflux},
 		defaultMaxDrainFlux => $fbaFormulation->{defaultmaxuptake},
 		defaultMinDrainFlux => $fbaFormulation->{defaultminuptake},
-		maximizeObjective => $fbaFormulation->{maximizeObjective},
 		decomposeReversibleFlux => 0,
 		decomposeReversibleDrainFlux => 0,
 		fluxUseVariables => 0,
 		drainfluxUseVariables => 0,
+		fbamodel_ref => $model->_reference(),
+		media_ref => $mediaobj->_reference(),
+		geneKO_refs => [],
+		reactionKO_refs => [],
+		additionalCpd_refs => [],
+		uptakeLimits => {},
 		parameters => {},
-		numberOfSolutions => 1,
+		inputfiles => {},
+		FBAConstraints => [],
+		FBAReactionBounds => [],
+		FBACompoundBounds => [],
+		outputfiles => {},
+		FBACompoundVariables => [],
+		FBAReactionVariables => [],
+		FBABiomassVariables => [],
+		FBAPromResults => [],
+		FBADeletionResults => [],
+		FBAMinimalMediaResults => [],
+		FBAMetaboliteProductionResults => [],
 	});
-	$form->parent($self->_KBaseStore());
+	$fbaobj->parent($self->_KBaseStore());
 	if (defined($fbaFormulation->{prommodel}) && defined($fbaFormulation->{prommodel_workspace})) {
 		my $promobj = $self->_get_msobject("PROMModel",$fbaFormulation->{prommodel_workspace},$fbaFormulation->{prommodel});
 		if (defined($promobj)) {
-			$form->promModel_uuid($promobj->uuid());
-			$form->promModel($promobj);
+			$fbaobj->prommodel_ref($promobj->_reference)
 		}
 	}
-	$form->{_kbaseWSMeta}->{wsid} = $id;
-	$form->{_kbaseWSMeta}->{ws} = $workspace;
+	if (defined($fbaFormulation->{regmodel}) && defined($fbaFormulation->{regmodel_workspace})) {
+		my $regmodel = $self->_get_msobject("RegulatoryModel",$fbaFormulation->{regmodel_workspace},$fbaFormulation->{regmodel});
+		if (defined($regmodel)) {
+			$fbaobj->regmodel_ref($regmodel->_reference)
+		}
+	}
 	#Parse objective equation
 	foreach my $term (@{$fbaFormulation->{objectiveTerms}}) {
-		my $output = $self->_parseTerm($term,$model);
-		$form->add("fbaObjectiveTerms",{
-			coefficient => $output->{coef},
-			variableType => $output->{vartype},
-			entityType => $output->{enttype},
-			entity_uuid => $output->{uuid},
-		});
+		if ($term->[1] eq "flux" || $term->[1] eq "reactionflux") {
+			$term->[1] = "flux";
+			my $obj = $model->searchForReaction($term->[2]);
+			if (!defined($obj)) {
+				$self->_error("Reaction ".$term->[2]." not found!");
+			}
+			$fbaobj->reactionflux_objterms()->{$obj->id()} = $term->[0]+1;
+		} elsif ($term->[1] eq "compoundflux" || $term->[1] eq "drainflux") {
+			$term->[1] = "drainflux";
+			my $obj = $model->searchForCompound($term->[2]);
+			if (!defined($obj)) {
+				$self->_error("Compound ".$term->[2]." not found!");
+			}
+			$fbaobj->compoundflux_objterms()->{$obj->id()} = $term->[0]+1;
+		} elsif ($term->[1] eq "biomassflux") {
+			my $obj = $model->searchForBiomass($term->[2]);
+			if (!defined($obj)) {
+				$self->_error("Biomass ".$term->[2]." not found!");
+			}
+			$fbaobj->biomassflux_objterms()->{$obj->id()} = $term->[0]+1;
+		} else {
+			$self->_error("Objective variable type ".$term->[1]." not recognized!");
+		}
 	}
 	#Parse constraints
 	foreach my $constraint (@{$fbaFormulation->{constraints}}) {
-		my $const = $form->add("fbaConstraints",{
+		my $const = $fbaobj->add("FBAConstraints",{
 			name => $constraint->[3],
 			rhs => $constraint->[0],
 			sign => $constraint->[1],
+			compound_terms => {},
+			reaction_terms => {},
+			biomass_terms => {}
 		});
 		foreach my $term (@{$const->[2]}) {
-			my $output = $self->_parseTerm($term,$model);
-			$const->add("fbaConstraintVariables",{
-				coefficient => $output->{coef},
-				variableType => $output->{vartype},
-				entityType => $output->{enttype},
-				entity_uuid => $output->{uuid},
-			});
+			if ($term->[1] eq "flux" || $term->[1] eq "reactionflux") {
+				$term->[1] = "flux";
+				my $obj = $model->searchForReaction($term->[2]);
+				if (!defined($obj)) {
+					$self->_error("Reaction ".$term->[2]." not found!");
+				}
+				$const->reaction_terms()->{$obj->id()} = $term->[0];
+			} elsif ($term->[1] eq "compoundflux" || $term->[1] eq "drainflux") {
+				$term->[1] = "drainflux";
+				my $obj = $model->searchForCompound($term->[2]);
+				if (!defined($obj)) {
+					$self->_error("Compound ".$term->[2]." not found!");
+				}
+				$const->compound_terms()->{$obj->id()} = $term->[0];
+			} elsif ($term->[1] eq "biomassflux") {
+				my $obj = $model->searchForBiomass($term->[2]);
+				if (!defined($obj)) {
+					$self->_error("Biomass ".$term->[2]." not found!");
+				}
+				$const->biomass_terms()->{$obj->id()} = $term->[0];
+			} else {
+				$self->_error("Constraint variable type ".$term->[1]." not recognized!");
+			}
 		}
 	}
 	#Parse bounds
-	foreach my $bound (@{$fbaFormulation->{bounds}}) {
-		my $bound = $self->_parseBound($bound);
-		my $uuid = "modelreaction_uuid";
-		if ($bound->{boundtype} eq "fbaCompoundBounds") {
-			$uuid = "modelcompound_uuid";
+	foreach my $term (@{$fbaFormulation->{bounds}}) {
+		if ($term->[2] eq "flux" || $term->[2] eq "reactionflux") {
+			$term->[2] = "flux";
+			my $obj = $model->searchForReaction($term->[3]);
+			if (!defined($obj)) {
+				$self->_error("Reaction ".$term->[3]." not found!");
+			}
+			$fbaobj->add("fbaReactionBounds",{modelreaction_ref => $obj->_reference(),variableType=> $term->[2],upperBound => $term->[1],lowerBound => $term->[0]});
+		} elsif ($term->[2] eq "compoundflux" || $term->[2] eq "drainflux") {
+			$term->[2] = "flux";
+			my $obj = $model->searchForCompound($term->[3]);
+			if (!defined($obj)) {
+				$self->_error("Compound ".$term->[3]." not found!");
+			}
+			$fbaobj->add("fbaCompoundBounds",{modelcompound_ref => $obj->_reference(),variableType=> $term->[2],upperBound => $term->[1],lowerBound => $term->[0]});
+		} else {
+			$self->_error("Objective variable type ".$term->[1]." not recognized!");
 		}
-		$form->add($bound->{boundtype},{
-			$uuid => $bound->{uuid},
-			variableType => $bound->{vartype},
-			upperBound => $bound->{upperbound},
-			lowerBound => $bound->{lowerbound}
-		});
 	}
 	#Parsing gene KO
-	my $anno = $model->annotation();
-	foreach my $gene (@{$fbaFormulation->{geneko}}) {
-		my $geneObj = $anno->queryObject("features",{id => $gene});
-		if (defined($geneObj)) {
-			$form->addLinkArrayItem("geneKOs",$geneObj);
+	if (defined($model->genome_ref())) {
+		my $genome = $model->genome();
+		foreach my $gene (@{$fbaFormulation->{geneko}}) {
+			my $geneObj = $genome->searchForFeature($gene);
+			if (defined($geneObj)) {
+				$fbaobj->addLinkArrayItem("geneKOs",$geneObj->_reference());
+			}
 		}
 	}
 	#Parsing reaction KO and blacklisted reactions
-	foreach my $reaction (@{$fbaFormulation->{blacklistedrxns}}) {
-	    my $rxnObj = $model->biochemistry()->searchForReaction($reaction);
-	    if (defined($rxnObj)) {
-		$form->addLinkArrayItem("reactionKOs",$rxnObj);
-	    }
-        }
-
 	foreach my $reaction (@{$fbaFormulation->{rxnko}}) {
-		my $rxnObj = $model->biochemistry()->searchForReaction($reaction);
+		my $rxnObj = $model->searchForReaction($reaction);
 		if (defined($rxnObj)) {
-			$form->addLinkArrayItem("reactionKOs",$rxnObj);
+			$fbaobj->addLinkArrayItem("reactionKOs",$rxnObj->_reference());
 		}
 	}
 	#Parsing additional Cpds
 	foreach my $compound (@{$fbaFormulation->{additionalcpds}}) {
-		my $cpdObj = $model->biochemistry()->searchForCompound($compound);
+		my $cpdObj = $model->searchForCompound($compound);
 		if (defined($cpdObj)) {
-			$form->addLinkArrayItem("additionalCpds",$cpdObj);
+			$fbaobj->addLinkArrayItem("additionalCpds",$cpdObj->_reference());
 		}
 	}
-	return $form;
+	return $fbaobj;
 }
 
 sub _setDefaultGapfillFormulation {
@@ -1088,18 +1153,26 @@ sub _setDefaultGapfillFormulation {
 }
 
 sub _buildGapfillObject {
-	my ($self,$formulation,$model) = @_;
-	my $fbaid = Data::UUID->new()->create_str();
-	if (!defined($formulation->{targeted_reactions})) {
-		$formulation->{targeted_reactions} = [];
+	my ($self,$formulation,$model,$gfid) = @_;
+	if (!defined($gfid)) {
+		$gfid = $self->_get_new_id($model->id().".gf.");
 	}
-	my $gapform = ModelSEED::MS::GapfillingFormulation->new({
-		uuid => Data::UUID->new()->create_str(),
-		model_uuid => $model->uuid(),
-		model => $model,
-		fbaFormulation_uuid => $fbaid,
-		fbaFormulation => $self->_buildFBAObject($formulation->{formulation},$model,"NO_WORKSPACE",$fbaid),
+	my $fba = $self->_buildFBAObject($formulation->{formulation},$model);
+	my $gapform = Bio::KBase::ObjectAPI::KBaseFBA::Gapfilling->new({
+		id => $gfid,
+    	fba_ref => "",
+    	media_ref => $fba->media()->_reference(),
+    	fbamodel_ref => $model->_reference(),
+    	guaranteedReaction_refs => [],
+		blacklistedReaction_refs => [],
+		allowableCompartment_refs => [],    
+		mediaHypothesis => $self->_invert_boolean($formulation->{nomediahyp}),
 		balancedReactionsOnly => $self->_invert_boolean($formulation->{allowunbalanced}),
+		reactionAdditionHypothesis => $self->_invert_boolean($formulation->{nopathwayhyp}),
+		gprHypothesis => $self->_invert_boolean($formulation->{nogprhyp}),
+		#biomassHypothesis => $self->_invert_boolean($formulation->{nobiomasshyp}),
+		biomassHypothesis => 0,
+		completeGapfill => $formulation->{completeGapfill},
 		reactionActivationBonus => $formulation->{activitybonus},
 		drainFluxMultiplier => $formulation->{drainpen},
 		directionalityMultiplier => $formulation->{directionpen},
@@ -1108,31 +1181,32 @@ sub _buildGapfillObject {
 		noDeltaGMultiplier => $formulation->{nodeltagpen},
 		biomassTransporterMultiplier => $formulation->{biomasstranspen},
 		singleTransporterMultiplier => $formulation->{singletranspen},
-		targetedreactions => $formulation->{targeted_reactions},
 		transporterMultiplier => $formulation->{transpen},
-		mediaHypothesis => $self->_invert_boolean($formulation->{nomediahyp}),
-		#biomassHypothesis => $self->_invert_boolean($formulation->{nobiomasshyp}),
-		biomassHypothesis => 0,
-		gprHypothesis => $self->_invert_boolean($formulation->{nogprhyp}),
-		reactionAdditionHypothesis => $self->_invert_boolean($formulation->{nopathwayhyp}),
 		timePerSolution => $formulation->{timePerSolution},
 		totalTimeLimit => $formulation->{totalTimeLimit},
-		completeGapfill => $formulation->{completeGapfill}
+		reactionMultipliers => {},
+		gapfillingSolutions => []
 	});
+	$gapform->fba($fba);
 	$gapform->parent($self->_KBaseStore());
+	foreach my $reaction (@{$formulation->{targeted_reactions}}) {
+		my $rxnObj = $model->template()->biochemistry()->searchForReaction($reaction);
+		if (defined($rxnObj)) {
+			$gapform->addLinkArrayItem("targetedreactions",$rxnObj);
+		}
+	}
 	foreach my $reaction (@{$formulation->{gauranteedrxns}}) {
-		my $rxnObj = $model->biochemistry()->searchForReaction($reaction);
+		my $rxnObj = $model->template()->biochemistry()->searchForReaction($reaction);
 		if (defined($rxnObj)) {
 			$gapform->addLinkArrayItem("guaranteedReactions",$rxnObj);
 		}
 	}
 	foreach my $reaction (@{$formulation->{blacklistedrxns}}) {
-		my $rxnObj = $model->biochemistry()->searchForReaction($reaction);
+		my $rxnObj = $model->template()->biochemistry()->searchForReaction($reaction);
 		if (defined($rxnObj)) {
 		    # This one is no longer necessary for gapfill itself but I don't know if it's used elsewhere or not.
 			$gapform->addLinkArrayItem("blacklistedReactions",$rxnObj);
-		       # This one has to be added to fix the bug
-			$gapform->fbaFormulation()->addLinkArrayItem("reactionKOs",$rxnObj);
+			$gapform->fba()->addLinkArrayItem("reactionKOs",$rxnObj);
 		}
 	}
 	my $mdlcmps = $model->modelcompartments();
@@ -1140,9 +1214,7 @@ sub _buildGapfillObject {
 		$gapform->addLinkArrayItem("allowableCompartments",$mdlcmp->compartment());
 	}
 	$gapform->prepareFBAFormulation();
-	$gapform->{_kbaseWSMeta}->{wsid} = $gapform->uuid();
-	$gapform->{_kbaseWSMeta}->{ws} = "NO_WORKSPACE";
-	$gapform->fbaFormulation()->numberOfSolutions($formulation->{num_solutions});
+	$gapform->fba()->numberOfSolutions($formulation->{num_solutions});
 	#Handling the probabilistic annotation
 	my $probRXNWS = $formulation->{probabilisticAnnotation_workspace};
 	if (defined($formulation->{probabilisticAnnotation})) {
@@ -1157,11 +1229,11 @@ sub _buildGapfillObject {
 			probanno => $formulation->{probabilisticAnnotation},
 			probanno_workspace => $formulation->{probabilisticAnnotation_workspace},
 			rxnprobs => $formulation->{probabilisticAnnotation},
-			rxnprobs_workspace => "NO_WORKSPACE",
+			rxnprobs_workspace => $formulation->{probabilisticAnnotation_workspace},
 			auth => $self->_authentication()
 		});
 		$formulation->{probabilisticReactions} = $rpmeta->[8];
-		$probRXNWS = "NO_WORKSPACE";
+		$probRXNWS = $formulation->{probabilisticAnnotation_workspace};
 		
 	}
 	$formulation->{probabilisticReaction_workspace} = $probRXNWS;
@@ -1169,17 +1241,17 @@ sub _buildGapfillObject {
 		# Get the RxnProbs object from the workspace.
 		my $rxnprobs = $self->_get_msobject("RxnProbs",$probRXNWS,$formulation->{probabilisticReactions});
 		#Get coefficients of probmodel
-		$gapform->fbaFormulation()->{"parameters"}->{"Objective coefficient file"} = "ProbModelReactionCoefficients.txt";
-		$gapform->fbaFormulation()->{"inputfiles"}->{"ProbModelReactionCoefficients.txt"} = [];
+		$gapform->fba()->parameters()->{"Objective coefficient file"} = "ProbModelReactionCoefficients.txt";
+		$gapform->fba()->inputfiles()->{"ProbModelReactionCoefficients.txt"} = [];
 		my $rxns = $rxnprobs->{"reaction_probabilities"};
 		for (my $i=0; $i < @{$rxns}; $i++) {
 			my $rxn = $rxns->[$i];
 			my $cost = (1-$rxn->[1]);
-			push(@{$gapform->fbaFormulation()->{"inputfiles"}->{"ProbModelReactionCoefficients.txt"}},"forward\t".$rxn->[0]."\t".$cost);
-			push(@{$gapform->fbaFormulation()->{"inputfiles"}->{"ProbModelReactionCoefficients.txt"}},"reverse\t".$rxn->[0]."\t".$cost);
+			push(@{$gapform->fba()->inputfiles()->{"ProbModelReactionCoefficients.txt"}},"forward\t".$rxn->[0]."\t".$cost);
+			push(@{$gapform->fba()->inputfiles()->{"ProbModelReactionCoefficients.txt"}},"reverse\t".$rxn->[0]."\t".$cost);
 		}	
 	}
-	return $gapform;
+	return ($gapform,$fba);
 }
 
 # Build the three-level GPR array for all reactions in a RxnProbs object.
@@ -1238,7 +1310,7 @@ sub _buildGapGenObject {
 		$media = $mediaobj->uuid();
 	}
 	my $fbaid = Data::UUID->new()->create_str();
-	my $gapform = ModelSEED::MS::GapgenFormulation->new({
+	my $gapform = Bio::KBase::ObjectAPI::KBaseFBA::Gapgeneration->new({
 		uuid => Data::UUID->new()->create_str(),
 		model_uuid => $model->uuid(),
 		model => $model,
@@ -1259,67 +1331,6 @@ sub _buildGapGenObject {
 	$gapform->prepareFBAFormulation();
 	$gapform->fbaFormulation()->numberOfSolutions($formulation->{num_solutions});
 	return $gapform;
-}
-
-sub _parseTerm {
-	my ($self,$term,$model) = @_;	
-	my $output = {
-		coef => $term->[0],
-		vartype => $term->[1],
-		enttype => undef,
-		uuid => undef
-	};
-	my $obj;
-	if ($term->[1] eq "flux") {
-		$output->{vartype} = "flux";
-		$output->{enttype} = "Reaction";
-		$obj = $model->searchForReaction("reactions",{id => $term->[2]});
-	} elsif ($term->[1] eq "biomassflux") {
-		$output->{vartype} = "flux";
-		$output->{enttype} = "Biomass";
-		$obj = $model->searchForBiomass("biomasses",{id => $term->[2]});
-		if (!defined($obj)) {
-			$obj = $model->biomasses()->[0];
-		}
-	} elsif ($term->[1] eq "drainflux") {
-		$output->{vartype} = "drainflux";
-		$output->{enttype} = "Compound";
-		$obj = $model->searchForCompound("compounds",{id => $term->[2]});
-	} else {
-		$self->_error("Variable type ".$term->[1]." not recognized!","_buildFBAObject");
-	}
-	if (!defined($obj)) {
-		my $msg = "Variable ".$term->[2]." not found!";
-		$self->_error($msg,'_buildFBAObject');
-	}
-	$output->{uuid} = $obj->uuid(); 
-	return $output;
-}
-
-sub _parseBound {
-	my ($self,$bound,$model) = @_;
-	my $output = {
-		lowerbound => $bound->[0],
-		upperbound => $bound->[1],
-		vartype => $bound->[2]
-	};
-	my $obj;
-	if ($bound->[2] eq "flux") {
-		$output->{boundtype} = "fbaReactionBounds";
-		$obj = $model->searchForReaction($bound->[3]);
-	} elsif ($bound->[2] eq "drainflux") {
-		$output->{boundtype} = "fbaCompoundBounds";
-		$obj = $model->searchForCompound($bound->[3]);
-	} else {
-		my $msg = "Variable type ".$bound->[2]." not recognized!";
-		$self->_error($msg,'_buildFBAObject');
-	}
-	if (!defined($obj)) {
-		my $msg = "Bound variable ".$bound->[3]." not found!";
-		$self->_error($msg,'_buildFBAObject');
-	}
-	$output->{uuid} = $obj->uuid(); 
-	return $output;
 }
 
 sub _get_new_id {
@@ -1449,7 +1460,7 @@ sub _generate_fbameta {
 	}
 	my $kos = [];
 	foreach my $gene ($obj->geneKOs()) {
-		if (defined($gene) && ref($gene) eq "ModelSEED::MS::Feature") {
+		if (defined($gene) && ref($gene) eq "Bio::KBase::ObjectAPI::KBaseGenomes::Feature") {
 			push(@{$kos},$gene->id());
 		}
 	}
@@ -1483,7 +1494,7 @@ sub _was_reaction_gapfilled {
     } elsif ( @{$proteins} >= 1 ) {
 	my $ok = 1;
 	foreach ( my $j=0; $j<@{$proteins}; $j++ ) {
-	    if ( $proteins->[$j]->complex_uuid() ne "00000000-0000-0000-0000-000000000000" || $proteins->[$j]->note() eq "spontaneous" || $proteins->[$j]->note() eq "universal" ) {
+	    if ( $proteins->[$j]->complex_ref() ne "00000000-0000-0000-0000-000000000000" || $proteins->[$j]->note() eq "spontaneous" || $proteins->[$j]->note() eq "universal" ) {
 		$ok = 0;
 		last;
 	    }
@@ -1675,30 +1686,22 @@ sub _generate_gapmeta {
 	my ($self,$obj) = @_;
 	my $idarray = [split(/\//,$obj->uuid())];
 	my $done = 0;
-	if ($obj->_type() eq "GapfillingFormulation" && defined($obj->gapfillingSolutions())) {
+	if ($obj->_type() eq "Gapfilling" && defined($obj->gapfillingSolutions())) {
 		$done = 1;
-	} elsif ($obj->_type() eq "GapgenFormulation" && defined($obj->gapgenSolutions())) {
+	} elsif ($obj->_type() eq "Gapgeneration" && defined($obj->gapgenSolutions())) {
 		$done = 1;
-	}
-	(my $mediaid,my $mediaws);
-	if ($obj->fbaFormulation()->media_uuid() =~ m/(.+)\/(.+)/) {
-		$mediaws = $1;
-		$mediaid = $2;
-	} else {
-		$mediaws = "NO_WORKSPACE";
-		$mediaid = $obj->fbaFormulation()->media()->id();
 	}
 	my $kos = [];
-	foreach my $gene ($obj->fbaFormulation()->geneKOs()) {
-		if (defined($gene) && ref($gene) eq "ModelSEED::MS::Feature") {
+	foreach my $gene ($obj->fba()->geneKOs()) {
+		if (defined($gene) && ref($gene) eq "Bio::KBase::ObjectAPI::KBaseGenomes::Feature") {
 			push(@{$kos},$gene->id());
 		}
 	}
 	return [
-		$idarray->[1],
-		$idarray->[0],
-		$mediaid,
-		$mediaws,
+		$obj->id(),
+		$obj->_reference(),
+		$obj->fba()->media()->name(),
+		$obj->fba()->media_ref(),
 		$done,
 		$kos
 	];
@@ -1707,12 +1710,10 @@ sub _generate_gapmeta {
 sub _FBA_to_FBAFormulation {
 	my ($self,$obj) = @_;
 	my $media;
-	my $media_workspace = "NO_WORKSPACE";
-	if ($obj->media_uuid() =~ m/(.+)\/(.+)/) {
+	my $media_workspace;
+	if ($obj->media_ref() =~ m/^(.+)\/(.+)/) {
 		$media_workspace = $1;
 		$media = $2;
-	} else {
-		$media = $obj->media()->id();
 	}
 	my $form = {
 		media => $media,
@@ -1740,21 +1741,27 @@ sub _FBA_to_FBAFormulation {
 	foreach my $ko (@{$obj->reactionKOs()}) {
 		push(@{$form->{rxnko}},$ko->id());
 	}
-	foreach my $const (@{$obj->fbaConstraints()}) {
+	foreach my $const (@{$obj->FBAConstraints()}) {
 		my $terms = [];
-		foreach my $term (@{$const->fbaConstraintVariables()}) {
+		foreach my $term (@{$const->FBAConstraintVariables()}) {
 			push(@{$terms},[$term->coefficient(),$term->variableType(),$term->entity()->id()]);
 		}
 		push(@{$form->{constraints}},[$const->rhs(),$const->sign(),$terms,$const->name()]);
 	}
-	foreach my $bound (@{$obj->fbaReactionBounds()}) {
+	foreach my $bound (@{$obj->FBAReactionBounds()}) {
 		push(@{$form->{bounds}},[$bound->lowerBound(),$bound->upperBound(),$bound->variableType(),$bound->modelreaction()->id()]);
 	}
-	foreach my $bound (@{$obj->fbaCompoundBounds()}) {
+	foreach my $bound (@{$obj->FBACompoundBounds()}) {
 		push(@{$form->{bounds}},[$bound->lowerBound(),$bound->upperBound(),$bound->variableType(),$bound->modelcompound()->id()]);
 	}
-	foreach my $term (@{$obj->fbaObjectiveTerms()}) {
-		push(@{$form->{objectiveTerms}},[$term->coefficient(),$term->variableType(),$term->entity()->id()]);
+	foreach my $term (keys(%{$obj->compoundflux_objterms()})) {
+		push(@{$form->{objectiveTerms}},[$obj->compoundflux_objterms()->{$term},"drainflux",$term]);
+	}
+	foreach my $term (keys(%{$obj->reactionflux_objterms()})) {
+		push(@{$form->{objectiveTerms}},[$obj->reactionflux_objterms()->{$term},"flux",$term]);
+	}
+	foreach my $term (keys(%{$obj->biomassflux_objterms()})) {
+		push(@{$form->{objectiveTerms}},[$obj->biomassflux_objterms()->{$term},"flux",$term]);
 	}
 	return $form;
 }
@@ -1762,12 +1769,11 @@ sub _FBA_to_FBAFormulation {
 sub _FBA_to_FBAdata {
 	my ($self,$obj) = @_;
 	my $array = [split(/\//,$obj->uuid())];
-	my $mdlarray = [split(/\//,$obj->model()->uuid())];
+	my $mdlarray = [split(/\//,$obj->fbamodel()->uuid())];
 	my $fbadata = {
-    	id => $array->[1],
-    	workspace => $array->[0],
-    	model => $mdlarray->[1],
-    	model_workspace => $mdlarray->[0],
+    	id => $obj->id(),
+    	fbaref => $obj->_reference(),
+    	modelref => $obj->fbamodel_ref(),
     	isComplete => 0,
     	objective => undef,
     	formulation => $self->_FBA_to_FBAFormulation($obj),
@@ -1777,11 +1783,10 @@ sub _FBA_to_FBAdata {
 		compoundFluxes => [],
 		geneAssertions => []
 	};
-    if (defined($obj->fbaResults()->[0])) {
+    if (defined($obj->objectiveValue())) {
 		$fbadata->{isComplete} = 1;
-		my $result = $obj->fbaResults()->[0];
-		$fbadata->{objective} = $result->objectiveValue();
-		foreach my $var (@{$result->fbaCompoundVariables()}) {
+		$fbadata->{objective} = $obj->objectiveValue();
+		foreach my $var (@{$obj->FBACompoundVariables()}) {
 			push(@{$fbadata->{compoundFluxes}},[
 				$var->modelcompound()->id(),
 				$var->value(),
@@ -1793,7 +1798,7 @@ sub _FBA_to_FBAdata {
 				$var->modelcompound()->name()
 			]);
 		}
-		foreach my $var (@{$result->fbaReactionVariables()}) {
+		foreach my $var (@{$obj->FBAReactionVariables()}) {
 			push(@{$fbadata->{reactionFluxes}},[
 				$var->modelreaction()->id(),
 				$var->value(),
@@ -1805,7 +1810,7 @@ sub _FBA_to_FBAdata {
 				$var->modelreaction()->definition()
 			]);
 		}
-		foreach my $var (@{$result->fbaBiomassVariables()}) {
+		foreach my $var (@{$obj->FBABiomassVariables()}) {
 			push(@{$fbadata->{reactionFluxes}},[
 				$var->biomass()->id(),
 				$var->value(),
@@ -1816,7 +1821,7 @@ sub _FBA_to_FBAdata {
 				$var->variableType()
 			]);
 		}
-		foreach my $var (@{$result->fbaDeletionResults()}) {
+		foreach my $var (@{$obj->FBADeletionResults()}) {
 			my $essential = 1;
 			if ($var->growthFraction() > 0.05) {
 				$essential = 0;
@@ -1828,22 +1833,22 @@ sub _FBA_to_FBAdata {
 				$essential
 			]);
 		}
-		foreach my $var (@{$result->fbaMetaboliteProductionResults()}) {
+		foreach my $var (@{$obj->FBAMetaboliteProductionResults()}) {
 			push(@{$fbadata->{metaboliteProductions}},[
 				$var->maximumProduction(),
-				$var->modelCompound()->id(),
-				$var->modelCompound()->name()
+				$var->modelcompound()->id(),
+				$var->modelcompound()->name()
 			]);
 		}
-		foreach my $minmedia (@{$result->minimalMediaResults()}) {
+		foreach my $minmedia (@{$obj->FBAMinimalMediaResults()}) {
 			my $data = {
 				optionalNutrients => [],
 				essentialNutrients => []
 			};
-			foreach my $cpd (@{$result->essentialNutrients()}) {
+			foreach my $cpd (@{$minmedia->essentialNutrients()}) {
 				push(@{$data->{essentialNutrients}},$cpd->id())
 			}
-			foreach my $cpd (@{$result->optionalNutrients()}) {
+			foreach my $cpd (@{$minmedia->optionalNutrients()}) {
 				push(@{$data->{optionalNutrients}},$cpd->id())
 			}
 			push(@{$fbadata->{minimalMediaPredictions}},$data);	
@@ -2443,7 +2448,7 @@ Description:
 
 sub _getJob {
 	my($self,$id) = @_;
-	my $jobs = $self->_workspaceServices()->get_jobs({
+	my $jobs = $self->_jobserv()->get_jobs({
 		jobids => [$id],
 		auth => $self->_authentication()
 	});
@@ -2460,9 +2465,9 @@ Description:
 =cut
 
 sub _error {
-	my($self,$msg,$method) = @_;
+	my($self,$msg) = @_;
 	$msg = "_ERROR_".$msg."_ERROR_";
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => $method);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => $self->_KBaseStore()->provenance()->[0]->{method});
 }
 
 =head3 _debugmessages
@@ -2506,22 +2511,15 @@ sub _build_sequence_object {
 	my $subprefix = "prot";
 	my $prefix = "kb|protset";
 	my $fieldname = "proteins";
-	my $function = "fasta_to_ProteinSet";
-	if ($type eq "TranscriptSet") {
-		$subprefix = "trans";
-		$fieldname = "transcripts";
-		$function = "fasta_to_TranscriptSet";
-		$prefix = "kb|transset";
-	} elsif ($type eq "ContigSet") {
+	if ($type eq "ContigSet") {
 		$subprefix = "contig";
 		$fieldname = "contigs";
-		$function = "fasta_to_ContigSet";
 		$prefix = "kb|contigset";
 	}
 	my $object = {
-		kbid => undef,
+		id => undef,
 		name => $params->{name},
-		sourceid => $params->{sourceid},
+		source_id => $params->{sourceid},
 		source => $params->{source},
 		type => $params->{type},
 		$fieldname => []
@@ -2536,14 +2534,27 @@ sub _build_sequence_object {
 			    # This isn't strictly a standard but it gets it right when you download from RAST or the SEED at least (and probably genbank too)).
 			    my $description = "unknown";
 			    if( $subarray->[0] =~ /.*?\s(.+)/ ) {
-				$description = $1;
+					$description = $1;
 			    }
-			    push(@{$object->{$fieldname}}, {
-				sourceid => $subarray->[0],
-				sequence => $subarray->[1],
-				description => $description
-				 });
-			}
+			    my $contigobject = {
+					id => $subarray->[0],
+					name => $subarray->[0],
+					"length" => length($subarray->[1]),
+					md5 => Digest::MD5::md5_hex($subarray->[1]),
+					sequence => $subarray->[1],
+					description => $description
+				};
+				if ($fieldname eq "proteins") {
+					$contigobject->{protein_families} = [];
+					$contigobject->{aliases} = [];
+					$contigobject->{annotations} = [];
+					$contigobject->{function} = $description;
+				} else {
+					$contigobject->{name} => $subarray->[0];
+					$contigobject->{description} => $description;
+				}
+				push(@{$object->{$fieldname}},$contigobject);
+ 			}
 		}
 	}
 	$object->{$fieldname} = [sort { $a->{sequence} <=> $b->{sequence} } @{$object->{$fieldname}}];
@@ -2554,15 +2565,22 @@ sub _build_sequence_object {
 		}
 		$str .= $object->{$fieldname}->[$i]->{sequence};
 	}
-	my $uniquestring = Digest::MD5::md5_hex($str);
-	$object->{kbid} = $self->_register_kb_id($prefix,$uniquestring,"md5hash");
+	$object->{md5} = Digest::MD5::md5_hex($str);
+	$object->{id} = $self->_register_kb_id($prefix,$object->{md5},"md5hash");
+	if (!defined($object->{source_id})) {
+		$object->{source_id} = $object->{id};
+		$object->{source} = "KBase";
+	}
 	if (!defined($params->{uid})) {
-		$params->{uid} = $object->{kbid};
+		$params->{uid} = $object->{id};
 	}
-	for (my $i=0; $i < @{$object->{$fieldname}}; $i++) {
-		$object->{$fieldname}->[$i]->{kbid} = $object->{kbid}.".".$subprefix.".".$i;
+	if (!defined($object->{name})) {
+		$object->{name} = $object->{id};
 	}
-	return $self->_save_msobject($object,$type,$params->{workspace},$params->{uid},$function,1);	
+	my $class = "Bio::KBase::ObjectAPI::KBaseGenomes::".$type;
+	$object = $class->new($object);
+	$object->parent($self->_KBaseStore());
+	return $self->_save_msobject($object,$type,$params->{workspace},$params->{uid});	
 }
 
 =head3 _register_kb_id
@@ -2643,6 +2661,135 @@ sub _buildModelFromFunctions {
 	return $mdl;
 }
 
+=head3 _annotate_genome
+
+Definition:
+	Genome = $self->_annotate_genome(Genome genome,AnnotationParameters parameters);
+Description:
+	Returns genome with annotated genes
+		
+=cut
+sub _annotate_genome {
+	my($self,$genome,$parameters) = @_;
+	$parameters = $self->_validateargs($parameters,[],{
+		call_genes => 0,
+		annotate_genes => 1,
+	});
+	my $gaserv = $self->_gaserv();
+	my $genomeTO = $genome->genome_typed_object();
+	if ($parameters->{call_genes} == 1 && @{$genomeTO->{contigs}} > 0) {
+		$genomeTO = $gaserv->annotate_genome($genomeTO);
+	} elsif ($parameters->{annotate_genes} == 1) {
+		$genomeTO = $gaserv->annotate_proteins($genomeTO);
+	}
+	foreach my $gene (@{$genomeTO->{features}}) {
+		my $feature = $genome->getObject("features",$gene->{id});
+		if (!defined($feature)) {
+			$genome->add("features",{
+				id => $gene->{id},
+				function => $gene->{function},
+				type => $gene->{type},
+				protein_translation => $gene->{protein_translation},
+				protein_translation_length => length($gene->{protein_translation}),
+  				dna_sequence_length => 3*$gene->{protein_translation_length},
+  				md5 => Digest::MD5::md5_hex($gene->{protein_translation}),
+				location => $gene->{location},
+				publications => [],
+				subsystems => [],
+				protein_families => [],
+				aliases => [],
+				annotations => [],
+				subsystem_data => [],
+				regulon_data => [],
+				atomic_regulons => [],
+				coexpressed_fids => [],
+				co_occurring_fids => [],
+			});
+		} else {
+			$feature->id($gene->{id});
+			$feature->function($gene->{function});
+			$feature->type($gene->{type});
+			$feature->protein_translation($gene->{protein_translation}),
+			$feature->protein_translation_length(length($gene->{protein_translation}));
+  			$feature->dna_sequence_length => 3*$gene->{protein_translation_length};
+  			$feature->md5(Digest::MD5::md5_hex($gene->{protein_translation}));
+			$feature->location($gene->{location});
+		}
+	}
+	return $genome;
+}
+
+=head3 _classify_genome
+
+Definition:
+	Genome = $self->_classify_genome(Genome genome);
+Description:
+	Returns the cell wall classification for genome
+		
+=cut
+sub _classify_genome {
+	my($self,$genome) = @_;
+	if (!defined($self->{_classifierdata})) {
+	    my ($fh1, $classifierFile) = File::Temp::tempfile();
+	    close($fh1);
+	    my $status = LWP::Simple::getstore("http://bioseed.mcs.anl.gov/~chenry/ModelSEED/classifier.txt", $classifierFile);
+	    $self->_error("Unable to fetch cell wall classifier data!") unless($status == 200);
+		my $data = Bio::KBase::ObjectAPI::utilities::LOADFILE($classifierFile);
+		my $headings = [split(/\t/,$data->[0])];
+		my $popprob = [split(/\t/,$data->[1])];
+		for (my $i=1; $i < @{$headings}; $i++) {
+			$self->{_classifierdata}->{classifierClassifications}->{$headings->[$i]} = {
+				name => $headings->[$i],
+				populationProbability => $popprob->[$i]
+			};
+		}
+		my $cfRoleHash = {};
+		for (my $i=2;$i < @{$data}; $i++) {
+			my $row = [split(/\t/,$data->[$i])];
+			my $searchrole = Bio::KBase::ObjectAPI::utilities::convertRoleToSearchRole($row->[0]);
+			$self->{_classifierdata}->{classifierRoles}->{$searchrole} = {
+				classificationProbabilities => {},
+				role => $row->[0]
+			};
+			for (my $j=1; $j < @{$headings}; $j++) {
+				$self->{_classifierdata}->{classifierRoles}->{$searchrole}->{classificationProbabilities}->{$headings->[$j]} = $row->[$j];
+			}
+		}
+	}
+	my $scores = {};
+	my $sum = 0;
+	foreach my $class (keys(%{$self->{_classifierdata}->{classifierClassifications}})) {
+		$scores->{$class} = 0;
+		$sum += $self->{_classifierdata}->{classifierClassifications}->{$class}->{populationProbability};
+	}
+	my $features = $genome->features();
+	for (my $i=0; $i < @{$features}; $i++) {
+		my $feature = $features->[$i];
+		my $roles = $feature->roles();
+		foreach my $role (@{$roles}) {
+			my $searchrole = Bio::KBase::ObjectAPI::utilities::convertRoleToSearchRole($role);
+			if (defined($self->{_classifierdata}->{classifierRoles}->{$searchrole})) {
+				foreach my $class (keys(%{$self->{_classifierdata}->{classifierClassifications}})) {
+					$scores->{$class} += $self->{_classifierdata}->{classifierRoles}->{$searchrole}->{classificationProbabilities}->{$class};
+				}
+			}
+		}
+	}
+	my $largest;
+	my $largestClass;
+	foreach my $class (keys(%{$self->{_classifierdata}->{classifierClassifications}})) {
+		$scores->{$class} += log($self->{_classifierdata}->{classifierClassifications}->{$class}->{populationProbability}/$sum);
+		if (!defined($largest)) {
+			$largest = $scores->{$class};
+			$largestClass = $class;
+		} elsif ($largest > $scores->{$class}) {
+			$largest = $scores->{$class};
+			$largestClass = $class;
+		}
+	}
+	return $largestClass;
+}
+
 #END_HEADER
 
 sub new
@@ -2654,15 +2801,18 @@ sub new
     #BEGIN_CONSTRUCTOR
     my $options = $args[0];
 	$ENV{KB_NO_FILE_ENVIRONMENT} = 1;
+	
     my $params;
     $self->{_defaultJobState} = "queued";
     $self->{_accounttype} = "kbase";
     $self->{'_fba-url'} = "";
+    $self->{'_jobserver-url'} = "http://kbase.us/services/workspace";
+    $self->{'_gaserver-url'} = "https://kbase.us/services/genome_annotation";
     $self->{'_idserver-url'} = "http://kbase.us/services/idserver";
     $self->{'_mssserver-url'} = "http://bio-data-1.mcs.anl.gov/services/ms_fba";
     $self->{"_probanno-url"} = "http://localhost:7073";
     $self->{"_workspace-url"} = "http://kbase.us/services/workspace";
-    my $paramlist = [qw(fba-url probanno-url mssserver-url accounttype workspace-url defaultJobState idserver-url)];
+    my $paramlist = [qw(jobserver-url fbajobdir mfatoolkitbin fba-url probanno-url mssserver-url accounttype workspace-url defaultJobState idserver-url)];
 
     # so it looks like params is created by looping over the config object
     # if deployment.cfg exists
@@ -2714,11 +2864,17 @@ sub new
     if (defined $params->{defaultJobState}) {
 		$self->{_defaultJobState} = $params->{defaultJobState};
     }
+    if (defined $params->{'_gaserver-url'}) {
+    		$self->{'_gaserver-url'} = $params->{'gaserver-url'};
+    }
     if (defined $params->{'fba-url'}) {
     		$self->{'_fba-url'} = $params->{'fba-url'};
     }
     if (defined $params->{'idserver-url'}) {
     		$self->{'_idserver-url'} = $params->{'idserver-url'};
+    }
+    if (defined $params->{'jobserver-url'}) {
+    		$self->{'_jobserver-url'} = $params->{'jobserver-url'};
     }
     if (defined $params->{'mssserver-url'}) {
     		$self->{'_mssserver-url'} = $params->{'mssserver-url'};
@@ -2743,7 +2899,13 @@ sub new
 	} else {
 		$self->{_idserver} = Bio::KBase::IDServer::Client->new($self->{'_idserver-url'});
 	}
-    
+	if ($self->{'_gaserver-url'} eq "impl") {
+		require "Bio/KBase/GenomeAnnotation/GenomeAnnotationImpl.pm";
+		$self->{_gaserver} = Bio::KBase::GenomeAnnotation::GenomeAnnotationImpl->new();
+	} else {
+		$self->{_gaserver} = Bio::KBase::GenomeAnnotation::Client->new($self->{'_gaserver-url'});
+	}
+	$self->{_jobserver} = Bio::KBase::workspaceService::Client->new($self->{'_jobserver-url'});
     #END_CONSTRUCTOR
 
     if ($self->can('_init_instance'))
@@ -2998,36 +3160,17 @@ sub get_models
     my($out_models);
     #BEGIN get_models
     $self->_setContext($ctx,$input);
-    $input = $self->_validateargs($input,["models","workspaces"],{
-		id_type => "ModelSEED",
-		biochemistry => "default",
-		mapping => "default-mapping"
-	});
-	#Creating cache with the biochemistry, to ensure only one is created for all models
-	my $cache = {
-		Biochemistry => {
-			kbase => {
-				"default" => $self->_get_msobject("Biochemistry","kbase",$input->{biochemistry})
-			}
-		}
-	};
+    $input = $self->_validateargs($input,["models","workspaces"],{});
     for (my $i=0; $i < @{$input->{models}}; $i++) {
     	my $id = $input->{models}->[$i];
     	my $ws = $input->{workspaces}->[$i];
     	my $model = $self->_get_msobject("Model",$input->{workspaces}->[$i],$input->{models}->[$i]);
-    	my $genomeArray = [split(/\//,$model->{annotation_uuid})];
     	my $mdldata = {
     		id => $input->{models}->[$i],
-    		workspace => $input->{workspaces}->[$i],
-    		genome => $genomeArray->[1],
-    		genome_workspace => $genomeArray->[0],
-    		"map" => $input->{mapping},
-    		map_workspace => "kbase",
-    		biochemistry => $input->{biochemistry},
-    		biochemistry_workspace => "kbase",
+    		genome_ref => $model->genome_ref(),
+    		biochemistry_ref => $model->template()->biochemistry_ref(),
     		name => $model->name(),
     		type => $model->type(),
-    		status => $model->status(),
     		biomasses => [],
     		compartments => [],
     		reactions => [],
@@ -3081,34 +3224,23 @@ sub get_models
     			definition => $rxn->definition(),
     			gapfilled => 0
     		};
-		$rxndata->{gapfilled} = $self->_was_reaction_gapfilled($rxn);
+			$rxndata->{gapfilled} = $self->_was_reaction_gapfilled($rxn);
     		push(@{$mdldata->{reactions}},$rxndata);
     	}
     	#Creating fbas, gapfills, and gapgens
-    	my $ids = $model->fbaFormulation_uuids();
-    	$model->fbaFormulations($self->_getMSObjectsByRef("FBAFormulation",$ids));
-    	$ids = $model->integratedGapfilling_uuids();
-    	$model->integratedGapfillings($self->_getMSObjectsByRef("GapfillingFormulation",$ids));
-    	$ids = $model->unintegratedGapfilling_uuids();
-    	$model->unintegratedGapfillings($self->_getMSObjectsByRef("GapfillingFormulation",$ids));
-    	$ids = $model->integratedGapgen_uuids();
-    	$model->integratedGapgens($self->_getMSObjectsByRef("GapgenFormulation",$ids));
-    	$ids = $model->unintegratedGapgen_uuids();
-    	$model->unintegratedGapgens($self->_getMSObjectsByRef("GapgenFormulation",$ids));
-    	foreach my $obj (@{$model->fbaFormulations()}) {
-    		push(@{$mdldata->{fbas}},$self->_generate_fbameta($obj));
+    	foreach my $obj (@{$model->gapfillings()}) {
+    		if ($obj->integrated() == 1) {
+    			push(@{$mdldata->{integrated_gapfillings}},$self->_generate_gapmeta($obj->gapfill()));
+    		} else {
+    			push(@{$mdldata->{unintegrated_gapfillings}},$self->_generate_gapmeta($obj->gapfill()));
+    		}
     	}
-    	foreach my $obj (@{$model->integratedGapfillings()}) {
-    		push(@{$mdldata->{integrated_gapfillings}},$self->_generate_gapmeta($obj));
-    	}
-    	foreach my $obj (@{$model->unintegratedGapfillings()}) {
-    		push(@{$mdldata->{unintegrated_gapfillings}},$self->_generate_gapmeta($obj));
-    	}
-    	foreach my $obj (@{$model->integratedGapgens()}) {
-    		push(@{$mdldata->{integrated_gapgenerations}},$self->_generate_gapmeta($obj));
-    	}
-    	foreach my $obj (@{$model->unintegratedGapgens()}) {
-    		push(@{$mdldata->{unintegrated_gapgenerations}},$self->_generate_gapmeta($obj));
+    	foreach my $obj (@{$model->gapgens()}) {
+    		if ($obj->integrated() == 1) {
+    			push(@{$mdldata->{integrated_gapfillings}},$self->_generate_gapmeta($obj->gapgen()));
+    		} else {
+    			push(@{$mdldata->{unintegrated_gapfillings}},$self->_generate_gapmeta($obj->gapgen()));
+    		}
     	}
     	push(@{$out_models},$mdldata);
     }
@@ -3389,7 +3521,7 @@ sub get_fbas
     	my $fba = $self->_get_msobject("FBA",$ws,$id);
     	my $fbadata = $self->_FBA_to_FBAdata($fba);
     	$cache->{FBA}->{$ws}->{$id} = $fba;
-    	$cache->{Model}->{$fbadata->{model_workspace}}->{$fbadata->{model}} = $fba->model();
+    	$cache->{Model}->{$fbadata->{model_workspace}}->{$fbadata->{model}} = $fba->fbamodel();
     	push(@{$out_fbas},$fbadata);
     }
 	$self->_clearContext();
@@ -4040,15 +4172,18 @@ sub get_reactions
     #BEGIN get_reactions
 	$self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["reactions"],{
-    	id_type => "ModelSEED",
-    	biochemistry => "default",
-		mapping => "default-mapping"
+    	biochemistry => "default"
     });
 	my $biochem = $self->_get_msobject("Biochemistry","kbase",$input->{biochemistry});
 	$out_reactions = [];
 	for (my $i=0; $i < @{$input->{reactions}}; $i++) {
 		my $rxn = $input->{reactions}->[$i];
-		my $obj = $biochem->getObjectByAlias("reactions",$rxn,$input->{id_type});
+		my $obj;
+		if ($rxn =~ m/(rxn\d+)$/) {
+			$obj = $biochem->getObject("reactions",$1);
+		} else {
+			$obj = $biochem->searchForReaction($rxn);
+		}
 		my $new;
 		if (defined($obj)) {
 			$new = {
@@ -4056,7 +4191,7 @@ sub get_reactions
                 abbrev => $obj->abbreviation(),
                 name => $obj->name(),
                 enzymes => $obj->getAliases("Enzyme Class"),
-		aliases => $obj->allAliases(),
+				aliases => $obj->allAliases(),
                 direction => $obj->direction(),
                 reversibility => $obj->thermoReversibility(),
                 deltaG => $obj->deltaG(),
@@ -4173,10 +4308,10 @@ sub get_compounds
 	for (my $i=0; $i < @{$input->{compounds}}; $i++) {
 		my $cpd = $input->{compounds}->[$i];
 		my $obj;
-		if ($input->{id_type} eq "all") {
-			$obj = $biochem->getObjectByAlias("compounds",$cpd);
+		if ($cpd =~ m/(cpd\d+)$/) {
+			$obj = $biochem->getObject("compounds",$1);
 		} else {
-			$obj = $biochem->getObjectByAlias("compounds",$cpd,$input->{id_type});
+			$obj = $biochem->searchForCompound($cpd);
 		}
 		my $new;
 		if (defined($obj)) {
@@ -4280,32 +4415,29 @@ sub get_alias
     #BEGIN get_alias
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["input_ids", "input_id_type", "output_id_type", "object_type"],{
-        biochemistry => "default",
-	mapping => "default-mapping"
+        biochemistry => "default"
     });
-
     my $biochem = $self->_get_msobject("Biochemistry","kbase",$input->{biochemistry});
     $output = [];
     for (my $i=0; $i < @{$input->{input_ids}}; $i++) {
-	my $id = $input->{input_ids}->[$i];
-	my $obj;
-	my $oneoutput = {};
-	if (lc($input->{"object_type"}) eq "compound") {
-	    $obj = $biochem->getObjectByAlias("compounds",$id,$input->{input_id_type});
-	} elsif (lc($input->{"object_type"}) eq "reaction") {
-	    $obj = $biochem->getObjectByAlias("reactions", $id, $input->{input_id_type});
-	} else { 
-	    die "Object type $input->{object_type} does not support alias sets";
-	}
-	if (defined($obj)) {
-	    $oneoutput->{original_id} = $id;
-	    $oneoutput->{aliases} = [];
-	    my $alias = $obj->getAliases($input->{output_id_type});
-	    push(@{$oneoutput->{aliases}},$alias);
-	    push(@{$output}, $oneoutput);
-	} 
+		my $id = $input->{input_ids}->[$i];
+		my $obj;
+		my $oneoutput = {};
+		if (lc($input->{"object_type"}) eq "compound") {
+		    $obj = $biochem->getObjectByAlias("compounds",$id,$input->{input_id_type});
+		} elsif (lc($input->{"object_type"}) eq "reaction") {
+		    $obj = $biochem->getObjectByAlias("reactions", $id, $input->{input_id_type});
+		} else { 
+		    die "Object type $input->{object_type} does not support alias sets";
+		}
+		if (defined($obj)) {
+		    $oneoutput->{original_id} = $id;
+		    $oneoutput->{aliases} = [];
+		    my $alias = $obj->getAliases($input->{output_id_type});
+		    push(@{$oneoutput->{aliases}},$alias);
+		    push(@{$output}, $oneoutput);
+		}
     }
-    
     #END get_alias
     my @_bad_returns;
     (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
@@ -4379,19 +4511,16 @@ sub get_aliassets
     my($aliassets);
     #BEGIN get_aliassets
     $self->_setContext($ctx,$input);
-    $input = $self->_validateargs($input,["object_type"],{
-        biochemistry => "default",
-        mapping => "default-mapping"
-				  });
+    $input = $self->_validateargs($input,["object_type"],{biochemistry => "default"});
     my $biochem = $self->_get_msobject("Biochemistry","kbase",$input->{biochemistry});
-
     $aliassets = [];
-    for (my $i=0; $i < @{$biochem->{aliasSets}}; $i++) {
-        my $type = $biochem->{aliasSets}->[$i]->{data}->{class};
-	if (lc($input->{object_type}) =~ lc($type)) {
-	    push(@{$aliassets}, $biochem->{aliasSets}->[$i]->{data}->{name});
-	}
+    my $aliashash = {};
+    if (lc($input->{object_type}) eq "compound") {
+    	$aliashash = $biochem->compoundsByAlias();
+    } elsif (lc($input->{object_type}) eq "reaction") {
+    	$aliashash = $biochem->reactionsByAlias();
     }
+    $aliassets = [keys(%{$aliashash})];
 
     #END get_aliassets
     my @_bad_returns;
@@ -4498,22 +4627,12 @@ sub get_media
     my($out_media);
     #BEGIN get_media
 	$self->_setContext($ctx,$input);
-    $input = $self->_validateargs($input,["medias","workspaces"],{
-    	biochemistry => "default",
-		mapping => "default-mapping"
-    });
-	my $biochem = $self->_get_msobject("Biochemistry","kbase",$input->{biochemistry});
+    $input = $self->_validateargs($input,["medias","workspaces"],{});
 	$out_media = [];
 	for (my $i=0; $i < @{$input->{medias}}; $i++) {
 		my $media = $input->{medias}->[$i];
 		my $workspace = $input->{workspaces}->[$i];
-		my $obj;
-		if (!defined($workspace) || $workspace eq "NO_WORKSPACE") {
-			$obj = $biochem->queryObject("media",{id => $media});
-		} else {
-			$obj = $self->_get_msobject("Media",$workspace,$media);
-			$biochem->add("media",$obj);
-		}
+		my $obj = $self->_get_msobject("Media",$workspace,$media);
 		my $new;
 		if (defined($obj)) {
 			$new = {
@@ -4638,77 +4757,23 @@ sub get_biochemistry
     $input = $self->_validateargs($input,[],{
 		biochemistry => "default",
 		biochemistry_workspace => "kbase",
-		id_type => "ModelSEED"
 	});
     my $biochem = $self->_get_msobject("Biochemistry",$input->{biochemistry_workspace},$input->{biochemistry});
-    
     my $compounds = [];
     my $reactions = [];
-    my $media = [];
-
     $out_biochemistry = {
-        id => $biochem->uuid,
+        id => $biochem->id(),
         name => $biochem->name,
         compounds => $compounds,
         reactions => $reactions,
-        media => $media
     };
-
-    # the following is very dependent upon the internal data representation
-    # of the MS subobjects, and needs to be changed if this representation changes
-	
-	my $aliasset = $biochem->queryObject("aliasSets",{
-		name => $input->{id_type},
-		attribute => "compounds"
-	});
-	if (!defined($aliasset)) {
-		my $msg = "id_type ".$input->{id_type}." not found for biochemistry compounds!";
-		$self->_error($msg,'get_biochemistry');
-	}
-	my $aliases = $aliasset->aliasesByuuid();
-    foreach my $cpd_info (@{$biochem->_compounds}) {
-        my $uuid;
-        if ($cpd_info->{created} == 1) {
-            $uuid = $cpd_info->{object}->uuid;
-        } else {
-        	$uuid = $cpd_info->{data}->{uuid};
-        }
-        if (defined($aliases->{$uuid})) {
-        	push(@{$compounds},$aliases->{$uuid}->[0]);
-        } else {
-        	push(@{$compounds},$uuid);
-        }
+	my $cpds = $biochem->compounds();
+    for (my $i=0; $i < @{$cpds}; $i++) {
+    	push(@{$compounds},$cpds->[$i]->id());
     }
-   	
-	$aliasset = $biochem->queryObject("aliasSets",{
-		name => $input->{id_type},
-		attribute => "reactions"
-	});
-	if (!defined($aliasset)) {
-		my $msg = "id_type ".$input->{id_type}." not found for biochemistry reactions!";
-		$self->_error($msg,'get_biochemistry');
-	}
-	$aliases = $aliasset->aliasesByuuid();
-    foreach my $rxn_info (@{$biochem->_reactions}) {
-        my $uuid;
-        if ($rxn_info->{created} == 1) {
-            $uuid = $rxn_info->{object}->uuid;
-        } else {
-            $uuid = $rxn_info->{data}->{uuid};
-        }
-        if (defined($aliases->{$uuid})) {
-        	push(@{$reactions},$aliases->{$uuid}->[0]);
-        } else {
-        	push(@{$reactions},$uuid);
-        }
-    }
-
-    foreach my $media_info (@{$biochem->_media}) {
-        if ($media_info->{created} == 1) {
-            push(@$media, $media_info->{object}->id);
-        } else {
-            push(@$media, $media_info->{data}->{id});
-        }
+    my $rxns = $biochem->reactions();
+    for (my $i=0; $i < @{$rxns}; $i++) {
+    	push(@{$reactions},$rxns->[$i]->id());
     }
 	$self->_clearContext();
     #END get_biochemistry
@@ -4823,21 +4888,6 @@ sub get_ETCDiagram
     my($output);
     #BEGIN get_ETCDiagram
     $self->_setContext($ctx,$input);
-	$input = $self->_validateargs($input,["model","workspace","media"],{
-		mediaws => $input->{workspace}
-	});
-    #
-    my $model = $self->_get_msobject("Model",$input->{workspace},$input->{model});
-    if (!defined($model)) {
-    	my $msg = "Failed to retrieve model ".$input->{workspace}."/".$input->{model};
-    	$self->_error($msg,'get_ETCDiagram');
-    }
-    my $formulation = $self->_setDefaultFBAFormulation({
-    	media => $input->{media},
-    	mediaws => $input->{mediaws}
-    });
-	my $fba = $self->_buildFBAObject($input->{formulation},$model,"NO_WORKSPACE","none");
-	my $fbaResult = $fba->runFBA();
     my $etcDiagram;
     $output = $etcDiagram;
 	$self->_clearContext();
@@ -5319,7 +5369,7 @@ sub genome_object_to_workspace
 		$genome->{dna_size} = length($str);
 		$genome->{md5} = Digest::MD5::md5_hex($str);
 		my $contigset = {
-			id => $self->_idServer()->register_ids("kb|contigset","md5hash",[$contigset->{md5}]),
+			id => $self->_idServer()->register_ids("kb|contigset","md5hash",[$genome->{md5}]),
 			name => $genome->{scientific_name},
 			md5 => $genome->{md5},
 			source_id => $genome->{source_id},
@@ -5327,16 +5377,16 @@ sub genome_object_to_workspace
 			type => "Organism",
 			contigs => []
 		};
-		for (my $i=0; $i < @{$oldcontigs->{contigs}}; $i++) {
-			push(@{$genomedata->{contig_ids}},$oldcontigs->{contigs}->[$i]->{id});
-			push(@{$genomedata->{contig_lengths}},length($oldcontigs->{contigs}->[$i]->{$label}));
-			my $md5 = Digest::MD5::md5_hex($oldcontigs->{contigs}->[$i]->{$label});
-			push(@{$newdata->{contigs}},{
-				id => $oldcontigs->{contigs}->[$i]->{id},
-				"length" => length($oldcontigs->{contigs}->[$i]->{$label}),
+		for (my $i=0; $i < @{$genome->{contigs}}; $i++) {
+			push(@{$genome->{contig_ids}},$genome->{contigs}->[$i]->{id});
+			push(@{$genome->{contig_lengths}},length($genome->{contigs}->[$i]->{$label}));
+			my $md5 = Digest::MD5::md5_hex($genome->{contigs}->[$i]->{$label});
+			push(@{$contigset->{contigs}},{
+				id => $genome->{contigs}->[$i]->{id},
+				"length" => length($genome->{contigs}->[$i]->{$label}),
 				md5 => $md5,
-				sequence => $oldcontigs->{contigs}->[$i]->{$label},
-				name => $oldcontigs->{contigs}->[$i]->{id}
+				sequence => $genome->{contigs}->[$i]->{$label},
+				name => $genome->{contigs}->[$i]->{id}
 			});
 		}
 		my $ContigObj = Bio::KBase::ObjectAPI::KBaseGenomes::ContigSet->new($contigset);
@@ -5489,15 +5539,19 @@ sub genome_to_workspace
     	sourcePassword => undef,
     	source => "kbase",
     });
-    my $genomeObj;
+    my $objects;
     if ($input->{source} eq "kbase") {
-    	$genomeObj = $self->_get_genomeObj_from_CDM($input->{genome});
+    	$objects = $self->_get_genomeObj_from_CDM($input->{genome});
     } elsif ($input->{source} eq "seed") {
-    	$genomeObj = $self->_get_genomeObj_from_SEED($input->{genome});
+    	$objects = $self->_get_genomeObj_from_SEED($input->{genome});
     } elsif ($input->{source} eq "rast") {
-    	$genomeObj = $self->_get_genomeObj_from_RAST($input->{genome},$input->{sourceLogin},$input->{sourcePassword});
+    	$objects = $self->_get_genomeObj_from_RAST($input->{genome},$input->{sourceLogin},$input->{sourcePassword});
     }
-	$genomeMeta = $self->_save_msobject($genomeObj,"Genome",$input->{workspace},$genomeObj->{id});
+    if (defined($objects->[1])) {
+    	my $contigmeta = $self->_save_msobject($objects->[1],"ContigSet",$input->{workspace},$objects->[1]->{id});
+		$objects->[0]->contigset_ref($objects->[1]->_reference());
+    }
+	$genomeMeta = $self->_save_msobject($objects->[0],"Genome",$input->{workspace},$input->{genome});
 	$self->_clearContext();
     #END genome_to_workspace
     my @_bad_returns;
@@ -5635,21 +5689,22 @@ sub add_feature_translation
     	my $trans = $input->{translations}->[$i];
     	$aliases->{$trans->[1]}->{$trans->[0]} = 1;
     }
-    for (my $i=0; $i < @{$genome->{features}}; $i++) {
-    	my $ftr = $genome->{features}->[$i];
-    	my $existingAliases = {};
-    	foreach my $alias (@{$ftr->{aliases}}) {
-    		$existingAliases->{$alias} = 1;
-    	}
-    	if (defined($aliases->{$ftr->{id}})) {
-    		foreach my $alias (keys(%{$aliases->{$ftr->{id}}})) {
+    my $features = $genome->features();
+    for (my $i=0; $i < @{$features}; $i++) {
+    	my $ftr = $features->[$i];
+    	if (defined($aliases->{$ftr->id()})) {
+    		my $existingAliases = {};
+	    	foreach my $alias (@{$ftr->aliases()}) {
+	    		$existingAliases->{$alias} = 1;
+	    	}
+    		foreach my $alias (keys(%{$aliases->{$ftr->id()}})) {
     			if (!defined($existingAliases->{$alias})) {
-    				push(@{$ftr->{aliases}},$alias);
+    				push(@{$ftr->aliases()},$alias);
     			}
     		}
     	}
     }
-    $genomeMeta = $self->_save_msobject($genome,"Genome",$input->{workspace},$input->{genome},"add_feature_translation",$input->{overwrite});
+    $genomeMeta = $self->_save_msobject($genome,"Genome",$input->{workspace},$input->{genome});
     $self->_clearContext();
     #END add_feature_translation
     my @_bad_returns;
@@ -5787,20 +5842,17 @@ sub genome_to_fbamodel
     	templatemodel_workspace => $input->{workspace},
     	coremodel => 0,
     	genome_workspace => $input->{workspace},
-    	model => undef,
-    	overwrite => 0
+    	model => undef
     });
-    #Determining model ID
-    if (!defined($input->{model})) {
-    	$input->{model} = $self->_get_new_id($input->{genome}.".fbamdl.");
-    }
     #Retreiving genome object from workspace
     my $genome = $self->_get_msobject("Genome",$input->{genome_workspace},$input->{genome});
-    #Retrieving annotation and mapping
-    my $annotation = $self->_get_msobject("Annotation","NO_WORKSPACE",$genome->{annotation_uuid});
+    #Determining model ID
+    my $kbid = $self->_get_new_id($genome->id().".fbamdl");
+    if (!defined($input->{model})) {
+    	$input->{model} = $input->{genome}.".fbamdl";
+    }
     #Retrieving template model
     my $template;
-    $template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","GramPosModelTemplate");   
     if (defined($input->{templatemodel})) {
     	$template = $self->_get_msobject("ModelTemplate",$input->{templatemodel_workspace},$input->{templatemodel});
     } elsif ($input->{coremodel} == 1) {
@@ -5808,8 +5860,8 @@ sub genome_to_fbamodel
     } elsif ($genome->{domain} eq "Plant") {
     	$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","PlantModelTemplate");
 	} else {
-    	my $class = $annotation->classifyGenomeFromAnnotation();
-    	if ($class eq "Gram positive") {
+		my $class = $self->_classify_genome($genome);
+		if ($class eq "Gram positive") {
     		$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","GramPosModelTemplate");
     	} elsif ($class eq "Gram negative") {
     		$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","GramNegModelTemplate");
@@ -5817,13 +5869,16 @@ sub genome_to_fbamodel
     		$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","PlantModelTemplate");
     	}
     }
+    if (!defined($template)) {
+    	$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","GramPosModelTemplate");
+    }
     #Building the model
     my $mdl = $template->buildModel({
-	    annotation => $annotation
+	    genome => $genome,
+	    modelid => $kbid
 	});
-	$mdl->defaultNameSpace("KBase");
 	#Model uuid and model id will be set to WS values during save
-	$modelMeta = $self->_save_msobject($mdl,"Model",$input->{workspace},$input->{model},"genome_to_fbamodel",$input->{overwrite});
+	$modelMeta = $self->_save_msobject($mdl,"Model",$input->{workspace},$input->{model});
     $self->_clearContext();
     #END genome_to_fbamodel
     my @_bad_returns;
@@ -5988,7 +6043,7 @@ sub import_fbamodel
     #Retreiving biochemistry
     my $bio = $annotation->mapping()->biochemistry();
     #Creating empty model
-    my $model = ModelSEED::MS::Model->new({
+    my $model = Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->new({
 		id => $input->{model},
 		name => $input->{model},
 		version => 1,
@@ -6344,8 +6399,7 @@ sub export_genome
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["genome","workspace","format"],{});
     my $genome = $self->_get_msobject("Genome",$input->{workspace},$input->{genome});
-    my $annotation = $self->_get_msobject("Annotation","NO_WORKSPACE",$genome->{annotation_uuid});
-    $output = $annotation->export({format => $input->{format}});
+    $output = $genome->export({format => $input->{format}});
     $self->_clearContext();
     #END export_genome
     my @_bad_returns;
@@ -6853,18 +6907,17 @@ sub addmedia
     	concentrations => [],
     	maxflux => [],
     	minflux => [],
-    	overwrite => 0,
     	biochemistry => "default"
     });
     #Creating the media object from the specifications
     my $bio = $self->_get_msobject("Biochemistry","kbase",$input->{biochemistry});
-    my $media = ModelSEED::MS::Media->new({
-    	uuid => $input->{workspace}."/".$input->{media},
-    	id => $input->{media},
+    my $media = Bio::KBase::ObjectAPI::KBaseBiochem::Media->new({
+    	id => "kb|media.".$self->_idServer()->allocate_id_range("kb|media",1),
     	name => $input->{name},
     	isDefined => $input->{isDefined},
     	isMinimal => $input->{isMinimal},
     	type => $input->{type},
+    	source_id => $input->{media}
     });
     my $missing = [];
     my $found = [];
@@ -6873,7 +6926,7 @@ sub addmedia
     	my $cpdobj = $bio->searchForCompound($name);
     	if (defined($cpdobj)) {
 	    	my $data = {
-	    		compound_uuid => $cpdobj->uuid(),
+	    		compound_ref => $bio->_reference()."/compounds/id/".$cpdobj->id(),
 	    		concentration => 0.001,
 	    		maxFlux => 100,
 	    		minFlux => -100
@@ -6898,7 +6951,8 @@ sub addmedia
 		$self->_error("Compounds specified for media not found: ".join(";",@{$missing}),'addmedia');
 	}
     #Saving media in database
-    $mediaMeta = $self->_save_msobject($media,"Media",$input->{workspace},$input->{media},"addmedia",$input->{overwrite});
+    $media->parent($self->_KBaseStore());
+    $mediaMeta = $self->_save_msobject($media,"Media",$input->{workspace},$input->{media});
 	$self->_clearContext();
     #END addmedia
     my @_bad_returns;
@@ -6981,22 +7035,8 @@ sub export_media
     my($output);
     #BEGIN export_media
     $self->_setContext($ctx,$input);
-	$input = $self->_validateargs($input,["media","workspace","format"],{
-		biochemistry => "default",
-		mapping => "default-mapping"
-	});
-    my $med;
-    my $bio = $self->_get_msobject("Biochemistry","kbase",$input->{biochemistry});
-    if ($input->{workspace} eq "NO_WORKSPACE") {
-    	 $med = $bio->queryObject("media",{id => $input->{media}});
-    	 if (!defined($med)) {
-    	 	my $msg = "Media ".$input->{media}." not found in base biochemistry!";
-			$self->_error($msg,'export_media');
-    	 }
-    } else {
-    	$med = $self->_get_msobject("Media",$input->{workspace},$input->{media});
-    	$med->parent($bio);
-    }
+	$input = $self->_validateargs($input,["media","workspace","format"],{});
+    my $med = $self->_get_msobject("Media",$input->{workspace},$input->{media});
     $output = $med->export({
 	    format => $input->{format}
 	});
@@ -7229,54 +7269,41 @@ sub runfba
 		notes => "",
 		model_workspace => $input->{workspace},
 		fba => undef,
-		add_to_model => 0,
-		overwrite => 0,
 		biomass => undef
 	});
+	my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
 	if (!defined($input->{fba})) {
 		$input->{fba} = $self->_get_new_id($input->{model}.".fba.");
 	}
 	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
 	#Creating FBAFormulation Object
-	my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
 	my $fba = $self->_buildFBAObject($input->{formulation},$model,$input->{workspace},$input->{fba});
 	$fba->fva($input->{fva});
 	$fba->comboDeletions($input->{simulateko});
 	$fba->fluxMinimization($input->{minimizeflux});
 	$fba->findMinimalMedia($input->{findminmedia});
-	if (defined($input->{biomass}) && $fba->readableObjective() =~ m/\{\s+bio1\s+\}/) {
+	if (defined($input->{biomass}) && defined($fba->biomassflux_objterms()->{bio1})) {
 		my $bio = $model->searchForBiomass($input->{biomass});
 		if (defined($bio)) {
-			$fba->remove("fbaObjectiveTerms",$fba->fbaObjectiveTerms()->[0]);
-			$fba->add("fbaObjectiveTerms",{
-				coefficient => 1,
-				variableType => 'flux',
-				entityType => "biomass",
-				entity_uuid => $bio->uuid(),
-			});
+			delete $fba->biomassflux_objterms()->{bio1};
+			$fba->biomassflux_objterms()->{$bio->id()} = 1;
 		}			
 	}
     #Running FBA
-    my $fbaResult;
+    my $objective;
     eval {
 		local $SIG{ALRM} = sub { die "FBA timed out! Model likely contains numerical instability!" };
 		alarm 600;
-		$fbaResult = $fba->runFBA();
+		$objective = $fba->runFBA();
 		alarm 0;
 	};
 	if ($@) {
-		$self->_error($@,'runfba');
+		$self->_error($@);
     }
-    if (!defined($fbaResult)) {
-    	my $msg = "FBA failed with no solution returned!";
-    	$self->_error($msg,'runfba');
+    if (!defined($objective)) {
+    	$self->_error("FBA failed with no solution returned!");
     }
-    if ($input->{add_to_model} == 1) {
-    	$model->addLinkArrayItem("fbaFormulations",$fba);
-    	$self->_save_msobject($model,"Model",$input->{model_workspace},$input->{model},"runfba");
-    }
-    $fba->model_uuid($model->uuid());
-	$fbaMeta = $self->_save_msobject($fba,"FBA",$input->{workspace},$input->{fba},"runfba",$input->{overwrite});
+	$fbaMeta = $self->_save_msobject($fba,"FBA",$input->{workspace},$input->{fba});
     $self->_clearContext();
     #END runfba
     my @_bad_returns;
@@ -8928,128 +8955,43 @@ sub queue_gapfill_model
 	$input->{formulation}->{target_reactions} = $input->{target_reactions};
 	$input->{formulation}->{timePerSolution} = $input->{timePerSolution};
 	$input->{formulation}->{totalTimeLimit} = $input->{totalTimeLimit};
-	#Checking is this is a postprocessing or initialization call
-	if (!defined($input->{gapFill})) {
-		if (@{$input->{target_reactions}} > 0) {
-			$input->{formulation}->{targeted_reactions} = $input->{target_reactions};
-			$input->{completeGapfill} = 1;
-		}
-		if ($input->{completeGapfill} == 1) {
-			$input->{formulation}->{num_solutions} = 1;
-			$input->{integrate_solution} = 1;
-		}
-		my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
-		if (!defined($input->{out_model})) {
-			$input->{out_model} = $input->{model};
-		}
-		$self->_get_new_id($input->{model}.".gapfill.");
-		$input->{formulation} = $self->_setDefaultGapfillFormulation($input->{formulation});
-		$input->{formulation}->{completeGapfill} = $input->{completeGapfill};
-		my $gapfill = $self->_buildGapfillObject($input->{formulation},$model);
-		$input->{gapFill} = $gapfill->uuid();
-		push(@{$model->unintegratedGapfilling_uuids()},$gapfill->uuid());
-		my $modelmeta = $self->_save_msobject($model,"Model",$input->{workspace},$input->{out_model},"queue_gapfill_model");
-		$gapfill->fbaFormulation()->model_uuid($input->{model_workspace}."/".$input->{model});
-		my $fbameta = $self->_save_msobject($gapfill->fbaFormulation(),"FBA","NO_WORKSPACE",$gapfill->fbaFormulation()->uuid(),"queue_gapfill_model",0,$gapfill->fbaFormulation()->uuid());
-		$gapfill->model_uuid($model->uuid());
-		my $gapfillmeta = $self->_save_msobject($gapfill,"GapFill","NO_WORKSPACE",$gapfill->uuid(),"queue_gapfill_model",0,$gapfill->uuid());
-	    my $jobdata = {
-			postprocess_command => "queue_gapfill_model",
-			postprocess_args => [$input],
-			fbaref => $gapfill->fbaFormulation()->uuid()
-		};
-		if (defined($input->{solver})) {
-		    # All valid solvers are UPPER CASE.
-			$jobdata->{solver} = uc($input->{solver});
-		}
-	    $job = $self->_queueJob({
-			type => "FBA",
-			jobdata => $jobdata,
-			queuecommand => "queue_gapfill_model",
-			"state" => $self->_defaultJobState()
-		});
-	} else {
-		my $gapfill = $self->_get_msobject("GapFill","NO_WORKSPACE",$input->{gapFill});
-		if (!defined($gapfill->fbaFormulation()->fbaResults()->[0])) {
-			my $msg = "Gapfilling failed to produce any results. Check gapfilling infrastructure!";
-			$self->_error($msg,'queue_gapfill_model');
-		}
-		# If we fail in preliminary solving there's no point to restarting it and it will result in a misleading error message.
-		my $gfoutput = $gapfill->fbaFormulation()->fbaResults()->[-1]->outputfiles()->{"CompleteGapfillingOutput.txt"};
-		if ( !defined($gfoutput->[1] ) ) {
-			my $msg = "Gapfilling failed to produce an output file. Check gapfilling infrastructure!";
-			$self->_error($msg,'queue_gapfill_model');
-		}
-		for (my $i=0; $i < @{$gfoutput}; $i++) {
-			my $line = $gfoutput->[$i];
-			if ($line =~ /FAILED/ && $line =~ /Prelim/ && $line =~ /bio\d+/) {
-				my $array = [split(/\t/,$line)];
-				my $msg;
-				if (defined($array->[6])) {
-					$msg = "Gapfilling failed in preliminary feasibility determination. The following biomass compounds appear to be problematic: ".$array->[6]."!";
-				} else {
-					$msg = "Gapfilling failed in preliminary feasibility determination.";
-				}
-				$self->_error($msg,'queue_gapfill_model');
-			} elsif ($line =~ /FAILED/ && $line =~ /bio\d+/) {
-				$self->_error("Gapfilling failed with no solutions!",'queue_gapfill_model');
-			}
-		}
-		$gapfill->parseGapfillingResults($gapfill->fbaFormulation()->fbaResults()->[-1]);
-		if (!defined($gapfill->gapfillingSolutions()->[0])) {
-			if (defined($input->{jobid})) {
-				my $job = $self->_getJob($input->{jobid});
-				my $newJobData;
-				if (!defined($job->{jobdata}->{newgapfilltime})) {
-					$newJobData = {newgapfilltime => 14400,error => ""};
-				} elsif ($job->{jobdata}->{newgapfilltime} == 14400) {
-					$newJobData = {newgapfilltime => 43200,error => ""};
-				} elsif ($job->{jobdata}->{newgapfilltime} == 43200) {
-					$newJobData = {newgapfilltime => 86400,error => ""};
-				}
-				if (defined($newJobData)) {
-					print STDERR "Resubmitting ".$job->{id}." for ".$newJobData->{newgapfilltime}." seconds!\n";
-					eval {
-						$self->_workspaceServices()->set_job_status({
-							auth => $self->_authentication(),
-							jobid => $job->{id},
-							currentStatus => "running",
-							status => "queued",
-							jobdata => $newJobData
-						});
-					};
-				} else {
-					my $msg = "Gapfilling completed, but no valid solutions found after 24 hours!";
-					$self->_error($msg,'queue_gapfill_model');	
-				}	
-			} else {
-				my $msg = "Gapfilling completed, but no valid solutions found!";
-				$self->_error($msg,'queue_gapfill_model');
-			}
-		}
-		if ($input->{integrate_solution} == 1) {
-			#TODO: This block should be in a "safe save" block to prevent race conditions
-			my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
-			my $fba = $gapfill->fbaFormulation();
-			my ($rxnprobsGPRArray);
-			my ($rxnprobs);
-			if ( defined($input->{formulation}->{probabilisticReactions} )) {
-			    my $rxnprobsid = $input->{formulation}->{probabilisticReactions};
-			    my $rxnprobsws = $input->{formulation}->{probabilisticReaction_workspace};
-			    $rxnprobs = $self->_get_msobject("RxnProbs", $rxnprobsws, $rxnprobsid);
-			    $rxnprobsGPRArray = $self->_buildRxnProbsGPRArray($rxnprobs);
-			}
-			my $report = $model->integrateGapfillSolution({
-				gapfillingFormulation => $gapfill,
-				solutionNum => 0,
-				rxnProbGpr => $rxnprobsGPRArray
-			});
-			my $modelmeta = $self->_save_msobject($model,"Model",$input->{workspace},$input->{out_model},"queue_gapfill_model");
-			#End "safe save" block
-		}
-		my $meta = $self->_save_msobject($gapfill,"GapFill","NO_WORKSPACE",$gapfill->uuid(),"queue_gapfill_model",1,$gapfill->uuid());
-		$job = {};
+	$input->{formulation}->{completeGapfill} = $input->{completeGapfill};
+	if (@{$input->{target_reactions}} > 0) {
+		$input->{completeGapfill} = 1;
 	}
+	if ($input->{completeGapfill} == 1) {
+		$input->{formulation}->{num_solutions} = 1;
+	}
+	$input->{formulation} = $self->_setDefaultGapfillFormulation($input->{formulation});
+	my $model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model});
+	my $gfid = $self->_get_new_id($model->id().".gf.");	
+	my $media = $self->_get_msobject("Media",$input->{formulation}->{formulation}->{media_workspace},$input->{formulation}->{formulation}->{media});
+	if (!defined($input->{out_model})) {
+		$input->{out_model} = $input->{model};
+	}
+	my $gapfill = Bio::KBase::ObjectAPI::KBaseFBA::Gapfilling->new({
+		id => $gfid,
+		fbamodel_ref => $model->_reference(),
+		reactionMultipliers => {},
+		gapfillingSolutions => []
+	});
+	my $gfMeta = $self->_save_msobject($gapfill,"Gapfilling",$input->{workspace},$gapfill->id(),{hidden => 1});
+	$model->add("gapfillings",{
+		gapfill_id => $gapfill->id(),
+		gapfill_ref => $input->{workspace}."/".$gapfill->id(),
+		integrated => 0,
+		integrated_solution => -1,
+		media_ref => $media->_reference()
+	});
+	my $modelMeta = $self->_save_msobject($model,"FBAModel",$input->{workspace},$input->{out_model});
+	$input->{gfid} = $gfid;
+	$job = $self->_jobserv()->queue_job({
+		type => "KBaseFBAModeling",
+		jobdata => $input,
+		queuecommand => "gapfill_model",
+		"state" => "queued",
+		auth => $self->_authentication(),
+	});
 	$self->_clearContext();
     #END queue_gapfill_model
     my @_bad_returns;
@@ -9060,6 +9002,375 @@ sub queue_gapfill_model
 							       method_name => 'queue_gapfill_model');
     }
     return($job);
+}
+
+
+
+
+=head2 gapfill_model
+
+  $modelMeta = $obj->gapfill_model($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a gapfill_model_params
+$modelMeta is an object_metadata
+gapfill_model_params is a reference to a hash where the following keys are defined:
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
+	formulation has a value which is a GapfillingFormulation
+	phenotypeSet has a value which is a phenotype_set_id
+	phenotypeSet_workspace has a value which is a workspace_id
+	integrate_solution has a value which is a bool
+	target_reactions has a value which is a reference to a list where each element is a string
+	out_model has a value which is a fbamodel_id
+	workspace has a value which is a workspace_id
+	gapFill has a value which is a gapfill_id
+	timePerSolution has a value which is an int
+	totalTimeLimit has a value which is an int
+	auth has a value which is a string
+	overwrite has a value which is a bool
+	completeGapfill has a value which is a bool
+fbamodel_id is a string
+workspace_id is a string
+GapfillingFormulation is a reference to a hash where the following keys are defined:
+	formulation has a value which is an FBAFormulation
+	num_solutions has a value which is an int
+	nomediahyp has a value which is a bool
+	nobiomasshyp has a value which is a bool
+	nogprhyp has a value which is a bool
+	nopathwayhyp has a value which is a bool
+	allowunbalanced has a value which is a bool
+	activitybonus has a value which is a float
+	drainpen has a value which is a float
+	directionpen has a value which is a float
+	nostructpen has a value which is a float
+	unfavorablepen has a value which is a float
+	nodeltagpen has a value which is a float
+	biomasstranspen has a value which is a float
+	singletranspen has a value which is a float
+	transpen has a value which is a float
+	blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
+	gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
+	allowedcmps has a value which is a reference to a list where each element is a compartment_id
+	probabilisticAnnotation has a value which is a probanno_id
+	probabilisticAnnotation_workspace has a value which is a workspace_id
+FBAFormulation is a reference to a hash where the following keys are defined:
+	media has a value which is a media_id
+	additionalcpds has a value which is a reference to a list where each element is a compound_id
+	prommodel has a value which is a prommodel_id
+	prommodel_workspace has a value which is a workspace_id
+	media_workspace has a value which is a workspace_id
+	objfraction has a value which is a float
+	allreversible has a value which is a bool
+	maximizeObjective has a value which is a bool
+	objectiveTerms has a value which is a reference to a list where each element is a term
+	geneko has a value which is a reference to a list where each element is a feature_id
+	rxnko has a value which is a reference to a list where each element is a reaction_id
+	bounds has a value which is a reference to a list where each element is a bound
+	constraints has a value which is a reference to a list where each element is a constraint
+	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
+	defaultmaxflux has a value which is a float
+	defaultminuptake has a value which is a float
+	defaultmaxuptake has a value which is a float
+	simplethermoconst has a value which is a bool
+	thermoconst has a value which is a bool
+	nothermoerror has a value which is a bool
+	minthermoerror has a value which is a bool
+media_id is a string
+compound_id is a string
+prommodel_id is a string
+bool is an int
+term is a reference to a list containing 3 items:
+	0: (coefficient) a float
+	1: (varType) a string
+	2: (variable) a string
+feature_id is a string
+reaction_id is a string
+bound is a reference to a list containing 4 items:
+	0: (min) a float
+	1: (max) a float
+	2: (varType) a string
+	3: (variable) a string
+constraint is a reference to a list containing 4 items:
+	0: (rhs) a float
+	1: (sign) a string
+	2: (terms) a reference to a list where each element is a term
+	3: (name) a string
+compartment_id is a string
+probanno_id is a string
+phenotype_set_id is a string
+gapfill_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a gapfill_model_params
+$modelMeta is an object_metadata
+gapfill_model_params is a reference to a hash where the following keys are defined:
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
+	formulation has a value which is a GapfillingFormulation
+	phenotypeSet has a value which is a phenotype_set_id
+	phenotypeSet_workspace has a value which is a workspace_id
+	integrate_solution has a value which is a bool
+	target_reactions has a value which is a reference to a list where each element is a string
+	out_model has a value which is a fbamodel_id
+	workspace has a value which is a workspace_id
+	gapFill has a value which is a gapfill_id
+	timePerSolution has a value which is an int
+	totalTimeLimit has a value which is an int
+	auth has a value which is a string
+	overwrite has a value which is a bool
+	completeGapfill has a value which is a bool
+fbamodel_id is a string
+workspace_id is a string
+GapfillingFormulation is a reference to a hash where the following keys are defined:
+	formulation has a value which is an FBAFormulation
+	num_solutions has a value which is an int
+	nomediahyp has a value which is a bool
+	nobiomasshyp has a value which is a bool
+	nogprhyp has a value which is a bool
+	nopathwayhyp has a value which is a bool
+	allowunbalanced has a value which is a bool
+	activitybonus has a value which is a float
+	drainpen has a value which is a float
+	directionpen has a value which is a float
+	nostructpen has a value which is a float
+	unfavorablepen has a value which is a float
+	nodeltagpen has a value which is a float
+	biomasstranspen has a value which is a float
+	singletranspen has a value which is a float
+	transpen has a value which is a float
+	blacklistedrxns has a value which is a reference to a list where each element is a reaction_id
+	gauranteedrxns has a value which is a reference to a list where each element is a reaction_id
+	allowedcmps has a value which is a reference to a list where each element is a compartment_id
+	probabilisticAnnotation has a value which is a probanno_id
+	probabilisticAnnotation_workspace has a value which is a workspace_id
+FBAFormulation is a reference to a hash where the following keys are defined:
+	media has a value which is a media_id
+	additionalcpds has a value which is a reference to a list where each element is a compound_id
+	prommodel has a value which is a prommodel_id
+	prommodel_workspace has a value which is a workspace_id
+	media_workspace has a value which is a workspace_id
+	objfraction has a value which is a float
+	allreversible has a value which is a bool
+	maximizeObjective has a value which is a bool
+	objectiveTerms has a value which is a reference to a list where each element is a term
+	geneko has a value which is a reference to a list where each element is a feature_id
+	rxnko has a value which is a reference to a list where each element is a reaction_id
+	bounds has a value which is a reference to a list where each element is a bound
+	constraints has a value which is a reference to a list where each element is a constraint
+	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
+	defaultmaxflux has a value which is a float
+	defaultminuptake has a value which is a float
+	defaultmaxuptake has a value which is a float
+	simplethermoconst has a value which is a bool
+	thermoconst has a value which is a bool
+	nothermoerror has a value which is a bool
+	minthermoerror has a value which is a bool
+media_id is a string
+compound_id is a string
+prommodel_id is a string
+bool is an int
+term is a reference to a list containing 3 items:
+	0: (coefficient) a float
+	1: (varType) a string
+	2: (variable) a string
+feature_id is a string
+reaction_id is a string
+bound is a reference to a list containing 4 items:
+	0: (min) a float
+	1: (max) a float
+	2: (varType) a string
+	3: (variable) a string
+constraint is a reference to a list containing 4 items:
+	0: (rhs) a float
+	1: (sign) a string
+	2: (terms) a reference to a list where each element is a term
+	3: (name) a string
+compartment_id is a string
+probanno_id is a string
+phenotype_set_id is a string
+gapfill_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+
+
+=item Description
+
+
+
+=back
+
+=cut
+
+sub gapfill_model
+{
+    my $self = shift;
+    my($input) = @_;
+
+    my @_bad_arguments;
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to gapfill_model:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'gapfill_model');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($modelMeta);
+    #BEGIN gapfill_model
+    $self->_setContext($ctx,$input);
+	$input = $self->_validateargs($input,["model","workspace"],{		
+		model_workspace => $input->{workspace},
+		formulation => undef,
+		phenotypeSet => undef,
+		phenotypeSet_workspace => $input->{workspace},
+		integrate_solution => 0,
+		out_model => undef,
+		gapFill => undef,
+		gapFill_workspace => $input->{workspace},
+		target_reactions => [],
+		timePerSolution => 3600,
+		totalTimeLimit => 18000,
+		completeGapfill => 0,
+		solver => undef
+	});
+	$input->{formulation}->{target_reactions} = $input->{target_reactions};
+	$input->{formulation}->{timePerSolution} = $input->{timePerSolution};
+	$input->{formulation}->{totalTimeLimit} = $input->{totalTimeLimit};
+	$input->{formulation}->{completeGapfill} = $input->{completeGapfill};
+	if (@{$input->{target_reactions}} > 0) {
+		$input->{completeGapfill} = 1;
+	}
+	if ($input->{completeGapfill} == 1) {
+		$input->{formulation}->{num_solutions} = 1;
+	}
+	$input->{formulation} = $self->_setDefaultGapfillFormulation($input->{formulation});
+	my $model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model});
+	if (!defined($input->{out_model})) {
+		$input->{out_model} = $input->{model};
+	}
+	my ($gapfill,$fba) = $self->_buildGapfillObject($input->{formulation},$model,$input->{gfid});
+	if (defined($input->{solver})) {
+    	$fba->parameters()->{MFASolver} = $input->{solver};
+    }
+    $gapfill->fbamodel_ref($model->_reference());
+    if (!defined($input->{gfid})) {
+		my $fbameta = $self->_save_msobject($fba,"FBA",$input->{workspace},$fba->id());
+		$gapfill->fba_ref($fba->_reference());
+		my $gfMeta = $self->_save_msobject($gapfill,"Gapfilling",$input->{workspace},$gapfill->id());
+		$model->add("gapfillings",{
+			gapfill_id => $gapfill->_reference(),
+			gapfill_ref => $input->{workspace}."/".$gapfill->id(),
+			integrated => 0,
+			integrated_solution => -1,
+			media_ref => $fba->media()->_reference()
+		});
+		$modelMeta = $self->_save_msobject($model,"FBAModel",$input->{workspace},$input->{out_model});
+		$gapfill->fbamodel_ref($model->_reference());
+    }
+	$fba->runFBA();
+	if (!defined($fba->objectiveValue())) {
+		$self->_error("Gapfilling failed to produce any results. Check gapfilling infrastructure!");
+	}
+	my $gfoutput = $fba->outputfiles()->{"CompleteGapfillingOutput.txt"};
+	if ( !defined($gfoutput->[1] ) ) {
+		$self->_error("Gapfilling failed to produce an output file. Check gapfilling infrastructure!");
+	}
+	for (my $i=0; $i < @{$gfoutput}; $i++) {
+		my $line = $gfoutput->[$i];
+		if ($line =~ /FAILED/ && $line =~ /Prelim/ && $line =~ /bio\d+/) {
+			my $array = [split(/\t/,$line)];
+			my $msg;
+			if (defined($array->[6])) {
+				$msg = "Gapfilling failed in preliminary feasibility determination. The following biomass compounds appear to be problematic: ".$array->[6]."!";
+			} else {
+				$msg = "Gapfilling failed in preliminary feasibility determination.";
+			}
+			$self->_error($msg);
+		} elsif ($line =~ /FAILED/ && $line =~ /bio\d+/) {
+			$self->_error("Gapfilling failed with no solutions!",'queue_gapfill_model');
+		}
+	}
+	$gapfill->parseGapfillingResults($fba);
+	if (!defined($gapfill->gapfillingSolutions()->[0])) {
+		$self->_error("Gapfilling completed, but no valid solutions found!");
+	}
+	my $meta = $self->_save_msobject($fba,"FBA",$input->{workspace},$fba->id());
+	$gapfill->fba_ref($fba->_reference());
+	$meta = $self->_save_msobject($gapfill,"GapFill",$input->{workspace},$gapfill->id());
+	if ($input->{integrate_solution} == 1) {
+		my ($rxnprobsGPRArray);
+		my ($rxnprobs);
+		if ( defined($input->{formulation}->{probabilisticReactions} )) {
+		    my $rxnprobsid = $input->{formulation}->{probabilisticReactions};
+		    my $rxnprobsws = $input->{formulation}->{probabilisticReaction_workspace};
+		    $rxnprobs = $self->_get_msobject("RxnProbs", $rxnprobsws, $rxnprobsid);
+		    $rxnprobsGPRArray = $self->_buildRxnProbsGPRArray($rxnprobs);
+		}
+		my $report = $model->integrateGapfillSolution({
+			gapfillingFormulation => $gapfill,
+			solutionNum => 0,
+			rxnProbGpr => $rxnprobsGPRArray
+		});
+		$modelMeta = $self->_save_msobject($model,"FBAModel",$input->{workspace},$input->{out_model});
+	}
+	$self->_clearContext();
+    #END gapfill_model
+    my @_bad_returns;
+    (ref($modelMeta) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"modelMeta\" (value was \"$modelMeta\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to gapfill_model:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'gapfill_model');
+    }
+    return($modelMeta);
 }
 
 
@@ -10846,42 +11157,25 @@ sub run_job
     $input = $self->_validateargs($input,["job"],{usecpx => 0});
     $job = $self->_getJob($input->{job});
     eval {
-	    $self->_workspaceServices()->set_job_status({
+	    $self->_jobserv()->set_job_status({
 		   	jobid => $job->{id},
 		   	status => "running",
 		   	auth => $self->_authentication(),
 		   	currentStatus => $job->{status},
 	    });
     };
-    my $fba = $self->_get_msobject("FBA","NO_WORKSPACE",$job->{jobdata}->{fbaref});
-    if ($input->{usecpx} == 1) {
-    	$job->{jobdata}->{solver} = "CPLEX";
-    }
-    if (defined($job->{jobdata}->{newgapfilltime})) {
-    	$fba->parameters()->{"CPLEX solver time limit"} = $job->{jobdata}->{newgapfilltime};
-    	$fba->parameters()->{"Recursive MILP timeout"} = $job->{jobdata}->{newgapfilltime}-100;
-    } 
-    if (defined($job->{jobdata}->{solver})) {
-    	$fba->parameters()->{MFASolver} = $job->{jobdata}->{solver};
-    }
-    my $fbaResult = $fba->runFBA();
-    if (!defined($fbaResult)) {
-   	    eval{
-		    $self->_workspaceServices()->set_job_status({
-			   	jobid => $job->{id},
-			   	status => "error",
-			   	auth => $self->_authentication(),
-			   	currentStatus => "running",
-			   	jobdata => {error => "FBA failed with no solution returned!"}
-		    });
-	    };
-    	my $msg = "FBA failed with no solution returned!";
-    	$self->_error($msg,'runfba');
-    }
-    #Saving the FBA by reference, overwriting the same object in the workspace
-    $self->_save_msobject($fba,"FBA","NO_WORKSPACE",$fba->{_kbaseWSMeta}->{wsid},"run_job",1,$job->{jobdata}->{fbaref});
-	delete $input->{auth};
-    $job = $self->jobs_done($input);
+    my $params = $job->{jobdata};
+    $params->{auth} = $job->{auth};
+    my $command = $job->{queuecommand};
+    $self->$command($params);
+    eval {
+	    $job = $self->_jobserv()->set_job_status({
+	    	jobid => $input->{job},
+	    	status => "done",
+	    	auth => $self->_authentication(),
+	    	currentStatus => "running"
+	    });
+    };
     $self->_clearContext();
     #END run_job
     my @_bad_returns;
@@ -12038,6 +12332,140 @@ sub delete_noncontributing_reactions
 
 
 
+=head2 annotate_workspace_Genome
+
+  $output = $obj->annotate_workspace_Genome($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is an annotate_workspace_Genome_params
+$output is an object_metadata
+annotate_workspace_Genome_params is a reference to a hash where the following keys are defined:
+	Genome_uid has a value which is a string
+	Genome_ws has a value which is a string
+	new_uid has a value which is a string
+	workspace has a value which is a workspace_id
+	annotation_parameters has a value which is an AnnotationParameters
+	auth has a value which is a string
+workspace_id is a string
+AnnotationParameters is a reference to a hash where the following keys are defined:
+	call_genes has a value which is a bool
+	annotate_genes has a value which is a bool
+bool is an int
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is an annotate_workspace_Genome_params
+$output is an object_metadata
+annotate_workspace_Genome_params is a reference to a hash where the following keys are defined:
+	Genome_uid has a value which is a string
+	Genome_ws has a value which is a string
+	new_uid has a value which is a string
+	workspace has a value which is a workspace_id
+	annotation_parameters has a value which is an AnnotationParameters
+	auth has a value which is a string
+workspace_id is a string
+AnnotationParameters is a reference to a hash where the following keys are defined:
+	call_genes has a value which is a bool
+	annotate_genes has a value which is a bool
+bool is an int
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+
+
+=item Description
+
+Create a job that runs the genome annotation pipeline on a genome object in a workspace
+
+=back
+
+=cut
+
+sub annotate_workspace_Genome
+{
+    my $self = shift;
+    my($params) = @_;
+
+    my @_bad_arguments;
+    (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"params\" (value was \"$params\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to annotate_workspace_Genome:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'annotate_workspace_Genome');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($output);
+    #BEGIN annotate_workspace_Genome
+    $self->_setContext($ctx,$params);
+	$params = $self->_validateargs($params,["Genome_uid","workspace"],{
+		Genome_ws => $params->{workspace},
+		new_uid => $params->{Genome_uid},
+		annotation_parameters => {}
+	});
+	my $genomeObj = $self->_get_msobject("Genome",$params->{Genome_ws},$params->{Genome_uid});
+	$self->_annotate_genome($genomeObj,$params->{annotation_parameters});
+  	$output = $self->_save_msobject($genomeObj,"Genome",$params->{workspace},$params->{uid});
+	$self->_clearContext();
+    #END annotate_workspace_Genome
+    my @_bad_returns;
+    (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to annotate_workspace_Genome:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'annotate_workspace_Genome');
+    }
+    return($output);
+}
+
+
+
+
 =head2 fasta_to_ProteinSet
 
   $output = $obj->fasta_to_ProteinSet($params)
@@ -12189,8 +12617,12 @@ ProteinSet_to_Genome_params is a reference to a hash where the following keys ar
 	auth has a value which is a string
 	scientific_name has a value which is a string
 	domain has a value which is a string
-	genetic_code has a value which is an int
+	annotation_parameters has a value which is an AnnotationParameters
 workspace_id is a string
+AnnotationParameters is a reference to a hash where the following keys are defined:
+	call_genes has a value which is a bool
+	annotate_genes has a value which is a bool
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -12225,8 +12657,12 @@ ProteinSet_to_Genome_params is a reference to a hash where the following keys ar
 	auth has a value which is a string
 	scientific_name has a value which is a string
 	domain has a value which is a string
-	genetic_code has a value which is an int
+	annotation_parameters has a value which is an AnnotationParameters
 workspace_id is a string
+AnnotationParameters is a reference to a hash where the following keys are defined:
+	call_genes has a value which is a bool
+	annotate_genes has a value which is a bool
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -12283,7 +12719,8 @@ sub ProteinSet_to_Genome
 		domain => "Bacteria",
 		genetic_code => "11",
 		source => undef,
-		source_id => undef
+		source_id => undef,
+		annotation_parameters => {}
 	});
 	my $kbid = $self->_get_new_id("kb|g");
 	if (!defined($params->{source_id})) {
@@ -12294,39 +12731,64 @@ sub ProteinSet_to_Genome
 		$params->{uid} = $kbid;
 	}
 	my $size = 0;
-	my $gc = 0;
 	my $protObj = $self->_get_msobject("ProteinSet",$params->{ProteinSet_ws},$params->{ProteinSet_uid});
-	for (my $i=0; $i < @{$protObj->{proteins}}; $i++) {
-		$size += length($protObj->{proteins}->[$i]->{sequence});
+	my $proteins = $protObj->proteins();
+	my $sequences = [];
+	for (my $i=0; $i < @{$proteins}; $i++) {
+		$size += length($proteins->[$i]->sequence());
+		push(@{$sequences},$proteins->[$i]->sequence());
 	}
+	@{$sequences} = sort(@{$sequences});
 	$size = 3*$size;
-	my $genome = {
-		id => $params->{source_id},
-		kbid => $kbid,
-		protein_wsid => $params->{ProteinSet_ws}."/".$params->{ProteinSet_uid}."/v".$protObj->{_kbaseWSMeta}->{wsinst},
-		protein_kbid => $protObj->{kbid},
-		size => $size,
+	my $genomeObj = {
+		id => $kbid,
 		scientific_name => $params->{scientific_name},
-		taxonomy => $params->{taxonomy},
 		domain => $params->{domain},
 		genetic_code => $params->{genetic_code},
+		dna_size => $size,
+		num_contigs => 0,
+		contig_lengths => [],
+		contig_ids => [],
 		source => $params->{source},
 		source_id => $params->{source_id},
-		features => []
-	};
-	for (my $i=0; $i < @{$protObj->{proteins}}; $i++) {
-	    push(@{$genome->{features}},{
-		protein_translation => $protObj->{proteins}->[$i]->{sequence},
-         	location => [],
-         	function => $protObj->{proteins}->[$i]->{description},
-         	aliases => [],
-         	id => $kbid.".CDS.".$i,
-         	annotations => []
-		 });
+		md5 => Digest::MD5::md5_hex(join(";",@{$sequences})),
+		taxonomy => $params->{taxonomy},
+		gc_content => 0,
+		complete => 1,
+		publications => [],
+		features => [],
+    };
+	for (my $i=0; $i < @{$proteins}; $i++) {
+		push(@{$genomeObj->{features}},{
+			id => $proteins->[$i]->id(),
+			location => [],
+			type => "peg",
+			function => $proteins->[$i]->function(),
+			md5 => $proteins->[$i]->md5(),
+			protein_translation => $proteins->[$i]->sequence(),
+			protein_translation_length => $proteins->[$i]->length(),
+			dna_sequence_length => 3*$proteins->[$i]->length(),
+			publications => [],
+			subsystems => [],
+			protein_families => $proteins->[$i]->protein_families(),
+			aliases => $proteins->[$i]->aliases(),
+			annotations => $proteins->[$i]->annotations(),
+			subsystem_data => [],
+			regulon_data => [],
+			atomic_regulons => [],
+			coexpressed_fids => [],
+			co_occurring_fids => []
+		});
 	}
-	my $mapping = $self->_get_msobject("Mapping","kbase","default-mapping");
-    ($genome,my $anno,$mapping, my $contigObj) = $self->_processGenomeObject($genome,$mapping,"ProteinSet_to_Genome");
-   	$output = $self->_save_msobject($genome,"Genome",$params->{workspace},$params->{uid},"ProteinSet_to_Genome");
+	foreach my $param (keys(%{$params->{annotation_parameters}})) {
+		if ($param =~ m/^call/) {
+			delete $params->{annotation_parameters}->{$param};
+		}
+	}
+	$genomeObj = Bio::KBase::ObjectAPI::KBaseGenomes::Genome->new($genomeObj);
+	$genomeObj->parent($self->_KBaseStore());
+	$self->_annotate_genome($genomeObj,$params->{annotation_parameters});
+  	$output = $self->_save_msobject($genomeObj,"Genome",$params->{workspace},$params->{uid});
 	$self->_clearContext();
     #END ProteinSet_to_Genome
     my @_bad_returns;
@@ -12335,307 +12797,6 @@ sub ProteinSet_to_Genome
 	my $msg = "Invalid returns passed to ProteinSet_to_Genome:\n" . join("", map { "\t$_\n" } @_bad_returns);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
 							       method_name => 'ProteinSet_to_Genome');
-    }
-    return($output);
-}
-
-
-
-
-=head2 fasta_to_TranscriptSet
-
-  $output = $obj->fasta_to_TranscriptSet($params)
-
-=over 4
-
-=item Parameter and return types
-
-=begin html
-
-<pre>
-$params is a fasta_to_Transcripts_params
-$output is an object_metadata
-fasta_to_Transcripts_params is a reference to a hash where the following keys are defined:
-	uid has a value which is a string
-	fasta has a value which is a string
-	workspace has a value which is a workspace_id
-	auth has a value which is a string
-	name has a value which is a string
-	sourceid has a value which is a string
-	source has a value which is a string
-	type has a value which is a string
-workspace_id is a string
-object_metadata is a reference to a list containing 11 items:
-	0: (id) an object_id
-	1: (type) an object_type
-	2: (moddate) a timestamp
-	3: (instance) an int
-	4: (command) a string
-	5: (lastmodifier) a username
-	6: (owner) a username
-	7: (workspace) a workspace_id
-	8: (ref) a workspace_ref
-	9: (chsum) a string
-	10: (metadata) a reference to a hash where the key is a string and the value is a string
-object_id is a string
-object_type is a string
-timestamp is a string
-username is a string
-workspace_ref is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-$params is a fasta_to_Transcripts_params
-$output is an object_metadata
-fasta_to_Transcripts_params is a reference to a hash where the following keys are defined:
-	uid has a value which is a string
-	fasta has a value which is a string
-	workspace has a value which is a workspace_id
-	auth has a value which is a string
-	name has a value which is a string
-	sourceid has a value which is a string
-	source has a value which is a string
-	type has a value which is a string
-workspace_id is a string
-object_metadata is a reference to a list containing 11 items:
-	0: (id) an object_id
-	1: (type) an object_type
-	2: (moddate) a timestamp
-	3: (instance) an int
-	4: (command) a string
-	5: (lastmodifier) a username
-	6: (owner) a username
-	7: (workspace) a workspace_id
-	8: (ref) a workspace_ref
-	9: (chsum) a string
-	10: (metadata) a reference to a hash where the key is a string and the value is a string
-object_id is a string
-object_type is a string
-timestamp is a string
-username is a string
-workspace_ref is a string
-
-
-=end text
-
-
-
-=item Description
-
-Loads a fasta file as a TranscriptSet object in the workspace
-
-=back
-
-=cut
-
-sub fasta_to_TranscriptSet
-{
-    my $self = shift;
-    my($params) = @_;
-
-    my @_bad_arguments;
-    (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"params\" (value was \"$params\")");
-    if (@_bad_arguments) {
-	my $msg = "Invalid arguments passed to fasta_to_TranscriptSet:\n" . join("", map { "\t$_\n" } @_bad_arguments);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'fasta_to_TranscriptSet');
-    }
-
-    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
-    my($output);
-    #BEGIN fasta_to_TranscriptSet
-    $self->_setContext($ctx,$params);
-	$params = $self->_validateargs($params,["fasta","workspace"],{
-		uid => undef,
-		name => undef,
-		sourceid => undef,
-		source => undef,
-		type => "Organism"
-	});
-	$output = $self->_build_sequence_object("TranscriptSet",$params);
-    $self->_clearContext();
-    #END fasta_to_TranscriptSet
-    my @_bad_returns;
-    (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
-    if (@_bad_returns) {
-	my $msg = "Invalid returns passed to fasta_to_TranscriptSet:\n" . join("", map { "\t$_\n" } @_bad_returns);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'fasta_to_TranscriptSet');
-    }
-    return($output);
-}
-
-
-
-
-=head2 TranscriptSet_to_Genome
-
-  $output = $obj->TranscriptSet_to_Genome($params)
-
-=over 4
-
-=item Parameter and return types
-
-=begin html
-
-<pre>
-$params is a TranscriptSet_to_Genome_params
-$output is an object_metadata
-TranscriptSet_to_Genome_params is a reference to a hash where the following keys are defined:
-	TranscriptSet_uid has a value which is a string
-	TranscriptSet_ws has a value which is a workspace_id
-	workspace has a value which is a workspace_id
-	uid has a value which is a string
-	auth has a value which is a string
-	scientific_name has a value which is a string
-	domain has a value which is a string
-	genetic_code has a value which is an int
-workspace_id is a string
-object_metadata is a reference to a list containing 11 items:
-	0: (id) an object_id
-	1: (type) an object_type
-	2: (moddate) a timestamp
-	3: (instance) an int
-	4: (command) a string
-	5: (lastmodifier) a username
-	6: (owner) a username
-	7: (workspace) a workspace_id
-	8: (ref) a workspace_ref
-	9: (chsum) a string
-	10: (metadata) a reference to a hash where the key is a string and the value is a string
-object_id is a string
-object_type is a string
-timestamp is a string
-username is a string
-workspace_ref is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-$params is a TranscriptSet_to_Genome_params
-$output is an object_metadata
-TranscriptSet_to_Genome_params is a reference to a hash where the following keys are defined:
-	TranscriptSet_uid has a value which is a string
-	TranscriptSet_ws has a value which is a workspace_id
-	workspace has a value which is a workspace_id
-	uid has a value which is a string
-	auth has a value which is a string
-	scientific_name has a value which is a string
-	domain has a value which is a string
-	genetic_code has a value which is an int
-workspace_id is a string
-object_metadata is a reference to a list containing 11 items:
-	0: (id) an object_id
-	1: (type) an object_type
-	2: (moddate) a timestamp
-	3: (instance) an int
-	4: (command) a string
-	5: (lastmodifier) a username
-	6: (owner) a username
-	7: (workspace) a workspace_id
-	8: (ref) a workspace_ref
-	9: (chsum) a string
-	10: (metadata) a reference to a hash where the key is a string and the value is a string
-object_id is a string
-object_type is a string
-timestamp is a string
-username is a string
-workspace_ref is a string
-
-
-=end text
-
-
-
-=item Description
-
-Creates a Genome associated with the TranscriptSet object
-Cannot do global genome structure comparison with such a genome
-
-=back
-
-=cut
-
-sub TranscriptSet_to_Genome
-{
-    my $self = shift;
-    my($params) = @_;
-
-    my @_bad_arguments;
-    (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"params\" (value was \"$params\")");
-    if (@_bad_arguments) {
-	my $msg = "Invalid arguments passed to TranscriptSet_to_Genome:\n" . join("", map { "\t$_\n" } @_bad_arguments);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'TranscriptSet_to_Genome');
-    }
-
-    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
-    my($output);
-    #BEGIN TranscriptSet_to_Genome
-    $self->_setContext($ctx,$params);
-	$params = $self->_validateargs($params,["TranscriptSet_uid","workspace"],{
-		TranscriptSet_ws => $params->{workspace},
-		uid => undef,
-		taxonomy => undef,
-		scientific_name => "Unknown sample",
-		domain => "Bacteria",
-		genetic_code => "11",
-		source => undef,
-		source_id => undef
-	});
-	my $kbid = $self->_get_new_id("kb|g");
-	if (!defined($params->{source_id})) {
-		$params->{source} = "KBase";
-		$params->{source_id} = $kbid;
-	}
-	if (!defined($params->{uid})) {
-		$params->{uid} = $kbid;
-	}
-	my $size = 0;
-	my $gc = 0;
-	my $transObj = $self->_get_msobject("TranscriptSet",$params->{TranscriptSet_ws},$params->{TranscriptSet_uid});
-	for (my $i=0; $i < @{$transObj->{transcripts}}; $i++) {
-		$size += length($transObj->{transcripts}->[$i]->{sequence});
-		for ( my $j = 0 ; $j < length($transObj->{transcripts}->[$i]->{sequence}) ; $j++ ) {
-			if ( substr( $transObj->{transcripts}->[$i]->{sequence}, $j, 1 ) =~ m/[gcGC]/ ) {
-				$gc++;
-			}
-		}
-	}
-	$gc = $gc/$size;
-	my $genome = {
-		id => $params->{source_id},
-		kbid => $kbid,
-		transcript_wsid => $params->{TranscriptSet_ws}."/".$params->{TranscriptSet_uid}."/v".$transObj->{_kbaseWSMeta}->{wsinst},
-		transcript_kbid => $transObj->{kbid},
-		size => $size,
-		scientific_name => $params->{scientific_name},
-		taxonomy => $params->{taxonomy},
-		domain => $params->{domain},
-		gc => $gc,
-		genetic_code => $params->{genetic_code},
-		source => $params->{source},
-		source_id => $params->{source_id},
-		features => []
-	};
-	my $mapping = $self->_get_msobject("Mapping","kbase","default-mapping");
-    ($genome,my $anno,$mapping,my $contigObj) = $self->_processGenomeObject($genome,$mapping,"TranscriptSet_to_Genome");
-   	$output = $self->_save_msobject($genome,"Genome",$params->{workspace},$params->{uid},"TranscriptSet_to_Genome");
-	$self->_clearContext();
-    #END TranscriptSet_to_Genome
-    my @_bad_returns;
-    (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
-    if (@_bad_returns) {
-	my $msg = "Invalid returns passed to TranscriptSet_to_Genome:\n" . join("", map { "\t$_\n" } @_bad_returns);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'TranscriptSet_to_Genome');
     }
     return($output);
 }
@@ -12654,9 +12815,9 @@ sub TranscriptSet_to_Genome
 =begin html
 
 <pre>
-$params is a fasta_to_Transcripts_params
+$params is a fasta_to_ContigSet_params
 $output is an object_metadata
-fasta_to_Transcripts_params is a reference to a hash where the following keys are defined:
+fasta_to_ContigSet_params is a reference to a hash where the following keys are defined:
 	uid has a value which is a string
 	fasta has a value which is a string
 	workspace has a value which is a workspace_id
@@ -12690,9 +12851,9 @@ workspace_ref is a string
 
 =begin text
 
-$params is a fasta_to_Transcripts_params
+$params is a fasta_to_ContigSet_params
 $output is an object_metadata
-fasta_to_Transcripts_params is a reference to a hash where the following keys are defined:
+fasta_to_ContigSet_params is a reference to a hash where the following keys are defined:
 	uid has a value which is a string
 	fasta has a value which is a string
 	workspace has a value which is a workspace_id
@@ -12795,7 +12956,12 @@ ContigSet_to_Genome_params is a reference to a hash where the following keys are
 	scientific_name has a value which is a string
 	domain has a value which is a string
 	genetic_code has a value which is an int
+	annotation_parameters has a value which is an AnnotationParameters
 workspace_id is a string
+AnnotationParameters is a reference to a hash where the following keys are defined:
+	call_genes has a value which is a bool
+	annotate_genes has a value which is a bool
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -12831,7 +12997,12 @@ ContigSet_to_Genome_params is a reference to a hash where the following keys are
 	scientific_name has a value which is a string
 	domain has a value which is a string
 	genetic_code has a value which is an int
+	annotation_parameters has a value which is an AnnotationParameters
 workspace_id is a string
+AnnotationParameters is a reference to a hash where the following keys are defined:
+	call_genes has a value which is a bool
+	annotate_genes has a value which is a bool
+bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -12883,12 +13054,13 @@ sub ContigSet_to_Genome
 	$params = $self->_validateargs($params,["ContigSet_uid","workspace"],{
 		ContigSet_ws => $params->{workspace},
 		uid => undef,
-		taxonomy => undef,
+		taxonomy => "Bacteria",
 		scientific_name => "Unknown sample",
 		domain => "Bacteria",
 		genetic_code => "11",
 		source => undef,
-		source_id => undef
+		source_id => undef,
+		annotation_parameters => {}
 	});
 	my $kbid = $self->_get_new_id("kb|g");
 	if (!defined($params->{source_id})) {
@@ -12901,33 +13073,45 @@ sub ContigSet_to_Genome
 	my $size = 0;
 	my $gc = 0;
 	my $contigObj = $self->_get_msobject("ContigSet",$params->{ContigSet_ws},$params->{ContigSet_uid});
-	for (my $i=0; $i < @{$contigObj->{contigs}}; $i++) {
-		$size += length($contigObj->{contigs}->[$i]->{sequence});
-		for ( my $j = 0 ; $j < length($contigObj->{contigs}->[$i]->{sequence}) ; $j++ ) {
-			if ( substr( $contigObj->{contigs}->[$i]->{sequence}, $j, 1 ) =~ m/[gcGC]/ ) {
+	my $contigs = $contigObj->contigs();
+	for (my $i=0; $i < @{$contigs}; $i++) {
+		my $seq = $contigs->[$i]->sequence();
+		$size += length($seq);
+		for ( my $j = 0 ; $j < length($seq) ; $j++ ) {
+			if ( substr( $seq, $j, 1 ) =~ m/[gcGC]/ ) {
 				$gc++;
 			}
 		}
 	}
 	$gc = $gc/$size;
-	my $genome = {
-		id => $params->{source_id},
-		kbid => $kbid,
-		contig_wsid => $params->{ContigSet_ws}."/".$params->{ContigSet_uid}."/v".$contigObj->{_kbaseWSMeta}->{wsinst},
-		contig_kbid => $contigObj->{kbid},
-		size => $size,
+	my $numcontigs = @{$contigs};
+	my $genomeObj = {
+		id => $kbid,
 		scientific_name => $params->{scientific_name},
-		taxonomy => $params->{taxonomy},
 		domain => $params->{domain},
-		gc => $gc,
 		genetic_code => $params->{genetic_code},
+		dna_size => $size,
+		num_contigs => $numcontigs,
+		contig_lengths => [],
+		contig_ids => [],
 		source => $params->{source},
 		source_id => $params->{source_id},
-		features => []
-	};
-	my $mapping = $self->_get_msobject("Mapping","kbase","default-mapping");
-    ($genome,my $anno,$mapping,$contigObj) = $self->_processGenomeObject($genome,$mapping,"TranscriptSet_to_Genome");
-   	$output = $self->_save_msobject($genome,"Genome",$params->{workspace},$params->{uid},"TranscriptSet_to_Genome");
+		md5 => $contigObj->md5(),
+		taxonomy => $params->{taxonomy},
+		contigset_ref => $contigObj->_reference(),
+		gc_content => $gc,
+		complete => 1,
+		publications => [],
+		features => [],
+    };
+	for (my $i=0; $i < @{$contigs}; $i++) {
+		push(@{$genomeObj->{contig_ids}},$contigs->[$i]->id());
+		push(@{$genomeObj->{contig_lengths}},$contigs->[$i]->length());
+	}
+	$genomeObj = Bio::KBase::ObjectAPI::KBaseGenomes::Genome->new($genomeObj);
+	$genomeObj->parent($self->_KBaseStore());
+	$self->_annotate_genome($genomeObj,$params->{annotation_parameters});
+  	$output = $self->_save_msobject($genomeObj,"Genome",$params->{workspace},$params->{uid});
 	$self->_clearContext();
     #END ContigSet_to_Genome
     my @_bad_returns;
@@ -12938,181 +13122,6 @@ sub ContigSet_to_Genome
 							       method_name => 'ContigSet_to_Genome');
     }
     return($output);
-}
-
-
-
-
-=head2 annotate_workspace_Genome
-
-  $job = $obj->annotate_workspace_Genome($params)
-
-=over 4
-
-=item Parameter and return types
-
-=begin html
-
-<pre>
-$params is an annotate_workspace_Genome_params
-$job is a JobObject
-annotate_workspace_Genome_params is a reference to a hash where the following keys are defined:
-	Genome_uid has a value which is a string
-	Genome_ws has a value which is a string
-	new_uid has a value which is a string
-	workspace has a value which is a workspace_id
-	pipeline_stages has a value which is a reference to a list where each element is an AnnotationPipelineStage
-	auth has a value which is a string
-workspace_id is a string
-AnnotationPipelineStage is a reference to a hash where the following keys are defined:
-	id has a value which is a stage_id
-	enable has a value which is a bool
-	parameters has a value which is a reference to a hash where the key is a string and the value is a string
-stage_id is a string
-bool is an int
-JobObject is a reference to a hash where the following keys are defined:
-	id has a value which is a job_id
-	type has a value which is a string
-	auth has a value which is a string
-	status has a value which is a string
-	jobdata has a value which is a reference to a hash where the key is a string and the value is a string
-	queuetime has a value which is a string
-	starttime has a value which is a string
-	completetime has a value which is a string
-	owner has a value which is a string
-	queuecommand has a value which is a string
-job_id is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-$params is an annotate_workspace_Genome_params
-$job is a JobObject
-annotate_workspace_Genome_params is a reference to a hash where the following keys are defined:
-	Genome_uid has a value which is a string
-	Genome_ws has a value which is a string
-	new_uid has a value which is a string
-	workspace has a value which is a workspace_id
-	pipeline_stages has a value which is a reference to a list where each element is an AnnotationPipelineStage
-	auth has a value which is a string
-workspace_id is a string
-AnnotationPipelineStage is a reference to a hash where the following keys are defined:
-	id has a value which is a stage_id
-	enable has a value which is a bool
-	parameters has a value which is a reference to a hash where the key is a string and the value is a string
-stage_id is a string
-bool is an int
-JobObject is a reference to a hash where the following keys are defined:
-	id has a value which is a job_id
-	type has a value which is a string
-	auth has a value which is a string
-	status has a value which is a string
-	jobdata has a value which is a reference to a hash where the key is a string and the value is a string
-	queuetime has a value which is a string
-	starttime has a value which is a string
-	completetime has a value which is a string
-	owner has a value which is a string
-	queuecommand has a value which is a string
-job_id is a string
-
-
-=end text
-
-
-
-=item Description
-
-Create a job that runs the genome annotation pipeline on a genome object in a workspace
-
-=back
-
-=cut
-
-sub annotate_workspace_Genome
-{
-    my $self = shift;
-    my($params) = @_;
-
-    my @_bad_arguments;
-    (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"params\" (value was \"$params\")");
-    if (@_bad_arguments) {
-	my $msg = "Invalid arguments passed to annotate_workspace_Genome:\n" . join("", map { "\t$_\n" } @_bad_arguments);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'annotate_workspace_Genome');
-    }
-
-    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
-    my($job);
-    #BEGIN annotate_workspace_Genome
-    $self->_setContext($ctx,$params);
-	$params = $self->_validateargs($params,["Genome_uid","workspace"],{
-		Genome_ws => $params->{workspace},
-		new_uid => $params->{Genome_uid},
-		pipeline_stages => [
-			{
-				id => "call_selenoproteins",
-				enable => 1,
-				parameters => {}
-			},
-			{
-				id => "call_pyrrolysoproteins",
-				enable => 1,
-				parameters => {}
-			},
-			{
-				id => "call_RNAs",
-				enable => 1,
-				parameters => {}
-			},
-			{
-				id => "call_CDSs",
-				enable => 1,
-				parameters => {}
-			},
-			{
-				id => "find_close_neighbors",
-				enable => 1,
-				parameters => {}
-			},
-			{
-				id => "assign_functions_to_CDSs",
-				enable => 1,
-				parameters => {}
-			}
-		]
-	});
-	my $genome = $self->_get_msobject("Genome",$params->{Genome_ws},$params->{Genome_uid});
-	my $type = "Annotation";
-	if ($genome->{domain} eq "Plant") {
-		$type = "PlantSEED";
-	}
-	$job = $self->_queueJob({
-		type => $type,
-		jobdata => {
-			Genome_ws => $params->{Genome_ws},
-			Genome_uid => $params->{Genome_uid},
-			Genome_inst => $genome->{_kbaseWSMeta}->{wsinst},
-			new_uid => $params->{new_uid},
-			stages => $params->{pipeline_stages},
-			workspace => $params->{workspace},
-			fbaurl => $self->_myURL()
-		},
-		queuecommand => "annotate_workspace_Genome",
-		"state" => $self->_defaultJobState()
-	});
-	$self->_clearContext();
-    #END annotate_workspace_Genome
-    my @_bad_returns;
-    (ref($job) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"job\" (value was \"$job\")");
-    if (@_bad_returns) {
-	my $msg = "Invalid returns passed to annotate_workspace_Genome:\n" . join("", map { "\t$_\n" } @_bad_returns);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'annotate_workspace_Genome');
-    }
-    return($job);
 }
 
 
@@ -14324,7 +14333,7 @@ sub import_template_fbamodel
     	$input->{name} = $input->{id};	
     }
     my $mapping = $self->_get_msobject("Mapping",$input->{mapping_workspace},$input->{"map"});
-	my $factory = ModelSEED::MS::Factories::ExchangeFormatFactory->new(
+	my $factory = Bio::KBase::ObjectAPI::Factories::ExchangeFormatFactory->new(
 		store => $self->_KBaseStore()
 	);
 	my $templateModel = $factory->buildTemplateModel({
@@ -15760,8 +15769,7 @@ sub import_metagenome_annotation
 	}
 	#Creating object
 	my $mgobj = {
-		metaanno_uid => $params->{metaanno_uid},
-		workspace => $params->{workspace},
+		id => $kbid,
 		source_id => $params->{source_id},
 		source => $params->{source},
 		type => $params->{type},
@@ -15793,7 +15801,7 @@ sub import_metagenome_annotation
 		my $otuobj = {
 			ave_confidence => $otuAverages->{$otu}->{confidence}/$numfunc,
 			ave_coverage => $otuAverages->{$otu}->{coverage}/$numfunc,
-			kbid => $kbid.".otu.".$counter,
+			id => $kbid.".otu.".$counter,
 			name => $otu,
 			source_id => $otu,
 			source => $params->{source},
@@ -15802,12 +15810,13 @@ sub import_metagenome_annotation
 		my $fcounter = 0;
 		for (my $i=0; $i < @{$otuobj->{functions}}; $i++) {
 			$fcounter++;
-			$otuobj->{functions}->[$i]->{kbid} = $kbid.".otu.".$counter.".func.".$fcounter;
+			$otuobj->{functions}->[$i]->{id} = $kbid.".otu.".$counter.".func.".$fcounter;
 		}
 		push(@{$mgobj->{otus}},$otuobj);
 	}
 	#Saving object
-	$output = $self->_save_msobject($mgobj,"MetagenomeAnno",$params->{workspace},$params->{metaanno_uid},"import_metagenome_annotation",1);
+	$mgobj = Bio::KBase::ObjectAPI::KBaseGenomes::MetagenomeAnnotation->new($mgobj);
+	$output = $self->_save_msobject($mgobj,"MetagenomeAnnotation",$params->{workspace},$params->{metaanno_uid});
     $self->_clearContext();
     #END import_metagenome_annotation
     my @_bad_returns;
@@ -15958,7 +15967,7 @@ sub models_to_community_model
 	#Pulling first model to obtain biochemistry ID
 	my $model = $self->_get_msobject("Model",$params->{models}->[0]->[1],$params->{models}->[0]->[0]);
 	#Creating mapping and annotation for community model
-	my $mapping = ModelSEED::MS::Mapping->new({
+	my $mapping = Bio::KBase::ObjectAPI::KBaseOntology::Mapping->new({
 		name         => $params->{name}."_Mapping",
 		biochemistry_uuid => $model->biochemistry_uuid(),
 		biochemistry => $model->biochemistry(),
@@ -15971,7 +15980,7 @@ sub models_to_community_model
 	  biochemistry => $model->biochemistry(),
 	});
 	#Creating new community model
-	my $commdl = ModelSEED::MS::Model->new({
+	my $commdl = Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->new({
 		kbid => $kbid,
 		source_id => $kbid,
 		source => "KBase",
@@ -16288,9 +16297,10 @@ sub metagenome_to_fbamodels
 		min_reactions => 100,
 		templates => {}
 	});
-	my $metaanno = $self->_get_msobject("MetagenomeAnno",$params->{metaanno_ws},$params->{metaanno_uid});
+	my $metaanno = $self->_get_msobject("MetagenomeAnnotation",$params->{metaanno_ws},$params->{metaanno_uid});
 	#Sorting OTUs by coverage, placing highest coverage OTU first
-	my $sortedOtus = [sort { $b->{ave_coverage} <=> $a->{ave_coverage} } @{$metaanno->{otus}}];
+	my $otus = $metaanno->otus();
+	my $sortedOtus = [sort { $b->ave_coverage() <=> $a->ave_coverage() } @{$otus}];
 	my $functions;
 	my $map = $self->_get_msobject("Mapping","kbase","default-mapping");
 	my $nummodels = 0;
@@ -16298,24 +16308,25 @@ sub metagenome_to_fbamodels
 		my $otu = $sortedOtus->[$i];
 		my $built = 0;
 		#Building OTU model if appropriate
-		if ($otu->{name} ne "tail" && $nummodels < $params->{max_otu_models} && $otu->{ave_coverage} >= $params->{min_abundance}) {
+		if ($otu->name() ne "tail" && $nummodels < $params->{max_otu_models} && $otu->ave_coverage() >= $params->{min_abundance}) {
 			my $mdlfunc = {};
-			for (my $j=0; $j < @{$otu->{functions}}; $j++) {
-				my $func = $otu->{functions}->[$j];
-				if ($self->_assess_confidence($metaanno->{confidence_type},$params->{confidence_threshold},$func->{confidence}) == 1) {
-					if (!defined($mdlfunc->{$func->{"functional_role"}})) {
-						$mdlfunc->{$func->{"functional_role"}} = 0;
+			my $functions = $otu->functions();
+			for (my $j=0; $j < @{$functions}; $j++) {
+				my $func = $functions->[$j];
+				if ($self->_assess_confidence($metaanno->confidence_type(),$params->{confidence_threshold},$func->confidence()) == 1) {
+					if (!defined($mdlfunc->{$func->functional_role()})) {
+						$mdlfunc->{$func->functional_role()} = 0;
 					}
-					$mdlfunc->{$func->{"functional_role"}} += $func->{abundance};
+					$mdlfunc->{$func->functional_role()} += $func->abundance();
 				}
 			}
 			my $mdl = $self->_buildModelFromFunctions($map,$mdlfunc,"EnsembleModel");
-			print $otu->{name}."\t".$otu->{ave_coverage}."\t".@{$otu->{functions}}."\t".@{$mdl->modelreactions()}."\n";
+			print $otu->name()."\t".$otu->ave_coverage()."\t".@{$otu->functions()}."\t".@{$mdl->modelreactions()}."\n";
 			#Saving OTU model if it's large enough
 			if (@{$mdl->modelreactions()} > $params->{min_reactions}) {
 				$nummodels++;
 				$built = 1;
-				$mdl->kbid($self->_get_new_id($otu->{kbid}.".fbamdl"));
+				$mdl->id($self->_get_new_id($otu->id().".fbamdl"));
 				my $ids = ["name","kbid","source_id"];
 				my $modelid;
 				for (my $j=0; $j < @{$ids}; $j++) {
@@ -16324,30 +16335,30 @@ sub metagenome_to_fbamodels
 					}
 				}
 				if (!defined($modelid)) {
-					$modelid = $mdl->kbid();
+					$modelid = $mdl->id();
 				}
-				$mdl->name($otu->{name});
-				$mdl->id($otu->{name});
+				$mdl->name($otu->name());
+				$mdl->id($otu->name());
 				$mdl->source("KBase");
-				$mdl->source_id($mdl->kbid());
-				push(@{$outputs},$self->_save_msobject($mdl,"Model",$params->{workspace},$modelid,"metagenome_to_fbamodels",1));
+				$mdl->source_id($mdl->id());
+				push(@{$outputs},$self->_save_msobject($mdl,"FBAModel",$params->{workspace},$modelid));
 			}
 		}
 		#Adding OTU functions to functions in tail
 		if ($built == 0) {
-			for (my $j=0; $j < @{$otu->{functions}}; $j++) {
-				my $func = $otu->{functions}->[$j];
-				if ($self->_assess_confidence($metaanno->{confidence_type},$params->{confidence_threshold},$func->{confidence}) == 1) {
-					if (!defined($functions->{$func->{functional_role}})) {
-						$functions->{$func->{functional_role}} = {
+			for (my $j=0; $j < @{$otu->functions()}; $j++) {
+				my $func = $otu->functions()->[$j];
+				if ($self->_assess_confidence($metaanno->confidence_type(),$params->{confidence_threshold},$func->confidence()) == 1) {
+					if (!defined($functions->{$func->functional_role()})) {
+						$functions->{$func->functional_role()} = {
 							abundance => 0,
 							confidence => 0,
 							reference_genes => []
 						};
 					}
-					$functions->{$func->{functional_role}}->{abundance} += $func->{abundance};
-					$functions->{$func->{functional_role}}->{confidence} += $func->{abundance}*$func->{confidence};
-					push(@{$functions->{$func->{functional_role}}->{reference_genes}},@{$func->{reference_genes}});
+					$functions->{$func->functional_role()}->{abundance} += $func->abundance();
+					$functions->{$func->functional_role()}->{confidence} += $func->abundance()*$func->confidence();
+					push(@{$functions->{$func->{functional_role}}->{reference_genes}},@{$func->reference_genes()});
 				}
 			}
 		}
@@ -16355,7 +16366,7 @@ sub metagenome_to_fbamodels
 	#Building ensemble model
 	my $mdlfunc = {};
 	foreach my $function (keys(%{$functions})) {
-		if ($self->_assess_confidence($metaanno->{confidence_type},$params->{confidence_threshold},$functions->{$function}->{confidence}) == 1) {
+		if ($self->_assess_confidence($metaanno->confidence_type(),$params->{confidence_threshold},$functions->{$function}->{confidence}) == 1) {
 			if (!defined($mdlfunc->{$function})) {
 				$mdlfunc->{$function} = 0;
 			}
@@ -16375,7 +16386,7 @@ sub metagenome_to_fbamodels
 	$mdl->id("tailmodel");
 	$mdl->source("KBase");
 	$mdl->source_id($mdl->kbid());
-	push(@{$outputs},$self->_save_msobject($mdl,"Model",$params->{workspace},$modelid,"metagenome_to_fbamodels",1));
+	push(@{$outputs},$self->_save_msobject($mdl,"FBAModel",$params->{workspace},$modelid));
 	$self->_clearContext();
     #END metagenome_to_fbamodels
     my @_bad_returns;
@@ -23912,7 +23923,7 @@ auth has a value which is a string
 
 
 
-=head2 ProteinSetProtein
+=head2 AnnotationParameters
 
 =over 4
 
@@ -23921,7 +23932,7 @@ auth has a value which is a string
 =item Description
 
 ********************************************************************************
-	Code relating to import and analysis of ProteinSets
+	Code relating to workspace versions of genome analysis algorithms
    	********************************************************************************
 
 
@@ -23931,10 +23942,8 @@ auth has a value which is a string
 
 <pre>
 a reference to a hash where the following keys are defined:
-kbid has a value which is a string
-sourceid has a value which is a string
-sequence has a value which is a string
-description has a value which is a string
+call_genes has a value which is a bool
+annotate_genes has a value which is a bool
 
 </pre>
 
@@ -23943,10 +23952,8 @@ description has a value which is a string
 =begin text
 
 a reference to a hash where the following keys are defined:
-kbid has a value which is a string
-sourceid has a value which is a string
-sequence has a value which is a string
-description has a value which is a string
+call_genes has a value which is a bool
+annotate_genes has a value which is a bool
 
 
 =end text
@@ -23955,7 +23962,7 @@ description has a value which is a string
 
 
 
-=head2 ProteinSet
+=head2 annotate_workspace_Genome_params
 
 =over 4
 
@@ -23963,12 +23970,14 @@ description has a value which is a string
 
 =item Description
 
-Type spec for the "ProteinSet" object
+Input parameters for the "annotate_workspace_Genome" function.
 
-        string kbid - unique kbase ID of the protein set
-        string name - name of the protein set
-        string type - type of the protein set (values are: Organism,Environment,Collection)
-        list<ProteinSetProtein> proteins - list of proteins in the protein set
+string Genome_uid - user ID to be assigned to the Genome (required argument)
+string Genome_ws - workspace with genome for annotation (optional; workspace argument will be used if no genome workspace is provided)
+string new_uid - new ID to assign to annotated genome (optional; original genome will be overwritten if no new uid is provided)
+workspace_id workspace - ID of workspace with Genome (required argument)
+AnnotationParameters parameters - parameters for running annotation job
+string auth - the authentication token of the KBase account changing workspace permissions
 
 
 =item Definition
@@ -23977,12 +23986,12 @@ Type spec for the "ProteinSet" object
 
 <pre>
 a reference to a hash where the following keys are defined:
-kbid has a value which is a string
-name has a value which is a string
-sourceid has a value which is a string
-source has a value which is a string
-type has a value which is a string
-proteins has a value which is a reference to a list where each element is a ProteinSetProtein
+Genome_uid has a value which is a string
+Genome_ws has a value which is a string
+new_uid has a value which is a string
+workspace has a value which is a workspace_id
+annotation_parameters has a value which is an AnnotationParameters
+auth has a value which is a string
 
 </pre>
 
@@ -23991,12 +24000,12 @@ proteins has a value which is a reference to a list where each element is a Prot
 =begin text
 
 a reference to a hash where the following keys are defined:
-kbid has a value which is a string
-name has a value which is a string
-sourceid has a value which is a string
-source has a value which is a string
-type has a value which is a string
-proteins has a value which is a reference to a list where each element is a ProteinSetProtein
+Genome_uid has a value which is a string
+Genome_ws has a value which is a string
+new_uid has a value which is a string
+workspace has a value which is a workspace_id
+annotation_parameters has a value which is an AnnotationParameters
+auth has a value which is a string
 
 
 =end text
@@ -24013,16 +24022,9 @@ proteins has a value which is a reference to a list where each element is a Prot
 
 =item Description
 
-Input parameters for the "fasta_to_ProteinSet" function.
-
-        string uid - user assigned ID for the protein set (optional)
-        string fasta - string with sequence data from fasta file (required argument)
-        workspace_id workspace - ID of workspace for storing objects (required argument)
-        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
-        string name - name of the protein data (optional)
-        string sourceid - source ID of the protein data (optional)
-        string source - source of the protein data (optional)
-        string type - type of the protein set (optional)
+********************************************************************************
+	Code relating to import and analysis of ProteinSets
+   	********************************************************************************
 
 
 =item Definition
@@ -24096,7 +24098,7 @@ uid has a value which is a string
 auth has a value which is a string
 scientific_name has a value which is a string
 domain has a value which is a string
-genetic_code has a value which is an int
+annotation_parameters has a value which is an AnnotationParameters
 
 </pre>
 
@@ -24112,313 +24114,7 @@ uid has a value which is a string
 auth has a value which is a string
 scientific_name has a value which is a string
 domain has a value which is a string
-genetic_code has a value which is an int
-
-
-=end text
-
-=back
-
-
-
-=head2 TranscriptSetTranscript
-
-=over 4
-
-
-
-=item Description
-
-********************************************************************************
-	Code relating to import and analysis of TranscriptSets
-   	********************************************************************************
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-kbid has a value which is a string
-sourceid has a value which is a string
-sequence has a value which is a string
-description has a value which is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-kbid has a value which is a string
-sourceid has a value which is a string
-sequence has a value which is a string
-description has a value which is a string
-
-
-=end text
-
-=back
-
-
-
-=head2 TranscriptSet
-
-=over 4
-
-
-
-=item Description
-
-Type spec for the "TranscriptSet" object
-
-        string kbid - unique kbase ID of the transcript set
-        string name - name of the transcript set
-        string type - type of the transcript set (values are: Organism,Environment,Collection)
-        string sourceid - source ID of the TranscriptSet data
-        string source - source of the TranscriptSet data
-        list<TranscriptSetTranscript> transcripts - list of transcripts in the transcript set
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-kbid has a value which is a string
-name has a value which is a string
-sourceid has a value which is a string
-source has a value which is a string
-type has a value which is a string
-transcripts has a value which is a reference to a list where each element is a TranscriptSetTranscript
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-kbid has a value which is a string
-name has a value which is a string
-sourceid has a value which is a string
-source has a value which is a string
-type has a value which is a string
-transcripts has a value which is a reference to a list where each element is a TranscriptSetTranscript
-
-
-=end text
-
-=back
-
-
-
-=head2 fasta_to_Transcripts_params
-
-=over 4
-
-
-
-=item Description
-
-Input parameters for the "fasta_to_Transcripts" function.
-
-        string uid - user assigned ID for the TranscriptSet (optional)
-        string fasta - string with sequence data from fasta file (required argument)
-        workspace_id workspace - ID of workspace for storing objects (required argument)
-        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
-        string name - name of the TranscriptSet data (optional)
-        string sourceid - source ID of the TranscriptSet data (optional)
-        string source - source of the TranscriptSet data (optional)
-        string type - type of the TranscriptSet (optional)
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-uid has a value which is a string
-fasta has a value which is a string
-workspace has a value which is a workspace_id
-auth has a value which is a string
-name has a value which is a string
-sourceid has a value which is a string
-source has a value which is a string
-type has a value which is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-uid has a value which is a string
-fasta has a value which is a string
-workspace has a value which is a workspace_id
-auth has a value which is a string
-name has a value which is a string
-sourceid has a value which is a string
-source has a value which is a string
-type has a value which is a string
-
-
-=end text
-
-=back
-
-
-
-=head2 TranscriptSet_to_Genome_params
-
-=over 4
-
-
-
-=item Description
-
-Input parameters for the "TranscriptSet_to_Genome" function.
-
-        string TranscriptSet_uid - user ID to be assigned to the TranscriptSet (required argument)
-        workspace_id TranscriptSet_ws - ID of workspace with the TranscriptSet (optional argument; default is value of workspace argument)
-        string uid - user assigned ID for the Genome (optional)
-        workspace_id workspace - ID of workspace for storing objects (required argument)
-        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
-        string scientific_name - scientific name to assign to genome
-        string domain - domain of life for genome
-        int genetic_code - genetic code to assign to genome
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-TranscriptSet_uid has a value which is a string
-TranscriptSet_ws has a value which is a workspace_id
-workspace has a value which is a workspace_id
-uid has a value which is a string
-auth has a value which is a string
-scientific_name has a value which is a string
-domain has a value which is a string
-genetic_code has a value which is an int
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-TranscriptSet_uid has a value which is a string
-TranscriptSet_ws has a value which is a workspace_id
-workspace has a value which is a workspace_id
-uid has a value which is a string
-auth has a value which is a string
-scientific_name has a value which is a string
-domain has a value which is a string
-genetic_code has a value which is an int
-
-
-=end text
-
-=back
-
-
-
-=head2 ContigSetContig
-
-=over 4
-
-
-
-=item Description
-
-********************************************************************************
-	Code relating to import and analysis of Contigs
-   	********************************************************************************
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-kbid has a value which is a string
-sourceid has a value which is a string
-sequence has a value which is a string
-description has a value which is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-kbid has a value which is a string
-sourceid has a value which is a string
-sequence has a value which is a string
-description has a value which is a string
-
-
-=end text
-
-=back
-
-
-
-=head2 ContigSet
-
-=over 4
-
-
-
-=item Description
-
-Type spec for the "ContigSet" object
-
-        string kbid - unique kbase ID of the contig set
-        string name - name of the contig set
-        string type - type of the contig set (values are: Organism,Environment,Collection)
-        string sourceid - source ID of the TranscriptSet data
-        string source - source of the TranscriptSet data
-        list<ContigSetContig> contigs - list of contigs in the transcript set
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-kbid has a value which is a string
-name has a value which is a string
-sourceid has a value which is a string
-source has a value which is a string
-type has a value which is a string
-contigs has a value which is a reference to a list where each element is a ContigSetContig
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-kbid has a value which is a string
-name has a value which is a string
-sourceid has a value which is a string
-source has a value which is a string
-type has a value which is a string
-contigs has a value which is a reference to a list where each element is a ContigSetContig
+annotation_parameters has a value which is an AnnotationParameters
 
 
 =end text
@@ -24435,16 +24131,9 @@ contigs has a value which is a reference to a list where each element is a Conti
 
 =item Description
 
-Input parameters for the "fasta_to_ContigSet" function.
-
-        string uid - user assigned ID for the ContigSet (optional)
-        string fasta - string with sequence data from fasta file (required argument)
-        workspace_id workspace - ID of workspace for storing objects (required argument)
-        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
-        string name - name of the ContigSet data (optional)
-        string sourceid - source ID of the ContigSet data (optional)
-        string source - source of the ContigSet data (optional)
-        string type - type of the ContigSet (optional)
+********************************************************************************
+	Code relating to import and analysis of Contigs
+   	********************************************************************************
 
 
 =item Definition
@@ -24503,6 +24192,7 @@ Input parameters for the "ContigSet_to_Genome" function.
         string scientific_name - scientific name to assign to genome
         string domain - domain of life for genome
         int genetic_code - genetic code to assign to genome
+        AnnotationParameters annotation_parameters - parameters for annotation of the genome
 
 
 =item Definition
@@ -24519,6 +24209,7 @@ auth has a value which is a string
 scientific_name has a value which is a string
 domain has a value which is a string
 genetic_code has a value which is an int
+annotation_parameters has a value which is an AnnotationParameters
 
 </pre>
 
@@ -24535,132 +24226,7 @@ auth has a value which is a string
 scientific_name has a value which is a string
 domain has a value which is a string
 genetic_code has a value which is an int
-
-
-=end text
-
-=back
-
-
-
-=head2 stage_id
-
-=over 4
-
-
-
-=item Description
-
-********************************************************************************
-	Code relating to workspace versions of genome analysis algorithms
-   	********************************************************************************
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a string
-</pre>
-
-=end html
-
-=begin text
-
-a string
-
-=end text
-
-=back
-
-
-
-=head2 AnnotationPipelineStage
-
-=over 4
-
-
-
-=item Description
-
-stage_id id - ID of stage of analysis to run
-bool enable - boolean indicating the stage should be run
-mapping<string,string> parameters - parameters for the analysis stage
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-id has a value which is a stage_id
-enable has a value which is a bool
-parameters has a value which is a reference to a hash where the key is a string and the value is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-id has a value which is a stage_id
-enable has a value which is a bool
-parameters has a value which is a reference to a hash where the key is a string and the value is a string
-
-
-=end text
-
-=back
-
-
-
-=head2 annotate_workspace_Genome_params
-
-=over 4
-
-
-
-=item Description
-
-Input parameters for the "annotate_workspace_Genome" function.
-
-string Genome_uid - user ID to be assigned to the Genome (required argument)
-string Genome_ws - workspace with genome for annotation (optional; workspace argument will be used if no genome workspace is provided)
-string new_uid - new ID to assign to annotated genome (optional; original genome will be overwritten if no new uid is provided)
-workspace_id workspace - ID of workspace with Genome (required argument)
-list<AnnotationPipelineStage> pipeline_stages - list of annotation pipeline steps to run
-string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-Genome_uid has a value which is a string
-Genome_ws has a value which is a string
-new_uid has a value which is a string
-workspace has a value which is a workspace_id
-pipeline_stages has a value which is a reference to a list where each element is an AnnotationPipelineStage
-auth has a value which is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-Genome_uid has a value which is a string
-Genome_ws has a value which is a string
-new_uid has a value which is a string
-workspace has a value which is a workspace_id
-pipeline_stages has a value which is a reference to a list where each element is an AnnotationPipelineStage
-auth has a value which is a string
+annotation_parameters has a value which is an AnnotationParameters
 
 
 =end text
