@@ -63,9 +63,9 @@ uniquely identifies a workspace among all workspaces.
 use URI;
 use ModelSEED::Client::SAP;
 use Bio::KBase::IDServer::Client;
+use Bio::KBase::workspaceService::Client;
 use Bio::KBase::CDMI::CDMIClient;
 use Bio::KBase::AuthToken;
-use Bio::KBase::workspaceService::Client;
 use Bio::KBase::probabilistic_annotation::Client;
 use Bio::KBase::GenomeAnnotation::Client;
 use Bio::KBase::ObjectAPI::KBaseStore;
@@ -82,7 +82,7 @@ use Bio::KBase::ObjectAPI::KBaseFBA::Gapfilling;
 use Bio::KBase::ObjectAPI::KBaseFBA::Gapgeneration;
 use Bio::KBase::ObjectAPI::KBaseFBA::FBA;
 use Bio::KBase::ObjectAPI::KBaseFBA::ModelTemplate;
-use Bio::KBase::workspaceService::Client;
+use Bio::KBase::workspace::Client;
 use Bio::KBase::ObjectAPI::KBaseGenomes::MetagenomeAnnotation;
 use Bio::KBase::ObjectAPI::utilities qw( args verbose set_verbose translateArrayOptions);
 use Try::Tiny;
@@ -395,7 +395,7 @@ sub _workspaceServices {
 		return $self->{_workspaceServiceOveride};
 	}
 	if (!defined($self->{_workspaceServices}->{$self->_workspaceURL()})) {
-		$self->{_workspaceServices}->{$self->_workspaceURL()} = Bio::KBase::workspaceService::Client->new($self->_workspaceURL());
+		$self->{_workspaceServices}->{$self->_workspaceURL()} = Bio::KBase::workspace::Client->new($self->_workspaceURL());
 	}
     return $self->{_workspaceServices}->{$self->_workspaceURL()};
 }
@@ -10909,7 +10909,7 @@ sub jobs_done
     $job = $self->_getJob($input->{job});
     if ($job->{status} ne "queued") {
 	    eval {
-		    $job = $self->_workspaceServices()->set_job_status({
+		    $job = $self->_jobserv()->set_job_status({
 		    	jobid => $input->{job},
 		    	status => "done",
 		    	auth => $self->_authentication(),
