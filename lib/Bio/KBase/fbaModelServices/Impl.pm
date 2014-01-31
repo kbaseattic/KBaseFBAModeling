@@ -275,16 +275,15 @@ sub _setContext {
 	if (defined($params->{probanno_url})) {
 		$self->_getContext()->{_override}->{_probanno_url} = $params->{probanno_url};
 	}
-	delete $self->{_workspaceServices};
-	$self->_resetKBaseStore($params);
     if (defined($params->{auth}) && length($params->{auth}) > 0) {
 		if (!defined($self->_getContext()->{_override}) || $self->_getContext()->{_override}->{_authentication} ne $params->{auth}) {
 			my $output = $self->_authenticate($params->{auth});
 			$self->_getContext()->{_override}->{_authentication} = $output->{authentication};
 			$self->_getContext()->{_override}->{_currentUser} = $output->{user};
-			$self->_KBaseStore()->auth($output->{authentication});
 		}
-    }			
+    }
+    delete $self->{_workspaceServices};
+	$self->_resetKBaseStore($params);		
 }
 
 sub _getContext {
@@ -395,7 +394,7 @@ sub _workspaceServices {
 		return $self->{_workspaceServiceOveride};
 	}
 	if (!defined($self->{_workspaceServices}->{$self->_workspaceURL()})) {
-		$self->{_workspaceServices}->{$self->_workspaceURL()} = Bio::KBase::workspace::Client->new($self->_workspaceURL());
+		$self->{_workspaceServices}->{$self->_workspaceURL()} = Bio::KBase::workspace::Client->new($self->_workspaceURL(),$self->_authentication());
 	}
     return $self->{_workspaceServices}->{$self->_workspaceURL()};
 }
