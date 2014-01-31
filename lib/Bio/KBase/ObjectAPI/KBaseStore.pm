@@ -143,6 +143,14 @@ sub get_objects {
 	return $objs;
 }
 
+sub auth {
+    my ($self,$token) = @_;
+    
+    $self->workspace(Bio::KBase::workspaceService::Client->new("http://140.221.84.209:7058",token=>$token));
+#die "in here at least, $token";
+
+}
+
 sub get_object {
     my ($self,$ref) = @_;
     return $self->get_objects([$ref])->[0];

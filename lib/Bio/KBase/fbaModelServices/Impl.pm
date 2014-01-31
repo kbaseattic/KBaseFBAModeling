@@ -123,7 +123,7 @@ sub _cachedBiochemistry {
 
 sub _resetCachedBiochemistry {
 	my ($self) = @_;
-	if (defined($self->_cachedBiochemistry())) {
+	if (0) { #defined($self->_cachedBiochemistry())) {
 		if (@{$self->_cachedBiochemistry()->media()} >= $self->_cachedBiochemistry()) {
 			for (my $i=@{$self->_cachedBiochemistry()->media()}; $i >= $self->{_initialBiochemistryCounts}->{Media}; $i--) {
 				$self->_cachedBiochemistry()->remove("media",$self->_cachedBiochemistry()->media()->[$i]);
@@ -12450,7 +12450,7 @@ sub annotate_workspace_Genome
 	});
 	my $genomeObj = $self->_get_msobject("Genome",$params->{Genome_ws},$params->{Genome_uid});
 	$self->_annotate_genome($genomeObj,$params->{annotation_parameters});
-  	$output = $self->_save_msobject($genomeObj,"Genome",$params->{workspace},$params->{uid});
+  	$output = $self->_save_msobject($genomeObj,"Genome",$params->{workspace},$params->{new_uid});
 	$self->_clearContext();
     #END annotate_workspace_Genome
     my @_bad_returns;
