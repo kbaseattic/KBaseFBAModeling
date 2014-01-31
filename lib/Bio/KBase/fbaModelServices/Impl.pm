@@ -275,6 +275,7 @@ sub _setContext {
 	if (defined($params->{probanno_url})) {
 		$self->_getContext()->{_override}->{_probanno_url} = $params->{probanno_url};
 	}
+	delete $self->{_workspaceServices};
 	$self->_resetKBaseStore($params);
     if (defined($params->{auth}) && length($params->{auth}) > 0) {
 		if (!defined($self->_getContext()->{_override}) || $self->_getContext()->{_override}->{_authentication} ne $params->{auth}) {
