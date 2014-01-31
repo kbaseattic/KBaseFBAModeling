@@ -125,11 +125,6 @@ sub _cachedBiochemistry {
 sub _resetCachedBiochemistry {
 	my ($self) = @_;
 	if (defined($self->_cachedBiochemistry())) {
-		if (@{$self->_cachedBiochemistry()->media()} >= $self->_cachedBiochemistry()) {
-			for (my $i=@{$self->_cachedBiochemistry()->media()}; $i >= $self->{_initialBiochemistryCounts}->{Media}; $i--) {
-				$self->_cachedBiochemistry()->remove("media",$self->_cachedBiochemistry()->media()->[$i]);
-			}
-		}
 		if (@{$self->_cachedBiochemistry()->compounds()} >= $self->_cachedBiochemistry()) {
 			for (my $i=@{$self->_cachedBiochemistry()->compounds()}; $i >= $self->{_initialBiochemistryCounts}->{Compounds}; $i--) {
 				$self->_cachedBiochemistry()->remove("compounds",$self->_cachedBiochemistry()->compounds()->[$i]);
@@ -2698,7 +2693,7 @@ sub new
     $self->{'_idserver-url'} = "http://kbase.us/services/idserver";
     $self->{'_mssserver-url'} = "http://bio-data-1.mcs.anl.gov/services/ms_fba";
     $self->{"_probanno-url"} = "http://localhost:7073";
-    $self->{"_workspace-url"} = "http://kbase.us/services/workspace";
+    $self->{"_workspace-url"} = "http://kbase.us/services/ws";
     my $paramlist = [qw(jobserver-url fbajobdir mfatoolkitbin fba-url probanno-url mssserver-url accounttype workspace-url defaultJobState idserver-url)];
 
     # so it looks like params is created by looping over the config object
