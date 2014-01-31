@@ -55,12 +55,12 @@ module KBaseFBA {
     typedef string template_ref;
     /*
 		Reference to an OTU in a metagenome
-		@id subws KBaseMetagenomes.Metagenome.otus.[*].id
+		@id subws KBaseGenomes.MetagenomeAnnotation.otus.[*].id
 	*/
     typedef string metagenome_otu_ref;
     /*
 		Reference to a metagenome object
-		@id ws KBaseMetagenomes.Metagenome
+		@id ws KBaseGenomes.MetagenomeAnnotation
 	*/
     typedef string metagenome_ref;
     /*

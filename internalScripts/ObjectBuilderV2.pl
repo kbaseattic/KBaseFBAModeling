@@ -61,6 +61,7 @@ foreach my $key (keys(%{$objtranslation})) {
 	$refobjtrans->{$objtranslation->{$key}} = $key;
 }
 my $baseobjects = {
+	MetagenomeAnnotation => "KBaseGenomes",
 	Genome => "KBaseGenomes",
 	ContigSet => "KBaseGenomes",
 	Media => "KBaseBiochem",
@@ -804,6 +805,6 @@ foreach my $name (keys(%{$allobjects})) {
 				"1;"
 			];
 		}
-		#Bio::KBase::ObjectAPI::utilities::PRINTFILE("/Users/chenry/code/KBaseFBAModeling/lib/Bio/KBase/ObjectAPI/".$module."/".$name.".pm",$output);
+		Bio::KBase::ObjectAPI::utilities::PRINTFILE("/Users/chenry/code/KBaseFBAModeling/lib/Bio/KBase/ObjectAPI/".$module."/".$name.".pm",$output);
 	}
 }

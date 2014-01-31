@@ -24,6 +24,7 @@ has source_id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, ty
 has importErrors => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has name => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
+has type => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 
 
 # SUBOBJECTS:
@@ -92,10 +93,17 @@ my $attributes = [
             'name' => 'id',
             'type' => 'Str',
             'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'type',
+            'type' => 'Str',
+            'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {genome_ref => 0, source => 1, source_id => 2, importErrors => 3, name => 4, id => 5};
+my $attribute_map = {genome_ref => 0, source => 1, source_id => 2, importErrors => 3, name => 4, id => 5, type => 6};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {

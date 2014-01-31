@@ -31,7 +31,7 @@ sub _buildcompoundTuples {
 			push(@{$links},[$cpd->link_coefficients()->[$j],$linkcpds->[$j]->id()]);
 		}
 		push(@{$compounds},[
-			$cpd->compound()->id(),$cpd->compartment()->id(),$cpd->class(),$cpd->universal(),$cpd->coefficientType(),$cpd->coefficient(),
+			$cpd->compound()->id(),$cpd->compartment()->id(),$cpd->class(),1,$cpd->coefficientType(),$cpd->coefficient(),
 			$links
 		]);
 	}

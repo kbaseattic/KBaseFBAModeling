@@ -83,6 +83,7 @@ use Bio::KBase::ObjectAPI::KBaseFBA::Gapgeneration;
 use Bio::KBase::ObjectAPI::KBaseFBA::FBA;
 use Bio::KBase::ObjectAPI::KBaseFBA::ModelTemplate;
 use Bio::KBase::workspaceService::Client;
+use Bio::KBase::ObjectAPI::KBaseGenomes::MetagenomeAnnotation;
 use Bio::KBase::ObjectAPI::utilities qw( args verbose set_verbose translateArrayOptions);
 use Try::Tiny;
 use Data::Dumper;
@@ -2457,42 +2458,93 @@ sub _assess_confidence {
 	return 0;
 }
 
-=head3 _buildModelFromFunctions
+=head3 _buildGenomeFromFunctions
 
 Definition:
-	0/1 = $self->_buildModelFromFunctions(string type,float threshold,float confidence);
+	Bio::KBase::ObjectAPI::KBaseGenomes::Genome = $self->_buildGenomeFromFunctions();
 Description:
 	Returns 1 if the confidence is sufficient, 0 otherwise
 		
 =cut
-sub _buildModelFromFunctions {
-	my($self,$map,$functions,$name) = @_;
-	my $lowest = 1000;
-	foreach my $func (keys(%{$functions})) {
-		if ($lowest > $functions->{$func}) {
-			$lowest = $functions->{$func};
-		}
-	}
-	foreach my $func (keys(%{$functions})) {
-		$functions->{$func} = $functions->{$func}/$lowest;
-	}
-	my $classifier = $map->typeClassifier();
-	$classifier->mapping($map);
-	my $class = $classifier->classifyRoles({functions => $functions});
-	my $template;
-	if ($class eq "Gram positive") {
-		$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","GramPosModelTemplate");
-	} elsif ($class eq "Gram negative") {
-		$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","GramNegModelTemplate");
+sub _buildGenomeFromFunctions {
+	my($self,$id,$functions,$name) = @_;
+	my $genomeObj = Bio::KBase::ObjectAPI::KBaseGenomes::Genome->new({
+		id => $id,
+		scientific_name => $name,
+		domain => "Bacteria",
+		genetic_code => 11,
+		dna_size => 0,
+		num_contigs => 0,
+		contig_lengths => [],
+		contig_ids => [],
+		source => "KBase",
+		source_id => $id,
+		md5 => "",
+		taxonomy => "Bacteria",
+		gc_content => 0,
+		complete => 0,
+		publications => [],
+		features => [],
+    });
+    my $count = 0;
+    foreach my $function (keys(%{$functions})) {
+    	$count++;
+    	$genomeObj->add("features",{
+    		id => $id.".peg.".$count,
+			function => $function,
+			type => "peg",
+			publications => [],
+			subsystems => [],
+			protein_families => [],
+			aliases => [],
+			annotations => [],
+			subsystem_data => [],
+			regulon_data => [],
+			atomic_regulons => [],
+			coexpressed_fids => [],
+			co_occurring_fids => [],
+			location => []
+  		});
+    }
+	return $genomeObj;
+}
+
+=head3 _genome_to_model
+
+Definition:
+	Bio::KBase::ObjectAPI::KBaseFBA::FBAModel = $self->_genome_to_model(Bio::KBase::ObjectAPI::KBaseGenomes::Genome);
+Description:
+	Builds model from genome
+		
+=cut
+sub _genome_to_model {
+	my($self,$genome,$mdlid,$params) = @_;
+    #Retrieving template model
+    my $template;
+    if (defined($params->{templatemodel})) {
+    	$template = $self->_get_msobject("ModelTemplate",$params->{templatemodel_workspace},$params->{templatemodel});
+    } elsif ($params->{coremodel} == 1) {
+    	$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","CoreModelTemplate");
+    } elsif ($genome->domain() eq "Plant") {
+    	$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","PlantModelTemplate");
 	} else {
-		$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","GramNegModelTemplate");
-	}
-    my $mdl = $template->buildModelFromFunctions({
-	    functions => $functions,
-	    id => $name
+		my $class = $self->_classify_genome($genome);
+		if ($class eq "Gram positive") {
+    		$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","GramPosModelTemplate");
+    	} elsif ($class eq "Gram negative") {
+    		$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","GramNegModelTemplate");
+    	} elsif ($class eq "Plant") {
+    		$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","PlantModelTemplate");
+    	}
+    }
+    if (!defined($template)) {
+    	$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","GramPosModelTemplate");
+    }
+    #Building the model
+    my $mdl = $template->buildModel({
+	    genome => $genome,
+	    modelid => $mdlid
 	});
-	$mdl->annotation_uuid("B4159688-E9E9-11E2-87AF-43F64331C093");
-	$mdl->name($name);
 	return $mdl;
 }
 
@@ -2999,7 +3051,7 @@ sub get_models
     for (my $i=0; $i < @{$input->{models}}; $i++) {
     	my $id = $input->{models}->[$i];
     	my $ws = $input->{workspaces}->[$i];
-    	my $model = $self->_get_msobject("Model",$input->{workspaces}->[$i],$input->{models}->[$i]);
+    	my $model = $self->_get_msobject("FBAModel",$input->{workspaces}->[$i],$input->{models}->[$i]);
     	my $mdldata = {
     		id => $input->{models}->[$i],
     		genome_ref => $model->genome_ref(),
@@ -5686,34 +5738,9 @@ sub genome_to_fbamodel
     if (!defined($input->{model})) {
     	$input->{model} = $input->{genome}.".fbamdl";
     }
-    #Retrieving template model
-    my $template;
-    if (defined($input->{templatemodel})) {
-    	$template = $self->_get_msobject("ModelTemplate",$input->{templatemodel_workspace},$input->{templatemodel});
-    } elsif ($input->{coremodel} == 1) {
-    	$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","CoreModelTemplate");
-    } elsif ($genome->{domain} eq "Plant") {
-    	$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","PlantModelTemplate");
-	} else {
-		my $class = $self->_classify_genome($genome);
-		if ($class eq "Gram positive") {
-    		$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","GramPosModelTemplate");
-    	} elsif ($class eq "Gram negative") {
-    		$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","GramNegModelTemplate");
-    	} elsif ($class eq "Plant") {
-    		$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","PlantModelTemplate");
-    	}
-    }
-    if (!defined($template)) {
-    	$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","GramPosModelTemplate");
-    }
-    #Building the model
-    my $mdl = $template->buildModel({
-	    genome => $genome,
-	    modelid => $kbid
-	});
+    my $mdl = $self->_genome_to_model($genome,$kbid,$input);
 	#Model uuid and model id will be set to WS values during save
-	$modelMeta = $self->_save_msobject($mdl,"Model",$input->{workspace},$input->{model});
+	$modelMeta = $self->_save_msobject($mdl,"FBAModel",$input->{workspace},$input->{model});
     $self->_clearContext();
     #END genome_to_fbamodel
     my @_bad_returns;
@@ -5960,7 +5987,7 @@ sub import_fbamodel
 		$self->_error($msg,'import_fbamodel');
 	}
 	#Saving imported model
-	$modelMeta = $self->_save_msobject($model,"Model",$input->{workspace},$input->{model},"import_fbamodel",$input->{overwrite});
+	$modelMeta = $self->_save_msobject($model,"FBAModel",$input->{workspace},$input->{model},"import_fbamodel",$input->{overwrite});
     $self->_clearContext();
     #END import_fbamodel
     my @_bad_returns;
@@ -6044,7 +6071,7 @@ sub export_fbamodel
     #BEGIN export_fbamodel
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["model","workspace","format"],{});
-    my $model = $self->_get_msobject("Model",$input->{workspace},$input->{model});
+    my $model = $self->_get_msobject("FBAModel",$input->{workspace},$input->{model});
     $output = $model->export({format => $input->{format}});
     $self->_clearContext();
     #END export_fbamodel
@@ -6394,7 +6421,7 @@ sub adjust_model_reaction
 	die "Size mismatch between number of reactions and number of GPR, direction, compartment or compartmentIndexes";
     }
 
-    my $model = $self->_get_msobject("Model",$input->{workspace},$input->{model});
+    my $model = $self->_get_msobject("FBAModel",$input->{workspace},$input->{model});
     for (my $i=0; $i < @{$input->{reaction}}; $i++)  {
 	my $gpr;
 	my $dir;
@@ -6438,7 +6465,7 @@ sub adjust_model_reaction
 					 });
 	}
 	}
-    $modelMeta = $self->_save_msobject($model,"Model",$input->{outputws},$input->{outputid},"adjust_model_reaction",$input->{overwrite});
+    $modelMeta = $self->_save_msobject($model,"FBAModel",$input->{outputws},$input->{outputid},"adjust_model_reaction",$input->{overwrite});
     $self->_clearContext();
     #END adjust_model_reaction
     my @_bad_returns;
@@ -6580,7 +6607,7 @@ sub adjust_biomass_reaction
     	"index" => 0,
     	overwrite => 0
     });
-	my $model = $self->_get_msobject("Model",$input->{workspace},$input->{model});
+	my $model = $self->_get_msobject("FBAModel",$input->{workspace},$input->{model});
 	$model->adjustBiomassReaction({
 		compound => $input->{compound},
 		coefficient => $input->{coefficient},
@@ -6588,7 +6615,7 @@ sub adjust_biomass_reaction
     	compartment => $input->{compartment},
     	"index" => $input->{"index"}
     });
-	$modelMeta = $self->_save_msobject($model,"Model",$input->{workspace},$input->{model},"adjust_biomass_reaction",$input->{overwrite});
+	$modelMeta = $self->_save_msobject($model,"FBAModel",$input->{workspace},$input->{model},"adjust_biomass_reaction",$input->{overwrite});
     $self->_clearContext();
     #END adjust_biomass_reaction
     my @_bad_returns;
@@ -7095,7 +7122,7 @@ sub runfba
 		fba => undef,
 		biomass => undef
 	});
-	my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
+	my $model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model});
 	if (!defined($input->{fba})) {
 		$input->{fba} = $self->_get_new_id($input->{model}.".fba.");
 	}
@@ -7637,7 +7664,7 @@ sub simulate_phenotypes
     if ( $input->{all_transporters} ) {
 		$model->addPhenotypeTransporters({phenotypes => $pheno,positiveonly => 0});
 	} elsif ( $input->{positive_transporters} ) {
-		$model->addPhenotypeTransporters({phenotypes => $pheno,positiveonly => 0});
+		$model->addPhenotypeTransporters({phenotypes => $pheno,positiveonly => 1});
 	}
 	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
 	my $fba = $self->_buildFBAObject($input->{formulation},$model);
@@ -7796,18 +7823,18 @@ sub add_media_transporters
 				      positive_transporters => 0
 				  });
 
-    my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
+    my $model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model});
     my $pheno = $self->_get_msobject("PhenotypeSet", $input->{phenotypeSet_workspace}, $input->{phenotypeSet});
 
     if ( $input->{all_transporters} ) {
-	$model = $self->_addPhenotypeMedia($model, $pheno, 0);
+		$model->addPhenotypeTransporters({phenotypes => $pheno,positiveonly => 0});
     } elsif ( $input->{positive_transporters} ) {
-	    $model = $self->_addPhenotypeMedia($model, $pheno, 1);
+		$model->addPhenotypeTransporters({phenotypes => $pheno,positiveonly => 1});
     } else {
 	die "Must specify either all_transporters or positive_transporters.\n";
     }
 
-    $output = $self->_save_msobject($model,"Model",$input->{workspace},$input->{outmodel},"add_media_transporters");
+    $output = $self->_save_msobject($model,"FBAModel",$input->{workspace},$input->{outmodel},"add_media_transporters");
 
     #END add_media_transporters
     my @_bad_returns;
@@ -9801,7 +9828,7 @@ sub queue_wildtype_phenotype_reconciliation
 		}
 		#Queing up gapfill and gapgen jobs
 		#TODO: This block should be in a "safe save" block to prevent race conditions
-		my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
+		my $model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model});
 		my $input = {
 			model => $input->{model},
 			model_workspace => $input->{model_workspace},
@@ -9833,7 +9860,7 @@ sub queue_wildtype_phenotype_reconciliation
 				}
 			}
 		}
-		my $modelmeta = $self->_save_msobject($model,"Model",$input->{workspace},$input->{out_model},"queue_wildtype_phenotype_reconciliation");
+		my $modelmeta = $self->_save_msobject($model,"FBAModel",$input->{workspace},$input->{out_model},"queue_wildtype_phenotype_reconciliation");
 		#End "safe save" block
 		my $joblist = [];
 		foreach my $gapgenObj (@{$gapgenObjs}) {
@@ -10216,7 +10243,7 @@ sub queue_reconciliation_sensitivity_analysis
 		simPhenoID => undef
 	});
 	#Retreiving model
-	my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
+	my $model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model});
 	if (!defined($input->{simPhenoID})) {
 		#Retrieving phenotypes
 		my $pheno = $self->_get_msobject("PhenotypeSet",$input->{phenotypeSet_workspace},$input->{phenotypeSet});
@@ -10292,7 +10319,7 @@ sub queue_reconciliation_sensitivity_analysis
 					$fba->model($newmod);
 					$fba->model_uuid($newmod->uuid());
 					$fba->notes($solIndex);
-					my $output = $self->_save_msobject($newmod,"Model","NO_WORKSPACE",$newmod->uuid(),"queue_reconciliation_sensitivity_analysis",1,$newmod->uuid());
+					my $output = $self->_save_msobject($newmod,"FBAModel","NO_WORKSPACE",$newmod->uuid(),"queue_reconciliation_sensitivity_analysis",1,$newmod->uuid());
 					$output = $self->_save_msobject($fba,"FBA","NO_WORKSPACE",$fba->uuid(),"queue_reconciliation_sensitivity_analysis",1,$fba->uuid());
 					push(@{$phenoSenseAnalysis->{fbaids}},$fba->uuid());
 					push(@{$phenoSenseAnalysis->{reconciliationSolutionSimulations}},["GF",$gf->uuid(),$j,$gf->gapfillingSolutions()->[$j]->solrxn(),$gf->gapfillingSolutions()->[$j]->biocpd(),[]]);
@@ -10333,7 +10360,7 @@ sub queue_reconciliation_sensitivity_analysis
 					$fba->model($newmod);
 					$fba->model_uuid($newmod->uuid());
 					$fba->notes($solIndex);
-					$output = $self->_save_msobject($newmod,"Model","NO_WORKSPACE",$newmod->uuid(),"queue_reconciliation_sensitivity_analysis",1,$newmod->uuid());
+					$output = $self->_save_msobject($newmod,"FBAModel","NO_WORKSPACE",$newmod->uuid(),"queue_reconciliation_sensitivity_analysis",1,$newmod->uuid());
 					$output = $self->_save_msobject($fba,"FBA","NO_WORKSPACE",$fba->uuid(),"queue_reconciliation_sensitivity_analysis",1,$fba->uuid());
 					push(@{$phenoSenseAnalysis->{fbaids}},$fba->uuid());
 					push(@{$phenoSenseAnalysis->{reconciliationSolutionSimulations}},["GG",$gg->uuid(),$j,$gg->gapgenSolutions()->[$j]->solrxn(),$gg->gapgenSolutions()->[$j]->biocpd(),[]]);
@@ -10697,7 +10724,7 @@ sub queue_combine_wildtype_phenotype_reconciliation
 		"FN" => 3
 	};
 	my $phenoSense = $self->_get_msobject("PhenoSenseAnalysis",$input->{workspace},$input->{PhenoSensitivityAnalysis});
-	my $model = $self->_get_msobject("Model",$phenoSense->{model_workspace},$phenoSense->{model});
+	my $model = $self->_get_msobject("FBAModel",$phenoSense->{model_workspace},$phenoSense->{model});
 	if (!defined($input->{out_model})) {
 		$input->{out_model} = $phenoSense->{model};
 	}
@@ -11649,7 +11676,7 @@ sub reaction_sensitivity_analysis
 	if (!defined($input->{fba_ref})) {
 	    # If gapfill solution is defined we need to get the reactions associated with it.
 	    # We only try to get reactions that are acutally in the model.
-	    my $model = $self->_get_msobject("Model",$input->{model_ws},$input->{model});
+	    my $model = $self->_get_msobject("FBAModel",$input->{model_ws},$input->{model});
 	    if ( defined($input->{gapfill_solution_id}) ) {
 		        # Note - this automatically changes the names to '+-' stuff
 			my $rxnlist = $self->_get_gapfill_solution_reactions($input->{gapfill_solution_id}, $model);
@@ -11912,7 +11939,7 @@ sub filter_iterative_solutions
 	outmodel => $input->{model}	
     });
 
-    my $model = $self->_get_msobject("Model",$input->{input_model_ws},$input->{model});
+    my $model = $self->_get_msobject("FBAModel",$input->{input_model_ws},$input->{model});
     my $parsedid = $self->_parse_gapfillsolution_id($input->{gapfillsln});
     my $gapfill = $self->_get_msobject("GapFill", "NO_WORKSPACE", $parsedid->[0]);
     my $problemReport = $gapfill->fbaFormulation()->fbaResults()->[0]->outputfiles()->{"ProblemReport.txt"};
@@ -11982,7 +12009,7 @@ sub filter_iterative_solutions
 	}
     }
 
-    $output = $self->_save_msobject($model,"Model",$input->{workspace},$input->{outmodel},"filter_iterative_solutions");
+    $output = $self->_save_msobject($model,"FBAModel",$input->{workspace},$input->{outmodel},"filter_iterative_solutions");
 
     #END filter_iterative_solutions
     my @_bad_returns;
@@ -12110,7 +12137,7 @@ sub delete_noncontributing_reactions
 	});
 	my $rxnsens = $self->_get_msobject("RxnSensitivity",$input->{rxn_sensitivity_ws},$input->{rxn_sensitivity});
 	$rxnsens->{integrated_deletions_in_model} = 1;
-	my $model = $self->_get_msobject("Model","NO_WORKSPACE",$rxnsens->{model_wsid});
+	my $model = $self->_get_msobject("FBAModel","NO_WORKSPACE",$rxnsens->{model_wsid});
 	for (my $i=0; $i < @{$rxnsens->{reactions}}; $i++) {
 		if ($rxnsens->{reactions}->[$i]->{"delete"} eq "1") {
 			my $rxn = $model->searchForReaction($rxnsens->{reactions}->[$i]->{reaction});
@@ -12141,9 +12168,9 @@ sub delete_noncontributing_reactions
 		}
 	}
 	if (defined($input->{new_model_uid})) {
-		$output = $self->_save_msobject($model,"Model",$input->{workspace},$input->{new_model_uid},"delete_noncontributing_reactions");
+		$output = $self->_save_msobject($model,"FBAModel",$input->{workspace},$input->{new_model_uid},"delete_noncontributing_reactions");
 	} else {
-		$output = $self->_save_msobject($model,"Model","NO_WORKSPACE",$rxnsens->{model_wsid},"delete_noncontributing_reactions");
+		$output = $self->_save_msobject($model,"FBAModel","NO_WORKSPACE",$rxnsens->{model_wsid},"delete_noncontributing_reactions");
 	}
 	if (defined($input->{new_rxn_sensitivity_uid})) {
 		$self->_save_msobject($rxnsens,"RxnSensitivity",$input->{workspace},$input->{new_rxn_sensitivity_uid},"delete_noncontributing_reactions");
@@ -13274,7 +13301,7 @@ sub get_mapping
     		complexes => $role->complexIDs()
     	});
     }
-    my $sss = $map->rolesets();
+    my $sss = $map->subsystems();
     for (my $i=0; $i < @{$sss}; $i++) {
     	my $ss = $sss->[$i];
     	push(@{$output->{subsystems}},{
@@ -15606,7 +15633,7 @@ sub import_metagenome_annotation
 		$params->{name} = $params->{metaanno_uid};
 	}
 	#Creating object
-	my $mgobj = {
+	my $mgobj = Bio::KBase::ObjectAPI::KBaseGenomes::MetagenomeAnnotation->new({
 		id => $kbid,
 		source_id => $params->{source_id},
 		source => $params->{source},
@@ -15614,7 +15641,7 @@ sub import_metagenome_annotation
 		name => $params->{name},
 		confidence_type => $params->{confidence_type},
 		otus => []
-	};
+	});
 	#Organizing annotations by OTU
 	my $otus = {};
 	my $otuAverages = {};
@@ -15628,8 +15655,8 @@ sub import_metagenome_annotation
 		push(@{$otus->{$params->{annotations}->[$i]->[2]}},{
 			reference_genes => [split(/,/,$params->{annotations}->[$i]->[0])],
 			functional_role => $params->{annotations}->[$i]->[1],
-			abundance => $params->{annotations}->[$i]->[3],
-			confidence => $params->{annotations}->[$i]->[4],
+			abundance => $params->{annotations}->[$i]->[3]+0,
+			confidence => $params->{annotations}->[$i]->[4]+0,
 		}); 
 	}
 	my $counter = 0;
@@ -15650,10 +15677,10 @@ sub import_metagenome_annotation
 			$fcounter++;
 			$otuobj->{functions}->[$i]->{id} = $kbid.".otu.".$counter.".func.".$fcounter;
 		}
-		push(@{$mgobj->{otus}},$otuobj);
+		$mgobj->add("otus",$otuobj);
 	}
 	#Saving object
-	$mgobj = Bio::KBase::ObjectAPI::KBaseGenomes::MetagenomeAnnotation->new($mgobj);
+	$mgobj->parent($self->_KBaseStore());
 	$output = $self->_save_msobject($mgobj,"MetagenomeAnnotation",$params->{workspace},$params->{metaanno_uid});
     $self->_clearContext();
     #END import_metagenome_annotation
@@ -15803,52 +15830,52 @@ sub models_to_community_model
 		$params->{name} = $params->{model_uid};
 	}
 	#Pulling first model to obtain biochemistry ID
-	my $model = $self->_get_msobject("Model",$params->{models}->[0]->[1],$params->{models}->[0]->[0]);
-	#Creating mapping and annotation for community model
-	my $mapping = Bio::KBase::ObjectAPI::KBaseOntology::Mapping->new({
-		name         => $params->{name}."_Mapping",
-		biochemistry_uuid => $model->biochemistry_uuid(),
-		biochemistry => $model->biochemistry(),
-	});
-	my $annotation = ModelSEED::MS::Annotation->new({
-	  name         => $params->{name}."_Annotation",
-	  mapping_uuid => $model->mapping_uuid(),
-	  mapping => $model->mapping(),
-	  biochemistry_uuid => $model->biochemistry_uuid(),
-	  biochemistry => $model->biochemistry(),
-	});
+	my $model = $self->_get_msobject("FBAModel",$params->{models}->[0]->[1],$params->{models}->[0]->[0]);
+	my $gid = $self->_get_new_id("kb|g.");
+	my $genomeObj = Bio::KBase::ObjectAPI::KBaseGenomes::Genome->new({
+		id => $gid,
+		scientific_name => $params->{name}."Genome",
+		domain => "Community",
+		genetic_code => 11,
+		dna_size => 0,
+		num_contigs => 0,
+		contig_lengths => [],
+		contig_ids => [],
+		source => "KBase",
+		source_id => $gid,
+		md5 => "",
+		taxonomy => "Community",
+		gc_content => 0,
+		complete => 0,
+		publications => [],
+		features => [],
+    });
+    $genomeObj->parent($self->_KBaseStore());
 	#Creating new community model
 	my $commdl = Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->new({
-		kbid => $kbid,
 		source_id => $kbid,
 		source => "KBase",
 		id => $kbid,
-		version => 0,
 		type => "CommunityModel",
 		name => $params->{name},
-		growth => 0,
-		status => "ManuallyCombined",
-		current => 1,
-		mapping_uuid => $mapping->uuid(),
-		mapping => $mapping,
-		biochemistry_uuid => $model->biochemistry_uuid(),
-		biochemistry => $model->biochemistry(),
-		annotation_uuid => $annotation->uuid(),
-		annotation => $annotation
+		template_ref => $model->template_ref(),
+		modelreactions => [],
+		modelcompounds => [],
+		modelcompartments => [],
+		biomasses => [],
+		gapgens => [],
+		gapfillings => [],
 	});
+	$commdl->parent($self->_KBaseStore());
 	my $cmpsHash = {
 		e => $commdl->addCompartmentToModel({
-			compartment => $model->biochemistry()->queryObject("compartments",{
-				id => "e"
-			}),
+			compartment => $model->template()->biochemistry()->getObject("compartments","e"),
 			pH => 7,
 			potential => 0,
 			compartmentIndex => 0
 		}),
 		c => $commdl->addCompartmentToModel({
-			compartment => $model->biochemistry()->queryObject("compartments",{
-				id => "c"
-			}),
+			compartment => $model->template()->biochemistry()->getObject("compartments","c"),
 			pH => 7,
 			potential => 0,
 			compartmentIndex => 0
@@ -15871,41 +15898,33 @@ sub models_to_community_model
 		cofactor => 0,
 		energy => 0
 	});
-	my $biomassCompound = $model->biochemistry()->queryObject("compounds",{
-		id => "cpd11416"
-	});
+	my $biomassCompound = $model->template()->biochemistry()->getObject("compounds","cpd11416");
 	my $biocpd = $commdl->add("modelcompounds",{
-		compound_uuid => $biomassCompound->uuid(),
+		id => $biomassCompound->id()."_".$cmpsHash->{c}->id(),
+		compound_ref => $biomassCompound->_reference(),
 		charge => 0,
-		modelcompartment_uuid => $cmpsHash->{c}->uuid()
+		modelcompartment_ref => "~/modelcompartments/id/".$cmpsHash->{c}->id()
 	});
 	$primbio->add("biomasscompounds",{
-		modelcompound_uuid => $biocpd->uuid(),
+		modelcompound_ref => "~/modelcompounds/id/".$biocpd->id(),
 		coefficient => 1
 	});
 	for (my $i=0; $i < @{$params->{models}}; $i++) {
 		print "Loading model ".$params->{models}->[$i]->[1]."\n";
 		if ($i > 0) {
-			$model = $self->_get_msobject("Model",$params->{models}->[$i]->[1],$params->{models}->[$i]->[0]);
+			$model = $self->_get_msobject("FBAModel",$params->{models}->[$i]->[1],$params->{models}->[$i]->[0]);
 		}
-		my $biomassCpd = $model->queryObject("modelcompounds",{
-			id => "cpd11416_c0"
-		});
-		if ($model->biochemistry_uuid() ne $commdl->biochemistry_uuid()) {
-			$self->_error("Cannot combine models referring to different biochemistries!","models_to_community_model");
-		}
+		my $biomassCpd = $model->getObject("modelcompounds","cpd11416_c0");
 		#Adding genome, features, and roles to master mapping and annotation
-		my $anno = $model->annotation();
-		print "Loading genomes\n";
-		for (my $j=0; $j < @{$anno->genomes()}; $j++) {
-			$annotation->add("genomes",$anno->genomes()->[$j]);
-		}
+		my $mdlgenome = $model->genome();
+		$genomeObj->dna_size($genomeObj->dna_size()+$mdlgenome->dna_size());
+		$genomeObj->num_contigs($genomeObj->num_contigs()+$mdlgenome->num_contigs());
+		$genomeObj->gc_content($genomeObj->gc_content()+$mdlgenome->dna_size()*$mdlgenome->gc_content());
+		push(@{$genomeObj->{contig_lengths}},@{$mdlgenome->{contig_lengths}});
+		push(@{$genomeObj->{contig_ids}},@{$mdlgenome->{contig_ids}});	
 		print "Loading features\n";
-		for (my $j=0; $j < @{$anno->features()}; $j++) {
-			for (my $k=0; $k < @{$anno->features()->[$j]->featureroles()}; $k++) {
-				$mapping->add("roles",$anno->features()->[$j]->featureroles()->[$k]->role());	
-			}
-			$annotation->add("features",$anno->features()->[$j]);
+		for (my $j=0; $j < @{$mdlgenome->features()}; $j++) {
+			$genomeObj->add("features",$mdlgenome->features()->[$j]);
 		}
 		#Adding compartments to community model
 		my $cmps = $model->modelcompartments();
@@ -15927,18 +15946,19 @@ sub models_to_community_model
 		for (my $j=0; $j < @{$cpds}; $j++) {
 			my $cpd = $cpds->[$j];
 			my $comcpd = $commdl->queryObject("modelcompounds",{
-				compound_uuid => $cpd->compound_uuid(),
-				modelcompartment_uuid => $cmpsHash->{$cpd->modelcompartment()->compartment()->id()}->uuid()
+				compound_ref => $cpd->compound_ref(),
+				modelcompartment_ref => "~/modelcompartments/id/".$cmpsHash->{$cpd->modelcompartment()->compartment()->id()}->id()
 			});
 			if (!defined($comcpd)) {
 				$comcpd = $commdl->add("modelcompounds",{
-					compound_uuid => $cpd->compound_uuid(),
+					id => $cpd->compound()->id()."_".$cmpsHash->{$cpd->modelcompartment()->compartment()->id()}->id(),
+					compound_ref => $cpd->compound_ref(),
 					charge => $cpd->charge(),
 					formula => $cpd->formula(),
-					modelcompartment_uuid => $cmpsHash->{$cpd->modelcompartment()->compartment()->id()}->uuid(),
+					modelcompartment_ref => "~/modelcompartments/id/".$cmpsHash->{$cpd->modelcompartment()->compartment()->id()}->id(),
 				});
 			}
-			$translation->{$cpd->uuid()} = $comcpd->uuid();
+			$translation->{$cpd->id()} = $comcpd->id();
 		}
 		print "Loading reactions\n";
 		#Adding reactions to community model
@@ -15946,14 +15966,15 @@ sub models_to_community_model
 		for (my $j=0; $j < @{$rxns}; $j++) {
 			my $rxn = $rxns->[$j];
 			if (!defined($commdl->queryObject("modelreactions",{
-				reaction_uuid => $rxn->reaction_uuid(),
-				modelcompartment_uuid => $cmpsHash->{$rxn->modelcompartment()->compartment()->id()}->uuid()
+				reaction_ref => $rxn->reaction_ref(),
+				modelcompartment_ref => "~/modelcompartments/id/".$cmpsHash->{$rxn->modelcompartment()->compartment()->id()}->id()
 			}))) {
 				my $comrxn = $commdl->add("modelreactions",{
-					reaction_uuid => $rxn->reaction_uuid(),
+					id => $rxn->reaction()->id()."_".$cmpsHash->{$rxn->modelcompartment()->compartment()->id()}->id(),
+					reaction_ref => $rxn->reaction_ref(),
 					direction => $rxn->direction(),
 					protons => $rxn->protons(),
-					modelcompartment_uuid => $cmpsHash->{$rxn->modelcompartment()->compartment()->id()}->uuid(),
+					modelcompartment_ref => "~/modelcompartments/id/".$cmpsHash->{$rxn->modelcompartment()->compartment()->id()}->id(),
 					probability => $rxn->probability()
 				});
 				for (my $k=0; $k < @{$rxn->modelReactionProteins()}; $k++) {
@@ -15961,7 +15982,7 @@ sub models_to_community_model
 				}
 				for (my $k=0; $k < @{$rxn->modelReactionReagents()}; $k++) {
 					$comrxn->add("modelReactionReagents",{
-						modelcompound_uuid => $translation->{$rxn->modelReactionReagents()->[$k]->modelcompound_uuid()},
+						modelcompound_ref => "~/modelcompounds/id/".$translation->{$rxn->modelReactionReagents()->[$k]->modelcompound()->id()},
 						coefficient => $rxn->modelReactionReagents()->[$k]->coefficient()
 					});
 				}
@@ -15972,26 +15993,26 @@ sub models_to_community_model
 		my $bios = $model->biomasses();
 		for (my $j=0; $j < @{$bios}; $j++) {
 			my $bio = $bios->[$j];
+			for (my $k=0; $k < @{$bio->biomasscompounds()}; $k++) {
+				$bio->biomasscompounds()->[$k]->modelcompound_ref("~/modelcompounds/id/".$translation->{$bio->biomasscompounds()->[$k]->modelcompound()->id()});
+			}
 			$bio = $commdl->add("biomasses",$bio);
 			$biocount++;
 			$bio->id("bio".$biocount);
 			$bio->name("bio".$biocount);
-			for (my $k=0; $k < @{$bio->biomasscompounds()}; $k++) {
-				$bio->biomasscompounds()->[$k]->modelcompound_uuid($translation->{$bio->biomasscompounds()->[$k]->modelcompound_uuid()});
-			}
 		}
 		print "Loading primary biomass\n";
 		#Adding biomass component to primary composite biomass reaction
 		$primbio->add("biomasscompounds",{
-			modelcompound_uuid => $translation->{$biomassCpd->uuid()},
+			modelcompound_ref => "~/modelcompounds/id/".$translation->{$biomassCpd->id()},
 			coefficient => -1*$params->{models}->[$i]->[2]/$totalAbundance
 		});
 	}
 	print "Merged model complete!\n";
 	#Saving object
-	$output = $self->_save_msobject($mapping,"Mapping","NO_WORKSPACE",$mapping->uuid(),"models_to_community_model",1,$mapping->uuid());
-	$output = $self->_save_msobject($annotation,"Annotation","NO_WORKSPACE",$annotation->uuid(),"models_to_community_model",1,$annotation->uuid());
-	$output = $self->_save_msobject($commdl,"Model",$params->{workspace},$params->{model_uid},"models_to_community_model",1);
+	$output = $self->_save_msobject($genomeObj,"Genome",$params->{workspace},$genomeObj->id());
+	$commdl->genome_ref($genomeObj->_reference());
+	$output = $self->_save_msobject($commdl,"FBAModel",$params->{workspace},$params->{model_uid});
     $self->_clearContext();
     #END models_to_community_model
     my @_bad_returns;
@@ -16140,7 +16161,6 @@ sub metagenome_to_fbamodels
 	my $otus = $metaanno->otus();
 	my $sortedOtus = [sort { $b->ave_coverage() <=> $a->ave_coverage() } @{$otus}];
 	my $functions;
-	my $map = $self->_get_msobject("Mapping","kbase","default-mapping");
 	my $nummodels = 0;
 	for (my $i=0; $i < @{$sortedOtus}; $i++) {
 		my $otu = $sortedOtus->[$i];
@@ -16158,13 +16178,14 @@ sub metagenome_to_fbamodels
 					$mdlfunc->{$func->functional_role()} += $func->abundance();
 				}
 			}
-			my $mdl = $self->_buildModelFromFunctions($map,$mdlfunc,"EnsembleModel");
+			my $genome = $self->_buildGenomeFromFunctions($otu->id().".g.0",$mdlfunc,$otu->name());
+			my $genomeMeta = $self->_save_msobject($genome,"Genome",$params->{workspace},$genome->id(),{hidden=>1});
+			my $mdl = $self->_genome_to_model($genome,$genome->id().".fbamdl.0");
 			print $otu->name()."\t".$otu->ave_coverage()."\t".@{$otu->functions()}."\t".@{$mdl->modelreactions()}."\n";
 			#Saving OTU model if it's large enough
 			if (@{$mdl->modelreactions()} > $params->{min_reactions}) {
 				$nummodels++;
 				$built = 1;
-				$mdl->id($self->_get_new_id($otu->id().".fbamdl"));
 				my $ids = ["name","kbid","source_id"];
 				my $modelid;
 				for (my $j=0; $j < @{$ids}; $j++) {
@@ -16176,9 +16197,10 @@ sub metagenome_to_fbamodels
 					$modelid = $mdl->id();
 				}
 				$mdl->name($otu->name());
-				$mdl->id($otu->name());
 				$mdl->source("KBase");
 				$mdl->source_id($mdl->id());
+				$mdl->metagenome_ref($metaanno->_reference());
+				$mdl->metagenome_otu_ref($otu->_reference());
 				push(@{$outputs},$self->_save_msobject($mdl,"FBAModel",$params->{workspace},$modelid));
 			}
 		}
@@ -16211,19 +16233,19 @@ sub metagenome_to_fbamodels
 			$mdlfunc->{$function} += $functions->{$function}->{abundance};
 		}
 	}
-	my $mdl = $self->_buildModelFromFunctions($map,$mdlfunc,"EnsembleModel");
-	$mdl->kbid($self->_get_new_id("kb|fbamdl"));
+	my $genome = $self->_buildGenomeFromFunctions($metaanno->id().".tail.0.g.0",$mdlfunc,$metaanno->id().".tail.0.g.0");
+	my $genomeMeta = $self->_save_msobject($genome,"Genome",$params->{workspace},$genome->id(),{hidden=>1});
+	my $mdl = $self->_genome_to_model($genome,$genome->id().".fbamdl.0");
 	my $modelid;
 	if (defined($params->{model_uids}->{tail})) {
 		$modelid = $params->{model_uids}->{tail};
 	}
 	if (!defined($modelid)) {
-		$modelid = $mdl->kbid();
+		$modelid = $mdl->id();
 	}
 	$mdl->name("tailmodel");
-	$mdl->id("tailmodel");
 	$mdl->source("KBase");
-	$mdl->source_id($mdl->kbid());
+	$mdl->source_id($mdl->id());
 	push(@{$outputs},$self->_save_msobject($mdl,"FBAModel",$params->{workspace},$modelid));
 	$self->_clearContext();
     #END metagenome_to_fbamodels
