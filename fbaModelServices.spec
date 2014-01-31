@@ -2083,6 +2083,9 @@ module fbaModelServices {
     authentication required;
     funcdef queue_gapgen_model(gapgen_model_params input) returns (JobObject job);
     
+    authentication required;
+    funcdef gapgen_model(gapgen_model_params input) returns (object_metadata modelMeta);
+    
     /* Input parameters for the "queue_wildtype_phenotype_reconciliation" function.
 	
 		fbamodel_id model - ID of the model that reconciliation should be run on (a required argument)
@@ -2200,23 +2203,7 @@ module fbaModelServices {
     */
     authentication required;
     funcdef queue_combine_wildtype_phenotype_reconciliation(combine_wildtype_phenotype_reconciliation_params input) returns (JobObject job);
-    
-    /* Input parameters for the "jobs_done" function.
-	
-		job_id job - ID of the job object (a required argument)
-		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
-		
-	*/
-	typedef structure {
-		job_id job;
-		string auth;
-    } jobs_done_params;
-	/*
-        Mark specified job as complete and run postprocessing
-    */
-	authentication required;
-	funcdef jobs_done(jobs_done_params input) returns (JobObject job);
-	
+    	
 	/* Input parameters for the "run_job" function.
 	
 		job_id job - ID of the job object (a required argument)

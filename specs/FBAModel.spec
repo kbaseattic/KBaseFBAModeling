@@ -322,26 +322,30 @@ module KBaseFBA {
     /* 
     	ModelGapfill object
     	 
-		@searchable ws_subset gapfill_id gapfill_ref integrated media_ref
+    	@optional integrated_solution
+		@searchable ws_subset id gapfill_id gapfill_ref integrated_solution integrated media_ref
     */
     typedef structure {
+		gapfill_id id;
 		gapfill_id gapfill_id;
 		gapfill_ref gapfill_ref;
 		bool integrated;
-		int integrated_solution;
+		string integrated_solution;
 		media_ref media_ref;
     } ModelGapfill;
     
     /* 
     	ModelGapgen object
     	
-		@searchable ws_subset gapgen_id gapgen_ref integrated media_ref
+    	@optional integrated_solution
+		@searchable ws_subset id gapgen_id gapgen_ref integrated media_ref integrated_solution
     */
     typedef structure {
+    	gapgen_id id;
     	gapgen_id gapgen_id;
 		gapgen_ref gapgen_ref;
 		bool integrated;
-		int integrated_solution;
+		string integrated_solution;
 		media_ref media_ref;
     } ModelGapgen;
     

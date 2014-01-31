@@ -67,7 +67,7 @@ sub _buildfeatureHash {
 =head3 addMediaReactions
 
 Definition:
-    Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->addTransportersFromMedia({
+    Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->addMediaReactions({
            media => Bio::KBase::ObjectAPI::KBaseBiochem::Media(REQ)
     })
 
@@ -1335,21 +1335,27 @@ Description:
 
 sub integrateGapfillSolution {
     my $self = shift;
-	my $args = Bio::KBase::ObjectAPI::utilities::args(["gapfillingFormulation"], { solutionNum => 0 }, @_);
+	my $args = Bio::KBase::ObjectAPI::utilities::args(["gapfill"], { solution => undef,rxnProbGpr => undef }, @_);
 	Bio::KBase::ObjectAPI::utilities::verbose("Now integrating gapfill solution into model");
-	my $gf = $args->{gapfillingFormulation};
-    my $num = $args->{solutionNum};
-    my $rxnProbGpr = $args->{rxnProbGpr};
-	my $gfss = $gf->gapfillingSolutions();
-	if (@{$gfss} <= $num) {
-		Bio::KBase::ObjectAPI::utilities::error("Specified solution not found in gapfilling formulation!");
+	my $gfmeta = $self->getObject("gapfillings",$args->{gapfill});
+	if (!defined($gfmeta)) {
+		Bio::KBase::ObjectAPI::utilities::error("Gapfill ".$args->{gapfill}." not found!");
 	}
+	my $gf = $gfmeta->gapfill();
+	my $sol;
+	if (!defined($args->{solution})) {
+		$args->{solution} = $gf->gapfillingSolutions()->[0]->id();
+	}
+	$sol = $gf->getObject("gapfillingSolutions",$args->{solution});
+	if (!defined($sol)) {
+		Bio::KBase::ObjectAPI::utilities::error("Solution ".$args->{solution}." not found in gapfill ".$args->{gapfill}."!");
+	}
+	$gfmeta->integrated(1);
+	$gfmeta->integrated_solution($args->{solution});
 	my $IntegrationReport = {
 		added => [],
 		reversed => []
 	};
-	my $sol = $gfss->[$num];
-	$sol->integrated(1);
 	#Integrating biomass removals into model
 	if (defined($sol->biomassRemovals()) && @{$sol->biomassRemovals()} > 0) {
 		my $removals = $sol->biomassRemovals();
@@ -1389,15 +1395,12 @@ sub integrateGapfillSolution {
 				direction => $rxn->direction()
 			});
 			# If RxnProbs object is defined, use it to assign GPRs to the integrated reactions.
-			if (defined($rxnProbGpr) && defined($rxnProbGpr->{$rxnid})) {
-			    $self->manualReactionAdjustment( { reaction => $rxnid,  gpr => $rxnProbGpr->{$rxnid} } );
+			if (defined($args->{rxnProbGpr}) && defined($args->{rxnProbGpr}->{$rxnid})) {
+			    $self->manualReactionAdjustment( { reaction => $rxnid,  gpr => $args->{rxnProbGpr}->{$rxnid} } );
 			}
 		}
 	}
 	#Checking if gapfilling formulation is in the unintegrated list 
-	$self->removeLinkArrayItem("unintegratedGapfillings",$gf);
-	$self->addLinkArrayItem("integratedGapfillings",$gf);
-	$self->integratedGapfillingSolutions()->{$gf->_reference()} = $num;
 	return $IntegrationReport;
 }
 
@@ -1441,16 +1444,23 @@ Description:
 
 sub integrateGapgenSolution {
 	my $self = shift;
-    my $args = Bio::KBase::ObjectAPI::utilities::args(["gapgenFormulation"], { solutionNum => 0 }, @_);
+    my $args = Bio::KBase::ObjectAPI::utilities::args(["gapgen"], { solution => undef }, @_);
 	Bio::KBase::ObjectAPI::utilities::verbose("Now integrating gapgen solution into model");
-	my $gg = $args->{gapgenFormulation};
-	my $num = $args->{solutionNum};
-	my $ggss = $gg->gapgenSolutions();
-	if (@{$ggss} <= $num) {
-		Bio::KBase::ObjectAPI::utilities::error("Specified solution not found in gapgen formulation!");
+	my $ggmeta = $self->getObject("gapgens",$args->{gapgen});
+	if (!defined($ggmeta)) {
+		Bio::KBase::ObjectAPI::utilities::error("Gapgen ".$args->{gapgen}." not found!");
 	}
-	my $sol = $ggss->[$num];
-	$sol->integrated(1);
+	my $gg = $ggmeta->gapgen();
+	my $sol;
+	if (!defined($args->{solution})) {
+		$args->{solution} = $gg->gapgenSolutions()->[0]->id();
+	}
+	$sol = $gg->getObject("gapgenSolutions",$args->{solution});
+	if (!defined($sol)) {
+		Bio::KBase::ObjectAPI::utilities::error("Solution ".$args->{solution}." not found in gapgen ".$args->{gapgen}."!");
+	}
+	$ggmeta->integrated(1);
+	$ggmeta->integrated_solution($args->{solution});
 	my $solrxns = $sol->gapgenSolutionReactions();
 	for (my $m=0; $m < @{$solrxns}; $m++) {
 		my $rxn = $solrxns->[$m];
@@ -1466,10 +1476,6 @@ sub integrateGapgenSolution {
 			$rxn->modelreaction()->direction(">");
 		}
 	}
-	#Checking if gapfilling formulation is in the unintegrated list 
-	$self->removeLinkArrayItem("unintegratedGapgens",$gg);
-	$self->addLinkArrayItem("integratedGapgens",$gg);
-	$self->integratedGapgenSolutions()->{$gg->_reference()} = $num;
 }
 
 sub printExchangeFormat {
@@ -2037,6 +2043,80 @@ sub searchForReaction {
     	modelcompartment_ref => $mdlcmp->_reference(),
     	reaction_ref => $reaction->_reference()
     });
+}
+
+
+=head3 addPhenotypeTransporters
+
+Definition:
+    $self->addPhenotypeTransporters({
+    	phenotypeset => Bio::KBase::ObjectAPI::PhenotypeSet,
+    	positiveonly => 0/1
+    });
+Description:
+    Add transporters for all media in a PhenotypeSet to the input model.
+    Note - this must be called BEFORE _buildFBAObject.
+
+=cut
+
+sub addPhenotypeTransporters {
+	my $self = shift;
+	my $args = Bio::KBase::ObjectAPI::utilities::args(["phenotypes"], {positiveonly => 0}, @_);
+	my $phenotypes = $args->{phenotypes}->phenotypes();
+	my $mediahash;
+	for (my $i=0; $i < @{$phenotypes}; $i++) {
+		my $phenotype = $phenotypes->[$i];
+		my $media = $phenotype->media();
+		if ($phenotype->normalizedGrowth() > 0 || $args->{positiveonly} == 0) {
+			$mediahash->{$media->_reference()} = $media;
+		} 
+	}
+	my $cpdhash;
+	foreach my $ref (keys(%{$mediahash})) {
+		my $cpds = $mediahash->{$ref}->mediacompounds();
+		foreach my $cpd (@{$cpds}) {
+			$cpdhash->{$cpd->id()} = $cpd;
+		}
+	}
+	my $NeedTrans = [];
+	my $mdlcpds = $self->modelcompounds();
+	foreach my $cpd (@{$mdlcpds}) {
+		if (defined($cpdhash->{$cpd->compound()->id()}) && $cpd->modelcompartment()->label() =~ m/^e/) {
+			delete $cpdhash->{$cpd->compound()->id()};
+		}
+	}
+	my $bio = $self->template()->biochemistry();
+	my $rxns = $bio->reactions();
+	my $transhash = {};
+	foreach my $cpd (keys(%{$cpdhash})) {
+		foreach my $rxn (@{$rxns}) {
+			my $rgts = $rxn->reagents();
+			my $extcoef;
+			my $cytcoef;
+			my $othercomps = 0;
+			foreach my $rgt (@{$rgts}) {
+				if ($rgt->compartment()->id() !~ m/[ce]/) {
+					$othercomps = 1;
+					last;
+				}
+				if ($rgt->compound()->id() eq $cpd && $rgt->compartment()->id() eq "e") {
+					$extcoef = $rgt->coefficient();
+				} elsif ($rgt->compound()->id() eq $cpd && $rgt->compartment()->id() eq "c") {
+					$cytcoef = $rgt->coefficient();
+				}
+			}	
+			if ($othercomps == 0 && defined($extcoef) && defined($cytcoef) && ($cytcoef*$extcoef) < 0) {
+				$transhash->{$rxn->id()} = $rxn;
+				last;
+			}	
+		}
+	}
+	foreach my $rxn (keys(%{$transhash})) {
+		$self->addReactionToModel({
+			direction => "=",
+			reaction => $transhash->{$rxn}
+		});
+	}
 }
 
 sub __upgrade__ {

@@ -461,7 +461,7 @@ sub createSolutionsFromArray {
     my $args = Bio::KBase::ObjectAPI::utilities::args(["data"], { model => $self->fbamodel(),subopt => 0 }, @_ );
 	my $data = $args->{data};
 	my $mdl = $args->{model};
-	my $bio = $mdl->biochemistry();
+	my $bio = $mdl->template()->biochemistry();
 	my $line;
 	for (my $i=(@{$data}-1); $i >= 0; $i--) {
 		my $array = [split(/\t/,$data->[$i])];
@@ -470,6 +470,7 @@ sub createSolutionsFromArray {
 			last;
 		}
 	}
+	my $solcount = @{$self->gapfillingSolutions()};
 	if (defined($line)) {
 		my $array = [split(/\t/,$data->[$line])];
 		my $solutionsArray = [split(/\|/,$array->[1])];   				
@@ -483,7 +484,8 @@ sub createSolutionsFromArray {
 						$gfsolution->solutionCost($count);
 					}
 					$count = 0;
-					$gfsolution = $self->add("gapfillingSolutions",{suboptimal => $args->{subopt}});
+					$solcount++;
+					$gfsolution = $self->add("gapfillingSolutions",{id => $self->id().".gfsol.".$solcount,suboptimal => $args->{subopt}});
 				}
 				my $subarray = [split(/[,;]/,$solutionsArray->[$k])];
 				for (my $j=0; $j < @{$subarray}; $j++) {
@@ -514,11 +516,11 @@ sub createSolutionsFromArray {
 						} else {
 							$sign = "<";
 						}
-						my $rxn = $mdl->biochemistry()->queryObject("reactions",{id => $rxnid});
+						my $rxn = $mdl->template()->biochemistry()->queryObject("reactions",{id => $rxnid});
 						if (!defined($rxn)) {
 							Bio::KBase::ObjectAPI::utilities::ERROR("Could not find gapfilled reaction ".$rxnid."!");
 						}
-						my $cmp = $mdl->biochemistry()->queryObject("compartments",{id => $comp});
+						my $cmp = $mdl->template()->biochemistry()->queryObject("compartments",{id => $comp});
 						if (!defined($rxn)) {
 							Bio::KBase::ObjectAPI::utilities::ERROR("Could not find gapfilled reaction compartment ".$comp."!");
 						}

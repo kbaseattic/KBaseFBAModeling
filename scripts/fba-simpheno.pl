@@ -6,12 +6,12 @@
 ########################################################################
 use strict;
 use warnings;
-use Bio::KBase::workspace::ScriptHelpers qw( get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
+use Bio::KBase::workspace::ScriptHelpers qw( printObjectInfo get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
 use Bio::KBase::fbaModelServices::ScriptHelpers qw(get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Model ID","Phenotype set"];
 my $servercommand = "simulate_phenotypes";
-my $script = "kbfba-simpheno";
+my $script = "fba-simpheno";
 my $translation = {
 	"Model ID" => "model",
 	"Phenotype set" => "phenotypeSet",
@@ -153,5 +153,5 @@ if (!defined($output)) {
 	print "Phenotype simulation failed!\n";
 } else {
 	print "Phenotype simulation successful:\n";
-	printObjectMeta($output);
+	printObjectInfo($output);
 }

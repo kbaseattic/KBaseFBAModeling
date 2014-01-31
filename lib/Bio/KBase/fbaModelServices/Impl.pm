@@ -453,12 +453,12 @@ sub _save_msobject {
 }
 
 sub _get_msobject {
-	my($self,$type,$ws,$id) = @_;
+	my($self,$type,$ws,$id,$options) = @_;
 	my $ref = $ws."/".$id;
 	if ($ws eq "kbase" && $id eq "default" && $type eq "Mapping") {
 		$id = "default-mapping";
 	}
-	my $obj = $self->_KBaseStore()->get_object($ref);
+	my $obj = $self->_KBaseStore()->get_object($ref,$options);
 	if (!defined($self->_cachedBiochemistry()) && $type eq "Biochemistry" && $id eq "default" && $ws eq "kbase") {
 		$self->_cachedBiochemistry($obj);
 	}
@@ -2232,145 +2232,6 @@ sub _parseSingleProtein {
 	return $subunits;
 }
 
-=head3 _addPhenotypeMedia
-
-Definition:
-    ModelSEED::MS::Model = $self->_addPnenotypeMedia(ModelSEED::MS::Model, PhenotypeSet);
-Description:
-    Add transporters for all media in a PhenotypeSet to the input model.
-    Note - this must be called BEFORE _buildFBAObject.
-
-=cut
-
-sub _addPhenotypeMedia {
-    my($self, $model, $pheno, $positiveonly) = @_;
-    my $bio = $model->biochemistry();
-    my $ex = $bio->queryObject("compartments", { name => "Extracellular"});
-    if (!defined($ex)) {
-        my $msg = "Could not find extracellular compartment in biochemistry object";
-        $self->_error($msg,'simulate_phenotypes');
-    }
-    my $ex_uuid = $ex->uuid();
-
-    # Find all of the transporter reactions in the model biochemistry.
-    my $bio_rxns = $bio->reactions();
-	$self->{_bio_transporters} = [];
-	for (my $i=0; $i<@{$bio_rxns}; $i++) {
-	    if ( $bio_rxns->[$i]->isTransport() ) {
-	        push(@{$self->{_bio_transporters}}, $bio_rxns->[$i]);
-	    }
-	}
-    # Find the transporter reactions in the model.
-    my $model_transporters = $model->findTransporterReactions();
-
-    my $mediaChecked = {};
-    for (my $i=0; $i < @{$pheno->{phenotypes}};$i++) {
-		# If we only want to add media for POSITIVE phenotypes we need to check the growth rate
-		# and make sure it isn't 0.
-		if ( $positiveonly && ( $pheno->{phenotypes}->[$i]->[4] eq "0" ) ) {
-		     next;
-		}
-		my $media = $pheno->{phenotypes}->[$i]->[2]."/".$pheno->{phenotypes}->[$i]->[1];
-		if (!defined($mediaChecked->{$media})) {
-		    $mediaChecked->{$media} = 1;
-		    my($mediaobj);
-		    if ($pheno->{phenotypes}->[$i]->[2] eq "NO_WORKSPACE") {
-                $mediaobj = $bio->queryObject("media",{id => $pheno->{phenotypes}->[$i]->[1]});
-		    } else {
-				$mediaobj = $self->_get_msobject("Media",$pheno->{phenotypes}->[$i]->[2],$pheno->{phenotypes}->[$i]->[1]);
-				$bio->add("media",$mediaobj);
-		    }
-
-		    # Add transporters to the model for everything in the media
-		    if ( defined($mediaobj) ) {
-				$model->addTransportersFromMedia( {
-					media => $mediaobj,
-					model_transporters => $model_transporters,
-					bio_transporters => $self->{_bio_transporters},
-					ex_uuid => $ex_uuid
-				} );
-		    };
-		}
-    }
-    return $model;
-}
-
-=head3 _prepPhenotypeSimultationFBA
-
-Definition:
-	 = $self->_prepPhenotypeSimultationFBA(ModelSEED::MS::Model,PhenotypeSet, FBA);
-Description:
-	Translate an input Model and PhenotypeSet into a loaded FBA problem object.
-	
-=cut
-
-sub _prepPhenotypeSimultationFBA {
-	my($self,$model,$pheno,$fba) = @_;
-	my $ftrs = $model->features();
-	my $ftrhash = {};
-	for (my $i=0; $i < @{$ftrs}; $i++) {
-		$ftrhash->{$ftrs->[$i]} = 1;
-	}
-	#Translating phenotypes to fbaformulation
-	my $bio = $model->biochemistry();
-	my $mediaChecked = {};
-	my $existingPhenos = {};
-	my $phenokeys = [];
-	for (my $i=0; $i < @{$pheno->{phenotypes}};$i++) {
-		my $media = $pheno->{phenotypes}->[$i]->[2]."/".$pheno->{phenotypes}->[$i]->[1]; 
-		if (!defined($mediaChecked->{$media})) {
-			$mediaChecked->{$media} = 1;
-			my($mediaobj);
-			if ($pheno->{phenotypes}->[$i]->[2] eq "NO_WORKSPACE") {
-				$mediaobj = $bio->queryObject("media",{id => $pheno->{phenotypes}->[$i]->[1]});
-				$media = $mediaobj->uuid();
-			} else {
-			    # This could be defined from earlier call (to _addPhenotypeMedia) and trying to define it again causes the program to hang (I think).
-			    $mediaobj = $bio->queryObject("media", {id => $pheno->{phenotypes}->[$i]->[1]});
-			    if ( ! defined($mediaobj) ) {
-				$mediaobj = $self->_get_msobject("Media",$pheno->{phenotypes}->[$i]->[2],$pheno->{phenotypes}->[$i]->[1]);
-				$bio->add("media",$mediaobj);
-			    }
-			}
-		}
-		my $genekos = [];
-		foreach my $gene (@{$pheno->{phenotypes}->[$i]->[0]}) {
-			my $geneObj = $model->annotation()->queryObject("features",{id => $gene});
-			if (defined($ftrhash->{$geneObj->uuid()})) {
-				push(@{$genekos},$geneObj->uuid());
-			}
-		}
-		my $addnlcpds = [];
-		foreach my $addnlcpd (@{$pheno->{phenotypes}->[$i]->[3]}) {
-			my $cpdObj = $model->biochemistry()->searchForCompound($addnlcpd);
-			push(@{$addnlcpds},$cpdObj->uuid());
-		}
-		my $phenokey = $media."|".join(";",sort(@{$genekos}))."|".join(";",sort(@{$addnlcpds}));
-		if (!defined($existingPhenos->{$phenokey})) {
-			push(@{$phenokeys},$phenokey);
-			my $newpheno = {
-				label => $i,
-				media_uuid => $media,
-				geneKO_uuids => $genekos,
-				reactionKO_uuids => [],
-				additionalCpd_uuids => $addnlcpds,
-				pH => 7,
-				temperature => 303,
-				observedGrowthFraction => $pheno->{phenotypes}->[$i]->[4]
-			};
-			$fba->add("fbaPhenotypeSimulations",$newpheno);
-			$existingPhenos->{$phenokey} = [$i];
-		} else {
-			push(@{$existingPhenos->{$phenokey}},$i);
-		}
-#		if ($i/1000 eq floor($i/1000)) {
-			#print $i."\n";
-#		}
-	}
-	#print "Unique phenos:".keys(%{$existingPhenos})."\n";
-	return ($fba,$existingPhenos,$phenokeys);
-}
-
 =head3 _queueJob
 
 Definition:
@@ -2387,7 +2248,6 @@ Description:
 
 sub _queueJob {
 	my($self,$args) = @_;
-	if (!defined($args->{localjob})) {
 	my $input = {
 		type => $args->{type},
 		jobdata => $args->{jobdata},
@@ -2395,32 +2255,7 @@ sub _queueJob {
 		"state" => $args->{"state"},
 		auth => $self->_authentication(),
 	};
-	return $self->_workspaceServices()->queue_job($input);
-	} else {
-		$args->{wsurl} = $self->_workspaceURL();
-		my $JSON = JSON::XS->new();
-	    my $data = $JSON->encode($args);
-		my $jobdir = File::Temp::tempdir(DIR =>"/tmp")."/";
-		open(my $fh, ">", $jobdir."jobfile.json") || return;
-		print $fh $data;
-		close($fh);
-		# Change the path below to your dev_container.
-		my $executable = "/kb/dev_container/modules/KBaseFBAModeling/internalScripts/RunJob.sh ".$jobdir;
-		my $cmd = "nohup ".$executable." > ".$jobdir."stdout.log 2> ".$jobdir."stderr.log &";
-		system($cmd);
-		# Make my own job object to return.
-		my $jobobj = { 
-			"id" => "local: ".$jobdir, 
-			"type" => $args->{type}, 
-			"status" => "queued",
-			"owner" => $self->_getUsername(),
-			"queuetime" => "now",
-			"starttime" => "now",
-			"queuecommand" => $args->{queuecommand},
-			"auth" => $self->_authentication()
-		};
-		return $jobobj;
-	}
+	return $self->_jobserv()->queue_job($input);
 }
 
 =head3 _defaultJobState
@@ -6294,24 +6129,13 @@ sub export_object
     $input = $self->_validateargs($input,["reference","type"],{
     	format => "html"
     });
-    my $obj = $self->_KBaseStore()->get_object($input->{type},$input->{reference});
-	my $msobject = {
-		Mapping => 1,
-		Model => 1,
-		Media => 1,
-		Annotation => 1,
-		Biochemistry => 1,
-		FBA => 1,
-		PromConstraints => 1
-	};
-	if ($input->{type} eq "Genome") {
-		$obj = $self->_KBaseStore()->get_object("Annotation",$obj->{annotation_uuid});
-		$output = $obj->export({format => $input->{format}});
-	} elsif (defined($msobject->{$input->{type}})) {
-		$output = $obj->export({format => $input->{format}});
-	} elsif (ref($obj) eq "HASH") {
+ 	my $array = [split(/\//,$input->{reference})];
+    my $obj = $self->_get_msobject($input->{type},$array->[0],$array->[1]);
+	if (ref($obj) eq "HASH") {
 		my $JSON = JSON::XS->new->utf8(1);
     	$output = $JSON->encode($obj);
+	} elsif (ref($obj) =~ m/Bio::KBase::ObjectAPI/) {
+		$output = $obj->export({format => $input->{format}});;
 	} else {
 		$output = $obj;
 	}
@@ -7548,170 +7372,38 @@ sub import_phenotypes
 		biochemistry => "default",
 		name => undef,
 		source => "unknown",
-		type => "unknown"
+		type => "unspecified",
 	});
-    if (!defined($input->{phenotypeSet})) {
-    	$input->{phenotypeSet} = $self->_get_new_id($input->{genome}.".phe.");
-    }
-    if (!defined($input->{name})) {
-    	$input->{name} = $input->{phenotypeSet};
-    }
-    #Retrieving biochemistry
-    my $bio = $self->_get_msobject("Biochemistry","kbase",$input->{biochemistry});
-    #Retrieving specified genome
-    my $genomeObj;
-    if ($input->{genome_workspace} eq "NO_WORKSPACE") {
-    	$genomeObj = $self->_get_genomeObj_from_CDM($input->{genome},0);
-    } else {
-    	$genomeObj = $self->_get_msobject("Genome",$input->{genome_workspace},$input->{genome});
-    }
-    if (!defined($genomeObj)) {
-    	my $msg = "Failed to retrieve genome ".$input->{genome_workspace}."/".$input->{genome};
-    	$self->_error($msg,'import_phenotypes');
-    }
-    my $genehash = {};
-    for (my $i=0; $i < @{$genomeObj->{features}}; $i++) {
-    	my $ftr = $genomeObj->{features}->[$i];
-    	$genehash->{$ftr->{id}} = $ftr->{id};
-    	if ($ftr->{id} =~ m/\.(peg\.\d+)/) {
-    		$genehash->{$1} = $ftr->{id};
-    	}
-    	if (defined($ftr->{aliases})) {
-    		for (my $j=0; $j < @{$ftr->{aliases}}; $j++) {
-    			$genehash->{$ftr->{aliases}->[$j]} = $ftr->{id};
-    		}
-    	}
-    }
-    #Instantiating imported phenotype object
-    my $object = {
-    	id => $input->{phenotypeSet},
-    	genome => $input->{genome},
-    	genome_workspace => $input->{genome_workspace},
-    	phenotypes => [],
-    	source => $input->{source},
-    	name => $input->{name},
-    	type => $input->{type}
-    };
-    #Validating media, genes, and compounds
-    my $missingMedia = {};
-    my $missingGenes = {};
-    my $missingCompounds = {};
-    my $mediaChecked = {};
-    my $cpdChecked = {};
-    my $mediaHash = {};
-    for (my $i=0; $i < @{$input->{phenotypes}}; $i++) {
-    	my $phenotype = $input->{phenotypes}->[$i];
-    	#Validating gene IDs
-    	my $allfound = 1;
-    	for (my $j=0;$j < @{$phenotype->[0]};$j++) {
-    		if (!defined($genehash->{$phenotype->[0]->[$j]})) {
-    			$missingGenes->{$phenotype->[0]->[$j]} = 1;
-    			$allfound = 0;
-    		} else {
-    			$phenotype->[0]->[$j] = $genehash->{$phenotype->[0]->[$j]};
-    		}
-    	}
-    	if ($allfound == 0) {
-    		next;
-    	}
-    	#Validating compounds
-    	$allfound = 1;
-    	for (my $j=0;$j < @{$phenotype->[3]};$j++) {
-    		my $cpd = $bio->searchForCompound($phenotype->[3]->[$j]);
-    		if (!defined($cpd)) {
-    			$missingCompounds->{$phenotype->[3]->[$j]} = 1;
-    			$allfound = 0;
-    		} else {
-    			$phenotype->[3]->[$j] = $cpd->id();
-    		}
-    	}
-    	if ($allfound == 0) {
-    		next;
-    	}
-    	#Validating media
-    	if ($phenotype->[2] eq "NO_WORKSPACE") {
-    		my $media = $bio->queryObject("media",{id => $phenotype->[1]});
-    		if (!defined($media)) {
-    			$missingMedia->{$phenotype->[1]} = 1;
-    			$allfound = 0;
-    		}
-    	} else {
-    		if (!defined($mediaHash->{$phenotype->[2]}->{$phenotype->[1]})) {
-	    		$mediaHash->{$phenotype->[2]}->{$phenotype->[1]} = {
-	    			found => 0,
-	    			locs => []
-	    		};
-    		}
-    		my $loc = @{$object->{phenotypes}};
-    		push(@{$mediaHash->{$phenotype->[2]}->{$phenotype->[1]}->{locs}},$loc);
-    	}
-    	if ($allfound == 0) {
-    		next;
-    	}
-    	#Adding phenotype to object
-    	push(@{$object->{phenotypes}},$phenotype);
-    }
-    my $mediaids = [];
-    my $mediawss = [];
-    my $types = [];
-    foreach my $workspace (keys(%{$mediaHash})) {
-    	foreach my $id (keys(%{$mediaHash->{$workspace}})) {
-    		push(@{$mediaids},$id);
-    		push(@{$mediawss},$workspace);
-    		push(@{$types},"Media");
-    	}
-    }
-    my $objs;
-    try {
-		$objs = $self->_workspaceServices()->get_objects({
-	    	ids => $mediaids,
-	    	types => $types,
-	    	workspaces => $mediawss
-	    });
-	} catch {
-		my $locs = [];
-		foreach my $workspace (keys(%{$mediaHash})) {
-	    	foreach my $id (keys(%{$mediaHash->{$workspace}})) {
-	    		$missingMedia->{$workspace."/".$id} = 1;
-	    		push(@{$locs},@{$mediaHash->{$workspace}->{$id}->{locs}});
-	    	}
-	    }
-	    $locs = [sort(@{$locs})];
-	    for (my $i=(@{$locs}-1); $i >= 0; $i--) {
-	    	splice(@{$object->{phenotypes}}, $locs->[$i], 1);	
-	    }
-	}  
-    #Printing error if any entities could not be validated
-    my $msg = "";
-    if (keys(%{$missingCompounds}) > 0) {
-    	$msg .= "Could not find compounds:".join(";",keys(%{$missingCompounds}))."\n";
-    }
-    if (keys(%{$missingGenes}) > 0) {
-    	$msg .= "Could not find genes:".join(";",keys(%{$missingGenes}))."\n";
-    }
-    if (keys(%{$missingMedia}) > 0) {
-    	$msg .= "Could not find media:".join(";",keys(%{$missingMedia}))."\n";
-    }
-    my $meta = {};
-	if (length($msg) > 0 && $input->{ignore_errors} == 0) {
-		$self->_error($msg,'import_phenotypes');
-	} elsif (length($msg) > 0) {
-		$object->{importErrors} = $msg;
+	my $genomeObj = $self->_get_msobject("Genome",$input->{genome_workspace},$input->{genome});
+	my $kbid = $self->_get_new_id($genomeObj->id().".phe.");
+	my $uid = $input->{genome}.".phe.".$input->{type};
+	if (!defined($input->{phenotypeSet})) {
+		$input->{phenotypeSet} = $uid;
 	}
-    #Saving object to database
-    my $objmeta = $self->_workspaceServices()->save_object({
-		id => $input->{phenotypeSet},
-		type => "PhenotypeSet",
-		data => $object,
-		workspace => $input->{workspace},
-		command => "import_phenotypes",
-		auth => $self->_authentication()
+	if (!defined($input->{name})) {
+		$input->{name} = $input->{phenotypeSet};
+	}
+	
+	my $phenoset = Bio::KBase::ObjectAPI::KBasePhenotypes::PhenotypeSet->new({
+		id => $kbid,
+		source_id => $input->{phenotypeSet},
+		source => $input->{source},
+		name => $input->{name},
+		genome_ref => $genomeObj->_reference(),
+		phenotypes => [],
+		importErrors => "",
+		type => $input->{type}
 	});
-	if (!defined($objmeta)) {
-		my $msg = "Unable to save object:PhenotypeSet/".$input->{workspace}."/".$input->{id};
-		$self->_error($msg,'import_phenotypes');
+	$phenoset->parent($self->_KBaseStore());
+	my $bio = $self->_get_msobject("Biochemistry","kbase",$input->{biochemistry});
+	$phenoset->import_phenotype_table({
+		data => $input->{phenotypes},
+		biochem => $bio
+	});
+	if (length($phenoset->importErrors()) > 0 && $input->{ignore_errors} == 0) {
+		$self->_error($phenoset->importErrors());
 	}
-	$output = $objmeta;
+	$output = $phenoset->save($input->{workspace}."/".$input->{phenotypeSet});
 	$self->_clearContext();
     #END import_phenotypes
     my @_bad_returns;
@@ -7936,64 +7628,30 @@ sub simulate_phenotypes
 		phenotypeSet_workspace => $input->{workspace},
 		model_workspace => $input->{workspace},
 		formulation => undef,
-		notes => "",
 		phenotypeSimultationSet => $input->{phenotypeSet}.".simulation",
-		overwrite => 0,
 		all_transporters => 0,
 		positive_transporters => 0
 	});
-	#Retrieving phenotypes
 	my $pheno = $self->_get_msobject("PhenotypeSet",$input->{phenotypeSet_workspace},$input->{phenotypeSet});
-	#Retrieving model
-	my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
-	#Creating FBAFormulation Object
+	my $model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model});
     if ( $input->{all_transporters} ) {
-	    $model = $self->_addPhenotypeMedia($model, $pheno, 0);
+		$model->addPhenotypeTransporters({phenotypes => $pheno,positiveonly => 0});
 	} elsif ( $input->{positive_transporters} ) {
-	    $model = $self->_addPhenotypeMedia($model, $pheno, 1);
+		$model->addPhenotypeTransporters({phenotypes => $pheno,positiveonly => 0});
 	}
 	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
-	my $fba = $self->_buildFBAObject($input->{formulation},$model,"NO_WORKSPACE",Data::UUID->new()->create_str());
-	#Constructing FBA simulation object from 
-	($fba,my $existingPhenos,my $phenokeys) = $self->_prepPhenotypeSimultationFBA($model,$pheno,$fba);
-	#Running FBA
-	my $fbaResult = $fba->runFBA();
-	if (!defined($fbaResult) || @{$fbaResult->fbaPhenotypeSimultationResults()} == 0) {
-    	my $msg = "Simulation of phenotypes failed to return results from FBA!";
-    	$self->_error($msg,'simulate_phenotypes');
-    }
-	#Converting FBA results into simulated phenotype
-    my $object = {
-    	id => $input->{phenotypeSimultationSet},
-    	phenotypeSet_workspace => $input->{phenotypeSet_workspace},
-    	phenotypeSet => $input->{phenotypeSet},
-    	model => $input->{model},
-    	model_workspace => $input->{model_workspace},
-    	phenotypeSimulations => []
-    };
-    my $phenoresults = $fbaResult->fbaPhenotypeSimultationResults();
-    for (my $i=0; $i < @{$phenoresults};$i++) {
-    	my $phenoResult = $phenoresults->[$i];
-    	my $phenosim = [
-    		$pheno->{phenotypes}->[$existingPhenos->{$phenokeys->[$i]}->[0]],
-    		$phenoResult->simulatedGrowth(),
-    		$phenoResult->simulatedGrowthFraction(),
-    		$phenoResult->class(),
-    		$existingPhenos->{$phenokeys->[$i]}
-    	];
-    	push(@{$object->{phenotypeSimulations}},$phenosim);
-    }
-    #Saving object to database
-    my $objmeta = $self->_workspaceServices()->save_object({
-		id => $input->{phenotypeSimultationSet},
-		type => "PhenotypeSimulationSet",
-		data => $object,
-		workspace => $input->{workspace},
-		command => "simulate_phenotypes",
-		auth => $self->_authentication(),
-		overwrite => $input->{overwrite}
-	});
-	$output = $objmeta;
+	my $fba = $self->_buildFBAObject($input->{formulation},$model);
+	$fba->phenotypeset_ref($pheno->_reference());
+	$fba->runFBA();
+	if (!defined($fba->objectiveValue()) || !defined($fba->phenotypesimulationset())) {
+    	$self->_error("Simulation of phenotypes failed to return results from FBA!");
+	}
+	if (!defined($input->{phenotypeSimulationSet})) {
+		$input->{phenotypeSimulationSet} = $fba->phenotypesimulationset()->id();
+	}
+	$output = $self->_save_msobject($fba->phenotypesimulationset(),"PhenotypeSimulationSet",$input->{workspace},$input->{phenotypeSimultationSet});
+	$fba->phenotypesimulationset_ref($fba->phenotypesimulationset()->_reference());
+    my $meta = $self->_save_msobject($fba,"FBA",$input->{workspace},$fba->id(),{hidden => 1});
 	$self->_clearContext();
     #END simulate_phenotypes
     my @_bad_returns;
@@ -8231,27 +7889,11 @@ sub export_phenotypeSimulationSet
     my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
     my($output);
     #BEGIN export_phenotypeSimulationSet
-    $self->_setContext($ctx,$input);
-	$input = $self->_validateargs($input,["phenotypeSimulationSet","workspace","format"],{});
-	my $obj = $self->_get_msobject("PhenotypeSimulationSet",$input->{workspace},$input->{phenotypeSimulationSet});
-	if ($input->{format} eq "readable") {
-		$output = "Base media\tAdditional compounds\tGene KO\tGrowth\tSimulated growth\tSimulated growth fraction\tClass\n";
-		for (my $i=0; $i < @{$obj->{phenotypeSimulations}}; $i++) {
-			my $phenosim = $obj->{phenotypeSimulations}->[$i];
-			$output .= 	$phenosim->[0]->[1]."\t".
-						join(";",@{$phenosim->[0]->[3]})."\t".
-						join(";",@{$phenosim->[0]->[0]})."\t".
-						$phenosim->[0]->[4]."\t".
-						$phenosim->[1]."\t".
-						$phenosim->[2]."\t".
-						$phenosim->[3]."\n";
-		}
-	} elsif ($input->{format} eq "html") {
-		$output = $self->_phenotypeSimulationSet_to_html($obj);
-	} else {
-		my $msg = "Specified format ".$input->{format}." not recognized!\n";
-		$self->_error($msg,'export_phenotypeSimulationSet');
-	}
+	$self->_setContext($ctx,$input);
+    $input = $self->_validateargs($input,["phenotypeSimulationSet","workspace","format"],{});
+    my $phenosim = $self->_get_msobject("PhenotypeSimulation",$input->{workspace},$input->{phenotypeSimulationSet});
+    $output = $phenosim->export({format => $input->{format}});
+    $self->_clearContext();
 	$self->_clearContext();
     #END export_phenotypeSimulationSet
     my @_bad_returns;
@@ -8389,50 +8031,33 @@ sub integrate_reconciliation_solutions
 		rxnprobs => undef,
 		rxnprobs_workspace => $input->{workspace}
     });
-    my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
+    my $model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model});
     my($rxnprobs);
     my($rxnprobsGPRArray);
-
     if ( defined($input->{rxnprobs}) ) {
-	$rxnprobs = $self->_get_msobject("RxnProbs", $input->{rxnprobs_workspace}, $input->{rxnprobs});
-	$rxnprobsGPRArray = $self->_buildRxnProbsGPRArray($rxnprobs);
+		$rxnprobs = $self->_get_msobject("RxnProbs", $input->{rxnprobs_workspace}, $input->{rxnprobs});
+		$rxnprobsGPRArray = $self->_buildRxnProbsGPRArray($rxnprobs);
     }
     foreach my $id (@{$input->{gapfillSolutions}}) {
-    	if ($id =~ m/(.+)\.solution\.(.+)/) {
+    	if ($id =~ m/^(.+\.gf\.\d+)\./) {
     		my $gfid = $1;
-    		my $solid = $2;
-    		my $gfs = $model->unintegratedGapfillings();
-    		foreach my $gf (@{$gfs}) {
-    			if ($gf->uuid() eq $gfid) {
-	    			$model->integrateGapfillSolution({
-						gapfillingFormulation => $gf,
-						solutionNum => $solid,
-						rxnProbGpr => $rxnprobsGPRArray
-					});
-					$self->_save_msobject($gf,"GapFill","NO_WORKSPACE",$gf->uuid(),"integrate_reconciliation_solutions",1,$gf->uuid());
-					last;
-    			}
-    		}
+			$model->integrateGapfillSolution({
+				gapfill=> $gfid,
+				solution => $id,
+				rxnProbGpr => $rxnprobsGPRArray
+			});
     	}
     }
     foreach my $id (@{$input->{gapgenSolutions}}) {
-    	if ($id =~ m/(.+)\.solution\.(.+)/) {
-    		my $ggid = $1;
-    		my $solid = $2;
-    		my $ggs = $model->unintegratedGapgens();
-    		foreach my $gg (@{$ggs}) {
-    			if ($gg->uuid() eq $ggid) {
-	    			$model->integrateGapgenSolution({
-						gapgenFormulation => $gg,
-						solutionNum => $solid,
-					});
-					$self->_save_msobject($gg,"GapGen","NO_WORKSPACE",$gg->uuid(),"integrate_reconciliation_solutions",1,$gg->uuid());
-    				last;
-    			}
-    		}
-    	}
+    	if ($id =~ m/^(.+\.gg\.\d+)\./) {
+	    	my $ggid = $1;
+			$model->integrateGapfillSolution({
+				gapgen=> $ggid,
+				solution => $id,
+			});
+	    }
     }
-    $modelMeta = $self->_save_msobject($model,"Model",$input->{workspace},$input->{out_model},"integrate_reconciliation_solutions",$input->{overwrite});
+    $modelMeta = $self->_save_msobject($model,"FBAModel",$input->{workspace},$input->{out_model});
     $self->_clearContext();
     #END integrate_reconciliation_solutions
     my @_bad_returns;
@@ -8653,24 +8278,12 @@ sub queue_runfba
 		model_workspace => $input->{workspace},
 		fba => undef,
 	});
-	if (!defined($input->{fba})) {
-		$input->{fba} = $self->_get_new_id($input->{model}.".fba.");
-	}
-	#Creating FBAFormulation Object
-	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
-	my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
-	my $fba = $self->_buildFBAObject($input->{formulation},$model,$input->{workspace},$input->{fba});
-	#Saving FBAFormulation to database
-	my $fbameta = $self->_save_msobject($fba,"FBA",$input->{workspace},$input->{fba},"queue_runfba");
 	$job = $self->_queueJob({
-		type => "FBA",
-		jobdata => {
-			postprocess_command => undef,
-			postprocess_args => undef,
-			fbaref => $fbameta->[8]
-		},
-		queuecommand => "queue_runfba",
-		"state" => $self->_defaultJobState()
+		type => "KBaseFBAModeling",
+		jobdata => $input,
+		queuecommand => "runfba",
+		"state" => "queued",
+		auth => $self->_authentication(),
 	});
 	$self->_clearContext();
     #END queue_runfba
@@ -8952,40 +8565,7 @@ sub queue_gapfill_model
 		completeGapfill => 0,
 		solver => undef
 	});
-	$input->{formulation}->{target_reactions} = $input->{target_reactions};
-	$input->{formulation}->{timePerSolution} = $input->{timePerSolution};
-	$input->{formulation}->{totalTimeLimit} = $input->{totalTimeLimit};
-	$input->{formulation}->{completeGapfill} = $input->{completeGapfill};
-	if (@{$input->{target_reactions}} > 0) {
-		$input->{completeGapfill} = 1;
-	}
-	if ($input->{completeGapfill} == 1) {
-		$input->{formulation}->{num_solutions} = 1;
-	}
-	$input->{formulation} = $self->_setDefaultGapfillFormulation($input->{formulation});
-	my $model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model});
-	my $gfid = $self->_get_new_id($model->id().".gf.");	
-	my $media = $self->_get_msobject("Media",$input->{formulation}->{formulation}->{media_workspace},$input->{formulation}->{formulation}->{media});
-	if (!defined($input->{out_model})) {
-		$input->{out_model} = $input->{model};
-	}
-	my $gapfill = Bio::KBase::ObjectAPI::KBaseFBA::Gapfilling->new({
-		id => $gfid,
-		fbamodel_ref => $model->_reference(),
-		reactionMultipliers => {},
-		gapfillingSolutions => []
-	});
-	my $gfMeta = $self->_save_msobject($gapfill,"Gapfilling",$input->{workspace},$gapfill->id(),{hidden => 1});
-	$model->add("gapfillings",{
-		gapfill_id => $gapfill->id(),
-		gapfill_ref => $input->{workspace}."/".$gapfill->id(),
-		integrated => 0,
-		integrated_solution => -1,
-		media_ref => $media->_reference()
-	});
-	my $modelMeta = $self->_save_msobject($model,"FBAModel",$input->{workspace},$input->{out_model});
-	$input->{gfid} = $gfid;
-	$job = $self->_jobserv()->queue_job({
+	$job = $self->_queueJob({
 		type => "KBaseFBAModeling",
 		jobdata => $input,
 		queuecommand => "gapfill_model",
@@ -9298,24 +8878,10 @@ sub gapfill_model
 	}
 	my ($gapfill,$fba) = $self->_buildGapfillObject($input->{formulation},$model,$input->{gfid});
 	if (defined($input->{solver})) {
-    	$fba->parameters()->{MFASolver} = $input->{solver};
-    }
-    $gapfill->fbamodel_ref($model->_reference());
-    if (!defined($input->{gfid})) {
-		my $fbameta = $self->_save_msobject($fba,"FBA",$input->{workspace},$fba->id());
-		$gapfill->fba_ref($fba->_reference());
-		my $gfMeta = $self->_save_msobject($gapfill,"Gapfilling",$input->{workspace},$gapfill->id());
-		$model->add("gapfillings",{
-			gapfill_id => $gapfill->_reference(),
-			gapfill_ref => $input->{workspace}."/".$gapfill->id(),
-			integrated => 0,
-			integrated_solution => -1,
-			media_ref => $fba->media()->_reference()
-		});
-		$modelMeta = $self->_save_msobject($model,"FBAModel",$input->{workspace},$input->{out_model});
-		$gapfill->fbamodel_ref($model->_reference());
+    	$fba->parameters()->{MFASolver} = uc($input->{solver});
     }
 	$fba->runFBA();
+	#Error checking the FBA and gapfilling solution
 	if (!defined($fba->objectiveValue())) {
 		$self->_error("Gapfilling failed to produce any results. Check gapfilling infrastructure!");
 	}
@@ -9335,7 +8901,7 @@ sub gapfill_model
 			}
 			$self->_error($msg);
 		} elsif ($line =~ /FAILED/ && $line =~ /bio\d+/) {
-			$self->_error("Gapfilling failed with no solutions!",'queue_gapfill_model');
+			$self->_error("Gapfilling failed with no solutions!");
 		}
 	}
 	$gapfill->parseGapfillingResults($fba);
@@ -9344,7 +8910,17 @@ sub gapfill_model
 	}
 	my $meta = $self->_save_msobject($fba,"FBA",$input->{workspace},$fba->id());
 	$gapfill->fba_ref($fba->_reference());
-	$meta = $self->_save_msobject($gapfill,"GapFill",$input->{workspace},$gapfill->id());
+	$meta = $self->_save_msobject($gapfill,"Gapfilling",$input->{workspace},$gapfill->id(),{hidden => 1});
+	#Since gapfilling can take hours, we retrieve the model again in case it changed since accessed previously
+	$model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model},{refreshcache => 1});
+	$model->add("gapfillings",{
+		id => $gapfill->id(),
+		gapfill_id => $gapfill->id(),
+		gapfill_ref => $gapfill->_reference(),
+		integrated => 0,
+		media_ref => $fba->media()->_reference()
+	});
+	#If specified, we now integrate the first solution of the gapfilling into the model
 	if ($input->{integrate_solution} == 1) {
 		my ($rxnprobsGPRArray);
 		my ($rxnprobs);
@@ -9355,12 +8931,11 @@ sub gapfill_model
 		    $rxnprobsGPRArray = $self->_buildRxnProbsGPRArray($rxnprobs);
 		}
 		my $report = $model->integrateGapfillSolution({
-			gapfillingFormulation => $gapfill,
-			solutionNum => 0,
+			gapfill => $gapfill->id(),
 			rxnProbGpr => $rxnprobsGPRArray
 		});
-		$modelMeta = $self->_save_msobject($model,"FBAModel",$input->{workspace},$input->{out_model});
 	}
+	$modelMeta = $self->_save_msobject($model,"FBAModel",$input->{workspace},$input->{out_model});
 	$self->_clearContext();
     #END gapfill_model
     my @_bad_returns;
@@ -9602,56 +9177,13 @@ sub queue_gapgen_model
 		overwrite => 0,
 		solver => undef
 	});
-	$input->{formulation}->{timePerSolution} = $input->{timePerSolution};
-	$input->{formulation}->{totalTimeLimit} = $input->{totalTimeLimit};
-	#Checking is this is a postprocessing or initialization call
-	if (!defined($input->{gapGen})) {
-		$input->{formulation} = $self->_setDefaultGapGenFormulation($input->{formulation});
-		#TODO: This block should be in a "safe save" block to prevent race conditions
-		my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
-		my $gapgen = $self->_buildGapGenObject($input->{formulation},$model);	
-		$input->{gapGen} = $gapgen->uuid();
-		push(@{$model->unintegratedGapgen_uuids()},$gapgen->uuid());
-		my $modelmeta = $self->_save_msobject($model,"Model",$input->{workspace},$input->{out_model},"queue_gapgen_model");
-		#End "safe save" block
-		$gapgen->fbaFormulation()->model_uuid($model->uuid());
-		my $fbameta = $self->_save_msobject($gapgen->fbaFormulation(),"FBA","NO_WORKSPACE",$gapgen->fbaFormulation()->uuid(),"queue_gapgen_model",0,$gapgen->fbaFormulation()->uuid());
-		$gapgen->model_uuid($model->uuid());
-		my $gapgenmeta = $self->_save_msobject($gapgen,"GapGen","NO_WORKSPACE",$gapgen->uuid(),"queue_gapgen_model",0,$gapgen->uuid());
-	    my $jobdata = {
-			postprocess_command => "queue_gapgen_model",
-			postprocess_args => [$input],
-			fbaref => $gapgen->fbaFormulation()->uuid()
-		};
-	    if (defined($input->{solver})) {
-			$jobdata->{solver} = $input->{solver};
-		}
-	    $job = $self->_queueJob({
-			type => "FBA",
-			jobdata => $jobdata,
-			queuecommand => "queue_gapgen_model",
-			"state" => $self->_defaultJobState()
-		});
-	} else {
-		my $gapgen = $self->_get_msobject("GapGen","NO_WORKSPACE",$input->{gapGen});
-		if (!defined($gapgen->fbaFormulation()->fbaResults())) {
-			my $msg = "Gap generation failed!";
-			$self->_error($msg,'queue_gapgen_model');
-		}
-		$gapgen->parseGapgenResults($gapgen->fbaFormulation()->fbaResults()->[0]);
-		if ($input->{integrate_solution} == 1 && defined($gapgen->gapgenSolutions()->[0])) {
-			#TODO: This block should be in a "safe save" block to prevent race conditions
-			my $model = $self->_get_msobject("Model",$input->{model_workspace},$input->{model});
-			$model->integrateGapgenSolution({
-				gapgenFormulation => $gapgen,
-				solutionNum => 0
-			});
-			my $modelmeta = $self->_save_msobject($model,"Model",$input->{workspace},$input->{out_model},"queue_gapgen_model");			
-			#End "safe save" block
-		}
-		my $meta = $self->_save_msobject($gapgen,"GapGen","NO_WORKSPACE",$gapgen->uuid(),"queue_gapgen_model",1,$gapgen->uuid());
-		$job = {};
-	}
+	$job = $self->_queueJob({
+		type => "KBaseFBAModeling",
+		jobdata => $input,
+		queuecommand => "gapgen_model",
+		"state" => "queued",
+		auth => $self->_authentication(),
+	});
 	$self->_clearContext();
     #END queue_gapgen_model
     my @_bad_returns;
@@ -9662,6 +9194,307 @@ sub queue_gapgen_model
 							       method_name => 'queue_gapgen_model');
     }
     return($job);
+}
+
+
+
+
+=head2 gapgen_model
+
+  $modelMeta = $obj->gapgen_model($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a gapgen_model_params
+$modelMeta is an object_metadata
+gapgen_model_params is a reference to a hash where the following keys are defined:
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
+	formulation has a value which is a GapgenFormulation
+	phenotypeSet has a value which is a phenotype_set_id
+	phenotypeSet_workspace has a value which is a workspace_id
+	integrate_solution has a value which is a bool
+	out_model has a value which is a fbamodel_id
+	workspace has a value which is a workspace_id
+	gapGen has a value which is a gapgen_id
+	auth has a value which is a string
+	timePerSolution has a value which is an int
+	totalTimeLimit has a value which is an int
+	overwrite has a value which is a bool
+fbamodel_id is a string
+workspace_id is a string
+GapgenFormulation is a reference to a hash where the following keys are defined:
+	formulation has a value which is an FBAFormulation
+	refmedia has a value which is a media_id
+	refmedia_workspace has a value which is a workspace_id
+	num_solutions has a value which is an int
+	nomediahyp has a value which is a bool
+	nobiomasshyp has a value which is a bool
+	nogprhyp has a value which is a bool
+	nopathwayhyp has a value which is a bool
+FBAFormulation is a reference to a hash where the following keys are defined:
+	media has a value which is a media_id
+	additionalcpds has a value which is a reference to a list where each element is a compound_id
+	prommodel has a value which is a prommodel_id
+	prommodel_workspace has a value which is a workspace_id
+	media_workspace has a value which is a workspace_id
+	objfraction has a value which is a float
+	allreversible has a value which is a bool
+	maximizeObjective has a value which is a bool
+	objectiveTerms has a value which is a reference to a list where each element is a term
+	geneko has a value which is a reference to a list where each element is a feature_id
+	rxnko has a value which is a reference to a list where each element is a reaction_id
+	bounds has a value which is a reference to a list where each element is a bound
+	constraints has a value which is a reference to a list where each element is a constraint
+	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
+	defaultmaxflux has a value which is a float
+	defaultminuptake has a value which is a float
+	defaultmaxuptake has a value which is a float
+	simplethermoconst has a value which is a bool
+	thermoconst has a value which is a bool
+	nothermoerror has a value which is a bool
+	minthermoerror has a value which is a bool
+media_id is a string
+compound_id is a string
+prommodel_id is a string
+bool is an int
+term is a reference to a list containing 3 items:
+	0: (coefficient) a float
+	1: (varType) a string
+	2: (variable) a string
+feature_id is a string
+reaction_id is a string
+bound is a reference to a list containing 4 items:
+	0: (min) a float
+	1: (max) a float
+	2: (varType) a string
+	3: (variable) a string
+constraint is a reference to a list containing 4 items:
+	0: (rhs) a float
+	1: (sign) a string
+	2: (terms) a reference to a list where each element is a term
+	3: (name) a string
+phenotype_set_id is a string
+gapgen_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a gapgen_model_params
+$modelMeta is an object_metadata
+gapgen_model_params is a reference to a hash where the following keys are defined:
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
+	formulation has a value which is a GapgenFormulation
+	phenotypeSet has a value which is a phenotype_set_id
+	phenotypeSet_workspace has a value which is a workspace_id
+	integrate_solution has a value which is a bool
+	out_model has a value which is a fbamodel_id
+	workspace has a value which is a workspace_id
+	gapGen has a value which is a gapgen_id
+	auth has a value which is a string
+	timePerSolution has a value which is an int
+	totalTimeLimit has a value which is an int
+	overwrite has a value which is a bool
+fbamodel_id is a string
+workspace_id is a string
+GapgenFormulation is a reference to a hash where the following keys are defined:
+	formulation has a value which is an FBAFormulation
+	refmedia has a value which is a media_id
+	refmedia_workspace has a value which is a workspace_id
+	num_solutions has a value which is an int
+	nomediahyp has a value which is a bool
+	nobiomasshyp has a value which is a bool
+	nogprhyp has a value which is a bool
+	nopathwayhyp has a value which is a bool
+FBAFormulation is a reference to a hash where the following keys are defined:
+	media has a value which is a media_id
+	additionalcpds has a value which is a reference to a list where each element is a compound_id
+	prommodel has a value which is a prommodel_id
+	prommodel_workspace has a value which is a workspace_id
+	media_workspace has a value which is a workspace_id
+	objfraction has a value which is a float
+	allreversible has a value which is a bool
+	maximizeObjective has a value which is a bool
+	objectiveTerms has a value which is a reference to a list where each element is a term
+	geneko has a value which is a reference to a list where each element is a feature_id
+	rxnko has a value which is a reference to a list where each element is a reaction_id
+	bounds has a value which is a reference to a list where each element is a bound
+	constraints has a value which is a reference to a list where each element is a constraint
+	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
+	defaultmaxflux has a value which is a float
+	defaultminuptake has a value which is a float
+	defaultmaxuptake has a value which is a float
+	simplethermoconst has a value which is a bool
+	thermoconst has a value which is a bool
+	nothermoerror has a value which is a bool
+	minthermoerror has a value which is a bool
+media_id is a string
+compound_id is a string
+prommodel_id is a string
+bool is an int
+term is a reference to a list containing 3 items:
+	0: (coefficient) a float
+	1: (varType) a string
+	2: (variable) a string
+feature_id is a string
+reaction_id is a string
+bound is a reference to a list containing 4 items:
+	0: (min) a float
+	1: (max) a float
+	2: (varType) a string
+	3: (variable) a string
+constraint is a reference to a list containing 4 items:
+	0: (rhs) a float
+	1: (sign) a string
+	2: (terms) a reference to a list where each element is a term
+	3: (name) a string
+phenotype_set_id is a string
+gapgen_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+
+
+=item Description
+
+
+
+=back
+
+=cut
+
+sub gapgen_model
+{
+    my $self = shift;
+    my($input) = @_;
+
+    my @_bad_arguments;
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to gapgen_model:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'gapgen_model');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($modelMeta);
+    #BEGIN gapgen_model
+    $self->_setContext($ctx,$input);
+	$input = $self->_validateargs($input,["model","workspace"],{
+		model_workspace => $input->{workspace},
+		formulation => undef,
+		phenotypeSet => undef,
+		phenotypeSet_workspace => $input->{workspace},
+		integrate_solution => 0,
+		out_model => $input->{model},
+		gapGen => undef,
+		solver => undef
+	});
+	$input->{formulation}->{timePerSolution} = $input->{timePerSolution};
+	$input->{formulation}->{totalTimeLimit} = $input->{totalTimeLimit};
+	$input->{formulation} = $self->_setDefaultGapGenFormulation($input->{formulation});
+	my $model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model});
+	if (!defined($input->{out_model})) {
+		$input->{out_model} = $input->{model};
+	}
+	my ($gapgen,$fba) = $self->_buildGapGenObject($input->{formulation},$model,$input->{ggid});
+	if (defined($input->{solver})) {
+    	$fba->parameters()->{MFASolver} = uc($input->{solver});
+    }
+    $gapgen->fbamodel_ref($model->_reference());
+    if (!defined($input->{ggid})) {
+		my $fbameta = $self->_save_msobject($fba,"FBA",$input->{workspace},$fba->id());
+		$gapgen->fba_ref($fba->_reference());
+		my $ggMeta = $self->_save_msobject($gapgen,"Gapgeneration",$input->{workspace},$gapgen->id(),{hidden => 1});
+		$model->add("gapgens",{
+			id => $gapgen->_reference(),
+			gapgen_id => $gapgen->_reference(),
+			gapgen_ref => $input->{workspace}."/".$gapgen->id(),
+			integrated => 0,
+			media_ref => $fba->media()->_reference()
+		});
+		$modelMeta = $self->_save_msobject($model,"FBAModel",$input->{workspace},$input->{out_model});
+ 		$gapgen->fbamodel_ref($model->_reference());
+    }
+	$fba->runFBA();
+	if (!defined($fba->objectiveValue())) {
+		$self->_error("Gapgeneration failed to produce any results. Check gapgeneration infrastructure!");
+	}
+	$gapgen->parseGapgenResults($gapgen->fba());
+	#We must resave the FBA and gapgen as these objects now have populated solutions
+	my $fbameta = $self->_save_msobject($fba,"FBA",$input->{workspace},$fba->id());
+	$gapgen->fba_ref($fba->_reference());
+	my $ggMeta = $self->_save_msobject($gapgen,"Gapgeneration",$input->{workspace},$gapgen->id(),{hidden => 1});
+	#Since gapgen can take hours, we retrieve the model again in case it changed since accessed previously
+	my $model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model},{refreshcache => 1});
+	$model->add("gapgens",{
+		id => $gapgen->id(),
+		gapgen_id => $gapgen->id(),
+		gapgen_ref => $gapgen->_reference(),
+		integrated => 0,
+		media_ref => $fba->media()->_reference()
+	});
+	#If specified, we now integrate the first solution of the gapgen into the model
+	if ($input->{integrate_solution} == 1 && defined($gapgen->gapgenSolutions()->[0])) {
+		$model->integrateGapgenSolution({
+			gapgen => $gapgen->id(),
+		});
+	}
+	my $modelmeta = $self->_save_msobject($model,"FBAModel",$input->{workspace},$input->{out_model});
+	$self->_clearContext();
+    #END gapgen_model
+    my @_bad_returns;
+    (ref($modelMeta) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"modelMeta\" (value was \"$modelMeta\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to gapgen_model:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'gapgen_model');
+    }
+    return($modelMeta);
 }
 
 
@@ -15287,23 +15120,24 @@ sub compare_models
 	my $modelhash = {};
 	my $rxnhash = {};
 	my $SubsysRoles = {};
-	my $map = $self->_get_msobject("Mapping","kbase","default-mapping");
+	my $template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","GramNegModelTemplate");
+	my $map = $template->mapping();
 	my $rxnroles = {};
-	my $complexes = $map->complexes();
-	for (my $i=0; $i < @{$complexes}; $i++) {
-		my $complex = $complexes->[$i];
-		my $cpxroles = $complex->complexroles();
-		my $cpxrxns = $complex->reaction_uuids();
-		for (my $j=0; $j < @{$cpxroles}; $j++) {
-			my $role = $cpxroles->[$j]->role();
-			if (defined($role)) {
-				for (my $k=0; $k < @{$cpxrxns}; $k++) {
-					push(@{$rxnroles->{$cpxrxns->[$k]}},$role);
+	my $rxns = $template->templateReactions();
+	for (my $k=0; $k < @{$rxns}; $k++) {
+		my $rxn = $rxns->[$k];
+		for (my $m=0; $m < @{$rxn->complexs()}; $m++) {
+			my $cpx = $rxn->complexs()->[$m];
+			my $cpxroles = $cpx->complexroles();
+			for (my $j=0; $j < @{$cpxroles}; $j++) {
+				my $role = $cpxroles->[$j]->role();
+				if (defined($role)) {
+					push(@{$rxnroles->{$rxn->reaction()->id()}},$role);
 				}
 			}
 		}
 	}
-	my $rolesets = $map->rolesets();
+	my $rolesets = $map->subsystems();
 	for (my $i=0; $i < @{$rolesets}; $i++) {
 		my $roleset = $rolesets->[$i];
 		my $roles = $roleset->roles();
@@ -15314,27 +15148,31 @@ sub compare_models
 	for (my $i=0; $i < @{$params->{models}}; $i++) {
 		my $mdl = $params->{models}->[$i];
 		my $ws = $params->{workspaces}->[$i];
-		my $model = $self->_get_msobject("Model",$ws,$mdl);
+		my $model = $self->_get_msobject("FBAModel",$ws,$mdl);
 		if (defined($model)) {
 			$modelhash->{$ws."/".$mdl} = @{$output->{model_comparisons}};
 			my $modelcomp = {
 				model => $mdl,
 				workspace => $ws,
 				model_name => $model->name(),
-				genome => $model->annotation()->genomes()->[0]->id(),
-				genome_name => $model->annotation()->genomes()->[0]->name(),
+				genome => "None",
+				genome_name => "None",
 				gapfilled_reactions => 0,
 				core_reactions => 0,
 				noncore_reactions => 0
 			};
+			if (defined($model->genome_ref())) {
+				$modelcomp->{genome} = $model->genome()->id();
+				$modelcomp->{genome} = $model->genome()->scientific_name();
+			}
 			my $mdlrxns = $model->modelreactions();
 			for (my $j=0; $j < @{$mdlrxns}; $j++) {
 				my $mdlrxn = $mdlrxns->[$j];
 				if (!defined($rxnhash->{$mdlrxn->reaction()->id()}->{$mdlrxn->modelcompartment()->compartment()->id()})) {
 					$rxnhash->{$mdlrxn->reaction()->id()}->{$mdlrxn->modelcompartment()->compartment()->id()} = @{$output->{reaction_comparisons}};
 					my $roles = [];
-					if (defined($rxnroles->{$mdlrxn->reaction()->uuid()})) {
-						$roles = $rxnroles->{$mdlrxn->reaction()->uuid()};
+					if (defined($rxnroles->{$mdlrxn->reaction()->id()})) {
+						$roles = $rxnroles->{$mdlrxn->reaction()->id()};
 					}
 					my $rolenames = [];
 					my $subsystems = [];
@@ -15524,16 +15362,18 @@ sub compare_genomes
     my($output);
     #BEGIN compare_genomes
     $self->_setContext($ctx,$params);
-	$params = $self->_validateargs($params,["genomes","workspaces"],{});
+	$params = $self->_validateargs($params,["genomes","workspaces"],{
+		mapping => "kbase/default-mapping"
+	});
 	$output = {
 		genome_comparisons => [],
-		function_comparisons => []
+		function_comparisons => [],
 	};
 	my $SubsysRoles = {};
 	my $GenomeHash = {};
 	my $FunctionHash = {};
 	my $map = $self->_get_msobject("Mapping","kbase","default-mapping");
-	my $rolesets = $map->rolesets();
+	my $rolesets = $map->subsystems();
 	for (my $i=0; $i < @{$rolesets}; $i++) {
 		my $roleset = $rolesets->[$i];
 		my $roles = $roleset->roles();
@@ -15548,25 +15388,23 @@ sub compare_genomes
 		if (defined($genome)) {
 			$GenomeHash->{$ws."/".$gen} = @{$output->{genome_comparisons}};
 			my $taxonomy = "Unknown";
-			if (defined($genome->{taxonomy})) {
-				$taxonomy = $genome->{taxonomy};
+			if (defined($genome->taxonomy())) {
+				$taxonomy = $genome->taxonomy();
 			}
-			my $numfeature = @{$genome->{features}};
+			my $numfeature = @{$genome->features()};
 			my $genomecomp = {
 				genome => $gen,
 				workspace => $ws,
-				genome_name => $genome->{scientific_name},
+				genome_name => $genome->scientific_name(),
 				taxonomy => $taxonomy,
 				features => $numfeature,
 				core_functions => 0,
 				noncore_functions => 0
 			};
-			for (my $j=0; $j < @{$genome->{features}}; $j++) {
-				my $feature = $genome->{features}->[$j];
-				my $array = [split(/\#/,$feature->{function})];
-				my $function = shift(@{$array});
-				$function =~ s/\s+$//;
-				my $roles = [split(/\s*;\s+|\s+[\@\/]\s+/,$function)];
+			my $features = $genome->features();
+			for (my $j=0; $j < @{$features}; $j++) {
+				my $feature = $features->[$j];
+				my $roles = $feature->roles();
 				for (my $k=0; $k < @{$roles}; $k++) {
 					if (!defined($FunctionHash->{$roles->[$k]})) {
 						my $ss = "None";

@@ -6,12 +6,12 @@
 ########################################################################
 use strict;
 use warnings;
-use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::workspace::ScriptHelpers qw(printObjectInfo get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Model ID"];
 my $servercommand = "integrate_reconciliation_solutions";
-my $script = "kbfba-integratesolution";
+my $script = "fba-integratesolution";
 my $translation = {
 	"Model ID" => "model",
 	modelws => "model_workspace",
@@ -55,5 +55,5 @@ if (!defined($output)) {
 	print "Solution integration failed!\n";
 } else {
 	print "Solutions successfully integrated:\n";
-	printObjectMeta($output);
+	printObjectInfo($output);
 }

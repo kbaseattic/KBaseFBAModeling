@@ -1538,6 +1538,14 @@ sub parseFBAPhenotypeOutput {
 		if (!defined($tbl->{data}->[0]->[5])) {
 			return Bio::KBase::ObjectAPI::utilities::ERROR("output file did not contain necessary data");
 		}
+		my $phenosimset = Bio::KBase::ObjectAPI::KBasePhenotypes::PhenotypeSimulationSet->new({
+			id => $self->_get_new_id($self->phenotypeset()->id().".phenosim");
+			fbamodel_ref => $self->fbamodel()->_reference(),
+			phenotypeset_ref => $self->phenotypeset_ref(),
+			phenotypeSimulations => []
+		});
+		$self->phenotypesimulationset_ref("");
+		$self->phenotypesimulationset($phenosimset);
 		my $phenoOutputHash;
 		foreach my $row (@{$tbl->{data}}) {
 			if (defined($row->[5])) {
@@ -1558,8 +1566,8 @@ sub parseFBAPhenotypeOutput {
 					dependantReactions => [],
 					dependantGenes => [],
 					fluxes => {},
-					class => "UN",
-					fbaPhenotypeSimulation_ref => $row->[0]
+					phenoclass => "UN",
+					phenotype_ref => $self->phenotypeset()->_reference()."/phenotypes/id/".$row->[0]
 				};		
 				if (defined($row->[6]) && length($row->[6]) > 0) {
 					chomp($row->[6]);
@@ -1581,31 +1589,29 @@ sub parseFBAPhenotypeOutput {
 			}
 		}
 		#Scanning through all phenotype data in FBAFormulation and creating corresponding phenotype result objects
-		my $phenos = $self->FBAPhenotypeSimulations();
+		my $phenos = $self->phenotypeset()->phenotypes();
 		for (my $i=0; $i < @{$phenos}; $i++) {
 			my $pheno = $phenos->[$i];
 			if (defined($phenoOutputHash->{$pheno->_reference()})) {
 				if (defined($pheno->observedGrowthFraction())) {
 					if ($pheno->observedGrowthFraction() > 0.0001) {
-						if ($phenoOutputHash->{$pheno->_reference()}->{simulatedGrowthFraction} > 0) {
-							$phenoOutputHash->{$pheno->_reference()}->{class} = "CP";
+						if ($phenoOutputHash->{$pheno->id()}->{simulatedGrowthFraction} > 0) {
+							$phenoOutputHash->{$pheno->id()}->{phenoclass} = "CP";
 						} else {
-							$phenoOutputHash->{$pheno->_reference()}->{class} = "FN";
+							$phenoOutputHash->{$pheno->id()}->{phenoclass} = "FN";
 						}
 					} else {
-						if ($phenoOutputHash->{$pheno->_reference()}->{simulatedGrowthFraction} > 0) {
-							$phenoOutputHash->{$pheno->_reference()}->{class} = "FP";
+						if ($phenoOutputHash->{$pheno->id()}->{simulatedGrowthFraction} > 0) {
+							$phenoOutputHash->{$pheno->id()}->{phenoclass} = "FP";
 						} else {
-							$phenoOutputHash->{$pheno->_reference()}->{class} = "CN";
+							$phenoOutputHash->{$pheno->id()}->{phenoclass} = "CN";
 						}
 					}
 				}
-				$self->add("FBAPhenotypeSimultationResults",$phenoOutputHash->{$pheno->_reference()});	
+				$phenosimset->add("phenotypeSimulations",$phenoOutputHash->{$pheno->id()});	
 			}
 		}
-		return 1;
 	}
-	return 0;
 }
 
 =head3 parseMetaboliteProduction
