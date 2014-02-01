@@ -19,6 +19,7 @@ has parent => (is => 'rw', isa => 'Ref', weak_ref => 1, type => 'parent', metacl
 has uuid => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_uuid');
 has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_reference');
 has probability => (is => 'rw', isa => 'Num', printOrder => '8', default => '1', type => 'attribute', metaclass => 'Typed');
+has name => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has protons => (is => 'rw', isa => 'Num', printOrder => '7', default => '0', type => 'attribute', metaclass => 'Typed');
 has reaction_ref => (is => 'rw', isa => 'Str', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
 has direction => (is => 'rw', isa => 'Str', printOrder => '5', default => '=', type => 'attribute', metaclass => 'Typed');
@@ -67,6 +68,13 @@ my $attributes = [
           },
           {
             'req' => 0,
+            'printOrder' => -1,
+            'name' => 'name',
+            'type' => 'Str',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
             'printOrder' => 7,
             'name' => 'protons',
             'default' => 0,
@@ -110,7 +118,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {probability => 0, protons => 1, reaction_ref => 2, direction => 3, modelcompartment_ref => 4, id => 5};
+my $attribute_map = {probability => 0, name => 1, protons => 2, reaction_ref => 3, direction => 4, modelcompartment_ref => 5, id => 6};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {

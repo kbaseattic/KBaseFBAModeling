@@ -44,10 +44,10 @@ has gapfillings => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { ret
 
 
 # LINKS:
-has metagenome => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,Metagenome,metagenome_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_metagenome', clearer => 'clear_metagenome', isa => 'Ref', weak_ref => 1);
+has metagenome => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,MetagenomeAnnotation,metagenome_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_metagenome', clearer => 'clear_metagenome', isa => 'Bio::KBase::ObjectAPI::KBaseGenomes::MetagenomeAnnotation', weak_ref => 1);
 has genome => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,Genome,genome_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_genome', clearer => 'clear_genome', isa => 'Bio::KBase::ObjectAPI::KBaseGenomes::Genome', weak_ref => 1);
 has template => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,ModelTemplate,template_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_template', clearer => 'clear_template', isa => 'Bio::KBase::ObjectAPI::KBaseFBA::ModelTemplate', weak_ref => 1);
-has metagenome_otu => (is => 'rw', type => 'link(Metagenome,otus,metagenome_otu_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_metagenome_otu', clearer => 'clear_metagenome_otu', isa => 'Ref', weak_ref => 1);
+has metagenome_otu => (is => 'rw', type => 'link(MetagenomeAnnotation,otus,metagenome_otu_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_metagenome_otu', clearer => 'clear_metagenome_otu', isa => 'Bio::KBase::ObjectAPI::KBaseGenomes::MetagenomeAnnotationOTU', weak_ref => 1);
 
 
 # BUILDERS:
@@ -175,9 +175,9 @@ my $links = [
             'parent' => 'Bio::KBase::ObjectAPI::KBaseStore',
             'clearer' => 'clear_metagenome',
             'name' => 'metagenome',
-            'method' => 'Metagenome',
-            'class' => 'Metagenome',
-            'module' => undef
+            'method' => 'MetagenomeAnnotation',
+            'class' => 'Bio::KBase::ObjectAPI::KBaseGenomes::MetagenomeAnnotation',
+            'module' => 'KBaseGenomes'
           },
           {
             'attribute' => 'genome_ref',
@@ -198,13 +198,13 @@ my $links = [
             'module' => 'KBaseFBA'
           },
           {
-            'parent' => 'Metagenome',
+            'parent' => 'MetagenomeAnnotation',
             'name' => 'metagenome_otu',
             'attribute' => 'metagenome_otu_ref',
             'clearer' => 'clear_metagenome_otu',
-            'class' => 'Metagenome',
+            'class' => 'Bio::KBase::ObjectAPI::KBaseGenomes::MetagenomeAnnotationOTU',
             'method' => 'otus',
-            'module' => undef,
+            'module' => 'KBaseGenomes',
             'field' => 'id'
           }
         ];

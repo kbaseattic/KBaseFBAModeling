@@ -311,6 +311,7 @@ module KBaseFBA {
     typedef structure {
 		modelreaction_id id;
 		reaction_ref reaction_ref;
+		string name;
 		string direction;
 		float protons;
 		modelcompartment_ref modelcompartment_ref;

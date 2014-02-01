@@ -84,9 +84,9 @@ sub new
     # We create an auth token, passing through the arguments that we were (hopefully) given.
 
     {
-	my $token = Bio::KBase::AuthToken->new(@args);
+	#my $token = Bio::KBase::AuthToken->new(@args);
 	
-	if (!$token->error_message)
+	#if (!$token->error_message)
 	{
 	    $self->{token} = $token->token;
 	    $self->{client}->{token} = $token->token;
