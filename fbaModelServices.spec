@@ -2220,6 +2220,22 @@ module fbaModelServices {
 	authentication required;
 	funcdef run_job(run_job_params input) returns (JobObject job);
 	
+	/* Input parameters for the "queue_job" function.
+	
+		string method;
+		mapping<string,string> parameters;
+				
+	*/
+	typedef structure {
+		string method;
+		mapping<string,string> parameters;
+    } queue_job_params;
+	/*
+        Queues the specified command to run as a job
+    */
+	authentication required;
+	funcdef queue_job(queue_job_params input) returns (JobObject job);
+	
 	/* Input parameters for the "set_cofactors" function.
 	
 		list<compound_id> cofactors - list of compounds that are universal cofactors (required)

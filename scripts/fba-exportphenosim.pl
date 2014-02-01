@@ -6,12 +6,12 @@
 ########################################################################
 use strict;
 use warnings;
-use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::workspace::ScriptHelpers qw(get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Phenotype simulation ID","Format (html)"];
 my $servercommand = "export_phenotypeSimulationSet";
-my $script = "kbfba-exportphenosim";
+my $script = "fba-exportphenosim";
 my $translation = {
 	"Format (html)" => "format",
 	"Phenotype simulation ID" => "phenotypeSimulationSet",

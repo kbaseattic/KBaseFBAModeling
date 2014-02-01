@@ -1517,9 +1517,9 @@ class fbaModelServices(object):
         else:
             raise ServerError('Unknown', 0, 'An unknown server error occurred')
 
-    def jobs_done(self, input):
+    def run_job(self, input):
 
-        arg_hash = {'method': 'fbaModelServices.jobs_done',
+        arg_hash = {'method': 'fbaModelServices.run_job',
                     'params': [input],
                     'version': '1.1',
                     'id': str(random.random())[2:]
@@ -1552,9 +1552,9 @@ class fbaModelServices(object):
         else:
             raise ServerError('Unknown', 0, 'An unknown server error occurred')
 
-    def run_job(self, input):
+    def queue_job(self, input):
 
-        arg_hash = {'method': 'fbaModelServices.run_job',
+        arg_hash = {'method': 'fbaModelServices.queue_job',
                     'params': [input],
                     'version': '1.1',
                     'id': str(random.random())[2:]

@@ -52,7 +52,7 @@ sub roleToReactions {
 	my $rolehash = {};
 	for (my $i=0;$i<@{$rxns};$i++) {
 		my $rxn = $rxns->[$i];
-		my $cpxs = $rxn->complexes();
+		my $cpxs = $rxn->complexs();
 		for (my $j=0;$j < @{$cpxs};$j++) {
 			my $cpx = $cpxs->[$j];
 			if (!defined($complexes->{$cpx->_reference()})) {

@@ -1539,7 +1539,7 @@ sub parseFBAPhenotypeOutput {
 			return Bio::KBase::ObjectAPI::utilities::ERROR("output file did not contain necessary data");
 		}
 		my $phenosimset = Bio::KBase::ObjectAPI::KBasePhenotypes::PhenotypeSimulationSet->new({
-			id => $self->_get_new_id($self->phenotypeset()->id().".phenosim");
+			id => $self->_get_new_id($self->phenotypeset()->id().".phenosim"),
 			fbamodel_ref => $self->fbamodel()->_reference(),
 			phenotypeset_ref => $self->phenotypeset_ref(),
 			phenotypeSimulations => []

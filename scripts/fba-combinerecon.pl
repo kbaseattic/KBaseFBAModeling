@@ -6,12 +6,12 @@
 ########################################################################
 use strict;
 use warnings;
-use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::workspace::ScriptHelpers qw( printObjectInfo get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Phenotype sensitivity analysis ID"];
 my $servercommand = "queue_combine_wildtype_phenotype_reconciliation";
-my $script = "kbfba-combinerecon";
+my $script = "fba-combinerecon";
 my $translation = {
 	"Phenotype sensitivity analysis ID" => "PhenoSensitivityAnalysis",
 	modelout => "out_model",
@@ -43,5 +43,5 @@ if (!defined($output)) {
 	print "Reconciliation combination queue failed!\n";
 } else {
 	print "Reconciliation combination queued:\n";
-	printObjectMeta($output);
+	printObjectInfo($output);
 }

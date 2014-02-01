@@ -1654,11 +1654,11 @@ sub _sort_gapfill_solution_reactions {
     # Build up the rxnprobs dictionary...
     my $RxnProbs = $self->_get_msobject("RxnProbs", $rxnprobs_workspace, $rxnprobs_id);
     for(my $i=0; $i<@{$RxnProbs->{reaction_probabilities}}; $i++) {
-	my $rxnarray = $RxnProbs->{reaction_probabilities}->[$i];
+		my $rxnarray = $RxnProbs->{reaction_probabilities}->[$i];
         my $rxnid = $rxnarray->[0];
-	my $likelihood = $rxnarray->[1];
-	$rxnprobdict->{"+".$rxnid} = $likelihood;
-	$rxnprobdict->{"-".$rxnid} = $likelihood;
+		my $likelihood = $rxnarray->[1];
+		$rxnprobdict->{"+".$rxnid} = $likelihood;
+		$rxnprobdict->{"-".$rxnid} = $likelihood;
     }
 
     # Build an array of (reaction, likelihood) sets
@@ -1866,7 +1866,7 @@ sub _invert_boolean {
 sub _GapFill_to_GapFillFormulation {
 	my ($self,$obj) = @_;
 	my $form = {
-		formulation => $self->_FBA_to_FBAFormulation($obj->fbaFormulation()),
+		formulation => $self->_FBA_to_FBAFormulation($obj->fba()),
 		nomediahyp => $self->_invert_boolean($obj->mediaHypothesis()),
 		nobiomasshyp => $self->_invert_boolean($obj->biomassHypothesis()),
 		nogprhyp => $self->_invert_boolean($obj->gprHypothesis()),
@@ -1901,13 +1901,13 @@ sub _GapFill_to_GapFillFormulation {
 
 sub _GapFill_to_GapFillData {
 	my ($self,$obj) = @_;
-	my $array = [split(/\//,$obj->uuid())];
-	my $mdlarray = [split(/\//,$obj->model()->uuid())];
+	my $array = [split(/\//,$obj->_reference())];
+	my $mdlarray = [split(/\//,$obj->fbamodel()->_reference())];
 	my $data = {
-    	id => $array->[1],
-    	workspace => $array->[0],
-    	model => $mdlarray->[1],
-    	model_workspace => $mdlarray->[0],
+    	id => $obj->_wsname(),
+    	workspace => $obj->_wsworkspace(),
+    	model => $obj->fbamodel()->_wsname(),
+    	model_workspace => $obj->fbamodel()->_wsworkspace(),
     	isComplete => 0,
     	formulation => $self->_GapFill_to_GapFillFormulation($obj),
     	solutions => []
@@ -1923,7 +1923,6 @@ sub _GapFill_to_GapFillData {
 				biomassRemovals => [],
 				mediaAdditions => [],
 				reactionAdditions => [],
-				integrated => $solution->integrated()
 			};
 			for (my $j=0; $j < @{$solution->biomassRemovals()}; $j++) {
 				push(@{$solData->{biomassRemovals}},[
@@ -7782,15 +7781,12 @@ sub add_media_transporters
     # TODO - I could also attempt to use the probanno object to add the "best" transporters. But I didn't
     # get that complicated here.
     $self->_setContext($ctx,$input);
-    $input = $self->_validateargs($input,["phenotypeSet","model","outmodel", "workspace"],
-				  {
-				      phenotypeSet_workspace => $input->{workspace},
-				      model_workspace => $input->{workspace},
-				      overwrite => 0,
-				      auth => $self->_authentication(),
-				      all_transporters => 0,
-				      positive_transporters => 0
-				  });
+    $input = $self->_validateargs($input,["phenotypeSet","model","outmodel", "workspace"],{
+		phenotypeSet_workspace => $input->{workspace},
+		model_workspace => $input->{workspace},
+		all_transporters => 0,
+		positive_transporters => 0
+	});
 
     my $model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model});
     my $pheno = $self->_get_msobject("PhenotypeSet", $input->{phenotypeSet_workspace}, $input->{phenotypeSet});
@@ -7800,10 +7796,10 @@ sub add_media_transporters
     } elsif ( $input->{positive_transporters} ) {
 		$model->addPhenotypeTransporters({phenotypes => $pheno,positiveonly => 1});
     } else {
-	die "Must specify either all_transporters or positive_transporters.\n";
+		die "Must specify either all_transporters or positive_transporters.\n";
     }
 
-    $output = $self->_save_msobject($model,"FBAModel",$input->{workspace},$input->{outmodel},"add_media_transporters");
+    $output = $self->_save_msobject($model,"FBAModel",$input->{workspace},$input->{outmodel});
 
     #END add_media_transporters
     my @_bad_returns;
@@ -10780,126 +10776,6 @@ sub queue_combine_wildtype_phenotype_reconciliation
 
 
 
-=head2 jobs_done
-
-  $job = $obj->jobs_done($input)
-
-=over 4
-
-=item Parameter and return types
-
-=begin html
-
-<pre>
-$input is a jobs_done_params
-$job is a JobObject
-jobs_done_params is a reference to a hash where the following keys are defined:
-	job has a value which is a job_id
-	auth has a value which is a string
-job_id is a string
-JobObject is a reference to a hash where the following keys are defined:
-	id has a value which is a job_id
-	type has a value which is a string
-	auth has a value which is a string
-	status has a value which is a string
-	jobdata has a value which is a reference to a hash where the key is a string and the value is a string
-	queuetime has a value which is a string
-	starttime has a value which is a string
-	completetime has a value which is a string
-	owner has a value which is a string
-	queuecommand has a value which is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-$input is a jobs_done_params
-$job is a JobObject
-jobs_done_params is a reference to a hash where the following keys are defined:
-	job has a value which is a job_id
-	auth has a value which is a string
-job_id is a string
-JobObject is a reference to a hash where the following keys are defined:
-	id has a value which is a job_id
-	type has a value which is a string
-	auth has a value which is a string
-	status has a value which is a string
-	jobdata has a value which is a reference to a hash where the key is a string and the value is a string
-	queuetime has a value which is a string
-	starttime has a value which is a string
-	completetime has a value which is a string
-	owner has a value which is a string
-	queuecommand has a value which is a string
-
-
-=end text
-
-
-
-=item Description
-
-Mark specified job as complete and run postprocessing
-
-=back
-
-=cut
-
-sub jobs_done
-{
-    my $self = shift;
-    my($input) = @_;
-
-    my @_bad_arguments;
-    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
-    if (@_bad_arguments) {
-	my $msg = "Invalid arguments passed to jobs_done:\n" . join("", map { "\t$_\n" } @_bad_arguments);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'jobs_done');
-    }
-
-    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
-    my($job);
-    #BEGIN jobs_done
-    $self->_setContext($ctx,$input);
-	$input = $self->_validateargs($input,["job"],{});
-	$job = $self->_getJob($input->{job});
-    if (defined($job->{jobdata}->{postprocess_command})) {
-    	my $function = $job->{jobdata}->{postprocess_command};
-    	my $args;
-    	if (defined($job->{jobdata}->{postprocess_args})) {
-    		$args = $job->{jobdata}->{postprocess_args};
-    	}
-    	$args->[0]->{jobid} = $job->{id};
-    	$self->$function(@{$args});
-    }
-    $job = $self->_getJob($input->{job});
-    if ($job->{status} ne "queued") {
-	    eval {
-		    $job = $self->_jobserv()->set_job_status({
-		    	jobid => $input->{job},
-		    	status => "done",
-		    	auth => $self->_authentication(),
-		    	currentStatus => "running"
-		    });
-	    };
-    }
-    $self->_clearContext();
-    #END jobs_done
-    my @_bad_returns;
-    (ref($job) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"job\" (value was \"$job\")");
-    if (@_bad_returns) {
-	my $msg = "Invalid returns passed to jobs_done:\n" . join("", map { "\t$_\n" } @_bad_returns);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'jobs_done');
-    }
-    return($job);
-}
-
-
-
-
 =head2 run_job
 
   $job = $obj->run_job($input)
@@ -11013,6 +10889,112 @@ sub run_job
 	my $msg = "Invalid returns passed to run_job:\n" . join("", map { "\t$_\n" } @_bad_returns);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
 							       method_name => 'run_job');
+    }
+    return($job);
+}
+
+
+
+
+=head2 queue_job
+
+  $job = $obj->queue_job($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a queue_job_params
+$job is a JobObject
+queue_job_params is a reference to a hash where the following keys are defined:
+	method has a value which is a string
+	parameters has a value which is a reference to a hash where the key is a string and the value is a string
+JobObject is a reference to a hash where the following keys are defined:
+	id has a value which is a job_id
+	type has a value which is a string
+	auth has a value which is a string
+	status has a value which is a string
+	jobdata has a value which is a reference to a hash where the key is a string and the value is a string
+	queuetime has a value which is a string
+	starttime has a value which is a string
+	completetime has a value which is a string
+	owner has a value which is a string
+	queuecommand has a value which is a string
+job_id is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a queue_job_params
+$job is a JobObject
+queue_job_params is a reference to a hash where the following keys are defined:
+	method has a value which is a string
+	parameters has a value which is a reference to a hash where the key is a string and the value is a string
+JobObject is a reference to a hash where the following keys are defined:
+	id has a value which is a job_id
+	type has a value which is a string
+	auth has a value which is a string
+	status has a value which is a string
+	jobdata has a value which is a reference to a hash where the key is a string and the value is a string
+	queuetime has a value which is a string
+	starttime has a value which is a string
+	completetime has a value which is a string
+	owner has a value which is a string
+	queuecommand has a value which is a string
+job_id is a string
+
+
+=end text
+
+
+
+=item Description
+
+Queues the specified command to run as a job
+
+=back
+
+=cut
+
+sub queue_job
+{
+    my $self = shift;
+    my($input) = @_;
+
+    my @_bad_arguments;
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to queue_job:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'queue_job');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($job);
+    #BEGIN queue_job
+    $self->_setContext($ctx,$input);
+	$input = $self->_validateargs($input,["method","parameters"],{});
+	$job = $self->_queueJob({
+		type => "KBaseFBAModeling",
+		jobdata => $input->{parameters},
+		queuecommand => $input->{method},
+		"state" => "queued",
+		auth => $self->_authentication(),
+	});
+	$self->_clearContext();
+    #END queue_job
+    my @_bad_returns;
+    (ref($job) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"job\" (value was \"$job\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to queue_job:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'queue_job');
     }
     return($job);
 }
@@ -11146,12 +11128,12 @@ sub set_cofactors
 			$cpd->isCofactor($value);
 		} else {
 			my $msg = "Compound ".$cpdid." was not found in biochemistry database ".$input->{biochemistry_workspace}."/".$input->{biochemistry};
-			$self->_error($msg, 'set_cofactors');
+			$self->_error($msg);
 		}
 	}
 	
 	# Save the updated biochemistry to the workspace.
-   	$output = $self->_save_msobject($biochem,"Biochemistry",$input->{biochemistry_workspace},$input->{biochemistry},"setcofactors",$input->{overwrite});
+   	$output = $self->_save_msobject($biochem,"Biochemistry",$input->{biochemistry_workspace},$input->{biochemistry});
 	
     $self->_clearContext();
     #END set_cofactors
@@ -11355,19 +11337,9 @@ sub find_reaction_synonyms
 	my $metadata = {
 		number_synonyms => $numSynonyms,
 		number_excluded => $numExcluded,
-		biochemistry_uuid => $biochem->uuid()
+		biochemistry_ref => $biochem->_reference()
 	};
-	$output = $self->_workspaceServices()->save_object({
-		id => $input->{reaction_synonyms},
-		type => "ReactionSynonyms",
-		workspace => $input->{workspace},
-		data => $object,
-		command => "fba-findreactionsyns",
-		auth => $input->{auth},
-		overwrite => $input->{overwrite},
-		metadata => $metadata
-	});
-
+	$output = $self->_save_msobject($object,"ReactionSynonyms",$input->{workspace},$input->{reaction_synonyms},{meta => $metadata});
     $self->_clearContext();
     #END find_reaction_synonyms
     my @_bad_returns;
@@ -11910,8 +11882,8 @@ sub filter_iterative_solutions
 
     my $model = $self->_get_msobject("FBAModel",$input->{input_model_ws},$input->{model});
     my $parsedid = $self->_parse_gapfillsolution_id($input->{gapfillsln});
-    my $gapfill = $self->_get_msobject("GapFill", "NO_WORKSPACE", $parsedid->[0]);
-    my $problemReport = $gapfill->fbaFormulation()->fbaResults()->[0]->outputfiles()->{"ProblemReport.txt"};
+    my $gapfill = $self->_get_msobject("Gapfilling", $input->{input_model_ws}, $parsedid->[0]);
+    my $problemReport = $gapfill->fba()->outputfiles()->{"ProblemReport.txt"};
     # Map from reaction ID to the direction to delete in the model...
     my $deleteDirections = {};
     # Parse the ProblemReport.txt to get a list of reactions aded to the model to actiave each inactive reaction.
@@ -11978,7 +11950,7 @@ sub filter_iterative_solutions
 	}
     }
 
-    $output = $self->_save_msobject($model,"FBAModel",$input->{workspace},$input->{outmodel},"filter_iterative_solutions");
+    $output = $self->_save_msobject($model,"FBAModel",$input->{workspace},$input->{outmodel});
 
     #END filter_iterative_solutions
     my @_bad_returns;
@@ -13067,25 +13039,22 @@ sub probanno_to_genome
 		g_id => undef,
 		pa_ws => $params->{workspace},
 		threshold => undef,
-		mapping_workspace => "kbase",
-		mapping => "default-mapping"
 	});
 	if (!defined($params->{g_id})) {
 		$params->{g_id} = $self->_get_new_id("kb|g.");
 	}
-	my $pa = $self->_get_msobject("ProbAnno",$params->{pa_ws},$params->{pa_id});
+	my $pa = $self->_get_msobject("ProbabilisticAnnotation",$params->{pa_ws},$params->{pa_id});
 	my $gn = $self->_get_msobject("Genome",$pa->{genome_workspace},$pa->{genome});
-	if (!defined($pa->{roleset_probabilities})) {
+	if (!defined($pa->roleset_probabilities())) {
 		$self->_error("No annotations in probanno!","probanno_to_genome");
 	}
-	delete $gn->{annotation_uuid};
-	$gn->{id} = $params->{g_id};
-	for (my $i=0; $i < @{$gn->{features}};$i++) {
-		my $ftr = $gn->{features}->[$i];
-		if (defined($pa->{roleset_probabilities}->{$ftr->{id}})) {
+	my $ftrs = $gn->features();
+	for (my $i=0; $i < @{$ftrs};$i++) {
+		my $ftr = $ftrs->[$i];
+		if (defined($pa->roleset_probabilities()->{$ftr->id()})) {
 			my $function = "";
-			for (my $j=0; $j < @{$pa->{roleset_probabilities}->{$ftr->{id}}};$j++) {
-				my $func = $pa->{roleset_probabilities}->{$ftr->{id}}->[$j];
+			for (my $j=0; $j < @{$pa->roleset_probabilities()->{$ftr->id()}};$j++) {
+				my $func = $pa->roleset_probabilities()->{$ftr->id()}->[$j];
 				if (!defined($params->{threshold}) || $func->[1] > $params->{threshold}) {
 					if (length($function) > 0) {
 						$function .= " @ ";
@@ -13093,12 +13062,10 @@ sub probanno_to_genome
 					$function .= $func->[0];
 				}
 			}
-			$ftr->{function} = $function;
+			$ftr->function($function);
 		} 
 	}
-	my $mapping = $self->_get_msobject("Mapping",$params->{mapping_workspace},$params->{mapping});
-	($gn,my $anno,$mapping,my $contigObj) = $self->_processGenomeObject($gn,$mapping,"probanno_to_genome");
-	$output = $self->_save_msobject($gn,"Genome",$params->{workspace},$params->{g_id},"probanno_to_genome");
+	$output = $self->_save_msobject($gn,"Genome",$params->{workspace},$params->{g_id});
 	$self->_clearContext();
     #END probanno_to_genome
     my @_bad_returns;
@@ -23032,46 +22999,6 @@ overwrite has a value which is a bool
 
 
 
-=head2 jobs_done_params
-
-=over 4
-
-
-
-=item Description
-
-Input parameters for the "jobs_done" function.
-
-        job_id job - ID of the job object (a required argument)
-        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-job has a value which is a job_id
-auth has a value which is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-job has a value which is a job_id
-auth has a value which is a string
-
-
-=end text
-
-=back
-
-
-
 =head2 run_job_params
 
 =over 4
@@ -23104,6 +23031,46 @@ auth has a value which is a string
 a reference to a hash where the following keys are defined:
 job has a value which is a job_id
 auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 queue_job_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "queue_job" function.
+
+        string method;
+        mapping<string,string> parameters;
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+method has a value which is a string
+parameters has a value which is a reference to a hash where the key is a string and the value is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+method has a value which is a string
+parameters has a value which is a reference to a hash where the key is a string and the value is a string
 
 
 =end text

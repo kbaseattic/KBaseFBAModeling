@@ -6990,117 +6990,6 @@ sub queue_combine_wildtype_phenotype_reconciliation
 
 
 
-=head2 jobs_done
-
-  $job = $obj->jobs_done($input)
-
-=over 4
-
-=item Parameter and return types
-
-=begin html
-
-<pre>
-$input is a jobs_done_params
-$job is a JobObject
-jobs_done_params is a reference to a hash where the following keys are defined:
-	job has a value which is a job_id
-	auth has a value which is a string
-job_id is a string
-JobObject is a reference to a hash where the following keys are defined:
-	id has a value which is a job_id
-	type has a value which is a string
-	auth has a value which is a string
-	status has a value which is a string
-	jobdata has a value which is a reference to a hash where the key is a string and the value is a string
-	queuetime has a value which is a string
-	starttime has a value which is a string
-	completetime has a value which is a string
-	owner has a value which is a string
-	queuecommand has a value which is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-$input is a jobs_done_params
-$job is a JobObject
-jobs_done_params is a reference to a hash where the following keys are defined:
-	job has a value which is a job_id
-	auth has a value which is a string
-job_id is a string
-JobObject is a reference to a hash where the following keys are defined:
-	id has a value which is a job_id
-	type has a value which is a string
-	auth has a value which is a string
-	status has a value which is a string
-	jobdata has a value which is a reference to a hash where the key is a string and the value is a string
-	queuetime has a value which is a string
-	starttime has a value which is a string
-	completetime has a value which is a string
-	owner has a value which is a string
-	queuecommand has a value which is a string
-
-
-=end text
-
-=item Description
-
-Mark specified job as complete and run postprocessing
-
-=back
-
-=cut
-
-sub jobs_done
-{
-    my($self, @args) = @_;
-
-# Authentication: required
-
-    if ((my $n = @args) != 1)
-    {
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
-							       "Invalid argument count for function jobs_done (received $n, expecting 1)");
-    }
-    {
-	my($input) = @args;
-
-	my @_bad_arguments;
-        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
-        if (@_bad_arguments) {
-	    my $msg = "Invalid arguments passed to jobs_done:\n" . join("", map { "\t$_\n" } @_bad_arguments);
-	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-								   method_name => 'jobs_done');
-	}
-    }
-
-    my $result = $self->{client}->call($self->{url}, {
-	method => "fbaModelServices.jobs_done",
-	params => \@args,
-    });
-    if ($result) {
-	if ($result->is_error) {
-	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{error}->{code},
-					       method_name => 'jobs_done',
-					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
-					      );
-	} else {
-	    return wantarray ? @{$result->result} : $result->result->[0];
-	}
-    } else {
-        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method jobs_done",
-					    status_line => $self->{client}->status_line,
-					    method_name => 'jobs_done',
-				       );
-    }
-}
-
-
-
 =head2 run_job
 
   $job = $obj->run_job($input)
@@ -7206,6 +7095,117 @@ sub run_job
         Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method run_job",
 					    status_line => $self->{client}->status_line,
 					    method_name => 'run_job',
+				       );
+    }
+}
+
+
+
+=head2 queue_job
+
+  $job = $obj->queue_job($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a queue_job_params
+$job is a JobObject
+queue_job_params is a reference to a hash where the following keys are defined:
+	method has a value which is a string
+	parameters has a value which is a reference to a hash where the key is a string and the value is a string
+JobObject is a reference to a hash where the following keys are defined:
+	id has a value which is a job_id
+	type has a value which is a string
+	auth has a value which is a string
+	status has a value which is a string
+	jobdata has a value which is a reference to a hash where the key is a string and the value is a string
+	queuetime has a value which is a string
+	starttime has a value which is a string
+	completetime has a value which is a string
+	owner has a value which is a string
+	queuecommand has a value which is a string
+job_id is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a queue_job_params
+$job is a JobObject
+queue_job_params is a reference to a hash where the following keys are defined:
+	method has a value which is a string
+	parameters has a value which is a reference to a hash where the key is a string and the value is a string
+JobObject is a reference to a hash where the following keys are defined:
+	id has a value which is a job_id
+	type has a value which is a string
+	auth has a value which is a string
+	status has a value which is a string
+	jobdata has a value which is a reference to a hash where the key is a string and the value is a string
+	queuetime has a value which is a string
+	starttime has a value which is a string
+	completetime has a value which is a string
+	owner has a value which is a string
+	queuecommand has a value which is a string
+job_id is a string
+
+
+=end text
+
+=item Description
+
+Queues the specified command to run as a job
+
+=back
+
+=cut
+
+sub queue_job
+{
+    my($self, @args) = @_;
+
+# Authentication: required
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function queue_job (received $n, expecting 1)");
+    }
+    {
+	my($input) = @args;
+
+	my @_bad_arguments;
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to queue_job:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'queue_job');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.queue_job",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{error}->{code},
+					       method_name => 'queue_job',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method queue_job",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'queue_job',
 				       );
     }
 }
@@ -17989,46 +17989,6 @@ overwrite has a value which is a bool
 
 
 
-=head2 jobs_done_params
-
-=over 4
-
-
-
-=item Description
-
-Input parameters for the "jobs_done" function.
-
-        job_id job - ID of the job object (a required argument)
-        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-job has a value which is a job_id
-auth has a value which is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-job has a value which is a job_id
-auth has a value which is a string
-
-
-=end text
-
-=back
-
-
-
 =head2 run_job_params
 
 =over 4
@@ -18061,6 +18021,46 @@ auth has a value which is a string
 a reference to a hash where the following keys are defined:
 job has a value which is a job_id
 auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 queue_job_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "queue_job" function.
+
+        string method;
+        mapping<string,string> parameters;
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+method has a value which is a string
+parameters has a value which is a reference to a hash where the key is a string and the value is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+method has a value which is a string
+parameters has a value which is a reference to a hash where the key is a string and the value is a string
 
 
 =end text
