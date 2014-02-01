@@ -93,7 +93,7 @@ use LWP::Simple "getstore";
 
 sub _authentication {
 	my($self) = @_;
-	print STDERR "TEST!\n";
+	print STDERR Data::Dumper->Dump([$self->_getContext()]);
 	if (defined($self->_getContext->{_override}->{_authentication})) {
 		print STDERR "TEST1!\n";
 		return $self->_getContext->{_override}->{_authentication};
