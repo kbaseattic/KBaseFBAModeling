@@ -50,7 +50,10 @@ sub get_fba_client {
 		require "Bio/KBase/fbaModelServices/Impl.pm";
 		return Bio::KBase::fbaModelServices::Impl->new({workspace => get_ws_client()});
 	}
-    return Bio::KBase::fbaModelServices::Client->new(fbaURL(),getToken());
+	my $client = Bio::KBase::fbaModelServices::Client->new(fbaURL());
+	$client->{token} = getToken();
+	$client->{client}->{token} = getToken();
+    return $client;
 }
 
 sub fbaURL {
@@ -150,6 +153,7 @@ sub runFBACommand {
     my $output;
     my $error;
     eval {
+    	delete $params->{auth};
     	$output = $serv->$function($params);
 	};$error = $@ if $@;
 	if ($opt->{showerror} == 1 && defined($error)){

@@ -95,6 +95,8 @@ sub _authentication {
 	my($self) = @_;
 	if (defined($self->_getContext->{_override}->{_authentication})) {
 		return $self->_getContext->{_override}->{_authentication};
+	} elsif (ref($self->_getContext() ne "HASH")) {
+		return $self->_getContext()->token();
 	}
 	return undef;
 }
@@ -261,8 +263,6 @@ sub _authenticate {
 
 sub _setContext {
 	my ($self,$context,$params) = @_;
-    #Clearing the existing kbasestore and initializing a new one
-	$self->_getContext()->{_debug} = "";
 	if (defined($params->{wsurl})) {
 		$self->_getContext()->{_override}->{_wsurl} = $params->{wsurl};
 	}
@@ -2301,34 +2301,6 @@ sub _error {
 	my($self,$msg) = @_;
 	$msg = "_ERROR_".$msg."_ERROR_";
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => $self->_KBaseStore()->provenance()->[0]->{method});
-}
-
-=head3 _debugmessages
-
-Definition:
-	$self->_debugmessages();
-Description:
-	Returns debug messages
-		
-=cut
-
-sub _debugmessages {
-	my($self) = @_;
-	return $self->_getContext()->{_debug};
-}
-
-=head3 _debugMessage
-
-Definition:
-	$self->_debugMessage(string input);
-Description:
-	Adds a debug message
-		
-=cut
-
-sub _debugMessage {
-	my($self,$msg) = @_;
-	$self->_getContext()->{_debug} .= $msg."\n";
 }
 
 =head3 _build_sequence_object
