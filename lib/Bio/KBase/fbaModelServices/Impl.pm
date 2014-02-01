@@ -388,7 +388,10 @@ sub _workspaceServices {
 		return $self->{_workspaceServiceOveride};
 	}
 	if (!defined($self->{_workspaceServices}->{$self->_workspaceURL()})) {
-		$self->{_workspaceServices}->{$self->_workspaceURL()} = Bio::KBase::workspace::Client->new($self->_workspaceURL(),$self->_authentication());
+		$self->{_workspaceServices}->{$self->_workspaceURL()} = Bio::KBase::workspace::Client->new($self->_workspaceURL());
+		print STDERR "TOKEN:".$self->_authentication()."\n";
+		$self->{_workspaceServices}->{$self->_workspaceURL()}->{token} = $self->_authentication();
+		$self->{_workspaceServices}->{$self->_workspaceURL()}->{client}->{token} = $self->_authentication();
 	}
     return $self->{_workspaceServices}->{$self->_workspaceURL()};
 }

@@ -98,7 +98,7 @@ sub universalFBAScriptCode {
     my $translation = shift;
     my $manpage = shift;
     $translation->{workspace} = "workspace";
-    $translation->{auth} = "auth";
+    #$translation->{auth} = "auth";
     #Setting arguments to "describe_options" function
     my $options = [];
     if (@{$primaryArgs} > 0) {
