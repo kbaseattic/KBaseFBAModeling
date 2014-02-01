@@ -93,12 +93,12 @@ use LWP::Simple "getstore";
 
 sub _authentication {
 	my($self) = @_;
-	print "TEST!\n";
+	print STDERR "TEST!\n";
 	if (defined($self->_getContext->{_override}->{_authentication})) {
-		print "TEST1!\n";
+		print STDERR "TEST1!\n";
 		return $self->_getContext->{_override}->{_authentication};
 	} elsif (ref($self->_getContext() ne "HASH")) {
-		print "TEST2!\n";
+		print STDERR "TEST2!\n";
 		return $self->_getContext()->token();
 	}
 	return undef;
