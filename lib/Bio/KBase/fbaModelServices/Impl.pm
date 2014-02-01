@@ -165,7 +165,6 @@ sub _resetKBaseStore {
 			}],
 			workspace => $self->_workspaceServices()
 		});
-		exit();
 	} else {
 		$self->{_kbasestore} = Bio::KBase::ObjectAPI::KBaseStore->new({
 			provenance => [{
