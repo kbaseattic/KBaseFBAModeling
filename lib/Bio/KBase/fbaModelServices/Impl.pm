@@ -6502,14 +6502,14 @@ sub adjust_model_reaction
 	my $dir;
 	my $comp;
 	my $compidx;
-	if ( scalar @{$input->{gpr}} eq 1) {
-	    if ( defined($input->{gpr}->[0] )) {
-		$gpr = $self->_translateGPRHash($self->_parseGPR($input->{gpr}->[0]));
-	    }
-	} else {
-	    if ( defined($input->{gpr}->[$i]) ) {
-		$gpr = $self->_translateGPRHash($self->_parseGPR($input->{gpr}->[$i]));	 
-	    }}
+	#if ( scalar @{$input->{gpr}} eq 1) {
+	    #if ( defined($input->{gpr}->[0] )) {
+		#$gpr = $self->_translateGPRHash($self->_parseGPR($input->{gpr}->[0]));
+	    #}
+	#} else {
+	   # if ( defined($input->{gpr}->[$i]) ) {
+		#$gpr = $self->_translateGPRHash($self->_parseGPR($input->{gpr}->[$i]));	 
+	    #}}
 	if ( scalar @{$input->{direction}} eq 1 ) {
 	    $dir = $input->{direction}->[0];
 	} else {
@@ -6525,17 +6525,21 @@ sub adjust_model_reaction
 	} else {
 	    $compidx = $input->{compartmentIndex}->[$i];
 	}
-
+	my $mdlrxn = $model->searchForReaction($input->{reaction}->[$i],$comp,$compidx);
+	if (defined($mdlrxn)) {
+		$mdlrxn->direction("=");
+	} else {
 	$model->manualReactionAdjustment({
 	    reaction => $input->{reaction}->[$i],
 	    direction => $dir,
 	    compartment => $comp,
 	    compartmentIndex => $compidx,
-	    gpr => $gpr,
+	  #  gpr => $gpr,
 	    removeReaction => $input->{removeReaction},
 	    addReaction => $input->{addReaction}
 					 });
-    }
+	}
+	}
     $modelMeta = $self->_save_msobject($model,"Model",$input->{outputws},$input->{outputid},"adjust_model_reaction",$input->{overwrite});
     $self->_clearContext();
     #END adjust_model_reaction

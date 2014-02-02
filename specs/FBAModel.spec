@@ -325,7 +325,6 @@ module KBaseFBA {
 		bool integrated;
 		int integrated_solution;
 		media_ref media_ref;
-		list<feature_ref> ko_refs;
     } ModelGapfill;
     
     /* 
@@ -339,7 +338,6 @@ module KBaseFBA {
 		bool integrated;
 		int integrated_solution;
 		media_ref media_ref;
-		list<feature_ref> ko_refs;
     } ModelGapgen;
     
     /* 
@@ -350,7 +348,7 @@ module KBaseFBA {
     	@searchable ws_subset gapfillings.[*].(gapfill_id,gapfill_ref,integrated,media_ref,integrated_solution,ko_refs) 
     	@searchable ws_subset gapgens.[*].(gapgen_id,gapgen_ref,integrated,media_ref,integrated_solution,ko_refs) 
     	@searchable ws_subset biomasses.[*].(id,name,other,dna,rna,protein,cellwall,lipid,cofactor,energy,biomasscompounds.[*].(modelcompound_ref,coefficient)) 
-    	@searchable ws_subset compartments.[*].(id,compartment_ref,compartmentIndex,label,pH,potential) 
+    	@searchable ws_subset modelcompartments.[*].(id,compartment_ref,compartmentIndex,label,pH,potential) 
     	@searchable ws_subset modelcompounds.[*].(id,compound_ref,name,charge,formula,modelcompartment_ref)
     	@searchable ws_subset modelreactions.[*].(id,reaction_ref,direction,protons,modelcompartment_ref,probability,modelReactionReagents.[*].(modelcompound_ref,coefficient),modelReactionProteins.[*].(complex_ref,modelReactionProteinSubunits.[*].(role,triggering,optionalSubunit,feature_refs))) 
     */
@@ -369,7 +367,7 @@ module KBaseFBA {
 		list<ModelGapgen> gapgens;
 		
 		list<Biomass> biomasses;
-		list<ModelCompartment> compartments;
+		list<ModelCompartment> modelcompartments;
 		list<ModelCompound> modelcompounds;
 		list<ModelReaction> modelreactions;
     } FBAModel;
@@ -618,6 +616,7 @@ module KBaseFBA {
     	bool gprHypothesis;
     	bool reactionRemovalHypothesis;
     	
+    	media_ref media_ref;
     	media_ref referenceMedia_ref;
     	
     	int timePerSolution;
@@ -666,6 +665,7 @@ module KBaseFBA {
     typedef structure {
     	gapfill_id id;
     	fba_ref fba_ref;
+    	media_ref media_ref;
     	fbamodel_ref fbamodel_ref;
     	probanno_ref probanno_ref;
     	
