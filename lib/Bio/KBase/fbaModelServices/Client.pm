@@ -88,8 +88,8 @@ sub new
 	
 	#if (!$token->error_message)
 	#{
-	    $self->{token} = @args[0];
-	    $self->{client}->{token} = @args[0];
+	    $self->{token} = $args[0];
+	    $self->{client}->{token} = $args[0];
 	#}
     #}
 
