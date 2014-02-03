@@ -60,12 +60,12 @@ sub import_phenotype_table {
     	$mediaHash->{$data->[$i]->[2]}->{$data->[$i]->[1]} = 0;
     }
     my $output = $self->parent()->workspace()->list_objects({
-    	workspaces => [keys(%{$mediaHash})];
+    	workspaces => [keys(%{$mediaHash})],
 		type => "KBaseBiochem.Media",
     });
     for (my $i=0; $i < @{$output}; $i++) {
     	if (defined($mediaHash->{$output->[$i]->[7]}->{$output->[$i]->[1]})) {
-    		$mediaHash->{$output->[$i]->[7]}->{$output->[$i]->[1]} = $info->[6]."/".$info->[0];
+    		$mediaHash->{$output->[$i]->[7]}->{$output->[$i]->[1]} = $output->[6]."/".$output->[0];
     	}
     }		
     for (my $i=0; $i < @{$data}; $i++) {

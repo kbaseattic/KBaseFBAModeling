@@ -2444,12 +2444,12 @@ sub new
     $self->{_accounttype} = "kbase";
     $self->{'_fba-url'} = "";
     $self->{'_jobserver-url'} = "http://kbase.us/services/workspace";
-    $self->{'_gaserver-url'} = "https://kbase.us/services/genome_annotation";
+    $self->{'_gaserver-url'} = "http://kbase.us/services/genome_annotation";
     $self->{'_idserver-url'} = "http://kbase.us/services/idserver";
     $self->{'_mssserver-url'} = "http://bio-data-1.mcs.anl.gov/services/ms_fba";
     $self->{"_probanno-url"} = "http://localhost:7073";
     $self->{"_workspace-url"} = "http://kbase.us/services/ws";
-    my $paramlist = [qw(jobserver-url fbajobdir mfatoolkitbin fba-url probanno-url mssserver-url accounttype workspace-url defaultJobState idserver-url)];
+    my $paramlist = [qw(gaserver-url jobserver-url fbajobdir mfatoolkitbin fba-url probanno-url mssserver-url accounttype workspace-url defaultJobState idserver-url)];
 
     # so it looks like params is created by looping over the config object
     # if deployment.cfg exists
@@ -2494,14 +2494,19 @@ sub new
     # now, if params has one of the predefined set of parameter keys,
     # use that value to override object instance variable values. The
     # default object instance variable values were set above.
-
+	if (defined($params->{mfatoolkitbin})) {
+		Bio::KBase::ObjectAPI::utilities::MFATOOLKIT_BINARY($params->{fbajobdir});
+	}
+	if (defined($params->{fbajobdir})) {
+		Bio::KBase::ObjectAPI::utilities::MFATOOLKIT_JOB_DIRECTORY($params->{fbajobdir});
+	}
     if (defined $params->{accounttype}) {
 		$self->{_accounttype} = $params->{accounttype};
     }
     if (defined $params->{defaultJobState}) {
 		$self->{_defaultJobState} = $params->{defaultJobState};
     }
-    if (defined $params->{'_gaserver-url'}) {
+    if (defined $params->{'gaserver-url'}) {
     		$self->{'_gaserver-url'} = $params->{'gaserver-url'};
     }
     if (defined $params->{'fba-url'}) {

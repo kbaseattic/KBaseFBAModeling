@@ -22,10 +22,12 @@ my $test_count = 25;
 my $tokenObj = Bio::KBase::AuthToken->new(
     user_id => 'kbasetest', password => '@Suite525'
 );
-$token = $tokenObj->token();
+my $token = $tokenObj->token();
 
 #Instantiating client workspace
-my $ws = Bio::KBase::workspace::Client->new("http://140.221.84.209:7058",$token);
+my $ws = Bio::KBase::workspace::Client->new("http://140.221.84.209:7058");
+$ws->{token} = $token;
+$ws->{client}->{token} = $token;
 $ENV{KB_SERVICE_NAME}="fbaModelServices";
 $ENV{KB_DEPLOYMENT_CONFIG}=$Bin."/../configs/test.cfg";
 my $obj = Bio::KBase::fbaModelServices::Impl->new({workspace => $ws});
@@ -55,6 +57,17 @@ my $genome = $obj->genome_to_workspace({
 	workspace => "fbaservicestest"
 });
 ok defined($genome), "Successfully loaded genome object to workspace!";
+my $phenos = $obj->import_phenotypes({
+	workspace => "fbaservicestest",
+	genome => $genome->[0],
+	genome_workspace => "fbaservicestest",
+	phenotypes => [
+		[[],"CustomMedia","fbaservicestest",["ADP"],1],
+		[[],"Complete","fbaservicestest",["H2O"],1],
+		[["kb|g.0.peg.1","kb|g.0.peg.2"],"CustomMedia","fbaservicestest",[],1]
+	],
+	notes => ""
+});
 ################################################################################
 #Tests 5-7: adding and retrieving a media formulation
 ################################################################################
@@ -94,7 +107,7 @@ ok defined($medias->[0]), "Successfully printed media!";
 my $model = $obj->genome_to_fbamodel({
 	genome => $genome->[0],
 	workspace => "fbaservicestest",
-	coremodel => 1
+	#coremodel => 1
 });
 ok defined($model), "Model successfully constructed from input genome!";
 #Testing model export
