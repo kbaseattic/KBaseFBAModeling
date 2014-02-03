@@ -110,7 +110,7 @@ sub import_phenotype_table {
 			media_ref => $mediaHash->{$phenotype->[2]}->{$phenotype->[1]}->_reference(),
 			geneko_refs => $generefs,
 			additionalcompound_refs => $cpdrefs,
-			normalizedGrowth => $phenotype->[4]
+			normalizedGrowth => $phenotype->[4],
 			name => $self->id().".phe.".$count
     	});
     	$count++;

@@ -73,10 +73,23 @@ my $media = $obj->addmedia({
 	wsurl => $wsurl
 });
 ok defined($media), "Media successfully added to workspace!";
+$media = $obj->addmedia({
+	media => "Complete",
+	workspace => "fbaservicestest",
+	name => "Complete",
+	isDefined => 0,
+	isMinimal => 1,
+	type => "Rich media",
+	compounds => [],
+	concentrations => [],
+	maxflux => [],
+	minflux => [],
+	wsurl => $wsurl
+});
 #Testing media retrieval method
 my $medias = $obj->get_media({
-	medias => ["Carbon-D-Glucose","CustomMedia"],
-	workspaces => ["NO_WORKSPACE","fbaservicestest"],
+	medias => ["CustomMedia"],
+	workspaces => ["fbaservicestest"],
 	wsurl => $wsurl
 });
 ok defined($medias->[0]), "Successfully printed media!";
@@ -87,8 +100,8 @@ my $phenos = $obj->import_phenotypes({
 	genome_workspace => "fbaservicestest",
 	phenotypes => [
 		[[],"CustomMedia","fbaservicestest",["ADP"],1],
-		[[],"Carbon-D-Glucose","NO_WORKSPACE",["ATP"],1],
-		[["kb|g.0.peg.1","kb|g.0.peg.2"],"Carbon-Glycerol","NO_WORKSPACE",[],1]
+		[[],"Complete","fbaservicestest",["ATP"],1],
+		[["kb|g.0.peg.1","kb|g.0.peg.2"],"CustomMedia","fbaservicestest",[],1]
 	],
 	notes => "",
 	wsurl => $wsurl
@@ -233,7 +246,7 @@ $job = $obj->queue_gapgen_model({
 			media_workspace => "fbaservicestest"
 		},
 		refmedia => "Complete",
-		refmedia_workspace => "NO_WORKSPACE",
+		refmedia_workspace => "fbaservicestest",
 		num_solutions => 1
 	},
 	integrate_solution => 1,
