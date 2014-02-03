@@ -17,7 +17,7 @@ has parent => (is => 'rw', isa => 'Ref', weak_ref => 1, type => 'parent', metacl
 # ATTRIBUTES:
 has uuid => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_uuid');
 has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_reference');
-has function => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has function => (is => 'rw', isa => 'Str', printOrder => '2', type => 'attribute', metaclass => 'Typed');
 has subsystems => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
 has atomic_regulons => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
 has coexpressed_fids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
@@ -26,14 +26,14 @@ has protein_translation => (is => 'rw', isa => 'Str', printOrder => '-1', type =
 has co_occurring_fids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
 has regulon_data => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
 has publications => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
-has id => (is => 'rw', isa => 'Str', printOrder => '1', required => 1, type => 'attribute', metaclass => 'Typed');
+has id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 has location => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
 has subsystem_data => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
 has dna_sequence_length => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has annotations => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
 has protein_translation_length => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has aliases => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
-has type => (is => 'rw', isa => 'Str', printOrder => '7', type => 'attribute', metaclass => 'Typed');
+has type => (is => 'rw', isa => 'Str', printOrder => '1', default => 'peg', type => 'attribute', metaclass => 'Typed');
 has md5 => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 
 
@@ -45,7 +45,7 @@ has protein_families => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub 
 
 
 # BUILDERS:
-sub _build_reference { return my ($self) = @_;$self->parent()->_reference().'/features/id/'.$self->id(); }
+sub _build_reference { my ($self) = @_;return $self->parent()->_reference().'/features/id/'.$self->id(); }
 sub _build_uuid { my ($self) = @_;return $self->_reference(); }
 
 
@@ -58,7 +58,7 @@ sub _top { return 0; }
 my $attributes = [
           {
             'req' => 0,
-            'printOrder' => -1,
+            'printOrder' => 2,
             'name' => 'function',
             'type' => 'Str',
             'perm' => 'rw'
@@ -127,7 +127,7 @@ my $attributes = [
           },
           {
             'req' => 1,
-            'printOrder' => 1,
+            'printOrder' => 0,
             'name' => 'id',
             'default' => undef,
             'type' => 'Str',
@@ -182,9 +182,9 @@ my $attributes = [
           },
           {
             'req' => 0,
-            'printOrder' => 7,
+            'printOrder' => 1,
             'name' => 'type',
-            'default' => undef,
+            'default' => 'peg',
             'type' => 'Str',
             'description' => undef,
             'perm' => 'rw'

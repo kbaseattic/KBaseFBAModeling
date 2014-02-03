@@ -6,8 +6,8 @@
 ########################################################################
 use strict;
 use warnings;
-use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::workspace::ScriptHelpers qw(printObjectInfo get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Metagenome annotation ID"];
 my $servercommand = "metagenome_to_fbamodels";
@@ -39,6 +39,6 @@ if (!defined($output)) {
 } else {
 	print "Model generation successful:\n";
 	for (my $i=0; $i < @{$output}; $i++) {
-		printObjectMeta($output->[$i]);
+		printObjectInfo($output->[$i]);
 	}
 }

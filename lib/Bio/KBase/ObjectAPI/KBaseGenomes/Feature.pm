@@ -20,6 +20,10 @@ has compartments => ( is => 'rw',printOrder => -1, isa => 'ArrayRef', type => 'm
 has comment => ( is => 'rw',printOrder => 2, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcomment' );
 has delimiter => ( is => 'rw',printOrder => 2, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_builddelimiter' );
 has roles  => ( is => 'rw', isa => 'ArrayRef',printOrder => -1, type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildroles' );
+has start  => ( is => 'rw', isa => 'Str',printOrder => 3, type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildstart' );
+has stop  => ( is => 'rw', isa => 'Str',printOrder => 4, type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildstop' );
+has direction  => ( is => 'rw', isa => 'Str',printOrder => 5, type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_builddirection' );
+has contig  => ( is => 'rw', isa => 'Str',printOrder => 6, type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcontig' );
 
 #***********************************************************************************************************
 # BUILDERS:
@@ -27,6 +31,25 @@ has roles  => ( is => 'rw', isa => 'ArrayRef',printOrder => -1, type => 'msdata'
 sub _buildgenomeID {
 	my ($self) = @_;
 	return $self->parent()->id();
+}
+sub _buildstart {
+	my ($self) = @_;
+	return $self->location()->[0]->[1];
+}
+sub _buildstop {
+	my ($self) = @_;
+	if ($self->direction() eq "+") {
+		return $self->start() + $self->location()->[0]->[3];
+	}
+	return $self->start() - $self->location()->[0]->[3];
+}
+sub _builddirection {
+	my ($self) = @_;
+	return $self->location()->[0]->[2];
+}
+sub _buildcontig {
+	my ($self) = @_;
+	return $self->location()->[0]->[0];
 }
 sub _buildroleList {
 	my ($self) = @_;
@@ -93,6 +116,13 @@ sub _functionparse {
 	    plastid => "d",
 	    unknown => "u"
 	};
+	if (!defined($self->function()) || length($self->function()) eq 0) {
+		$self->roles([]);
+		$self->compartments([]);
+		$self->delimiter(";");
+		$self->comment("No annotated function");
+		return;
+	}
 	my $function = $self->function();
 	my $array = [split(/\#/,$function)];
 	$function = shift(@{$array});
@@ -128,7 +158,6 @@ sub _functionparse {
 #***********************************************************************************************************
 # FUNCTIONS:
 #***********************************************************************************************************
-
 
 __PACKAGE__->meta->make_immutable;
 1;

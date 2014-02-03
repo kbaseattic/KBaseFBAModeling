@@ -25,6 +25,7 @@ has targetedreaction_refs => (is => 'rw', isa => 'ArrayRef', printOrder => '-1',
 has balancedReactionsOnly => (is => 'rw', isa => 'Bool', printOrder => '6', default => '1', type => 'attribute', metaclass => 'Typed');
 has completeGapfill => (is => 'rw', isa => 'Bool', printOrder => '18', default => '0', type => 'attribute', metaclass => 'Typed');
 has gprHypothesis => (is => 'rw', isa => 'Bool', printOrder => '4', default => '0', type => 'attribute', metaclass => 'Typed');
+has media_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has timePerSolution => (is => 'rw', isa => 'Int', printOrder => '16', type => 'attribute', metaclass => 'Typed');
 has probanno_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has deltaGMultiplier => (is => 'rw', isa => 'Num', printOrder => '10', default => '1', type => 'attribute', metaclass => 'Typed');
@@ -53,6 +54,7 @@ has gapfillingSolutions => (is => 'rw', isa => 'ArrayRef[HashRef]', default => s
 # LINKS:
 has allowableCompartments => (is => 'rw', type => 'link(Biochemistry,compartments,allowableCompartment_refs)', metaclass => 'Typed', lazy => 1, builder => '_build_allowableCompartments', clearer => 'clear_allowableCompartments', isa => 'ArrayRef');
 has targetedreactions => (is => 'rw', type => 'link(Biochemistry,reactions,targetedreaction_refs)', metaclass => 'Typed', lazy => 1, builder => '_build_targetedreactions', clearer => 'clear_targetedreactions', isa => 'ArrayRef');
+has media => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,Media,media_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_media', clearer => 'clear_media', isa => 'Bio::KBase::ObjectAPI::KBaseBiochem::Media', weak_ref => 1);
 has probanno => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,ProbAnno,probanno_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_probanno', clearer => 'clear_probanno', isa => 'Ref', weak_ref => 1);
 has fba => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,FBA,fba_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_fba', clearer => 'clear_fba', isa => 'Bio::KBase::ObjectAPI::KBaseFBA::FBA', weak_ref => 1);
 has fbamodel => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,FBAModel,fbamodel_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_fbamodel', clearer => 'clear_fbamodel', isa => 'Bio::KBase::ObjectAPI::KBaseFBA::FBAModel', weak_ref => 1);
@@ -61,7 +63,7 @@ has blacklistedReactions => (is => 'rw', type => 'link(Biochemistry,reactions,bl
 
 
 # BUILDERS:
-sub _build_reference { return my ($self) = @_;$self->uuid(); }
+sub _build_reference { my ($self) = @_;return $self->uuid(); }
 sub _build_uuid { return Data::UUID->new()->create_str(); }
 sub _build_allowableCompartments {
 	 my ($self) = @_;
@@ -70,6 +72,10 @@ sub _build_allowableCompartments {
 sub _build_targetedreactions {
 	 my ($self) = @_;
 	 return $self->getLinkedObjectArray($self->targetedreaction_refs());
+}
+sub _build_media {
+	 my ($self) = @_;
+	 return $self->getLinkedObject($self->media_ref());
 }
 sub _build_probanno {
 	 my ($self) = @_;
@@ -160,6 +166,13 @@ my $attributes = [
             'default' => '0',
             'type' => 'Bool',
             'description' => undef,
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'media_ref',
+            'type' => 'Str',
             'perm' => 'rw'
           },
           {
@@ -327,7 +340,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {reactionMultipliers => 0, allowableCompartment_refs => 1, noStructureMultiplier => 2, targetedreaction_refs => 3, balancedReactionsOnly => 4, completeGapfill => 5, gprHypothesis => 6, timePerSolution => 7, probanno_ref => 8, deltaGMultiplier => 9, id => 10, fba_ref => 11, fbamodel_ref => 12, biomassHypothesis => 13, totalTimeLimit => 14, noDeltaGMultiplier => 15, drainFluxMultiplier => 16, guaranteedReaction_refs => 17, reactionAdditionHypothesis => 18, singleTransporterMultiplier => 19, directionalityMultiplier => 20, mediaHypothesis => 21, biomassTransporterMultiplier => 22, reactionActivationBonus => 23, transporterMultiplier => 24, blacklistedReaction_refs => 25};
+my $attribute_map = {reactionMultipliers => 0, allowableCompartment_refs => 1, noStructureMultiplier => 2, targetedreaction_refs => 3, balancedReactionsOnly => 4, completeGapfill => 5, gprHypothesis => 6, media_ref => 7, timePerSolution => 8, probanno_ref => 9, deltaGMultiplier => 10, id => 11, fba_ref => 12, fbamodel_ref => 13, biomassHypothesis => 14, totalTimeLimit => 15, noDeltaGMultiplier => 16, drainFluxMultiplier => 17, guaranteedReaction_refs => 18, reactionAdditionHypothesis => 19, singleTransporterMultiplier => 20, directionalityMultiplier => 21, mediaHypothesis => 22, biomassTransporterMultiplier => 23, reactionActivationBonus => 24, transporterMultiplier => 25, blacklistedReaction_refs => 26};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -364,6 +377,15 @@ my $links = [
             'method' => 'reactions',
             'module' => 'KBaseBiochem',
             'field' => 'id'
+          },
+          {
+            'attribute' => 'media_ref',
+            'parent' => 'Bio::KBase::ObjectAPI::KBaseStore',
+            'clearer' => 'clear_media',
+            'name' => 'media',
+            'method' => 'Media',
+            'class' => 'Bio::KBase::ObjectAPI::KBaseBiochem::Media',
+            'module' => 'KBaseBiochem'
           },
           {
             'attribute' => 'probanno_ref',
@@ -416,7 +438,7 @@ my $links = [
           }
         ];
 
-my $link_map = {allowableCompartments => 0, targetedreactions => 1, probanno => 2, fba => 3, fbamodel => 4, guaranteedReactions => 5, blacklistedReactions => 6};
+my $link_map = {allowableCompartments => 0, targetedreactions => 1, media => 2, probanno => 3, fba => 4, fbamodel => 5, guaranteedReactions => 6, blacklistedReactions => 7};
 sub _links {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {

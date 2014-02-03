@@ -22,6 +22,7 @@ has fbamodel_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attr
 has biomassHypothesis => (is => 'rw', isa => 'Bool', printOrder => '0', default => '0', type => 'attribute', metaclass => 'Typed');
 has totalTimeLimit => (is => 'rw', isa => 'Int', printOrder => '17', type => 'attribute', metaclass => 'Typed');
 has gprHypothesis => (is => 'rw', isa => 'Bool', printOrder => '0', default => '0', type => 'attribute', metaclass => 'Typed');
+has media_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has timePerSolution => (is => 'rw', isa => 'Int', printOrder => '16', type => 'attribute', metaclass => 'Typed');
 has mediaHypothesis => (is => 'rw', isa => 'Bool', printOrder => '0', default => '0', type => 'attribute', metaclass => 'Typed');
 has id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
@@ -36,16 +37,21 @@ has gapgenSolutions => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub {
 
 # LINKS:
 has fbamodel => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,FBAModel,fbamodel_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_fbamodel', clearer => 'clear_fbamodel', isa => 'Bio::KBase::ObjectAPI::KBaseFBA::FBAModel', weak_ref => 1);
+has media => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,Media,media_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_media', clearer => 'clear_media', isa => 'Bio::KBase::ObjectAPI::KBaseBiochem::Media', weak_ref => 1);
 has referenceMedia => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,Media,referenceMedia_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_referenceMedia', clearer => 'clear_referenceMedia', isa => 'Bio::KBase::ObjectAPI::KBaseBiochem::Media', weak_ref => 1);
 has fba => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,FBA,fba_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_fba', clearer => 'clear_fba', isa => 'Bio::KBase::ObjectAPI::KBaseFBA::FBA', weak_ref => 1);
 
 
 # BUILDERS:
-sub _build_reference { return my ($self) = @_;$self->uuid(); }
+sub _build_reference { my ($self) = @_;return $self->uuid(); }
 sub _build_uuid { return Data::UUID->new()->create_str(); }
 sub _build_fbamodel {
 	 my ($self) = @_;
 	 return $self->getLinkedObject($self->fbamodel_ref());
+}
+sub _build_media {
+	 my ($self) = @_;
+	 return $self->getLinkedObject($self->media_ref());
 }
 sub _build_referenceMedia {
 	 my ($self) = @_;
@@ -101,6 +107,13 @@ my $attributes = [
           },
           {
             'req' => 0,
+            'printOrder' => -1,
+            'name' => 'media_ref',
+            'type' => 'Str',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
             'printOrder' => 16,
             'name' => 'timePerSolution',
             'default' => undef,
@@ -151,7 +164,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {fbamodel_ref => 0, biomassHypothesis => 1, totalTimeLimit => 2, gprHypothesis => 3, timePerSolution => 4, mediaHypothesis => 5, id => 6, referenceMedia_ref => 7, fba_ref => 8, reactionRemovalHypothesis => 9};
+my $attribute_map = {fbamodel_ref => 0, biomassHypothesis => 1, totalTimeLimit => 2, gprHypothesis => 3, media_ref => 4, timePerSolution => 5, mediaHypothesis => 6, id => 7, referenceMedia_ref => 8, fba_ref => 9, reactionRemovalHypothesis => 10};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -177,6 +190,15 @@ my $links = [
             'module' => 'KBaseFBA'
           },
           {
+            'attribute' => 'media_ref',
+            'parent' => 'Bio::KBase::ObjectAPI::KBaseStore',
+            'clearer' => 'clear_media',
+            'name' => 'media',
+            'method' => 'Media',
+            'class' => 'Bio::KBase::ObjectAPI::KBaseBiochem::Media',
+            'module' => 'KBaseBiochem'
+          },
+          {
             'attribute' => 'referenceMedia_ref',
             'parent' => 'Bio::KBase::ObjectAPI::KBaseStore',
             'clearer' => 'clear_referenceMedia',
@@ -196,7 +218,7 @@ my $links = [
           }
         ];
 
-my $link_map = {fbamodel => 0, referenceMedia => 1, fba => 2};
+my $link_map = {fbamodel => 0, media => 1, referenceMedia => 2, fba => 3};
 sub _links {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {

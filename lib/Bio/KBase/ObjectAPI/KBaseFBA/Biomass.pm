@@ -232,7 +232,7 @@ sub adjustBiomassReaction {
 	my $found = 0;
 	for (my $i=0; $i < @{$biocpds}; $i++) {
 		my $biocpd = $biocpds->[$i];
-		if ($biocpd->modelcompound()->uuid() eq $args->{modelcompound}->uuid()) {
+		if ($biocpd->modelcompound()->id() eq $args->{modelcompound}->id()) {
 			if ($args->{coefficient} == 0) {
 				$self->remove("biomasscompounds",$biocpd);
 			} else {
@@ -243,7 +243,7 @@ sub adjustBiomassReaction {
 	}
 	if ($args->{coefficient} != 0 && $found == 0) {
 		$self->add("biomasscompounds",{
-			modelcompound_uuid => $args->{modelcompound}->uuid(),
+			modelcompound_ref => "~/modelcompounds/id/".$args->{modelcompound}->id(),
 			coefficient => $args->{coefficient}
 		});
 	}
@@ -283,15 +283,13 @@ sub loadFromEquation {
             my $biocomp = $bio->queryObject("compartments",{id => $biocompid});
             if (!defined($biocomp)) {
                 $biocomp = $bio->add("compartments",{
-                    locked => "0",
                     id => $biocompid,
                     name => $biocompid,
                     hierarchy => 3
                 });
             }
             $comp = $mod->add("modelcompartments",{
-                locked => "0",
-                compartment_uuid => $biocomp->uuid,
+                compartment_ref => $biocomp->_reference(),
                 compartmentIndex => $compindex,
                 label => $compartment,
                 pH => 7,
@@ -310,7 +308,6 @@ sub loadFromEquation {
             Bio::KBase::ObjectAPI::utilities::USEWARNING("Unrecognized compound '".$compound."' used in biomass equation!");
             if ($args->{addMissingCompounds} == 1) {
 	            $cpd = $bio->add("compounds",{
-	                locked => "0",
 	                name => $compound,
 	                abbreviation => $compound
 	            });
@@ -320,24 +317,127 @@ sub loadFromEquation {
         }
         if (defined($cpd)) {
 	        my $modcpd = $mod->queryObject("modelcompounds",{
-	            compound_uuid => $cpd->uuid(),
-	            modelcompartment_uuid => $comp->uuid()
+	            compound_ref => $cpd->_reference(),
+	            modelcompartment_ref => "~/modelcompartments/id/".$comp->id()
 	        });
 	        if (!defined($modcpd)) {
 	            $modcpd = $mod->add("modelcompounds",{
 	                compound_uuid => $cpd->uuid(),
 	                charge => $cpd->defaultCharge(),
 	                formula => $cpd->formula(),
-	                modelcompartment_uuid => $comp->uuid()
+	                modelcompartment_ref => "~/modelcompartments/id/".$comp->id()
 	            });
 	        }
 	        $self->add("biomasscompounds",{
-	            modelcompound_uuid => $modcpd->uuid(),
-	            coefficient => $coefficient,
+	        	modelcompound_ref => "~/modelcompounds/id/".$modcpd->id(),
+	        	coefficient => $coefficient,
 	        });
         }
     }
     return $missingCompounds;
+}
+
+sub ImportExternalEquation {
+	my $self = shift;
+    my $args = Bio::KBase::ObjectAPI::utilities::args(["equation","compounds"],{}, @_);
+	$args->{equation} =~ s/\s+\<*[-=]+\>\s+/ = /g;
+	$args->{equation} =~ s/\s\<[-=]+\s/ = /g;
+    $args->{equation} =~ s/\s+\+\s+/ + /g;
+	my $array = [split(/\s=\s/,$args->{equation})];
+	if (@{$array} == 1) {
+		Bio::KBase::ObjectAPI::utilities::error("No equal sign in ".$args->{equation}."!");
+	} elsif (@{$array} > 2) {
+		Bio::KBase::ObjectAPI::utilities::error("Too many equal signs in ".$args->{equation}."!");
+	}
+	my $bio = $self->parent()->template()->biochemistry();
+    my $biocpds = $self->biomasscompounds();
+    for (my $i=0; $i < @{$biocpds}; $i++){
+    	$self->remove("biomasscompounds",$biocpds->[$i])
+    }
+    $self->biomasscompounds([]);
+    for (my $i=0; $i < @{$array}; $i++) {
+    	my $compounds = [split(/\s\+\s/,$array->[$i])];
+    	foreach my $cpd (@{$compounds}) {
+    		my $coef = 1;
+    		my $compartment = "c";
+    		my $index = 0;
+    		if ($cpd =~ m/^\((\d+\.*\d*)\)\s+(.+)/) {
+    			$coef = $1;
+    			$cpd = $2;
+    		}
+    		if ($cpd =~ m/^(.+)\[([a-z]\d*)\]$/) {
+    			$cpd = $1;
+    			$compartment = $2;	
+    		}
+    		if ($compartment =~ m/([a-z])(\d+)/) {
+    			$index = $2;
+    			$compartment = $1;	
+    		}
+    		if ($i == 0) {
+    			$coef = -1*$coef;
+    		}
+    		my $cmp = $bio->searchForCompartment($compartment);
+    		if (!defined($cmp)) {
+    			Bio::KBase::ObjectAPI::utilities::error("Unrecognized compartment in equation:".$cmp."!");
+    		}
+    		my $mdlcmp = $self->parent()->getObject("modelcompartments",$compartment.$index);
+    		if (!defined($mdlcmp)) {
+    			$mdlcmp = $self->add("modelcompartments",{
+    				id => $compartment.$index,
+					compartment_ref => $cmp->_reference(),
+					compartmentIndex => $index,
+					label => $compartment.$index,
+					pH => 7,
+					potential => 0,
+    			});
+    		}
+    		my $cpdobj = $bio->searchForCompound($cpd);
+    		if (!defined($cpdobj) && defined($args->{compounds}->{$cpd})) {
+    			$cpdobj = $bio->searchForCompound($args->{compounds}->{$cpd}->[3]);
+    			if (!defined($cpdobj)) {
+    				foreach my $alias (@{$args->{compounds}->{$cpd}->[4]}) {
+    					$cpdobj = $bio->searchForCompound($alias);
+    					if (defined($cpdobj)) {
+    						last;
+    					}
+    				}
+    			}
+    		}
+    		my $mdlcpd;
+    		if (defined($cpdobj)) {
+    			$mdlcpd = $self->parent()->searchForCompound($cpdobj->id()."_".$compartment.$index);
+    			if (!defined($mdlcpd)) {
+    				$mdlcpd = $self->parent()->add("modelcompounds",{
+    					id => $cpdobj->id()."_".$compartment.$index,
+						compound_ref => $cpdobj->_reference(),
+						name => $cpdobj->name()."_".$compartment.$index,
+						charge => $cpdobj->defaultCharge(),
+						formula => $cpdobj->formula(),
+						modelcompartment_ref => "~/modelcompartments/id/".$mdlcmp->id()
+    				});
+    			}
+    		} else {
+    			$mdlcpd = $self->parent()->searchForCompound($cpd."_".$compartment.$index);
+    			if (!defined($mdlcpd)) {
+    				if (!defined($args->{compounds}->{$cpd})) {
+    					Bio::KBase::ObjectAPI::utilities::error("Ill defined compound:".$cpd."!");
+    				}
+    				$mdlcpd = $self->parent()->add("modelcompounds",{
+    					id => $cpd."_".$compartment.$index,
+						compound_ref => $bio->_reference()."/compounds/id/cpd00000",
+						name => $args->{compounds}->{$cpd}->[3]."_".$compartment.$index,
+						charge => $args->{compounds}->{$cpd}->[1],
+						formula => $args->{compounds}->{$cpd}->[2],
+						modelcompartment_ref => "~/modelcompartments/id/".$mdlcmp->id()
+    				});
+    			}
+    		}
+    		$self->add("biomasscompounds",{
+    			modelcompound_ref => "~/modelcompounds/id/".$mdlcpd->id(),
+				coefficient => $coef
+    		});
+    	}
+    }
 }
 
 __PACKAGE__->meta->make_immutable;

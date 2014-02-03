@@ -32,15 +32,10 @@ my $cmpTranslation = {
 #***********************************************************************************************************
 # ADDITIONAL ATTRIBUTES:
 #***********************************************************************************************************
-has biochemistry => ( is => 'rw', isa => 'Bio::KBase::ObjectAPI::KBaseBiochem::Biochemistry',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildbiochemistry' );
 
 #***********************************************************************************************************
 # BUILDERS:
 #***********************************************************************************************************
-sub _buildbiochemistry {
-	my ($self) = @_;
-	return $self->mapping()->biochemistry();
-}
 
 #***********************************************************************************************************
 # CONSTANTS:
@@ -57,17 +52,17 @@ sub roleToReactions {
 	my $rolehash = {};
 	for (my $i=0;$i<@{$rxns};$i++) {
 		my $rxn = $rxns->[$i];
-		my $cpxs = $rxn->complexes();
+		my $cpxs = $rxn->complexs();
 		for (my $j=0;$j < @{$cpxs};$j++) {
 			my $cpx = $cpxs->[$j];
-			if (!defined($complexes->{$cpx->uuid()})) {
-				$complexes->{$cpx->uuid()} = {
+			if (!defined($complexes->{$cpx->_reference()})) {
+				$complexes->{$cpx->_reference()} = {
 					complex => $cpx->id(),
 					name => $cpx->name(),
 					reactions => []
 				};
 			}
-			push(@{$complexes->{$cpx->uuid()}->{reactions}},{
+			push(@{$complexes->{$cpx->_reference()}->{reactions}},{
 				reaction => $rxn->reaction()->id(),
 				direction => $rxn->direction(),
 				compartment => $rxn->compartment()->id(),
@@ -76,22 +71,22 @@ sub roleToReactions {
 			my $roles = $cpx->complexroles();
 		    for (my $k=0; $k < @{$roles}; $k++) {
 		    	my $role = $roles->[$k]->role();
-		    	if (!defined($rolehash->{$role->uuid()})) {
-		    		$rolehash->{$role->uuid()} = {
+		    	if (!defined($rolehash->{$role->_reference()})) {
+		    		$rolehash->{$role->_reference()} = {
 		    			role => $role->id(),
 		    			name => $role->name(),
 		    			complexes => []
 		    		};
-		    		push(@{$roleToRxn},$rolehash->{$role->uuid()});
+		    		push(@{$roleToRxn},$rolehash->{$role->_reference()});
 		    	}
 		    	my $found = 0;
-		    	for (my $m=0; $m < @{$rolehash->{$role->uuid()}->{complexes}}; $m++) {
-		    		if ($rolehash->{$role->uuid()}->{complexes}->[$m] eq $complexes->{$cpx->uuid()}) {
+		    	for (my $m=0; $m < @{$rolehash->{$role->_reference()}->{complexes}}; $m++) {
+		    		if ($rolehash->{$role->_reference()}->{complexes}->[$m] eq $complexes->{$cpx->_reference()}) {
 		    			$found = 1;
 		    		}
 		    	}
 		    	if ($found == 0) {
-		    		push(@{$rolehash->{$role->uuid()}->{complexes}},$complexes->{$cpx->uuid()});
+		    		push(@{$rolehash->{$role->_reference()}->{complexes}},$complexes->{$cpx->_reference()});
 		    	}
 		    }
 		}
@@ -102,7 +97,7 @@ sub roleToReactions {
 sub adjustBiomass {
 	my $self = shift;
     my $args = Bio::KBase::ObjectAPI::utilities::args([], {
-    	biomass => $self->templateBiomasses()->[0]->uuid(),
+    	biomass => $self->templateBiomasses()->[0]->_reference(),
     	"new" => 0,
     	"delete" => 0,
 		clearBiomassCompounds => 0,
@@ -126,7 +121,10 @@ sub adjustBiomass {
 	}
 	if (!defined($tempbio)) {
 		if ($args->{"new"} == 1) {
+			my $bios = $self->templateBiomasses();
+			my $id = @{$bios}+1;
 			$tempbio = $self->add("templateBiomasses",{
+				id => $self->parent()->id().".bio.".$id,
 				name => $args->{name},
 				type => $args->{type},
 				other => $args->{other},
@@ -161,7 +159,7 @@ sub adjustBiomass {
         my $cpd = $bio->searchForCompound($args->{compoundsToRemove}->[$i]);
         for (my $j=0; $j < @{$comps}; $j++) {
             my $comp = $comps->[$j];
-            if ($comp->compound_uuid() eq $cpd->uuid()) {
+            if ($comp->compound_ref() eq $cpd->_reference()) {
                 $tempbio->remove("templateBiomassComponents", $comp);
             }
         }
@@ -175,7 +173,7 @@ sub adjustBiomass {
         my $found = 0;
         for (my $j=0; $j < @{$comps} && $found == 0; $j++) {
             my $comp = $comps->[$j];
-            if ($comp->compound_uuid() eq $cpd->uuid()) {
+            if ($comp->compound_ref() eq $cpd->_reference()) {
                 $found = 1;
             }
         }
@@ -184,10 +182,13 @@ sub adjustBiomass {
 	        if (!defined($cmp)) {
 	            Bio::KBase::ObjectAPI::utilities::error("Compartment ".$compound->[1]." not found!");
 	        }
+	        my $comps = $self->templateBiomassComponents();
+			my $id = @{$comps}+1;
 	        my $comp = Bio::KBase::ObjectAPI::KBaseFBA::TemplateBiomassComponent->new({
+				id => $tempbio->id().".cpd.".$id,
 	            class => $compound->[2],
-	            compound_uuid => $cpd->uuid(),
-	            compartment_uuid => $cmp->uuid(),
+	            compound_ref => $cpd->_reference(),
+	            compartment_ref => $cmp->_reference(),
 	            coefficientType => $compound->[4],
 	            coefficient => $compound->[5],
 	        });
@@ -215,14 +216,20 @@ sub adjustReaction {
 	my $cmp = $bio->searchForCompartment($args->{compartment});
 	Bio::KBase::ObjectAPI::utilities::error("Specified compartment ".$args->{compartment}." not found!") unless(defined($cmp));
 	my $temprxn = $self->queryObjects("templateReactions",{
-		compartment_uuid => $cmp->uuid(),
-		reaction_uuid => $rxn->uuid()
+		compartment_ref => $cmp->_reference(),
+		reaction_ref => $rxn->_reference()
 	});
 	if (!defined($temprxn)) {
 		if (defined($args->{"new"}) && $args->{"new"} == 1) {
+			my $rxns = $self->reactions();
+			my $id = @{$rxns}+1;
 			$temprxn = Bio::KBase::ObjectAPI::KBaseFBA::TemplateReaction->new({
-				compartment_uuid => $cmp->uuid(),
-				reaction_uuid => $rxn->uuid()
+				id => $self->parent()->id().".rxn.".$id,
+				compartment_ref => $cmp->_reference(),
+				reaction_ref => $rxn->_reference(),
+				complex_refs => [],
+				direction => "<=>",
+				type => "Conditional"
 			});
 			$self->add("templateReactions",$temprxn);
 		} else {
@@ -239,18 +246,18 @@ sub adjustReaction {
 		$temprxn->type($args->{type});
 	}
     if (defined($args->{clearComplexes}) && $args->{clearComplexes} == 1) {
-		$temprxn->clearLinkArray("complexes");
+		$temprxn->clearLinkArray("complexs");
 	}
   	for (my $i=0; $i < @{$args->{complexesToRemove}}; $i++) {
   		my $cpx = $self->mapping()->searchForComplex($args->{complexesToRemove}->[$i]);
     	if (defined($cpx)) {
-    		$temprxn->removeLinkArrayItem("complexes",$cpx);
+    		$temprxn->removeLinkArrayItem("complexs",$cpx);
     	}
    	}
     for (my $i=0; $i < @{$args->{complexesToAdd}}; $i++) {
     	my $cpx = $self->mapping()->searchForComplex($args->{complexesToAdd}->[$i]);
     	if (defined($cpx)) {
-    		$temprxn->addLinkArrayItem("complexes",$cpx);
+    		$temprxn->addLinkArrayItem("complexs",$cpx);
     	} else {
   			Bio::KBase::ObjectAPI::utilities::error("Specified complex ".$args->{complexesToAdd}->[$i]." not found!");
   		}
@@ -260,45 +267,45 @@ sub adjustReaction {
 
 sub buildModel {
     my $self = shift;
-	my $args = Bio::KBase::ObjectAPI::utilities::args(["annotation"],{}, @_);
+	my $args = Bio::KBase::ObjectAPI::utilities::args(["genome","modelid"],{}, @_);
+	my $genome = $args->{genome};
 	my $mdl = Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->new({
-		id => $args->{annotation}->genomes()->[0]->id().".fbamdl.0",
-		version => 0,
+		id => $args->{modelid},
+		source => $genome->source(),
+		source_id => $genome->source_id().".fbamdl",
 		type => $self->modelType(),
-		name => $args->{annotation}->name(),
-		growth => 0,
-		status => "Reconstructed",
-		current => 1,
-		mapping_uuid => $self->mapping()->uuid(),
-		mapping => $self->mapping(),
-		biochemistry_uuid => $self->mapping()->biochemistry()->uuid(),
-		biochemistry => $self->mapping()->biochemistry(),
-		annotation_uuid => $args->{annotation}->uuid(),
-		annotation => $args->{annotation}
+		name => $genome->scientific_name(),
+		genome_ref => $genome->_reference(),
+		template_ref => $self->_reference(),
+		gapfillings => [],
+		gapgens => [],
+		biomasses => [],
+		modelcompartments => [],
+		modelcompounds => [],
+		modelreactions => []
 	});
+	$mdl->_reference("~");
+	$mdl->parent($self->parent());
 	my $rxns = $self->templateReactions();
 	my $roleFeatures;
-	my $features = $args->{annotation}->features();
+	my $features = $genome->features();
 	for (my $i=0; $i < @{$features}; $i++) {
 		my $ftr = $features->[$i];
-		my $ftrroles = $ftr->featureroles();
-		for (my $j=0; $j < @{$ftrroles}; $j++) {
-			my $ftrrole = $ftrroles->[$j];
-			my $compartmentStr = $ftrrole->compartment();
-			my $cmparray = [split(/[;\|]/,$compartmentStr)];
-			for (my $k=0; $k < @{$cmparray}; $k++) {
-				my $abbrev = $cmparray->[$k];
-				if (length($cmparray->[$k]) > 1 && defined($cmpTranslation->{$cmparray->[$k]})) {
-					$abbrev = $cmpTranslation->{$cmparray->[$k]};
-				} elsif (length($cmparray->[$k]) > 1 && !defined($cmpTranslation->{$cmparray->[$k]})) {
-					print STDERR "Compartment ".$cmparray->[$k]." not found!\n";
+		my $roles = $ftr->roles();
+		my $compartments = $ftr->compartments();
+		for (my $j=0; $j < @{$roles}; $j++) {
+			my $role = $roles->[$j];
+			for (my $k=0; $k < @{$compartments}; $k++) {
+				my $abbrev = $compartments->[$k];
+				if (length($compartments->[$k]) > 1 && defined($cmpTranslation->{$compartments->[$k]})) {
+					$abbrev = $cmpTranslation->{$compartments->[$k]};
+				} elsif (length($compartments->[$k]) > 1 && !defined($cmpTranslation->{$compartments->[$k]})) {
+					print STDERR "Compartment ".$compartments->[$k]." not found!\n";
 				}
-				my $subroles = [split(/;/,$ftrrole->role()->searchname())];
-				for (my $m=0; $m < @{$subroles}; $m++) {
-					my $roles = $self->mapping()->searchForRoles($subroles->[$m]);
-					for (my $n=0; $n < @{$roles};$n++) {
-						push(@{$roleFeatures->{$roles->[$n]->uuid()}->{$abbrev}},$ftr);
-					}
+				my $searchrole = Bio::KBase::ObjectAPI::utilities::convertRoleToSearchRole($role);
+				my $roles = $self->mapping()->searchForRoles($searchrole);
+				for (my $n=0; $n < @{$roles};$n++) {
+					push(@{$roleFeatures->{$roles->[$n]->id()}->{$abbrev}},$ftr);
 				}
 			}
 		}
@@ -314,7 +321,7 @@ sub buildModel {
 	for (my $i=0; $i < @{$bios}; $i++) {
 		my $bio = $bios->[$i];
 		$bio->addBioToModel({
-			gc => $args->{annotation}->genomes()->[0]->gc(),
+			gc => $genome->gc_content(),
 			model => $mdl
 		});
 	}
@@ -325,16 +332,18 @@ sub buildModelFromFunctions {
     my $self = shift;
 	my $args = Bio::KBase::ObjectAPI::utilities::args(["functions","id"],{}, @_);
 	my $mdl = Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->new({
-		id => $args->{id},
-		version => 0,
+		id => $args->{modelid},
+		source => "KBase",
+		source_id => $args->{modelid},
 		type => $self->modelType(),
-		growth => 0,
-		status => "Reconstructed",
-		current => 1,
-		mapping_uuid => $self->mapping()->uuid(),
-		mapping => $self->mapping(),
-		biochemistry_uuid => $self->mapping()->biochemistry()->uuid(),
-		biochemistry => $self->mapping()->biochemistry(),
+		name => "Unknown",
+		template_ref => $self->_reference(),
+		gapfillings => [],
+		gapgens => [],
+		biomasses => [],
+		modelcompartments => [],
+		modelcompounds => [],
+		modelreactions => []
 	});
 	my $rxns = $self->templateReactions();
 	my $roleFeatures = {};
@@ -344,7 +353,7 @@ sub buildModelFromFunctions {
 		for (my $m=0; $m < @{$subroles}; $m++) {
 			my $roles = $self->mapping()->searchForRoles($subroles->[$m]);
 			for (my $n=0; $n < @{$roles};$n++) {
-				$roleFeatures->{$roles->[$n]->uuid()}->{"c"}->[0] = "Role-based-annotation";
+				$roleFeatures->{$roles->[$n]->_reference()}->{"c"}->[0] = "Role-based-annotation";
 			}
 		}
 	}

@@ -32,7 +32,7 @@ has id => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', me
 
 
 # BUILDERS:
-sub _build_reference { return my ($self) = @_;$self->parent()->_reference().'/protein_families/id/'.$self->id(); }
+sub _build_reference { my ($self) = @_;return $self->parent()->_reference().'/protein_families/id/'.$self->id(); }
 sub _build_uuid { my ($self) = @_;return $self->_reference(); }
 
 

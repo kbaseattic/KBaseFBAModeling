@@ -31,7 +31,7 @@ has complexs => (is => 'rw', type => 'link(Mapping,complexes,complex_refs)', met
 
 
 # BUILDERS:
-sub _build_reference { return my ($self) = @_;$self->parent()->_reference().'/templateReactions/id/'.$self->id(); }
+sub _build_reference { my ($self) = @_;return $self->parent()->_reference().'/templateReactions/id/'.$self->id(); }
 sub _build_uuid { my ($self) = @_;return $self->_reference(); }
 sub _build_compartment {
 	 my ($self) = @_;

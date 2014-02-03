@@ -9,7 +9,6 @@ use strict;
 use Bio::KBase::ObjectAPI::KBaseFBA::DB::FBA;
 package Bio::KBase::ObjectAPI::KBaseFBA::FBA;
 use Moose;
-use ModelSEED::Exceptions;
 use Bio::KBase::ObjectAPI::utilities;
 
 use namespace::autoclean;
@@ -23,8 +22,6 @@ has jobDirectory => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msda
 has command => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, default => '' );
 has mfatoolkitBinary => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildmfatoolkitBinary' );
 has mfatoolkitDirectory => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildmfatoolkitDirectory' );
-has dataDirectory => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_builddataDirectory' );
-has cplexLicense => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcplexLicense' );
 has readableObjective => ( is => 'rw', isa => 'Str',printOrder => '30', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildreadableObjective' );
 has mediaID => ( is => 'rw', isa => 'Str',printOrder => '0', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildmediaID' );
 has knockouts => ( is => 'rw', isa => 'Str',printOrder => '3', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildknockouts' );
@@ -47,7 +44,10 @@ sub _buildjobid {
 
 sub _buildjobpath {
 	my ($self) = @_;
-	my $path = $self->dataDirectory()."fbajobs";
+	my $path = Bio::KBase::ObjectAPI::utilities::MFATOOLKIT_JOB_DIRECTORY();
+	if (!defined($path)) {
+		$path = "/tmp/fbajobs/";
+	}
 	if (!-d $path) {
 		File::Path::mkpath ($path);
 	}
@@ -61,31 +61,15 @@ sub _buildjobdirectory {
 
 sub _buildmfatoolkitBinary {
 	my ($self) = @_;
-	my $config = Bio::KBase::ObjectAPI::utilities::config();
 	my $bin;
-	if (defined($config->MFATK_BIN()) && length($config->MFATK_BIN()) > 0) {
-		$bin = $config->MFATK_BIN();
+	if (defined(Bio::KBase::ObjectAPI::utilities::MFATOOLKIT_BINARY()) && length(Bio::KBase::ObjectAPI::utilities::MFATOOLKIT_BINARY()) > 0 && -e Bio::KBase::ObjectAPI::utilities::MFATOOLKIT_BINARY()) {
+		$bin = Bio::KBase::ObjectAPI::utilities::MFATOOLKIT_BINARY();
 	} else {
-		if ($^O =~ m/^MSWin/) {
-			$bin = Bio::KBase::ObjectAPI::utilities::MODELSEEDCORE()."/software/mfatoolkit/bin/mfatoolkit";
-			$bin .= ".exe";
-		} elsif (-e "/bin/mfatoolkit") {
-			$bin = "/bin/mfatoolkit";
-		} else {
-			$bin = `which mfatoolkit 2>/dev/null`;
-			chomp $bin;
-		}
+		$bin = `which mfatoolkit 2>/dev/null`;
+		chomp $bin;
 	}
 	if ((! defined $bin) || (!-e $bin)) {
-        ModelSEED::Exception::MissingConfig->throw(
-            variable => 'MFATK_BIN',
-            message => <<ND
-This is the path to the mfatoolkit binary. If it is not already
-installed, this program can be downloaded from:
-https://github.com/modelseed/mfatoolkit
-Add the binary directory to your path or use the following command:
-ND
-        );
+		Bio::KBase::ObjectAPI::utilities::error("MFAToolkit binary could not be found!");
 	}
 	return $bin;
 }
@@ -99,43 +83,33 @@ sub _buildmfatoolkitDirectory {
 	return "";
 }
 
-sub _builddataDirectory {
-	my ($self) = @_;
-	my $config = ModelSEED::Configuration->new();
-	if (defined($config->user_options()->{MFATK_CACHE})) {
-		return $config->user_options()->{MFATK_CACHE}."/";
-	}
-	return Bio::KBase::ObjectAPI::utilities::MODELSEEDCORE()."/data/";
-}
-
-sub _buildcplexLicense {
-	my ($self) = @_;
-	my $config = ModelSEED::Configuration->new();
-	if (defined($config->user_options()->{CPLEX_LICENCE})) {
-		return $config->user_options()->{CPLEX_LICENCE};
-	}
-	return "";
-}
-
 sub _buildreadableObjective {
 	my ($self) = @_;
-	my $string = "Max { ";
+	my $string = "Maximize ";
 	if ($self->maximizeObjective() == 0) {
-		$string = "Min { ";
+		$string = "Minimize ";
 	}
-	my $terms = $self->fbaObjectiveTerms();
-	for (my $i=0; $i < @{$terms}; $i++) {
-		my $term = $terms->[$i];
-		if ($i > 0) {
+	foreach my $objid (keys(%{$self->compoundflux_objterms()})) {
+		if (length($string) > 10) {
 			$string .= " + ";
 		}
-		my $coef = "";
-		if ($term->coefficient() != 1) {
-			$coef = "(".$term->coefficient().") ";
-		}
-		$string .= $coef.$term->entity()->id();
+		$string .= "(".$self->compoundflux_objterms()->{$objid}.") ".$objid;
 	}
-	$string .= " }";
+	foreach my $objid (keys(%{$self->reactionflux_objterms()})) {
+		if (length($string) > 10) {
+			$string .= " + ";
+		}
+		$string .= "(".$self->reactionflux_objterms()->{$objid}.") ".$objid;
+	}
+	foreach my $objid (keys(%{$self->biomassflux_objterms()})) {
+		if (length($string) > 10) {
+			$string .= " + ";
+		}
+		$string .= "(".$self->biomassflux_objterms()->{$objid}.") ".$objid;
+	}
+	if (defined($self->objectiveValue())) {
+		$string .= " = ".$self->objectiveValue();
+	}
 	return $string;
 }
 sub _buildmediaID {
@@ -171,22 +145,22 @@ sub _buildpromBounds {
 	my $final_bounds = {};
 	my $clone = $self->cloneObject();
 	$clone->parent($self->parent());
-	$clone->promModel_uuid("");
+	$clone->prommodel_ref("");
 	$clone->fva(1);
-	my $results = $clone->runFBA();
-	my $fluxes = $results->fbaReactionVariables();
+	$clone->runFBA();
+	my $fluxes = $clone->FBAReactionVariables();
 	for (my $i=0; $i < @{$fluxes}; $i++) {
 		my $flux = $fluxes->[$i];
 		$bounds->{$flux->modelreaction()->reaction()->id()}->[0] = $flux->min();
 		$bounds->{$flux->modelreaction()->reaction()->id()}->[1] = $flux->max();
 	}
-	my $mdlrxns = $self->model()->modelreactions();
+	my $mdlrxns = $self->fbamodel()->modelreactions();
 	my $geneReactions = {};
 	foreach my $mdlrxn (@{$mdlrxns}) {
 		foreach my $prot (@{$mdlrxn->modelReactionProteins()}) {
 			foreach my $subunit (@{$prot->modelReactionProteinSubunits()}) {
-				foreach my $feature (@{$subunit->modelReactionProteinSubunitGenes()}) {
-					$geneReactions->{$feature->feature()->id()}->{$mdlrxn->reaction()->id()} = 1;
+				foreach my $feature (@{$subunit->features()}) {
+					$geneReactions->{$feature->id()}->{$mdlrxn->reaction()->id()} = 1;
 				}
 			}				
 		} 
@@ -195,7 +169,7 @@ sub _buildpromBounds {
 	my $genekos = $self->geneKOs();
 	foreach my $gene (@{$genekos}) {
 		my $tfmap = $promModel->queryObject("transcriptionFactorMaps",{
-			transcriptionFactor_uuid => $gene->uuid()
+			transcriptionFactor_ref => $gene->_reference()
 		});
 		if (defined($tfmap)) {
 			my $targets = $tfmap->transcriptionFactorMapTargets();
@@ -242,27 +216,27 @@ sub _buildadditionalCompoundString {
 Definition:
 	Bio::KBase::ObjectAPI::KBaseBiochem::Biochemistry = biochemistry();
 Description:
-	Returns biochemistry behind gapfilling object
+	Returns biochemistry behind FBA object
 
 =cut
 
 sub biochemistry {
 	my ($self) = @_;
-	$self->model()->biochemistry();	
+	$self->fbamodel()->template()->biochemistry();	
 }
 
-=head3 annotation
+=head3 genome
 
 Definition:
-	Bio::KBase::ObjectAPI::Annotation = annotation();
+	Bio::KBase::ObjectAPI::KBaseGenomes::Genome = genome();
 Description:
-	Returns annotation behind gapfilling object
+	Returns genome behind FBA object
 
 =cut
 
-sub annotation {
+sub genome {
 	my ($self) = @_;
-	$self->model()->annotation();	
+	$self->fbamodel()->genome();	
 }
 
 =head3 mapping
@@ -270,13 +244,13 @@ sub annotation {
 Definition:
 	Bio::KBase::ObjectAPI::KBaseOntology::Mapping = mapping();
 Description:
-	Returns mapping behind gapfilling object
+	Returns mapping behind FBA object
 
 =cut
 
 sub mapping {
 	my ($self) = @_;
-	$self->model()->mapping();	
+	$self->fbamodel()->template()->mapping();	
 }
 
 =head3 runFBA
@@ -294,9 +268,8 @@ sub runFBA {
 		$self->createJobDirectory();
 	}
 	system($self->command());
-	my $fbaresults = $self->add("fbaResults",{});
-	$fbaresults->loadMFAToolkitResults();
-	return $fbaresults;
+	$self->loadMFAToolkitResults();
+	return $self->objectiveValue();
 }
 
 =head3 createJobDirectory
@@ -319,12 +292,21 @@ sub createJobDirectory {
 		biomassflux => "FLUX"
 	};
 	#Print model to Model.tbl
-	my $model = $self->model();
+	my $model = $self->fbamodel();
 	my $BioCpd = ["abbrev	charge	deltaG	deltaGErr	formula	id	mass	name"];
 	my $mdlcpd = $model->modelcompounds();
 	my $cpdhash = {};
 	for (my $i=0; $i < @{$mdlcpd}; $i++) {
 		my $cpd = $mdlcpd->[$i];
+		my $id = $cpd->compound()->id();
+		my $name = $cpd->compound()->name();
+		my $abbrev = $cpd->compound()->abbreviation();
+		if ($id eq "cpd00000") {
+			$id = $cpd->id();
+			$id =~ s/_[a-z]\d+$//;
+			$name = $id;
+			$abbrev = $id;
+		}
 		my $index = $cpd->modelcompartment()->compartmentIndex();
 		if (!defined($cpdhash->{$cpd->compound()->id()."_".$index})) {
 			my $line = "";
@@ -335,9 +317,17 @@ sub createJobDirectory {
 				if ($j > 0) {
 					$line .= "\t";
 				}
-				if (defined($cpd->compound()->$function())) {	
-					$line .= $cpd->compound()->$function();
-					if ($index > 0 && $function =~ m/(name)|(id)|(abbreviation)/) {
+				if (defined($cpd->compound()->$function())) {
+					if ($function eq "name") {
+						$line .= $name;
+					} elsif ($function eq "id") {
+						$line .= $id;
+					} elsif ($function eq "abbreviation") {
+						$line .= $abbrev;
+					} else {
+						$line .= $cpd->compound()->$function();
+					}
+					if ($index > 0 && $function !~ m/(name)|(id)|(abbreviation)/) {
 						$line .= "_".$index;
 					}
 				}
@@ -360,14 +350,18 @@ sub createJobDirectory {
 		}
 		my $id = $rxn->reaction()->id();
 		my $name = $rxn->reaction()->name();
+		if ($id eq "rxn00000") {
+			$id = $rxn->id();
+			$id =~ s/_[a-z]\d+$//;
+			$name = $id;
+		}
 		my $index = $rxn->modelcompartment()->compartmentIndex();	
 		if ($index != 0) {
 			$id .= "_".$index;
 			$name .= "_".$index;
 		}
 		my $line = $id.";".$rxndir.";".$rxn->modelcompartment()->compartment()->id().";".$rxn->gprString();
-		$line =~ s/kb\|g\.\d+\.//g;
-		$line =~ s/fig\|\d+\.\d+\.//g;
+		$line =~ s/\|/___/g;
 		push(@{$mdlData},$line);
 		if (!defined($rxnhash->{$id})) {
 			$rxnhash->{$id} = 1;
@@ -426,7 +420,7 @@ sub createJobDirectory {
 		}
 	}
 	if (defined($self->parameters()->{"Complete gap filling"}) && $self->parameters()->{"Complete gap filling"} == 1) {
-		$mdlcpd = $model->biochemistry()->compounds();
+		$mdlcpd = $self->biochemistry()->compounds();
 		for (my $i=0; $i < @{$mdlcpd}; $i++) {
 			my $cpd = $mdlcpd->[$i];
 			if (!defined($cpdhash->{$cpd->id()."_0"})) {
@@ -445,7 +439,7 @@ sub createJobDirectory {
 				push(@{$BioCpd},$line);
 			}
 		}
-		my $mdlrxn = $model->biochemistry()->reactions();
+		my $mdlrxn = $self->biochemistry()->reactions();
 		for (my $i=0; $i < @{$mdlrxn}; $i++) {
 			my $rxn = $mdlrxn->[$i];
 			if (!defined($rxnhash->{$rxn->id()})) {
@@ -562,19 +556,18 @@ sub createJobDirectory {
 	my $addnlCpds = $self->additionalCpds();
 	if (@{$addnlCpds} > 0) {
 		my $newPrimMedia = $primMedia->cloneObject();
-		$newPrimMedia->parent($primMedia->parent());
 		$newPrimMedia->name("TempPrimaryMedia");
 		$newPrimMedia->id("TempPrimaryMedia");
 		my $mediaCpds = $newPrimMedia->mediacompounds();
 		for (my $i=0; $i < @{$addnlCpds}; $i++) {
 			my $found = 0;
 			for (my $j=0; $j < @{$mediaCpds}; $j++) {
-				if ($mediaCpds->[$j]->compound_uuid() eq $addnlCpds->[$i]->uuid()) {
+				if ($mediaCpds->[$j]->compound_ref() eq $addnlCpds->[$i]->_reference()) {
 					$mediaCpds->[$j]->maxFlux() = 100;
 				}
 			}
 			if ($found == 0) {
-				$newPrimMedia->add("mediacompounds",{compound_uuid => $addnlCpds->[$i]->uuid()});
+				$newPrimMedia->add("mediacompounds",{compound_ref => $addnlCpds->[$i]->_reference()});
 			}
 		}
 		$primMedia = $newPrimMedia;
@@ -582,11 +575,7 @@ sub createJobDirectory {
 	#Selecting the solver based on whether the problem is MILP
 	my $solver = "GLPK";
 	if ($self->fluxUseVariables() == 1 || $self->drainfluxUseVariables() == 1 || $self->findMinimalMedia()) {
-		if (-e $self->cplexLicense()) {
-			$solver = "CPLEX";
-		} else {
-			$solver = "SCIP";
-		}
+		$solver = "SCIP";
 	}
 	#Setting gene KO
 	my $geneKO = "none";
@@ -598,8 +587,7 @@ sub createJobDirectory {
 			$geneKO .= ";".$gene->id();
 		}
 	}
-	$geneKO =~ s/kb\|g\.\d+\.//g;
-	$geneKO =~ s/fig\|\d+\.\d+\.//g;
+	$geneKO =~ s/\|/___/g;
 	#Setting reaction KO
 	my $rxnKO = "none";
 	for (my $i=0; $i < @{$self->reactionKOs()}; $i++) {
@@ -611,8 +599,14 @@ sub createJobDirectory {
 		}
 	}
 	#Setting exchange species
-	my $exchange = "Biomass[c]:-10000:0;cpd02701[c]:-10000:0";
-	#TODO
+	my $exchangehash = {
+		cpd11416 => {
+			c => [-10000,0]
+		},
+		cpd02701 => {
+			c => [-10000,0]
+		}
+	};
 	#Setting the objective
 	my $objective = "MAX";
 	my $metToOpt = "REACTANTS;bio1";
@@ -624,39 +618,33 @@ sub createJobDirectory {
 		$objective = "MIN";
 		$optMetabolite = 0;
 	}
-	my $objterms = $self->fbaObjectiveTerms();
-	for (my $i=0; $i < @{$objterms}; $i++) {
-		my $objterm = $objterms->[$i];
-		my $objVarName = "";
-		my $objVarComp = "none";
-		if (lc($objterm->entityType()) eq "compound") {
-			my $entity = $model->getObject("modelcompounds",$objterm->entity_uuid());
-			if (defined($entity)) {
-				$objVarName = $entity->compound()->id();
-				$objVarComp = $entity->modelcompartment()->label();
-			}
-			$optMetabolite = 0;
-		} elsif (lc($objterm->entityType()) eq "reaction") {
-			my $entity = $model->getObject("modelreactions",$objterm->entity_uuid());
-			if (defined($entity)) {
-				$objVarName = $entity->reaction()->id();
-				$objVarComp = $entity->modelcompartment()->label();
-				$metToOpt = "REACTANTS;".$entity->reaction()->id();
-			}
-		} elsif (lc($objterm->entityType()) eq "biomass") {
-			my $entity = $model->getObject("biomasses",$objterm->entity_uuid());
-			if (defined($entity)) {
-				$objVarName = $entity->id();
-				$objVarComp = "none";
-				$metToOpt = "REACTANTS;".$entity->id();
-			}
-		}
-		if (length($objVarName) > 0) {
-			$objective .= ";".$translation->{$objterm->variableType()}.";".$objVarName.";".$objVarComp.";".$objterm->coefficient();
+	foreach my $objid (keys(%{$self->compoundflux_objterms()})) {
+		my $entity = $model->getObject("modelcompounds",$objid);
+		if (defined($entity)) {
+			$objective .= ";DRAIN_FLUX;".$objid.";".$entity->modelcompartment()->label().";".$self->compoundflux_objterms()->{$objid};
+			$exchangehash->{$objid} = {c => [-10000,0]};
 		}
 	}
-	if (@{$objterms} > 1) {
-		$optMetabolite = 0;	
+	foreach my $objid (keys(%{$self->reactionflux_objterms()})) {
+		my $entity = $model->getObject("modelreactions",$objid);
+		if (defined($entity)) {
+			$objective .= ";FLUX;".$objid.";".$entity->modelcompartment()->label().";".$self->reactionflux_objterms()->{$objid};
+		}
+	}
+	foreach my $objid (keys(%{$self->biomassflux_objterms()})) {
+		my $entity = $model->getObject("biomasses",$objid);
+		if (defined($entity)) {
+			$objective .= ";FLUX;".$objid.";none;".$self->biomassflux_objterms()->{$objid};
+		}
+	}
+	my $exchange = "";
+	foreach my $key (keys(%{$exchangehash})) {
+		if (length($exchange) > 0) {
+			$exchange .= ";";
+		}
+		foreach my $comp (keys(%{$exchangehash->{$key}})) {
+			$exchange .= $key."[".$comp."]:".$exchangehash->{$key}->{$comp}->[0].":".$exchangehash->{$key}->{$comp}->[1];
+		}
 	}
 	#Setting up uptake limits
 	my $uptakeLimits = "none";
@@ -672,7 +660,8 @@ sub createJobDirectory {
 		$comboDeletions = "none";
 	}
 	#Creating FBA experiment file
-	my $fbaExpFile = $self->setupFBAExperiments();
+	my $medialist = [$primMedia];
+	my $fbaExpFile = $self->setupFBAExperiments($medialist);
 	if ($fbaExpFile ne "none") {
 		$optMetabolite = 0;
 	}
@@ -712,7 +701,7 @@ sub createJobDirectory {
 		"database root output directory" => $self->jobPath()."/",
 		"database root input directory" => $self->jobDirectory()."/",
 	};
-	if (defined($self->promModel_uuid()) && length($self->promModel_uuid()) > 0) {
+	if (defined($self->prommodel_ref()) && length($self->prommodel_ref()) > 0) {
 		my $softConst = $self->PROMKappa();
 		my $bounds = $self->promBounds();
 		foreach my $key (keys(%{$bounds})) {
@@ -762,11 +751,9 @@ sub createJobDirectory {
 	}
 	Bio::KBase::ObjectAPI::utilities::PRINTFILE($directory."SpecializedParameters.txt",$paramData);
 	#Printing specialized bounds
-	my $medialist = [$primMedia];
-	push(@{$medialist},@{$self->secondaryMedia()});
 	my $mediaData = ["ID\tNAMES\tVARIABLES\tTYPES\tMAX\tMIN\tCOMPARTMENTS"];
-	my $cpdbnds = $self->fbaCompoundBounds();
-	my $rxnbnds = $self->fbaReactionBounds();
+	my $cpdbnds = $self->FBACompoundBounds();
+	my $rxnbnds = $self->FBAReactionBounds();
 	foreach my $media (@{$medialist}) {
 		my $userBounds = {};
 		my $mediaCpds = $media->mediacompounds();
@@ -837,20 +824,17 @@ sub createJobDirectory {
 	Bio::KBase::ObjectAPI::utilities::PRINTFILE($directory."media.tbl",$mediaData);
 	#Set StringDBFile.txt
 	my $mfatkdir = $self->mfatoolkitDirectory();
-	my $dataDir = $self->dataDirectory();
-	my $biochemid = $model->biochemistry()->uuid();
-    $biochemid =~ s/\//_/g;
 	my $stringdb = [
 		"Name\tID attribute\tType\tPath\tFilename\tDelimiter\tItem delimiter\tIndexed columns",
 		"compound\tid\tSINGLEFILE\t\t".$directory."Compounds.tbl\tTAB\tSC\tid",
 		"reaction\tid\tSINGLEFILE\t".$directory."reaction/\t".$directory."Reactions.tbl\tTAB\t|\tid",
 		"cue\tNAME\tSINGLEFILE\t\t".$mfatkdir."../etc/MFAToolkit/cueTable.txt\tTAB\t|\tNAME",
-		"media\tID\tSINGLEFILE\t".$dataDir."ReactionDB/Media/\t".$directory."media.tbl\tTAB\t|\tID;NAMES"		
+		"media\tID\tSINGLEFILE\t".$directory."media/\t".$directory."media.tbl\tTAB\t|\tID;NAMES"		
 	];
 	Bio::KBase::ObjectAPI::utilities::PRINTFILE($directory."StringDBFile.txt",$stringdb);
 	#Write shell script
 	my $exec = [
-		$self->mfatoolkitBinary().' resetparameter "MFA input directory" "'.$dataDir.'ReactionDB/" parameterfile "'.$directory.'SpecializedParameters.txt" LoadCentralSystem "'.$directory.'Model.tbl" > "'.$directory.'log.txt"'
+		$self->mfatoolkitBinary().' resetparameter "MFA input directory" "'.$directory.'ReactionDB/" parameterfile "'.$directory.'SpecializedParameters.txt" LoadCentralSystem "'.$directory.'Model.tbl" > "'.$directory.'log.txt"'
 	];
 	Bio::KBase::ObjectAPI::utilities::PRINTFILE($directory."runMFAToolkit.sh",$exec);
 	chmod 0775,$directory."runMFAToolkit.sh";
@@ -867,54 +851,45 @@ Description:
 =cut
 
 sub setupFBAExperiments {
-	my ($self) = @_;
+	my ($self,$medialist) = @_;
 	my $fbaExpFile = "none";
-	my $fbaSims = $self->fbaPhenotypeSimulations();
-	if (@{$fbaSims} > 0) {
+	if (defined($self->phenotypeset_ref()) && defined($self->phenotypeset())) {
+		my $phenoset = $self->phenotypeset();
 		$fbaExpFile = "FBAExperiment.txt";
 		my $phenoData = ["Label\tKO\tMedia"];
 		my $mediaHash = {};
 		my $tempMediaIndex = 1;
-		for (my $i=0; $i < @{$fbaSims}; $i++) {
+		my $phenos = $phenoset->phenotypes();
+		for (my $i=0; $i < @{$phenos}; $i++) {
+			my $pheno = $phenos->[$i];
 			my $phenoko = "none";
-			my $addnlCpds = $fbaSims->[$i]->additionalCpd_uuids();
-			my $media = $fbaSims->[$i]->media()->name();
+			my $addnlCpds = $pheno->additionalcompound_refs();
+			my $media = $pheno->media()->name();
 			if (@{$addnlCpds} > 0) {
 				if (!defined($mediaHash->{$media.":".join("|",sort(@{$addnlCpds}))})) {
 					$mediaHash->{$media.":".join("|",sort(@{$addnlCpds}))} = $self->createTemporaryMedia({
 						name => "Temp".$tempMediaIndex,
-						media => $fbaSims->[$i]->media(),
-						additionalCpd => $fbaSims->[$i]->additionalCpds()
+						media => $pheno->media(),
+						additionalCpd => $pheno->additionalcompounds()
 					});
 					$tempMediaIndex++;
 				}
 				$media = $mediaHash->{$media.":".join("|",sort(@{$addnlCpds}))}->name();
 			} else {
-				$mediaHash->{$media} = $fbaSims->[$i]->media();
+				$mediaHash->{$media} = $pheno->media();
 			}
-			for (my $j=0; $j < @{$fbaSims->[$i]->geneKOs()}; $j++) {
-				if ($phenoko eq "none" && $fbaSims->[$i]->geneKOs()->[$j]->id() =~ m/(\w+\.\d+)$/) {
+			for (my $j=0; $j < @{$pheno->genekos()}; $j++) {
+				if ($phenoko eq "none") {
 					$phenoko = $1;
-				} elsif ($fbaSims->[$i]->geneKOs()->[$j]->id() =~ m/(\w+\.\d+)$/) {
+				} else {
 					$phenoko .= ";".$1;
 				}
 			}
-			for (my $j=0; $j < @{$fbaSims->[$i]->reactionKOs()}; $j++) {
-				if ($phenoko eq "none") {
-					$phenoko = $fbaSims->[$i]->reactionKOs()->[$j]->id();
-				} else {
-					$phenoko .= ";".$fbaSims->[$i]->reactionKOs()->[$j]->id();
-				}
-			}
-			push(@{$phenoData},$fbaSims->[$i]->uuid()."\t".$phenoko."\t".$media);
+			$phenoko =~ s/\|/___/g;
+			push(@{$phenoData},$pheno->id()."\t".$phenoko."\t".$media);
 		}
-		#Adding all additional media used as secondary media to FBAFormulation
-		my $mediaRef = $self->secondaryMedia();
-		foreach my $tempmedia (keys(%{$mediaHash})) {
-			if ($tempmedia ne $self->media()->name()) {
-				push(@{$self->secondaryMedia_uuids()},$mediaHash->{$tempmedia}->uuid());
-				push(@{$mediaRef},$mediaHash->{$tempmedia});
-			}
+		foreach my $key (keys(%{$mediaHash})) {
+			push(@{$medialist},$mediaHash->{$key});
 		}
 		Bio::KBase::ObjectAPI::utilities::PRINTFILE($self->jobDirectory()."/".$fbaExpFile,$phenoData);
 	}
@@ -944,20 +919,19 @@ sub createTemporaryMedia {
 		name => $args->{name},
 		type => "temporary"
 	});
-	$newMedia->parent($self->biochemistry());
 	my $cpds = $args->{media}->mediacompounds();
 	my $cpdHash = {};
 	foreach my $cpd (@{$cpds}) {
-		$cpdHash->{$cpd->compound_uuid()} = {
-			compound_uuid => $cpd->compound_uuid(),
+		$cpdHash->{$cpd->compound_ref()} = {
+			compound_ref => $cpd->compound_ref(),
 			concentration => $cpd->concentration(),
 			maxFlux => $cpd->maxFlux(),
 			minFlux => $cpd->minFlux(),
 		};
 	}
 	foreach my $cpd (@{$args->{additionalCpd}}) {
-		$cpdHash->{$cpd->uuid()} = {
-			compound_uuid => $cpd->uuid(),
+		$cpdHash->{$cpd->_reference()} = {
+			compound_ref => $cpd->_reference(),
 			concentration => 0.001,
 			maxFlux => 100,
 			minFlux => -100,
@@ -967,203 +941,6 @@ sub createTemporaryMedia {
 		$newMedia->add("mediacompounds",$cpdHash->{$cpd});	
 	}
 	return $newMedia;
-}
-
-=head3 parsePhenotypeSimulations
-
-Definition:
-	void parsePhenotypeSimulations(
-		[{}]
-	);
-Description:
-	Parses array of hashes with phenotype specifications
-
-=cut
-
-sub parsePhenotypeSimulations {
-    my $self = shift;
-    my $args = Bio::KBase::ObjectAPI::utilities::args(["fbaPhenotypeSimulations"],{}, @_);
-	my $phenos = $args->{fbaPhenotypeSimulations};
-	for (my $i=0; $i < @{$phenos};$i++) {
-		my ($addnluuids,$addnlcpds,$genokouuids,$genekos,$reactionkouuids,$reactionkos) = ([],[],[],[],[],[]);
-		my $pheno = $phenos->[$i];
-		(my $obj,my $type) = $self->interpretReference($pheno->{media},"Media");
-		if (defined($pheno->{geneKOs})) {
-			foreach my $gene (@{$pheno->{geneKOs}}) {
-				(my $obj) = $self->interpretReference($gene,"Feature");
-				if (defined($obj)) {
-					push(@{$genekos},$obj);
-					push(@{$genokouuids},$obj->uuid());
-				}
-			}
-		}
-		if (defined($pheno->{reactionKOs})) {
-			foreach my $gene (@{$pheno->{reactionKOs}}) {
-				(my $obj) = $self->interpretReference($gene,"Reaction");
-				if (defined($obj)) {
-					push(@{$reactionkos},$obj);
-					push(@{$reactionkouuids},$obj->uuid());
-				}
-			}
-		}
-		if (defined($pheno->{additionalCpds})) {
-			foreach my $gene (@{$pheno->{additionalCpds}}) {
-				(my $obj) = $self->interpretReference($gene,"Compound");
-				if (defined($obj)) {
-					push(@{$addnlcpds},$obj);
-					push(@{$addnluuids},$obj->uuid());
-				}
-			}
-		}
-		if (defined($obj)) {
-			$self->add("fbaPhenotypeSimulations",{
-				media => $obj,
-				media_uuid => $obj->uuid(),
-				label => $i,
-				pH => $pheno->{pH},
-				temperature => $pheno->{temperature},
-				label => $pheno->{label},
-				additionalCpd_uuids => $addnluuids,
-				additionalCpds => $addnlcpds,
-				geneKO_uuids => $genokouuids,
-				geneKOs => $genekos,
-				reactionKO_uuids => $reactionkouuids,
-				reactionKOs => $reactionkos,
-				observedGrowthFraction => $pheno->{growth}
-			});
-		}
-	}
-}
-
-=head3 parseObjectiveTerms
-
-Definition:
-	void parseObjectiveTerms(
-		[string]
-	);
-Description:
-	Parses array of strings specifying objective into objective term sub objects
-
-=cut
-
-sub parseObjectiveTerms {
-    my $self = shift;
-    my $args = Bio::KBase::ObjectAPI::utilities::args(["objTerms"],{}, @_);
-	my $terms = $args->{objTerms};
-	for (my $i=0; $i < @{$terms};$i++) {
-		(my $obj,my $type) = $self->interpretReference($terms->[$i]->{id});
-		if (defined($obj)) {
-			$self->add("fbaObjectiveTerms",{
-				coefficient => $terms->[$i]->{coefficient},
-				variableType => $terms->[$i]->{variableType},
-				entityType => $type,
-				entity_uuid => $obj->uuid(),
-			});
-		}
-	}
-}
-
-=head3 parseConstraints
-
-Definition:
-	void parseConstraints({
-		constraints => [string]
-	});
-Description:
-	Parses array of strings specifying special constraints into constraint objects
-
-=cut
-
-sub parseConstraints {
-    my $self = shift;
-    my $args = Bio::KBase::ObjectAPI::utilities::args(["constraints"],{}, @_);
-	my $vartrans = {
-		f => "flux",ff => "forflux",rf => "revflux",
-		df => "drainflux",fdf => "fordrainflux",rdf => "revdrainflux",
-		ffu => "forfluxuse",rfu => "reffluxuse"
-	};
-	for (my $i=0; $i < @{$args->{constraints}};$i++) {
-		my $array = [split(/\+/,$args->{constraints}->[$i]->{terms})];
-		my $terms;
-		for (my $j=0; $j < @{$array};$j++) {
-			if ($array->[$j] =~ /\((\d+\.*\d*)\)(\w+)_([\w\/]+)\[(w+)\]/) {
-				my $coef = $1;
-				my $vartype = $vartrans->{$2};
-				(my $obj,my $type) = $self->interpretReference($3);
-				push(@{$terms},{
-					entity_uuid => $obj->uuid(),
-					entityType => $type,
-					variableType => $vartype,
-					coefficient => $coef
-				});
-			}
-		}
-		$self->add("fbaConstraints",{
-			name => $args->{constraints}->[$i]->{name},
-			rhs => $args->{constraints}->[$i]->{rhs},
-			sign => $args->{constraints}->[$i]->{sign},
-			fbaConstraintVariables => $terms
-		});
-	}
-}
-
-=head3 parseReactionKOList
-
-Definition:
-	void parseReactionKOList(
-		string => string(none),delimiter => string(|),array => [string]([])
-	);
-Description:
-	Parses a string or array of strings specifying a list of reaction KOs in the form of references
-
-=cut
-
-sub parseReactionKOList {
-	my ($self,$args) = @_;
-	$args->{data} = "uuid";
-	$args->{class} = "Reaction";
-	$self->reactionKO_uuids($self->parseReferenceList($args));
-}
-
-=head3 parseGeneKOList
-
-Definition:
-	void parseGeneKOList(
-		string => string(none),delimiter => string(|),array => [string]([])
-	);
-Description:
-	Parses a string or array of strings specifying a list of gene KOs in the form of references
-
-=cut
-
-sub parseGeneKOList {
-	my ($self,$args) = @_;
-	$args->{data} = "uuid";
-	$args->{class} = "Feature";
-	$self->geneKO_uuids($self->parseReferenceList($args));
-}
-
-=head3 mediaUUIDs
-
-Definition:
-	[string] mediaUUIDs();
-Description:
-	Returns a list of media uuids used by this FBAFormulation
-=cut
-
-sub mediaUUIDs {
-	my ($self) = @_;
-	my $mediauuids = {
-		$self->media_uuid() => 1,
-	};
-	foreach my $media (@{$self->secondaryMedia_uuids()}) {
-		$mediauuids->{$media} = 1;
-	}
-	my $phenotypes = $self->fbaPhenotypeSimulations();
-	foreach my $pheno (@{$phenotypes}) {
-		$mediauuids->{$pheno->media_uuid()} = 1;
-	}
-	return [keys(%{$mediauuids})];
 }
 
 =head3 export
@@ -1217,8 +994,8 @@ sub htmlComponents {
 	for (my $i=0; $i < @{$data->{attributes}->{headings}}; $i++) {
 		$output->{tabs}->{main}->{content} .= "<tr><th>".$data->{attributes}->{headings}->[$i]."</th><td style='font-size:16px;border: 1px solid black;'>".$data->{attributes}->{data}->[0]->[$i]."</td></tr>\n";
 	}
-	if (defined($self->fbaResults()->[0])) {
-		$output->{tabs}->{main}->{content} .= "<tr><th>Objective value</th><td style='font-size:16px;border: 1px solid black;'>".$self->fbaResults()->[0]->objectiveValue()."</td></tr>\n";
+	if (defined($self->objectiveValue())) {
+		$output->{tabs}->{main}->{content} .= "<tr><th>Objective value</th><td style='font-size:16px;border: 1px solid black;'>".$self->objectiveValue()."</td></tr>\n";
 	}
 	$output->{tabs}->{main}->{content} .= "</table>\n";
 	my $index = 2;
@@ -1242,12 +1019,12 @@ sub htmlComponents {
 		};
 		push(@{$output->{tablist}},$tab);
 	}
-	if (@{$self->fbaReactionBounds()} > 0 || @{$self->fbaCompoundBounds()} > 0) {
+	if (@{$self->FBAReactionBounds()} > 0 || @{$self->FBACompoundBounds()} > 0) {
 		$tab = "tab-".$index;
 		$index++;
 		$headingsOne = ["Variable ID","Definition","Type","Upper bound","Lower bound"];
                 $dataOne = [];
-		foreach my $bound (@{$self->fbaCompoundBounds()}) {
+		foreach my $bound (@{$self->FBACompoundBounds()}) {
                         push(@$dataOne, [
                                 $bound->modelCompound()->id(),
                                 $bound->modelCompound()->name(),
@@ -1256,7 +1033,7 @@ sub htmlComponents {
                                 $bound->lowerBound()
                         ]);
 		}
-		foreach my $bound (@{$self->fbaReactionBounds()}) {
+		foreach my $bound (@{$self->FBAReactionBounds()}) {
                         push(@$dataOne, [
 				$bound->modelReaction()->id(),
 				$bound->modelReaction()->definition(),
@@ -1271,12 +1048,12 @@ sub htmlComponents {
 		};
 		push(@{$output->{tablist}},$tab);
 	}
-	if (@{$self->fbaConstraints()} > 0) {
+	if (@{$self->FBAConstraints()} > 0) {
 		$tab = "tab-".$index;
 		$index++;
 		$headingsOne = ["Name","Constraint"];
                 $dataOne = [];
-		foreach my $const (@{$self->fbaConstraints()}) {
+		foreach my $const (@{$self->FBAConstraints()}) {
                         push(@$dataOne, [ $const->name(), $const->readableString() ]);
 		}
 		$output->{tabs}->{$tab} = {
@@ -1286,13 +1063,12 @@ sub htmlComponents {
 		push(@{$output->{tablist}},$tab);
 	}
 	#Retrieving result
-	if (defined($self->fbaResults()->[0])) {
-		my $result = $self->fbaResults()->[0];
+	if (defined($self->objectiveValue())) {
 		$tab = "tab-".$index;
 		$index++;
 		$headingsOne = ["Reaction ID","Definition","Variable","Value","Lower bound","Upper bound","Min","Max","Class"];
                 $dataOne = [];
-		foreach my $rxnflux (@{$result->fbaReactionVariables()}) {
+		foreach my $rxnflux (@{$self->FBAReactionVariables()}) {
                         push(@$dataOne, [
 				$rxnflux->modelreaction()->id(),
 				$rxnflux->modelreaction()->definition(),
@@ -1305,7 +1081,7 @@ sub htmlComponents {
 				$rxnflux->class()
                         ]);
 		}
-		foreach my $rxnflux (@{$result->fbaBiomassVariables()}) {
+		foreach my $rxnflux (@{$self->FBABiomassVariables()}) {
                         push(@$dataOne, [
 				$rxnflux->biomass()->id(),
 				$rxnflux->biomass()->definition(),
@@ -1327,7 +1103,7 @@ sub htmlComponents {
 		$index++;
 		$headingsOne = ["Compound ID","Name","Variable","Value","Lower bound","Upper bound","Min","Max","Class"];
                 $dataOne = [];
-		foreach my $cpdflux (@{$result->fbaCompoundVariables()}) {
+		foreach my $cpdflux (@{$self->FBACompoundVariables()}) {
                         push(@$dataOne, [
 				$cpdflux->modelcompound()->id(),
 				$cpdflux->modelcompound()->name(),
@@ -1345,49 +1121,12 @@ sub htmlComponents {
 			name => "Compound fluxes"
 		};
 		push(@{$output->{tablist}},$tab);
-		if (@{$result->fbaPhenotypeSimultationResults()} > 0) {
-			$tab = "tab-".$index;
-			$index++;
-			$headingsOne = ["Label","Media","Addtl cpd","Gene KO","Observed growth","Simulated growth","Class"];
-                        $dataOne = [];
-			foreach my $pheno (@{$result->fbaPhenotypeSimultationResults()}) {
-				my $phenospec = $pheno->fbaPhenotypeSimulation();
-				my $genes = "";
-				my $addcpd = "";
-				for (my $i=0; $i < @{$phenospec->geneKOs()}; $i++) {
-					if (length($genes) > 0) {
-						$genes .= ";";
-					}
-					$genes .= $phenospec->geneKOs()->[$i]->id();
-				}
-				for (my $i=0; $i < @{$phenospec->additionalCpds()}; $i++) {
-					if (length($addcpd) > 0) {
-						$addcpd .= ";";
-					}
-					$addcpd .= $phenospec->additionalCpds()->[$i]->name();
-				}
-                                push(@$dataOne, [
-					$phenospec->label(),
-					$phenospec->media()->id(),
-					$addcpd,
-					$genes,
-					$phenospec->observedGrowthFraction(),
-					$pheno->simulatedGrowth()." (".$pheno->simulatedGrowthFraction().")",
-					$pheno->class()
-                                ]);
-			}
-			$output->{tabs}->{$tab} = {
-                                content => Bio::KBase::ObjectAPI::utilities::PRINTHTMLTABLE( $headingsOne, $dataOne, 'data-table' ),
-				name => "Phenotype results"
-			};
-			push(@{$output->{tablist}},$tab);
-		}
-		if (@{$result->fbaPromResults()} > 0) {
+		if (@{$self->FBAPromResults()} > 0) {
 			$tab = "tab-".$index;
 			$index++;
 			$headingsOne = ["Objective fraction","Alpha","Beta"];
                         $dataOne = [];
-			foreach my $promres (@{$result->fbaPromResults()}) {
+			foreach my $promres (@{$self->FBAPromResults()}) {
             	push(@{$dataOne},[
             		$promres->objectFraction(),
             		$promres->alpha(),
@@ -1400,12 +1139,12 @@ sub htmlComponents {
 			};
 			push(@{$output->{tablist}},$tab);
 		}
-		if (@{$result->fbaDeletionResults()} > 0) {
+		if (@{$self->FBADeletionResults()} > 0) {
 			$tab = "tab-".$index;
 			$index++;
 			$headingsOne = ["Gene KOs","Growth fraction"];
                         $dataOne = [];
-			foreach my $delres (@{$result->fbaDeletionResults()}) {
+			foreach my $delres (@{$self->FBADeletionResults()}) {
 				my $genes = "";
 				for (my $i=0; $i < @{$delres->genekos()}; $i++) {
 					if (length($genes) > 0) {
@@ -1424,13 +1163,13 @@ sub htmlComponents {
 			};
 			push(@{$output->{tablist}},$tab);
 		}
-		if (@{$result->minimalMediaResults()} > 0) {
+		if (@{$self->FBAMinimalMediaResults()} > 0) {
 			$tab = "tab-".$index;
 			$index++;
 			$headingsOne = ["Media index","Essential nutrient","Compound ID","Name"];
                         $dataOne = [];
 			my $mediaIndex = 0;
-			foreach my $minmed (@{$result->minimalMediaResults()}) {
+			foreach my $minmed (@{$self->FBAMinimalMediaResults()}) {
 				foreach my $minmedcpd (@{$minmed->essentialNutrients()}) {
                                         push(@$dataOne, [
 						$mediaIndex,
@@ -1455,15 +1194,15 @@ sub htmlComponents {
 			};
 			push(@{$output->{tablist}},$tab);
 		}
-		if (@{$result->fbaMetaboliteProductionResults()} > 0) {
+		if (@{$self->FBAMetaboliteProductionResults()} > 0) {
 			$tab = "tab-".$index;
 			$index++;
 			$headingsOne = ["Compound ID","Name","Maximum production"];
                         $dataOne = [];
-			foreach my $metprod (@{$result->fbaMetaboliteProductionResults()}) {
+			foreach my $metprod (@{$self->FBAMetaboliteProductionResults()}) {
                                 push(@$dataOne, [
-					$metprod->modelCompound()->id(),
-					$metprod->modelCompound()->name(),
+					$metprod->modelcompound()->id(),
+					$metprod->modelcompound()->name(),
 					$metprod->maximumProduction()
                                 ]);
 			}
@@ -1475,6 +1214,842 @@ sub htmlComponents {
 		}
 	}
 	return $output;
+}
+
+=head3 buildFromOptSolution
+
+Definition:
+	ModelSEED::MS::FBAResults = ModelSEED::MS::FBAResults->runFBA();
+Description:
+	Runs the FBA study described by the fomulation and returns a typed object with the results
+
+=cut
+
+sub buildFromOptSolution {
+    my $self = shift;
+    my $args = Bio::KBase::ObjectAPI::utilities::args(["LinOptSolution"],{}, @_);
+	my $solvars = $args->{LinOptSolution}->solutionvariables();
+	for (my $i=0; $i < @{$solvars}; $i++) {
+		my $var = $solvars->[$i];
+		my $type = $var->variable()->type();
+		if ($type eq "flux" || $type eq "forflux" || $type eq "revflux" || $type eq "fluxuse" || $type eq "forfluxuse" || $type eq "revfluxuse") {
+			$self->integrateReactionFluxRawData($var);
+		} elsif ($type eq "biomassflux") {
+			$self->add("FBABiomassVariables",{
+				biomass_ref => $var->variable()->entity_ref(),
+				variableType => $type,
+				lowerBound => $var->variable()->lowerBound(),
+				upperBound => $var->variable()->upperBound(),
+				min => $var->min(),
+				max => $var->max(),
+				value => $var->value()
+			});
+		} elsif ($type eq "drainflux" || $type eq "fordrainflux" || $type eq "revdrainflux" || $type eq "drainfluxuse" || $type eq "fordrainfluxuse" || $type eq "revdrainfluxuse") {
+			$self->integrateCompoundFluxRawData($var);
+		}
+	}	
+}
+
+=head3 integrateReactionFluxRawData
+
+Definition:
+	void ModelSEED::MS::FBAResults->integrateReactionFluxRawData();
+Description:
+	Translates a raw flux or flux use variable into a reaction variable with decomposed reversible reactions recombined
+
+=cut
+
+sub integrateReactionFluxRawData {
+	my ($self,$solVar) = @_;
+	my $type = "flux";
+	my $max = 0;
+	my $min = 0;
+	my $var = $solVar->variable();
+	if ($var->type() =~ m/use$/) {
+		$max = 1;
+		$min = -1;
+		$type = "fluxuse";	
+	}
+	my $fbavar = $self->queryObject("FBAReactionVariables",{
+		modelreaction_ref => $var->entity_ref(),
+		variableType => $type
+	});
+	if (!defined($fbavar)) {
+		$fbavar = $self->add("FBAReactionVariables",{
+			modelreaction_ref => $var->entity_ref(),
+			variableType => $type,
+			lowerBound => $min,
+			upperBound => $max,
+			min => $min,
+			max => $max,
+			value => 0
+		});
+	}
+	if ($var->type() eq $type) {
+		$fbavar->upperBound($var->upperBound());
+		$fbavar->lowerBound($var->lowerBound());
+		$fbavar->max($solVar->max());
+		$fbavar->min($solVar->min());
+		$fbavar->value($solVar->value());
+	} elsif ($var->type() eq "for".$type) {
+		if ($var->upperBound() > 0) {
+			$fbavar->upperBound($var->upperBound());	
+		}
+		if ($var->lowerBound() > 0) {
+			$fbavar->lowerBound($var->lowerBound());
+		}
+		if ($solVar->max() > 0) {
+			$fbavar->max($solVar->max());
+		}
+		if ($solVar->min() > 0) {
+			$fbavar->min($solVar->min());
+		}
+		if ($solVar->value() > 0) {
+			$fbavar->value($fbavar->value() + $solVar->value());
+		}
+	} elsif ($var->type() eq "rev".$type) {
+		if ($var->upperBound() > 0) {
+			$fbavar->lowerBound((-1*$var->upperBound()));
+		}
+		if ($var->lowerBound() > 0) {
+			$fbavar->upperBound((-1*$var->lowerBound()));
+		}
+		if ($solVar->max() > 0) {
+			$fbavar->min((-1*$solVar->max()));
+		}
+		if ($solVar->min() > 0) {
+			$fbavar->max((-1*$solVar->min()));
+		}
+		if ($solVar->value() > 0) {
+			$fbavar->value($fbavar->value() - $solVar->value());
+		}
+	}
+}
+
+=head3 integrateCompoundFluxRawData
+
+Definition:
+	void ModelSEED::MS::FBAResults->integrateCompoundFluxRawData();
+Description:
+	Translates a raw flux or flux use variable into a compound variable with decomposed reversible reactions recombined
+
+=cut
+
+sub integrateCompoundFluxRawData {
+	my ($self,$solVar) = @_;
+	my $var = $solVar->variable();
+	my $type = "drainflux";
+	my $max = 0;
+	my $min = 0;
+	if ($var->type() =~ m/use$/) {
+		$max = 1;
+		$min = -1;
+		$type = "drainfluxuse";	
+	}
+	my $fbavar = $self->queryObject("FBACompoundVariables",{
+		modelcompound_ref => $var->entity_ref(),
+		variableType => $type
+	});
+	if (!defined($fbavar)) {
+		$fbavar = $self->add("FBACompoundVariables",{
+			modelcompound_ref => $var->entity_ref(),
+			variableType => $type,
+			lowerBound => $min,
+			upperBound => $max,
+			min => $min,
+			max => $max,
+			value => 0
+		});
+	}
+	if ($var->type() eq $type) {
+		$fbavar->upperBound($var->upperBound());
+		$fbavar->lowerBound($var->lowerBound());
+		$fbavar->max($solVar->max());
+		$fbavar->min($solVar->min());
+		$fbavar->value($solVar->value());
+	} elsif ($var->type() eq "for".$type) {
+		if ($var->upperBound() > 0) {
+			$fbavar->upperBound($var->upperBound());	
+		}
+		if ($var->lowerBound() > 0) {
+			$fbavar->lowerBound($var->lowerBound());
+		}
+		if ($solVar->max() > 0) {
+			$fbavar->max($solVar->max());
+		}
+		if ($solVar->min() > 0) {
+			$fbavar->min($solVar->min());
+		}
+		if ($solVar->value() > 0) {
+			$fbavar->value($fbavar->value() + $solVar->value());
+		}
+	} elsif ($var->type() eq "rev".$type) {
+		if ($var->upperBound() > 0) {
+			$fbavar->lowerBound((-1*$var->upperBound()));
+		}
+		if ($var->lowerBound() > 0) {
+			$fbavar->upperBound((-1*$var->lowerBound()));
+		}
+		if ($solVar->max() > 0) {
+			$fbavar->min((-1*$solVar->max()));	
+		}
+		if ($solVar->min() > 0) {
+			$fbavar->max((-1*$solVar->min()));
+		}
+		if ($solVar->value() > 0) {
+			$fbavar->value($fbavar->value() - $solVar->value());
+		}
+	}
+}
+
+=head3 loadMFAToolkitResults
+Definition:
+	void ModelSEED::MS::FBAResult->loadMFAToolkitResults();
+Description:
+	Loads problem result data from job directory
+
+=cut
+
+sub loadMFAToolkitResults {
+	my ($self) = @_;
+	$self->parseProblemReport();
+	$self->parseFluxFiles();
+	$self->parseMetaboliteProduction();
+	$self->parseFBAPhenotypeOutput();
+	$self->parseMinimalMediaResults();
+	$self->parseCombinatorialDeletionResults();
+	$self->parseFVAResults();
+	$self->parsePROMResult();
+	$self->parseOutputFiles();
+}
+
+=head3 parseFluxFiles
+Definition:
+	void ModelSEED::MS::Model->parseFluxFiles();
+Description:
+	Parses files with flux data
+
+=cut
+
+sub parseFluxFiles {
+	my ($self) = @_;
+	my $directory = $self->jobDirectory();
+	if (-e $directory."/MFAOutput/SolutionCompoundData.txt") {
+		my $tbl = Bio::KBase::ObjectAPI::utilities::LOADTABLE($directory."/MFAOutput/SolutionCompoundData.txt",";");
+		my $drainCompartmentColumns = {};
+		my $compoundColumn = -1;
+		for (my $i=0; $i < @{$tbl->{headings}}; $i++) {
+			if ($tbl->{headings}->[$i] eq "Compound") {
+				$compoundColumn = $i;
+			} elsif ($tbl->{headings}->[$i] =~ m/Drain\[([a-zA-Z0-9]+)\]/) {
+				$drainCompartmentColumns->{$1} = $i;
+			}
+		}
+		my $mediaCpdHash = {};
+		my $mediaCpds = $self->media()->mediacompounds();
+		for (my $i=0; $i < @{$mediaCpds}; $i++) {
+			$mediaCpdHash->{$mediaCpds->[$i]->compound()->id()} = 1;
+		}
+		if ($compoundColumn != -1) {
+			foreach my $row (@{$tbl->{data}}) {
+				foreach my $comp (keys(%{$drainCompartmentColumns})) {
+					if ($row->[$drainCompartmentColumns->{$comp}] ne "none") {
+						my $id = $row->[$compoundColumn]."_".$comp."0";
+						if ($row->[$compoundColumn] =~ m/(.+)_(\d+)/) {
+							my $cpd = $1;
+							my $index = $2;
+							if ($index > 0) {
+								$id = $cpd."_".$comp.$index;
+							}
+						}
+						my $mdlcpd = $self->fbamodel()->getObject("modelcompounds",$id);
+						if (defined($mdlcpd)) {
+							my $value = $row->[$drainCompartmentColumns->{$comp}];
+							if (abs($value) < 0.00000001) {
+								$value = 0;
+							}
+							my $lower = $self->defaultMinDrainFlux();
+							my $upper = $self->defaultMaxDrainFlux();
+							if ($comp eq "e" && defined($mediaCpdHash->{$mdlcpd->compound()->id()})) {
+								$upper = $self->defaultMaxFlux();
+							}
+							$self->add("FBACompoundVariables",{
+								modelcompound_ref => $mdlcpd->_reference(),
+								variableType => "drainflux",
+								value => $value,
+								lowerBound => $lower,
+								upperBound => $upper,
+								min => $lower,
+								max => $upper,
+								class => "unknown"
+							});
+						}
+					}
+				}
+			}
+		}
+	}
+	if (-e $directory."/MFAOutput/SolutionReactionData.txt") {
+		my $tbl = Bio::KBase::ObjectAPI::utilities::LOADTABLE($directory."/MFAOutput/SolutionReactionData.txt",";");
+		my $fluxCompartmentColumns = {};
+		my $reactionColumn = -1;
+		for (my $i=0; $i < @{$tbl->{headings}}; $i++) {
+			if ($tbl->{headings}->[$i] eq "Reaction") {
+				$reactionColumn = $i;
+			} elsif ($tbl->{headings}->[$i] =~ m/Flux\[([a-zA-Z0-9]+)\]/) {
+				$fluxCompartmentColumns->{$1} = $i;
+			}
+		}
+		if ($reactionColumn != -1) {
+			foreach my $row (@{$tbl->{data}}) {
+				foreach my $comp (keys(%{$fluxCompartmentColumns})) {
+					if ($row->[$fluxCompartmentColumns->{$comp}] ne "none") {
+						my $id = $row->[$reactionColumn]."_".$comp."0";
+						if ($row->[$reactionColumn] =~ m/(.+)_(\d+)/) {
+							my $rxn = $1;
+							my $index = $2;
+							if ($index > 0) {
+								$id = $rxn."_".$comp.$index;
+							}
+						}
+						my $mdlrxn = $self->fbamodel()->getObject("modelreactions",$id);
+						if (defined($mdlrxn)) {
+							my $value = $row->[$fluxCompartmentColumns->{$comp}];
+							if (abs($value) < 0.00000001) {
+								$value = 0;
+							}
+							my $lower = -1*$self->defaultMaxFlux();
+							my $upper = $self->defaultMaxFlux();
+							if ($mdlrxn->direction() eq "<") {
+								$upper = 0;
+							} elsif ($mdlrxn->direction() eq ">") {
+								$lower = 0;
+							}
+							$self->add("FBAReactionVariables",{
+								modelreaction_ref => $mdlrxn->_reference(),
+								variableType => "flux",
+								value => $value,
+								lowerBound => $lower,
+								upperBound => $upper,
+								min => $lower,
+								max => $upper,
+								class => "unknown"
+							});
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+=head3 parseFBAPhenotypeOutput
+Definition:
+	void ModelSEED::MS::Model->parseFBAPhenotypeOutput();
+Description:
+	Parses output file generated by FBAPhenotypeSimulation
+
+=cut
+
+sub parseFBAPhenotypeOutput {
+	my ($self) = @_;
+	my $directory = $self->jobDirectory();
+	if (-e $directory."/FBAExperimentOutput.txt") {
+		#Loading file results into a hash
+		my $tbl = Bio::KBase::ObjectAPI::utilities::LOADTABLE($directory."/FBAExperimentOutput.txt","\t");
+		if (!defined($tbl->{data}->[0]->[5])) {
+			return Bio::KBase::ObjectAPI::utilities::ERROR("output file did not contain necessary data");
+		}
+		my $phenosimset = Bio::KBase::ObjectAPI::KBasePhenotypes::PhenotypeSimulationSet->new({
+			id => $self->_get_new_id($self->phenotypeset()->id().".phenosim"),
+			fbamodel_ref => $self->fbamodel()->_reference(),
+			phenotypeset_ref => $self->phenotypeset_ref(),
+			phenotypeSimulations => []
+		});
+		$self->phenotypesimulationset_ref("");
+		$self->phenotypesimulationset($phenosimset);
+		my $phenoOutputHash;
+		foreach my $row (@{$tbl->{data}}) {
+			if (defined($row->[5])) {
+				my $fraction = 0;
+				if ($row->[5] < 1e-7) {
+					$row->[5] = 0;	
+				}
+				if ($row->[4] < 1e-7) {
+					$row->[4] = 0;	
+				} else {
+					$fraction = $row->[5]/$row->[4];	
+				}
+				$phenoOutputHash->{$row->[0]} = {
+					simulatedGrowth => $row->[5],
+					wildtype => $row->[4],
+					simulatedGrowthFraction => $fraction,
+					noGrowthCompounds => [],
+					dependantReactions => [],
+					dependantGenes => [],
+					fluxes => {},
+					phenoclass => "UN",
+					phenotype_ref => $self->phenotypeset()->_reference()."/phenotypes/id/".$row->[0]
+				};		
+				if (defined($row->[6]) && length($row->[6]) > 0) {
+					chomp($row->[6]);
+					$phenoOutputHash->{$row->[0]}->{noGrowthCompounds} = [split(/;/,$row->[6])];
+				}
+				if (defined($row->[7]) && length($row->[7]) > 0) {
+					$phenoOutputHash->{$row->[0]}->{dependantReactions} = [split(/;/,$row->[7])];
+				}
+				if (defined($row->[8]) && length($row->[8]) > 0) {
+					$phenoOutputHash->{$row->[0]}->{dependantReactions} = [split(/;/,$row->[8])];
+				}
+				if (defined($row->[9]) && length($row->[9]) > 0) {
+					my @fluxList = split(/;/,$row->[9]);
+					for (my $j=0; $j < @fluxList; $j++) {
+						my @temp = split(/:/,$fluxList[$j]);
+						$phenoOutputHash->{$row->[0]}->{fluxes}->{$temp[0]} = $temp[1];
+					}
+				}
+			}
+		}
+		#Scanning through all phenotype data in FBAFormulation and creating corresponding phenotype result objects
+		my $phenos = $self->phenotypeset()->phenotypes();
+		for (my $i=0; $i < @{$phenos}; $i++) {
+			my $pheno = $phenos->[$i];
+			if (defined($phenoOutputHash->{$pheno->_reference()})) {
+				if (defined($pheno->observedGrowthFraction())) {
+					if ($pheno->observedGrowthFraction() > 0.0001) {
+						if ($phenoOutputHash->{$pheno->id()}->{simulatedGrowthFraction} > 0) {
+							$phenoOutputHash->{$pheno->id()}->{phenoclass} = "CP";
+						} else {
+							$phenoOutputHash->{$pheno->id()}->{phenoclass} = "FN";
+						}
+					} else {
+						if ($phenoOutputHash->{$pheno->id()}->{simulatedGrowthFraction} > 0) {
+							$phenoOutputHash->{$pheno->id()}->{phenoclass} = "FP";
+						} else {
+							$phenoOutputHash->{$pheno->id()}->{phenoclass} = "CN";
+						}
+					}
+				}
+				$phenosimset->add("phenotypeSimulations",$phenoOutputHash->{$pheno->id()});	
+			}
+		}
+	}
+}
+
+=head3 parseMetaboliteProduction
+Definition:
+	void ModelSEED::MS::Model->parseMetaboliteProduction();
+Description:
+	Parses metabolite production file
+
+=cut
+
+sub parseMetaboliteProduction {
+	my ($self) = @_;
+	my $directory = $self->jobDirectory();
+	if (-e $directory."/MFAOutput/MetaboliteProduction.txt") {
+		my $tbl = Bio::KBase::ObjectAPI::utilities::LOADTABLE($directory."/MFAOutput/MetaboliteProduction.txt",";");
+		foreach my $row (@{$tbl->{data}}) {
+			if (defined($row->[1])) {
+				my $id = $row->[0]."_c0";
+				if ($row->[0] =~ m/(.+)_(\d+)/) {
+					my $cpd = $1;
+					my $index = $2;
+					if ($index > 0) {
+						$id = $cpd."_c".$index;
+					}
+				}
+				my $cpd = $self->fbamodel()->getObject("modelcompounds",$id);
+				if (defined($cpd)) {
+					$self->add("FBAMetaboliteProductionResults",{
+						modelcompound_ref => $cpd->_reference(),
+						maximumProduction => -1*$row->[1]
+					});
+				}
+			}
+		}
+		return 1;
+	}
+	return 0;
+}
+
+=head3 parseProblemReport
+Definition:
+	void ModelSEED::MS::Model->parseProblemReport();
+Description:
+	Parses problem report
+
+=cut
+
+sub parseProblemReport {
+	my ($self) = @_;
+	my $directory = $self->jobDirectory();
+	if (-e $directory."/ProblemReport.txt") {
+		my $tbl = Bio::KBase::ObjectAPI::utilities::LOADTABLE($directory."/ProblemReport.txt",";");
+		my $column;
+		for (my $i=0; $i < @{$tbl->{headings}}; $i++) {
+			if ($tbl->{headings}->[$i] eq "Objective") {
+				$column = $i;
+				last;
+			}
+		}
+		if (defined($tbl->{data}->[0]) && defined($tbl->{data}->[0]->[$column])) {
+			$self->objectiveValue($tbl->{data}->[0]->[$column]);
+		}
+		return 1;
+	}
+	return 0;
+}
+
+=head3 parseMinimalMediaResults
+Definition:
+	void ModelSEED::MS::Model->parseMinimalMediaResults();
+Description:
+	Parses minimal media result file
+
+=cut
+
+sub parseMinimalMediaResults {
+	my ($self) = @_;
+	my $directory = $self->jobDirectory();
+	if (-e $directory."/MFAOutput/MinimalMediaResults.txt") {
+		my $data = Bio::KBase::ObjectAPI::utilities::LOADFILE($directory."/MFAOutput/MinimalMediaResults.txt");
+		my $essIDs = [split(/;/,$data->[1])];
+		my $essCpds;
+		my $essuuids;
+		for (my $i=0; $i < @{$essIDs};$i++) {
+			my $cpd = $self->biochemistry()->getObject("compounds",$essIDs->[$i]);
+			if (defined($cpd)) {
+				push(@{$essCpds},$cpd);
+				push(@{$essuuids},$cpd->_reference());	
+			}
+		}
+		my $count = 1;
+		for (my $i=3; $i < @{$data}; $i++) {
+			if ($data->[$i] !~ m/^Dead/) {
+				my $optIDs = [split(/;/,$data->[$i])];
+				my $optCpds;
+				my $optuuids;
+				for (my $j=0; $j < @{$optIDs};$j++) {
+					my $cpd = $self->biochemistry()->getObject("compounds",$optIDs->[$j]);
+					if (defined($cpd)) {
+						push(@{$optCpds},$cpd);
+						push(@{$optuuids},$cpd->_reference());
+					}
+				}
+				$self->add("FBAMinimalMediaResults",{
+					essentialNutrient_refs => $essuuids,
+					optionalNutrient_refs => $optuuids
+				});
+				$count++;
+			} else {
+				last;	
+			}
+		}
+	}
+}
+
+=head3 parseCombinatorialDeletionResults
+Definition:
+	void ModelSEED::MS::Model->parseCombinatorialDeletionResults();
+Description:
+	Parses combinatorial deletion results
+
+=cut
+
+sub parseCombinatorialDeletionResults {
+	my ($self) = @_;
+	my $directory = $self->jobDirectory();
+	if (-e $directory."/MFAOutput/CombinationKO.txt") {
+		my $tbl = Bio::KBase::ObjectAPI::utilities::LOADTABLE($directory."/MFAOutput/CombinationKO.txt","\t");
+		foreach my $row (@{$tbl->{data}}) {
+			if (defined($row->[1])) {
+				my $array = [split(/;/,$row->[0])];
+				my $geneArray = [];
+				for (my $i=0; $i < @{$array}; $i++) {
+					my $geneID = $array->[$i];
+					$geneID =~ s/___/|/;
+					my $gene = $self->genome()->getObject("features",$geneID);
+					if (defined($gene)) {
+						push(@{$geneArray},$gene->_reference());	
+					}
+				}
+				if (@{$geneArray} > 0) {
+					$self->add("FBADeletionResults",{
+						feature_refs => $geneArray,
+						growthFraction => $row->[1]
+					});
+				}
+			}
+		}
+		return 1;
+	}
+	return 0;
+}
+
+=head3 parseFVAResults
+Definition:
+	void ModelSEED::MS::Model->parseFVAResults();
+Description:
+	Parses FVA results
+
+=cut
+
+sub parseFVAResults {
+	my ($self) = @_;
+	my $directory = $self->jobDirectory();
+	if (-e $directory."/MFAOutput/TightBoundsReactionData.txt" && -e $directory."/MFAOutput/TightBoundsCompoundData.txt") {
+		my $tbl = Bio::KBase::ObjectAPI::utilities::LOADTABLE($directory."/MFAOutput/TightBoundsReactionData.txt",";",1);
+		if (defined($tbl->{headings}) && defined($tbl->{data})) {
+			my $idColumn = -1;
+			my $vartrans = {
+				FLUX => ["flux",-1,-1],
+				DELTAGG_ENERGY => ["deltag",-1,-1],
+				REACTION_DELTAG_ERROR => ["deltagerr",-1,-1]
+			};
+			my $deadRxn = {};
+			if (-e $directory."/DeadReactions.txt") {
+				my $inputArray = Bio::KBase::ObjectAPI::utilities::LOADFILE($directory."/DeadReactions.txt","");
+				if (defined($inputArray)) {
+					for (my $i=0; $i < @{$inputArray}; $i++) {
+						$deadRxn->{$inputArray->[$i]} = 1;
+					}
+				}
+			}
+			for (my $i=0; $i < @{$tbl->{headings}}; $i++) {
+				if ($tbl->{headings}->[$i] eq "DATABASE ID") {
+					$idColumn = $i;
+				} else {
+					foreach my $vartype (keys(%{$vartrans})) {
+						if ($tbl->{headings}->[$i] eq "Max ".$vartype) {
+							$vartrans->{$vartype}->[2] = $i;
+							last;
+						} elsif ($tbl->{headings}->[$i] eq "Min ".$vartype) {
+							$vartrans->{$vartype}->[1] = $i;
+							last;
+						}
+					}
+				}
+			}
+			if ($idColumn >= 0) {
+				for (my $i=0; $i < @{$tbl->{data}}; $i++) {
+					my $row = $tbl->{data}->[$i];
+					if (defined($row->[$idColumn])) {
+						my $comp = "c";
+						my $id = $row->[$idColumn]."_".$comp."0";
+						if ($row->[$idColumn] =~ m/(.+)_(\d+)/) {
+							my $rxn = $1;
+							my $index = $2;
+							if ($index > 0) {
+								$id = $rxn."_".$comp.$index;
+							}
+						}
+						my $mdlrxn = $self->fbamodel()->getObject("modelreactions",$id);
+						if (defined($mdlrxn)) {
+							foreach my $vartype (keys(%{$vartrans})) {
+								if ($vartrans->{$vartype}->[1] != -1 && $vartrans->{$vartype}->[2] != -1) {
+									my $min = $row->[$vartrans->{$vartype}->[1]];
+									my $max = $row->[$vartrans->{$vartype}->[2]];
+									if (abs($min) < 0.0000001) {
+										$min = 0;	
+									}
+									if (abs($max) < 0.0000001) {
+										$max = 0;	
+									}
+									my $fbaRxnVar = $self->queryObject("FBAReactionVariables",{
+										modelreaction_ref => $mdlrxn->_reference(),
+										variableType => $vartrans->{$vartype}->[0],
+									});
+									if (!defined($fbaRxnVar)) {
+										$fbaRxnVar = $self->add("FBAReactionVariables",{
+											modelreaction_ref => $mdlrxn->_reference(),
+											variableType => $vartrans->{$vartype}->[0]
+										});	
+									}
+									$fbaRxnVar->min($min);
+									$fbaRxnVar->max($max);
+									if (defined($deadRxn->{$id})) {
+										$fbaRxnVar->class("Dead");
+									} elsif ($fbaRxnVar->min() > 0) {
+										$fbaRxnVar->class("Positive");
+									} elsif ($fbaRxnVar->max() < 0) {
+										$fbaRxnVar->class("Negative");
+									} elsif ($fbaRxnVar->min() == 0 && $fbaRxnVar->max() > 0) {
+										$fbaRxnVar->class("Positive variable");
+									} elsif ($fbaRxnVar->max() == 0 && $fbaRxnVar->min() < 0) {
+										$fbaRxnVar->class("Negative variable");
+									} elsif ($fbaRxnVar->max() == 0 && $fbaRxnVar->min() == 0) {
+										$fbaRxnVar->class("Blocked");
+									} else {
+										$fbaRxnVar->class("Variable");
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		$tbl = Bio::KBase::ObjectAPI::utilities::LOADTABLE($directory."/MFAOutput/TightBoundsCompoundData.txt",";",1);
+		if (defined($tbl->{headings}) && defined($tbl->{data})) {
+			my $idColumn = -1;
+			my $compColumn = -1;
+			my $vartrans = {
+				DRAIN_FLUX => ["drainflux",-1,-1],
+				LOG_CONC => ["conc",-1,-1],
+				DELTAGF_ERROR => ["deltagferr",-1,-1],
+				POTENTIAL => ["potential",-1,-1]
+			};
+			my $deadCpd = {};
+			my $deadendCpd = {};
+			if (-e $directory."/DeadMetabolites.txt") {
+				my $inputArray = Bio::KBase::ObjectAPI::utilities::LOADFILE($directory."/DeadMetabolites.txt","");
+				if (defined($inputArray)) {
+					for (my $i=0; $i < @{$inputArray}; $i++) {
+						$deadCpd->{$inputArray->[$i]} = 1;
+					}
+				}
+			}
+			if (-e $directory."/DeadEndMetabolites.txt") {
+				my $inputArray = Bio::KBase::ObjectAPI::utilities::LOADFILE($directory."/DeadEndMetabolites.txt","");
+				if (defined($inputArray)) {
+					for (my $i=0; $i < @{$inputArray}; $i++) {
+						$deadendCpd->{$inputArray->[$i]} = 1;
+					}
+				}
+			}
+			for (my $i=0; $i < @{$tbl->{headings}}; $i++) {
+				if ($tbl->{headings}->[$i] eq "DATABASE ID") {
+					$idColumn = $i;
+				} elsif ($tbl->{headings}->[$i] eq "COMPARTMENT") {
+					$compColumn = $i;
+				} else {
+					foreach my $vartype (keys(%{$vartrans})) {
+						if ($tbl->{headings}->[$i] eq "Max ".$vartype) {
+							$vartrans->{$vartype}->[2] = $i;
+						} elsif ($tbl->{headings}->[$i] eq "Min ".$vartype) {
+							$vartrans->{$vartype}->[1] = $i;
+						}
+					}
+				}
+			}
+			if ($idColumn >= 0) {
+				for (my $i=0; $i < @{$tbl->{data}}; $i++) {
+					my $row = $tbl->{data}->[$i];
+					if (defined($row->[$idColumn])) {
+						my $comp = $row->[$compColumn];
+						my $id = $row->[$idColumn]."_".$comp."0";
+						if ($row->[$idColumn] =~ m/(.+)_(\d+)/) {
+							my $cpd = $1;
+							my $index = $2;
+							if ($index > 0) {
+								$id = $cpd."_".$comp.$index;
+							}
+						}
+						my $mdlcpd = $self->fbamodel()->getObject("modelcompounds",$id);
+						if (defined($mdlcpd)) {
+							foreach my $vartype (keys(%{$vartrans})) {
+								if ($vartrans->{$vartype}->[1] != -1 && $vartrans->{$vartype}->[2] != -1) {
+									my $min = $row->[$vartrans->{$vartype}->[1]];
+									my $max = $row->[$vartrans->{$vartype}->[2]];
+									if ($min != 10000000) {
+										if (abs($min) < 0.0000001) {
+											$min = 0;	
+										}
+										if (abs($max) < 0.0000001) {
+											$max = 0;	
+										}
+										my $fbaCpdVar = $self->queryObject("FBACompoundVariables",{
+											modelcompound_ref => $mdlcpd->_reference(),
+											variableType => $vartrans->{$vartype}->[0],
+										});
+										if (!defined($fbaCpdVar)) {
+											$fbaCpdVar = $self->add("FBACompoundVariables",{
+												modelcompound_ref => $mdlcpd->_reference(),
+												variableType => $vartrans->{$vartype}->[0],
+											});	
+										}
+										$fbaCpdVar->min($min);
+										$fbaCpdVar->max($max);
+										if (defined($deadCpd->{$id})) {
+											$fbaCpdVar->class("Dead");
+										} elsif (defined($deadendCpd->{$id})) {
+											$fbaCpdVar->class("Deadend");
+										} elsif ($fbaCpdVar->min() > 0) {
+											$fbaCpdVar->class("Positive");
+										} elsif ($fbaCpdVar->max() < 0) {
+											$fbaCpdVar->class("Negative");
+										} elsif ($fbaCpdVar->min() == 0 && $fbaCpdVar->max() > 0) {
+											$fbaCpdVar->class("Positive variable");
+										} elsif ($fbaCpdVar->max() == 0 && $fbaCpdVar->min() < 0) {
+											$fbaCpdVar->class("Negative variable");
+										} elsif ($fbaCpdVar->max() == 0 && $fbaCpdVar->min() == 0) {
+											$fbaCpdVar->class("Blocked");
+										} else {
+											$fbaCpdVar->class("Variable");
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+=head3 parsePROMResult
+
+Definition:
+	void parsePROMResult();
+Description:
+	Parses PROM result file.
+
+=cut
+
+sub parsePROMResult {
+	my ($self) = @_;
+	my $directory = $self->jobDirectory();
+	if (-e $directory."/PROMResult.txt") {
+		#Loading file results into a hash
+		my $data = Bio::KBase::ObjectAPI::utilities::LOADFILE($directory."/PROMResult.txt");
+		if (@{$data} < 3) {
+			return Bio::KBase::ObjectAPI::utilities::ERROR("output file did not contain necessary data");
+		}
+		my $promOutputHash;
+		foreach my $row (@{$data}) {
+		    my @line = split /\t/, $row;
+		    $promOutputHash->{$line[0]} = $line[1] if ($line[0] =~ /alpha|beta|objectFraction/);
+		}		
+		$self->add("FBAPromResults",$promOutputHash);			       
+		return 1;
+	}
+	return 0;
+}
+
+
+
+=head3 parseOutputFiles
+
+Definition:
+	void parseOutputFiles();
+Description:
+	Parses output files specified in FBAFormulation
+
+=cut
+
+sub parseOutputFiles {
+	my ($self) = @_;
+	my $directory = $self->jobDirectory();
+	foreach my $filename (keys(%{$self->outputfiles()})) {
+		if (-e $directory."/".$filename) {
+			$self->outputfiles()->{$filename} = Bio::KBase::ObjectAPI::utilities::LOADFILE($directory."/".$filename);
+		}
+	}
+	if (-e $directory."/suboptimalSolutions.txt") {
+		$self->outputfiles()->{"suboptimalSolutions.txt"} = 1;
+	}
 }
 
 __PACKAGE__->meta->make_immutable;

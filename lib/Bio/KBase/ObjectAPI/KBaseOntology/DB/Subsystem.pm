@@ -29,7 +29,7 @@ has roles => (is => 'rw', type => 'link(Mapping,roles,role_refs)', metaclass => 
 
 
 # BUILDERS:
-sub _build_reference { return my ($self) = @_;$self->parent()->_reference().'/subsystems/id/'.$self->id(); }
+sub _build_reference { my ($self) = @_;return $self->parent()->_reference().'/subsystems/id/'.$self->id(); }
 sub _build_uuid { my ($self) = @_;return $self->_reference(); }
 sub _build_roles {
 	 my ($self) = @_;

@@ -37,7 +37,7 @@ has biomasscompounds => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub 
 
 
 # BUILDERS:
-sub _build_reference { return my ($self) = @_;$self->parent()->_reference().'/biomasses/id/'.$self->id(); }
+sub _build_reference { my ($self) = @_;return $self->parent()->_reference().'/biomasses/id/'.$self->id(); }
 sub _build_uuid { my ($self) = @_;return $self->_reference(); }
 
 

@@ -14,24 +14,14 @@ extends 'Bio::KBase::ObjectAPI::KBaseFBA::DB::ModelCompartment';
 #***********************************************************************************************************
 # ADDITIONAL ATTRIBUTES:
 #***********************************************************************************************************
-has mapped_uuid  => ( is => 'rw', isa => 'ModelSEED::uuid',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildmapped_uuid' );
-has id  => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildid' );
 has name  => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildname' );
 
 #***********************************************************************************************************
 # BUILDERS:
 #***********************************************************************************************************
-sub _buildid {
-	my ($self) = @_;
-	return $self->compartment()->id().$self->compartmentIndex();
-}
 sub _buildname {
 	my ($self) = @_;
 	return $self->compartment()->name().$self->compartmentIndex();
-}
-sub _buildmapped_uuid {
-	my ($self) = @_;
-	return "00000000-0000-0000-0000-000000000000";
 }
 
 #***********************************************************************************************************

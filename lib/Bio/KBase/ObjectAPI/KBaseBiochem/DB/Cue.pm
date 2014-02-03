@@ -36,7 +36,7 @@ has deltaGErr => (is => 'rw', isa => 'Num', printOrder => '7', type => 'attribut
 
 
 # BUILDERS:
-sub _build_reference { return my ($self) = @_;$self->parent()->_reference().'/cues/id/'.$self->id(); }
+sub _build_reference { my ($self) = @_;return $self->parent()->_reference().'/cues/id/'.$self->id(); }
 sub _build_uuid { my ($self) = @_;return $self->_reference(); }
 
 

@@ -118,6 +118,17 @@ use Bio::KBase::ObjectAPI::BaseObject;
 extends 'Bio::KBase::ObjectAPI::BaseObject';
 
 has indices => ( is => 'rw', isa => 'HashRef', default => sub { return {} } );
+has _wswsid => (is => 'rw', lazy => 1, isa => 'Num', type => 'msdata', metaclass => 'Typed',default => -1);
+has _wsworkspace => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',default => "");
+has _wschsum => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',default => "");
+has _wssize => (is => 'rw', lazy => 1, isa => 'Num', type => 'msdata', metaclass => 'Typed',default => -1);
+has _wsmeta => (is => 'rw', lazy => 1, isa => 'HashRef', type => 'msdata', metaclass => 'Typed',default => sub { return {} });
+has _wsobjid => (is => 'rw', lazy => 1, isa => 'Num', type => 'msdata', metaclass => 'Typed',default => -1);
+has _wsname => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',default => "");
+has _wstype => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',default => "");
+has _wssave_date => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',default => "");
+has _wsversion => (is => 'rw', lazy => 1, isa => 'Num', type => 'msdata', metaclass => 'Typed',default => -1);
+has _wssaved_by => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',default => "");
 
 sub add {
     my ($self, $attribute, $data_or_object) = @_;
@@ -275,6 +286,9 @@ sub _buildIndex {
 	my $subatt = $args->{subAttribute};
 	my $newIndex  = {};
 	if ($att =~ m/^682F57E0/) {
+		Bio::KBase::ObjectAPI::utilities::error("Bad call to _buildIndex!");
+	}
+	if ($att eq "aliasSets") {
 		Bio::KBase::ObjectAPI::utilities::error("Bad call to _buildIndex!");
 	}
 	my $method = "_$att";

@@ -11,7 +11,47 @@ package Bio::KBase::ObjectAPI::KBaseGenomes::Genome;
 use Moose;
 use namespace::autoclean;
 extends 'Bio::KBase::ObjectAPI::KBaseGenomes::DB::Genome';
+#***********************************************************************************************************
+# ADDITIONAL ATTRIBUTES:
+#***********************************************************************************************************
+has geneAliasHash => ( is => 'rw',printOrder => 2, isa => 'HashRef', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildgeneAliasHash' );
 
+
+#***********************************************************************************************************
+# BUILDERS:
+#***********************************************************************************************************
+sub _buildgeneAliasHash {
+	my ($self) = @_;
+	my $geneAliases = {};
+	my $ftrs = $self->features();
+    foreach my $ftr (@{$ftrs}) {
+    	$geneAliases->{$ftr->id()} = $ftr;
+    	foreach my $alias (@{$ftr->aliases()}) {
+    		$geneAliases->{$alias} = $ftr;
+    	}
+    }
+    return $geneAliases;
+}
+
+#***********************************************************************************************************
+# CONSTANTS:
+#***********************************************************************************************************
+
+#***********************************************************************************************************
+# FUNCTIONS:
+#***********************************************************************************************************
+sub genome_typed_object {
+    my ($self) = @_;
+	my $output = $self->serializeToDB();
+	my $contigset = $self->contigset();
+	my $contigserial = $contigset->serializeToDB();
+	$output->{contigs} = $contigserial->{contigs};
+	for (my $i=0; $i < @{$output->{contigs}}; $i++) {
+		$output->{contigs}->[$i]->{dna} = $output->{contigs}->[$i]->{sequence};
+		delete $output->{contigs}->[$i]->{sequence};
+	}
+	return $output;
+}
 
 __PACKAGE__->meta->make_immutable;
 1;

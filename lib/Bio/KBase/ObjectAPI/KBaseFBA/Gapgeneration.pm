@@ -220,11 +220,14 @@ sub parseGapgenResults {
 		if (defined($fbaResults->outputfiles()->{"suboptimalSolutions.txt"})) {
 			$subopt = 1;
 		}
+		my $solcount = @{$self->gapgenSolutions()};
 		for (my $i=1; $i < @{$filedata}; $i++) {
 			my $array = [split(/\t/,$filedata->[$i])];
 			if (defined($array->[1])) {
 				my $subarray = [split(/,/,$array->[1])];
+				$solcount++;
 				my $ggsolution = $self->add("gapgenSolutions",{
+					id => $self->id().".ggsol.".$solcount,
 					suboptimal => $subopt
 				});
 				$ggsolution->loadFromData({

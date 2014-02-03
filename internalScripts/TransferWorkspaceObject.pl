@@ -12,6 +12,7 @@ $|=1;
 
 my $config = $ARGV[0];
 my $object = $ARGV[1];
+my $filename = $ARGV[1];
 if (!defined($config)) {
 	print STDERR "No config file provided!\n";
 	exit(-1);
@@ -23,6 +24,14 @@ if (!-e $config) {
 
 my $c = Config::Simple->new();
 $c->read($config);
+
+open( my $fh, "<", $filename);
+while (my $str = <$fh>) {
+	chomp($str);
+	my $array = [split(/\t/,$str)];
+	$genomehash->{$array->[1]} = $array->[0];
+}
+close($fh);
 
 my $wserv = Bio::KBase::workspaceService::Client->new($c->param("kbclientconfig.wsurl"));
 #my $wserv = Bio::KBase::workspaceService::Impl->new({

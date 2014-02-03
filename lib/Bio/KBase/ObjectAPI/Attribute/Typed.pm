@@ -1,4 +1,4 @@
-package Bio::KBase::ObjectAPI::Attribute::KBTyped;
+package Bio::KBase::ObjectAPI::Attribute::Typed;
 use strict;
 use warnings;
 use Moose;
@@ -18,6 +18,6 @@ has printOrder => (
 );
 1;
 
-package Moose::Meta::Attribute::Custom::KBTyped;
-sub register_implementation { 'Bio::KBase::ObjectAPI::Attribute::KBTyped' }
+package Moose::Meta::Attribute::Custom::Typed;
+sub register_implementation { 'Bio::KBase::ObjectAPI::Attribute::Typed' }
 1;

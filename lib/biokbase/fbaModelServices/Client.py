@@ -1307,9 +1307,79 @@ class fbaModelServices(object):
         else:
             raise ServerError('Unknown', 0, 'An unknown server error occurred')
 
+    def gapfill_model(self, input):
+
+        arg_hash = {'method': 'fbaModelServices.gapfill_model',
+                    'params': [input],
+                    'version': '1.1',
+                    'id': str(random.random())[2:]
+                    }
+
+        body = json.dumps(arg_hash, cls=JSONObjectEncoder)
+        try:
+            request = urllib2.Request(self.url, body, self._headers)
+            ret = urllib2.urlopen(request, timeout=self.timeout)
+        except HTTPError as h:
+            if _CT in h.headers and h.headers[_CT] == _AJ:
+                b = h.read()
+                err = json.loads(b)
+                if 'error' in err:
+                    raise ServerError(**err['error'])
+                else:            # this should never happen... but if it does
+                    se = ServerError('Unknown', 0, b)
+                    se.httpError = h
+                    # h.read() will return '' in the calling code.
+                    raise se
+            else:
+                raise h
+        if ret.code != httplib.OK:
+            raise URLError('Received bad response code from server:' +
+                           ret.code)
+        resp = json.loads(ret.read())
+
+        if 'result' in resp:
+            return resp['result'][0]
+        else:
+            raise ServerError('Unknown', 0, 'An unknown server error occurred')
+
     def queue_gapgen_model(self, input):
 
         arg_hash = {'method': 'fbaModelServices.queue_gapgen_model',
+                    'params': [input],
+                    'version': '1.1',
+                    'id': str(random.random())[2:]
+                    }
+
+        body = json.dumps(arg_hash, cls=JSONObjectEncoder)
+        try:
+            request = urllib2.Request(self.url, body, self._headers)
+            ret = urllib2.urlopen(request, timeout=self.timeout)
+        except HTTPError as h:
+            if _CT in h.headers and h.headers[_CT] == _AJ:
+                b = h.read()
+                err = json.loads(b)
+                if 'error' in err:
+                    raise ServerError(**err['error'])
+                else:            # this should never happen... but if it does
+                    se = ServerError('Unknown', 0, b)
+                    se.httpError = h
+                    # h.read() will return '' in the calling code.
+                    raise se
+            else:
+                raise h
+        if ret.code != httplib.OK:
+            raise URLError('Received bad response code from server:' +
+                           ret.code)
+        resp = json.loads(ret.read())
+
+        if 'result' in resp:
+            return resp['result'][0]
+        else:
+            raise ServerError('Unknown', 0, 'An unknown server error occurred')
+
+    def gapgen_model(self, input):
+
+        arg_hash = {'method': 'fbaModelServices.gapgen_model',
                     'params': [input],
                     'version': '1.1',
                     'id': str(random.random())[2:]
@@ -1447,9 +1517,9 @@ class fbaModelServices(object):
         else:
             raise ServerError('Unknown', 0, 'An unknown server error occurred')
 
-    def jobs_done(self, input):
+    def run_job(self, input):
 
-        arg_hash = {'method': 'fbaModelServices.jobs_done',
+        arg_hash = {'method': 'fbaModelServices.run_job',
                     'params': [input],
                     'version': '1.1',
                     'id': str(random.random())[2:]
@@ -1482,9 +1552,9 @@ class fbaModelServices(object):
         else:
             raise ServerError('Unknown', 0, 'An unknown server error occurred')
 
-    def run_job(self, input):
+    def queue_job(self, input):
 
-        arg_hash = {'method': 'fbaModelServices.run_job',
+        arg_hash = {'method': 'fbaModelServices.queue_job',
                     'params': [input],
                     'version': '1.1',
                     'id': str(random.random())[2:]
@@ -1727,6 +1797,41 @@ class fbaModelServices(object):
         else:
             raise ServerError('Unknown', 0, 'An unknown server error occurred')
 
+    def annotate_workspace_Genome(self, params):
+
+        arg_hash = {'method': 'fbaModelServices.annotate_workspace_Genome',
+                    'params': [params],
+                    'version': '1.1',
+                    'id': str(random.random())[2:]
+                    }
+
+        body = json.dumps(arg_hash, cls=JSONObjectEncoder)
+        try:
+            request = urllib2.Request(self.url, body, self._headers)
+            ret = urllib2.urlopen(request, timeout=self.timeout)
+        except HTTPError as h:
+            if _CT in h.headers and h.headers[_CT] == _AJ:
+                b = h.read()
+                err = json.loads(b)
+                if 'error' in err:
+                    raise ServerError(**err['error'])
+                else:            # this should never happen... but if it does
+                    se = ServerError('Unknown', 0, b)
+                    se.httpError = h
+                    # h.read() will return '' in the calling code.
+                    raise se
+            else:
+                raise h
+        if ret.code != httplib.OK:
+            raise URLError('Received bad response code from server:' +
+                           ret.code)
+        resp = json.loads(ret.read())
+
+        if 'result' in resp:
+            return resp['result'][0]
+        else:
+            raise ServerError('Unknown', 0, 'An unknown server error occurred')
+
     def fasta_to_ProteinSet(self, params):
 
         arg_hash = {'method': 'fbaModelServices.fasta_to_ProteinSet',
@@ -1797,76 +1902,6 @@ class fbaModelServices(object):
         else:
             raise ServerError('Unknown', 0, 'An unknown server error occurred')
 
-    def fasta_to_TranscriptSet(self, params):
-
-        arg_hash = {'method': 'fbaModelServices.fasta_to_TranscriptSet',
-                    'params': [params],
-                    'version': '1.1',
-                    'id': str(random.random())[2:]
-                    }
-
-        body = json.dumps(arg_hash, cls=JSONObjectEncoder)
-        try:
-            request = urllib2.Request(self.url, body, self._headers)
-            ret = urllib2.urlopen(request, timeout=self.timeout)
-        except HTTPError as h:
-            if _CT in h.headers and h.headers[_CT] == _AJ:
-                b = h.read()
-                err = json.loads(b)
-                if 'error' in err:
-                    raise ServerError(**err['error'])
-                else:            # this should never happen... but if it does
-                    se = ServerError('Unknown', 0, b)
-                    se.httpError = h
-                    # h.read() will return '' in the calling code.
-                    raise se
-            else:
-                raise h
-        if ret.code != httplib.OK:
-            raise URLError('Received bad response code from server:' +
-                           ret.code)
-        resp = json.loads(ret.read())
-
-        if 'result' in resp:
-            return resp['result'][0]
-        else:
-            raise ServerError('Unknown', 0, 'An unknown server error occurred')
-
-    def TranscriptSet_to_Genome(self, params):
-
-        arg_hash = {'method': 'fbaModelServices.TranscriptSet_to_Genome',
-                    'params': [params],
-                    'version': '1.1',
-                    'id': str(random.random())[2:]
-                    }
-
-        body = json.dumps(arg_hash, cls=JSONObjectEncoder)
-        try:
-            request = urllib2.Request(self.url, body, self._headers)
-            ret = urllib2.urlopen(request, timeout=self.timeout)
-        except HTTPError as h:
-            if _CT in h.headers and h.headers[_CT] == _AJ:
-                b = h.read()
-                err = json.loads(b)
-                if 'error' in err:
-                    raise ServerError(**err['error'])
-                else:            # this should never happen... but if it does
-                    se = ServerError('Unknown', 0, b)
-                    se.httpError = h
-                    # h.read() will return '' in the calling code.
-                    raise se
-            else:
-                raise h
-        if ret.code != httplib.OK:
-            raise URLError('Received bad response code from server:' +
-                           ret.code)
-        resp = json.loads(ret.read())
-
-        if 'result' in resp:
-            return resp['result'][0]
-        else:
-            raise ServerError('Unknown', 0, 'An unknown server error occurred')
-
     def fasta_to_ContigSet(self, params):
 
         arg_hash = {'method': 'fbaModelServices.fasta_to_ContigSet',
@@ -1905,41 +1940,6 @@ class fbaModelServices(object):
     def ContigSet_to_Genome(self, params):
 
         arg_hash = {'method': 'fbaModelServices.ContigSet_to_Genome',
-                    'params': [params],
-                    'version': '1.1',
-                    'id': str(random.random())[2:]
-                    }
-
-        body = json.dumps(arg_hash, cls=JSONObjectEncoder)
-        try:
-            request = urllib2.Request(self.url, body, self._headers)
-            ret = urllib2.urlopen(request, timeout=self.timeout)
-        except HTTPError as h:
-            if _CT in h.headers and h.headers[_CT] == _AJ:
-                b = h.read()
-                err = json.loads(b)
-                if 'error' in err:
-                    raise ServerError(**err['error'])
-                else:            # this should never happen... but if it does
-                    se = ServerError('Unknown', 0, b)
-                    se.httpError = h
-                    # h.read() will return '' in the calling code.
-                    raise se
-            else:
-                raise h
-        if ret.code != httplib.OK:
-            raise URLError('Received bad response code from server:' +
-                           ret.code)
-        resp = json.loads(ret.read())
-
-        if 'result' in resp:
-            return resp['result'][0]
-        else:
-            raise ServerError('Unknown', 0, 'An unknown server error occurred')
-
-    def annotate_workspace_Genome(self, params):
-
-        arg_hash = {'method': 'fbaModelServices.annotate_workspace_Genome',
                     'params': [params],
                     'version': '1.1',
                     'id': str(random.random())[2:]

@@ -50,12 +50,8 @@ sub getAliases {
     return [] unless(defined($setName));
     my $output = [];
     my $aliases = $self->parent()->complex_aliases()->{$self->id()};
-    if (defined($aliases)) {
-    	foreach my $alias (@{$aliases}) {
-    		if ($alias->[0] eq $setName) {
-    			push(@{$output},$alias->[1]);
-    		}
-    	}
+    if (defined($aliases) && defined($aliases->{$setName})) {
+    	return $aliases->{$setName};
     }
     return $output;
 }
@@ -65,8 +61,8 @@ sub allAliases {
     my $output = [];
     my $aliases = $self->parent()->complex_aliases()->{$self->id()};
     if (defined($aliases)) {
-    	foreach my $alias (@{$aliases}) {
-    		push(@{$output},$alias->[1]);
+    	foreach my $set (keys(%{$aliases})) {
+    		push(@{$output},@{$aliases->{$set}});
     	}
     }
     return $output;
@@ -75,9 +71,9 @@ sub allAliases {
 sub hasAlias {
     my ($self,$alias,$setName) = @_;
     my $aliases = $self->parent()->complex_aliases()->{$self->id()};
-    if (defined($aliases)) {
-    	foreach my $alias (@{$aliases}) {
-    		if ($alias->[0] eq $setName && $alias->[1] eq $alias) {
+    if (defined($aliases) && defined($aliases->{$setName})) {
+    	foreach my $searchalias (@{$aliases->{$setName}}) {
+    		if ($searchalias eq $alias) {
     			return 1;
     		}
     	}
@@ -149,7 +145,7 @@ sub _build_roleTuples {
     my $roles = $self->complexroles();
     for (my $i=0; $i < @{$roles}; $i++) {
     	my $role = $roles->[$i];
-    	push(@{$roletuples},[$role->role()->id(),$role->type(),$role->optional(),$role->triggering()]);
+    	push(@{$roletuples},[$role->role()->id(),$role->type(),$role->optionalRole(),$role->triggering()]);
     }
     return $roletuples;
 }

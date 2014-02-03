@@ -88,11 +88,11 @@ has user_override => ( is => 'rw', isa => 'Str',default => "");
 # FUNCTIONS:
 #***********************************************************************************************************
 sub get_objects {
-	my ($self,$refs) = @_;
+	my ($self,$refs,$options) = @_;
 	#Checking cache for objects
-	my $newrefs;
+	my $newrefs = [];
 	for (my $i=0; $i < @{$refs}; $i++) {
-		if (!defined($self->cache()->{$refs->[$i]})) {
+		if (!defined($self->cache()->{$refs->[$i]}) || defined($options->{refreshcache})) {
     		push(@{$newrefs},$refs->[$i]);
     	}
 	}
@@ -127,7 +127,59 @@ sub get_objects {
 				my $module = $1;
 				my $type = $2;
 				my $class = "Bio::KBase::ObjectAPI::".$module."::".$type;
+				if ($type eq "FBAModel") {
+					for (my $j=0; $j < @{$objdatas->[$i]->{data}->{gapfillings}}; $j++) {
+						delete $objdatas->[$i]->{data}->{gapfillings}->[$j]->{integrated_solution};
+						$objdatas->[$i]->{data}->{gapfillings}->[$j]->{id} = $objdatas->[$i]->{data}->{gapfillings}->[$j]->{gapfill_id};
+					}
+				} 
 				$self->cache()->{$newrefs->[$i]} = $class->new($objdatas->[$i]->{data});
+				$self->cache()->{$info->[6]."/".$info->[0]."/".$info->[4]} = $self->cache()->{$newrefs->[$i]};
+				$self->cache()->{$newrefs->[$i]}->parent($self);
+				if ($type eq "Biochemistry") {
+					$self->cache()->{$newrefs->[$i]}->add("compounds",{
+						id => "cpd00000",
+				    	isCofactor => 0,
+				    	name => "CustomCompound",
+				    	abbreviation => "CustomCompound",
+				    	md5 => "",
+				    	formula => "",
+				    	unchargedFormula => "",
+				    	mass => 0,
+				    	defaultCharge => 0,
+				    	deltaG => 0,
+				    	deltaGErr => 0,
+				    	comprisedOfCompound_refs => [],
+				    	cues => {},
+				    	pkas => {},
+				    	pkbs => {}
+					});
+					$self->cache()->{$newrefs->[$i]}->add("reactions",{
+						id => "rxn00000",
+				    	name => "CustomReaction",
+				    	abbreviation => "CustomReaction",
+				    	md5 => "",
+				    	direction => "=",
+				    	thermoReversibility => "=",
+				    	status => "OK",
+				    	defaultProtons => 0,
+				    	deltaG => 0,
+				    	deltaGErr => 0,
+				    	cues => {},
+				    	reagents => []
+					});
+				}
+				$self->cache()->{$newrefs->[$i]}->_wsobjid($info->[0]);
+				$self->cache()->{$newrefs->[$i]}->_wsname($info->[1]);
+				$self->cache()->{$newrefs->[$i]}->_wstype($info->[2]);
+				$self->cache()->{$newrefs->[$i]}->_wssave_date($info->[3]);
+				$self->cache()->{$newrefs->[$i]}->_wsversion($info->[4]);
+				$self->cache()->{$newrefs->[$i]}->_wssaved_by($info->[5]);
+				$self->cache()->{$newrefs->[$i]}->_wswsid($info->[6]);
+				$self->cache()->{$newrefs->[$i]}->_wsworkspace($info->[7]);
+				$self->cache()->{$newrefs->[$i]}->_wschsum($info->[8]);
+				$self->cache()->{$newrefs->[$i]}->_wssize($info->[9]);
+				$self->cache()->{$newrefs->[$i]}->_wsmeta($info->[10]);
 				$self->cache()->{$newrefs->[$i]}->_reference($info->[6]."/".$info->[0]."/".$info->[4]);
 				$self->uuid_refs()->{$self->cache()->{$newrefs->[$i]}->uuid()} = $info->[6]."/".$info->[0]."/".$info->[4];
 			}
@@ -142,7 +194,7 @@ sub get_objects {
 }
 
 sub get_object {
-    my ($self,$ref) = @_;
+    my ($self,$ref,$options) = @_;
     return $self->get_objects([$ref])->[0];
 }
 
@@ -189,14 +241,12 @@ sub save_objects {
     	}
     	my $listout;
     	if (defined($self->user_override()) && length($self->user_override()) > 0) {
-    		print "Now saving!\n";
     		$listout = $self->workspace()->administer({
     			"command" => "saveObjects",
     			"user" => $self->user_override(),
     			"params" => $input
     		});
     	} else {
-    		print "Now saving!\n";
     		$listout = $self->workspace()->save_objects($input);
     	}    	
 	    #Placing output into a hash of references pointing to object infos
@@ -207,6 +257,17 @@ sub save_objects {
 	    		$self->updated_refs()->{$refobjhash->{$wsdata->{$ws}->{refs}->[$i]}->{object}->_reference()} = $listout->[$i]->[6]."/".$listout->[$i]->[0]."/".$listout->[$i]->[4];
 	    	}
 	    	$refobjhash->{$wsdata->{$ws}->{refs}->[$i]}->{object}->_reference($listout->[$i]->[6]."/".$listout->[$i]->[0]."/".$listout->[$i]->[4]);
+	    	$refobjhash->{$wsdata->{$ws}->{refs}->[$i]}->{object}->_wsobjid($listout->[$i]->[0]);
+			$refobjhash->{$wsdata->{$ws}->{refs}->[$i]}->{object}->_wsname($listout->[$i]->[1]);
+			$refobjhash->{$wsdata->{$ws}->{refs}->[$i]}->{object}->_wstype($listout->[$i]->[2]);
+			$refobjhash->{$wsdata->{$ws}->{refs}->[$i]}->{object}->_wssave_date($listout->[$i]->[3]);
+			$refobjhash->{$wsdata->{$ws}->{refs}->[$i]}->{object}->_wsversion($listout->[$i]->[4]);
+			$refobjhash->{$wsdata->{$ws}->{refs}->[$i]}->{object}->_wssaved_by($listout->[$i]->[5]);
+			$refobjhash->{$wsdata->{$ws}->{refs}->[$i]}->{object}->_wswsid($listout->[$i]->[6]);
+			$refobjhash->{$wsdata->{$ws}->{refs}->[$i]}->{object}->_wsworkspace($listout->[$i]->[7]);
+			$refobjhash->{$wsdata->{$ws}->{refs}->[$i]}->{object}->_wschsum($listout->[$i]->[8]);
+			$refobjhash->{$wsdata->{$ws}->{refs}->[$i]}->{object}->_wssize($listout->[$i]->[9]);
+			$refobjhash->{$wsdata->{$ws}->{refs}->[$i]}->{object}->_wsmeta($listout->[$i]->[10]);
 	    	$output->{$wsdata->{$ws}->{refs}->[$i]} = $listout->[$i];
 	    }
 	    return $output;

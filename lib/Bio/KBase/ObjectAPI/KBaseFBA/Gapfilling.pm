@@ -60,12 +60,12 @@ sub _buildallowableCompartmentString {
 }
 sub _buildmediaID {
 	my ($self) = @_;
-	return $self->fbaFormulation()->media()->id();
+	return $self->fba()->media()->id();
 }
 sub _buildreactionKOString {
 	my ($self) = @_;
 	my $string = "";
-	my $rxnkos = $self->fbaFormulation()->reactionKOs();
+	my $rxnkos = $self->fba()->reactionKOs();
 	for (my $i=0; $i < @{$rxnkos}; $i++) {
 		if ($i > 0) {
 			$string .= ", ";
@@ -77,7 +77,7 @@ sub _buildreactionKOString {
 sub _buildgeneKOString {
 	my ($self) = @_;
 	my $string = "";
-	my $genekos = $self->fbaFormulation()->geneKOs();
+	my $genekos = $self->fba()->geneKOs();
 	for (my $i=0; $i < @{$genekos}; $i++) {
 		if ($i > 0) {
 			$string .= ", ";
@@ -106,7 +106,7 @@ Description:
 
 sub biochemistry {
 	my ($self) = @_;
-	$self->model()->biochemistry();	
+	$self->fbamodel()->template()->biochemistry();	
 }
 
 =head3 annotation
@@ -229,25 +229,10 @@ Description:
 sub prepareFBAFormulation {
 	my ($self,$args) = @_;
 	my $form;
-	if (!defined($self->fbaFormulation_uuid())) {
-		my $exFact = Bio::KBase::ObjectAPI::Factories::ExchangeFormatFactory->new();
-		$form = $exFact->buildFBAFormulation({model => $self->model(),overrides => {
-			media => "Media/name/Complete",
-			notes => "Default gapfilling FBA formulation",
-			allReversible => 1,
-			reactionKO => "none",
-			numberOfSolutions => 1,
-			maximizeObjective => 1,
-			fbaObjectiveTerms => [{
-				variableType => "biomassflux",
-				id => "Biomass/id/bio1",
-				coefficient => 1
-			}]
-		}});
-		$self->fbaFormulation($form);
-		$self->fbaFormulation_uuid($form->uuid());
+	if (!defined($self->fba_ref())) {
+		Bio::KBase::ObjectAPI::utilities::error("Must create FBA for gapfilling!");
 	} else {
-		$form = $self->fbaFormulation();
+		$form = $self->fba();
 	}
 	$form->allReversible(1);
 	if ($form->media()->name() eq "Complete") {
@@ -319,7 +304,7 @@ sub prepareFBAFormulation {
 	for (my $i=0; $i < @{$rxns}; $i++) {
 		if (!defined($rxnhash->{$rxns->[$i]->id()})) {
 			push(@{$form->reactionKOs()},$rxns->[$i]);
-			push(@{$form->reactionKO_uuids()},$rxns->[$i]->uuid());
+			push(@{$form->reactionKO_refs()},$rxns->[$i]->_reference());
 			$rxnhash->{$rxns->[$i]->id()} = 1;
 		}	
 	}
@@ -331,9 +316,9 @@ sub prepareFBAFormulation {
 	}
 	$form->parameters()->{"Allowable unbalanced reactions"} = join(",",@{$rxnlist});
 	#Setting other important parameters
-	$form->parameters()->{"Complete gap filling"} = 1;
+	$form->parameters()->{"Complete gap filling"} = "1";
 	$form->parameters()->{"Reaction activation bonus"} = $self->reactionActivationBonus();
-	$form->parameters()->{"Minimum flux for use variable positive constraint"} = 10;
+	$form->parameters()->{"Minimum flux for use variable positive constraint"} = "10";
 	$form->parameters()->{"Objective coefficient file"} = "NONE";
 	$form->parameters()->{"just print LP file"} = "0";
 	$form->parameters()->{"use database fields"} = "1";
@@ -351,20 +336,20 @@ sub prepareFBAFormulation {
 	$form->parameters()->{"biomass transporter penalty"} = $self->biomassTransporterMultiplier();#3
 	$form->parameters()->{"single compound transporter penalty"} = $self->singleTransporterMultiplier();#3
 	$form->parameters()->{"transporter penalty"} = $self->transporterMultiplier();#0
-	$form->parameters()->{"unbalanced penalty"} = 10;
-	$form->parameters()->{"no functional role penalty"} = 2;
-	$form->parameters()->{"no KEGG map penalty"} = 1;
-	$form->parameters()->{"non KEGG reaction penalty"} = 1;
-	$form->parameters()->{"no subsystem penalty"} = 1;
-	$form->parameters()->{"subsystem coverage bonus"} = 1;
-	$form->parameters()->{"scenario coverage bonus"} = 1;
-	$form->parameters()->{"Add positive use variable constraints"} = 0;
-	$form->parameters()->{"Biomass modification hypothesis"} = 0;
-	$form->parameters()->{"Biomass component reaction penalty"} = 500;
-	push(@{$form->outputfiles}, "CompleteGapfillingOutput.txt");
-	push(@{$form->outputfiles}, "ProblemReport.txt");
+	$form->parameters()->{"unbalanced penalty"} = "10";
+	$form->parameters()->{"no functional role penalty"} = "2";
+	$form->parameters()->{"no KEGG map penalty"} = "1";
+	$form->parameters()->{"non KEGG reaction penalty"} = "1";
+	$form->parameters()->{"no subsystem penalty"} = "1";
+	$form->parameters()->{"subsystem coverage bonus"} = "1";
+	$form->parameters()->{"scenario coverage bonus"} = "1";
+	$form->parameters()->{"Add positive use variable constraints"} = "0";
+	$form->parameters()->{"Biomass modification hypothesis"} = "0";
+	$form->parameters()->{"Biomass component reaction penalty"} = "500";
+	$form->outputfiles()->{"CompleteGapfillingOutput.txt"} = [];
+	$form->outputfiles()->{"ProblemReport.txt"} = [];
 	if ($self->biomassHypothesis() == 1) {
-		$form->parameters()->{"Biomass modification hypothesis"} = 1;
+		$form->parameters()->{"Biomass modification hypothesis"} = "1";
 		$self->addBiomassComponentReactions();
 	}
 	if ($self->mediaHypothesis() == 1) {
@@ -387,7 +372,7 @@ Description:
 
 sub addBiomassComponentReactions {
 	my ($self,$args) = @_;
-	my $form = $self->fbaFormulation();
+	my $form = $self->fba();
 	my $filename = $form->jobDirectory()."/";
 	my $output = ["id\tequation\tname"];
 	my $bio = $self->model()->biomasses()->[0];
@@ -428,9 +413,9 @@ sub runGapFilling {
 	#Preparing fba formulation describing gapfilling problem
 	my $form = $self->prepareFBAFormulation();	
 	#Running the gapfilling
-	my $fbaResults = $form->runFBA();
+	$form->runFBA();
 	#Parsing solutions
-	$self->parseGapfillingResults($fbaResults);
+	$self->parseGapfillingResults($form);
 	return $self;
 }
 
@@ -473,10 +458,10 @@ Description:
 
 sub createSolutionsFromArray {
     my $self = shift;
-    my $args = Bio::KBase::ObjectAPI::utilities::args(["data"], { model => $self->model,subopt => 0 }, @_ );
+    my $args = Bio::KBase::ObjectAPI::utilities::args(["data"], { model => $self->fbamodel(),subopt => 0 }, @_ );
 	my $data = $args->{data};
 	my $mdl = $args->{model};
-	my $bio = $mdl->biochemistry();
+	my $bio = $mdl->template()->biochemistry();
 	my $line;
 	for (my $i=(@{$data}-1); $i >= 0; $i--) {
 		my $array = [split(/\t/,$data->[$i])];
@@ -485,6 +470,7 @@ sub createSolutionsFromArray {
 			last;
 		}
 	}
+	my $solcount = @{$self->gapfillingSolutions()};
 	if (defined($line)) {
 		my $array = [split(/\t/,$data->[$line])];
 		my $solutionsArray = [split(/\|/,$array->[1])];   				
@@ -498,7 +484,8 @@ sub createSolutionsFromArray {
 						$gfsolution->solutionCost($count);
 					}
 					$count = 0;
-					$gfsolution = $self->add("gapfillingSolutions",{suboptimal => $args->{subopt}});
+					$solcount++;
+					$gfsolution = $self->add("gapfillingSolutions",{id => $self->id().".gfsol.".$solcount,suboptimal => $args->{subopt}});
 				}
 				my $subarray = [split(/[,;]/,$solutionsArray->[$k])];
 				for (my $j=0; $j < @{$subarray}; $j++) {
@@ -513,7 +500,7 @@ sub createSolutionsFromArray {
 							if ($biocpd->modelcompound()->compound()->id() eq $cpdid) {
 								$found = 1;
 								push(@{$gfsolution->biomassRemovals()},$biocpd->modelcompound());
-								push(@{$gfsolution->biomassRemoval_uuids()},$biocpd->modelcompound()->uuid());	
+								push(@{$gfsolution->biomassRemoval_refs()},$biocpd->modelcompound()->_reference());	
 							}
 						}
 						if ($found == 0) {
@@ -529,18 +516,18 @@ sub createSolutionsFromArray {
 						} else {
 							$sign = "<";
 						}
-						my $rxn = $mdl->biochemistry()->queryObject("reactions",{id => $rxnid});
+						my $rxn = $mdl->template()->biochemistry()->queryObject("reactions",{id => $rxnid});
 						if (!defined($rxn)) {
 							Bio::KBase::ObjectAPI::utilities::ERROR("Could not find gapfilled reaction ".$rxnid."!");
 						}
-						my $cmp = $mdl->biochemistry()->queryObject("compartments",{id => $comp});
+						my $cmp = $mdl->template()->biochemistry()->queryObject("compartments",{id => $comp});
 						if (!defined($rxn)) {
 							Bio::KBase::ObjectAPI::utilities::ERROR("Could not find gapfilled reaction compartment ".$comp."!");
 						}
-						if (defined($rxnHash->{$rxn->uuid()}->{$cmp->uuid()}) && $rxnHash->{$rxn->uuid()}->{$cmp->uuid()} ne $sign) {
-							$rxnHash->{$rxn->uuid()}->{$cmp->uuid()} = "=";
+						if (defined($rxnHash->{$rxn->_reference()}->{$cmp->_reference()}) && $rxnHash->{$rxn->_reference()}->{$cmp->_reference()} ne $sign) {
+							$rxnHash->{$rxn->_reference()}->{$cmp->_reference()} = "=";
 						} else {
-							$rxnHash->{$rxn->uuid()}->{$cmp->uuid()} = $sign;
+							$rxnHash->{$rxn->_reference()}->{$cmp->_reference()} = $sign;
 						}
 						$count++;
 					}
@@ -548,8 +535,8 @@ sub createSolutionsFromArray {
 				foreach my $ruuid (keys(%{$rxnHash})) {
 					foreach my $cuuid (keys(%{$rxnHash->{$ruuid}})) {
 						$gfsolution->add("gapfillingSolutionReactions",{
-							reaction_uuid => $ruuid,
-							compartment_uuid => $cuuid,
+							reaction_ref => $ruuid,
+							compartment_ref => $cuuid,
 							direction => $rxnHash->{$ruuid}->{$cuuid}
 						});
 					}
@@ -586,19 +573,19 @@ sub parseGeneCandidates {
 			if (!defined($ortho)) {
 				$ortho = $self->annotation->add("features",{
 					id => $id,
-					genome_uuid => $orthoGenome->uuid(),
+					genome_ref => $orthoGenome->_reference(),
 				});
 				$ortho->add("featureroles",{
-					role_uuid => $role->uuid(),
+					role_ref => $role->_reference(),
 				});
 			}
 			$self->add("gapfillingGeneCandidates",{
-				feature_uuid => $ftr->uuid(),
-				ortholog_uuid => $ortho->uuid(),
-				orthologGenome_uuid => $orthoGenome->uuid(),
+				feature_ref => $ftr->_reference(),
+				ortholog_ref => $ortho->_reference(),
+				orthologGenome_ref => $orthoGenome->_reference(),
 				similarityScore => $candidate->{similarityScore},
 				distanceScore => $candidate->{distanceScore},
-				role_uuid => $role->uuid()
+				role_ref => $role->_reference()
 			});
 		}
 	}
@@ -612,7 +599,7 @@ sub parseSetMultipliers {
 		my $obj = $self->interpretReference($set->{set},"Reactionset");
 		if (defined($obj)) {
 			$self->add("reactionSetMultipliers",{
-				reactionset_uuid => $obj->uuid(),
+				reactionset_ref => $obj->_reference(),
 				reactionsetType => $set->{reactionsetType},
 				multiplierType => $set->{multiplierType},
 				description => $set->{description},
@@ -626,21 +613,21 @@ sub parseGuaranteedReactions {
 	my ($self,$args) = @_;
 	$args->{data} = "uuid";
 	$args->{class} = "Reaction";
-	$self->guaranteedReaction_uuids($self->parseReferenceList($args));
+	$self->guaranteedReaction_refs($self->parseReferenceList($args));
 }
 
 sub parseBlacklistedReactions {
 	my ($self,$args) = @_;
 	$args->{data} = "uuid";
 	$args->{class} = "Reaction";
-	$self->blacklistedReaction_uuids($self->parseReferenceList($args));
+	$self->blacklistedReaction_refs($self->parseReferenceList($args));
 }
 
 sub parseAllowableCompartments {
 	my ($self,$args) = @_;
 	$args->{data} = "uuid";
 	$args->{class} = "Compartment";
-	$self->allowableCompartment_uuids($self->parseReferenceList($args));
+	$self->allowableCompartment_refs($self->parseReferenceList($args));
 }
 
 =head3 printStudy
@@ -658,7 +645,7 @@ sub printStudy {
 	my $numSolutions = @{$solutions};
 	my $output = "*********************************************\n";
 	$output .= "Gapfilling formulation: GF".$index."\n";
-	$output .= "Media: ".$self->mediaID()."\n";
+	$output .= "Media: ".$self->media()->id()."\n";
 	if ($self->geneKOString() ne "") {
 		$output .= "GeneKO: ".$self->geneKOString()."\n";
 	}

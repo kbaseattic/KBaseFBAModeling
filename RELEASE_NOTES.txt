@@ -3,6 +3,24 @@ OVERVIEW
 This KBase service contains all commands that support the reconstruction, optimization, and 
 analysis of genome-scale metabolic models.
 
+VERSION: 0.0.4 (Released 2/2/2014)
+------------------------------------------
+NEW FEATURES:
+-Support for custom reactions and compounds in model import/adjustments
+-Support for reaction sensitivity analysis
+-Switch to the new workspace
+
+UPDATED FEATURES / MAJOR BUG FIXES:
+-Major refactor to include object API in KBaseFBAModeling and not in ModelSEED
+-Improvements in gapfilling job handling
+-Improvements in all object designs to make them faster and more usable
+
+ANTICIPATED FUTURE DEVELOPMENTS:
+-Enable import of models from SBML
+-Support for PROM constraints
+-Support for regulatory modeling
+-Support for probabilistic annotation and modeling
+
 VERSION: 0.0.3 (Released 10/10/2013)
 ------------------------------------------
 NEW FEATURES:

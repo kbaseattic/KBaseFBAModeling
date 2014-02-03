@@ -19,6 +19,7 @@ has parent => (is => 'rw', isa => 'Ref', weak_ref => 1, type => 'parent', metacl
 has uuid => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_uuid');
 has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_reference');
 has probability => (is => 'rw', isa => 'Num', printOrder => '8', default => '1', type => 'attribute', metaclass => 'Typed');
+has name => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has protons => (is => 'rw', isa => 'Num', printOrder => '7', default => '0', type => 'attribute', metaclass => 'Typed');
 has reaction_ref => (is => 'rw', isa => 'Str', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
 has direction => (is => 'rw', isa => 'Str', printOrder => '5', default => '=', type => 'attribute', metaclass => 'Typed');
@@ -33,11 +34,11 @@ has modelReactionProteins => (is => 'rw', isa => 'ArrayRef[HashRef]', default =>
 
 # LINKS:
 has reaction => (is => 'rw', type => 'link(Biochemistry,reactions,reaction_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_reaction', clearer => 'clear_reaction', isa => 'Bio::KBase::ObjectAPI::KBaseBiochem::Reaction', weak_ref => 1);
-has modelcompartment => (is => 'rw', type => 'link(FBAModel,modelcompartments,modelcompartment_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_modelcompartment', clearer => 'clear_modelcompartment', isa => 'Ref', weak_ref => 1);
+has modelcompartment => (is => 'rw', type => 'link(FBAModel,modelcompartments,modelcompartment_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_modelcompartment', clearer => 'clear_modelcompartment', isa => 'Bio::KBase::ObjectAPI::KBaseFBA::ModelCompartment', weak_ref => 1);
 
 
 # BUILDERS:
-sub _build_reference { return my ($self) = @_;$self->parent()->_reference().'/modelreactions/id/'.$self->id(); }
+sub _build_reference { my ($self) = @_;return $self->parent()->_reference().'/modelreactions/id/'.$self->id(); }
 sub _build_uuid { my ($self) = @_;return $self->_reference(); }
 sub _build_reaction {
 	 my ($self) = @_;
@@ -63,6 +64,13 @@ my $attributes = [
             'default' => 1,
             'type' => 'Num',
             'description' => undef,
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'name',
+            'type' => 'Str',
             'perm' => 'rw'
           },
           {
@@ -110,7 +118,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {probability => 0, protons => 1, reaction_ref => 2, direction => 3, modelcompartment_ref => 4, id => 5};
+my $attribute_map = {probability => 0, name => 1, protons => 2, reaction_ref => 3, direction => 4, modelcompartment_ref => 5, id => 6};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -141,7 +149,7 @@ my $links = [
             'name' => 'modelcompartment',
             'attribute' => 'modelcompartment_ref',
             'clearer' => 'clear_modelcompartment',
-            'class' => 'FBAModel',
+            'class' => 'Bio::KBase::ObjectAPI::KBaseFBA::ModelCompartment',
             'method' => 'modelcompartments',
             'module' => 'KBaseFBA',
             'field' => 'id'

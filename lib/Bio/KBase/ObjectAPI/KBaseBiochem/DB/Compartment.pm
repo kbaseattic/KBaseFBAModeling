@@ -25,7 +25,7 @@ has hierarchy => (is => 'rw', isa => 'Int', printOrder => '3', default => '', ty
 
 
 # BUILDERS:
-sub _build_reference { return my ($self) = @_;$self->parent()->_reference().'/compartments/id/'.$self->id(); }
+sub _build_reference { my ($self) = @_;return $self->parent()->_reference().'/compartments/id/'.$self->id(); }
 sub _build_uuid { my ($self) = @_;return $self->_reference(); }
 
 

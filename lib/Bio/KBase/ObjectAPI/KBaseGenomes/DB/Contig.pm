@@ -28,7 +28,7 @@ has md5 => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', m
 
 
 # BUILDERS:
-sub _build_reference { return my ($self) = @_;$self->parent()->_reference().'/contigs/id/'.$self->id(); }
+sub _build_reference { my ($self) = @_;return $self->parent()->_reference().'/contigs/id/'.$self->id(); }
 sub _build_uuid { my ($self) = @_;return $self->_reference(); }
 
 

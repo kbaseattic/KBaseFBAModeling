@@ -148,7 +148,7 @@ sub getObjectsByAlias {
 		my $uuidhash = {};
 		foreach my $set (keys(%{$aliasHash})) {
 			if (defined($aliasHash->{$set}->{$alias})) {
-				foreach my $uuid (@{$aliasHash->{$set}->{$alias}}) {
+				foreach my $uuid (keys(%{$aliasHash->{$set}->{$alias}})) {
 					$uuidhash->{$uuid} = 1;
 				}
 			}
@@ -157,7 +157,7 @@ sub getObjectsByAlias {
 	} else {
 		my $uuidhash = {};
 		if (defined($aliasHash->{$aliasName})) {
-			foreach my $uuid (@{$aliasHash->{$aliasName}->{$alias}}) {
+			foreach my $uuid (keys(%{$aliasHash->{$aliasName}->{$alias}})) {
 				$uuidhash->{$uuid} = 1;
 			}
 			$objects = $self->getObjects($attribute,[keys(%{$uuidhash})]);
@@ -1341,37 +1341,23 @@ sub checkForDuplicateCue {
 
 sub checkForProton {
     my ($self) = @_;
-    
-    if($self->queryObject("aliasSets",{name => "ModelSEED", attribute=>"compounds"})){
-	my $obj=$self->getObjectByAlias("compounds","cpd00067","ModelSEED");
+   	my $obj=$self->getObjectByAlias("compounds","cpd00067","ModelSEED");
 	return $obj if $obj;
-    }    
-    if($self->queryObject("aliasSets",{name => "KEGG", attribute=>"compounds"})){
-	my $obj=$self->getObjectByAlias("compounds","C00080","KEGG");
+	$obj=$self->getObjectByAlias("compounds","C00080","KEGG");
 	return $obj if $obj;
-    }
-    if($self->queryObject("aliasSets",{name => "MetaCyc", attribute=>"compounds"})){
-	my $obj=$self->getObjectByAlias("compounds","PROTON","MetaCyc");
+    $obj=$self->getObjectByAlias("compounds","PROTON","MetaCyc");
 	return $obj if $obj;
-    }
     return $self->queryObject("compounds",{name => "H+"});
 }
 
 sub checkForWater {
     my ($self) = @_;
-
-    if($self->queryObject("aliasSets",{name => "ModelSEED", attribute=>"compounds"})){
 	my $obj=$self->getObjectByAlias("compounds","cpd00001","ModelSEED");
 	return $obj if $obj;
-    }
-    if($self->queryObject("aliasSets",{name => "KEGG", attribute=>"compounds"})){
-	my $obj=$self->getObjectByAlias("compounds","C00001","KEGG");
+    $obj=$self->getObjectByAlias("compounds","C00001","KEGG");
 	return $obj if $obj;
-    }
-    if($self->queryObject("aliasSets",{name => "MetaCyc", attribute=>"compounds"})){
-	my $obj=$self->getObjectByAlias("compounds","WATER","MetaCyc");
+    $obj=$self->getObjectByAlias("compounds","WATER","MetaCyc");
 	return $obj if $obj;
-    }
     return $self->queryObject("compounds",{name => "Water"});
 }
 

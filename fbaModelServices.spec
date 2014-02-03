@@ -1678,22 +1678,20 @@ module fbaModelServices {
 		fbamodel_id model - ID of model to be adjusted
 		workspace_id workspace - workspace containing model to be adjusted
 		biomass_id biomass - ID of biomass reaction to adjust
-		float coefficient - coefficient of biomass compound
-		compound_id compound - ID of biomass compound to adjust in biomass
-		compartment_id compartment - ID of compartment containing compound to adjust in biomass
-		int compartmentIndex - index of compartment containing compound to adjust in biomass
+		list<float> coefficients - coefficient of biomass compound
+		list<compound_id> compounds - ID of biomass compound to adjust in biomass
+		list<compartment_id> compartments - ID of compartment containing compound to adjust in biomass
+		list<int> compartmentIndecies - index of compartment containing compound to adjust in biomass
 		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
-			
 	*/
     typedef structure {
 		fbamodel_id model;
 		workspace_id workspace;
 		biomass_id biomass;
-		float coefficient;
-		compound_id compound;
-		compartment_id compartment;
-		int compartmentIndex;
-		bool overwrite;
+		list<float> coefficients;
+		list<compound_id> compounds;
+		list<compartment_id> compartments;
+		list<int> compartmentIndecies;
 		string auth;
     } adjust_biomass_reaction_params;
     /*
@@ -2043,6 +2041,9 @@ module fbaModelServices {
     authentication required;
     funcdef queue_gapfill_model(gapfill_model_params input) returns (JobObject job);
     
+    authentication required;
+    funcdef gapfill_model(gapfill_model_params input) returns (object_metadata modelMeta);
+    
     /* Input parameters for the "queue_gapgen_model" function.
 	
 		fbamodel_id model - ID of the model that gapgen should be run on (a required argument)
@@ -2079,6 +2080,9 @@ module fbaModelServices {
     */
     authentication required;
     funcdef queue_gapgen_model(gapgen_model_params input) returns (JobObject job);
+    
+    authentication required;
+    funcdef gapgen_model(gapgen_model_params input) returns (object_metadata modelMeta);
     
     /* Input parameters for the "queue_wildtype_phenotype_reconciliation" function.
 	
@@ -2197,23 +2201,7 @@ module fbaModelServices {
     */
     authentication required;
     funcdef queue_combine_wildtype_phenotype_reconciliation(combine_wildtype_phenotype_reconciliation_params input) returns (JobObject job);
-    
-    /* Input parameters for the "jobs_done" function.
-	
-		job_id job - ID of the job object (a required argument)
-		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
-		
-	*/
-	typedef structure {
-		job_id job;
-		string auth;
-    } jobs_done_params;
-	/*
-        Mark specified job as complete and run postprocessing
-    */
-	authentication required;
-	funcdef jobs_done(jobs_done_params input) returns (JobObject job);
-	
+    	
 	/* Input parameters for the "run_job" function.
 	
 		job_id job - ID of the job object (a required argument)
@@ -2229,6 +2217,22 @@ module fbaModelServices {
     */
 	authentication required;
 	funcdef run_job(run_job_params input) returns (JobObject job);
+	
+	/* Input parameters for the "queue_job" function.
+	
+		string method;
+		mapping<string,string> parameters;
+				
+	*/
+	typedef structure {
+		string method;
+		mapping<string,string> parameters;
+    } queue_job_params;
+	/*
+        Queues the specified command to run as a job
+    */
+	authentication required;
+	funcdef queue_job(queue_job_params input) returns (JobObject job);
 	
 	/* Input parameters for the "set_cofactors" function.
 	
@@ -2410,7 +2414,7 @@ module fbaModelServices {
         Queues a sensitivity analysis on the knockout of model reactions
     */
     authentication required;
-    funcdef reaction_sensitivity_analysis(reaction_sensitivity_analysis_params input) returns (JobObject job);
+    funcdef reaction_sensitivity_analysis(reaction_sensitivity_analysis_params input) returns (object_metadata output);
 	
         /* Input parameters for the "filter_iterative_solutions" function.
 	        fbamodel_id model - Model ID for which to filter iterative gapfill solutions (a required argument)
@@ -2460,37 +2464,55 @@ module fbaModelServices {
     funcdef delete_noncontributing_reactions(delete_noncontributing_reactions_params input) returns (object_metadata output);
 	
 	/*********************************************************************************
+	Code relating to workspace versions of genome analysis algorithms
+   	*********************************************************************************/
+	/* AnnotationParameters: parameters for all annotation functions
+	
+		bool call_selenoproteins - identify all selenoproteins
+		bool call_pyrrolysoproteins - identify all pyrrolysoproteins
+		bool call_RNAs - identify all RNAs
+		bool call_CDSs - identify all CDSs
+		bool find_close_neighbors - identify nearby genomes in CDM
+		bool gene_calling - call genes based on DNA sequences in transcripts or contigs
+		string gene_calling_algorithm - algorithm to use for gene calling
+		mapping<string,string> gene_calling_params - parameters for gene calling algorithm
+		bool assign_functions_to_CDSs - assign functions to proteins
+		string assign_functions_to_CDS_algorithm - algorithm to use for functional annotation
+		mapping<string,string> assign_functions_to_CDS_params - parameters to use for functional annotation
+		
+	*/
+	typedef structure {
+		bool call_genes;
+		bool annotate_genes;
+    } AnnotationParameters;
+	
+	/* Input parameters for the "annotate_workspace_Genome" function.
+		
+		string Genome_uid - user ID to be assigned to the Genome (required argument)
+		string Genome_ws - workspace with genome for annotation (optional; workspace argument will be used if no genome workspace is provided)
+		string new_uid - new ID to assign to annotated genome (optional; original genome will be overwritten if no new uid is provided)
+		workspace_id workspace - ID of workspace with Genome (required argument)
+		AnnotationParameters parameters - parameters for running annotation job
+		string auth - the authentication token of the KBase account changing workspace permissions
+		
+	*/
+	typedef structure {
+		string Genome_uid;
+		string Genome_ws;
+		string new_uid;
+		workspace_id workspace;
+		AnnotationParameters annotation_parameters;
+		string auth;
+    } annotate_workspace_Genome_params;
+    /*
+		Create a job that runs the genome annotation pipeline on a genome object in a workspace
+    */
+    authentication required;
+    funcdef annotate_workspace_Genome(annotate_workspace_Genome_params params) returns (object_metadata output);
+	
+	/*********************************************************************************
 	Code relating to import and analysis of ProteinSets
    	*********************************************************************************/
-	/* Type spec for a "Protein" subobject in the "ProteinSet" object
-	
-		string kbid - unique kbase ID of the protein
-		string sourceid - ID of the source data for the protein
-		string sequence - sequence of the protein
-	        string description - Description (annotation) of the protein (e.g. everything after the ID in a FASTA file)
-	*/
-	typedef structure {
-		string kbid;
-		string sourceid;
-		string sequence;
-		string description;
-    } ProteinSetProtein;
-	/* Type spec for the "ProteinSet" object
-	
-		string kbid - unique kbase ID of the protein set
-		string name - name of the protein set
-		string type - type of the protein set (values are: Organism,Environment,Collection)
-		list<ProteinSetProtein> proteins - list of proteins in the protein set
-				
-	*/
-	typedef structure {
-		string kbid;
-		string name;
-		string sourceid;
-		string source;
-		string type;
-		list<ProteinSetProtein> proteins;
-    } ProteinSet;
 	/* Input parameters for the "fasta_to_ProteinSet" function.
 	
 		string uid - user assigned ID for the protein set (optional)
@@ -2539,7 +2561,7 @@ module fbaModelServices {
 		string auth;
 		string scientific_name;
 		string domain;
-		int genetic_code;
+		AnnotationParameters annotation_parameters;
     } ProteinSet_to_Genome_params;
     /*
 		Creates a Genome associated with the ProteinSet object. You cannot recall genes on this genome.  
@@ -2548,130 +2570,9 @@ module fbaModelServices {
     funcdef ProteinSet_to_Genome(ProteinSet_to_Genome_params params) returns (object_metadata output);
     
 	/*********************************************************************************
-	Code relating to import and analysis of TranscriptSets
-   	*********************************************************************************/
-	/* Type spec for a "Transcript" subobject in the "TranscriptSet" object
-
-		string kbid - unique kbase ID of the transcript
-		string sourceid - ID of the source data for the transcript
-		string sequence - sequence of the transcript
-	        string description - description of the transcript (e.g. everything after the ID in the input FASTA file)
-	*/
-	typedef structure {
-		string kbid;
-		string sourceid;
-		string sequence;
-		string description;
-    } TranscriptSetTranscript;
-	/* Type spec for the "TranscriptSet" object
-	
-		string kbid - unique kbase ID of the transcript set
-		string name - name of the transcript set
-		string type - type of the transcript set (values are: Organism,Environment,Collection)
-		string sourceid - source ID of the TranscriptSet data
-		string source - source of the TranscriptSet data
-		list<TranscriptSetTranscript> transcripts - list of transcripts in the transcript set
-				
-	*/
-	typedef structure {
-		string kbid;
-		string name;
-		string sourceid;
-		string source;
-		string type;
-		list<TranscriptSetTranscript> transcripts;
-    } TranscriptSet;
-	/* Input parameters for the "fasta_to_Transcripts" function.
-	
-		string uid - user assigned ID for the TranscriptSet (optional)
-		string fasta - string with sequence data from fasta file (required argument)
-		workspace_id workspace - ID of workspace for storing objects (required argument)
-		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
-		string name - name of the TranscriptSet data (optional)
-		string sourceid - source ID of the TranscriptSet data (optional)
-		string source - source of the TranscriptSet data (optional)
-		string type - type of the TranscriptSet (optional)
-		
-	*/
-	typedef structure {
-		string uid;
-		string fasta;
-		workspace_id workspace;
-		string auth;
-		string name;
-		string sourceid;
-		string source;
-		string type;
-    } fasta_to_Transcripts_params;
-    /*
-		Loads a fasta file as a TranscriptSet object in the workspace       
-    */
-    authentication required;
-    funcdef fasta_to_TranscriptSet(fasta_to_Transcripts_params params) returns (object_metadata output);
-    
-    /* Input parameters for the "TranscriptSet_to_Genome" function.
-	
-		string TranscriptSet_uid - user ID to be assigned to the TranscriptSet (required argument)
-		workspace_id TranscriptSet_ws - ID of workspace with the TranscriptSet (optional argument; default is value of workspace argument)
-		string uid - user assigned ID for the Genome (optional)
-		workspace_id workspace - ID of workspace for storing objects (required argument)
-		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
-		string scientific_name - scientific name to assign to genome
-		string domain - domain of life for genome
-		int genetic_code - genetic code to assign to genome
-		
-	*/
-	typedef structure {
-		string TranscriptSet_uid;
-		workspace_id TranscriptSet_ws;
-		workspace_id workspace;
-		string uid;
-		string auth;
-		string scientific_name;
-		string domain;
-		int genetic_code;
-    } TranscriptSet_to_Genome_params;
-    /*
-		Creates a Genome associated with the TranscriptSet object
-		Cannot do global genome structure comparison with such a genome   
-    */
-    authentication required;
-    funcdef TranscriptSet_to_Genome(TranscriptSet_to_Genome_params params) returns (object_metadata output);
-    
-	/*********************************************************************************
 	Code relating to import and analysis of Contigs
    	*********************************************************************************/
-	/* Type spec for a "Contig" subobject in the "ContigSet" object
 	
-		string kbid - unique kbase ID of the contig
-		string sourceid - ID of the source data for the contig
-		string sequence - sequence of the contig
-	        string description - Description of the contig (e.g. everything after the ID in a FASTA file)
-	*/
-	typedef structure {
-		string kbid;
-		string sourceid;
-		string sequence;
-		string description;
-    } ContigSetContig;
-	/* Type spec for the "ContigSet" object
-	
-		string kbid - unique kbase ID of the contig set
-		string name - name of the contig set
-		string type - type of the contig set (values are: Organism,Environment,Collection)
-		string sourceid - source ID of the TranscriptSet data
-		string source - source of the TranscriptSet data
-		list<ContigSetContig> contigs - list of contigs in the transcript set
-				
-	*/
-	typedef structure {
-		string kbid;
-		string name;
-		string sourceid;
-		string source;
-		string type;
-		list<ContigSetContig> contigs;
-    } ContigSet;
 	/* Input parameters for the "fasta_to_ContigSet" function.
 	
 		string uid - user assigned ID for the ContigSet (optional)
@@ -2698,7 +2599,7 @@ module fbaModelServices {
 		Loads a fasta file as a ContigSet object in the workspace       
     */
     authentication required;
-    funcdef fasta_to_ContigSet(fasta_to_Transcripts_params params) returns (object_metadata output);
+    funcdef fasta_to_ContigSet(fasta_to_ContigSet_params params) returns (object_metadata output);
     
 	/* Input parameters for the "ContigSet_to_Genome" function.
 	
@@ -2710,6 +2611,7 @@ module fbaModelServices {
 		string scientific_name - scientific name to assign to genome
 		string domain - domain of life for genome
 		int genetic_code - genetic code to assign to genome
+		AnnotationParameters annotation_parameters - parameters for annotation of the genome
 		
 	*/
 	typedef structure {
@@ -2721,60 +2623,13 @@ module fbaModelServices {
 		string scientific_name;
 		string domain;
 		int genetic_code;
+		AnnotationParameters annotation_parameters;
     } ContigSet_to_Genome_params;
     /*
 		Creates a genome associated with the ContigSet object   
     */
     authentication required;
     funcdef ContigSet_to_Genome(ContigSet_to_Genome_params params) returns (object_metadata output);
-    
-	/*********************************************************************************
-	Code relating to workspace versions of genome analysis algorithms
-   	*********************************************************************************/
-	/* 
-		string stage_id - Name of a stage in the annotation pipeline
-			Options include:
-				1.) call_selenoproteins
-				2.) call_pyrrolysoproteins
-				3.) call_RNAs
-				4.) call_CDSs
-				5.) find_close_neighbors
-				6.) assign_functions_to_CDSs
-	*/
-	typedef string stage_id;
-	/*
-		stage_id id - ID of stage of analysis to run
-		bool enable - boolean indicating the stage should be run
-		mapping<string,string> parameters - parameters for the analysis stage
-	*/
-	typedef structure {
-		stage_id id;
-		bool enable;
-		mapping<string,string> parameters;
-    } AnnotationPipelineStage;
-	/* Input parameters for the "annotate_workspace_Genome" function.
-		
-		string Genome_uid - user ID to be assigned to the Genome (required argument)
-		string Genome_ws - workspace with genome for annotation (optional; workspace argument will be used if no genome workspace is provided)
-		string new_uid - new ID to assign to annotated genome (optional; original genome will be overwritten if no new uid is provided)
-		workspace_id workspace - ID of workspace with Genome (required argument)
-		list<AnnotationPipelineStage> pipeline_stages - list of annotation pipeline steps to run
-		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
-		
-	*/
-	typedef structure {
-		string Genome_uid;
-		string Genome_ws;
-		string new_uid;
-		workspace_id workspace;
-		list<AnnotationPipelineStage> pipeline_stages;
-		string auth;
-    } annotate_workspace_Genome_params;
-    /*
-		Create a job that runs the genome annotation pipeline on a genome object in a workspace
-    */
-    authentication required;
-    funcdef annotate_workspace_Genome(annotate_workspace_Genome_params params) returns (JobObject job);
     
 	/*********************************************************************************
 	Code relating to analysis of probabilistic annotations
