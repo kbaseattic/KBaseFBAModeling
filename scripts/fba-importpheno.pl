@@ -7,13 +7,13 @@
 use strict;
 use warnings;
 use Data::Dumper;
-use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::workspace::ScriptHelpers qw( get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(get_fba_client runFBACommand universalFBAScriptCode );
 
 my $manpage =
 "
 NAME
-      kbfba-importpheno -- import phenotype data to a PhenotypeSet object
+      fba-importpheno -- import phenotype data to a PhenotypeSet object
 
 DESCRIPTION
       Import phenotype data from a file and create a PhenotypeSet object. The
@@ -36,11 +36,11 @@ DESCRIPTION
 
 EXAMPLES
       Import phenotype data for E. coli K12 genome:
-      > kbfba-importpheno kb|g.0.genome kb|g.0.phenotype.txt
+      > fba-importpheno kb|g.0.genome kb|g.0.phenotype.txt
 
 SEE ALSO
-      kbfba-simpheno
-      kbfba-exportphenosim
+      fba-simpheno
+      fba-exportphenosim
 
 AUTHORS
       Christopher Henry
@@ -49,15 +49,13 @@ AUTHORS
 #Defining globals describing behavior
 my $primaryArgs = ["Genome ID","Phenotype filename"];
 my $servercommand = "import_phenotypes";
-my $script = "kbfba-importpheno";
+my $script = "fba-importpheno";
 my $translation = {
 	"Genome ID" => "genome",
 	"phenoid" => "phenotypeSet",
 	workspace => "workspace",
 	genomews => "genome_workspace",
 	ignoreerrors => "ignore_errors",
-	auth => "auth",
-	overwrite => "overwrite"
 };
 #Defining usage and options
 my $specs = [
@@ -65,7 +63,6 @@ my $specs = [
     [ 'genomews:s', 'Workspace with genome object' ],
     [ 'ignoreerrors', 'Ignore errors encountered during import' ],
     [ 'workspace|w:s', 'Workspace to save phenotypes in', { "default" => workspace() } ],
-    [ 'overwrite|o', 'Overwrite any existing phenotypes with same name' ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation,$manpage);
 
@@ -138,5 +135,5 @@ if (!defined($output)) {
 	print "Phenotype import failed!\n";
 } else {
 	print "Phenotype import successful:\n";
-	printObjectMeta($output);
+	printObjectInfo($output);
 }

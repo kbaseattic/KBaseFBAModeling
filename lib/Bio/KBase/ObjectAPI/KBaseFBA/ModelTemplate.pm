@@ -121,7 +121,10 @@ sub adjustBiomass {
 	}
 	if (!defined($tempbio)) {
 		if ($args->{"new"} == 1) {
+			my $bios = $self->templateBiomasses();
+			my $id = @{$bios}+1;
 			$tempbio = $self->add("templateBiomasses",{
+				id => $self->parent()->id().".bio.".$id,
 				name => $args->{name},
 				type => $args->{type},
 				other => $args->{other},
@@ -179,7 +182,10 @@ sub adjustBiomass {
 	        if (!defined($cmp)) {
 	            Bio::KBase::ObjectAPI::utilities::error("Compartment ".$compound->[1]." not found!");
 	        }
+	        my $comps = $self->templateBiomassComponents();
+			my $id = @{$comps}+1;
 	        my $comp = Bio::KBase::ObjectAPI::KBaseFBA::TemplateBiomassComponent->new({
+				id => $tempbio->id().".cpd.".$id,
 	            class => $compound->[2],
 	            compound_ref => $cpd->_reference(),
 	            compartment_ref => $cmp->_reference(),
@@ -215,9 +221,15 @@ sub adjustReaction {
 	});
 	if (!defined($temprxn)) {
 		if (defined($args->{"new"}) && $args->{"new"} == 1) {
+			my $rxns = $self->reactions();
+			my $id = @{$rxns}+1;
 			$temprxn = Bio::KBase::ObjectAPI::KBaseFBA::TemplateReaction->new({
+				id => $self->parent()->id().".rxn.".$id,
 				compartment_ref => $cmp->_reference(),
-				reaction_ref => $rxn->_reference()
+				reaction_ref => $rxn->_reference(),
+				complex_refs => [],
+				direction => "<=>",
+				type => "Conditional"
 			});
 			$self->add("templateReactions",$temprxn);
 		} else {
@@ -234,18 +246,18 @@ sub adjustReaction {
 		$temprxn->type($args->{type});
 	}
     if (defined($args->{clearComplexes}) && $args->{clearComplexes} == 1) {
-		$temprxn->clearLinkArray("complexes");
+		$temprxn->clearLinkArray("complexs");
 	}
   	for (my $i=0; $i < @{$args->{complexesToRemove}}; $i++) {
   		my $cpx = $self->mapping()->searchForComplex($args->{complexesToRemove}->[$i]);
     	if (defined($cpx)) {
-    		$temprxn->removeLinkArrayItem("complexes",$cpx);
+    		$temprxn->removeLinkArrayItem("complexs",$cpx);
     	}
    	}
     for (my $i=0; $i < @{$args->{complexesToAdd}}; $i++) {
     	my $cpx = $self->mapping()->searchForComplex($args->{complexesToAdd}->[$i]);
     	if (defined($cpx)) {
-    		$temprxn->addLinkArrayItem("complexes",$cpx);
+    		$temprxn->addLinkArrayItem("complexs",$cpx);
     	} else {
   			Bio::KBase::ObjectAPI::utilities::error("Specified complex ".$args->{complexesToAdd}->[$i]." not found!");
   		}

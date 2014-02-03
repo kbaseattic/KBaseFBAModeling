@@ -84,9 +84,9 @@ sub new
     # We create an auth token, passing through the arguments that we were (hopefully) given.
 
     {
-	#my $token = Bio::KBase::AuthToken->new(@args);
+	my $token = Bio::KBase::AuthToken->new(@args);
 	
-	#if (!$token->error_message)
+	if (!$token->error_message)
 	{
 	    $self->{token} = $token->token;
 	    $self->{client}->{token} = $token->token;
@@ -3341,18 +3341,16 @@ adjust_biomass_reaction_params is a reference to a hash where the following keys
 	model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
 	biomass has a value which is a biomass_id
-	coefficient has a value which is a float
-	compound has a value which is a compound_id
-	compartment has a value which is a compartment_id
-	compartmentIndex has a value which is an int
-	overwrite has a value which is a bool
+	coefficients has a value which is a reference to a list where each element is a float
+	compounds has a value which is a reference to a list where each element is a compound_id
+	compartments has a value which is a reference to a list where each element is a compartment_id
+	compartmentIndecies has a value which is a reference to a list where each element is an int
 	auth has a value which is a string
 fbamodel_id is a string
 workspace_id is a string
 biomass_id is a string
 compound_id is a string
 compartment_id is a string
-bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -3383,18 +3381,16 @@ adjust_biomass_reaction_params is a reference to a hash where the following keys
 	model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
 	biomass has a value which is a biomass_id
-	coefficient has a value which is a float
-	compound has a value which is a compound_id
-	compartment has a value which is a compartment_id
-	compartmentIndex has a value which is an int
-	overwrite has a value which is a bool
+	coefficients has a value which is a reference to a list where each element is a float
+	compounds has a value which is a reference to a list where each element is a compound_id
+	compartments has a value which is a reference to a list where each element is a compartment_id
+	compartmentIndecies has a value which is a reference to a list where each element is an int
 	auth has a value which is a string
 fbamodel_id is a string
 workspace_id is a string
 biomass_id is a string
 compound_id is a string
 compartment_id is a string
-bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -7615,7 +7611,7 @@ sub role_to_reactions
 
 =head2 reaction_sensitivity_analysis
 
-  $job = $obj->reaction_sensitivity_analysis($input)
+  $output = $obj->reaction_sensitivity_analysis($input)
 
 =over 4
 
@@ -7625,7 +7621,7 @@ sub role_to_reactions
 
 <pre>
 $input is a reaction_sensitivity_analysis_params
-$job is a JobObject
+$output is an object_metadata
 reaction_sensitivity_analysis_params is a reference to a hash where the following keys are defined:
 	model has a value which is a fbamodel_id
 	model_ws has a value which is a workspace_id
@@ -7644,18 +7640,23 @@ reaction_id is a string
 gapfillsolution_id is a string
 bool is an int
 rxnprob_id is a string
-JobObject is a reference to a hash where the following keys are defined:
-	id has a value which is a job_id
-	type has a value which is a string
-	auth has a value which is a string
-	status has a value which is a string
-	jobdata has a value which is a reference to a hash where the key is a string and the value is a string
-	queuetime has a value which is a string
-	starttime has a value which is a string
-	completetime has a value which is a string
-	owner has a value which is a string
-	queuecommand has a value which is a string
-job_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
 
 </pre>
 
@@ -7664,7 +7665,7 @@ job_id is a string
 =begin text
 
 $input is a reaction_sensitivity_analysis_params
-$job is a JobObject
+$output is an object_metadata
 reaction_sensitivity_analysis_params is a reference to a hash where the following keys are defined:
 	model has a value which is a fbamodel_id
 	model_ws has a value which is a workspace_id
@@ -7683,18 +7684,23 @@ reaction_id is a string
 gapfillsolution_id is a string
 bool is an int
 rxnprob_id is a string
-JobObject is a reference to a hash where the following keys are defined:
-	id has a value which is a job_id
-	type has a value which is a string
-	auth has a value which is a string
-	status has a value which is a string
-	jobdata has a value which is a reference to a hash where the key is a string and the value is a string
-	queuetime has a value which is a string
-	starttime has a value which is a string
-	completetime has a value which is a string
-	owner has a value which is a string
-	queuecommand has a value which is a string
-job_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
 
 
 =end text
@@ -16998,10 +17004,10 @@ Input parameters for the "adjust_biomass_reaction" function.
         fbamodel_id model - ID of model to be adjusted
         workspace_id workspace - workspace containing model to be adjusted
         biomass_id biomass - ID of biomass reaction to adjust
-        float coefficient - coefficient of biomass compound
-        compound_id compound - ID of biomass compound to adjust in biomass
-        compartment_id compartment - ID of compartment containing compound to adjust in biomass
-        int compartmentIndex - index of compartment containing compound to adjust in biomass
+        list<float> coefficients - coefficient of biomass compound
+        list<compound_id> compounds - ID of biomass compound to adjust in biomass
+        list<compartment_id> compartments - ID of compartment containing compound to adjust in biomass
+        list<int> compartmentIndecies - index of compartment containing compound to adjust in biomass
         string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
 
@@ -17014,11 +17020,10 @@ a reference to a hash where the following keys are defined:
 model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
 biomass has a value which is a biomass_id
-coefficient has a value which is a float
-compound has a value which is a compound_id
-compartment has a value which is a compartment_id
-compartmentIndex has a value which is an int
-overwrite has a value which is a bool
+coefficients has a value which is a reference to a list where each element is a float
+compounds has a value which is a reference to a list where each element is a compound_id
+compartments has a value which is a reference to a list where each element is a compartment_id
+compartmentIndecies has a value which is a reference to a list where each element is an int
 auth has a value which is a string
 
 </pre>
@@ -17031,11 +17036,10 @@ a reference to a hash where the following keys are defined:
 model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
 biomass has a value which is a biomass_id
-coefficient has a value which is a float
-compound has a value which is a compound_id
-compartment has a value which is a compartment_id
-compartmentIndex has a value which is an int
-overwrite has a value which is a bool
+coefficients has a value which is a reference to a list where each element is a float
+compounds has a value which is a reference to a list where each element is a compound_id
+compartments has a value which is a reference to a list where each element is a compartment_id
+compartmentIndecies has a value which is a reference to a list where each element is an int
 auth has a value which is a string
 
 

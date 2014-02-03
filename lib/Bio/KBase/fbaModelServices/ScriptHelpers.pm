@@ -149,12 +149,20 @@ sub runFBACommand {
     my $params = shift;
     my $function = shift;
     my $opt = shift;
+    my $queuejob = shift;
     my $serv = get_fba_client();
     my $output;
     my $error;
+    delete $params->{auth};
     eval {
-    	delete $params->{auth};
-    	$output = $serv->$function($params);
+    	if (defined($queuejob) && $queuejob == 1) {
+	    	$output = $serv->queue_job({
+	    		method => $function,
+				parameters => $params
+	    	});
+    	} else {
+	    	$output = $serv->$function($params);
+		}
 	};$error = $@ if $@;
 	if ($opt->{showerror} == 1 && defined($error)){
 	    print STDERR $error;

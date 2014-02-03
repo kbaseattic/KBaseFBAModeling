@@ -6,12 +6,12 @@
 ########################################################################
 use strict;
 use warnings;
-use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::workspace::ScriptHelpers qw(printObjectInfo get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Template ID","Reaction ID"];
 my $servercommand = "adjust_template_reaction";
-my $script = "kbfba-adjusttemprxn";
+my $script = "fba-adjusttemprxn";
 my $translation = {
 	"Template ID" => "templateModel",
 	"Reaction ID" => "reaction",
@@ -52,4 +52,5 @@ if (!defined($output)) {
 	print "Adjustment of template reaction failed!\n";
 } else {
 	print "Adjustment of template reaction successful:\n";
+	printObjectInfo($output);
 }

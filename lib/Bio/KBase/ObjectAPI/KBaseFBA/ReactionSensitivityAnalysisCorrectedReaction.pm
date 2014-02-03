@@ -1,37 +1,26 @@
 ########################################################################
-# Bio::KBase::ObjectAPI::KBaseGenomes::Genome - This is the moose object corresponding to the Genome object
+# Bio::KBase::ObjectAPI::KBaseFBA::ReactionSensitivityAnalysisCorrectedReaction - This is the moose object corresponding to the KBaseFBA.ReactionSensitivityAnalysisCorrectedReaction object
 # Authors: Christopher Henry, Scott Devoid, Paul Frybarger
 # Contact email: chenry@mcs.anl.gov
 # Development location: Mathematics and Computer Science Division, Argonne National Lab
-# Date of module creation: 2012-03-26T23:22:35
+# Date of module creation: 2014-02-02T16:54:37
 ########################################################################
 use strict;
-use Bio::KBase::ObjectAPI::KBaseGenomes::DB::Genome;
-package Bio::KBase::ObjectAPI::KBaseGenomes::Genome;
+use Bio::KBase::ObjectAPI::KBaseFBA::DB::ReactionSensitivityAnalysisCorrectedReaction;
+package Bio::KBase::ObjectAPI::KBaseFBA::ReactionSensitivityAnalysisCorrectedReaction;
 use Moose;
 use namespace::autoclean;
-extends 'Bio::KBase::ObjectAPI::KBaseGenomes::DB::Genome';
+extends 'Bio::KBase::ObjectAPI::KBaseFBA::DB::ReactionSensitivityAnalysisCorrectedReaction';
 #***********************************************************************************************************
 # ADDITIONAL ATTRIBUTES:
 #***********************************************************************************************************
-has geneAliasHash => ( is => 'rw',printOrder => 2, isa => 'HashRef', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildgeneAliasHash' );
 
 
 #***********************************************************************************************************
 # BUILDERS:
 #***********************************************************************************************************
-sub _buildgeneAliasHash {
-	my ($self) = @_;
-	my $geneAliases = {};
-	my $ftrs = $self->features();
-    foreach my $ftr (@{$ftrs}) {
-    	$geneAliases->{$ftr->id()} = $ftr;
-    	foreach my $alias (@{$ftr->aliases()}) {
-    		$geneAliases->{$alias} = $ftr;
-    	}
-    }
-    return $geneAliases;
-}
+
+
 
 #***********************************************************************************************************
 # CONSTANTS:
@@ -40,18 +29,7 @@ sub _buildgeneAliasHash {
 #***********************************************************************************************************
 # FUNCTIONS:
 #***********************************************************************************************************
-sub genome_typed_object {
-    my ($self) = @_;
-	my $output = $self->serializeToDB();
-	my $contigset = $self->contigset();
-	my $contigserial = $contigset->serializeToDB();
-	$output->{contigs} = $contigserial->{contigs};
-	for (my $i=0; $i < @{$output->{contigs}}; $i++) {
-		$output->{contigs}->[$i]->{dna} = $output->{contigs}->[$i]->{sequence};
-		delete $output->{contigs}->[$i]->{sequence};
-	}
-	return $output;
-}
+
 
 __PACKAGE__->meta->make_immutable;
 1;

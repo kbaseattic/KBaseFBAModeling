@@ -110,7 +110,7 @@ sub _buildcomplexesByAlias {
 #***********************************************************************************************************
 sub addAlias {
     my $self = shift;
-    my $args = Bio::KBase::ObjectAPI::Util::utilities::args(["attribute","aliasName","alias","uuid"], {}, @_);
+    my $args = Bio::KBase::ObjectAPI::Util::utilities::args(["attribute","aliasName","alias","id"], {}, @_);
 	my $idhash;
 	my $aliasHash;
 	if ($args->{attribute} eq "roles") {
@@ -123,15 +123,15 @@ sub addAlias {
 		$idhash = $self->subsystem_aliases();
 		$aliasHash = $self->subsystemsByAlias();
 	}
-	if (!defined($aliasHash->{$args->{aliasName}}->{$args->{alias}}->{$args->{uuid}})) {
-		$aliasHash->{$args->{aliasName}}->{$args->{alias}}->{$args->{uuid}} = 1;
-		push(@{$idhash->{$args->{uuid}}->{$args->{aliasName}}},$args->{uuid});
+	if (!defined($aliasHash->{$args->{aliasName}}->{$args->{alias}}->{$args->{id}})) {
+		$aliasHash->{$args->{aliasName}}->{$args->{alias}}->{$args->{id}} = 1;
+		push(@{$idhash->{$args->{id}}->{$args->{aliasName}}},$args->{id});
 	}
 }
 
 sub removeAlias {
     my $self = shift;
-    my $args = Bio::KBase::ObjectAPI::Util::utilities::args(["attribute","aliasName","alias","uuid"], {}, @_);
+    my $args = Bio::KBase::ObjectAPI::Util::utilities::args(["attribute","aliasName","alias","id"], {}, @_);
 	my $idhash;
 	my $aliasHash;
 	if ($args->{attribute} eq "roles") {
@@ -144,13 +144,13 @@ sub removeAlias {
 		$idhash = $self->subsystem_aliases();
 		$aliasHash = $self->subsystemsByAlias();
 	}
-	if (defined($idhash->{$args->{uuid}})) {
-		if (defined($idhash->{$args->{uuid}}->{$args->{aliasName}})) {
-			for (my $i=0; $i < @{$idhash->{$args->{uuid}}->{$args->{aliasName}}}; $i++) {
-				if ($idhash->{$args->{uuid}}->{$args->{aliasName}}->[$i] eq $args->{alias}) {
-					splice(@{$idhash->{$args->{uuid}}->{$args->{aliasName}}}, $i, 1);
+	if (defined($idhash->{$args->{id}})) {
+		if (defined($idhash->{$args->{id}}->{$args->{aliasName}})) {
+			for (my $i=0; $i < @{$idhash->{$args->{id}}->{$args->{aliasName}}}; $i++) {
+				if ($idhash->{$args->{id}}->{$args->{aliasName}}->[$i] eq $args->{alias}) {
+					splice(@{$idhash->{$args->{id}}->{$args->{aliasName}}}, $i, 1);
 					$i--;
-					delete $aliasHash->{$args->{aliasName}}->{$args->{alias}}->{$args->{uuid}};
+					delete $aliasHash->{$args->{aliasName}}->{$args->{alias}}->{$args->{id}};
 				}
 			}
 		}
@@ -445,15 +445,15 @@ sub adjustComplex {
     }, @_);
 	my $cpx;
 	if ($args->{id} eq "new") {
-		my $id = Bio::KBase::ObjectAPI::utilities::get_new_id("mscpx.");
+		my $id = Bio::KBase::ObjectAPI::utilities::get_new_id("kb|cpx.");
 		$cpx = Bio::KBase::ObjectAPI::KBaseOntology::Complex->new({
 			name => $id
 		});
 		$self->addAlias({
   			attribute => "complexes",
-  			aliasName => "ModelSEED",
+  			aliasName => "KBase",
   			alias => $id,
-  			uuid => $cpx->uuid()
+  			id => $cpx->id()
   		});
   		$self->add("complexes",$cpx);
 	} else {
@@ -476,7 +476,7 @@ sub adjustComplex {
    		if (defined($roleobj)) {
    			my $cpxroles = $cpx->complexroles();
    			for (my $i=0; $i < @$cpxroles; $i++) {
-   				if ($cpxroles->[$i]->role_uuid() eq $roleobj->uuid()) {
+   				if ($cpxroles->[$i]->role_ref() eq $roleobj->_reference()) {
    					$cpx->remove("complexroles",$cpxroles->[$i]);
    					$cpxroles = $cpx->complexroles();
    					$i--;
@@ -491,14 +491,14 @@ sub adjustComplex {
     		my $cpxroles = $cpx->complexroles();
    			my $cpxrole;
    			for (my $i=0; $i < @$cpxroles; $i++) {
-    			if ($cpxroles->[$i]->role_uuid() eq $roleobj->uuid()) {
+    			if ($cpxroles->[$i]->role_ref() eq $roleobj->_reference()) {
     				$cpxrole = $cpxroles->[$i];
     				last;
     			}
    			}
    			if (!defined($cpxrole)) {
    				my $newCpxRole = {
-	    			role_uuid => $roleobj->uuid()
+	    			role_ref => $roleobj->_reference()
 	    		};
 	    		$cpxrole = $cpx->add("complexroles",$newCpxRole);
    			}
@@ -529,7 +529,7 @@ sub adjustRole {
     }, @_);
 	my $role;
 	if ($args->{id} eq "new") {
-		my $id = Bio::KBase::ObjectAPI::utilities::get_new_id("msfr.");
+		my $id = Bio::KBase::ObjectAPI::utilities::get_new_id("kb|fr.");
 		$role = Bio::KBase::ObjectAPI::KBaseOntology::Role->new({
 			name => $id
 		});
@@ -537,7 +537,7 @@ sub adjustRole {
   			attribute => "roles",
   			aliasName => "ModelSEED",
   			alias => $id,
-  			uuid => $role->uuid()
+  			id => $role->id()
   		});
   		$self->add("roles",$role);
 	} else {
@@ -559,7 +559,7 @@ sub adjustRole {
   			attribute => "roles",
   			aliasName => "name",
   			alias => $args->{aliasToAdd}->[$i],
-  			uuid => $role->uuid()
+  			id => $role->id()
   		});
    	}
    	for (my $i=0; $i < @{$args->{aliasToRemove}}; $i++) {
@@ -567,7 +567,7 @@ sub adjustRole {
   			attribute => "roles",
   			aliasName => "name",
   			alias => $args->{aliasToRemove}->[$i],
-  			uuid => $role->uuid()
+  			id => $role->id()
   		});
    	}
    	return $role;
@@ -595,7 +595,7 @@ sub adjustRoleset {
   			attribute => "rolesets",
   			aliasName => "ModelSEED",
   			alias => $id,
-  			uuid => $ss->uuid()
+  			id => $ss->id()
   		});
   		$self->add("rolesets",$ss);
 	} else {

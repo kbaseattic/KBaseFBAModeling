@@ -136,6 +136,39 @@ sub get_objects {
 				$self->cache()->{$newrefs->[$i]} = $class->new($objdatas->[$i]->{data});
 				$self->cache()->{$info->[6]."/".$info->[0]."/".$info->[4]} = $self->cache()->{$newrefs->[$i]};
 				$self->cache()->{$newrefs->[$i]}->parent($self);
+				if ($type eq "Biochemistry") {
+					$self->cache()->{$newrefs->[$i]}->add("compounds",{
+						id => "cpd00000",
+				    	isCofactor => 0,
+				    	name => "CustomCompound",
+				    	abbreviation => "CustomCompound",
+				    	md5 => "",
+				    	formula => "",
+				    	unchargedFormula => "",
+				    	mass => 0,
+				    	defaultCharge => 0,
+				    	deltaG => 0,
+				    	deltaGErr => 0,
+				    	comprisedOfCompound_refs => [],
+				    	cues => {},
+				    	pkas => {},
+				    	pkbs => {}
+					});
+					$self->cache()->{$newrefs->[$i]}->add("reactions",{
+						id => "rxn00000",
+				    	name => "CustomReaction",
+				    	abbreviation => "CustomReaction",
+				    	md5 => "",
+				    	direction => "=",
+				    	thermoReversibility => "=",
+				    	status => "OK",
+				    	defaultProtons => 0,
+				    	deltaG => 0,
+				    	deltaGErr => 0,
+				    	cues => {},
+				    	reagents => []
+					});
+				}
 				$self->cache()->{$newrefs->[$i]}->_wsobjid($info->[0]);
 				$self->cache()->{$newrefs->[$i]}->_wsname($info->[1]);
 				$self->cache()->{$newrefs->[$i]}->_wstype($info->[2]);

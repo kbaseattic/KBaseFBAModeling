@@ -16,6 +16,7 @@ extends 'Bio::KBase::ObjectAPI::KBaseFBA::DB::ModelReaction';
 # ADDITIONAL ATTRIBUTES:
 #***********************************************************************************************************
 has equation => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildequation' );
+has code => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcode' );
 has definition => ( is => 'rw', isa => 'Str',printOrder => '3', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_builddefinition' );
 has name => ( is => 'rw', isa => 'Str',printOrder => '2', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildname' );
 has abbreviation => ( is => 'rw', isa => 'Str',printOrder => '2', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildabbreviation' );
@@ -98,6 +99,50 @@ sub _buildequation {
 	}
 	$reactants .= " ".$self->translatedDirection()." ";
 	return $reactants.$products;
+}
+sub _buildcode {
+	my ($self) = @_;
+	my $reactants = {};
+	my $products = {};
+	my $rgts = $self->modelReactionReagents();
+	for (my $i=0; $i < @{$rgts}; $i++) {
+		my $rgt = $rgts->[$i];
+		my $id = $rgt->modelcompound()->id();
+		if ($id =~ m/(.+)_c\d+$/) {
+			$id = $1;
+		} elsif ($id =~ m/(.+)_[(a-z)]\d+$/) {
+			$id = $1."[".$2."]";
+		}
+		if ($rgt->coefficient() < 0) {
+			my $coef = -1*$rgt->coefficient();
+			$reactants->{$id} = $coef;
+		} else {
+			$products->{$id} = $rgt->coefficient();
+		}
+	}
+	my $code = "";
+	my $array = [sort(keys(%{$reactants}))];
+	foreach my $id (@{$array}) {
+		if (length($code) > 0) {
+			$code .= " + ";
+		}
+		if ($reactants->{$id} != 1) {
+			$code .= "(".$reactants->{$id}.") ";
+		}
+		$code .= $id;
+	}
+	$code .= " <=> ";
+	$array = [sort(keys(%{$products}))];
+	foreach my $id (@{$array}) {
+		if (length($code) > 0) {
+			$code .= " + ";
+		}
+		if ($products->{$id} != 1) {
+			$code .= "(".$products->{$id}.") ";
+		}
+		$code .= $id;
+	}
+	return $code;
 }
 sub _buildmodelCompartmentLabel {
 	my ($self) = @_;
@@ -338,6 +383,148 @@ sub setGPRFromArray {
 	    	}
     	}
     }
+}
+
+sub ImportExternalEquation {
+	my $self = shift;
+    my $args = Bio::KBase::ObjectAPI::utilities::args(["equation","compounds"],{}, @_);
+	$args->{equation} =~ s/\s+\<*[-=]+\>\s+/ = /g;
+	$args->{equation} =~ s/\s\<[-=]+\s/ = /g;
+    $args->{equation} =~ s/\s+\+\s+/ + /g;
+	my $array = [split(/\s=\s/,$args->{equation})];
+	if (@{$array} == 1) {
+		Bio::KBase::ObjectAPI::utilities::error("No equal sign in ".$args->{equation}."!");
+	} elsif (@{$array} > 2) {
+		Bio::KBase::ObjectAPI::utilities::error("Too many equal signs in ".$args->{equation}."!");
+	}
+	my $bio = $self->parent()->template()->biochemistry();
+    my $rxncpds = $self->modelReactionReagents();
+    for (my $i=0; $i < @{$rxncpds}; $i++){
+    	$self->remove("modelReactionReagents",$rxncpds->[$i])
+    }
+    $self->modelReactionReagents([]);
+    for (my $i=0; $i < @{$array}; $i++) {
+    	my $compounds = [split(/\s\+\s/,$array->[$i])];
+    	foreach my $cpd (@{$compounds}) {
+    		my $coef = 1;
+    		my $compartment = "c";
+    		my $index = 0;
+    		if ($cpd =~ m/^\((\d+\.*\d*)\)\s+(.+)/) {
+    			$coef = $1;
+    			$cpd = $2;
+    		}
+    		if ($cpd =~ m/^(.+)\[([a-z]\d*)\]$/) {
+    			$cpd = $1;
+    			$compartment = $2;	
+    		}
+    		if ($compartment =~ m/([a-z])(\d+)/) {
+    			$index = $2;
+    			$compartment = $1;	
+    		}
+    		if ($i == 0) {
+    			$coef = -1*$coef;
+    		}
+    		my $cmp = $bio->searchForCompartment($compartment);
+    		if (!defined($cmp)) {
+    			Bio::KBase::ObjectAPI::utilities::error("Unrecognized compartment in equation:".$cmp."!");
+    		}
+    		my $mdlcmp = $self->parent()->getObject("modelcompartments",$compartment.$index);
+    		if (!defined($mdlcmp)) {
+    			$mdlcmp = $self->parent()->add("modelcompartments",{
+    				id => $compartment.$index,
+					compartment_ref => $cmp->_reference(),
+					compartmentIndex => $index,
+					label => $compartment.$index,
+					pH => 7,
+					potential => 0,
+    			});
+    		}
+    		my $cpdobj = $bio->searchForCompound($cpd);
+    		if (!defined($cpdobj) && defined($args->{compounds}->{$cpd})) {
+    			$cpdobj = $bio->searchForCompound($args->{compounds}->{$cpd}->[3]);
+    			if (!defined($cpdobj)) {
+    				foreach my $alias (@{$args->{compounds}->{$cpd}->[4]}) {
+    					$cpdobj = $bio->searchForCompound($alias);
+    					if (defined($cpdobj)) {
+    						last;
+    					}
+    				}
+    			}
+    		}
+    		my $mdlcpd;
+    		if (defined($cpdobj)) {
+    			$mdlcpd = $self->parent()->searchForCompound($cpdobj->id()."_".$compartment.$index);
+    			if (!defined($mdlcpd)) {
+    				$mdlcpd = $self->parent()->add("modelcompounds",{
+    					id => $cpdobj->id()."_".$compartment.$index,
+						compound_ref => $cpdobj->_reference(),
+						name => $cpdobj->name()."_".$compartment.$index,
+						charge => $cpdobj->defaultCharge(),
+						formula => $cpdobj->formula(),
+						modelcompartment_ref => "~/modelcompartments/id/".$mdlcmp->id()
+    				});
+    			}
+    		} else {
+    			$mdlcpd = $self->parent()->searchForCompound($cpd."_".$compartment.$index);
+    			if (!defined($mdlcpd)) {
+    				if (!defined($args->{compounds}->{$cpd})) {
+    					Bio::KBase::ObjectAPI::utilities::error("Ill defined compound:".$cpd."!");
+    				}
+    				$mdlcpd = $self->parent()->add("modelcompounds",{
+    					id => $cpd."_".$compartment.$index,
+						compound_ref => $bio->_reference()."/compounds/id/cpd00000",
+						name => $args->{compounds}->{$cpd}->[3]."_".$compartment.$index,
+						charge => $args->{compounds}->{$cpd}->[1],
+						formula => $args->{compounds}->{$cpd}->[2],
+						modelcompartment_ref => "~/modelcompartments/id/".$mdlcmp->id()
+    				});
+    			}
+    		}
+    		$self->add("modelReactionReagents",{
+    			modelcompound_ref => "~/modelcompounds/id/".$mdlcpd->id(),
+				coefficient => $coef
+    		});
+    	}
+    }
+    my $rxnobj = $bio->queryObject("reactions",{code => $self->code()});
+    if (defined($rxnobj)) {
+    	$self->reaction_ref($bio->_reference()."/reactions/id/".$rxnobj->id());
+    } else {
+    	$self->reaction_ref($bio->_reference()."/reactions/id/rxn00000");
+    }
+}
+
+sub loadGPRFromString {
+	my $self = shift;
+	my $gprstring = shift;
+	print $gprstring."\n";
+	my $geneAliases = $self->parent()->genome()->geneAliasHash();
+	my $gpr = Bio::KBase::ObjectAPI::utilities::translateGPRHash(Bio::KBase::ObjectAPI::utilities::parseGPR($gprstring));
+	my $missingGenes;
+	for (my $m=0; $m < @{$gpr}; $m++) {
+		my $protObj = $self->add("modelReactionProteins",{
+			complex_ref => "",
+			note => "Imported GPR",
+			modelReactionProteinSubunits => []
+		});		
+		for (my $j=0; $j < @{$gpr->[$m]}; $j++) {
+			my $subObj = $protObj->add("modelReactionProteinSubunits",{
+				role => "",
+				triggering => 0,
+				optionalSubunit => 0,
+				note => "Imported GPR",
+				feature_refs => []
+			});		
+			for (my $k=0; $k < @{$gpr->[$m]->[$j]}; $k++) {
+				my $ftrID = $gpr->[$m]->[$j]->[$k];
+				if (!defined($geneAliases->{$ftrID})) {
+					$missingGenes->{$ftrID} = 1;
+				} else {
+					$subObj->addLinkArrayItem("features",$geneAliases->{$ftrID});
+				}
+			}
+		}
+	}
 }
 
 __PACKAGE__->meta->make_immutable;

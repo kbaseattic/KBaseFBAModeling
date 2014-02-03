@@ -298,6 +298,15 @@ sub createJobDirectory {
 	my $cpdhash = {};
 	for (my $i=0; $i < @{$mdlcpd}; $i++) {
 		my $cpd = $mdlcpd->[$i];
+		my $id = $cpd->compound()->id();
+		my $name = $cpd->compound()->name();
+		my $abbrev = $cpd->compound()->abbreviation();
+		if ($id eq "cpd00000") {
+			$id = $cpd->id();
+			$id =~ s/_[a-z]\d+$//;
+			$name = $id;
+			$abbrev = $id;
+		}
 		my $index = $cpd->modelcompartment()->compartmentIndex();
 		if (!defined($cpdhash->{$cpd->compound()->id()."_".$index})) {
 			my $line = "";
@@ -308,9 +317,17 @@ sub createJobDirectory {
 				if ($j > 0) {
 					$line .= "\t";
 				}
-				if (defined($cpd->compound()->$function())) {	
-					$line .= $cpd->compound()->$function();
-					if ($index > 0 && $function =~ m/(name)|(id)|(abbreviation)/) {
+				if (defined($cpd->compound()->$function())) {
+					if ($function eq "name") {
+						$line .= $name;
+					} elsif ($function eq "id") {
+						$line .= $id;
+					} elsif ($function eq "abbreviation") {
+						$line .= $abbrev;
+					} else {
+						$line .= $cpd->compound()->$function();
+					}
+					if ($index > 0 && $function !~ m/(name)|(id)|(abbreviation)/) {
 						$line .= "_".$index;
 					}
 				}
@@ -333,6 +350,11 @@ sub createJobDirectory {
 		}
 		my $id = $rxn->reaction()->id();
 		my $name = $rxn->reaction()->name();
+		if ($id eq "rxn00000") {
+			$id = $rxn->id();
+			$id =~ s/_[a-z]\d+$//;
+			$name = $id;
+		}
 		my $index = $rxn->modelcompartment()->compartmentIndex();	
 		if ($index != 0) {
 			$id .= "_".$index;

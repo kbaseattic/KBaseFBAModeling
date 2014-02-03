@@ -6,13 +6,13 @@
 ########################################################################
 use strict;
 use warnings;
-use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::workspace::ScriptHelpers qw(printObjectInfo get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(get_fba_client runFBACommand universalFBAScriptCode );
 
 my $manpage =
 "
 NAME
-      kbfba-adjusttempbiomass -- adjust biomass reaction in a model template
+      fba-adjusttempbiomass -- adjust biomass reaction in a model template
 
 DESCRIPTION
       Adjust biomass reaction in a ModelTemplate object.
@@ -42,12 +42,12 @@ DESCRIPTION
 
 EXAMPLES
       Add a new compound to the biomass:
-      > kbfba-adjusttempbiomass
+      > fba-adjusttempbiomass
 
 SEE ALSO
-      kbfba-adjusttempbiocpd
-      kbfba-gettemplate
-      kbfba-importtemplate
+      fba-adjusttempbiocpd
+      fba-gettemplate
+      fba-importtemplate
 
 AUTHORS
       Christopher Henry
@@ -56,7 +56,7 @@ AUTHORS
 #Defining globals describing behavior
 my $primaryArgs = ["Template ID","Biomass ID"];
 my $servercommand = "adjust_template_biomass";
-my $script = "kbfba-adjusttempbiomass";
+my $script = "fba-adjusttempbiomass";
 my $translation = {
 	"Template ID" => "templateModel",
 	"Biomass ID" => "biomass",
@@ -105,4 +105,5 @@ if (!defined($output)) {
 	print "Adjustment of template biomass reaction failed!\n";
 } else {
 	print "Adjustment of template biomass reaction successful\n";
+	printObjectInfo($output);
 }

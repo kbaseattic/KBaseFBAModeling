@@ -18,6 +18,7 @@ extends 'Bio::KBase::ObjectAPI::KBaseBiochem::DB::Reaction';
 has definition => ( is => 'rw',printOrder => 3, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_builddefinition' );
 has equation => ( is => 'rw',printOrder => 4, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildequation' );
 has equationDir => ( is => 'rw',printOrder => 4, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildequationdirection' );
+has code => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcode' );
 has equationCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildequationcode' );
 has revEquationCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildrevequationcode' );
 has equationCompFreeCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcompfreeequationcode' );
@@ -51,7 +52,10 @@ sub _buildequationcode {
 	my ($self) = @_;
 	return $self->createEquation({format=>"uuid",hashed=>1});
 }
-
+sub _buildcode {
+	my ($self) = @_;
+	return $self->createEquation({format=>"id"});
+}
 sub _buildrevequationcode {
 	my ($self) = @_;
 	return $self->createEquation({format=>"uuid",hashed=>1,reverse=>1});

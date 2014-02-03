@@ -1678,22 +1678,20 @@ module fbaModelServices {
 		fbamodel_id model - ID of model to be adjusted
 		workspace_id workspace - workspace containing model to be adjusted
 		biomass_id biomass - ID of biomass reaction to adjust
-		float coefficient - coefficient of biomass compound
-		compound_id compound - ID of biomass compound to adjust in biomass
-		compartment_id compartment - ID of compartment containing compound to adjust in biomass
-		int compartmentIndex - index of compartment containing compound to adjust in biomass
+		list<float> coefficients - coefficient of biomass compound
+		list<compound_id> compounds - ID of biomass compound to adjust in biomass
+		list<compartment_id> compartments - ID of compartment containing compound to adjust in biomass
+		list<int> compartmentIndecies - index of compartment containing compound to adjust in biomass
 		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
-			
 	*/
     typedef structure {
 		fbamodel_id model;
 		workspace_id workspace;
 		biomass_id biomass;
-		float coefficient;
-		compound_id compound;
-		compartment_id compartment;
-		int compartmentIndex;
-		bool overwrite;
+		list<float> coefficients;
+		list<compound_id> compounds;
+		list<compartment_id> compartments;
+		list<int> compartmentIndecies;
 		string auth;
     } adjust_biomass_reaction_params;
     /*
@@ -2416,7 +2414,7 @@ module fbaModelServices {
         Queues a sensitivity analysis on the knockout of model reactions
     */
     authentication required;
-    funcdef reaction_sensitivity_analysis(reaction_sensitivity_analysis_params input) returns (JobObject job);
+    funcdef reaction_sensitivity_analysis(reaction_sensitivity_analysis_params input) returns (object_metadata output);
 	
         /* Input parameters for the "filter_iterative_solutions" function.
 	        fbamodel_id model - Model ID for which to filter iterative gapfill solutions (a required argument)

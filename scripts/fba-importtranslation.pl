@@ -6,19 +6,18 @@
 ########################################################################
 use strict;
 use warnings;
-use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::workspace::ScriptHelpers qw(printObjectInfo get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Genome ID","Translation file","ID type"];
 my $servercommand = "add_feature_translation";
-my $script = "kbfba-importtranslation";
+my $script = "fba-importtranslation";
 my $translation = {
 	"ID type" => "id_type",
 	"Genome ID" => "genome",
 	genomews => "genome_workspace",
 	workspace => "workspace",
-	auth => "auth",
-	overwrite => "overwrite"
+	auth => "auth"
 };
 
 my $manpage = 
@@ -44,12 +43,12 @@ DESCRIPTION
 
 EXAMPLES
 
-      kbfba-importtranslation 'kb|g.0' 'kb|g.0.translationfile' 'madeup'
+      fba-importtranslation 'kb|g.0' 'kb|g.0.translationfile' 'madeup'
 
 SEE ALSO
-      kbfba-loadgenome
-      kbfba-runfba
-      kbfba-buildfbamodel
+      fba-loadgenome
+      fba-runfba
+      fba-buildfbamodel
 
 AUTHORS
       Christopher Henry
@@ -61,7 +60,6 @@ AUTHORS
 my $specs = [
     [ 'genomews:s', 'Workspace with genome object' ],
     [ 'workspace|w:s', 'Workspace to save imported model in', { "default" => workspace() } ],
-    [ 'overwrite|o', 'Overwrite any existing phenotypes with same name' ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation, $manpage);
 $params->{translations} = [];
@@ -89,5 +87,5 @@ if (!defined($output)) {
 	print "Translation import failed!\n";
 } else {
 	print "Translation import successful:\n";
-	printObjectMeta($output);
+	printObjectInfo($output);
 }

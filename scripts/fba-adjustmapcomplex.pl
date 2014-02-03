@@ -6,12 +6,12 @@
 ########################################################################
 use strict;
 use warnings;
-use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::workspace::ScriptHelpers qw(getObjectInfo get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Map ID","Complex ID"];
 my $servercommand = "adjust_mapping_complex";
-my $script = "kbfba-adjustmapcomplex";
+my $script = "fba-adjustmapcomplex";
 my $translation = {
 	"Map ID" => "map",
 	"Complex ID" => "complex",
@@ -51,4 +51,5 @@ if (!defined($output)) {
 	print "Adjustment of map complex failed!\n";
 } else {
 	print "Adjustment of map complex successful:\n";
+	printObjectInfo($output);
 }

@@ -1,6 +1,6 @@
 #group-name	modeling	Modeling Scripts
 #group-name	genome_annotation	Genome Annotation Scripts
-#ignore kbfba-url
+#ignore kbfba-url fba-url
 kbfba-addaliases	modeling
 kbfba-addmedia	modeling
 kbfba-adjustbiomass	modeling
@@ -43,6 +43,48 @@ kbfba-runfba	modeling
 kbfba-runjob	modeling
 kbfba-simpheno	modeling
 kbfba-url	modeling
+fba-addaliases	modeling
+fba-addmedia	modeling
+fba-adjustbiomass	modeling
+fba-adjustmapcomplex	modeling
+fba-adjustmaprole	modeling
+fba-adjustmapsubsystem	modeling
+fba-adjustmodel	modeling
+fba-adjusttempbiocpd	modeling
+fba-adjusttempbiomass	modeling
+fba-adjusttemprxn	modeling
+fba-buildfbamodel	modeling
+fba-exportfba	modeling
+fba-exportfbamodel	modeling
+fba-exportgenome	modeling
+fba-exportmedia	modeling
+fba-exportobject	modeling
+fba-exportphenosim	modeling
+fba-gapfill	modeling
+fba-gapgen	modeling
+fba-getbio	modeling
+fba-getcompounds	modeling
+fba-getfbas	modeling
+fba-getgapfills	modeling
+fba-getgapgens	modeling
+fba-getmap	modeling
+fba-getmedia	modeling
+fba-getmodels	modeling
+fba-getreactions	modeling
+fba-gettemplate	modeling
+fba-importfbamodel	modeling
+fba-importpheno	modeling
+fba-importprobanno	modeling
+fba-importtemplate	modeling
+fba-importtranslation	modeling
+fba-integratesolution	modeling
+fba-jobdone	modeling
+fba-loadgenome	modeling
+fba-queuefba	modeling
+fba-runfba	modeling
+fba-runjob	modeling
+fba-simpheno	modeling
+fba-url	modeling
 fba-roles-used-in-models	modeling
 fba-compare-mdls	modeling
 fba-findpaths	modeling

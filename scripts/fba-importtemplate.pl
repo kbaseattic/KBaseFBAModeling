@@ -6,12 +6,12 @@
 ########################################################################
 use strict;
 use warnings;
-use Bio::KBase::workspaceService::Helpers qw(loadTableFile auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::workspace::ScriptHelpers qw(loadTableFile printObjectInfo get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Reaction file","Biomass file","Biomass components file"];
 my $servercommand = "import_template_fbamodel";
-my $script = "kbfba-importtemplate";
+my $script = "fba-importtemplate";
 my $translation = {
 	"Reaction file" => "Reaction file",
 	"Biomass file" => "Biomass file",
@@ -103,5 +103,5 @@ if (!defined($output)) {
 	print "Template model import failed!\n";
 } else {
 	print "Template model import successful:\n";
-	printObjectMeta($output);
+	printObjectInfo($output);
 }

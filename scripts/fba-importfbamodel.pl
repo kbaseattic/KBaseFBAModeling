@@ -6,12 +6,12 @@
 ########################################################################
 use strict;
 use warnings;
-use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::workspace::ScriptHelpers qw(printObjectInfo get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
-my $primaryArgs = ["Genome ID","Model file","Biomass equation"];
+my $primaryArgs = ["Genome ID","Model reactions file","Biomass equation"];
 my $servercommand = "import_fbamodel";
-my $script = "kbfba-importfbamodel";
+my $script = "fba-importfbamodel";
 my $translation = {
 	"Genome ID" => "genome",
 	genomews => "genome_workspace",
@@ -20,13 +20,12 @@ my $translation = {
 	workspace => "workspace",
 	auth => "auth",
 	ignoreerrors => "ignore_errors",
-	overwrite => "overwrite"
 };
 
 my $manpage = 
 "
 NAME
-      kbfba-importfbamodel
+      fba-importfbamodel
 
 DESCRIPTION
 
@@ -56,19 +55,38 @@ DESCRIPTION
       'OR' or 'AND', in the Boolean rules.
 
       id   direction   compartment   gpr
+      atp + h2o --> adp + pi + h  >    c0    
       rxn00001  =    c0    kb|g.0.peg.1
       rxn00002  >    c0    
       rxn00003  <    c0    kb|g.0.peg.2 or kb|g.0.peg.3
+      
+      If the user decides to specify reactions in equation form instead of just IDs, it is a good
+      idea to provide a second file with specifications on all compounds appearing in user-specified
+      reactions. If this file is to be provided, indicate the full name of the file using the compoundfile
+      command line option (e.g. --compoundfile '/vol/files/mycompounds.txt'. The first line of the compound
+      file is required and contains the following four headers 
+      (in any order):
+
+      - id : The ID of the compounds as they appear in any user specified reactions, including the biomass reaction.
+      - charg: Molecular charge of the compound at cellular conditions
+      - formula: Formula of the compound at cellular conditions
+      - name: Primary name of the compound
+      - aliases: '|' delimited list of aliases for the compound to aid in matching      
+      
+      The following is an example data file (note: leave an empty space for fields you do not complete).
+
+      id   charge   formula   name	aliases
+      h2o	0	H2O	Water	C00001|cpd00001
 
 EXAMPLES
       Import an E coli model with 'biomass equation' atp + h2o --> adp + pi + h:
 
-      kbfba-importfbamodel 'kb|g.0.genome' 'kb|g.0.modelfile' 'atp + h2o --> adp + pi + h'
+      fba-importfbamodel 'kb|g.0.genome' 'kb|g.0.modelfile' 'atp + h2o --> adp + pi + h'
 
 SEE ALSO
-      kbfba-loadgenome
-      kbfba-runfba
-      kbfba-buildfbamodel
+      fba-loadgenome
+      fba-runfba
+      fba-buildfbamodel
 
 AUTHORS
       Christopher Henry
@@ -78,19 +96,19 @@ AUTHORS
 #Defining usage and options
 my $specs = [
     [ 'modelid|m:s', 'ID for imported model in workspace' ],
+    [ 'compoundfile:s', 'Name of file with compound data' ],
     [ 'genomews:s', 'Workspace with genome object' ],
     [ 'ignoreerrors|i', 'Ignore errors encountered during load' ],
     [ 'workspace|w:s', 'Workspace to save imported model in', { "default" => workspace() } ],
-    [ 'overwrite|o', 'Overwrite any existing phenotypes with same name' ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation, $manpage);
 $params->{reactions} = [];
-if (!-e $opt->{"Model file"}) {
+if (!-e $opt->{"Model reactions file"}) {
 	print "Could not find input model file!\n";
 	exit();
 }
-open(my $fh, "<", $opt->{"Model file"}) || return;
-$opt->{"Model file"} = "";
+open(my $fh, "<", $opt->{"Model reactions file"}) || return;
+$opt->{"Model reactions file"} = "";
 my $headingline = <$fh>;
 chomp($headingline);
 my $headings = [split(/\t/,$headingline)];
@@ -126,6 +144,48 @@ foreach my $rxn (@{$data}) {
 		push(@{$params->{reactions}},$rxnobj);
 	}
 }
+if (defined($opt->{compoundfile})) {
+	if (!-e $opt->{compoundfile}) {
+		print "Could not find input compound file!\n";
+		exit();
+	}
+	open(my $fhh, "<", $opt->{compoundfile}) || return;
+	$headingline = <$fhh>;
+	chomp($headingline);
+	$headings = [split(/\t/,$headingline)];
+	$data = [];
+	while (my $line = <$fhh>) {
+		chomp($line);
+		push(@{$data},[split(/\t/,$line)]);
+	}
+	close($fhh);
+	for (my $i=0;$i < @{$headings}; $i++) {
+		$headingColums->{$headings->[$i]} = $i;
+	}
+	my $reqheadings = ["id","charge","formula","name","aliases"];
+	my $error = 0;
+	foreach my $heading (@{$reqheadings}) {
+		if (!defined($headingColums->{$heading})) {
+			$error = 1;
+			print "Compound file missing required column '".$heading."'!\n";
+		} 
+	}
+	if ($error == 1) {
+		exit();
+	}
+	foreach my $cpd (@{$data}) {
+		if (@{$cpd} >= 5) {
+			my $cpdobj = [
+				$cpd->[$headingColums->{id}],
+				$cpd->[$headingColums->{charge}],
+				$cpd->[$headingColums->{formula}],
+				$cpd->[$headingColums->{name}],
+				$cpd->[$headingColums->{aliases}],
+			];
+			push(@{$params->{compounds}},$cpdobj);
+		}
+	}
+}
 #Calling the server
 my $output = runFBACommand($params,$servercommand,$opt);
 #Checking output and report results
@@ -133,5 +193,5 @@ if (!defined($output)) {
 	print "Model import failed!\n";
 } else {
 	print "Model import successful:\n";
-	printObjectMeta($output);
+	printObjectInfo($output);
 }

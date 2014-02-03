@@ -63,6 +63,10 @@ sub _buildfeatureHash {
 #***********************************************************************************************************
 # FUNCTIONS:
 #***********************************************************************************************************
+sub biochemistry {
+	my $self = shift;
+	return $self->template()->biochemistry();
+}
 
 =head3 addMediaReactions
 
@@ -182,14 +186,14 @@ sub addReactionToModel {
 	}
 	my $mdlrxn = $self->queryObject("modelreactions",{
 		reaction_ref => $rxn->_reference(),
-		modelcompartment_ref => $mdlcmp->_reference()
+		modelcompartment_ref => "~/modelcompartments/id/".$mdlcmp->id()
 	});
 	if (!defined($mdlrxn)) {
 		$mdlrxn = $self->add("modelreactions",{
 			reaction_ref => $rxn->_reference(),
 			direction => $args->{direction},
 			protons => $rxn->defaultProtons(),
-			modelcompartment_ref => $mdlcmp->_reference(),
+			modelcompartment_ref => "~/modelcompartments/id/".$mdlcmp->id(),
 		});
 		my $rgts = $rxn->reagents();
 		for (my $i=0; $i < @{$rgts}; $i++) {
@@ -202,7 +206,7 @@ sub addReactionToModel {
 			});
 			$mdlrxn->addReagentToReaction({
 				coefficient => $coefficient,
-				modelcompound_ref => $mdlcpd->_reference()
+				modelcompound_ref => "~/modelcompounds/id/".$mdlcpd->id()
 			});
 		}
 		$mdlrxn->setGPRFromArray({"gpr" => [[$args->{gpr}]]});
@@ -264,7 +268,7 @@ sub addCompoundToModel {
 		charge => undef,
 		formula => undef
 	}, @_);
-	my $mdlcpd = $self->queryObject("modelcompounds",{compound_ref => $args->{compound}->_reference(),modelcompartment_ref => $args->{modelCompartment}->_reference()});
+	my $mdlcpd = $self->queryObject("modelcompounds",{compound_ref => $args->{compound}->_reference(),modelcompartment_ref => "~/modelcompartments/id/".$args->{modelCompartment}->id()});
 	if (!defined($mdlcpd)) {
 		if (!defined($args->{charge})) {
 			$args->{charge} = $args->{compound}->defaultCharge();
@@ -273,7 +277,7 @@ sub addCompoundToModel {
 			$args->{formula} = $args->{compound}->formula();
 		}
 		$mdlcpd = $self->add("modelcompounds",{
-			modelcompartment_ref => $args->{modelCompartment}->_reference(),
+			modelcompartment_ref => "~/modelcompartments/id/".$args->{modelCompartment}->id(),
 			compound_ref => $args->{compound}->_reference(),
 			charge => $args->{charge},
 			formula => $args->{formula},
@@ -336,75 +340,155 @@ Description:
 sub manualReactionAdjustment {
     my $self = shift;
     my $args = Bio::KBase::ObjectAPI::utilities::args(["reaction"],{
+    	biomass => 0,
     	direction => undef,
     	compartment => "c",
     	compartmentIndex => 0,
     	gpr => undef,
     	removeReaction => 0,
-    	addReaction => 0
+    	addReaction => 0,
+    	compounds => {}
     }, @_);
-
-    if ($args->{reaction} =~ m/^(.+)\[([a-z]+)(\d*)]$/) {
+	my $genealiases = $self->genome()->geneAliasHash();
+    my $rxnid = $args->{reaction};
+    if ($rxnid =~ m/^(.+)\[([a-z]+)(\d*)]$/) {
     	$args->{reaction} = $1;
     	$args->{compartment} = $2;
     	$args->{compartmentIndex} = $3;
+    } 
+    my $eq;
+    if ($args->{reaction} =~ m/^(.+):(.+)/) {
+    	$rxnid = $1;
+    	$eq = $2;
     }
-    if (!defined($args->{compartment})) {
-    	$args->{compartment} = "c";
+    my $bio = $self->template()->biochemistry();
+    my $cmp = $bio->searchForCompartment($args->{compartment});
+    if (!defined($cmp)) {
+    	Bio::KBase::ObjectAPI::utilities::error("Unrecognized compartment in reaction:".$rxnid."!");
     }
-    if (!defined($args->{compartmentIndex})) {
-    	$args->{compartmentIndex} = 0;
-    }
-    my $mdlrxn = $self->searchForReaction($args->{reaction},$args->{compartment},$args->{compartmentIndex});
-    if (defined($mdlrxn)) {
-    	if ($args->{addReaction} == 1) {
-    		Bio::KBase::ObjectAPI::utilities::error("Cannot add reaction ".$args->{reaction}."_".$args->{compartment}.$args->{compartmentIndex}.", reaction is already in model!");
-    	} elsif ($args->{removeReaction} == 1) {
-    		$self->remove("modelreactions",$mdlrxn);
+    my $mdlcmp = $self->addCompartmentToModel({compartment => $cmp,pH => 7,potential => 0,compartmentIndex => 0});
+    my $mdlrxn;
+    if ($rxnid =~ m/rxn\d+/) {
+	    if ($args->{biomass} == 1) {
+	    	Bio::KBase::ObjectAPI::utilities::error("Biomass reactions should not have rxn IDs!");
+	    }
+	    if (defined($eq)) {
+	    	Bio::KBase::ObjectAPI::utilities::error("Custom reactions cannot have rxn IDs!");
+	    }
+	    my $rxnobj = $bio->searchForReaction($rxnid);
+	    if (!defined($rxnobj)) {
+	    	Bio::KBase::ObjectAPI::utilities::error("Specified reaction not found:".$rxnid."!");
+	    }
+	    my $mdlrxn = $self->queryObject("modelreactions",{
+			reaction_ref => $rxnobj->_reference(),
+			modelcompartment_ref => "~/modelcompartments/id/".$mdlcmp->id()
+		});
+		if (defined($mdlrxn)) {
+			if ($args->{removeReaction} == 1) {
+		    	$self->remove("modelreactions",$mdlrxn);
+		    } elsif ($args->{addReaction} != 1) {
+    			if (defined($args->{direction})){
+    				$mdlrxn->direction($args->{direction});
+    			}
+    			if (defined($args->{gpr})){
+    				$mdlrxn->loadGPRFromString($args->{gpr});
+    			}
+    		}
+		} elsif ($args->{addReaction} == 1) {
+    		$mdlrxn = $self->add("modelreactions",{
+				id => $rxnid."_".$args->{compartment}.$args->{compartmentIndex},
+				reaction_ref => $rxnobj->_reference(),
+				name => $rxnid."_".$args->{compartment}.$args->{compartmentIndex},
+				direction => $args->{direction},
+				protons => 0,
+				modelcompartment_ref => "~/modelcompartments/id/".$mdlcmp->id(),
+				probability => 0,
+				modelReactionReagents => [],
+				modelReactionProteins => []
+			});
+			my $rgts = $rxnobj->reagents();
+			my $cmpchange = 0;
+			for (my $i=0; $i < @{$rgts}; $i++) {
+				if ($rgts->[$i]->compartment()->id() ne "c") {
+					$cmpchange = 1;
+					last;
+				}
+			}
+			for (my $i=0; $i < @{$rgts}; $i++) {
+				my $rgt = $rgts->[$i];
+				my $rgtcmp = $mdlcmp;
+				if ($cmpchange == 1) {
+					$rgtcmp = $self->addCompartmentToModel({compartment => $rgt->compartment(),pH => 7,potential => 0,compartmentIndex => 0});
+				}
+				my $coefficient = $rgt->coefficient();
+				my $mdlcpd = $self->addCompoundToModel({
+					compound => $rgt->compound(),
+					modelCompartment => $rgtcmp,
+				});
+				$mdlrxn->addReagentToReaction({
+					coefficient => $coefficient,
+					modelcompound_ref => $mdlcpd->_reference()
+				});
+			}
+			if (defined($args->{gpr})){
+    			$mdlrxn->loadGPRFromString($args->{gpr});
+    		}	
     	} else {
-    		if (defined($args->{direction})) {
-    			$mdlrxn->direction($args->{direction});
-    		}
-    		if (defined($args->{gpr})) {
-		    $mdlrxn->setGPRFromArray({gpr => $args->{gpr}});
-    		}
+    		Bio::KBase::ObjectAPI::utilities::error("Specified reaction not found:".$rxnid."!");
     	}
     } else {
-    	if ($args->{removeReaction} == 1) {
-    		Bio::KBase::ObjectAPI::utilities::error("Cannot remove reaction ".$args->{reaction}."_".$args->{compartment}.$args->{compartmentIndex}.", reaction is not in model!");
-    	} elsif ($args->{addReaction} == 1) {
-    		my $bio = $self->biochemistry();
-    		my $rxn = $bio->searchForReaction($args->{reaction});
-    		if (!defined($rxn)) {
-		    	Bio::KBase::ObjectAPI::utilities::error("Reaction ".$args->{reaction}." not found in biochemistry!");
-		    }
-			my $cmp = $bio->queryObject("compartments",{id => $args->{compartment}});
-		    if (!defined($cmp)) {
-		    	Bio::KBase::ObjectAPI::utilities::error("Compartment ".$args->{compartment}." not found in biochemistry!");
-		    }
-		    my $mdlcmp = $self->queryObject("modelcompartments",{
-		    	compartment_ref => $cmp->_reference(),
-		    	compartmentIndex => $args->{compartmentIndex}
-		    });
-		    if (!defined($mdlcmp)) {
-		    	$mdlcmp = $self->addCompartmentToModel({
-		    		compartment => $cmp,
-		    		pH => 7,
-		    		potential => 0,
-		    		compartmentIndex => $args->{compartmentIndex}
-		    	});
-		    }
-		    my $mdlrxn = $self->addReactionToModel({
-		    	reaction => $rxn,
-		    	direction => $args->{direction},
-				protons => undef,
-				overrideCompartment => $mdlcmp
-		    });
-		    if (defined($args->{gpr})) {
-    			$mdlrxn->setGPRFromArray({gpr => $args->{gpr}});
+    	if ($args->{biomass} == 1) {
+    		my $biorxn = $self->searchForBiomass($rxnid);
+    		if (!defined($biorxn)) {
+       			$biorxn = $self->add("biomasses",{
+       				id => $rxnid,
+					name => $rxnid,
+					other => 1,
+					energy => 40,
+					biomasscompounds => []
+				});
     		}
+	    	$biorxn->ImportExternalEquation({equation => $eq,compounds => $args->{compounds}});
     	} else {
-    		Bio::KBase::ObjectAPI::utilities::error("Cannot alter reaction ".$args->{reaction}."_".$args->{compartment}.$args->{compartmentIndex}.", reaction is not in model!");
+	    	my $mdlrxn = $self->searchForReaction($rxnid,$args->{compartment},$args->{compartmentIndex});
+	    	if (defined($mdlrxn)) {
+	    		if ($args->{removeReaction} == 1) {
+	    			$self->remove("modelreactions",$mdlrxn);
+	    		} else {
+	    			if (defined($args->{direction})){
+	    				$mdlrxn->direction($args->{direction});
+	    			}
+	    			if (defined($args->{gpr})){
+	    				$mdlrxn->loadGPRFromString($args->{gpr});
+	    			}
+	    			if (defined($eq)) {
+	    				$mdlrxn->ImportExternalEquation({equation => $eq,compounds => $args->{compounds}});
+	    			}
+	    		}
+	    	} elsif ($args->{addReaction} == 1) {
+	    		$mdlrxn = $self->add("modelreactions",{
+					id => $rxnid."_".$args->{compartment}.$args->{compartmentIndex},
+					reaction_ref => "~/reactions/id/rxn00000",
+					name => $rxnid."_".$args->{compartment}.$args->{compartmentIndex},
+					direction => $args->{direction},
+					protons => 0,
+					modelcompartment_ref => "~/modelcompartments/id/".$mdlcmp->id(),
+					probability => 0,
+					modelReactionReagents => [],
+					modelReactionProteins => []
+				});
+				if (defined($args->{direction})){
+    				$mdlrxn->direction($args->{direction});
+    			}
+    			if (defined($args->{gpr})){
+    				$mdlrxn->loadGPRFromString($args->{gpr});
+    			}
+    			if (defined($eq)) {
+    				$mdlrxn->ImportExternalEquation({equation => $eq,compounds => $args->{compounds}});
+    			}
+	    	} else {
+	    		Bio::KBase::ObjectAPI::utilities::error("Specified reaction not found:".$rxnid."!");
+	    	}
     	}
     }
 }

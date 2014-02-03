@@ -6,12 +6,12 @@
 ########################################################################
 use strict;
 use warnings;
-use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::workspace::ScriptHelpers qw(printObjectInfo get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Map ID","Role ID"];
 my $servercommand = "adjust_mapping_role";
-my $script = "kbfba-adjustmaprole";
+my $script = "fba-adjustmaprole";
 my $translation = {
 	"Map ID" => "map",
 	"Role ID" => "role",
@@ -50,4 +50,5 @@ if (!defined($output)) {
 	print "Adjustment of map role failed!\n";
 } else {
 	print "Adjustment of map role successful:\n";
+	printObjectInfo($output);
 }

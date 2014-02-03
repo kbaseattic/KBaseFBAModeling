@@ -7,13 +7,13 @@
 use strict;
 use warnings;
 use JSON;
-use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::workspace::ScriptHelpers qw(printObjectInfo get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(get_fba_client runFBACommand universalFBAScriptCode );
 
 #Defining globals describing behavior
 my $primaryArgs = ["RxnSensitivity ID"];
 my $servercommand = "delete_noncontributing_reactions";
-my $script = "kbfba-delete_noncontributing_reactions";
+my $script = "fba-delete_noncontributing_reactions";
 my $translation = {
     "RxnSensitivity ID" => "rxn_sensitivity",
     "rxnsensws" => "rxn_sensitivity_ws",
@@ -37,5 +37,5 @@ my $output = runFBACommand($params,$servercommand,$opt);
 if (!defined($output)) {
     print "Deleting reactions failed!"
 } else {
-    printObjectMeta($output);
+    printObjectInfo($output);
 }

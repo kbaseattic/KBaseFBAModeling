@@ -6,12 +6,12 @@
 ########################################################################
 use strict;
 use warnings;
-use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::workspace::ScriptHelpers qw(printObjectInfo get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Map ID","Subsystem ID"];
 my $servercommand = "adjust_mapping_subsystem";
-my $script = "kbfba-adjustmapsubsystem";
+my $script = "fba-adjustmapsubsystem";
 my $translation = {
 	"Map ID" => "map",
 	"Subsystem ID" => "subsystem",
@@ -54,4 +54,5 @@ if (!defined($output)) {
 	print "Adjustment of map subsystem failed!\n";
 } else {
 	print "Adjustment of map subsystem successful:\n";
+	printObjectInfo($output);
 }

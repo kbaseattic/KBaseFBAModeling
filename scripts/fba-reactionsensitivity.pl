@@ -7,13 +7,13 @@
 use strict;
 use warnings;
 use JSON;
-use Bio::KBase::workspaceService::Helpers qw(printJobData auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::workspace::ScriptHelpers qw( get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(printJobData get_fba_client runFBACommand universalFBAScriptCode );
 
 #Defining globals describing behavior
 my $primaryArgs = ["Model ID"];
 my $servercommand = "reaction_sensitivity_analysis";
-my $script = "kbfba-reactionsensitivity";
+my $script = "fba-reactionsensitivity";
 my $translation = {
         "Model ID" => "model",
 	"modelws" => "model_ws",
@@ -28,7 +28,7 @@ my $translation = {
 my $manpage =
     "
 NAME
-      kbfba-reactionsensitivity
+      fba-reactionsensitivity
 
 DESCRIPTION
 
@@ -60,12 +60,12 @@ DESCRIPTION
 
 EXAMPLES
 
-      > kbfba-reactionsensitivity --rxnstotest '+rxn00001;-rxn00002' MyModel
-      > kbfba-reactionsensitivity --gapfill 'GapfillID'.solution.0 MyModel
+      > fba-reactionsensitivity --rxnstotest '+rxn00001;-rxn00002' MyModel
+      > fba-reactionsensitivity --gapfill 'GapfillID'.solution.0 MyModel
 
 SEE ALSO
-      kbfba-gapfill
-      kbfba-delete_noncontributing_reactions
+      fba-gapfill
+      fba-delete_noncontributing_reactions
 
 AUTHORS
       Christopher Henry
@@ -101,7 +101,7 @@ if ( $ok == 0 ) {
 }
 
 #Calling the server
-my $output = runFBACommand($params,$servercommand,$opt);
+my $output = runFBACommand($params,$servercommand,$opt,1);
 #Checking output and report results
 if (!defined($output)) {
     print "Reaction sensitivity analysis failed.\n"

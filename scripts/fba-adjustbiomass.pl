@@ -6,22 +6,17 @@
 ########################################################################
 use strict;
 use warnings;
-use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::workspace::ScriptHelpers qw(printObjectInfo get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Model ID","Compound ID","Coefficient"];
 my $servercommand = "adjust_biomass_reaction";
-my $script = "kbfba-adjustbiomass";
+my $script = "fba-adjustbiomass";
 my $translation = {
 	"Model ID" => "model",
 	workspace => "workspace",
 	biomass => "biomass",
-	Coefficient => "coefficient",
-	"Compound ID" => "compound",
-	compartment => "compartment",
-	compindex => "compartmentIndex",
 	auth => "auth",
-	overwrite => "overwrite"
 };
 #Defining usage and options
 my $specs = [
@@ -30,11 +25,19 @@ my $specs = [
     [ 'compartment|c:s', 'Compartment of target compound', { "default" => "c" } ],
     [ 'compindex|i:s', 'Index of compartment for target compound', { "default" => 0 } ],
     [ 'workspace|w:s', 'Workspace to save FBA results', { "default" => workspace() } ],
-    [ 'overwrite|o', 'Overwrite any existing FBA with same name' ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
 if (!defined($opt->{product})) {
-	$params->{coefficient} = -1*$params->{coefficient};
+	$opt->{Coefficient} = -1*$opt->{Coefficient};
+}
+my $trans = {
+	"Compound ID" => "compounds",
+	Coefficient => "coefficients",
+	compartment => "compartments",
+	compindex => "compartmentIndecies"
+};
+foreach my $param (keys(%{$trans})) {
+	$params->{$trans->{$param}} = [$opt->{$param}];
 }
 #Calling the server
 my $output = runFBACommand($params,$servercommand,$opt);
@@ -43,5 +46,5 @@ if (!defined($output)) {
 	print "Adjustment of biomass failed!\n";
 } else {
 	print "Adjustment of biomass successful:\n";
-	printObjectMeta($output);
+	printObjectInfo($output);
 }

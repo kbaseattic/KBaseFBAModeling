@@ -18,31 +18,6 @@ use Data::Dumper;
 use File::Temp qw(tempfile);
 my $test_count = 25;
 
-if (!defined($ENV{NO_TEST_MONGO})) {
-	&mongo_up;
-	sleep 300; # mongod can take a lot of time to spin up
-}
-
-################################################################################
-#Test intiailization: setting test config, instantiating Impl, getting auth token
-################################################################################
-$ENV{KB_SERVICE_NAME}="workspaceService";
-$ENV{KB_DEPLOYMENT_CONFIG}=$Bin."/../configs/test.cfg";
-my $ws = Bio::KBase::workspaceService::Impl->new();
-$ws->_clearAllWorkspaces();
-$ws->_clearAllWorkspaceObjects();
-$ws->_clearAllWorkspaceUsers();
-$ws->_clearAllWorkspaceDataObjects();
-$ws->import_bio({overwrite => 1});
-$ws->import_map({overwrite => 1});
-$ws->create_workspace({
-	workspace => "testworkspace",
-	default_permission => "n"
-});
-$ws->create_workspace({
-	workspace => "KBaseTemplateModels",
-	default_permission => "n"
-});
 $ENV{KB_SERVICE_NAME}="fbaModelServices";
 $ENV{KB_DEPLOYMENT_CONFIG}=$Bin."/../configs/test.cfg";
 $ENV{MODELSEED_CONF}=$Bin."/../configs/testconfig.json";
