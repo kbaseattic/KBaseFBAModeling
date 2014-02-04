@@ -138,65 +138,9 @@ deploy-fba-scripts:
 	$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/fba-simpheno.pl" $(TARGET)/bin/kbfba-simpheno ; \
 	$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/fba-url.pl" $(TARGET)/bin/kbfba-url ; \
 
-
-kbfba-addaliases	modeling
-kbfba-addmedia	modeling
-kbfba-adjustbiomass	modeling
-kbfba-adjustmapcomplex	modeling
-kbfba-adjustmaprole	modeling
-kbfba-adjustmapsubsystem	modeling
-kbfba-adjustmodel	modeling
-kbfba-adjusttempbiocpd	modeling
-kbfba-adjusttempbiomass	modeling
-kbfba-adjusttemprxn	modeling
-kbfba-buildfbamodel	modeling
-kbfba-exportfba	modeling
-kbfba-exportfbamodel	modeling
-kbfba-exportgenome	modeling
-kbfba-exportmedia	modeling
-kbfba-exportobject	modeling
-kbfba-exportphenosim	modeling
-kbfba-gapfill	modeling
-kbfba-gapgen	modeling
-kbfba-getbio	modeling
-kbfba-getcompounds	modeling
-kbfba-getfbas	modeling
-kbfba-getgapfills	modeling
-kbfba-getgapgens	modeling
-kbfba-getmap	modeling
-kbfba-getmedia	modeling
-kbfba-getmodels	modeling
-kbfba-getreactions	modeling
-kbfba-gettemplate	modeling
-kbfba-importfbamodel	modeling
-kbfba-importpheno	modeling
-kbfba-importprobanno	modeling
-kbfba-importtemplate	modeling
-kbfba-importtranslation	modeling
-kbfba-integratesolution	modeling
-kbfba-jobdone	modeling
-kbfba-loadgenome	modeling
-kbfba-queuefba	modeling
-kbfba-runfba	modeling
-kbfba-runjob	modeling
-kbfba-simpheno	modeling
-kbfba-url	modeling
-
 deploy-dir:
 	if [ ! -d $(SERV_SERVICE_DIR) ] ; then mkdir $(SERV_SERVICE_DIR) ; fi
-	if [ ! -d $(SERV_SERVICE_DIR)/webroot ] ; then mkdir $(SERV_SERVICE_DIR)/webroot ; fi
-
-#deploy-scripts:
-#	export KB_TOP=$(TARGET); \
-#	export KB_RUNTIME=$(KB_RUNTIME); \
-#	export KB_PERL_PATH=$(TARGET)/lib bash ; \
-#	for src in $(SRC_PERL) ; do \
-#		basefile=`basename $$src`; \
-#		base=`basename $$src .pl`; \
-#		echo install $$src $$base ; \
-#		cp $$src $(TARGET)/plbin ; \
-#		bash $(TOOLS_DIR)/wrap_perl.sh "$(TARGET)/plbin/$$basefile" $(TARGET)/bin/$$base ; \
-#	done 
+	if [ ! -d $(SERV_SERVICE_DIR)/webroot ] ; then mkdir $(SERV_SERVICE_DIR)/webroot ; fi 
 
 deploy-libs:
 	rsync -arv lib/. $(TARGET)/lib/.
@@ -208,8 +152,6 @@ deploy-services:
 	chmod +x $(TARGET)/services/$(SERV_SERVICE)/stop_service; \
 	tpage $(SERV_TPAGE_ARGS) service/process.tt > $(TARGET)/services/$(SERV_SERVICE)/process.$(SERV_SERVICE); \
 	chmod +x $(TARGET)/services/$(SERV_SERVICE)/process.$(SERV_SERVICE); \
-	cp configs/KBaseMSConfig.json ${HOME}/.modelseed2
-	echo "{\"user_options\":{\"MFATK_BIN\":\"$(TARGET)/bin/mfatoolkit\",\"MFATK_CACHE\":\"/tmp\"}}" > $(TARGET)/services/$(SERV_SERVICE)/config.json;
 
 deploy-docs:
 	if [ ! -d docs ] ; then mkdir -p docs ; fi
