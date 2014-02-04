@@ -847,7 +847,7 @@ module KBaseFBA {
 		
 		@searchable ws_subset id fbamodel_ref type deleted_noncontributing_reactions integrated_deletions_in_model
 		@searchable ws_subset reactions.[*].(id,new_essentials,new_inactive_rxns,biomass_compounds,modelreaction_ref,delete,growth_fraction,deleted,normalized_activated_reaction_count)
-		@searchable ws_subset corrected_reactions.[*].(id,modelreaction_ref,required_reactions,normalized_required_reaction_count)
+		@searchable ws_subset corrected_reactions.[*].(modelreaction_ref,required_reactions,normalized_required_reaction_count)
 		@optional	
 	*/
     typedef structure {

@@ -127,12 +127,6 @@ sub get_objects {
 				my $module = $1;
 				my $type = $2;
 				my $class = "Bio::KBase::ObjectAPI::".$module."::".$type;
-				if ($type eq "FBAModel") {
-					for (my $j=0; $j < @{$objdatas->[$i]->{data}->{gapfillings}}; $j++) {
-						delete $objdatas->[$i]->{data}->{gapfillings}->[$j]->{integrated_solution};
-						$objdatas->[$i]->{data}->{gapfillings}->[$j]->{id} = $objdatas->[$i]->{data}->{gapfillings}->[$j]->{gapfill_id};
-					}
-				} 
 				$self->cache()->{$newrefs->[$i]} = $class->new($objdatas->[$i]->{data});
 				$self->cache()->{$info->[6]."/".$info->[0]."/".$info->[4]} = $self->cache()->{$newrefs->[$i]};
 				$self->cache()->{$newrefs->[$i]}->parent($self);

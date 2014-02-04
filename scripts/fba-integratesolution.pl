@@ -48,7 +48,6 @@ if (defined($opt->{gapgensols})) {
 	}
 }
 #Calling the server
-print $params;
 my $output = runFBACommand($params,$servercommand,$opt);
 #Checking output and report results
 if (!defined($output)) {

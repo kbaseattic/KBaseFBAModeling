@@ -190,6 +190,7 @@ sub addReactionToModel {
 	});
 	if (!defined($mdlrxn)) {
 		$mdlrxn = $self->add("modelreactions",{
+			id => $rxn->id()."_".$mdlcmp->id(),
 			reaction_ref => $rxn->_reference(),
 			direction => $args->{direction},
 			protons => $rxn->defaultProtons(),
@@ -929,14 +930,14 @@ sub htmlComponents {
 					$bios .= $bio->id().":".$bio->name();
 				}
 				my $integrated = "No";
-				if ($sol->integrated() == 1) {
+				if ($mgf->integrated() == 1 && $mgf->integrated_solution() eq $sol->id()) {
 					$integrated	= "Yes";
 				}
-                                push(@$dataOne, [ $integrated, $gf->id(), $gf->fbaFormulation()->media()->_reference(), $count, $sol->solutionCost(), $rxns, $bios, $medias ]);
+                                push(@$dataOne, [ $integrated, $gf->id(), $mgf->media()->_wsworkspace()."/".$mgf->media()->_wsname(), $sol->id(), $sol->solutionCost(), $rxns, $bios, $medias ]);
 				$count++;
 			}
 		} else {
-                    push(@$dataOne, [ "No", $gf->id(), $gf->fbaFormulation()->media()->_reference(), "None", "None", "None", "None", "None" ]);
+                    push(@$dataOne, [ "No", $gf->id(), $mgf->media()->_wsworkspace()."/".$mgf->media()->_wsname(), "None", "None", "None", "None", "None" ]);
 		}
 	}
 	$output->{tabs}->{"tab-6"} = {
@@ -976,11 +977,11 @@ sub htmlComponents {
 				if ($sol->integrated() == 1) {
 					$integrated	= "Yes";
 				}
-                                push(@$dataOne, [ $integrated, $gg->id(), $gg->fbaFormulation()->media()->_reference(), $count, $sol->solutionCost(), $rxns, $bios, $medias ]);
+                                push(@$dataOne, [ $integrated, $gg->id(),$mgg->media()->_wsworkspace()."/".$mgg->media()->_wsname(), $sol->id(), $sol->solutionCost(), $rxns, $bios, $medias ]);
 				$count++;
 			}
 		} else {
-                        push(@$dataOne, [ "No", $gg->id(), $gg->fbaFormulation()->media()->_reference(), "None", "None", "None", "None", "None" ]);
+                        push(@$dataOne, [ "No", $gg->id(), $mgg->media()->_wsworkspace()."/".$mgg->media()->_wsname(), "None", "None", "None", "None", "None" ]);
 		}
 	}
 	$output->{tabs}->{"tab-7"} = {

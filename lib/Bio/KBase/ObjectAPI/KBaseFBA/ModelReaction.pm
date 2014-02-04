@@ -350,7 +350,6 @@ Description:
 sub setGPRFromArray {
 	my $self = shift;
     my $args = Bio::KBase::ObjectAPI::utilities::args(["gpr"],{}, @_);
-	my $anno = $self->parent()->annotation();
 	$self->modelReactionProteins([]);
 	foreach my $prot (@{$self->modelReactionProteins()}) {
 		$self->remove("modelReactionProteins",$prot);
@@ -358,26 +357,28 @@ sub setGPRFromArray {
 	for (my $i=0; $i < @{$args->{gpr}}; $i++) {
     	if (defined($args->{gpr}->[$i]) && ref($args->{gpr}->[$i]) eq "ARRAY") {
 	    	my $prot = $self->add("modelReactionProteins",{
+	    		complex_ref => "",
 	    		note => "Manually specified GPR"
 	    	});
 	    	for (my $j=0; $j < @{$args->{gpr}->[$i]}; $j++) {
 	    		if (defined($args->{gpr}->[$i]->[$j]) && ref($args->{gpr}->[$i]->[$j]) eq "ARRAY") {
 		    		for (my $k=0; $k < @{$args->{gpr}->[$i]->[$j]}; $k++) {
 		    			if (defined($args->{gpr}->[$i]->[$j]->[$k])) {
-					    my $featureId = $args->{gpr}->[$i]->[$j]->[$k];
-					    my $ftrObj = $anno->queryObject("features",{id => $featureId});
-					    if (!defined($ftrObj)) {
-						Bio::KBase::ObjectAPI::utilities::error("Could not find feature $featureId in model annotation!\n");
-						$prot->note($featureId);
-					    }
-					    else {
-						my $subunit = $prot->add("modelReactionProteinSubunits",{
-						    triggering => 0,
-						    optional => 0,
-						    note => "Manually specified GPR"});
-						$subunit->add("modelReactionProteinSubunitGenes",{feature_ref => $ftrObj->_reference()});
-					    }
-		    			}
+						    my $featureId = $args->{gpr}->[$i]->[$j]->[$k];
+						    my $ftrObj = $self->genome()->getObject("features",$featureId);
+						    if (!defined($ftrObj)) {
+								$prot->note($featureId);
+						    }
+						    else {
+								my $subunit = $prot->add("modelReactionProteinSubunits",{
+								    role => "",
+								    triggering => 0,
+								    optionalSubunit => 0,
+								    note => "Manually specified GPR",
+								    feature_refs => [$ftrObj->_reference()]
+							    });
+			    			}
+			    		}
 		    		}
 	    		}
 	    	}

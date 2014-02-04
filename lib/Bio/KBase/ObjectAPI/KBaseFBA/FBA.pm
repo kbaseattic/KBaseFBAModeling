@@ -1148,11 +1148,11 @@ sub htmlComponents {
                         $dataOne = [];
 			foreach my $delres (@{$self->FBADeletionResults()}) {
 				my $genes = "";
-				for (my $i=0; $i < @{$delres->genekos()}; $i++) {
+				for (my $i=0; $i < @{$delres->features()}; $i++) {
 					if (length($genes) > 0) {
 						$genes .= ";";
 					}
-					$genes .= $delres->genekos()->[$i]->id();
+					$genes .= $delres->features()->[$i]->id();
 				}
                                 push(@$dataOne, [
 					$genes,

@@ -7836,6 +7836,8 @@ sub integrate_reconciliation_solutions
 			});
 	    }
     }
+    
+    $model->modelreactions();#This must be called here to ensure that the reaction objects are instantiated
     $modelMeta = $self->_save_msobject($model,"FBAModel",$input->{workspace},$input->{out_model});
     $self->_clearContext();
     #END integrate_reconciliation_solutions
