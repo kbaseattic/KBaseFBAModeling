@@ -65,7 +65,7 @@ sub import_phenotype_table {
     });
     for (my $i=0; $i < @{$output}; $i++) {
     	if (defined($mediaHash->{$output->[$i]->[7]}->{$output->[$i]->[1]})) {
-    		$mediaHash->{$output->[$i]->[7]}->{$output->[$i]->[1]} = $output->[6]."/".$output->[0];
+    		$mediaHash->{$output->[$i]->[7]}->{$output->[$i]->[1]} = $output->[$i]->[6]."/".$output->[$i]->[0];
     	}
     }		
     for (my $i=0; $i < @{$data}; $i++) {
@@ -100,14 +100,14 @@ sub import_phenotype_table {
     		next;
     	}
     	#Validating media
-    	if ($mediaHash->{$phenotype->[2]}->{$phenotype->[1]} == 0) {
+    	if ($mediaHash->{$phenotype->[2]}->{$phenotype->[1]} eq "0") {
     		$missingMedia->{$phenotype->[2]."/".$phenotype->[1]} = 1;
     		next;
     	}
     	#Adding phenotype to object
-    	$self->add("phenotpes",{
+    	$self->add("phenotypes",{
     		id => $self->id().".phe.".$count,
-			media_ref => $mediaHash->{$phenotype->[2]}->{$phenotype->[1]}->_reference(),
+			media_ref => $mediaHash->{$phenotype->[2]}->{$phenotype->[1]},
 			geneko_refs => $generefs,
 			additionalcompound_refs => $cpdrefs,
 			normalizedGrowth => $phenotype->[4],

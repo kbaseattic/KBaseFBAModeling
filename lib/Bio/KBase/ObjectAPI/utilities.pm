@@ -106,9 +106,14 @@ Description:
 =cut
 sub idServer {
 	if (!defined($idserver)) {
-		$idserver = Bio::KBase::IDServer::Client->new('http://bio-data-1.mcs.anl.gov/services/idserver');
+		if (Bio::KBase::ObjectAPI::utilities::ID_SERVER_URL() eq "impl") {
+			require "Bio/KBase/IDServer/Impl.pm";
+			$idserver = Bio::KBase::IDServer::Impl->new();
+		} else {
+			$idserver = Bio::KBase::IDServer::Client->new(Bio::KBase::ObjectAPI::utilities::ID_SERVER_URL());
+		}
 	}
-    return $idserver;
+	return $idserver;
 }
 
 =head3 get_new_id
@@ -564,6 +569,24 @@ sub MFATOOLKIT_BINARY {
 		$ENV{MFATOOLKIT_BINARY} = $input;
 	}
 	return $ENV{MFATOOLKIT_BINARY};
+}
+
+=head3 ID_SERVER_URL
+
+Definition:
+	string = Bio::KBase::ObjectAPI::utilities::ID_SERVER_URL(string input);
+Description:
+	Getter setter for ID server URL
+Example:
+
+=cut
+
+sub ID_SERVER_URL {
+	my ($input) = @_;
+	if (defined($input)) {
+		$ENV{ID_SERVER_URL} = $input;
+	}
+	return $ENV{ID_SERVER_URL};
 }
 
 =head3 parseArrayString

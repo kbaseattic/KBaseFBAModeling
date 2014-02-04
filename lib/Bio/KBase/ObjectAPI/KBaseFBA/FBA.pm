@@ -880,9 +880,9 @@ sub setupFBAExperiments {
 			}
 			for (my $j=0; $j < @{$pheno->genekos()}; $j++) {
 				if ($phenoko eq "none") {
-					$phenoko = $1;
+					$phenoko = $pheno->genekos()->[$j];
 				} else {
-					$phenoko .= ";".$1;
+					$phenoko .= ";".$pheno->genekos()->[$j]->id();
 				}
 			}
 			$phenoko =~ s/\|/___/g;
@@ -913,12 +913,14 @@ sub createTemporaryMedia {
     my $self = shift;
     my $args = Bio::KBase::ObjectAPI::utilities::args(["name","media","additionalCpd"],{}, @_);
 	my $newMedia = Bio::KBase::ObjectAPI::KBaseBiochem::Media->new({
+		source_id => $args->{name},
 		isDefined => 1,
 		isMinimal => 0,
 		id => $args->{name},
 		name => $args->{name},
 		type => "temporary"
 	});
+	$newMedia->parent($self->parent());
 	my $cpds = $args->{media}->mediacompounds();
 	my $cpdHash = {};
 	foreach my $cpd (@{$cpds}) {
@@ -1561,7 +1563,7 @@ sub parseFBAPhenotypeOutput {
 			return Bio::KBase::ObjectAPI::utilities::ERROR("output file did not contain necessary data");
 		}
 		my $phenosimset = Bio::KBase::ObjectAPI::KBasePhenotypes::PhenotypeSimulationSet->new({
-			id => $self->_get_new_id($self->phenotypeset()->id().".phenosim"),
+			id => Bio::KBase::ObjectAPI::utilities::get_new_id($self->phenotypeset()->id().".phenosim"),
 			fbamodel_ref => $self->fbamodel()->_reference(),
 			phenotypeset_ref => $self->phenotypeset_ref(),
 			phenotypeSimulations => []

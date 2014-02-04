@@ -16,7 +16,7 @@ use warnings;
 use Test::More;
 use Data::Dumper;
 use File::Temp qw(tempfile);
-my $test_count = 25;
+my $test_count = 17;
 
 #Logging in
 my $tokenObj = Bio::KBase::AuthToken->new(
@@ -85,6 +85,18 @@ my $media = $obj->addmedia({
 	minflux => [-1000,-1000,-1000]
 });
 ok defined($media), "Media successfully added to workspace!";
+my $media = $obj->addmedia({
+	media => "Complete",
+	workspace => "fbaservicestest",
+	name => "Complete",
+	isDefined => 0,
+	isMinimal => 0,
+	type => "Rich media",
+	compounds => [],
+	concentrations => [],
+	maxflux => [],
+	minflux => []
+});
 
 #Now exporting media formulation
 my $html = $obj->export_media({
@@ -149,7 +161,7 @@ my $phenos = $obj->import_phenotypes({
 	phenotypes => [
 		[[],"CustomMedia","fbaservicestest",["ADP"],1],
 		[[],"Complete","fbaservicestest",["H2O"],1],
-		[["kb|g.0.peg.1","kb|g.0.peg.2"],"Carbon-Glycerol","NO_WORKSPACE",[],1]
+		[["kb|g.0.peg.1","kb|g.0.peg.2"],"CustomMedia","fbaservicestest",[],1]
 	],
 	notes => ""
 });

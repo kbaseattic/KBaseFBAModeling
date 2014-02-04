@@ -369,7 +369,7 @@ sub _mssServer {
 
 sub _idServer {
 	my $self = shift;
-    return $self->{_idserver};
+    return Bio::KBase::ObjectAPI::utilities::idServer();
 }
 
 sub _gaserv {
@@ -2443,9 +2443,9 @@ sub new
     $self->{_defaultJobState} = "queued";
     $self->{_accounttype} = "kbase";
     $self->{'_fba-url'} = "";
+    Bio::KBase::ObjectAPI::utilities::ID_SERVER_URL("http://kbase.us/services/idserver");
     $self->{'_jobserver-url'} = "http://kbase.us/services/workspace";
     $self->{'_gaserver-url'} = "http://kbase.us/services/genome_annotation";
-    $self->{'_idserver-url'} = "http://kbase.us/services/idserver";
     $self->{'_mssserver-url'} = "http://bio-data-1.mcs.anl.gov/services/ms_fba";
     $self->{"_probanno-url"} = "http://localhost:7073";
     $self->{"_workspace-url"} = "http://kbase.us/services/ws";
@@ -2495,7 +2495,7 @@ sub new
     # use that value to override object instance variable values. The
     # default object instance variable values were set above.
 	if (defined($params->{mfatoolkitbin})) {
-		Bio::KBase::ObjectAPI::utilities::MFATOOLKIT_BINARY($params->{fbajobdir});
+		Bio::KBase::ObjectAPI::utilities::MFATOOLKIT_BINARY($params->{mfatoolkitbin});
 	}
 	if (defined($params->{fbajobdir})) {
 		Bio::KBase::ObjectAPI::utilities::MFATOOLKIT_JOB_DIRECTORY($params->{fbajobdir});
@@ -2513,7 +2513,7 @@ sub new
     		$self->{'_fba-url'} = $params->{'fba-url'};
     }
     if (defined $params->{'idserver-url'}) {
-    		$self->{'_idserver-url'} = $params->{'idserver-url'};
+    	Bio::KBase::ObjectAPI::utilities::ID_SERVER_URL($params->{'idserver-url'});
     }
     if (defined $params->{'jobserver-url'}) {
     		$self->{'_jobserver-url'} = $params->{'jobserver-url'};
@@ -2535,12 +2535,7 @@ sub new
     if (defined($options->{verbose})) {
     	set_verbose(1);
     }
-    if ($self->{'_idserver-url'} eq "impl") {
-		require "Bio/KBase/IDServer/Impl.pm";
-		$self->{_idserver} = Bio::KBase::IDServer::Impl->new();
-	} else {
-		$self->{_idserver} = Bio::KBase::IDServer::Client->new($self->{'_idserver-url'});
-	}
+    
 	if ($self->{'_gaserver-url'} eq "impl") {
 		require "Bio/KBase/GenomeAnnotation/GenomeAnnotationImpl.pm";
 		$self->{_gaserver} = Bio::KBase::GenomeAnnotation::GenomeAnnotationImpl->new();
@@ -7427,9 +7422,10 @@ sub simulate_phenotypes
 	}
 	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
 	my $fba = $self->_buildFBAObject($input->{formulation},$model);
+	$fba->parent($self->_KBaseStore());
 	$fba->phenotypeset_ref($pheno->_reference());
 	$fba->runFBA();
-	if (!defined($fba->objectiveValue()) || !defined($fba->phenotypesimulationset())) {
+	if (!defined($fba->phenotypesimulationset())) {
     	$self->_error("Simulation of phenotypes failed to return results from FBA!");
 	}
 	if (!defined($input->{phenotypeSimulationSet})) {

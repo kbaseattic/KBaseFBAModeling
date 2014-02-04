@@ -679,6 +679,9 @@ sub store {
     if (defined($parent) && ref($parent) ne "Bio::KBase::ObjectAPI::KBaseStore") {
         return $parent->store();
     }
+    if (!defined($parent)) {
+    	Bio::KBase::ObjectAPI::utilities::error("Attempted to get object with no store!");
+    }
     return $parent;
 }
 
