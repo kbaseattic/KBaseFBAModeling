@@ -111,7 +111,6 @@ ok defined($phenos), "Successfully imported phenotypes!";
 my $model = $obj->genome_to_fbamodel({
 	genome => "kb|g.0",
 	workspace => "fbaservicestest",
-	coremodel => 1,
 	wsurl => $wsurl
 });
 ok defined($model), "Model successfully constructed from input genome!";
@@ -203,59 +202,8 @@ $html = $obj->export_fba({
 	wsurl => $wsurl
 });
 ok defined($html), "Successfully exported FBA to html format!";
-#Now test the queue fba function, without submitting the job to the cluster
-my $job = $obj->queue_runfba({
-	model => $model->[0],
-	model_workspace => "fbaservicestest",
-	formulation => {
-		media => "CustomMedia",
-		media_workspace => "fbaservicestest"
-	},
-	fva => 0,
-	simulateko => 0,
-	minimizeflux => 0,
-	findminmedia => 0,
-	notes => "",
-	workspace => "fbaservicestest",
-	wsurl => $wsurl
-});
-ok defined($job), "FBA successfully queued for input model!";
-#Now queuing gapfilling in complete media
-$job = $obj->queue_gapfill_model({
-	model => $model->[0],
-	workspace => "fbaservicestest",
-	formulation => {
-		formulation => {
-			media => "CustomMedia",
-			media_workspace => "fbaservicestest"
-		},
-		num_solutions => 1
-	},
-	integrate_solution => 1,
-	out_model => $model->[0].".gf",
-	wsurl => $wsurl
-});
-ok defined($html), "Successfully queued gapfill job!";
-#Now exporting queued FBA
-$job = $obj->queue_gapgen_model({
-	model => $model->[0],
-	workspace => "fbaservicestest",
-	formulation => {
-		formulation => {
-			media => "CustomMedia",
-			media_workspace => "fbaservicestest"
-		},
-		refmedia => "Complete",
-		refmedia_workspace => "fbaservicestest",
-		num_solutions => 1
-	},
-	integrate_solution => 1,
-	out_model => $model->[0].".gg",
-	wsurl => $wsurl
-});
-ok defined($html), "Successfully queued gapgen job!";
 
-done_testing(20);
+done_testing(17);
 
 ##Now running queued FBA job mannually to ensure that the job runs and postprocessing works
 #$job = $obj->run_job({
