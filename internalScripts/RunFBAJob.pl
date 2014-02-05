@@ -22,10 +22,10 @@ my $config = $ARGV[0];
 my $jobid = $ARGV[1];
 my $c = Config::Simple->new();
 $c->read($config);
-open(PID, "> ".$c->param("scheduler.jobdirectory").$ARGV[1]."/pid") || die "could not open PID file!"; 
+open(PID, "> ".$c->param("scheduler.jobdirectory")."jobs/".$ARGV[1]."/pid") || die "could not open PID file!"; 
 print PID "$$\n"; 
 close(PID);
-my $filename = $c->param("scheduler.jobdirectory").$ARGV[1]."/jobfile.json";
+my $filename = $c->param("scheduler.jobdirectory")."jobs/".$ARGV[1]."/jobfile.json";
 if (!-e $filename) {
 	die "Cannot open ".$filename;
 }
@@ -41,7 +41,7 @@ $Bio::KBase::fbaModelServices::Server::CallContext = {token => $job->{auth}};
 $ENV{KB_DEPLOYMENT_CONFIG} = $config;
 my $obj = Bio::KBase::fbaModelServices::Impl->new({
 	accounttype => $job->{accounttype},
-	fbajobcache => $c->param("scheduler.jobdirectory").$ARGV[1]
+	fbajobcache => $c->param("scheduler.jobdirectory")."jobs/".$ARGV[1]
 });
 $obj->run_job({
 	job => $job->{id},
