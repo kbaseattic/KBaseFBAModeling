@@ -31,28 +31,17 @@ my $job;
     $job = decode_json $str;
 }
 close($fh);
-my $obj;
-if ($job->{wsurl} eq "impl") {
-	require "Bio/KBase/workspaceService/Impl.pm";
-	$obj = Bio::KBase::fbaModelServices::Impl->new({accounttype => $job->{accounttype},workspace => Bio::KBase::workspaceService::Impl->new()});
-} else {
-    $obj = Bio::KBase::fbaModelServices::Impl->new({accounttype => $job->{accounttype},"workspace-url" => $job->{wsurl}});
-}
+my $ws = Bio::KBase::workspace::Client->new($job->{wsurl});
+$ws->{token} = $job->{auth};
+$ws->{client}->{token} = $job->{auth};
+my $obj = Bio::KBase::fbaModelServices::Impl->new({accounttype => $job->{accounttype},workspace => $ws});
 #Clearing out old files
 if (-d "/tmp/fbajobs/") {
 	&clearOldDirectoryFiles("/tmp/fbajobs/");
 }
-if (!defined($job->{localjob})) {
-	 $obj->run_job({
-	    job => $job->{id},
-	    auth => $job->{auth}
-	 });	
-} else {
-	$obj->run_job({
-		job => $job,
-		auth => $job->{jobdata}->{auth}
-	});
-}
+$obj->run_job({
+	job => $job->{id},
+});	
 
 sub clearOldDirectoryFiles {
 	my($directory) = @_;
