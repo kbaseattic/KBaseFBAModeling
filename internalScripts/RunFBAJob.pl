@@ -8,7 +8,6 @@
 # Date of script creation: 10/6/2009
 ########################################################################
 use strict;
-use warnings;
 use JSON::XS;
 use Test::More;
 use Data::Dumper;
