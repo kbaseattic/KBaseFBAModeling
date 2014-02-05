@@ -2472,12 +2472,14 @@ sub new
 		if (!defined($service)) {
 			$service = "fbaModelService";
 		}
+		print STDERR "Service:".$service."\n";
 		if (defined($service)) {
 			my $c = Config::Simple->new();
 			$c->read($e);
 			for my $p (@{$paramlist}) {
 			  	my $v = $c->param("$service.$p");
 			    if ($v) {
+					print STDERR $p."\t".$v."\n";
 					$params->{$p} = $v;
 			    }
 			}
