@@ -35,10 +35,10 @@ server:
 	echo "server target does nothing"
 
 $(BIN_DIR)/%: scripts/%.pl 
-	$(TOOLS_DIR)/wrap_perl '$$KB_TOP/modules/$(CURRENT_DIR)/$<' $@
+	$(KB_TOP)/tools/wrap_perl '$$KB_TOP/modules/$(CURRENT_DIR)/$<' $@
 
 $(BIN_DIR)/%: scripts/%.py
-	$(TOOLS_DIR)/wrap_python '$$KB_TOP/modules/$(CURRENT_DIR)/$<' $@
+	$(KB_TOP)/tools/wrap_python '$$KB_TOP/modules/$(CURRENT_DIR)/$<' $@
 
 CLIENT_TESTS = $(wildcard client-tests/*.t)
 SCRIPT_TESTS = $(wildcard script-tests/*.sh)
@@ -91,50 +91,50 @@ deploy-fba-scripts:
 		base=`basename $$src .pl`; \
 		echo install $$src $$base ; \
 		cp $$src $(TARGET)/plbin ; \
-		$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/$$basefile" $(TARGET)/bin/$$base ; \
+		$(TOOLS_DIR)/tools/wrap_perl "$(TARGET)/plbin/$$basefile" $(TARGET)/bin/$$base ; \
 	done
-	$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/fba-addaliases.pl" $(TARGET)/bin/kbfba-addaliases ; \
-	$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/fba-addmedia.pl" $(TARGET)/bin/kbfba-addmedia ; \
-	$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/fba-adjustbiomass.pl" $(TARGET)/bin/kbfba-adjustbiomass ; \
-	$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/fba-adjustmapcomplex.pl" $(TARGET)/bin/kbfba-adjustmapcomplex ; \
-	$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/fba-adjustmaprole.pl" $(TARGET)/bin/kbfba-adjustmaprole ; \
-	$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/fba-adjustmapsubsystem.pl" $(TARGET)/bin/kbfba-adjustmapsubsystem ; \
-	$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/fba-adjustmodel.pl" $(TARGET)/bin/kbfba-adjustmodel ; \
-	$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/fba-adjusttempbiocpd.pl" $(TARGET)/bin/kbfba-adjusttempbiocpd ; \
-	$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/fba-adjusttempbiomass.pl" $(TARGET)/bin/kbfba-adjusttempbiomass ; \
-	$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/fba-adjusttemprxn.pl" $(TARGET)/bin/kbfba-adjusttemprxn ; \
-	$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/fba-buildfbamodel.pl" $(TARGET)/bin/kbfba-buildfbamodel ; \
-	$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/fba-exportfba.pl" $(TARGET)/bin/kbfba-exportfba ; \
-	$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/fba-exportfbamodel.pl" $(TARGET)/bin/kbfba-exportfbamodel ; \
-	$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/fba-exportgenome.pl" $(TARGET)/bin/kbfba-exportgenome ; \
-	$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/fba-exportmedia.pl" $(TARGET)/bin/kbfba-exportmedia ; \
-	$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/fba-exportobject.pl" $(TARGET)/bin/kbfba-exportobject ; \
-	$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/fba-exportphenosim.pl" $(TARGET)/bin/kbfba-exportphenosim ; \
-	$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/fba-gapfill.pl" $(TARGET)/bin/kbfba-gapfill ; \
-	$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/fba-gapgen.pl" $(TARGET)/bin/kbfba-gapgen ; \
-	$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/fba-getbio.pl" $(TARGET)/bin/kbfba-getbio ; \
-	$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/fba-getcompounds.pl" $(TARGET)/bin/kbfba-getcompounds ; \
-	$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/fba-getfbas.pl" $(TARGET)/bin/kbfba-getfbas ; \
-	$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/fba-getgapfills.pl" $(TARGET)/bin/kbfba-getgapfills ; \
-	$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/fba-getgapgens.pl" $(TARGET)/bin/kbfba-getgapgens ; \
-	$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/fba-getmap.pl" $(TARGET)/bin/kbfba-getmap ; \
-	$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/fba-getmedia.pl" $(TARGET)/bin/kbfba-getmedia ; \
-	$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/fba-getmodels.pl" $(TARGET)/bin/kbfba-getmodels ; \
-	$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/fba-getreactions.pl" $(TARGET)/bin/kbfba-getreactions ; \
-	$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/fba-gettemplate.pl" $(TARGET)/bin/kbfba-gettemplate ; \
-	$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/fba-importfbamodel.pl" $(TARGET)/bin/kbfba-importfbamodel ; \
-	$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/fba-importpheno.pl" $(TARGET)/bin/kbfba-importpheno ; \
-	$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/fba-importprobanno.pl" $(TARGET)/bin/kbfba-importprobanno ; \
-	$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/fba-importtemplate.pl" $(TARGET)/bin/kbfba-importtemplate ; \
-	$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/fba-importtranslation.pl" $(TARGET)/bin/kbfba-importtranslation ; \
-	$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/fba-integratesolution.pl" $(TARGET)/bin/kbfba-integratesolution ; \
-	$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/fba-jobdone.pl" $(TARGET)/bin/kbfba-jobdone ; \
-	$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/fba-loadgenome.pl" $(TARGET)/bin/kbfba-loadgenome ; \
-	$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/fba-queuefba.pl" $(TARGET)/bin/kbfba-queuefba ; \
-	$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/fba-runfba.pl" $(TARGET)/bin/kbfba-runfba ; \
-	$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/fba-runjob.pl" $(TARGET)/bin/kbfba-runjob ; \
-	$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/fba-simpheno.pl" $(TARGET)/bin/kbfba-simpheno ; \
-	$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/fba-url.pl" $(TARGET)/bin/kbfba-url ; \
+	$(TOOLS_DIR)/tools/wrap_perl "$(TARGET)/plbin/fba-addaliases.pl" $(TARGET)/bin/kbfba-addaliases ; \
+	$(TOOLS_DIR)/tools/wrap_perl "$(TARGET)/plbin/fba-addmedia.pl" $(TARGET)/bin/kbfba-addmedia ; \
+	$(TOOLS_DIR)/tools/wrap_perl "$(TARGET)/plbin/fba-adjustbiomass.pl" $(TARGET)/bin/kbfba-adjustbiomass ; \
+	$(TOOLS_DIR)/tools/wrap_perl "$(TARGET)/plbin/fba-adjustmapcomplex.pl" $(TARGET)/bin/kbfba-adjustmapcomplex ; \
+	$(TOOLS_DIR)/tools/wrap_perl "$(TARGET)/plbin/fba-adjustmaprole.pl" $(TARGET)/bin/kbfba-adjustmaprole ; \
+	$(TOOLS_DIR)/tools/wrap_perl "$(TARGET)/plbin/fba-adjustmapsubsystem.pl" $(TARGET)/bin/kbfba-adjustmapsubsystem ; \
+	$(TOOLS_DIR)/tools/wrap_perl "$(TARGET)/plbin/fba-adjustmodel.pl" $(TARGET)/bin/kbfba-adjustmodel ; \
+	$(TOOLS_DIR)/tools/wrap_perl "$(TARGET)/plbin/fba-adjusttempbiocpd.pl" $(TARGET)/bin/kbfba-adjusttempbiocpd ; \
+	$(TOOLS_DIR)/tools/wrap_perl "$(TARGET)/plbin/fba-adjusttempbiomass.pl" $(TARGET)/bin/kbfba-adjusttempbiomass ; \
+	$(TOOLS_DIR)/tools/wrap_perl "$(TARGET)/plbin/fba-adjusttemprxn.pl" $(TARGET)/bin/kbfba-adjusttemprxn ; \
+	$(TOOLS_DIR)/tools/wrap_perl "$(TARGET)/plbin/fba-buildfbamodel.pl" $(TARGET)/bin/kbfba-buildfbamodel ; \
+	$(TOOLS_DIR)/tools/wrap_perl "$(TARGET)/plbin/fba-exportfba.pl" $(TARGET)/bin/kbfba-exportfba ; \
+	$(TOOLS_DIR)/tools/wrap_perl "$(TARGET)/plbin/fba-exportfbamodel.pl" $(TARGET)/bin/kbfba-exportfbamodel ; \
+	$(TOOLS_DIR)/tools/wrap_perl "$(TARGET)/plbin/fba-exportgenome.pl" $(TARGET)/bin/kbfba-exportgenome ; \
+	$(TOOLS_DIR)/tools/wrap_perl "$(TARGET)/plbin/fba-exportmedia.pl" $(TARGET)/bin/kbfba-exportmedia ; \
+	$(TOOLS_DIR)/tools/wrap_perl "$(TARGET)/plbin/fba-exportobject.pl" $(TARGET)/bin/kbfba-exportobject ; \
+	$(TOOLS_DIR)/tools/wrap_perl "$(TARGET)/plbin/fba-exportphenosim.pl" $(TARGET)/bin/kbfba-exportphenosim ; \
+	$(TOOLS_DIR)/tools/wrap_perl "$(TARGET)/plbin/fba-gapfill.pl" $(TARGET)/bin/kbfba-gapfill ; \
+	$(TOOLS_DIR)/tools/wrap_perl "$(TARGET)/plbin/fba-gapgen.pl" $(TARGET)/bin/kbfba-gapgen ; \
+	$(TOOLS_DIR)/tools/wrap_perl "$(TARGET)/plbin/fba-getbio.pl" $(TARGET)/bin/kbfba-getbio ; \
+	$(TOOLS_DIR)/tools/wrap_perl "$(TARGET)/plbin/fba-getcompounds.pl" $(TARGET)/bin/kbfba-getcompounds ; \
+	$(TOOLS_DIR)/tools/wrap_perl "$(TARGET)/plbin/fba-getfbas.pl" $(TARGET)/bin/kbfba-getfbas ; \
+	$(TOOLS_DIR)/tools/wrap_perl "$(TARGET)/plbin/fba-getgapfills.pl" $(TARGET)/bin/kbfba-getgapfills ; \
+	$(TOOLS_DIR)/tools/wrap_perl "$(TARGET)/plbin/fba-getgapgens.pl" $(TARGET)/bin/kbfba-getgapgens ; \
+	$(TOOLS_DIR)/tools/wrap_perl "$(TARGET)/plbin/fba-getmap.pl" $(TARGET)/bin/kbfba-getmap ; \
+	$(TOOLS_DIR)/tools/wrap_perl "$(TARGET)/plbin/fba-getmedia.pl" $(TARGET)/bin/kbfba-getmedia ; \
+	$(TOOLS_DIR)/tools/wrap_perl "$(TARGET)/plbin/fba-getmodels.pl" $(TARGET)/bin/kbfba-getmodels ; \
+	$(TOOLS_DIR)/tools/wrap_perl "$(TARGET)/plbin/fba-getreactions.pl" $(TARGET)/bin/kbfba-getreactions ; \
+	$(TOOLS_DIR)/tools/wrap_perl "$(TARGET)/plbin/fba-gettemplate.pl" $(TARGET)/bin/kbfba-gettemplate ; \
+	$(TOOLS_DIR)/tools/wrap_perl "$(TARGET)/plbin/fba-importfbamodel.pl" $(TARGET)/bin/kbfba-importfbamodel ; \
+	$(TOOLS_DIR)/tools/wrap_perl "$(TARGET)/plbin/fba-importpheno.pl" $(TARGET)/bin/kbfba-importpheno ; \
+	$(TOOLS_DIR)/tools/wrap_perl "$(TARGET)/plbin/fba-importprobanno.pl" $(TARGET)/bin/kbfba-importprobanno ; \
+	$(TOOLS_DIR)/tools/wrap_perl "$(TARGET)/plbin/fba-importtemplate.pl" $(TARGET)/bin/kbfba-importtemplate ; \
+	$(TOOLS_DIR)/tools/wrap_perl "$(TARGET)/plbin/fba-importtranslation.pl" $(TARGET)/bin/kbfba-importtranslation ; \
+	$(TOOLS_DIR)/tools/wrap_perl "$(TARGET)/plbin/fba-integratesolution.pl" $(TARGET)/bin/kbfba-integratesolution ; \
+	$(TOOLS_DIR)/tools/wrap_perl "$(TARGET)/plbin/fba-jobdone.pl" $(TARGET)/bin/kbfba-jobdone ; \
+	$(TOOLS_DIR)/tools/wrap_perl "$(TARGET)/plbin/fba-loadgenome.pl" $(TARGET)/bin/kbfba-loadgenome ; \
+	$(TOOLS_DIR)/tools/wrap_perl "$(TARGET)/plbin/fba-queuefba.pl" $(TARGET)/bin/kbfba-queuefba ; \
+	$(TOOLS_DIR)/tools/wrap_perl "$(TARGET)/plbin/fba-runfba.pl" $(TARGET)/bin/kbfba-runfba ; \
+	$(TOOLS_DIR)/tools/wrap_perl "$(TARGET)/plbin/fba-runjob.pl" $(TARGET)/bin/kbfba-runjob ; \
+	$(TOOLS_DIR)/tools/wrap_perl "$(TARGET)/plbin/fba-simpheno.pl" $(TARGET)/bin/kbfba-simpheno ; \
+	$(TOOLS_DIR)/tools/wrap_perl "$(TARGET)/plbin/fba-url.pl" $(TARGET)/bin/kbfba-url ; \
 
 deploy-dir:
 	if [ ! -d $(SERV_SERVICE_DIR) ] ; then mkdir $(SERV_SERVICE_DIR) ; fi
