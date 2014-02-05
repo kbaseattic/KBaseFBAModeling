@@ -2912,7 +2912,7 @@ module fbaModelServices {
 		Modifies a reaction of a template model       
     */
     authentication required;
-    funcdef adjust_template_reaction(adjust_template_reaction_params params) returns (TemplateReaction output);
+    funcdef adjust_template_reaction(adjust_template_reaction_params params) returns (object_metadata modelMeta);
 	
 	typedef structure {
 		template_id templateModel;
@@ -2939,7 +2939,7 @@ module fbaModelServices {
 		Modifies the biomass of a template model        
     */
     authentication required;
-    funcdef adjust_template_biomass(adjust_template_biomass_params params) returns (TemplateBiomass output);
+    funcdef adjust_template_biomass(adjust_template_biomass_params params) returns (object_metadata modelMeta);
 	
 	/*********************************************************************************
     Code relating to reconstruction, import, and analysis of regulatory models

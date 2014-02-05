@@ -182,7 +182,7 @@ sub adjustBiomass {
 	        if (!defined($cmp)) {
 	            Bio::KBase::ObjectAPI::utilities::error("Compartment ".$compound->[1]." not found!");
 	        }
-	        my $comps = $self->templateBiomassComponents();
+	        my $comps = $tempbio->templateBiomassComponents();
 			my $id = @{$comps}+1;
 	        my $comp = Bio::KBase::ObjectAPI::KBaseFBA::TemplateBiomassComponent->new({
 				id => $tempbio->id().".cpd.".$id,

@@ -14033,7 +14033,7 @@ sub import_template_fbamodel
 
 =head2 adjust_template_reaction
 
-  $output = $obj->adjust_template_reaction($params)
+  $modelMeta = $obj->adjust_template_reaction($params)
 
 =over 4
 
@@ -14043,7 +14043,7 @@ sub import_template_fbamodel
 
 <pre>
 $params is an adjust_template_reaction_params
-$output is a TemplateReaction
+$modelMeta is an object_metadata
 adjust_template_reaction_params is a reference to a hash where the following keys are defined:
 	templateModel has a value which is a template_id
 	workspace has a value which is a workspace_id
@@ -14062,15 +14062,23 @@ workspace_id is a string
 bool is an int
 compartment_id is a string
 complex_id is a string
-TemplateReaction is a reference to a hash where the following keys are defined:
-	id has a value which is a temprxn_id
-	compartment has a value which is a compartment_id
-	reaction has a value which is a reaction_id
-	complexes has a value which is a reference to a list where each element is a complex_id
-	direction has a value which is a string
-	type has a value which is a string
-temprxn_id is a string
-reaction_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
 
 </pre>
 
@@ -14079,7 +14087,7 @@ reaction_id is a string
 =begin text
 
 $params is an adjust_template_reaction_params
-$output is a TemplateReaction
+$modelMeta is an object_metadata
 adjust_template_reaction_params is a reference to a hash where the following keys are defined:
 	templateModel has a value which is a template_id
 	workspace has a value which is a workspace_id
@@ -14098,15 +14106,23 @@ workspace_id is a string
 bool is an int
 compartment_id is a string
 complex_id is a string
-TemplateReaction is a reference to a hash where the following keys are defined:
-	id has a value which is a temprxn_id
-	compartment has a value which is a compartment_id
-	reaction has a value which is a reaction_id
-	complexes has a value which is a reference to a list where each element is a complex_id
-	direction has a value which is a string
-	type has a value which is a string
-temprxn_id is a string
-reaction_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
 
 
 =end text
@@ -14135,7 +14151,7 @@ sub adjust_template_reaction
     }
 
     my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
-    my($output);
+    my($modelMeta);
     #BEGIN adjust_template_reaction
     $self->_setContext($ctx,$params);
     my $input = $self->_validateargs($params,["templateModel","workspace","reaction"],{
@@ -14157,16 +14173,16 @@ sub adjust_template_reaction
     	}
     }
 	my $rxn = $tempmdl->adjustReaction($arguments);
-	$output = $self->_save_msobject($tempmdl,"ModelTemplate",$input->{workspace},$input->{templateModel});
+	$modelMeta = $self->_save_msobject($tempmdl,"ModelTemplate",$input->{workspace},$input->{templateModel});
     #END adjust_template_reaction
     my @_bad_returns;
-    (ref($output) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    (ref($modelMeta) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"modelMeta\" (value was \"$modelMeta\")");
     if (@_bad_returns) {
 	my $msg = "Invalid returns passed to adjust_template_reaction:\n" . join("", map { "\t$_\n" } @_bad_returns);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
 							       method_name => 'adjust_template_reaction');
     }
-    return($output);
+    return($modelMeta);
 }
 
 
@@ -14174,7 +14190,7 @@ sub adjust_template_reaction
 
 =head2 adjust_template_biomass
 
-  $output = $obj->adjust_template_biomass($params)
+  $modelMeta = $obj->adjust_template_biomass($params)
 
 =over 4
 
@@ -14184,7 +14200,7 @@ sub adjust_template_reaction
 
 <pre>
 $params is an adjust_template_biomass_params
-$output is a TemplateBiomass
+$modelMeta is an object_metadata
 adjust_template_biomass_params is a reference to a hash where the following keys are defined:
 	templateModel has a value which is a template_id
 	workspace has a value which is a workspace_id
@@ -14224,31 +14240,23 @@ workspace_id is a string
 bool is an int
 compound_id is a string
 compartment_id is a string
-TemplateBiomass is a reference to a hash where the following keys are defined:
-	id has a value which is a tempbiomass_id
-	name has a value which is a string
-	type has a value which is a string
-	other has a value which is a string
-	protein has a value which is a string
-	dna has a value which is a string
-	rna has a value which is a string
-	cofactor has a value which is a string
-	energy has a value which is a string
-	cellwall has a value which is a string
-	lipid has a value which is a string
-	compounds has a value which is a reference to a list where each element is a TemplateBiomassCompounds
-tempbiomass_id is a string
-TemplateBiomassCompounds is a reference to a list containing 7 items:
-	0: (compound) a compound_id
-	1: (compartment) a compartment_id
-	2: (cpdclass) a string
-	3: (universal) a string
-	4: (coefficientType) a string
-	5: (coefficient) a string
-	6: (linkedCompounds) a reference to a list where each element is a reference to a list containing 2 items:
-		0: (coeffficient) a string
-		1: (compound) a compound_id
-
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
 
 </pre>
 
@@ -14257,7 +14265,7 @@ TemplateBiomassCompounds is a reference to a list containing 7 items:
 =begin text
 
 $params is an adjust_template_biomass_params
-$output is a TemplateBiomass
+$modelMeta is an object_metadata
 adjust_template_biomass_params is a reference to a hash where the following keys are defined:
 	templateModel has a value which is a template_id
 	workspace has a value which is a workspace_id
@@ -14297,31 +14305,23 @@ workspace_id is a string
 bool is an int
 compound_id is a string
 compartment_id is a string
-TemplateBiomass is a reference to a hash where the following keys are defined:
-	id has a value which is a tempbiomass_id
-	name has a value which is a string
-	type has a value which is a string
-	other has a value which is a string
-	protein has a value which is a string
-	dna has a value which is a string
-	rna has a value which is a string
-	cofactor has a value which is a string
-	energy has a value which is a string
-	cellwall has a value which is a string
-	lipid has a value which is a string
-	compounds has a value which is a reference to a list where each element is a TemplateBiomassCompounds
-tempbiomass_id is a string
-TemplateBiomassCompounds is a reference to a list containing 7 items:
-	0: (compound) a compound_id
-	1: (compartment) a compartment_id
-	2: (cpdclass) a string
-	3: (universal) a string
-	4: (coefficientType) a string
-	5: (coefficient) a string
-	6: (linkedCompounds) a reference to a list where each element is a reference to a list containing 2 items:
-		0: (coeffficient) a string
-		1: (compound) a compound_id
-
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
 
 
 =end text
@@ -14350,7 +14350,7 @@ sub adjust_template_biomass
     }
 
     my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
-    my($output);
+    my($modelMeta);
     #BEGIN adjust_template_biomass
     $self->_setContext($ctx,$params);
     my $input = $self->_validateargs($params,["templateModel","workspace"],{
@@ -14380,30 +14380,16 @@ sub adjust_template_biomass
     	}
     }
 	my $bio = $tempmdl->adjustBiomass($arguments);
-	$output = {
-    	id => $bio->uuid(),
-    	name => $bio->name(),
-    	type => $bio->type(),
-    	other => $bio->other(),
-    	protein => $bio->protein(),
-    	dna => $bio->dna(),
-    	rna => $bio->rna(),
-    	cofactor => $bio->cofactor(),
-    	energy => $bio->energy(),
-    	cellwall => $bio->cellwall(),
-    	lipid => $bio->lipid(),
-    	compounds => $bio->compoundTuples()
-    };
-    $output = $self->_save_msobject($tempmdl,"ModelTemplate",$input->{workspace},$input->{templateModel});
+    $modelMeta = $self->_save_msobject($tempmdl,"ModelTemplate",$input->{workspace},$input->{templateModel});
     #END adjust_template_biomass
     my @_bad_returns;
-    (ref($output) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    (ref($modelMeta) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"modelMeta\" (value was \"$modelMeta\")");
     if (@_bad_returns) {
 	my $msg = "Invalid returns passed to adjust_template_biomass:\n" . join("", map { "\t$_\n" } @_bad_returns);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
 							       method_name => 'adjust_template_biomass');
     }
-    return($output);
+    return($modelMeta);
 }
 
 
