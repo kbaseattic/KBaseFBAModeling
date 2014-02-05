@@ -79,7 +79,7 @@ test-client:
 deploy: deploy-client deploy-service
 deploy-all: deploy-client deploy-service
 
-deploy-service: deploy-dir deploy-libs deploy-fba-scripts deploy-services deploy-cfg
+deploy-service: deploy-dir deploy-libs deploy-fba-scripts deploy-services
 deploy-client: deploy-dir deploy-libs deploy-fba-scripts deploy-docs
 
 deploy-fba-scripts:
