@@ -2466,7 +2466,7 @@ sub new
 
     # looping over a set of predefined set of parameter keys, see if there
     # is a value for that key in the config object
-
+	print STDERR "Deploy:".$ENV{KB_DEPLOYMENT_CONFIG}."\n";
     if ((my $e = $ENV{KB_DEPLOYMENT_CONFIG}) && -e $ENV{KB_DEPLOYMENT_CONFIG}) {
 		my $service = $ENV{KB_SERVICE_NAME};
 		if (!defined($service)) {
