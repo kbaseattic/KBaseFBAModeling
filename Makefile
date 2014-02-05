@@ -1,9 +1,7 @@
 ROOT_DEV_MODULE_DIR := $(abspath $(dir $lastword $(MAKEFILE_LIST)))
-TOP_DIR = ../..
-DEPLOY_RUNTIME ?= /kb/runtime
-TARGET ?= /kb/deployment
+TARGET ?= $(KB_TOP)/../
  
-include $(TOP_DIR)/tools/Makefile.common
+include $(KB_TOP)/tools/Makefile.common
 
 SRC_PERL = $(wildcard scripts/*.pl)
 BIN_PERL = $(addprefix $(BIN_DIR)/,$(basename $(notdir $(SRC_PERL))))
@@ -51,7 +49,7 @@ test: test-service test-scripts test-client
 test-service:
 	for t in $(SERVER_TESTS) ; do \
 		if [ -f $$t ] ; then \
-			$(DEPLOY_RUNTIME)/bin/prove $$t ; \
+			$(KB_RUNTIME)/bin/prove $$t ; \
 			if [ $$? -ne 0 ] ; then \
 				exit 1 ; \
 			fi \
@@ -71,7 +69,7 @@ test-scripts:
 test-client:
 	for t in $(CLIENT_TESTS) ; do \
 		if [ -f $$t ] ; then \
-			$(DEPLOY_RUNTIME)/bin/prove $$t ; \
+			$(KB_RUNTIME)/bin/prove $$t ; \
 			if [ $$? -ne 0 ] ; then \
 				exit 1 ; \
 			fi \
@@ -86,7 +84,6 @@ deploy-client: deploy-dir deploy-libs deploy-fba-scripts deploy-docs
 
 deploy-fba-scripts:
 	export KB_TOP=$(TARGET); \
-	export KB_RUNTIME=$(DEPLOY_RUNTIME); \
 	export KB_PERL_PATH=$(TARGET)/lib ; \
 	for src in $(SRC_PERL) ; do \
 		basefile=`basename $$src`; \
@@ -171,5 +168,5 @@ compile-typespec:
 	-py biokbase/fbaModelServices/Client \
 	fbaModelServices.spec lib
 
-include $(TOP_DIR)/tools/Makefile.common.rules
+include $(KB_TOP)/tools/Makefile.common.rules
 
