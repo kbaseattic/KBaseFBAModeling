@@ -137,7 +137,7 @@ sub monitor {
 				my $runningJobs = $self->runningJobs($type);
 				for (my $i=0; $i < @{$jobs}; $i++) {
 					my $job = $jobs->[$i];
-					if (defined($job->{jobdata}->{qsubid}) && $job->{jobdata}->{schedulerstatus} eq $jobHash->{$type}->{status}) {
+					if (defined($job->{jobdata}->{qsubid}) && -d $self->jobdirectory()."/jobs/".$job->{id}) {
 						my $id = $job->{jobdata}->{qsubid};
 						if (!defined($runningJobs->{$id})) {
 							my $input = {
