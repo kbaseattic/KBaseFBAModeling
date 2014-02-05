@@ -65,6 +65,7 @@ sub _buildjobdirectory {
 sub _buildmfatoolkitBinary {
 	my ($self) = @_;
 	my $bin;
+	print STDERR "BINARY:".Bio::KBase::ObjectAPI::utilities::MFATOOLKIT_BINARY()."\n";
 	if (defined(Bio::KBase::ObjectAPI::utilities::MFATOOLKIT_BINARY()) && length(Bio::KBase::ObjectAPI::utilities::MFATOOLKIT_BINARY()) > 0 && -e Bio::KBase::ObjectAPI::utilities::MFATOOLKIT_BINARY()) {
 		$bin = Bio::KBase::ObjectAPI::utilities::MFATOOLKIT_BINARY();
 	} else {
