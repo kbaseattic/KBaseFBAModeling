@@ -571,6 +571,42 @@ sub MFATOOLKIT_BINARY {
 	return $ENV{MFATOOLKIT_BINARY};
 }
 
+=head3 CurrentJobID
+
+Definition:
+	string = Bio::KBase::ObjectAPI::utilities::CurrentJobID(string input);
+Description:
+	Getter setter for the current job id to be used as directory name for MFAToolkit jobs
+Example:
+
+=cut
+
+sub CurrentJobID {
+	my ($input) = @_;
+	if (defined($input)) {
+		$ENV{KBFBA_CurrentJobID} = $input;
+	}
+	return $ENV{KBFBA_CurrentJobID};
+}
+
+=head3 FinalJobCache
+
+Definition:
+	string = Bio::KBase::ObjectAPI::utilities::FinalJobCache(string input);
+Description:
+	Getter setter for the current job id to be used as the final job cache destination for MFAToolkit jobs
+Example:
+
+=cut
+
+sub FinalJobCache {
+	my ($input) = @_;
+	if (defined($input)) {
+		$ENV{KBFBA_FinalJobCache} = $input;
+	}
+	return $ENV{KBFBA_FinalJobCache};
+}
+
 =head3 ID_SERVER_URL
 
 Definition:

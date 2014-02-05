@@ -47,8 +47,9 @@ sub get_fba_client {
 		$url = fbaURL();
 	}
 	if ($url eq "impl") {
+		$Bio::KBase::fbaModelServices::Server::CallContext = {token => getToken()};
 		require "Bio/KBase/fbaModelServices/Impl.pm";
-		return Bio::KBase::fbaModelServices::Impl->new({workspace => get_ws_client()});
+		return Bio::KBase::fbaModelServices::Impl->new();
 	}
 	my $client = Bio::KBase::fbaModelServices::Client->new(fbaURL());
 	$client->{token} = getToken();

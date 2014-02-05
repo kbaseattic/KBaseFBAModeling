@@ -10,7 +10,7 @@ use Bio::KBase::ObjectAPI::KBaseFBA::DB::FBA;
 package Bio::KBase::ObjectAPI::KBaseFBA::FBA;
 use Moose;
 use Bio::KBase::ObjectAPI::utilities;
-
+use File::Path;
 use namespace::autoclean;
 extends 'Bio::KBase::ObjectAPI::KBaseFBA::DB::FBA';
 #***********************************************************************************************************
@@ -34,11 +34,14 @@ has additionalCompoundString => ( is => 'rw', isa => 'Str',printOrder => '4', ty
 sub _buildjobid {
 	my ($self) = @_;
 	my $path = $self->jobPath();
-	my $fulldir = File::Temp::tempdir(DIR => $path);
-	if (!-d $fulldir) {
-		File::Path::mkpath ($fulldir);
+	my $jobid = Bio::KBase::ObjectAPI::utilities::CurrentJobID();
+	if (!defined($jobid)) {
+		my $fulldir = File::Temp::tempdir(DIR => $path);
+		if (!-d $fulldir) {
+			File::Path::mkpath ($fulldir);
+		}
+		$jobid = substr($fulldir,length($path."/"));
 	}
-	my $jobid = substr($fulldir,length($path."/"));
 	return $jobid
 }
 
@@ -269,6 +272,12 @@ sub runFBA {
 	}
 	system($self->command());
 	$self->loadMFAToolkitResults();
+	if (defined(Bio::KBase::ObjectAPI::utilities::FinalJobCache())) {
+		system("cd ".$self->jobPath().";tar -czf ".Bio::KBase::ObjectAPI::utilities::FinalJobCache()."/".$self->jobID().".tgz ".$self->jobID());
+	}
+	if ($self->jobDirectory() =~ m/\/fbajobs\/.+/) {
+		rmtree($self->jobDirectory());
+	}
 	return $self->objectiveValue();
 }
 

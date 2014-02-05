@@ -18,11 +18,15 @@ use File::Path;
 use Bio::KBase::fbaModelServices::Impl;
 
 $|=1;
-if (!defined($ARGV[0])) {
-	exit(0);
+my $config = $ARGV[0];
+my $jobid = $ARGV[1];
+my $c = Config::Simple->new();
+$c->read($file);
+my $filename = $c->param("scheduler.jobdirectory").$ARGV[1]."/jobfile.json";
+if (!-e $filename) {
+	die "Cannot open ".$filename;
 }
-my $filename = $ARGV[0];
-open( my $fh, "<", $filename."jobfile.json");
+open( my $fh, "<", $filename);
 my $job;
 {
     local $/;
@@ -30,17 +34,17 @@ my $job;
     $job = decode_json $str;
 }
 close($fh);
-my $ws = Bio::KBase::workspace::Client->new($job->{wsurl});
-$ws->{token} = $job->{auth};
-$ws->{client}->{token} = $job->{auth};
-my $obj = Bio::KBase::fbaModelServices::Impl->new({accounttype => $job->{accounttype},workspace => $ws});
-#Clearing out old files
-if (-d "/tmp/fbajobs/") {
-	&clearOldDirectoryFiles("/tmp/fbajobs/");
-}
+$Bio::KBase::fbaModelServices::Server::CallContext = {token => $job->{auth}};
+$ENV{KB_DEPLOYMENT_CONFIG} = $file;
+my $obj = Bio::KBase::fbaModelServices::Impl->new({
+	accounttype => $job->{accounttype}
+});
 $obj->run_job({
 	job => $job->{id},
-});	
+});
+if (-d $c->param("fbaModelServices.fbajobdir")) {
+	&clearOldDirectoryFiles($c->param("fbaModelServices.fbajobdir"));
+}
 
 sub clearOldDirectoryFiles {
 	my($directory) = @_;

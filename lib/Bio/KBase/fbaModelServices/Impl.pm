@@ -388,7 +388,9 @@ sub _workspaceServices {
 		return $self->{_workspaceServiceOveride};
 	}
 	if (!defined($self->{_workspaceServices}->{$self->_workspaceURL()})) {
-		$self->{_workspaceServices}->{$self->_workspaceURL()} = Bio::KBase::workspace::Client->new($self->_workspaceURL());
+		my $url = $self->_workspaceURL();
+		$url =~ s/https/http/;
+		$self->{_workspaceServices}->{$self->_workspaceURL()} = Bio::KBase::workspace::Client->new($url);
 		$self->{_workspaceServices}->{$self->_workspaceURL()}->{token} = $self->_authentication();
 		$self->{_workspaceServices}->{$self->_workspaceURL()}->{client}->{token} = $self->_authentication();
 	}
@@ -2451,7 +2453,7 @@ sub new
     $self->{'_mssserver-url'} = "http://bio-data-1.mcs.anl.gov/services/ms_fba";
     $self->{"_probanno-url"} = "http://localhost:7073";
     $self->{"_workspace-url"} = "http://kbase.us/services/ws";
-    my $paramlist = [qw(gaserver-url jobserver-url fbajobdir mfatoolkitbin fba-url probanno-url mssserver-url accounttype workspace-url defaultJobState idserver-url)];
+    my $paramlist = [qw(fbajobcache gaserver-url jobserver-url fbajobdir mfatoolkitbin fba-url probanno-url mssserver-url accounttype workspace-url defaultJobState idserver-url)];
 
     # so it looks like params is created by looping over the config object
     # if deployment.cfg exists
@@ -2501,6 +2503,9 @@ sub new
 	}
 	if (defined($params->{fbajobdir})) {
 		Bio::KBase::ObjectAPI::utilities::MFATOOLKIT_JOB_DIRECTORY($params->{fbajobdir});
+	}
+	if (defined($params->{fbajobcache})) {
+		Bio::KBase::ObjectAPI::utilities::FinalJobCache($params->{fbajobcache});
 	}
     if (defined $params->{accounttype}) {
 		$self->{_accounttype} = $params->{accounttype};
@@ -10652,7 +10657,7 @@ sub run_job
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["job"],{usecpx => 0});
     $job = $self->_getJob($input->{job});
-    print STDERR Data::Dumper->Dump([$job]);
+    Bio::KBase::ObjectAPI::utilities::CurrentJobID($input->{job});
     eval {
 	    $self->_jobserv()->set_job_status({
 		   	jobid => $job->{id},
