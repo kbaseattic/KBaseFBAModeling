@@ -1,4 +1,4 @@
-TOP_DIR = ../..
+ROOT_DEV_MODULE_DIR := $(abspath $(dir $lastword $(MAKEFILE_LIST)))
 TARGET = $(KB_TOP)/../
  
 include $(KB_TOP)/tools/Makefile.common
@@ -7,6 +7,13 @@ SRC_PERL = $(wildcard scripts/*.pl)
 BIN_PERL = $(addprefix $(BIN_DIR)/,$(basename $(notdir $(SRC_PERL))))
 SRC_PYTHON = $(wildcard scripts/*.py)
 BIN_PYTHON = $(addprefix $(BIN_DIR)/,$(basename $(notdir $(SRC_PYTHON))))
+# KB_PERL = $(addprefix $(TARGET)/bin/,$(basename $(notdir $(SRC_PERL))))
+
+# SERVER_SPEC :  fbaModelServices.spec
+# SERVER_MODULE : fbaModelServices
+# SERVICE       : fbaModelServices
+# SERVICE_PORT  : 7036 
+# PSGI_PATH     : lib/fbaModelServices.psgi
 
 # fbaModelServices
 SERV_SERVER_SPEC = fbaModelServices.spec
@@ -25,6 +32,9 @@ bin: $(BIN_PERL) $(BIN_PYTHON)
 
 server:
 	echo "server target does nothing"
+
+$(BIN_DIR)/%: scripts/%.pl 
+	$(KB_TOP)/tools/wrap_perl '$$KB_TOP/modules/$(CURRENT_DIR)/$<' $@
 
 $(BIN_DIR)/%: scripts/%.py
 	$(KB_TOP)/tools/wrap_python '$$KB_TOP/modules/$(CURRENT_DIR)/$<' $@
@@ -73,7 +83,8 @@ deploy-service: deploy-dir deploy-libs deploy-fba-scripts deploy-services deploy
 deploy-client: deploy-dir deploy-libs deploy-fba-scripts deploy-docs
 
 deploy-fba-scripts:
-	KB_TOP = ../..
+	export KB_TOP=$(TARGET); \
+	export KB_PERL_PATH=$(TARGET)/lib ; \
 	for src in $(SRC_PERL) ; do \
 		basefile=`basename $$src`; \
 		base=`basename $$src .pl`; \
