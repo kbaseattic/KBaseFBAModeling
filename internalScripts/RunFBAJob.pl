@@ -46,8 +46,8 @@ my $obj = Bio::KBase::fbaModelServices::Impl->new({
 $obj->run_job({
 	job => $job->{id},
 });
-if (-d $c->param("fbaModelServices.fbajobdir")) {
-	&clearOldDirectoryFiles($c->param("fbaModelServices.fbajobdir"));
+if (-d $c->param("fbaModelService.fbajobdir")) {
+	&clearOldDirectoryFiles($c->param("fbaModelService.fbajobdir"));
 }
 
 sub clearOldDirectoryFiles {

@@ -566,7 +566,6 @@ Example:
 sub MFATOOLKIT_BINARY {
 	my ($input) = @_;
 	if (defined($input)) {
-		print STDERR $input."\n";
 		$ENV{MFATOOLKIT_BINARY} = $input;
 	}
 	return $ENV{MFATOOLKIT_BINARY};

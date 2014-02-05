@@ -2466,20 +2466,17 @@ sub new
 
     # looping over a set of predefined set of parameter keys, see if there
     # is a value for that key in the config object
-	print STDERR "Deploy:".$ENV{KB_DEPLOYMENT_CONFIG}."\n";
     if ((my $e = $ENV{KB_DEPLOYMENT_CONFIG}) && -e $ENV{KB_DEPLOYMENT_CONFIG}) {
 		my $service = $ENV{KB_SERVICE_NAME};
 		if (!defined($service)) {
 			$service = "fbaModelService";
 		}
-		print STDERR "Service:".$service."\n";
 		if (defined($service)) {
 			my $c = Config::Simple->new();
 			$c->read($e);
 			for my $p (@{$paramlist}) {
 			  	my $v = $c->param("$service.$p");
 			    if ($v) {
-					print STDERR $p."\t".$v."\n";
 					$params->{$p} = $v;
 			    }
 			}
@@ -4730,8 +4727,7 @@ sub import_probanno
     		$annoprob->[0] = $genehash->{$annoprob->[0]};
     		
     		my $searchName = ModelSEED::MS::Utilities::GlobalFunctions::convertRoleToSearchRole($annoprob->[1]);
-    		print STDERR "looking for ".$annoprob->[1]." ".$searchName."\n";
-			my $roleObj = $map->queryObject("roles",{searchname => $searchName});
+    		my $roleObj = $map->queryObject("roles",{searchname => $searchName});
     		if (defined($roleObj)) {
     			$found++;
     			if (defined($featureHash->{$annoprob->[0]})) {
