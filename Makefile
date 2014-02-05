@@ -1,4 +1,4 @@
-ROOT_DEV_MODULE_DIR := $(abspath $(dir $lastword $(MAKEFILE_LIST)))
+TOP_DIR = ../..
 TARGET = $(KB_TOP)/../
  
 include $(KB_TOP)/tools/Makefile.common
@@ -7,13 +7,6 @@ SRC_PERL = $(wildcard scripts/*.pl)
 BIN_PERL = $(addprefix $(BIN_DIR)/,$(basename $(notdir $(SRC_PERL))))
 SRC_PYTHON = $(wildcard scripts/*.py)
 BIN_PYTHON = $(addprefix $(BIN_DIR)/,$(basename $(notdir $(SRC_PYTHON))))
-# KB_PERL = $(addprefix $(TARGET)/bin/,$(basename $(notdir $(SRC_PERL))))
-
-# SERVER_SPEC :  fbaModelServices.spec
-# SERVER_MODULE : fbaModelServices
-# SERVICE       : fbaModelServices
-# SERVICE_PORT  : 7036 
-# PSGI_PATH     : lib/fbaModelServices.psgi
 
 # fbaModelServices
 SERV_SERVER_SPEC = fbaModelServices.spec
@@ -76,10 +69,11 @@ test-client:
 deploy: deploy-client deploy-service
 deploy-all: deploy-client deploy-service
 
-deploy-service: deploy-dir deploy-libs deploy-scripts deploy-services deploy-cfg
+deploy-service: deploy-dir deploy-libs deploy-fba-scripts deploy-services deploy-cfg
 deploy-client: deploy-dir deploy-libs deploy-fba-scripts deploy-docs
 
 deploy-fba-scripts:
+	KB_TOP = ../..
 	for src in $(SRC_PERL) ; do \
 		basefile=`basename $$src`; \
 		base=`basename $$src .pl`; \
