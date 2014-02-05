@@ -83,15 +83,15 @@ sub new
     #
     # We create an auth token, passing through the arguments that we were (hopefully) given.
 
-    #{
-	#my $token = Bio::KBase::AuthToken->new(@args);
+    {
+	my $token = Bio::KBase::AuthToken->new(@args);
 	
-	#if (!$token->error_message)
-	#{
-	    $self->{token} = $args[0];
-	    $self->{client}->{token} = $args[0];
-	#}
-    #}
+	if (!$token->error_message)
+	{
+	    $self->{token} = $token->token;
+	    $self->{client}->{token} = $token->token;
+	}
+    }
 
     my $ua = $self->{client}->ua;	 
     my $timeout = $ENV{CDMI_TIMEOUT} || (30 * 60);	 
@@ -9798,7 +9798,7 @@ sub import_template_fbamodel
 
 =head2 adjust_template_reaction
 
-  $output = $obj->adjust_template_reaction($params)
+  $modelMeta = $obj->adjust_template_reaction($params)
 
 =over 4
 
@@ -9808,7 +9808,7 @@ sub import_template_fbamodel
 
 <pre>
 $params is an adjust_template_reaction_params
-$output is a TemplateReaction
+$modelMeta is an object_metadata
 adjust_template_reaction_params is a reference to a hash where the following keys are defined:
 	templateModel has a value which is a template_id
 	workspace has a value which is a workspace_id
@@ -9827,15 +9827,23 @@ workspace_id is a string
 bool is an int
 compartment_id is a string
 complex_id is a string
-TemplateReaction is a reference to a hash where the following keys are defined:
-	id has a value which is a temprxn_id
-	compartment has a value which is a compartment_id
-	reaction has a value which is a reaction_id
-	complexes has a value which is a reference to a list where each element is a complex_id
-	direction has a value which is a string
-	type has a value which is a string
-temprxn_id is a string
-reaction_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
 
 </pre>
 
@@ -9844,7 +9852,7 @@ reaction_id is a string
 =begin text
 
 $params is an adjust_template_reaction_params
-$output is a TemplateReaction
+$modelMeta is an object_metadata
 adjust_template_reaction_params is a reference to a hash where the following keys are defined:
 	templateModel has a value which is a template_id
 	workspace has a value which is a workspace_id
@@ -9863,15 +9871,23 @@ workspace_id is a string
 bool is an int
 compartment_id is a string
 complex_id is a string
-TemplateReaction is a reference to a hash where the following keys are defined:
-	id has a value which is a temprxn_id
-	compartment has a value which is a compartment_id
-	reaction has a value which is a reaction_id
-	complexes has a value which is a reference to a list where each element is a complex_id
-	direction has a value which is a string
-	type has a value which is a string
-temprxn_id is a string
-reaction_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
 
 
 =end text
@@ -9933,7 +9949,7 @@ sub adjust_template_reaction
 
 =head2 adjust_template_biomass
 
-  $output = $obj->adjust_template_biomass($params)
+  $modelMeta = $obj->adjust_template_biomass($params)
 
 =over 4
 
@@ -9943,7 +9959,7 @@ sub adjust_template_reaction
 
 <pre>
 $params is an adjust_template_biomass_params
-$output is a TemplateBiomass
+$modelMeta is an object_metadata
 adjust_template_biomass_params is a reference to a hash where the following keys are defined:
 	templateModel has a value which is a template_id
 	workspace has a value which is a workspace_id
@@ -9983,31 +9999,23 @@ workspace_id is a string
 bool is an int
 compound_id is a string
 compartment_id is a string
-TemplateBiomass is a reference to a hash where the following keys are defined:
-	id has a value which is a tempbiomass_id
-	name has a value which is a string
-	type has a value which is a string
-	other has a value which is a string
-	protein has a value which is a string
-	dna has a value which is a string
-	rna has a value which is a string
-	cofactor has a value which is a string
-	energy has a value which is a string
-	cellwall has a value which is a string
-	lipid has a value which is a string
-	compounds has a value which is a reference to a list where each element is a TemplateBiomassCompounds
-tempbiomass_id is a string
-TemplateBiomassCompounds is a reference to a list containing 7 items:
-	0: (compound) a compound_id
-	1: (compartment) a compartment_id
-	2: (cpdclass) a string
-	3: (universal) a string
-	4: (coefficientType) a string
-	5: (coefficient) a string
-	6: (linkedCompounds) a reference to a list where each element is a reference to a list containing 2 items:
-		0: (coeffficient) a string
-		1: (compound) a compound_id
-
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
 
 </pre>
 
@@ -10016,7 +10024,7 @@ TemplateBiomassCompounds is a reference to a list containing 7 items:
 =begin text
 
 $params is an adjust_template_biomass_params
-$output is a TemplateBiomass
+$modelMeta is an object_metadata
 adjust_template_biomass_params is a reference to a hash where the following keys are defined:
 	templateModel has a value which is a template_id
 	workspace has a value which is a workspace_id
@@ -10056,31 +10064,23 @@ workspace_id is a string
 bool is an int
 compound_id is a string
 compartment_id is a string
-TemplateBiomass is a reference to a hash where the following keys are defined:
-	id has a value which is a tempbiomass_id
-	name has a value which is a string
-	type has a value which is a string
-	other has a value which is a string
-	protein has a value which is a string
-	dna has a value which is a string
-	rna has a value which is a string
-	cofactor has a value which is a string
-	energy has a value which is a string
-	cellwall has a value which is a string
-	lipid has a value which is a string
-	compounds has a value which is a reference to a list where each element is a TemplateBiomassCompounds
-tempbiomass_id is a string
-TemplateBiomassCompounds is a reference to a list containing 7 items:
-	0: (compound) a compound_id
-	1: (compartment) a compartment_id
-	2: (cpdclass) a string
-	3: (universal) a string
-	4: (coefficientType) a string
-	5: (coefficient) a string
-	6: (linkedCompounds) a reference to a list where each element is a reference to a list containing 2 items:
-		0: (coeffficient) a string
-		1: (compound) a compound_id
-
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
 
 
 =end text
