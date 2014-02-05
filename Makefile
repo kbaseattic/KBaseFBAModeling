@@ -1,6 +1,5 @@
 ROOT_DEV_MODULE_DIR := $(abspath $(dir $lastword $(MAKEFILE_LIST)))
 TARGET = $(KB_TOP)/../
-KB_TOP = $(KB_TOP)/tools
  
 include $(KB_TOP)/tools/Makefile.common
 
