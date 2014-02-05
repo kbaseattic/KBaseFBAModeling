@@ -389,7 +389,6 @@ sub _workspaceServices {
 	}
 	if (!defined($self->{_workspaceServices}->{$self->_workspaceURL()})) {
 		$self->{_workspaceServices}->{$self->_workspaceURL()} = Bio::KBase::workspace::Client->new($self->_workspaceURL());
-		print STDERR "TOKEN:".$self->_authentication()."\n";
 		$self->{_workspaceServices}->{$self->_workspaceURL()}->{token} = $self->_authentication();
 		$self->{_workspaceServices}->{$self->_workspaceURL()}->{client}->{token} = $self->_authentication();
 	}
@@ -559,7 +558,7 @@ sub _get_genomeObj_from_CDM {
 		}	
   		push(@{$genomeObj->{features}},$feature);
   	}
-    my $genomeObj = Bio::KBase::ObjectAPI::KBaseGenomes::Genome->new($genomeObj);
+    $genomeObj = Bio::KBase::ObjectAPI::KBaseGenomes::Genome->new($genomeObj);
 	return [$genomeObj,$ContigObj];
 }
 
@@ -680,7 +679,7 @@ sub _get_genomeObj_from_SEED {
   		push(@{$genomeObj->{features}},$feature);	
 	}
 	my $ContigObj = Bio::KBase::ObjectAPI::KBaseGenomes::ContigSet->new($contigset);
-	my $genomeObj = Bio::KBase::ObjectAPI::KBaseGenomes::Genome->new($genomeObj);
+	$genomeObj = Bio::KBase::ObjectAPI::KBaseGenomes::Genome->new($genomeObj);
 	return [$genomeObj,$ContigObj];
 }
 
@@ -2034,6 +2033,9 @@ sub _queueJob {
 		"state" => $args->{"state"},
 		auth => $self->_authentication(),
 	};
+	if (!defined($args->{jobdata}->{wsurl})) {
+		$args->{jobdata}->{wsurl} = $self->_workspaceURL();
+	}
 	return $self->_jobserv()->queue_job($input);
 }
 
@@ -2136,8 +2138,8 @@ sub _build_sequence_object {
 					$contigobject->{annotations} = [];
 					$contigobject->{function} = $description;
 				} else {
-					$contigobject->{name} => $subarray->[0];
-					$contigobject->{description} => $description;
+					$contigobject->{name} = $subarray->[0];
+					$contigobject->{description} = $description;
 				}
 				push(@{$object->{$fieldname}},$contigobject);
  			}
@@ -2348,7 +2350,7 @@ sub _annotate_genome {
 			$feature->type($gene->{type});
 			$feature->protein_translation($gene->{protein_translation}),
 			$feature->protein_translation_length(length($gene->{protein_translation}));
-  			$feature->dna_sequence_length => 3*$gene->{protein_translation_length};
+  			$feature->dna_sequence_length = 3*$gene->{protein_translation_length};
   			$feature->md5(Digest::MD5::md5_hex($gene->{protein_translation}));
 			$feature->location($gene->{location});
 		}
@@ -9251,7 +9253,7 @@ sub gapgen_model
 	$gapgen->fba_ref($fba->_reference());
 	my $ggMeta = $self->_save_msobject($gapgen,"Gapgeneration",$input->{workspace},$gapgen->id(),{hidden => 1});
 	#Since gapgen can take hours, we retrieve the model again in case it changed since accessed previously
-	my $model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model},{refreshcache => 1});
+	$model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model},{refreshcache => 1});
 	$model->add("gapgens",{
 		id => $gapgen->id(),
 		gapgen_id => $gapgen->id(),
@@ -10650,6 +10652,7 @@ sub run_job
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["job"],{usecpx => 0});
     $job = $self->_getJob($input->{job});
+    print STDERR Data::Dumper->Dump([$job]);
     eval {
 	    $self->_jobserv()->set_job_status({
 		   	jobid => $job->{id},
