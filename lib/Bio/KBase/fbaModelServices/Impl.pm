@@ -148,7 +148,7 @@ sub _resetKBaseStore {
 	$temp = pop(@{$temp});
 	my $newparams = {};
 	foreach my $param (keys(%{$params})) {
-		if ($param ne "fasta") {
+		if ($param ne "fasta" && $param ne "annotations") {
 			$newparams->{$param} = $params->{$param};
 		}
 	}
