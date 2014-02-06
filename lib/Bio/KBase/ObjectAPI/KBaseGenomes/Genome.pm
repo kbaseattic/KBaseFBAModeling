@@ -53,5 +53,18 @@ sub genome_typed_object {
 	return $output;
 }
 
+=head3 searchForFeature
+Definition:
+	Bio::KBase::ObjectAPI::KBaseGenomes::Feature = Bio::KBase::ObjectAPI::KBaseGenomes::Feature->searchForFeature(string);
+Description:
+	Searches for a gene by ID, name, or alias.
+
+=cut
+
+sub searchForFeature {
+	my ($self,$id) = @_;
+	return $self->geneAliasHash()->{$id};
+}
+
 __PACKAGE__->meta->make_immutable;
 1;
