@@ -29,7 +29,7 @@ my $ws = Bio::KBase::workspace::Client->new("http://140.221.84.209:7058");
 $ws->{token} = $token;
 $ws->{client}->{token} = $token;
 $ENV{KB_SERVICE_NAME}="fbaModelServices";
-$ENV{KB_DEPLOYMENT_CONFIG}=$Bin."/../configs/test.cfg";
+#$ENV{KB_DEPLOYMENT_CONFIG}=$Bin."/../configs/test.cfg";
 my $obj = Bio::KBase::fbaModelServices::Impl->new({workspace => $ws});
 ################################################################################
 #Tests 1-3: retrieving a biochemistry object and reaction and compound data
@@ -85,7 +85,7 @@ my $media = $obj->addmedia({
 	minflux => [-1000,-1000,-1000]
 });
 ok defined($media), "Media successfully added to workspace!";
-my $media = $obj->addmedia({
+$media = $obj->addmedia({
 	media => "Complete",
 	workspace => "fbaservicestest",
 	name => "Complete",
@@ -154,7 +154,7 @@ ok defined($mdls->[0]), "Successfully printed model data!";
 #Test 13-15: importing a phenotypes set, simulating phenotypes, and export simulation results
 ################################################################################
 #Now test phenotype import
-my $phenos = $obj->import_phenotypes({
+$phenos = $obj->import_phenotypes({
 	workspace => "fbaservicestest",
 	genome => $genome->[0],
 	genome_workspace => "fbaservicestest",

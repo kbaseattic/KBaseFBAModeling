@@ -2492,6 +2492,7 @@ sub new
   		if (defined($options->{$p})) {
 			$params->{$p} = $options->{$p};
         }
+        print STDERR $p."\t".$params->{$p}
     }
 
     # now, if params has one of the predefined set of parameter keys,

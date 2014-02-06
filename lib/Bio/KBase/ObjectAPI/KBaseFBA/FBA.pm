@@ -72,7 +72,7 @@ sub _buildmfatoolkitBinary {
 		chomp $bin;
 	}
 	if ((! defined $bin) || (!-e $bin)) {
-		Bio::KBase::ObjectAPI::utilities::error("MFAToolkit binary could not be found!");
+		Bio::KBase::ObjectAPI::utilities::error("MFAToolkit binary could not be found at ".Bio::KBase::ObjectAPI::utilities::MFATOOLKIT_BINARY()."!");
 	}
 	return $bin;
 }
