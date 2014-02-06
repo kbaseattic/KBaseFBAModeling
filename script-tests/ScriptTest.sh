@@ -1,3 +1,4 @@
+export PATH=../../../bin:$PATH
 ws-url dev
 kbase-login kbasetest -p "@Suite525"
 ws-workspace scripttest
