@@ -273,6 +273,9 @@ sub runFBA {
 	system($self->command());
 	$self->loadMFAToolkitResults();
 	if (defined(Bio::KBase::ObjectAPI::utilities::FinalJobCache())) {
+		if (!-d Bio::KBase::ObjectAPI::utilities::FinalJobCache()) {
+			File::Path::mkpath (Bio::KBase::ObjectAPI::utilities::FinalJobCache());
+		}
 		system("cd ".$self->jobPath().";tar -czf ".Bio::KBase::ObjectAPI::utilities::FinalJobCache()."/".$self->jobID().".tgz ".$self->jobID());
 	}
 	if ($self->jobDirectory() =~ m/\/fbajobs\/.+/) {

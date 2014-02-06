@@ -43,7 +43,7 @@ CLIENT_TESTS = $(wildcard client-tests/*.t)
 SCRIPT_TESTS = $(wildcard script-tests/*.sh)
 SERVER_TESTS = $(wildcard server-tests/*.t)
 
-test: test-service test-scripts test-client
+test: test-service
 	@echo "running server, script and client tests"
 
 test-service:
