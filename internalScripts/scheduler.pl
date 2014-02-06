@@ -137,7 +137,9 @@ sub monitor {
 				my $runningJobs = $self->runningJobs($type);
 				for (my $i=0; $i < @{$jobs}; $i++) {
 					my $job = $jobs->[$i];
+					print "Outside:".$job->{id}."\n";
 					if (defined($job->{jobdata}->{qsubid}) && -d $self->jobdirectory()."/jobs/".$job->{id}) {
+						print "Inside:".$job->{id}."\n";
 						my $id = $job->{jobdata}->{qsubid};
 						if (!defined($runningJobs->{$id})) {
 							my $input = {
