@@ -2059,7 +2059,7 @@ sub parseOutputFiles {
 		}
 	}
 	if (-e $directory."/suboptimalSolutions.txt") {
-		$self->outputfiles()->{"suboptimalSolutions.txt"} = [1];
+		$self->outputfiles()->{"suboptimalSolutions.txt"} = ["1"];
 	}
 }
 
