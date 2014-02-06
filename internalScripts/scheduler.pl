@@ -137,38 +137,54 @@ sub monitor {
 				my $runningJobs = $self->runningJobs($type);
 				for (my $i=0; $i < @{$jobs}; $i++) {
 					my $job = $jobs->[$i];
-					print "Outside:".$job->{id}."\n";
-					if (defined($job->{jobdata}->{qsubid}) && -d $self->jobdirectory()."/jobs/".$job->{id}) {
-						print "Inside:".$job->{id}."\n";
-						my $id = $job->{jobdata}->{qsubid};
-						if (!defined($runningJobs->{$id})) {
+					if (-d $self->jobdirectory()."/jobs/".$job->{id}) {
+						if (defined($job->{jobdata}->{qsubid})) {
+							my $id = $job->{jobdata}->{qsubid};
+							if (!defined($runningJobs->{$id})) {
+								my $input = {
+									jobid => $job->{id},
+									status => "error",
+									auth => $self->auth(),
+									currentStatus => "running"
+								};
+								my $filename = $self->jobdirectory()."/errors/".$self->script($type).".e".$id;
+								if (-e $filename) {
+									my $error = "";
+									open (INPUT, "<", $filename);
+								    while (my $Line = <INPUT>) {
+								        chomp($Line);
+								        $Line =~ s/\r//;
+										$error .= $Line."\n";
+								    }
+								    close(INPUT);
+									$input->{jobdata}->{error} = $error;
+								}
+								eval {
+									local $Bio::KBase::workspaceService::Server::CallContext = {};
+									my $status = $self->client()->set_job_status($input);
+								};
+								$runningCount--;
+							}
+						} else {
 							my $input = {
 								jobid => $job->{id},
 								status => "error",
 								auth => $self->auth(),
-								currentStatus => "running"
+								currentStatus => "running",
+								jobdata => {error => "Failed to queue in cluster!"}
 							};
-							my $filename = $self->jobdirectory()."/errors/".$self->script($type).".e".$id;
-							if (-e $filename) {
-								my $error = "";
-								open (INPUT, "<", $filename);
-							    while (my $Line = <INPUT>) {
-							        chomp($Line);
-							        $Line =~ s/\r//;
-									$error .= $Line."\n";
-							    }
-							    close(INPUT);
-								$input->{jobdata}->{error} = $error;
-							}
 							eval {
 								local $Bio::KBase::workspaceService::Server::CallContext = {};
 								my $status = $self->client()->set_job_status($input);
 							};
 							$runningCount--;
 						}
+					} elsif (!-d $self->jobdirectory()."/jobs/".$job->{id}) {
+						print $job->{id}." running in another cluster!\n";
+						$runningCount--;
 					}
 				}
-				print $runningCount." jobs of type ".$type." now running!\n";
+				print $runningCount." jobs of type ".$type." now running on this cluster!\n";
 				#Queuing new jobs
 				my $openSlots = ($count - $runningCount);
 				$jobs = [];
