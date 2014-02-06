@@ -6,11 +6,11 @@
 ########################################################################
 use strict;
 use warnings;
-use Bio::KBase::workspace::ScriptHelpers qw( printObjectInfo printJobData auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
+use Bio::KBase::workspace::ScriptHelpers qw( printObjectInfo printJobData get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
 use Bio::KBase::fbaModelServices::ScriptHelpers qw(get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Genome ID"];
-my $servercommand = "annotate_workspace_Genome";
+my $servercommand = "queue_job";
 my $script = "ga-annotate-ws-genome";
 my $translation = {
 	"Genome ID" => "Genome_uid",
@@ -32,11 +32,11 @@ if ($opt->{callgenes} && $opt->{callgenes} == 1) {
 	$params->{annotation_parameters}->{call_genes} = 1;
 }
 #Calling the server
-my $output = runFBACommand($params,$servercommand,$opt);
+my $output = runFBACommand({method => "annotate_workspace_Genome",parameters => $params},$servercommand,$opt);
 #Checking output and report results
 if (!defined($output)) {
 	print "Genome annotation failed!\n";
 } else {
-	print "Genome annotation succeeded:\n";
-	printObjectInfo($output);
+	print "Genome annotation queued:\n";
+	printJobData($output);
 }
