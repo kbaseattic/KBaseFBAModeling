@@ -12055,7 +12055,7 @@ sub annotate_workspace_Genome
 	});
 	my $genomeObj = $self->_get_msobject("Genome",$params->{Genome_ws},$params->{Genome_uid});
 	$self->_annotate_genome($genomeObj,$params->{annotation_parameters});
-  	$output = $self->_save_msobject($genomeObj,"Genome",$params->{workspace},$params->{uid});
+  	$output = $self->_save_msobject($genomeObj,"Genome",$params->{workspace},$params->{new_uid});
 	$self->_clearContext();
     #END annotate_workspace_Genome
     my @_bad_returns;
