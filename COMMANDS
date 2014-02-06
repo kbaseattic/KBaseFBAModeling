@@ -36,7 +36,6 @@ kbfba-importprobanno	modeling
 kbfba-importtemplate	modeling
 kbfba-importtranslation	modeling
 kbfba-integratesolution	modeling
-kbfba-jobdone	modeling
 kbfba-loadgenome	modeling
 kbfba-queuefba	modeling
 kbfba-runfba	modeling
@@ -78,7 +77,6 @@ fba-importprobanno	modeling
 fba-importtemplate	modeling
 fba-importtranslation	modeling
 fba-integratesolution	modeling
-fba-jobdone	modeling
 fba-loadgenome	modeling
 fba-queuefba	modeling
 fba-runfba	modeling
