@@ -15996,8 +15996,9 @@ sub metagenome_to_fbamodels
 		}
 		#Adding OTU functions to functions in tail
 		if ($built == 0) {
+			my $funcs = $otu->functions();
 			for (my $j=0; $j < @{$otu->functions()}; $j++) {
-				my $func = $otu->functions()->[$j];
+				my $func = $funcs->[$j];
 				if ($self->_assess_confidence($metaanno->confidence_type(),$params->{confidence_threshold},$func->confidence()) == 1) {
 					if (!defined($functions->{$func->functional_role()})) {
 						$functions->{$func->functional_role()} = {
