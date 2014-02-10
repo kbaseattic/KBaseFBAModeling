@@ -644,6 +644,9 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 				$data->{$item} = $cues->[$i]->$item();
 			}
 		}
+		if (!defined($data->{priority})) {
+			$data->{priority} = 0;
+		}
 		$data->{id} = $cues->[$i]->name();
 		if (defined($biochemstruct)) {
 			if (defined($cues->[$i]->structure())) {
