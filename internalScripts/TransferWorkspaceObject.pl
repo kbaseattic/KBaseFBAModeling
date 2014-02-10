@@ -425,7 +425,12 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 			$data->{$item} = $obj->{$item};
 		}
 	}
-	print $data->{id}."\n";
+	if (!defined($data->{name})) {
+		$data->{name} = $data->{id};
+	}
+	if (!defined($data->{source_id})) {
+		$data->{source_id} = $data->{name};
+	}
 	$data->{genome_ref} = $genobj->_reference();
 	my $i=1;
 	my $biochem = $newstore->get_object("kbase/default");
