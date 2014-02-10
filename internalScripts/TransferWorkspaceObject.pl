@@ -428,7 +428,7 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 	print $data->{id}."\n";
 	$data->{genome_ref} = $genobj->_reference();
 	my $i=1;
-	my $biochem = $newstore->get_object("Biochemistry","kbase/default");
+	my $biochem = $newstore->get_object("kbase/default");
 	foreach my $pheno (@{$obj->{phenotypes}}) {
 		my $media = $newstore->get_object($pheno->[2]."/".$pheno->[1]);
 		my $newpheno = {
