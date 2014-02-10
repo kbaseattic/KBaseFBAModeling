@@ -30,7 +30,9 @@ my $genomehash = {};
 while (my $str = <$fh>) {
 	chomp($str);
 	my $array = [split(/\t/,$str)];
-	$genomehash->{$array->[1]} = $array->[0];
+	if (defined($array->[1])) {
+		$genomehash->{$array->[1]} = $array->[0];
+	}
 }
 close($fh);
 
@@ -454,6 +456,7 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 		$i++;	
 	}
 	my $NewPhenoSet = Bio::KBase::ObjectAPI::KBasePhenotypes::PhenotypeSet->new($data);
+	$NewPhenoSet->parent($newstore);
 	eval {
 		$NewPhenoSet->save($array->[1]."/".$array->[2]);
 		print "Success:".$array->[1]."/".$array->[2]."/".$obj->{"_kbaseWSMeta"}->{wsinst}."\n";
