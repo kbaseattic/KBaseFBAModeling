@@ -8670,13 +8670,10 @@ sub gapfill_model
     }
 	$fba->runFBA();
 	#Error checking the FBA and gapfilling solution
-	if (!defined($fba->objectiveValue())) {
-		$self->_error("Gapfilling failed to produce any results. Check gapfilling infrastructure!");
-	}
-	my $gfoutput = $fba->outputfiles()->{"CompleteGapfillingOutput.txt"};
-	if ( !defined($gfoutput->[1] ) ) {
+	if (!defined($fba->outputfiles()->{"CompleteGapfillingOutput.txt"}->[1] ) ) {
 		$self->_error("Gapfilling failed to produce an output file. Check gapfilling infrastructure!");
 	}
+	my $gfoutput = $fba->outputfiles()->{"CompleteGapfillingOutput.txt"};
 	for (my $i=0; $i < @{$gfoutput}; $i++) {
 		my $line = $gfoutput->[$i];
 		if ($line =~ /FAILED/ && $line =~ /Prelim/ && $line =~ /bio\d+/) {
