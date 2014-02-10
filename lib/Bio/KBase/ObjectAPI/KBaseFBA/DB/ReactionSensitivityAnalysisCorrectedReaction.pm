@@ -19,7 +19,6 @@ has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metacl
 has modelreaction_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has normalized_required_reaction_count => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has required_reactions => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
-has id => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
@@ -27,8 +26,6 @@ has modelreaction => (is => 'rw', type => 'link(FBAModel,modelreactions,modelrea
 
 
 # BUILDERS:
-sub _build_reference { my ($self) = @_;return $self->parent()->_reference().'/corrected_reactions/id/'.$self->id(); }
-sub _build_uuid { my ($self) = @_;return $self->_reference(); }
 sub _build_modelreaction {
 	 my ($self) = @_;
 	 return $self->getLinkedObject($self->modelreaction_ref());
@@ -63,17 +60,10 @@ my $attributes = [
             'default' => 'sub {return [];}',
             'type' => 'ArrayRef',
             'perm' => 'rw'
-          },
-          {
-            'req' => 0,
-            'printOrder' => -1,
-            'name' => 'id',
-            'type' => 'Str',
-            'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {modelreaction_ref => 0, normalized_required_reaction_count => 1, required_reactions => 2, id => 3};
+my $attribute_map = {modelreaction_ref => 0, normalized_required_reaction_count => 1, required_reactions => 2};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {

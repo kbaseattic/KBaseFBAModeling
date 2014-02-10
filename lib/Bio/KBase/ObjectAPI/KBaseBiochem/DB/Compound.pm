@@ -21,7 +21,7 @@ has isCofactor => (is => 'rw', isa => 'Bool', printOrder => '3', default => '0',
 has deltaG => (is => 'rw', isa => 'Num', printOrder => '6', type => 'attribute', metaclass => 'Typed');
 has pkbs => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
 has formula => (is => 'rw', isa => 'Str', printOrder => '3', default => '', type => 'attribute', metaclass => 'Typed');
-has mass => (is => 'rw', isa => 'Int', printOrder => '4', type => 'attribute', metaclass => 'Typed');
+has mass => (is => 'rw', isa => 'Num', printOrder => '4', type => 'attribute', metaclass => 'Typed');
 has pkas => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
 has id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 has unchargedFormula => (is => 'rw', isa => 'Str', printOrder => '-1', default => '', type => 'attribute', metaclass => 'Typed');
@@ -115,7 +115,7 @@ my $attributes = [
             'printOrder' => 4,
             'name' => 'mass',
             'default' => undef,
-            'type' => 'Int',
+            'type' => 'Num',
             'description' => 'Atomic mass of the compound',
             'perm' => 'rw'
           },

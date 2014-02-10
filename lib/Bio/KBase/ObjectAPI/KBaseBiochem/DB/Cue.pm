@@ -24,7 +24,7 @@ has structure_type => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'at
 has structure_key => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has smallMolecule => (is => 'rw', isa => 'Bool', printOrder => '8', type => 'attribute', metaclass => 'Typed');
 has formula => (is => 'rw', isa => 'Str', printOrder => '3', default => '', type => 'attribute', metaclass => 'Typed');
-has mass => (is => 'rw', isa => 'Int', printOrder => '4', type => 'attribute', metaclass => 'Typed');
+has mass => (is => 'rw', isa => 'Num', printOrder => '4', type => 'attribute', metaclass => 'Typed');
 has id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 has abbreviation => (is => 'rw', isa => 'Str', printOrder => '2', default => '', type => 'attribute', metaclass => 'Typed');
 has unchargedFormula => (is => 'rw', isa => 'Str', printOrder => '-1', default => '', type => 'attribute', metaclass => 'Typed');
@@ -120,7 +120,7 @@ my $attributes = [
             'printOrder' => 4,
             'name' => 'mass',
             'default' => undef,
-            'type' => 'Int',
+            'type' => 'Num',
             'description' => undef,
             'perm' => 'rw'
           },
