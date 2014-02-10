@@ -694,7 +694,11 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 			my $cues = $compounds->[$i]->cues();
 			foreach my $cue (keys(%{$cues})) {
 				my $cueobj = $obj->getObject("cues",$cue);
-				$data->{cues}->{"~/cues/id/".$cueobj->name()} = $cues->{$cue};
+				if (defined($cueobj)) {
+					$data->{cues}->{"~/cues/id/".$cueobj->name()} = $cues->{$cue};
+				} else {
+					print STDERR $cue." not found!\n";
+				}
 			}
 		}
 		if (defined($compounds->[$i]->abstractCompound_uuid())) {
@@ -725,7 +729,11 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 			my $cues = $reactions->[$i]->cues();
 			foreach my $cue (keys(%{$cues})) {
 				my $cueobj = $obj->getObject("cues",$cue);
-				$data->{cues}->{"~/cues/id/".$cueobj->name()} = $cues->{$cue};
+				if (defined($cueobj)) {
+					$data->{cues}->{"~/cues/id/".$cueobj->name()} = $cues->{$cue};
+				} else {
+					print STDERR $cue." not found!\n";
+				}	
 			}
 		}
 		if (defined($reactions->[$i]->reagents())) {
