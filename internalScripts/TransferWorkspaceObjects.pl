@@ -32,6 +32,8 @@ my $errors = [];
 my $currentproc = -1;
 my $object;
 my $error;
+open ( my $fh, ">", $directory."/".$targettype."-".$index."-new_errors.txt");
+print @{$objectlist}." objects to print!\n";
 for (my $i=0; $i < @{$objectlist}; $i++) {
 	my $array = [split(/\t/,$objectlist->[$i])];
 	if (!defined($targettype) || $array->[0] eq $targettype) {
@@ -48,10 +50,12 @@ for (my $i=0; $i < @{$objectlist}; $i++) {
 			for (my $j=0; $j < @{$OutputArray}; $j++) {
 				if ($OutputArray->[$j] =~ m/^Success:(.+)/) {
 					$object = $1;
+					print "Success:".$i."\t".$array->[0]."\t".$array->[1]."\t".$array->[2]."\t".$array->[3]."\n";
 					push(@{$successobj},$objectlist->[$i]);
 					$found = 1;
 				} elsif ($OutputArray->[$j] =~ m/^Failed:(.+)/) {
 					$object = $1;
+					print "Fail:".$i."\t".$array->[0]."\t".$array->[1]."\t".$array->[2]."\t".$array->[3]."\n";
 					push(@{$failobj},$objectlist->[$i]);
 					$found = 1;
 				} elsif ($OutputArray->[$j] =~ m/^ERROR_MESSAGE(.+)/) {
@@ -68,6 +72,7 @@ for (my $i=0; $i < @{$objectlist}; $i++) {
 						}
 						$j++;
 					}
+					print $fh $error."\n\n\n\n";
 					push(@{$errors},$objectlist->[$i]);
 					push(@{$errors},$error);
 				}
@@ -81,6 +86,7 @@ for (my $i=0; $i < @{$objectlist}; $i++) {
 		}
 	}
 }
+close($fh);
 Bio::KBase::ObjectAPI::utilities::PRINTFILE($directory."/".$targettype."-".$index."-success.txt",$successobj);
 Bio::KBase::ObjectAPI::utilities::PRINTFILE($directory."/".$targettype."-".$index."-fail.txt",$failobj);
 Bio::KBase::ObjectAPI::utilities::PRINTFILE($directory."/".$targettype."-".$index."-errors.txt",$errors);
