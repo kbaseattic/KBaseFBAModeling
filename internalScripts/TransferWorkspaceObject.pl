@@ -433,6 +433,16 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 	if (!defined($data->{source_id})) {
 		$data->{source_id} = $data->{name};
 	}
+	if ($array->[2] =~ m/essent/) {
+		$data->{type} = "essentiality";
+	} elsif ($array->[2] =~ m/biolog/) {
+		$data->{type} = "biolog";
+	} else {
+		$data->{type} = "unknown";
+	}
+	if (!defined($data->{importErrors})) {
+		$data->{importErrors} = "";
+	}
 	$data->{genome_ref} = $genobj->_reference();
 	my $i=1;
 	my $biochem = $newstore->get_object("kbase/default");
