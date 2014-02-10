@@ -450,7 +450,7 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 		my $media = $newstore->get_object($pheno->[2]."/".$pheno->[1]);
 		my $newpheno = {
 			id => $data->{id}.".pheno.".$i,
-			name => $pheno->[5],
+			name => $data->{id}.".pheno.".$i,
 			normalizedGrowth => $pheno->[4],
 			media_ref => $media->_reference(),
 			geneko_refs => [],
