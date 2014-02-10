@@ -3,7 +3,7 @@
 use strict;
 use Config::Simple;
 use Bio::KBase::workspaceService::Client;
-#use Bio::KBase::workspaceService::Impl;
+use Bio::KBase::workspaceService::Impl;
 use Bio::KBase::workspace::Client;
 use ModelSEED::KBaseStore;
 use JSON::XS;
@@ -26,6 +26,7 @@ my $c = Config::Simple->new();
 $c->read($config);
 
 open( my $fh, "<", $filename);
+my $genomehash = {};
 while (my $str = <$fh>) {
 	chomp($str);
 	my $array = [split(/\t/,$str)];
@@ -33,14 +34,20 @@ while (my $str = <$fh>) {
 }
 close($fh);
 
-my $wserv = Bio::KBase::workspaceService::Client->new($c->param("kbclientconfig.wsurl"));
-#my $wserv = Bio::KBase::workspaceService::Impl->new({
-#	"mongodb-database" => "workspace_service",
-#	"mssserver-url" => "http://biologin-4.mcs.anl.gov:7050",
-#	"idserver-url" => "http://kbase.us/service/idserver",
-#	"mongodb-host" => "mongodb.kbase.us"
-#});
+my $wserv;
+if ($c->param("kbclientconfig.wsurl") eq "impl") {
+	$wserv = Bio::KBase::workspaceService::Impl->new({
+		"mongodb-database" => "workspace_service",
+		"mssserver-url" => "http://biologin-4.mcs.anl.gov:7050",
+		"idserver-url" => "http://kbase.us/service/idserver",
+		"mongodb-host" => "mongodb.kbase.us"
+	});
+} else {
+	$wserv = Bio::KBase::workspaceService::Client->new($c->param("kbclientconfig.wsurl"));
+}
 my $wsderv = Bio::KBase::workspace::Client->new($c->param("kbclientconfig.wsdurl"),$c->param("kbclientconfig.auth"));
+$wsderv->{token} = $c->param("kbclientconfig.auth");
+$wsderv->{client}->{token} = $c->param("kbclientconfig.auth");
 my $idserv = Bio::KBase::IDServer::Client->new($c->param("kbclientconfig.idurl"));
 
 my $oldstore = ModelSEED::KBaseStore->new({
@@ -410,24 +417,27 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 		print "ERROR_MESSAGE".$@."END_ERROR_MESSAGE\n";
 	}
 } elsif ($array->[0] eq "PhenotypeSet") {
-	my $data = {phenotypes => []};
-	my $list = [qw(id name source source_id importErrors)];
+	my $genobj = $newstore->get_object($obj->{genome_workspace}."/".$obj->{genome});
+	my $data = {id => $genobj->id().".phe.".$idserv->allocate_id_range($genobj->id().".phe.",1),phenotypes => []};
+	my $list = [qw(name source source_id importErrors)];
 	foreach my $item (@{$list}) {
-		if (defined($obj->$item())) {
-			$data->{$item} = $obj->$item();
+		if (defined($obj->{$item})) {
+			$data->{$item} = $obj->{$item};
 		}
 	}
-	my $genobj = $newstore->get_object("Genome",$obj->{genome_workspace}."/".$obj->{genome});
+	print $data->{id}."\n";
 	$data->{genome_ref} = $genobj->_reference();
 	my $i=1;
 	my $biochem = $newstore->get_object("Biochemistry","kbase/default");
 	foreach my $pheno (@{$obj->{phenotypes}}) {
-		my $media = $newstore->get_object("Media",$pheno->[2]."/".$pheno->[1]);
+		my $media = $newstore->get_object($pheno->[2]."/".$pheno->[1]);
 		my $newpheno = {
 			id => $data->{id}.".pheno.".$i,
 			name => $pheno->[5],
 			normalizedGrowth => $pheno->[4],
-			media_ref => $media->_reference()
+			media_ref => $media->_reference(),
+			geneko_refs => [],
+			additionalcompound_refs => []
 		};
 		foreach my $gene (@{$pheno->[0]}) {
 			push(@{$newpheno->{geneko_refs}},$data->{genome_ref}."/features/id/".$gene);

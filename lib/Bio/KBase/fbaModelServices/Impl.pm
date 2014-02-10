@@ -10664,6 +10664,7 @@ sub run_job
 		   	status => "running",
 		   	auth => $self->_authentication(),
 		   	currentStatus => $job->{status},
+		   	jobdata => {error => "None"}
 	    });
     };
     my $params = $job->{jobdata};
@@ -10675,7 +10676,8 @@ sub run_job
 	    	jobid => $input->{job},
 	    	status => "done",
 	    	auth => $self->_authentication(),
-	    	currentStatus => "running"
+	    	currentStatus => "running",
+	    	jobdata => {error => "None"}
 	    });
     };
     $self->_clearContext();

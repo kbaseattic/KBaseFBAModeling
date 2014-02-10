@@ -339,7 +339,7 @@ sub createJobDirectory {
 					} else {
 						$line .= $cpd->compound()->$function();
 					}
-					if ($index > 0 && $function !~ m/(name)|(id)|(abbreviation)/) {
+					if ($index > 0 && $function =~ m/(name)|(id)|(abbreviation)/) {
 						$line .= "_".$index;
 					}
 				}
