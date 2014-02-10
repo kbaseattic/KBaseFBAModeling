@@ -474,7 +474,7 @@ sub createSolutionsFromArray {
 	if (defined($line)) {
 		my $array = [split(/\t/,$data->[$line])];
 		if ($array->[1] eq "UNNEEDED") {
-			$gfsolution = $self->add("gapfillingSolutions",{id => $self->id().".gfsol.".$solcount});
+			my $gfsolution = $self->add("gapfillingSolutions",{id => $self->id().".gfsol.".$solcount});
 			return;
 		} else {
 			my $solutionsArray = [split(/\|/,$array->[1])];   				
