@@ -12,7 +12,7 @@ $|=1;
 
 my $config = $ARGV[0];
 my $object = $ARGV[1];
-my $filename = $ARGV[1];
+my $filename = $ARGV[2];
 if (!defined($config)) {
 	print STDERR "No config file provided!\n";
 	exit(-1);
