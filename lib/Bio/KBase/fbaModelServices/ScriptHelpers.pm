@@ -11,7 +11,7 @@ use Bio::KBase::workspaceService::Client;
 use Bio::KBase::workspace::ScriptHelpers qw(workspaceURL get_ws_client workspace parseObjectMeta parseWorkspaceMeta);
 use Exporter;
 use parent qw(Exporter);
-our @EXPORT_OK = qw( get_old_ws_client fbaws printJobData fbaURL get_fba_client runFBACommand universalFBAScriptCode fbaTranslation roles_of_function );
+our @EXPORT_OK = qw(getToken get_old_ws_client fbaws printJobData fbaURL get_fba_client runFBACommand universalFBAScriptCode fbaTranslation roles_of_function );
 
 our $defaultURL = "https://kbase.us/services/KBaseFBAModeling";
 our $localhostURL = "http://127.0.0.1:4043";
