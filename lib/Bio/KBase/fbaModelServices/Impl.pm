@@ -560,6 +560,9 @@ sub _get_genomeObj_from_CDM {
 		}	
   		push(@{$genomeObj->{features}},$feature);
   	}
+  	if (!defined($genomeObj->{md5})) {
+    	$genomeObj->{md5} = "";
+    }
     $genomeObj = Bio::KBase::ObjectAPI::KBaseGenomes::Genome->new($genomeObj);
 	return [$genomeObj,$ContigObj];
 }
