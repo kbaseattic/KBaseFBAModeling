@@ -7,7 +7,7 @@
 use strict;
 use warnings;
 use Bio::KBase::workspaceService::Helpers qw(printJobData auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::fbaModelServices::Helpers qw(fbaws get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Model ID","Reactions (; delimiter)"];
 my $servercommand = "reaction_sensitivity_analysis";
@@ -26,7 +26,7 @@ my $specs = [
     [ 'modelws|m:s', 'Workspace where model is located' ],
     [ 'type|t:s', 'Type of reaction sensitivity analysis' ],
     [ 'fromfile|f', 'Load model list from file. Input file should have three columns with headers: Model, Workspace, and Abundance.' ],
-    [ 'workspace|w=s', 'Workspace to save merged model', { "default" => workspace() } ],
+    [ 'workspace|w=s', 'Workspace to save merged model', { "default" => fbaws() } ],
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
 $params->{reactions_to_delete} = [split(/;/,$opt->{"Reactions (; delimiter)"})];

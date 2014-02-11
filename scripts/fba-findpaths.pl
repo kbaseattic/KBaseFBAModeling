@@ -8,7 +8,7 @@
 use strict;
 use warnings;
 use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::fbaModelServices::Helpers qw(fbaws get_fba_client runFBACommand universalFBAScriptCode );
 
 #Defining globals describing behavior
 my $primaryArgs = [ "Reaction synonyms ID", "Media ID", "Input Model ID", "Output Model ID" ];
@@ -30,8 +30,8 @@ my $translation = {
 #Defining usage and options
 my $specs = [
 	[ 'iterations|i', 'number of times to run FBA to find paths', { "default" => 1 } ],
-	[ 'workspace|w:s', 'ID of workspace containing reaction synonyms and model objects', { "default" => workspace() } ],
-	[ 'mediaws:s', 'ID of workspace containing media object', { "default" => workspace() } ],
+	[ 'workspace|w:s', 'ID of workspace containing reaction synonyms and model objects', { "default" => fbaws() } ],
+	[ 'mediaws:s', 'ID of workspace containing media object', { "default" => fbaws() } ],
 	[ 'biochem|b:s', 'ID of the biochemistry database', { "default" => "default" } ],
 	[ 'biochemws:s', 'ID of workspace containing biochemistry database', { "default" => "kbase" } ],
 	[ 'overwrite|o', 'Set as 1 to overwrite existing output model object', { "default" => 0 } ],

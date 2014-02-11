@@ -7,7 +7,7 @@
 use strict;
 use warnings;
 use Bio::KBase::workspace::ScriptHelpers qw(get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::ScriptHelpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(fbaws get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Genome ID","Format (html,json,readable)"];
 my $servercommand = "export_genome";
@@ -20,7 +20,7 @@ my $translation = {
 };
 #Defining usage and options
 my $specs = [
-    [ 'workspace|w:s', 'Workspace with genome', { "default" => workspace() } ]
+    [ 'workspace|w:s', 'Workspace with genome', { "default" => fbaws() } ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
 #Calling the server

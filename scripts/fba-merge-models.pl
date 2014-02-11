@@ -7,7 +7,7 @@
 use strict;
 use warnings;
 use Bio::KBase::workspace::ScriptHelpers qw( printObjectInfo get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::ScriptHelpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(fbaws get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Models (workspace/ID/abundance) or Filename"];
 my $servercommand = "models_to_community_model";
@@ -22,7 +22,7 @@ my $specs = [
     [ 'newuid|u:s', 'ID for merged model in workspace' ],
     [ 'name|n:s', 'Name for merged model' ],
     [ 'fromfile|f', 'Load model list from file. Input file should have three columns with headers: Model, Workspace, and Abundance.' ],
-    [ 'workspace|w=s', 'Workspace to save merged model', { "default" => workspace() } ],
+    [ 'workspace|w=s', 'Workspace to save merged model', { "default" => fbaws() } ],
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
 $params->{models} = [];

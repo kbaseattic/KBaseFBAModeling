@@ -7,7 +7,7 @@
 use strict;
 use warnings;
 use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::fbaModelServices::Helpers qw(fbaws get_fba_client runFBACommand universalFBAScriptCode );
 use Bio::KBase::CDMI::CDMIClient;
 
 #Defining globals describing behavior
@@ -27,7 +27,7 @@ my $translation = {
 #Defining usage and options
 my $specs = [
     [ 'model|m:s', 'ID of the output model' ],
-    [ 'workspace|w:s', 'Workspace where output model object is stored', { "default" => workspace() } ],
+    [ 'workspace|w:s', 'Workspace where output model object is stored', { "default" => fbaws() } ],
     [ 'genomews:s', 'Workspace where genome object is located' ],
     [ 'defaultprob|d:f', 'Default probability for reactions not associated with a complex', { "default" => 0.0 } ],
     [ 'overwrite|o', 'Overwrite any existing model with same name' ]

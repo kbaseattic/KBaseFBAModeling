@@ -7,7 +7,7 @@
 use strict;
 use warnings;
 use Bio::KBase::workspace::ScriptHelpers qw(get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta printObjectInfo);
-use Bio::KBase::fbaModelServices::ScriptHelpers qw(printJobData get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(fbaws printJobData get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Model"];
 my $servercommand = "queue_gapfill_model";
@@ -95,7 +95,7 @@ my $specs = [
     [ 'transpen:s', 'Penalty for transport reactions', {"default" => 1} ],
 	[ 'probrxn=s', 'ID of probabilistic reaction object' ],
 	[ 'probanno=s', 'ID of probabilistic annotation object' ],
-    [ 'probannows:s', 'Workspace with probabilistic annotation or probabilistic reaction', { "default" => workspace() } ],
+    [ 'probannows:s', 'Workspace with probabilistic annotation or probabilistic reaction', { "default" => fbaws() } ],
     [ 'blacklist:s@', 'List of blacklisted reactions (; delimiter)' ],
     [ 'guaranteed:s@', 'List of guaranteed reactions (; delimiter)' ],
     [ 'allowedcmp:s@', 'List of allowed compartments (; delimiter)' ],
@@ -116,7 +116,7 @@ my $specs = [
     [ 'objfraction:s', 'Fraction of objective for follow on analysis', { "default" => 0.1 }],
     [ 'notes:s', 'Notes for flux balance analysis' ],
     [ 'solver:s', 'Solver to use for gapfilling' ],
-    [ 'workspace|w:s', 'Workspace to save FBA results', { "default" => workspace() } ],
+    [ 'workspace|w:s', 'Workspace to save FBA results', { "default" => fbaws() } ],
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
 if (!defined($opt->{mediaws}) && defined($opt->{media})) {

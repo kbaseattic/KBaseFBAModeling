@@ -7,7 +7,7 @@
 use strict;
 use warnings;
 use Bio::KBase::workspace::ScriptHelpers qw(printObjectInfo get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::ScriptHelpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(fbaws get_fba_client runFBACommand universalFBAScriptCode );
 
 my $manpage =
 "
@@ -66,7 +66,7 @@ my $specs = [
     [ 'templateid=s', 'ID of template model to use' ],
     [ 'templatews=s', 'Workspace with template model' ],
     [ 'core', 'Build core model'],
-    [ 'workspace|w=s', 'Reference default workspace', { "default" => workspace() } ],
+    [ 'workspace|w=s', 'Reference default workspace', { "default" => fbaws() } ],
     [ 'overwrite|o', 'Overwrite any existing model with same name' ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation,$manpage);

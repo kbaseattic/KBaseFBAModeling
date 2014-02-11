@@ -7,7 +7,7 @@
 use strict;
 use warnings;
 use Bio::KBase::workspace::ScriptHelpers qw(printObjectInfo get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::ScriptHelpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(fbaws get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Model ID"];
 my $servercommand = "integrate_reconciliation_solutions";
@@ -28,11 +28,11 @@ my $specs = [
     [ 'gapfillsols|f:s@', 'IDs of gapfilling solutions to integrate (; delimiter)' ],
     [ 'gapgensols|g:s@', 'IDs of gapgen solutions to integrate (; delimiter)'],
     [ 'outmodel|i:s', 'ID to save new model as'],
-    [ 'workspace|w:s', 'Reference default workspace', { "default" => workspace() } ],
+    [ 'workspace|w:s', 'Reference default workspace', { "default" => fbaws() } ],
     [ 'modelws:s', 'Workspace for input FBA model' ],
     [ 'overwrite|o', 'Overwrite any existing model with same name' ],
     [ 'rxnprobs|r:s', 'ID for a rxnprobs object to use to assign GPRs to gapfilled reactions' ],
-    [ 'rxnprobsws|x:s', 'Workspace for rxnprobs object', { "default" => workspace() } ]
+    [ 'rxnprobsws|x:s', 'Workspace for rxnprobs object', { "default" => fbaws() } ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
 $params->{gapfillSolutions} = [];

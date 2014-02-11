@@ -7,7 +7,7 @@
 use strict;
 use warnings;
 use Bio::KBase::workspace::ScriptHelpers qw(printObjectInfo get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::ScriptHelpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(fbaws get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Metagenome annotation ID"];
 my $servercommand = "metagenome_to_fbamodels";
@@ -27,8 +27,8 @@ my $specs = [
     [ 'minabundance|a:s', 'Minimum average abundance for compartment', { "default" => 1 } ],
     [ 'minreactions|r:s', 'Minimum reactions for otu model', { "default" => 100 } ],
     [ 'confthreshold|c:s', 'Confidence threshold for use of function', { "default" => 0.00001 } ],
-    [ 'metaannows|e:s', 'Metagenome annotation workspace', { "default" => workspace() } ],
-    [ 'workspace|w=s', 'Workspace to save merged model', { "default" => workspace() } ],
+    [ 'metaannows|e:s', 'Metagenome annotation workspace', { "default" => fbaws() } ],
+    [ 'workspace|w=s', 'Workspace to save merged model', { "default" => fbaws() } ],
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
 #Calling the server

@@ -7,7 +7,7 @@
 use strict;
 use warnings;
 use Bio::KBase::workspace::ScriptHelpers qw(printObjectInfo get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::ScriptHelpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(fbaws get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Model ID","Reaction IDs (;-separated)"];
 my $servercommand = "adjust_model_reaction";
@@ -33,7 +33,7 @@ my $specs = [
     [ 'gpr|g:s', 'GPR for reaction (;-separated if multiple)'],
     [ 'removerxn|r', 'Remove reaction(s)', { "default" => 0 } ],
     [ 'addrxn|a', 'Add reaction(s)', { "default" => 0 } ],
-    [ 'workspace|w:s', 'Workspace to save FBA results', { "default" => workspace() } ],
+    [ 'workspace|w:s', 'Workspace to save FBA results', { "default" => fbaws() } ],
     [ 'overwrite|o', 'Overwrite any existing FBA with same name' ],
     [ 'outputid|u:s', 'Output ID for adjusted reaction (by default, creates a new version of the same model)']
 ];

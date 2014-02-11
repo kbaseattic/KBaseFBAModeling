@@ -8,7 +8,7 @@ use strict;
 use warnings;
 use JSON;
 use Bio::KBase::workspace::ScriptHelpers qw( get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::ScriptHelpers qw(printJobData get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(fbaws printJobData get_fba_client runFBACommand universalFBAScriptCode );
 
 #Defining globals describing behavior
 my $primaryArgs = ["Model ID"];
@@ -75,14 +75,14 @@ AUTHORS
 
 #Defining usage and options
 my $specs = [
-    [ 'workspace|w:s', 'Workspace in which to save the RxnSensitivity object (default: current workspace)', { "default" => workspace() } ],
+    [ 'workspace|w:s', 'Workspace in which to save the RxnSensitivity object (default: current workspace)', { "default" => fbaws() } ],
     [ 'rxnsensid|r:s', 'ID for RxnSensitivity object to be outputted' ],
-    [ 'modelws:s', 'Workspace in which the input model is found (default: current workspace)', { "default" => workspace() } ],
+    [ 'modelws:s', 'Workspace in which the input model is found (default: current workspace)', { "default" => fbaws() } ],
     [ 'deleterxns', 'Delete nonconributing reactions before testing the next sensitivity of the others in the list' ],
     [ 'rxnstotest:s', 'Reactions to test the sensitivity for, in order to try them (;-delimited). Specify this or a gapfill solution ID. Use + or - to specify a direction, by default both directions are tested.' ],
     [ 'gapfill:s', 'Gapfill solution ID (UUID.solution.#). Specify this or a list of reactions to test.'],
     [ 'rxnprobs:s', 'RxnProbs object. If provided, reaction sensitivity is done with lowest-likelihood reactions first. Only applicable if a gapfill solution is provided.' ],
-    [ 'rxnprobsws:s', 'RxnProbs object workspace (default: current workspace)', { "default" => workspace() } ]
+    [ 'rxnprobsws:s', 'RxnProbs object workspace (default: current workspace)', { "default" => fbaws() } ]
     ];
 
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation, $manpage);

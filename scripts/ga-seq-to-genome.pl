@@ -7,7 +7,7 @@
 use strict;
 use warnings;
 use Bio::KBase::workspace::ScriptHelpers qw(printObjectInfo printJobData get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::ScriptHelpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(fbaws get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Sequence ID"];
 my $servercommand = "ContigSet_to_Genome";
@@ -29,7 +29,7 @@ my $specs = [
     [ 'code|c=s', 'Genetic code of genome' ],
     [ 'callgenes|g', 'Call genes in the genome' ],
     [ 'annotate|a', 'Annotate the genome' ],
-    [ 'workspace|w=s', 'Workspace to save FBA results', { "default" => workspace() } ],
+    [ 'workspace|w=s', 'Workspace to save FBA results', { "default" => fbaws() } ],
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
 $params->{annotation_parameters}->{call_genes} = 0;

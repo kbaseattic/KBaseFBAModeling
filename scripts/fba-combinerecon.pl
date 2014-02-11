@@ -7,7 +7,7 @@
 use strict;
 use warnings;
 use Bio::KBase::workspace::ScriptHelpers qw( printObjectInfo get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::ScriptHelpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(fbaws get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Phenotype sensitivity analysis ID"];
 my $servercommand = "queue_combine_wildtype_phenotype_reconciliation";
@@ -32,7 +32,7 @@ my $specs = [
     [ 'timelimit:s', 'Maximum toal time' ],
     [ 'numsol:i', 'Number of solutions desired', {"default" => 1} ],
     [ 'nosubmit', 'Do not submit job to cluster', { "default" => 0 } ],
-    [ 'workspace|w:s', 'Workspace to save FBA results', { "default" => workspace() } ],
+    [ 'workspace|w:s', 'Workspace to save FBA results', { "default" => fbaws() } ],
     [ 'overwrite|o', 'Overwrite any existing FBA with same name' ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);

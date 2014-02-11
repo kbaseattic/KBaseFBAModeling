@@ -7,7 +7,7 @@
 use strict;
 use warnings;
 use Bio::KBase::workspace::ScriptHelpers qw( get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::ScriptHelpers qw(printJobData get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(fbaws printJobData get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Model ID","Phenotype set"];
 my $servercommand = "queue_reconciliation_sensitivity_analysis";
@@ -58,7 +58,7 @@ my $specs = [
     [ 'objfraction:s', 'Fraction of objective for follow on analysis', { "default" => 0.1 }],
     [ 'notes:s', 'Notes for flux balance analysis' ],
     [ 'nosubmit', 'Do not submit job to cluster', { "default" => 0 } ],
-    [ 'workspace|w:s', 'Workspace to save FBA results', { "default" => workspace() } ],
+    [ 'workspace|w:s', 'Workspace to save FBA results', { "default" => fbaws() } ],
     [ 'overwrite|o', 'Overwrite any existing FBA with same name' ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);

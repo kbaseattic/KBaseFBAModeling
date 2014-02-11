@@ -7,7 +7,7 @@
 use strict;
 use warnings;
 use Bio::KBase::workspace::ScriptHelpers qw(printObjectInfo get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::ScriptHelpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(fbaws get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Genome ID","Translation file","ID type"];
 my $servercommand = "add_feature_translation";
@@ -59,7 +59,7 @@ AUTHORS
 #Defining usage and options
 my $specs = [
     [ 'genomews:s', 'Workspace with genome object' ],
-    [ 'workspace|w:s', 'Workspace to save imported model in', { "default" => workspace() } ],
+    [ 'workspace|w:s', 'Workspace to save imported model in', { "default" => fbaws() } ],
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation, $manpage);
 $params->{translations} = [];

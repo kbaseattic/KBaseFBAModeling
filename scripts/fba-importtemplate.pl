@@ -7,7 +7,7 @@
 use strict;
 use warnings;
 use Bio::KBase::workspace::ScriptHelpers qw(loadTableFile printObjectInfo get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::ScriptHelpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(fbaws get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Reaction file","Biomass file","Biomass components file"];
 my $servercommand = "import_template_fbamodel";
@@ -38,7 +38,7 @@ my $specs = [
 	["mapping=s", "Mapping to which the template should be linked"],
     ["mappingws=s", "Workspace with mapping to which the template should be linked"],
 	[ 'ignoreerrors|i', 'Ignore errors encountered during load' ],
-    [ 'workspace|w=s', 'Workspace to save imported template', { "default" => workspace() } ],
+    [ 'workspace|w=s', 'Workspace to save imported template', { "default" => fbaws() } ],
     [ 'overwrite|o', 'Overwrite any existing phenotypes with same name' ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);

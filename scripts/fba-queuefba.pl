@@ -7,7 +7,7 @@
 use strict;
 use warnings;
 use Bio::KBase::workspace::ScriptHelpers qw( get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::ScriptHelpers qw(printJobData get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(fbaws printJobData get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Model"];
 my $servercommand = "queue_runfba";
@@ -57,7 +57,7 @@ my $specs = [
     [ 'bounds:s@', 'Custom bounds' ],
     [ 'constraints:s@', 'Custom constraints' ],
     [ 'prommodel|p:s', 'ID of PROMModel' ],
-    [ 'prommodelws:s', 'Workspace with PROMModel', { "default" => workspace() } ],
+    [ 'prommodelws:s', 'Workspace with PROMModel', { "default" => fbaws() } ],
     [ 'defaultmaxflux:s', 'Default maximum reaction flux' ],
     [ 'defaultminuptake:s', 'Default minimum nutrient uptake' ],
     [ 'defaultmaxuptake:s', 'Default maximum nutrient uptake' ],
@@ -74,7 +74,7 @@ my $specs = [
     [ 'findminmedia', 'Find minimal media' ],
     [ 'addtomodel', 'Add FBA to model' ],
     [ 'notes:s', 'Notes for flux balance analysis' ],
-    [ 'workspace|w:s', 'Workspace to save FBA results', { "default" => workspace() } ],
+    [ 'workspace|w:s', 'Workspace to save FBA results', { "default" => fbaws() } ],
     [ 'overwrite|o', 'Overwrite any existing FBA with same name' ],
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);

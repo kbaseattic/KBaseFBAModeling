@@ -7,7 +7,7 @@
 use strict;
 use warnings;
 use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::fbaModelServices::Helpers qw(fbaws get_fba_client runFBACommand universalFBAScriptCode );
 use Bio::KBase::CDMI::CDMIClient;
 
 #Defining globals describing behavior
@@ -24,7 +24,7 @@ my $translation = {
 #Defining usage and options
 my $specs = [
 	[ 'biochem|b:s', 'ID of biochemistry database', { "default" => "default"} ],
-    [ 'biochemws|w:s', 'Workspace where biochemistry database is located', { "default" => workspace() } ],
+    [ 'biochemws|w:s', 'Workspace where biochemistry database is located', { "default" => fbaws() } ],
     [ 'reset|r', 'Reset (turn off) compounds as universal cofactors', { "default" => 0 } ],
     [ 'overwrite|o', 'Overwrite existing biochemistry database with same name', { "default" => 0 } ]
 ];

@@ -7,7 +7,7 @@
 use strict;
 use warnings;
 use Bio::KBase::workspace::ScriptHelpers qw(get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::ScriptHelpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(fbaws get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Object type","Object ID"];
 my $servercommand = "export_object";
@@ -20,7 +20,7 @@ my $translation = {
 #Defining usage and options
 my $specs = [
     [ 'format|f:s', 'Format for export (html,json,readable)', { "default" => "html" } ],
-    [ 'workspace|w:s', 'Workspace with FBA', { "default" => workspace() } ]
+    [ 'workspace|w:s', 'Workspace with FBA', { "default" => fbaws() } ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
 if ($params->{reference} !~ m/[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}/) {

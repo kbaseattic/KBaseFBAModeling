@@ -7,7 +7,7 @@
 use strict;
 use warnings;
 use Bio::KBase::workspace::ScriptHelpers qw(printObjectInfo get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::ScriptHelpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(fbaws get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Map ID","Role ID"];
 my $servercommand = "adjust_mapping_role";
@@ -30,7 +30,7 @@ my $specs = [
     [ 'delete', 'Delete specified role' ],
     [ 'aliasestoadd=s@', 'Aliases to add to role (; delimited)' ],
     [ 'aliasestoremove=s@', 'Aliases to remove from role (; delimited)' ],
-    [ 'workspace|w=s', 'Workspace to save FBA results', { "default" => workspace() } ],
+    [ 'workspace|w=s', 'Workspace to save FBA results', { "default" => fbaws() } ],
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
 if (defined($opt->{aliasestoadd})) {

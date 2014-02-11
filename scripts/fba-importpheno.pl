@@ -8,7 +8,7 @@ use strict;
 use warnings;
 use Data::Dumper;
 use Bio::KBase::workspace::ScriptHelpers qw( get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::ScriptHelpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(fbaws get_fba_client runFBACommand universalFBAScriptCode );
 
 my $manpage =
 "
@@ -62,7 +62,7 @@ my $specs = [
     [ 'phenoid:s', 'ID for phenotype set in workspace' ],
     [ 'genomews:s', 'Workspace with genome object' ],
     [ 'ignoreerrors', 'Ignore errors encountered during import' ],
-    [ 'workspace|w:s', 'Workspace to save phenotypes in', { "default" => workspace() } ],
+    [ 'workspace|w:s', 'Workspace to save phenotypes in', { "default" => fbaws() } ],
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation,$manpage);
 

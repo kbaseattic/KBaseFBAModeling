@@ -7,7 +7,7 @@
 use strict;
 use warnings;
 use Bio::KBase::workspace::ScriptHelpers qw( get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::ScriptHelpers qw(printJobData get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(fbaws printJobData get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Model"];
 my $servercommand = "queue_gapgen_model";
@@ -85,7 +85,7 @@ my $specs = [
     [ 'objfraction:s', 'Fraction of objective for follow on analysis', { "default" => 0.1 }],
     [ 'notes:s', 'Notes for flux balance analysis' ],
     [ 'solver:s', 'Solver to use for gapgen' ],
-    [ 'workspace|w:s', 'Workspace to save FBA results', { "default" => workspace() } ],
+    [ 'workspace|w:s', 'Workspace to save FBA results', { "default" => fbaws() } ],
     [ 'overwrite|o', 'Overwrite any existing FBA with same name' ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);

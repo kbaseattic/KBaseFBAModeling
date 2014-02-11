@@ -7,7 +7,7 @@
 use strict;
 use warnings;
 use Bio::KBase::workspace::ScriptHelpers qw(printObjectInfo get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::ScriptHelpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(fbaws get_fba_client runFBACommand universalFBAScriptCode );
 
 my $manpage =
 "
@@ -92,7 +92,7 @@ my $specs = [
     [ 'delete', 'Delete specified biomass reaction' ],
     [ 'clearbiomasscompounds', 'Clear all biomass compounds' ],
     [ 'compoundstoremove=s', 'Compounds to remove from reaction (; delimited)' ],
-    [ 'workspace|w=s', 'Workspace with template model', { "default" => workspace() } ],
+    [ 'workspace|w=s', 'Workspace with template model', { "default" => fbaws() } ],
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation,$manpage);
 if (defined($opt->{compoundstoremove})) {

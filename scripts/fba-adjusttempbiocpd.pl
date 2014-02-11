@@ -7,7 +7,7 @@
 use strict;
 use warnings;
 use Bio::KBase::workspace::ScriptHelpers qw(printObjectInfo get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::ScriptHelpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(fbaws get_fba_client runFBACommand universalFBAScriptCode );
 
 my $manpage =
 "
@@ -79,7 +79,7 @@ my $specs = [
     [ 'class=s', 'Class of template biomass compound' ],
     [ 'universal', 'Indicates if template biomass compound should be universal' ],
     [ 'linkcpds=s@', 'Compounds linked to current compound (; delimited)' ],
-    [ 'workspace|w=s', 'Workspace with template model', { "default" => workspace() } ],
+    [ 'workspace|w=s', 'Workspace with template model', { "default" => fbaws() } ],
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation,$manpage);
 $params->{compoundsToAdd} = [$opt->{"Compound ID"},$opt->{compartment},$opt->{class},$opt->{universal},$opt->{coeftype},$opt->{coef},[]];

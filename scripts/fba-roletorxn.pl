@@ -8,7 +8,7 @@ use strict;
 use warnings;
 use JSON;
 use Bio::KBase::workspace::ScriptHelpers qw(get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::ScriptHelpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(fbaws get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Template model"];
 my $servercommand = "role_to_reactions";
@@ -19,7 +19,7 @@ my $translation = {
 };
 #Defining usage and options
 my $specs = [
-    [ 'workspace|w:s', 'Workspace with template model', { "default" => workspace() } ],
+    [ 'workspace|w:s', 'Workspace with template model', { "default" => fbaws() } ],
     [ 'pretty|p', 'Pretty print output' ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);

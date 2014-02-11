@@ -7,7 +7,7 @@
 use strict;
 use warnings;
 use Bio::KBase::workspace::ScriptHelpers qw(printObjectInfo get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::ScriptHelpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(fbaws get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Model ID","Compound ID","Coefficient"];
 my $servercommand = "adjust_biomass_reaction";
@@ -24,7 +24,7 @@ my $specs = [
     [ 'product|p', 'Product compound'],
     [ 'compartment|c:s', 'Compartment of target compound', { "default" => "c" } ],
     [ 'compindex|i:s', 'Index of compartment for target compound', { "default" => 0 } ],
-    [ 'workspace|w:s', 'Workspace to save FBA results', { "default" => workspace() } ],
+    [ 'workspace|w:s', 'Workspace to save FBA results', { "default" => fbaws() } ],
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
 if (!defined($opt->{product})) {

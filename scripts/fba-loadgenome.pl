@@ -8,7 +8,7 @@ use strict;
 use warnings;
 use JSON::XS;
 use Bio::KBase::workspace::ScriptHelpers qw( printObjectInfo get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::ScriptHelpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(fbaws get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Genome file | Genome ID"];
 my $script = "fba-loadgenome";
@@ -30,7 +30,7 @@ my $specs = [
 	[ 'password|p:s', 'Password for genome source (e.g. RAST)'],
 	[ 'mapping|m:s', 'Mapping to be used with loaded genome'],
 	[ 'mappingws:s', 'Workspace of mapping to be used with loaded genome'],
-    [ 'workspace|w:s', 'Workspace to load genome into', { "default" => workspace() } ],
+    [ 'workspace|w:s', 'Workspace to load genome into', { "default" => fbaws() } ],
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
 #Calling the server

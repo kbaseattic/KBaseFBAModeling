@@ -7,7 +7,7 @@
 use strict;
 use warnings;
 use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::fbaModelServices::Helpers qw(fbaws get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Name"];
 my $servercommand = "add_stimuli";
@@ -30,7 +30,7 @@ my $specs = [
     [ 'id=s', 'ID to save the stimuli under' ],
     [ 'biochem|b=s', 'ID of biochemistry to add the stimuli to' ],
     [ 'biochemws=s', 'Workspace of biochemistry to add the stimuli to' ],
-    [ 'workspace|w=s', 'Workspace with model', { "default" => workspace() } ]
+    [ 'workspace|w=s', 'Workspace with model', { "default" => fbaws() } ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
 $params->{type} = "environmental";

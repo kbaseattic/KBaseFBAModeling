@@ -7,7 +7,7 @@
 use strict;
 use warnings;
 use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::Helpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::fbaModelServices::Helpers qw( fbaws get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 
 my $primaryArgs = ["Model ID" , "PhenotypeSet ID" , "Output model ID"];
@@ -27,9 +27,9 @@ my $translation = {
 };
 #Defining usage and options
 my $specs = [
-    [ 'workspace|w:s', 'Workspace to save the modified model', { "default" => workspace() } ],
-    [ 'modelws:s', 'Workspace in which the original model is found', { "default" => workspace() } ],
-    [ 'phenotypews:s', 'Workspace in which the PhenotypeSet is found', { "default" => workspace() } ],
+    [ 'workspace|w:s', 'Workspace to save the modified model', { "default" => fbaws() } ],
+    [ 'modelws:s', 'Workspace in which the original model is found', { "default" => fbaws() } ],
+    [ 'phenotypews:s', 'Workspace in which the PhenotypeSet is found', { "default" => fbaws() } ],
     [ 'overwrite|o', 'Overwrite any existing FBA with same name' ],
     [ 'alltransporters|a', 'Add transporters for ALL media in the phenotype set' ],
     [ 'positivetransporters|p', 'Add transporters ONLY for media in the phenotype set with non-zero growth rates' ]

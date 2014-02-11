@@ -7,7 +7,7 @@
 use strict;
 use warnings;
 use Bio::KBase::workspace::ScriptHelpers qw( printObjectInfo printJobData get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::ScriptHelpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(fbaws get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Genome ID"];
 my $servercommand = "queue_job";
@@ -23,7 +23,7 @@ my $specs = [
     [ 'newuserid=s', 'New user ID for annotated genome' ],
     [ 'genomews=s', 'Workspace with input genome' ],
     [ 'callgenes|c', 'Call genes' ],
-    [ 'workspace|w=s', 'Workspace to save FBA results', { "default" => workspace() } ],
+    [ 'workspace|w=s', 'Workspace to save FBA results', { "default" => fbaws() } ],
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
 $params->{annotation_parameters}->{annotate_genes} = 1;

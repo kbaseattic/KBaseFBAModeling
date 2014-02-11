@@ -7,7 +7,7 @@
 use strict;
 use warnings;
 use Bio::KBase::workspace::ScriptHelpers qw( printObjectInfo get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::ScriptHelpers qw(get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(fbaws get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Model ID","Phenotype set"];
 my $servercommand = "simulate_phenotypes";
@@ -55,7 +55,7 @@ my $specs = [
     [ 'bounds:s@', 'Custom bounds' ],
     [ 'constraints:s@', 'Custom constraints' ],
     [ 'prommodel|p:s', 'ID of PROMModel' ],
-    [ 'prommodelws:s', 'Workspace with PROMModel', { "default" => workspace() } ],
+    [ 'prommodelws:s', 'Workspace with PROMModel', { "default" => fbaws() } ],
     [ 'defaultmaxflux:s', 'Default maximum reaction flux' ],
     [ 'defaultminuptake:s', 'Default minimum nutrient uptake' ],
     [ 'defaultmaxuptake:s', 'Default maximum nutrient uptake' ],
@@ -67,7 +67,7 @@ my $specs = [
     [ 'allrev', 'Treat all reactions as reversible', { "default" => 0 } ],
     [ 'objfraction:s', 'Fraction of objective for follow on analysis', { "default" => 0.1 }],
     [ 'notes:s', 'Notes for flux balance analysis' ],
-    [ 'workspace|w:s', 'Workspace to save FBA results', { "default" => workspace() } ],
+    [ 'workspace|w:s', 'Workspace to save FBA results', { "default" => fbaws() } ],
     [ 'overwrite|o', 'Overwrite any existing FBA with same name' ],
     [ 'alltransporters', 'Add transporters for everything in EVERY media in the phenotype set before doing the simulation' ],
     [ 'positivetransporters', 'Add transporters ONLY for media that the organism grows on in the phenotype set before doing the simulation' ]
