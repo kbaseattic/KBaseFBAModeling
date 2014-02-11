@@ -1,7 +1,9 @@
 ROOT_DEV_MODULE_DIR := $(abspath $(dir $lastword $(MAKEFILE_LIST)))
-TARGET = $(KB_TOP)/../
+TOP_DIR = $(shell python -c "import os.path as p; print p.abspath('../..')")
+DEPLOY_RUNTIME ?= /kb/runtime
+TARGET ?= /kb/deployment
  
-include $(KB_TOP)/tools/Makefile.common
+include $(TOP_DIR)/tools/Makefile.common
 
 SRC_PERL = $(wildcard scripts/*.pl)
 BIN_PERL = $(addprefix $(BIN_DIR)/,$(basename $(notdir $(SRC_PERL))))
@@ -34,22 +36,22 @@ server:
 	echo "server target does nothing"
 
 $(BIN_DIR)/%: scripts/%.pl 
-	$(KB_TOP)/tools/wrap_perl '$$KB_TOP/modules/$(CURRENT_DIR)/$<' $@
+	$(TOOLS_DIR)/wrap_perl '$$KB_TOP/modules/$(CURRENT_DIR)/$<' $@
 
 $(BIN_DIR)/%: scripts/%.py
-	$(KB_TOP)/tools/wrap_python '$$KB_TOP/modules/$(CURRENT_DIR)/$<' $@
+	$(TOOLS_DIR)/wrap_python '$$KB_TOP/modules/$(CURRENT_DIR)/$<' $@
 
 CLIENT_TESTS = $(wildcard client-tests/*.t)
 SCRIPT_TESTS = $(wildcard script-tests/*.sh)
 SERVER_TESTS = $(wildcard server-tests/*.t)
 
-test: test-service
+test: test-service test-scripts test-client
 	@echo "running server, script and client tests"
 
 test-service:
 	for t in $(SERVER_TESTS) ; do \
 		if [ -f $$t ] ; then \
-			$(KB_RUNTIME)/bin/prove $$t ; \
+			$(DEPLOY_RUNTIME)/bin/prove $$t ; \
 			if [ $$? -ne 0 ] ; then \
 				exit 1 ; \
 			fi \
@@ -69,7 +71,7 @@ test-scripts:
 test-client:
 	for t in $(CLIENT_TESTS) ; do \
 		if [ -f $$t ] ; then \
-			$(KB_RUNTIME)/bin/prove $$t ; \
+			$(DEPLOY_RUNTIME)/bin/prove $$t ; \
 			if [ $$? -ne 0 ] ; then \
 				exit 1 ; \
 			fi \
@@ -79,68 +81,59 @@ test-client:
 deploy: deploy-client deploy-service
 deploy-all: deploy-client deploy-service
 
-deploy-service: deploy-dir deploy-libs deploy-fba-scripts deploy-services
-deploy-client: deploy-dir deploy-libs deploy-fba-scripts deploy-docs
-
-deploy-fba-scripts:
-	export KB_TOP=$(TARGET); \
-	export KB_PERL_PATH=$(TARGET)/lib ; \
-	for src in $(SRC_PERL) ; do \
-		basefile=`basename $$src`; \
-		base=`basename $$src .pl`; \
-		echo install $$src $$base ; \
-		cp $$src $(TARGET)/plbin ; \
-		$(KB_TOP)/tools/wrap_perl "$(TARGET)/plbin/$$basefile" $(TARGET)/bin/$$base ; \
-	done
-	$(KB_TOP)/tools/wrap_perl "$(TARGET)/plbin/fba-addaliases.pl" $(TARGET)/bin/kbfba-addaliases ; \
-	$(KB_TOP)/tools/wrap_perl "$(TARGET)/plbin/fba-addmedia.pl" $(TARGET)/bin/kbfba-addmedia ; \
-	$(KB_TOP)/tools/wrap_perl "$(TARGET)/plbin/fba-adjustbiomass.pl" $(TARGET)/bin/kbfba-adjustbiomass ; \
-	$(KB_TOP)/tools/wrap_perl "$(TARGET)/plbin/fba-adjustmapcomplex.pl" $(TARGET)/bin/kbfba-adjustmapcomplex ; \
-	$(KB_TOP)/tools/wrap_perl "$(TARGET)/plbin/fba-adjustmaprole.pl" $(TARGET)/bin/kbfba-adjustmaprole ; \
-	$(KB_TOP)/tools/wrap_perl "$(TARGET)/plbin/fba-adjustmapsubsystem.pl" $(TARGET)/bin/kbfba-adjustmapsubsystem ; \
-	$(KB_TOP)/tools/wrap_perl "$(TARGET)/plbin/fba-adjustmodel.pl" $(TARGET)/bin/kbfba-adjustmodel ; \
-	$(KB_TOP)/tools/wrap_perl "$(TARGET)/plbin/fba-adjusttempbiocpd.pl" $(TARGET)/bin/kbfba-adjusttempbiocpd ; \
-	$(KB_TOP)/tools/wrap_perl "$(TARGET)/plbin/fba-adjusttempbiomass.pl" $(TARGET)/bin/kbfba-adjusttempbiomass ; \
-	$(KB_TOP)/tools/wrap_perl "$(TARGET)/plbin/fba-adjusttemprxn.pl" $(TARGET)/bin/kbfba-adjusttemprxn ; \
-	$(KB_TOP)/tools/wrap_perl "$(TARGET)/plbin/fba-buildfbamodel.pl" $(TARGET)/bin/kbfba-buildfbamodel ; \
-	$(KB_TOP)/tools/wrap_perl "$(TARGET)/plbin/fba-exportfba.pl" $(TARGET)/bin/kbfba-exportfba ; \
-	$(KB_TOP)/tools/wrap_perl "$(TARGET)/plbin/fba-exportfbamodel.pl" $(TARGET)/bin/kbfba-exportfbamodel ; \
-	$(KB_TOP)/tools/wrap_perl "$(TARGET)/plbin/fba-exportgenome.pl" $(TARGET)/bin/kbfba-exportgenome ; \
-	$(KB_TOP)/tools/wrap_perl "$(TARGET)/plbin/fba-exportmedia.pl" $(TARGET)/bin/kbfba-exportmedia ; \
-	$(KB_TOP)/tools/wrap_perl "$(TARGET)/plbin/fba-exportobject.pl" $(TARGET)/bin/kbfba-exportobject ; \
-	$(KB_TOP)/tools/wrap_perl "$(TARGET)/plbin/fba-exportphenosim.pl" $(TARGET)/bin/kbfba-exportphenosim ; \
-	$(KB_TOP)/tools/wrap_perl "$(TARGET)/plbin/fba-gapfill.pl" $(TARGET)/bin/kbfba-gapfill ; \
-	$(KB_TOP)/tools/wrap_perl "$(TARGET)/plbin/fba-gapgen.pl" $(TARGET)/bin/kbfba-gapgen ; \
-	$(KB_TOP)/tools/wrap_perl "$(TARGET)/plbin/fba-getbio.pl" $(TARGET)/bin/kbfba-getbio ; \
-	$(KB_TOP)/tools/wrap_perl "$(TARGET)/plbin/fba-getcompounds.pl" $(TARGET)/bin/kbfba-getcompounds ; \
-	$(KB_TOP)/tools/wrap_perl "$(TARGET)/plbin/fba-getfbas.pl" $(TARGET)/bin/kbfba-getfbas ; \
-	$(KB_TOP)/tools/wrap_perl "$(TARGET)/plbin/fba-getgapfills.pl" $(TARGET)/bin/kbfba-getgapfills ; \
-	$(KB_TOP)/tools/wrap_perl "$(TARGET)/plbin/fba-getgapgens.pl" $(TARGET)/bin/kbfba-getgapgens ; \
-	$(KB_TOP)/tools/wrap_perl "$(TARGET)/plbin/fba-getmap.pl" $(TARGET)/bin/kbfba-getmap ; \
-	$(KB_TOP)/tools/wrap_perl "$(TARGET)/plbin/fba-getmedia.pl" $(TARGET)/bin/kbfba-getmedia ; \
-	$(KB_TOP)/tools/wrap_perl "$(TARGET)/plbin/fba-getmodels.pl" $(TARGET)/bin/kbfba-getmodels ; \
-	$(KB_TOP)/tools/wrap_perl "$(TARGET)/plbin/fba-getreactions.pl" $(TARGET)/bin/kbfba-getreactions ; \
-	$(KB_TOP)/tools/wrap_perl "$(TARGET)/plbin/fba-gettemplate.pl" $(TARGET)/bin/kbfba-gettemplate ; \
-	$(KB_TOP)/tools/wrap_perl "$(TARGET)/plbin/fba-importfbamodel.pl" $(TARGET)/bin/kbfba-importfbamodel ; \
-	$(KB_TOP)/tools/wrap_perl "$(TARGET)/plbin/fba-importpheno.pl" $(TARGET)/bin/kbfba-importpheno ; \
-	$(KB_TOP)/tools/wrap_perl "$(TARGET)/plbin/fba-importprobanno.pl" $(TARGET)/bin/kbfba-importprobanno ; \
-	$(KB_TOP)/tools/wrap_perl "$(TARGET)/plbin/fba-importtemplate.pl" $(TARGET)/bin/kbfba-importtemplate ; \
-	$(KB_TOP)/tools/wrap_perl "$(TARGET)/plbin/fba-importtranslation.pl" $(TARGET)/bin/kbfba-importtranslation ; \
-	$(KB_TOP)/tools/wrap_perl "$(TARGET)/plbin/fba-integratesolution.pl" $(TARGET)/bin/kbfba-integratesolution ; \
-	$(KB_TOP)/tools/wrap_perl "$(TARGET)/plbin/fba-jobdone.pl" $(TARGET)/bin/kbfba-jobdone ; \
-	$(KB_TOP)/tools/wrap_perl "$(TARGET)/plbin/fba-loadgenome.pl" $(TARGET)/bin/kbfba-loadgenome ; \
-	$(KB_TOP)/tools/wrap_perl "$(TARGET)/plbin/fba-queuefba.pl" $(TARGET)/bin/kbfba-queuefba ; \
-	$(KB_TOP)/tools/wrap_perl "$(TARGET)/plbin/fba-runfba.pl" $(TARGET)/bin/kbfba-runfba ; \
-	$(KB_TOP)/tools/wrap_perl "$(TARGET)/plbin/fba-runjob.pl" $(TARGET)/bin/kbfba-runjob ; \
-	$(KB_TOP)/tools/wrap_perl "$(TARGET)/plbin/fba-simpheno.pl" $(TARGET)/bin/kbfba-simpheno ; \
-	$(KB_TOP)/tools/wrap_perl "$(TARGET)/plbin/fba-url.pl" $(TARGET)/bin/kbfba-url ; \
+deploy-service: deploy-dir deploy-libs deploy-scripts deploy-services deploy-cfg deploy-kbscripts
+deploy-client: deploy-dir deploy-libs deploy-scripts deploy-docs deploy-kbscripts
 
 deploy-dir:
 	if [ ! -d $(SERV_SERVICE_DIR) ] ; then mkdir $(SERV_SERVICE_DIR) ; fi
-	if [ ! -d $(SERV_SERVICE_DIR)/webroot ] ; then mkdir $(SERV_SERVICE_DIR)/webroot ; fi 
+	if [ ! -d $(SERV_SERVICE_DIR)/webroot ] ; then mkdir $(SERV_SERVICE_DIR)/webroot ; fi
 
 deploy-libs:
 	rsync -arv lib/. $(TARGET)/lib/.
+
+deploy-kbscripts:
+	cp $(TARGET)/bin/fba-addaliases $(TARGET)/bin/kbfba-addaliases
+	cp $(TARGET)/bin/fba-addmedia $(TARGET)/bin/kbfba-addmedia
+	cp $(TARGET)/bin/fba-adjustbiomass $(TARGET)/bin/kbfba-adjustbiomass
+	cp $(TARGET)/bin/fba-adjustmapcomplex $(TARGET)/bin/kbfba-adjustmapcomplex
+	cp $(TARGET)/bin/fba-adjustmaprole $(TARGET)/bin/kbfba-adjustmaprole
+	cp $(TARGET)/bin/fba-adjustmapsubsystem $(TARGET)/bin/kbfba-adjustmapsubsystem
+	cp $(TARGET)/bin/fba-adjustmodel $(TARGET)/bin/kbfba-adjustmodel
+	cp $(TARGET)/bin/fba-adjusttempbiocpd $(TARGET)/bin/kbfba-adjusttempbiocpd
+	cp $(TARGET)/bin/fba-adjusttempbiomass $(TARGET)/bin/kbfba-adjusttempbiomass
+	cp $(TARGET)/bin/fba-adjusttemprxn $(TARGET)/bin/kbfba-adjusttemprxn
+	cp $(TARGET)/bin/fba-buildfbamodel $(TARGET)/bin/kbfba-buildfbamodel
+	cp $(TARGET)/bin/fba-exportfba $(TARGET)/bin/kbfba-exportfba
+	cp $(TARGET)/bin/fba-exportfbamodel $(TARGET)/bin/kbfba-exportfbamodel
+	cp $(TARGET)/bin/fba-exportgenome $(TARGET)/bin/kbfba-exportgenome
+	cp $(TARGET)/bin/fba-exportmedia $(TARGET)/bin/kbfba-exportmedia
+	cp $(TARGET)/bin/fba-exportobject $(TARGET)/bin/kbfba-exportobject
+	cp $(TARGET)/bin/fba-exportphenosim $(TARGET)/bin/kbfba-exportphenosim
+	cp $(TARGET)/bin/fba-gapfill $(TARGET)/bin/kbfba-gapfill
+	cp $(TARGET)/bin/fba-gapgen $(TARGET)/bin/kbfba-gapgen
+	cp $(TARGET)/bin/fba-getbio $(TARGET)/bin/kbfba-getbio
+	cp $(TARGET)/bin/fba-getcompounds $(TARGET)/bin/kbfba-getcompounds
+	cp $(TARGET)/bin/fba-getfbas $(TARGET)/bin/kbfba-getfbas
+	cp $(TARGET)/bin/fba-getgapfills $(TARGET)/bin/kbfba-getgapfills
+	cp $(TARGET)/bin/fba-getgapgens $(TARGET)/bin/kbfba-getgapgens
+	cp $(TARGET)/bin/fba-getmap $(TARGET)/bin/kbfba-getmap
+	cp $(TARGET)/bin/fba-getmedia $(TARGET)/bin/kbfba-getmedia
+	cp $(TARGET)/bin/fba-getmodels $(TARGET)/bin/kbfba-getmodels
+	cp $(TARGET)/bin/fba-getreactions $(TARGET)/bin/kbfba-getreactions
+	cp $(TARGET)/bin/fba-gettemplate $(TARGET)/bin/kbfba-gettemplate
+	cp $(TARGET)/bin/fba-importfbamodel $(TARGET)/bin/kbfba-importfbamodel
+	cp $(TARGET)/bin/fba-importpheno $(TARGET)/bin/kbfba-importpheno
+	cp $(TARGET)/bin/fba-importprobanno $(TARGET)/bin/kbfba-importprobanno
+	cp $(TARGET)/bin/fba-importtemplate $(TARGET)/bin/kbfba-importtemplate
+	cp $(TARGET)/bin/fba-importtranslation $(TARGET)/bin/kbfba-importtranslation
+	cp $(TARGET)/bin/fba-integratesolution $(TARGET)/bin/kbfba-integratesolution
+	cp $(TARGET)/bin/fba-jobdone $(TARGET)/bin/kbfba-jobdone
+	cp $(TARGET)/bin/fba-loadgenome $(TARGET)/bin/kbfba-loadgenome
+	cp $(TARGET)/bin/fba-queuefba $(TARGET)/bin/kbfba-queuefba
+	cp $(TARGET)/bin/fba-runfba $(TARGET)/bin/kbfba-runfba
+	cp $(TARGET)/bin/fba-runjob $(TARGET)/bin/kbfba-runjob
+	cp $(TARGET)/bin/fba-simpheno $(TARGET)/bin/kbfba-simpheno
+	cp $(TARGET)/bin/fba-url $(TARGET)/bin/kbfba-url
 
 deploy-services:
 	tpage $(SERV_TPAGE_ARGS) service/start_service.tt > $(TARGET)/services/$(SERV_SERVICE)/start_service; \
@@ -149,6 +142,8 @@ deploy-services:
 	chmod +x $(TARGET)/services/$(SERV_SERVICE)/stop_service; \
 	tpage $(SERV_TPAGE_ARGS) service/process.tt > $(TARGET)/services/$(SERV_SERVICE)/process.$(SERV_SERVICE); \
 	chmod +x $(TARGET)/services/$(SERV_SERVICE)/process.$(SERV_SERVICE); \
+	cp configs/KBaseMSConfig.json ${HOME}/.modelseed2
+	echo "{\"user_options\":{\"MFATK_BIN\":\"$(TARGET)/bin/mfatoolkit\",\"MFATK_CACHE\":\"/tmp\"}}" > $(TARGET)/services/$(SERV_SERVICE)/config.json;
 
 deploy-docs:
 	if [ ! -d docs ] ; then mkdir -p docs ; fi
@@ -168,5 +163,4 @@ compile-typespec:
 	-py biokbase/fbaModelServices/Client \
 	fbaModelServices.spec lib
 
-include $(KB_TOP)/tools/Makefile.common.rules
-
+include $(TOP_DIR)/tools/Makefile.common.rules
