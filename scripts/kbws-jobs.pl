@@ -8,7 +8,7 @@ use strict;
 use warnings;
 use Getopt::Long::Descriptive;
 use Text::Table;
-use Bio::KBase::fbaModelServices::ScriptHelpers qw( get_old_ws_client fbaURL get_fba_client runFBACommand universalFBAScriptCode fbaTranslation roles_of_function );
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(getToken get_old_ws_client fbaURL get_fba_client runFBACommand universalFBAScriptCode fbaTranslation roles_of_function );
 
 my $serv = get_old_ws_client();
 #Defining globals describing behavior
@@ -46,6 +46,7 @@ foreach my $key (keys(%{$translation})) {
 		$params->{$translation->{$key}} = $opt->{$key};
 	}
 }
+$params->{auth} = getToken();
 #Calling the server
 my $output;
 if ($opt->{showerror} == 0){

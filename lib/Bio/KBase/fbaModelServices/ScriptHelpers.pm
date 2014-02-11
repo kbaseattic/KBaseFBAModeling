@@ -57,6 +57,7 @@ sub fbaws {
 			$client->set_user_settings({
 				setting => "workspace",
 				value => $currentWs,
+				auth => getToken()
 			});
 		}
 	} else {
@@ -71,7 +72,7 @@ sub fbaws {
 			$cfg->close();
 		} else {
 			my $client = get_old_ws_client();
-			my $settings = $client->get_user_settings({});
+			my $settings = $client->get_user_settings({auth => getToken()});
 			$currentWs = $settings->{workspace};
 		}
 	}
@@ -84,8 +85,8 @@ sub get_old_ws_client {
 		$url = "http://kbase.us/services/workspace/";
 	}
 	my $client = Bio::KBase::workspaceService::Client->new($url);
-	$client->{token} = getToken();
-	$client->{client}->{token} = getToken();
+	#$client->{token} = getToken();
+	#$client->{client}->{token} = getToken();
     return $client;
 }
 
@@ -100,8 +101,6 @@ sub get_fba_client {
 		return Bio::KBase::fbaModelServices::Impl->new();
 	}
 	my $client = Bio::KBase::fbaModelServices::Client->new(fbaURL());
-	$client->{token} = getToken();
-	$client->{client}->{token} = getToken();
     return $client;
 }
 
