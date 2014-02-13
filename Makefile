@@ -127,7 +127,6 @@ deploy-kbscripts:
 	cp $(TARGET)/bin/fba-importtemplate $(TARGET)/bin/kbfba-importtemplate
 	cp $(TARGET)/bin/fba-importtranslation $(TARGET)/bin/kbfba-importtranslation
 	cp $(TARGET)/bin/fba-integratesolution $(TARGET)/bin/kbfba-integratesolution
-	cp $(TARGET)/bin/fba-jobdone $(TARGET)/bin/kbfba-jobdone
 	cp $(TARGET)/bin/fba-loadgenome $(TARGET)/bin/kbfba-loadgenome
 	cp $(TARGET)/bin/fba-queuefba $(TARGET)/bin/kbfba-queuefba
 	cp $(TARGET)/bin/fba-runfba $(TARGET)/bin/kbfba-runfba
