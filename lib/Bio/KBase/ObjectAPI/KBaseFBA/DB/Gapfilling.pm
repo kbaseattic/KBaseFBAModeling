@@ -55,7 +55,7 @@ has gapfillingSolutions => (is => 'rw', isa => 'ArrayRef[HashRef]', default => s
 has allowableCompartments => (is => 'rw', type => 'link(Biochemistry,compartments,allowableCompartment_refs)', metaclass => 'Typed', lazy => 1, builder => '_build_allowableCompartments', clearer => 'clear_allowableCompartments', isa => 'ArrayRef');
 has targetedreactions => (is => 'rw', type => 'link(Biochemistry,reactions,targetedreaction_refs)', metaclass => 'Typed', lazy => 1, builder => '_build_targetedreactions', clearer => 'clear_targetedreactions', isa => 'ArrayRef');
 has media => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,Media,media_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_media', clearer => 'clear_media', isa => 'Bio::KBase::ObjectAPI::KBaseBiochem::Media', weak_ref => 1);
-has probanno => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,ProbAnno,probanno_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_probanno', clearer => 'clear_probanno', isa => 'Ref', weak_ref => 1);
+has probanno => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,ProbAnno,probanno_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_probanno', clearer => 'clear_probanno', isa => 'Bio::KBase::ObjectAPI::ProbabilisticAnnotation::ProbAnno', weak_ref => 1);
 has fba => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,FBA,fba_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_fba', clearer => 'clear_fba', isa => 'Bio::KBase::ObjectAPI::KBaseFBA::FBA', weak_ref => 1);
 has fbamodel => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,FBAModel,fbamodel_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_fbamodel', clearer => 'clear_fbamodel', isa => 'Bio::KBase::ObjectAPI::KBaseFBA::FBAModel', weak_ref => 1);
 has guaranteedReactions => (is => 'rw', type => 'link(Biochemistry,reactions,guaranteedReaction_refs)', metaclass => 'Typed', lazy => 1, builder => '_build_guaranteedReactions', clearer => 'clear_guaranteedReactions', isa => 'ArrayRef');
@@ -393,8 +393,8 @@ my $links = [
             'clearer' => 'clear_probanno',
             'name' => 'probanno',
             'method' => 'ProbAnno',
-            'class' => 'ProbAnno',
-            'module' => undef
+            'class' => 'Bio::KBase::ObjectAPI::ProbabilisticAnnotation::ProbAnno',
+            'module' => 'ProbabilisticAnnotation'
           },
           {
             'attribute' => 'fba_ref',

@@ -17,8 +17,7 @@ reactions in metabolic models.  With the Probabilistic Annotation service:
 
 */
 
-module ProbabilisticAnnotation
-{
+module ProbabilisticAnnotation {
 
 	/* ************************************************************************************* */
 	/* SIMPLE ID AND STRING TYPES */
@@ -137,103 +136,4 @@ module ProbabilisticAnnotation
         workspace_id probanno_workspace;
     	list<reaction_probability> reaction_probabilities;
     } RxnProbs;
-
-	/* ************************************************************************************* */
-	/* FUNCTION DEFINITIONS */
-	/* ************************************************************************************* */
-
-	/* All functions require authentication. */
-	authentication required;
-
-    /* Input parameters for the "annotate" function.
-
-       genome_id genome - ID of Genome object
-       workspace_id genome_workspace - ID of workspace where Genome object is stored
-       probanno_id probanno - ID of ProbAnno object
-       workspace_id probanno_workspace - ID workspace where ProbAnno object is saved
-       bool overwrite - True to overwrite existing ProbAnno object with same name
-	   bool verbose - True to print verbose messages
-    */
-    typedef structure {
-		genome_id genome;
-		workspace_id genome_workspace;
-		probanno_id probanno;
-		workspace_id probanno_workspace;
-		bool overwrite;
-		bool verbose;
-    } AnnotateParams;
-
-	/*
-		Generate alternative annotations for every gene in a genome together with
-		their likelihoods.  Results are stored in a ProbAnno object. Returns the
-		job ID of the submitted job.
-	*/
-    funcdef annotate(AnnotateParams input) returns (job_id jobid);
-    
-    /* Input parameters for the "calculate" function.
-    
-		probanno_id probanno - ID of ProbAnno object
-		workspace_id probanno_workspace - ID of workspace where ProbAnno object is stored
-		bool verbose - True to print verbose messages
-    */
-    typedef structure {
-    	probanno_id probanno;
-    	workspace_id probanno_workspace;
-		template_id template_model;
-		workspace_id template_model_workspace;
-		rxnprobs_id rxnprobs;
-		workspace_id rxnprobs_workspace;
-    	bool verbose;
-    } CalculateParams;
-    
-    /*
-    	Calculate reaction likelihoods from a probabilistic annotation and a
-    	template model.  Results are stored in a RxnProbs object.  Returns the
-    	metadata for the reaction probability object.
-    */
-    funcdef calculate(CalculateParams input) returns(object_metadata output);
-
-    /*
-        Inputs for get_rxnprobs function.
-	rxnprobs_id rxnprobs- ID for RxnProbs object in the workspace
-	workspace_id rxnprobs_workspace - ID for workspace in which RxnProbs object is held.
-    */
-    typedef structure {
-	rxnprobs_id rxnprobs;
-	workspace_id rxnprobs_workspace;
-    } GetRxnprobsParams;
-
-    /*
-        Output for get_rxnprobs function.
-	It is a list of tuples convenient for output as a table.
-    */
-    typedef list<reaction_probability> reaction_probability_list;
-
-    /*
-        Convert a reaction probability object into a human-readable table.
-    */
-    funcdef get_rxnprobs(GetRxnprobsParams input) returns(reaction_probability_list output);
-
-    /*
-        Inputs for get_probanno function.
-	probanno_id probanno - ID for probanno object
-	workspace_id probanno_workspace - ID for workspace in which ProbAnno object is held.
-    */
-    typedef structure {
-	probanno_id probanno;
-	workspace_id probanno_workspace;
-    } GetProbannoParams;
-
-    /* 
-        Output for get_probanno function.
-	It is a mapping from a feature (gene) ID to a list of (annotation, likelihood) tuples.
-	Annotations are roles separated by a "///" delimiter
-    */
-    typedef mapping<feature_id, list<function_probability>> roleset_probabilities;
-    
-    /*
-        Convert a ProbAnno object into a human-readbale table.
-    */
-    funcdef get_probanno(GetProbannoParams input) returns(roleset_probabilities output);
-
 };
