@@ -1,5 +1,5 @@
-#group-name	modeling	Modeling Scripts
-#group-name	genome_annotation	Genome Annotation Scripts
+#group-name	modeling	FBA Modeling
+#group-name	genome_annotation	Annotation
 #ignore kbfba-url fba-url
 kbfba-addaliases	modeling
 kbfba-addmedia	modeling
