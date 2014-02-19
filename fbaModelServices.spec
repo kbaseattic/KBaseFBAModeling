@@ -1386,29 +1386,6 @@ module fbaModelServices {
     authentication optional;
     funcdef get_biochemistry(get_biochemistry_params input) returns (Biochemistry out_biochemistry);
 	
-	/* Input parameters for the "get_ETCDiagram" function.
-	
-		model_id model - ID of the model to retrieve ETC for
-		workspace_id workspace - ID of the workspace containing the model 
-		media_id media - ID of the media to retrieve ETC for
-		workspace_id mediaws - workpace containing the specified media
-		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
-				
-	*/
-    typedef structure {
-		fbamodel_id model;
-		workspace_id workspace;
-		media_id media;
-		workspace_id mediaws;
-		string auth;
-    } get_ETCDiagram_params;
-    /*
-        This function retrieves an ETC diagram for the input model operating in the input media condition
-    	The model must grow on the specified media in order to return a working ETC diagram
-    */
-    authentication optional;
-    funcdef get_ETCDiagram (get_ETCDiagram_params input) returns (ETCDiagramSpecs output);
-    
 	/*********************************************************************************
     Code relating to reconstruction of metabolic models
    	*********************************************************************************/

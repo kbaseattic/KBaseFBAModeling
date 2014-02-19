@@ -79,7 +79,9 @@ my $baseobjects = {
 	PhenotypeSet => "KBasePhenotypes",
 	PhenotypeSimulationSet => "KBasePhenotypes",
 	ProteinSet => "KBaseGenomes",
-	ProbabilisticAnnotation => "KBaseGenomes"
+	ProbabilisticAnnotation => "KBaseGenomes",
+	RxnProbs => "ProbabilisticAnnotation",
+	ProbAnno => "ProbabilisticAnnotation",
 };
 my $objcorrespondence = {
 	BiochemistryStructures => "BiochemistryStructures",
@@ -100,7 +102,7 @@ foreach my $obj (keys(%{$objcorrespondence})) {
 }
 my $subobj = {};
 my $specobjects = {};
-my $speclist = ["FBAModel.spec","Ontology.spec","Biochem.spec","Genome.spec","Phenotypes.spec"];
+my $speclist = ["FBAModel.spec","Ontology.spec","Biochem.spec","Genome.spec","Phenotypes.spec","ProbabilisticAnnotation.spec"];
 for (my $i=0; $i < @{$speclist}; $i++) {
 	my $module;
 	my $stringtypes = {};

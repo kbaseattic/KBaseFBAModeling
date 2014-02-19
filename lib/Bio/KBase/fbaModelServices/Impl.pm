@@ -397,6 +397,14 @@ sub _workspaceServices {
     return $self->{_workspaceServices}->{$self->_workspaceURL()};
 }
 
+sub _workspace_list {
+	my $self = shift;
+	if (!defined($self->_getContext()->{_workspace_list})) {
+		$self->_getContext()->{_workspace_list} = $self->_workspaceServices()->list_workspace_info({});
+	}
+	return $self->_getContext()->{_workspace_list};
+}
+
 sub _workspaceURL {
 	my $self = shift;
 	if (defined($self->_getContext()->{_override}->{_wsurl})) {
@@ -500,7 +508,7 @@ sub _get_genomeObj_from_CDM {
     }
     $data = $cdmi->genomes_to_contigs([$id]);
     my $contigset = {
-    	id => $self->_idServer()->register_ids("kb|contigset","md5hash",[$genomeObj->{md5}])->{$genomeObj->{md5}},
+    	id => $self->_register_kb_id("kb|contigset",$genomeObj->{md5},"md5hash"),
 		name => $genomeObj->{scientific_name},
 		md5 => $genomeObj->{md5},
 		source_id => $genomeObj->{source_id},
@@ -578,7 +586,7 @@ sub _get_genomeObj_from_SEED {
     	$self->_error("PubSEED genome ".$id." not found!",'get_genomeobject');
     }
     my $genomeObj = {
-		id => $self->_idServer()->register_ids("kb|g","SEED",[$id])->{$id},
+		id => $self->_register_kb_id("kb|g",$id,"SEED"),
 		scientific_name => $data->{$id}->[2],
 		domain => $data->{$id}->[4],
 		genetic_code => $data->{$id}->[5],
@@ -635,7 +643,7 @@ sub _get_genomeObj_from_SEED {
 	}
 	$genomeObj->{md5} = Digest::MD5::md5_hex($str);
 	$contigset->{md5} = $genomeObj->{md5};
-	$contigset->{id} = $self->_idServer()->register_ids("kb|contigset","md5hash",[$contigset->{md5}])->{$contigset->{md5}};
+	$contigset->{id} = $self->_register_kb_id("kb|contigset",$contigset->{md5},"md5hash");
 	for (my $i=0; $i < @{$featureList}; $i++) {
 		my $feature = {
   			id => $featureList->[$i],
@@ -702,7 +710,7 @@ sub _get_genomeObj_from_RAST {
     	$self->_error("RAST genome ".$id." not found!",'get_genomeobject');
     }
 	my $genomeObj = {
-		id => $self->_idServer()->register_ids("kb|g","RAST",[$id])->{$id},
+		id => $self->_register_kb_id("kb|g",$id,"RAST"),
 		scientific_name => $data->{name},
 		domain => $data->{taxonomy},
 		genetic_code => 11,
@@ -819,7 +827,7 @@ sub _get_genomeObj_from_RAST {
 		}
 		$genomeObj->{md5} = Digest::MD5::md5_hex($str);
 		$contigset->{md5} = $genomeObj->{md5};
-		$contigset->{id} = $self->_idServer()->register_ids("kb|contigset","md5hash",[$contigset->{md5}])->{$contigset->{md5}};
+		$contigset->{id} = $self->_register_kb_id("kb|contigset",$contigset->{md5},"md5hash");
     	$ContigObj = Bio::KBase::ObjectAPI::KBaseGenomes::ContigSet->new($contigset);
 	}
 	$genomeObj = Bio::KBase::ObjectAPI::KBaseGenomes::Genome->new($genomeObj);
@@ -853,6 +861,34 @@ sub _validateargs {
 		foreach my $argument (keys(%{$optionalArguments})) {
 			if (!defined($args->{$argument})) {
 				$args->{$argument} = $optionalArguments->{$argument};
+				
+			}
+		}
+	}
+	my $wshash = {};
+	foreach my $argument (keys(%{$args})) {
+		if (defined($args->{$argument}) && length($args->{$argument}) > 0) {
+			if ($argument =~ m/_ws$/ || $argument =~ m/workspace$/) {
+				$wshash->{$args->{$argument}} = 0;
+			} elsif ($argument =~ m/workspaces/) {
+				foreach my $ws (@{$args->{$argument}}) {
+					$wshash->{$ws} = 0;
+				}
+			}
+		}
+	}
+	if (keys(%{$wshash}) > 0) {
+		my $output = $self->_workspace_list();
+		foreach my $item (@{$output}) {
+			if (defined($wshash->{$item->[0]})) {
+				$wshash->{$item->[0]} = 1;
+			} elsif (defined($wshash->{$item->[1]})) {
+				$wshash->{$item->[1]} = 1;
+			}
+		}
+		foreach my $ws (keys(%{$wshash})) {
+			if ($wshash->{$ws} == 0) {
+				$self->_error("Job specifies a workspace that does not exist or that user has no access to:".$ws);
 			}
 		}
 	}
@@ -3153,24 +3189,14 @@ sub get_fbas
     $input = $self->_validateargs($input,["fbas","workspaces"],{
 		id_type => "ModelSEED",
 		biochemistry => "default",
-		mapping => "default-mapping"
+		biochemistry_workspace => "kbase"
 	});
-	#Creating cache with the biochemistry, to ensure only one is created for all models
-	my $cache = {
-		Biochemistry => {
-			kbase => {
-				"default" => $self->_get_msobject("Biochemistry","kbase",$input->{biochemistry})
-			}
-		}
-	};
     for (my $i=0; $i < @{$input->{fbas}}; $i++) {
     	my $id = $input->{fbas}->[$i];
     	my $ws = $input->{workspaces}->[$i];
     	my $fba = $self->_get_msobject("FBA",$ws,$id);
     	my $fbadata = $self->_FBA_to_FBAdata($fba);
-    	$cache->{FBA}->{$ws}->{$id} = $fba;
-    	$cache->{Model}->{$fbadata->{model_workspace}}->{$fbadata->{model}} = $fba->fbamodel();
-    	push(@{$out_fbas},$fbadata);
+       	push(@{$out_fbas},$fbadata);
     }
 	$self->_clearContext();
     #END get_fbas
@@ -3445,11 +3471,8 @@ sub get_gapfills
     #BEGIN get_gapfills
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["gapfills","workspaces"],{
-		id_type => "ModelSEED",
-		biochemistry => "default",
-		mapping => "default-mapping"
+		id_type => "ModelSEED"
 	});
-	
     for (my $i=0; $i < @{$input->{gapfills}}; $i++) {
     	my $id = $input->{gapfills}->[$i];
     	my $ws = $input->{workspaces}->[$i];
@@ -3698,26 +3721,14 @@ sub get_gapgens
     #BEGIN get_gapgens
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["gapgens","workspaces"],{
-		id_type => "ModelSEED",
-		biochemistry => "default",
-		mapping => "default-mapping"
+		id_type => "ModelSEED"
 	});
-	#Creating cache with the biochemistry, to ensure only one is created for all models
-	my $cache = {
-		Biochemistry => {
-			kbase => {
-				"default" => $self->_get_msobject("Biochemistry","kbase",$input->{biochemistry})
-			}
-		}
-	};
     for (my $i=0; $i < @{$input->{gapgens}}; $i++) {
     	my $id = $input->{gapgens}->[$i];
     	my $ws = $input->{workspaces}->[$i];
     	my $obj = $self->_get_msobject("GapGen",$ws,$id);
     	my $data = $self->_GapGen_to_GapGenData($obj);
-    	$cache->{GapGen}->{$ws}->{$id} = $obj;
-    	$cache->{Model}->{$data->{model_workspace}}->{$data->{model}} = $obj->model();
-    	push(@{$out_gapgens},$data);
+       	push(@{$out_gapgens},$data);
     }
 	$self->_clearContext();
     #END get_gapgens
@@ -3820,9 +3831,10 @@ sub get_reactions
     #BEGIN get_reactions
 	$self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["reactions"],{
-    	biochemistry => "default"
+    	biochemistry => "default",
+    	biochemistry_workspace => "kbase"
     });
-	my $biochem = $self->_get_msobject("Biochemistry","kbase",$input->{biochemistry});
+	my $biochem = $self->_get_msobject("Biochemistry",$input->{biochemistry_workspace},$input->{biochemistry});
 	$out_reactions = [];
 	for (my $i=0; $i < @{$input->{reactions}}; $i++) {
 		my $rxn = $input->{reactions}->[$i];
@@ -3949,9 +3961,9 @@ sub get_compounds
     $input = $self->_validateargs($input,["compounds"],{
     	id_type => "all",
     	biochemistry => "default",
-		mapping => "default-mapping"
+		biochemistry_workspace => "kbase"
     });
-	my $biochem = $self->_get_msobject("Biochemistry","kbase",$input->{biochemistry});
+	my $biochem = $self->_get_msobject("Biochemistry",$input->{biochemistry_workspace},$input->{biochemistry});
 	$out_compounds = [];
 	for (my $i=0; $i < @{$input->{compounds}}; $i++) {
 		my $cpd = $input->{compounds}->[$i];
@@ -4063,9 +4075,10 @@ sub get_alias
     #BEGIN get_alias
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["input_ids", "input_id_type", "output_id_type", "object_type"],{
-        biochemistry => "default"
+        biochemistry => "default",
+        biochemistry_workspace => "kbase"
     });
-    my $biochem = $self->_get_msobject("Biochemistry","kbase",$input->{biochemistry});
+    my $biochem = $self->_get_msobject("Biochemistry",$input->{biochemistry_workspace},$input->{biochemistry});
     $output = [];
     for (my $i=0; $i < @{$input->{input_ids}}; $i++) {
 		my $id = $input->{input_ids}->[$i];
@@ -4433,121 +4446,6 @@ sub get_biochemistry
 							       method_name => 'get_biochemistry');
     }
     return($out_biochemistry);
-}
-
-
-
-
-=head2 get_ETCDiagram
-
-  $output = $obj->get_ETCDiagram($input)
-
-=over 4
-
-=item Parameter and return types
-
-=begin html
-
-<pre>
-$input is a get_ETCDiagram_params
-$output is an ETCDiagramSpecs
-get_ETCDiagram_params is a reference to a hash where the following keys are defined:
-	model has a value which is a fbamodel_id
-	workspace has a value which is a workspace_id
-	media has a value which is a media_id
-	mediaws has a value which is a workspace_id
-	auth has a value which is a string
-fbamodel_id is a string
-workspace_id is a string
-media_id is a string
-ETCDiagramSpecs is a reference to a hash where the following keys are defined:
-	nodes has a value which is a reference to a list where each element is an ETCNodes
-	media has a value which is a string
-	growth has a value which is a string
-	organism has a value which is a string
-ETCNodes is a reference to a hash where the following keys are defined:
-	resp has a value which is a string
-	y has a value which is an int
-	x has a value which is an int
-	width has a value which is an int
-	height has a value which is an int
-	shape has a value which is a string
-	label has a value which is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-$input is a get_ETCDiagram_params
-$output is an ETCDiagramSpecs
-get_ETCDiagram_params is a reference to a hash where the following keys are defined:
-	model has a value which is a fbamodel_id
-	workspace has a value which is a workspace_id
-	media has a value which is a media_id
-	mediaws has a value which is a workspace_id
-	auth has a value which is a string
-fbamodel_id is a string
-workspace_id is a string
-media_id is a string
-ETCDiagramSpecs is a reference to a hash where the following keys are defined:
-	nodes has a value which is a reference to a list where each element is an ETCNodes
-	media has a value which is a string
-	growth has a value which is a string
-	organism has a value which is a string
-ETCNodes is a reference to a hash where the following keys are defined:
-	resp has a value which is a string
-	y has a value which is an int
-	x has a value which is an int
-	width has a value which is an int
-	height has a value which is an int
-	shape has a value which is a string
-	label has a value which is a string
-
-
-=end text
-
-
-
-=item Description
-
-This function retrieves an ETC diagram for the input model operating in the input media condition
-    The model must grow on the specified media in order to return a working ETC diagram
-
-=back
-
-=cut
-
-sub get_ETCDiagram
-{
-    my $self = shift;
-    my($input) = @_;
-
-    my @_bad_arguments;
-    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
-    if (@_bad_arguments) {
-	my $msg = "Invalid arguments passed to get_ETCDiagram:\n" . join("", map { "\t$_\n" } @_bad_arguments);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'get_ETCDiagram');
-    }
-
-    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
-    my($output);
-    #BEGIN get_ETCDiagram
-    $self->_setContext($ctx,$input);
-    my $etcDiagram;
-    $output = $etcDiagram;
-	$self->_clearContext();
-    #END get_ETCDiagram
-    my @_bad_returns;
-    (ref($output) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
-    if (@_bad_returns) {
-	my $msg = "Invalid returns passed to get_ETCDiagram:\n" . join("", map { "\t$_\n" } @_bad_returns);
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'get_ETCDiagram');
-    }
-    return($output);
 }
 
 
@@ -5016,7 +4914,7 @@ sub genome_object_to_workspace
 		$genome->{dna_size} = length($str);
 		$genome->{md5} = Digest::MD5::md5_hex($str);
 		my $contigset = {
-			id => $self->_idServer()->register_ids("kb|contigset","md5hash",[$genome->{md5}]),
+			id => $self->_register_kb_id("kb|contigset",$genome->{md5},"md5hash"),
 			name => $genome->{scientific_name},
 			md5 => $genome->{md5},
 			source_id => $genome->{source_id},
@@ -6157,7 +6055,6 @@ sub adjust_model_reaction
     	addReaction => 0,
     	compounds => [],
 		outputid => $input->{model},
-		outputws => $input->{workspace}
     });
 
     # For reverse compatibility, if we are given scalar arguments for the reactions or other multi-component objects
@@ -6223,7 +6120,7 @@ sub adjust_model_reaction
 		    compounds => $compoundhash
 		});
 	}
-    $modelMeta = $self->_save_msobject($model,"FBAModel",$input->{outputws},$input->{outputid});
+    $modelMeta = $self->_save_msobject($model,"FBAModel",$input->{workspace},$input->{outputid});
     $self->_clearContext();
     #END adjust_model_reaction
     my @_bad_returns;
@@ -6522,10 +6419,11 @@ sub addmedia
     	concentrations => [],
     	maxflux => [],
     	minflux => [],
-    	biochemistry => "default"
+    	biochemistry => "default",
+    	biochemistry_workspace => "kbase"
     });
     #Creating the media object from the specifications
-    my $bio = $self->_get_msobject("Biochemistry","kbase",$input->{biochemistry});
+    my $bio = $self->_get_msobject("Biochemistry",$input->{biochemistry_workspace},$input->{biochemistry});
     my $media = Bio::KBase::ObjectAPI::KBaseBiochem::Media->new({
     	id => "kb|media.".$self->_idServer()->allocate_id_range("kb|media",1),
     	name => $input->{name},
@@ -7161,6 +7059,7 @@ sub import_phenotypes
 		genome_workspace => $input->{workspace},
 		ignore_errors => 0,
 		biochemistry => "default",
+		biochemistry_workspace => "kbase",
 		name => undef,
 		source => "unknown",
 		type => "unspecified",
@@ -7186,7 +7085,7 @@ sub import_phenotypes
 		type => $input->{type}
 	});
 	$phenoset->parent($self->_KBaseStore());
-	my $bio = $self->_get_msobject("Biochemistry","kbase",$input->{biochemistry});
+	my $bio = $self->_get_msobject("Biochemistry",$input->{biochemistry_workspace},$input->{biochemistry});
 	$phenoset->import_phenotype_table({
 		data => $input->{phenotypes},
 		biochem => $bio
@@ -11686,8 +11585,8 @@ sub filter_iterative_solutions
     #BEGIN filter_iterative_solutions
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["model","workspace", "cutoff", "gapfillsln"],{
-	input_model_ws => $input->{workspace},
-	outmodel => $input->{model}	
+		input_model_ws => $input->{workspace},
+		outmodel => $input->{model}	
     });
 
     my $model = $self->_get_msobject("FBAModel",$input->{input_model_ws},$input->{model});
@@ -14511,7 +14410,8 @@ sub add_stimuli
     #BEGIN add_stimuli
     $self->_setContext($ctx,$params);
 	$params = $self->_validateargs($params,["name","workspace"],{
-		biochemid => undef,
+		biochemid => "default",
+		biochem_workspace => "kbase",
 		stimuliid => undef,
 		abbreviation => $params->{name},
 		description => "",
@@ -14533,12 +14433,7 @@ sub add_stimuli
 	if (!defined($params->{stimuliid})) {
 		$params->{stimuliid} = $self->_get_new_id("stim.");
 	}
-	my $biochem;
-	if (defined($params->{biochemid})) {
-		$biochem = $self->_get_msobject("Biochemistry",$params->{biochem_workspace},$params->{biochemid});
-	} else {
-		$biochem = $self->_get_msobject("Biochemistry","kbase","default");
-	}
+	my $biochem = $self->_get_msobject("Biochemistry",$params->{biochem_workspace},$params->{biochemid});
 	my $obj = {
 		description => $params->{stimuliid},
 		id => $params->{stimuliid},
@@ -14715,6 +14610,8 @@ sub import_regulatory_model
     #BEGIN import_regulatory_model
      $self->_setContext($ctx,$params);
 	$params = $self->_validateargs($params,["genome","workspace","regulators"],{
+		biochemid => "default",
+		biochem_workspace => "kbase",
 		regmodel_uid => undef,
 		genome_ws => $params->{workspace},
 		name => undef,
@@ -14735,12 +14632,7 @@ sub import_regulatory_model
 	if (!defined($params->{stimuliid})) {
 		$params->{stimuliid} = $self->_get_new_id("stim.");
 	}
-	my $biochem;
-	if (defined($params->{biochemid})) {
-		$biochem = $self->_get_msobject("Biochemistry",$params->{biochem_workspace},$params->{biochemid});
-	} else {
-		$biochem = $self->_get_msobject("Biochemistry","kbase","default");
-	}
+	my $biochem = $self->_get_msobject("Biochemistry",$params->{biochem_workspace},$params->{biochemid});
 	my $obj = {
 		description => $params->{stimuliid},
 		id => $params->{stimuliid},
@@ -15184,7 +15076,8 @@ sub compare_genomes
     #BEGIN compare_genomes
     $self->_setContext($ctx,$params);
 	$params = $self->_validateargs($params,["genomes","workspaces"],{
-		mapping => "kbase/default-mapping"
+		mapping => "default-mapping",
+		mapping_workspace => "kbase"
 	});
 	$output = {
 		genome_comparisons => [],
@@ -15193,7 +15086,7 @@ sub compare_genomes
 	my $SubsysRoles = {};
 	my $GenomeHash = {};
 	my $FunctionHash = {};
-	my $map = $self->_get_msobject("Mapping","kbase","default-mapping");
+	my $map = $self->_get_msobject("Mapping",$params->{mapping_workspace},$params->{mapping});
 	my $rolesets = $map->subsystems();
 	for (my $i=0; $i < @{$rolesets}; $i++) {
 		my $roleset = $rolesets->[$i];
@@ -21187,55 +21080,6 @@ a reference to a hash where the following keys are defined:
 biochemistry has a value which is a biochemistry_id
 biochemistry_workspace has a value which is a workspace_id
 id_type has a value which is a string
-auth has a value which is a string
-
-
-=end text
-
-=back
-
-
-
-=head2 get_ETCDiagram_params
-
-=over 4
-
-
-
-=item Description
-
-Input parameters for the "get_ETCDiagram" function.
-
-        model_id model - ID of the model to retrieve ETC for
-        workspace_id workspace - ID of the workspace containing the model 
-        media_id media - ID of the media to retrieve ETC for
-        workspace_id mediaws - workpace containing the specified media
-        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-model has a value which is a fbamodel_id
-workspace has a value which is a workspace_id
-media has a value which is a media_id
-mediaws has a value which is a workspace_id
-auth has a value which is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-model has a value which is a fbamodel_id
-workspace has a value which is a workspace_id
-media has a value which is a media_id
-mediaws has a value which is a workspace_id
 auth has a value which is a string
 
 

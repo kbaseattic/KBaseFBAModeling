@@ -7,6 +7,7 @@ use Bio::KBase::workspaceService::Impl;
 use Bio::KBase::workspace::Client;
 use ModelSEED::KBaseStore;
 use JSON::XS;
+use DateTime;
 use Bio::KBase::ObjectAPI::KBaseStore;
 $|=1;
 
@@ -62,24 +63,52 @@ my $newstore = Bio::KBase::ObjectAPI::KBaseStore->new({
 
 $Bio::KBase::workspaceService::Server::CallContext = {_override => {_authentication => ""}};
 my $array = [split(/[\t;]/,$object)];
-my $obj = $oldstore->get_object($array->[0],$array->[1]."/".$array->[2]);
-my $provenance = [{
-	"time" => $array->[5]."+0000",
-	service_ver => 0,
-	service => "KBaseFBAModeling",
-	method => $array->[4],
-	method_params => [],
-	input_ws_objects => [],
-	resolved_ws_objects => [],
-	intermediate_incoming => [],
-	intermediate_outgoing => []
-}];
-if ($array->[4] =~ m/Bio::KBase::([^:]+)::(.+)/) {
-	$provenance->{service} = $1;
-	$provenance->{method} = $2;
+my $obj;
+my $provenance;
+if (-e $array->[4]) {
+	#The object is a JSON file. Load the file and instantiate the object
+	open(my $fh, "<", $array->[4]);
+	my $data = "";
+	while (my $str = <$fh>) {
+		$data .= $str;
+	}
+	close($fh);
+	$obj = decode_json($data);
+	my $class = "ModelSEED::MS::".$array->[0];
+    $obj = $class->new($obj);
+    $provenance = [{
+		"time" => DateTime->now()->datetime()."+0000",
+		service_ver => 0,
+		service => "workspace_deluxe",
+		method => "save_object",
+		method_params => [],
+		input_ws_objects => [],
+		resolved_ws_objects => [],
+		intermediate_incoming => [],
+		intermediate_outgoing => []
+	}];
+	$newstore->user_override($array->[3]);
+} else {
+	$obj = $oldstore->get_object($array->[0],$array->[1]."/".$array->[2]);
+	$provenance = [{
+		"time" => $array->[5]."+0000",
+		service_ver => 0,
+		service => "KBaseFBAModeling",
+		method => $array->[4],
+		method_params => [],
+		input_ws_objects => [],
+		resolved_ws_objects => [],
+		intermediate_incoming => [],
+		intermediate_outgoing => []
+	}];
+	if ($array->[4] =~ m/Bio::KBase::([^:]+)::(.+)/) {
+		$provenance->{service} = $1;
+		$provenance->{method} = $2;
+	}
+	$newstore->user_override($array->[3]);
 }
 $newstore->provenance($provenance);
-$newstore->user_override($array->[3]);
+
 if ($array->[0] eq "PhenotypeSimulationSet") {
 	my $modobj = $newstore->get_object("FBAModel",$obj->{model_workspace}."/".$obj->{model});
 	my $phenoobj = $newstore->get_object("PhenotypeSet",$obj->{phenotypeSet});

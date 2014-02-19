@@ -5,27 +5,27 @@ module KBaseBiochem {
 	typedef int bool;
 	/*
 		Reference to a reaction object in a biochemistry
-		@id subws KBCHEM.BiochemistryStructures.structures.[*].id
+		@id subws KBaseBiochem.BiochemistryStructures.structures.[*].id
 	*/
     typedef string structure_ref;
 	/*
 		Reference to a reaction object in a biochemistry
-		@id subws KBCHEM.Biochemistry.reactions.[*].id
+		@id subws KBaseBiochem.Biochemistry.reactions.[*].id
 	*/
     typedef string reaction_ref;
 	/*
 		Reference to a cue object in a biochemistry
-		@id subws KBCHEM.Biochemistry.cues.[*].id
+		@id subws KBaseBiochem.Biochemistry.cues.[*].id
 	*/
     typedef string cue_ref;
 	/*
 		Reference to a compartment object in a biochemistry
-		@id subws KBCHEM.Biochemistry.compartments.[*].id
+		@id subws KBaseBiochem.Biochemistry.compartments.[*].id
 	*/
     typedef string compartment_ref;
 	/*
 		Reference to a compound object in a biochemistry
-		@id subws KBCHEM.Biochemistry.compounds.[*].id
+		@id subws KBaseBiochem.Biochemistry.compounds.[*].id
 	*/
     typedef string compound_ref;
 	/*
@@ -277,10 +277,10 @@ module KBaseBiochem {
     	Biochemistry object
     	
     	@optional description name
-    	@searchable ws_subset compartments.[*].(id,name,hierarchy)
-    	@searchable ws_subset compounds.[*].(id,isCofactor,name,abbreviation,formula,unchargedFormula,abstractCompound_ref,comprisedOfCompound_refs)
-    	@searchable ws_subset reactions.[*].(id,name,abbreviation,defaultProtons,abstractReaction_ref,reagents.[*].(compound_ref))
-    	@searchable ws_subset cues.[*].(id,name,abbreviation,formula,unchargedFormula,smallMolecule,priority)
+    	@searchable ws_subset compartments.[*].(id,name)
+    	@searchable ws_subset compounds.[*].(id,name)
+    	@searchable ws_subset reactions.[*].(id)
+    	@searchable ws_subset cues.[*].(id,name,smallMolecule)
     	@searchable ws_subset reactionSets.[*].(id,name,class,reaction_refs,type)
     	@searchable ws_subset compoundSets.[*].(id,name,class,compound_refs,type)
     */
@@ -323,4 +323,106 @@ module KBaseBiochem {
 		string description;
 		list<CompoundStructure> structures;
 	} BiochemistryStructures;
+	
+	/*
+		Reference to a compound object in a metabolic map
+		@id subws KBaseBiochem.MetabolicMap.compounds.[*].id
+	*/
+    typedef string mapcompound_ref;
+    
+    /*
+		Reference to a compound object in a metabolic map
+		@id subws KBaseBiochem.MetabolicMap.linkedmaps.[*].id
+	*/
+    typedef string maplink_ref;
+    
+    /*
+		Reference to a metabolic map
+		@id ws KBaseBiochem.MetabolicMap
+	*/
+    typedef string map_ref;
+    
+    /*
+		Metabolic map ID
+		@id external
+	*/
+    typedef string map_id;
+	
+	/* 
+    	MapReaction object
+    	
+    	@optional link
+    */
+	typedef structure {
+		string id;
+		bool reversible;
+		string name;
+		string ec;
+		string shape;
+		string link;
+		int h;
+		int w;
+		int y;
+		int x;
+		list<string> rxns;
+		list<mapcompound_ref> substrate_refs;
+		list<mapcompound_ref> product_refs;
+	} MapReaction;
+	
+	/* 
+    	MapCompound object
+    	
+    	@optional link
+    */
+	typedef structure {
+		string id;
+		string name;
+		string ec;
+		string shape;
+		string link;
+		int h;
+		int w;
+		int y;
+		int x;
+		list<string> cpds;
+		list<maplink_ref> link_refs;
+	} MapCompound;
+	
+	/* 
+    	MapLink object
+    	
+    	@optional link
+    */
+	typedef structure {
+		string id;
+		map_ref map_ref;
+		string name;
+		string shape;
+		string link;
+		int h;
+		int w;
+		int y;
+		int x;
+		map_id map_id;
+	} MapLink;
+	
+	/* 
+    	MetabolicMap object
+    	
+    	@optional description link
+    	@searchable ws_subset id id name source_id source reaction_ids compound_ids
+    */
+	typedef structure {
+		map_id id;
+		string name;
+		string source_id;
+		string source;
+		string link;
+		string description;
+		list<string> reaction_ids;
+		list<string> compound_ids;
+		list<MapReaction> reactions;
+		list<MapCompound> compounds;
+		list<MapLink> linkedmaps;
+	} MetabolicMap;
 };

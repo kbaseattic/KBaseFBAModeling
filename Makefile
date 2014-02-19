@@ -141,8 +141,6 @@ deploy-services:
 	chmod +x $(TARGET)/services/$(SERV_SERVICE)/stop_service; \
 	tpage $(SERV_TPAGE_ARGS) service/process.tt > $(TARGET)/services/$(SERV_SERVICE)/process.$(SERV_SERVICE); \
 	chmod +x $(TARGET)/services/$(SERV_SERVICE)/process.$(SERV_SERVICE); \
-	cp configs/KBaseMSConfig.json ${HOME}/.modelseed2
-	echo "{\"user_options\":{\"MFATK_BIN\":\"$(TARGET)/bin/mfatoolkit\",\"MFATK_CACHE\":\"/tmp\"}}" > $(TARGET)/services/$(SERV_SERVICE)/config.json;
 
 deploy-docs:
 	if [ ! -d docs ] ; then mkdir -p docs ; fi
