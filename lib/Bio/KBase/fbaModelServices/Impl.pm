@@ -70,6 +70,8 @@ use Bio::KBase::probabilistic_annotation::Client;
 use Bio::KBase::GenomeAnnotation::Client;
 use Bio::KBase::ObjectAPI::KBaseStore;
 use Data::UUID;
+use Bio::KBase::ObjectAPI::ProbabilisticAnnotation::ProbAnno;
+use Bio::KBase::ObjectAPI::ProbabilisticAnnotation::RxnProbs;
 use Bio::KBase::ObjectAPI::KBaseBiochem::Biochemistry;
 use Bio::KBase::ObjectAPI::KBaseBiochem::Media;
 use Bio::KBase::ObjectAPI::KBaseOntology::Mapping;
@@ -1281,7 +1283,7 @@ sub _buildGapfillObject {
 		#Get coefficients of probmodel
 		$gapform->fba()->parameters()->{"Objective coefficient file"} = "ProbModelReactionCoefficients.txt";
 		$gapform->fba()->inputfiles()->{"ProbModelReactionCoefficients.txt"} = [];
-		my $rxns = $rxnprobs->{"reaction_probabilities"};
+		my $rxns = $rxnprobs->reaction_probabilities();
 		for (my $i=0; $i < @{$rxns}; $i++) {
 			my $rxn = $rxns->[$i];
 			my $cost = (1-$rxn->[1]);
