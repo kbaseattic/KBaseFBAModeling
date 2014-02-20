@@ -9,11 +9,15 @@ use ModelSEED::KBaseStore;
 use JSON::XS;
 use DateTime;
 use Bio::KBase::ObjectAPI::KBaseStore;
+use ModelSEED::MS::Model;
+
+use Devel::Size::Report qw(report_size);
 $|=1;
 
 my $config = $ARGV[0];
 my $object = $ARGV[1];
 my $filename = $ARGV[2];
+
 if (!defined($config)) {
 	print STDERR "No config file provided!\n";
 	exit(-1);
@@ -26,43 +30,48 @@ if (!-e $config) {
 my $c = Config::Simple->new();
 $c->read($config);
 
-open( my $fh, "<", $filename);
 my $genomehash = {};
-while (my $str = <$fh>) {
+if(-e $filename){
+    open( my $fh, "<", $filename);
+    while (my $str = <$fh>) {
 	chomp($str);
 	my $array = [split(/\t/,$str)];
 	if (defined($array->[1])) {
-		$genomehash->{$array->[1]} = $array->[0];
+	    $genomehash->{$array->[1]} = $array->[0];
 	}
+    }
+    close($fh);
 }
-close($fh);
 
 my $wserv;
 if ($c->param("kbclientconfig.wsurl") eq "impl") {
-	$wserv = Bio::KBase::workspaceService::Impl->new({
-		"mongodb-database" => "workspace_service",
-		"mssserver-url" => "http://biologin-4.mcs.anl.gov:7050",
-		"idserver-url" => "http://kbase.us/service/idserver",
-		"mongodb-host" => "mongodb.kbase.us"
-	});
+    $wserv = Bio::KBase::workspaceService::Impl->new({"mongodb-database" => "workspace_service",
+						      "mssserver-url" => "http://biologin-4.mcs.anl.gov:7050",
+						      "idserver-url" => "http://kbase.us/service/idserver",
+						      "mongodb-host" => "mongodb.kbase.us"});
 } else {
-	$wserv = Bio::KBase::workspaceService::Client->new($c->param("kbclientconfig.wsurl"));
+    $wserv = Bio::KBase::workspaceService::Client->new($c->param("kbclientconfig.wsurl"));
 }
+
 my $wsderv = Bio::KBase::workspace::Client->new($c->param("kbclientconfig.wsdurl"),$c->param("kbclientconfig.auth"));
 $wsderv->{token} = $c->param("kbclientconfig.auth");
 $wsderv->{client}->{token} = $c->param("kbclientconfig.auth");
+
 my $idserv = Bio::KBase::IDServer::Client->new($c->param("kbclientconfig.idurl"));
+
+my $newstore = Bio::KBase::ObjectAPI::KBaseStore->new({
+	workspace => $wsderv
+});
 
 my $oldstore = ModelSEED::KBaseStore->new({
 	auth => $c->param("kbclientconfig.auth"),
 	workspace => $wserv
 });
-my $newstore = Bio::KBase::ObjectAPI::KBaseStore->new({
-	workspace => $wsderv
-});
 
 $Bio::KBase::workspaceService::Server::CallContext = {_override => {_authentication => ""}};
+
 my $array = [split(/[\t;]/,$object)];
+
 my $obj;
 my $provenance;
 if (-e $array->[4]) {
@@ -75,8 +84,8 @@ if (-e $array->[4]) {
 	close($fh);
 	$obj = decode_json($data);
 	my $class = "ModelSEED::MS::".$array->[0];
-    $obj = $class->new($obj);
-    $provenance = [{
+	$obj = $class->new($obj);
+	$provenance = [{
 		"time" => DateTime->now()->datetime()."+0000",
 		service_ver => 0,
 		service => "workspace_deluxe",
@@ -87,27 +96,26 @@ if (-e $array->[4]) {
 		intermediate_incoming => [],
 		intermediate_outgoing => []
 	}];
-	$newstore->user_override($array->[3]);
+	$newstore->user_override($array->[2]);
 } else {
-	$obj = $oldstore->get_object($array->[0],$array->[1]."/".$array->[2]);
-	$provenance = [{
-		"time" => $array->[5]."+0000",
-		service_ver => 0,
-		service => "KBaseFBAModeling",
-		method => $array->[4],
-		method_params => [],
-		input_ws_objects => [],
-		resolved_ws_objects => [],
-		intermediate_incoming => [],
-		intermediate_outgoing => []
-	}];
-	if ($array->[4] =~ m/Bio::KBase::([^:]+)::(.+)/) {
-		$provenance->{service} = $1;
-		$provenance->{method} = $2;
-	}
+    $obj = $oldstore->get_object("Model",$array->[1]."/".$array->[2]);
+    $provenance = [{
+	"time" => $array->[5]."+0000",
+	service_ver => 0,
+	service => "KBaseFBAModeling",
+	method => $array->[4],
+	method_params => [],
+	input_ws_objects => [],
+	resolved_ws_objects => [],
+	intermediate_incoming => [],
+	intermediate_outgoing => []
+		   }];
+    if ($array->[4] =~ m/Bio::KBase::([^:]+)::(.+)/) {
+	$provenance->{service} = $1;
+	$provenance->{method} = $2;
+    }
 	$newstore->user_override($array->[3]);
 }
-$newstore->provenance($provenance);
 
 if ($array->[0] eq "PhenotypeSimulationSet") {
 	my $modobj = $newstore->get_object("FBAModel",$obj->{model_workspace}."/".$obj->{model});
@@ -140,9 +148,10 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 		print "ERROR_MESSAGE".$@."END_ERROR_MESSAGE\n";
 	}
 } elsif ($array->[0] eq "FBAModel") {
-	my $biochem = $newstore->get_object("kbase/default");
-	my $genomehash;
+    my $biochem = $newstore->get_object("kbase/default");
+
 	my $kbid;
+
 	if (defined($obj->kbid())) {
 		$kbid = $obj->kbid();
 	} else {
@@ -159,28 +168,33 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 	};
 	my $genome;
 	if (defined($obj->annotation_uuid())) {
-		my $class = $obj->annotation()->classifyGenomeFromAnnotation();
-    	my $template;
-    	if ($class eq "Gram positive") {
+	    my $class = $obj->annotation()->classifyGenomeFromAnnotation();
+	    my $template;
+	    if ($class eq "Gram positive") {
     		$template = $newstore->get_object("KBaseTemplateModels/GramPosModelTemplate");
-       	} elsif ($class eq "Plant") {
-       		$template = $newstore->get_object("KBaseTemplateModels/PlantModelTemplate");
-    	} else {
+	    } elsif ($class eq "Plant") {
+       		$template = $newstore->get_object("PlantSEED/PlantTemplate");
+	    } else {
     		$template = $newstore->get_object("KBaseTemplateModels/GramNegModelTemplate");
-    	}
-    	if (defined($genomehash->{$obj->annotation_uuid()})) {;
-			$genome = $newstore->get_object($genomehash->{$obj->annotation_uuid()});
-			$data->{genome_ref} = $genome->_reference();
-    	}
-		$data->{template_ref} = $template->_reference();
+	    }
+
+	    if (defined($genomehash->{$obj->annotation_uuid()})) {
+		$genome = $newstore->get_object($genomehash->{$obj->annotation_uuid()});
+		$data->{genome_ref} = $genome->_reference();
+	    }
+	    $data->{template_ref} = $template->_reference();
 	}
-	if (defined($obj->id()) && !defined($obj->source_id())) {
-		$obj->source_id($obj->id());
-	}
-	if (!defined($obj->source_id())) {
-		$obj->source_id($kbid);
-		$obj->source("KBase");
-	}
+    if (defined($obj->id()) && !defined($obj->source_id())) {
+	$obj->source_id($obj->id());
+    }
+
+    if (!defined($obj->source_id())) {
+	$obj->source_id($kbid);
+    }
+    if(!defined($obj->source())){
+	$obj->source("KBase");
+    }
+
 	my $list = [qw(source_id source name type)];
 	foreach my $item (@{$list}) {
 		if (defined($obj->$item())) {
@@ -246,6 +260,7 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 		my $newrxn = {
 			id => $rxn->id(),
 			reaction_ref => $biochem->_reference()."/reactions/id/".$rxn->reaction()->id(),
+			name => $rxn->name(),
 			direction => $rxn->direction(),
 			protons => $rxn->protons()+0,
 			modelcompartment_ref => "~/modelcompartments/id/".$rxn->modelcompartment()->id(),
@@ -282,15 +297,24 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 				my $features = $subunit->modelReactionProteinSubunitGenes();
 				for (my $m=0; $m < @{$features}; $m++) {
 					my $feature = $features->[$m];
-					push(@{$newsubunit->feature_refs()},$genome->_reference()."/features/id/".$feature->id());
+					push(@{$newsubunit->{feature_refs}},$genome->_reference()."/features/id/".$feature->feature()->id());
 				}
 				push(@{$newprot->{modelReactionProteinSubunits}},$newsubunit);
 			}
 			push(@{$newprot->{modelReactionProteins}},$newprot);
 		}
+		
 		push(@{$data->{modelreactions}},$newrxn);
+		
 	}
 	my $NewModel = Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->new($data);
+
+    foreach my $newrxn (@{$NewModel->modelreactions()}){
+	$newrxn->modelReactionReagents();
+	$newrxn->modelReactionProteins();
+    }
+    	$NewModel->parent($newstore);
+
 	eval {
 		$NewModel->save($array->[1]."/".$array->[2]);
 		print "Success:".$array->[1]."/".$array->[2]."/".$obj->{"_kbaseWSMeta"}->{wsinst}."\n";
@@ -299,12 +323,16 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 		print "Failed:".$array->[1]."/".$array->[2]."/".$obj->{"_kbaseWSMeta"}->{wsinst}."\n" ;
 		print "ERROR_MESSAGE".$@."END_ERROR_MESSAGE\n";
 	}
+
+    $data = $NewModel->serializeToDB();
+
 	my $gfs = $obj->integratedGapfillings();
 	my $count = 1;
 	for (my $i=0; $i < @{$gfs}; $i++) {
-		my $gf = translate_gapfilling($gfs->[$i],$NewModel->_reference(),$genome->_reference(),$biochem->_reference(),$array->[1],$array->[2].".gf.".$count,$NewModel->id().".gf.".$count);
+		my $gf = translate_gapfill($gfs->[$i],$NewModel->_reference(),$genome->_reference(),$biochem->_reference(),$array->[1],$array->[2].".gf.".$count,$NewModel->id().".gf.".$count);
 		$count++;
 		push(@{$data->{gapfillings}},{
+		    id => $gf->id(),
 			gapfill_id => $gf->id(),
 			gapfill_ref => $gf->_reference(),
 			integrated => 1,
@@ -314,9 +342,10 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 	}
 	$gfs = $obj->unintegratedGapfillings();
 	for (my $i=0; $i < @{$gfs}; $i++) {
-		my $gf = translate_gapfilling($gfs->[$i],$NewModel->_reference(),$genome->_reference(),$biochem->_reference(),$array->[1],$array->[2].".gf.".$count,$NewModel->id().".gf.".$count);
+		my $gf = translate_gapfill($gfs->[$i],$NewModel->_reference(),$genome->_reference(),$biochem->_reference(),$array->[1],$array->[2].".gf.".$count,$NewModel->id().".gf.".$count);
 		$count++;
 		push(@{$data->{gapfillings}},{
+		    id => $gf->id(),
 			gapfill_id => $gf->id(),
 			gapfill_ref => $gf->_reference(),
 			integrated => 0,
@@ -327,9 +356,10 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 	$count = 1;
 	my $ggs = $obj->integratedGapgens();
 	for (my $i=0; $i < @{$ggs}; $i++) {
-		my $gg = translate_gapfilling($ggs->[$i],$NewModel->_reference(),$genome->_reference(),$biochem->_reference(),$array->[1],$array->[2].".gg.".$count,$NewModel->id().".gg.".$count);
+		my $gg = translate_gapfill($ggs->[$i],$NewModel->_reference(),$genome->_reference(),$biochem->_reference(),$array->[1],$array->[2].".gg.".$count,$NewModel->id().".gg.".$count);
 		$count++;
 		push(@{$data->{gapgens}},{
+		    id => $gg->id(),
 			gapgen_id => $gg->id(),
 			gapgen_ref => $gg->_reference(),
 			integrated => 1,
@@ -339,9 +369,10 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 	}
 	$ggs = $obj->unintegratedGapgens();
 	for (my $i=0; $i < @{$ggs}; $i++) {
-		my $gg = translate_gapfilling($ggs->[$i],$NewModel->_reference(),$genome->_reference(),$biochem->_reference(),$array->[1],$array->[2].".gg.".$count,$NewModel->id().".gg.".$count);
+		my $gg = translate_gapfill($ggs->[$i],$NewModel->_reference(),$genome->_reference(),$biochem->_reference(),$array->[1],$array->[2].".gg.".$count,$NewModel->id().".gg.".$count);
 		$count++;
 		push(@{$data->{gapgens}},{
+		    id => $gg->id(),
 			gapgen_id => $gg->id(),
 			gapgen_ref => $gg->_reference(),
 			integrated => 0,
@@ -349,7 +380,16 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 			media_ref => $gg->media_ref(),
 		});
 	}
-	if (@{$NewModel->gapgens()} > 0 && @{$NewModel->gapfillings()} > 0) {
+
+    $NewModel = Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->new($data);
+
+    foreach my $newrxn (@{$NewModel->modelreactions()}){
+	$newrxn->modelReactionReagents();
+	$newrxn->modelReactionProteins();
+    }
+    	$NewModel->parent($newstore);
+
+	if (@{$NewModel->gapgens()} > 0 || @{$NewModel->gapfillings()} > 0) {
 		eval {
 			$NewModel->save($array->[1]."/".$array->[2]);
 			print "Success:".$array->[1]."/".$array->[2]."/".$obj->{"_kbaseWSMeta"}->{wsinst}."/final\n";
@@ -743,7 +783,7 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 		if (defined($compounds->[$i]->cues())) {
 			my $cues = $compounds->[$i]->cues();
 			foreach my $cue (keys(%{$cues})) {
-				my $cueobj = $obj->getObject("cues",$cue);
+			    my $cueobj = $obj->getObject("cues",$cue);
 				if (defined($cueobj)) {
 					$data->{cues}->{"~/cues/id/".$cueobj->name()} = $cues->{$cue};
 				} else {
@@ -851,13 +891,15 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 			}
 		}
 	}
+
+	$NewBiochem->reactions();
 	$NewBiochem->parent($newstore);
 	eval {
 		$NewBiochem->save($array->[1]."/".$array->[2]);
-		print "Success:".$array->[1]."/".$array->[2]."/".$obj->{"_kbaseWSMeta"}->{wsinst}."\n";
+		print "Success: ".$array->[1]."/".$array->[2]."/".$obj->{"_kbaseWSMeta"}->{wsinst}."\n";
 	};
 	if ($@) {
-		print "Failed:".$array->[1]."/".$array->[2]."/".$obj->{"_kbaseWSMeta"}->{wsinst}."\n" ;
+		print "Failed:"..$array->[1]."/".$array->[2]."/".$obj->{"_kbaseWSMeta"}->{wsinst}."\n" ;
 		print "ERROR_MESSAGE".$@."END_ERROR_MESSAGE\n";
 	}
 } elsif ($array->[0] eq "Genome") {
@@ -892,9 +934,11 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 			};
 			$items = ["location","protein_families","subsystems","publications","co_occurring_fids","coexpressed_fids","atomic_regulons","regulon_data","subsystem_data","function","protein_translation","dna_sequence","type","function","aliases","annotations"];
 			foreach my $item (@{$items}) {
-				if (defined($ftr->{$item})) {
-					$newftr->{$item} = $ftr->{$item};
-				}
+			    if (defined($ftr->{$item}) && (ref($ftr->{$item}) ne "ARRAY" || scalar(@{$ftr->{$item}}) > 0 )){
+				next if $item eq "location" && scalar(@{$ftr->{$item}[0]}) == 0;
+
+				$newftr->{$item} = $ftr->{$item};
+			    }
 			}
 			if (!defined($newftr->{type}) && $newftr->{id} =~ m/(\w+)\.\d+$/) {
 				$newftr->{type} = $1;
@@ -913,57 +957,62 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 		$genomedata->{scientific_name} = $obj->{id};
 	}
 	if (defined($obj->{contigs_uuid})) {
-		my $oldcontigs = $oldstore->get_object("GenomeContigs",$obj->{contigs_uuid});
+	    my $oldcontigs = $oldstore->get_object("GenomeContigs",$obj->{contigs_uuid});
+
+	    if(scalar(@{$oldcontigs->{contigs}})>0){
+		
 		my $label = "dna";
 		if (defined($oldcontigs->{contigs}->[0]->{seq})) {
-			$label = "seq";
+		    $label = "seq";
 		}
 		$genomedata->{num_contigs} = @{$oldcontigs->{contigs}};
 		my $sortedcontigs = [sort { $a->{$label} cmp $b->{$label} } @{$oldcontigs->{contigs}}];
 		my $str = "";
+		
 		for (my $i=0; $i < @{$sortedcontigs}; $i++) {
-			if (length($str) > 0) {
-				$str .= ";";
-			}
-			$str .= $sortedcontigs->[$i]->{$label};
-			
+		    if (length($str) > 0) {
+			$str .= ";";
+		    }
+		    $str .= $sortedcontigs->[$i]->{$label};
 		}
 		$genomedata->{dna_size} = length($str);
 		my $newdata = {
-			name => $genomedata->{scientific_name},
-			md5 => Digest::MD5::md5_hex($str),
-			source_id => $genomedata->{source_id},
-			source => $genomedata->{source},
-			type => "Organism",
-			contigs => []
+		    name => $genomedata->{scientific_name},
+		    md5 => Digest::MD5::md5_hex($str),
+		    source_id => $genomedata->{source_id},
+		    source => $genomedata->{source},
+		    type => "Organism",
+		    contigs => []
 		};
 		$genomedata->{md5} = $newdata->{md5};
 		my $output = $idserv->register_ids("kb|contigset","md5hash",[$newdata->{md5}]);
 		$newdata->{id} = $output->{$newdata->{md5}};
 		for (my $i=0; $i < @{$oldcontigs->{contigs}}; $i++) {
-			push(@{$genomedata->{contig_ids}},$oldcontigs->{contigs}->[$i]->{id});
-			push(@{$genomedata->{contig_lengths}},length($oldcontigs->{contigs}->[$i]->{$label}));
-			my $md5 = Digest::MD5::md5_hex($oldcontigs->{contigs}->[$i]->{$label});
-			push(@{$newdata->{contigs}},{
-				id => $oldcontigs->{contigs}->[$i]->{id},
-				"length" => length($oldcontigs->{contigs}->[$i]->{$label}),
-				md5 => $md5,
-				sequence => $oldcontigs->{contigs}->[$i]->{$label},
-				name => $oldcontigs->{contigs}->[$i]->{id}
-			});
+		    push(@{$genomedata->{contig_ids}},$oldcontigs->{contigs}->[$i]->{id});
+		    push(@{$genomedata->{contig_lengths}},length($oldcontigs->{contigs}->[$i]->{$label}));
+		    my $md5 = Digest::MD5::md5_hex($oldcontigs->{contigs}->[$i]->{$label});
+		    push(@{$newdata->{contigs}},{
+			id => $oldcontigs->{contigs}->[$i]->{id},
+			"length" => length($oldcontigs->{contigs}->[$i]->{$label}),
+			md5 => $md5,
+			sequence => $oldcontigs->{contigs}->[$i]->{$label},
+			name => $oldcontigs->{contigs}->[$i]->{id}
+			 });
 		}
 		my $ContigObj = Bio::KBase::ObjectAPI::KBaseGenomes::ContigSet->new($newdata);
 		$ContigObj->parent($newstore);
 		eval {
-			$ContigObj->save($array->[1]."/".$array->[2].".contigset");
-			print "Success:".$array->[1]."/".$array->[2].".contigset\n";
+		    $ContigObj->save($array->[1]."/".$array->[2].".contigset");
+		    print "Success:".$array->[1]."/".$array->[2].".contigset\n";
 		};
 		if ($@) {
-			print "Failed:".$array->[1]."/".$array->[2].".contigset\n" ;
-			print "ERROR_MESSAGE".$@."END_ERROR_MESSAGE\n";
+		    print "Failed:".$array->[1]."/".$array->[2].".contigset\n" ;
+		    print "ERROR_MESSAGE".$@."END_ERROR_MESSAGE\n";
 		}
 		$genomedata->{contigset_ref} = $ContigObj->_reference();
+	    }
 	}
+
 	my $GenomeObj = Bio::KBase::ObjectAPI::KBaseGenomes::Genome->new($genomedata);
 	my $features = $GenomeObj->features();
 	$GenomeObj->parent($newstore);
@@ -979,19 +1028,22 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 
 sub translate_gapfill {
 	my ($oldgf,$modelref,$genomeref,$biochemref,$ws,$wsid,$id) = @_;
+
 	my $fba = translate_fba($oldgf->fbaFormulation(),$modelref,$genomeref,$biochemref,$ws,$wsid.".fba",$id.".fba");
+
 	my $newgf = {
 		id => $id,
-    	fba_ref => $fba->_reference(),
-    	media_ref => $fba->media_ref(),
-    	fbamodel_ref => $modelref,
-    	reactionMultipliers => {},
-    	gapfillingSolutions => [],
-    	guaranteedReaction_refs => [],
-    	targetedreaction_refs => [],
-    	blacklistedReaction_refs => [],
-    	allowableCompartment_refs => []
+		fba_ref => $fba->_reference(),
+		media_ref => $fba->media_ref(),
+		fbamodel_ref => $modelref,
+		reactionMultipliers => {},
+		gapfillingSolutions => [],
+		guaranteedReaction_refs => [],
+		targetedreaction_refs => [],
+		blacklistedReaction_refs => [],
+		allowableCompartment_refs => []
 	};	
+
     my $items = [qw(totalTimeLimit timePerSolution transporterMultiplier singleTransporterMultiplier biomassTransporterMultiplier noDeltaGMultiplier noStructureMultiplier deltaGMultiplier directionalityMultiplier drainFluxMultiplier reactionActivationBonus completeGapfill balancedReactionsOnly mediaHypothesis biomassHypothesis gprHypothesis reactionAdditionHypothesis)];	
 	foreach my $item (@{$items}) {
 		if (defined($oldgf->$item())) {
@@ -1019,13 +1071,13 @@ sub translate_gapfill {
 	foreach my $solution (@{$solutions}) {
 		my $newsolution = {
 			id => $newgf->{id}.".sol.".$count,
-    		solutionCost => $solution->solutionCost(),
-    		suboptimal => $solution->suboptimal(),
-    		integrated => $solution->integrated(),
-    		gapfillingSolutionReactions => [],
-    		biomassRemoval_refs => [],
-    		mediaSupplement_refs => [],
-    		koRestore_refs => []
+			solutionCost => $solution->solutionCost()+0,
+			suboptimal => $solution->suboptimal()+0,
+			integrated => $solution->integrated()+0,
+			gapfillingSolutionReactions => [],
+			biomassRemoval_refs => [],
+			mediaSupplement_refs => [],
+			koRestore_refs => []
 		};
 		$count++;
 		$items = $solution->biomassRemovals();
@@ -1045,10 +1097,10 @@ sub translate_gapfill {
 		foreach my $reaction (@{$reactions}) {		
 			$rcount++;
 			my $newreaction = {
-				reaction_ref => $biochemref."/reactions/id/".$reaction->reaction()->id(),
-    			compartment_ref => $biochemref."/compartments/id/".$reaction->compartment()->id(),
-    			direction => $reaction->direction(),
-    			candidateFeature_refs => []
+			    reaction_ref => $biochemref."/reactions/id/".$reaction->reaction()->id(),
+			    compartment_ref => $biochemref."/compartments/id/".$obj->biochemistry()->getObject("compartments",$reaction->compartment_uuid())->id(),
+			    direction => $reaction->direction(),
+			    candidateFeature_refs => []
 			};
 			push(@{$newsolution->{gapfillingSolutionReactions}},$newreaction);
 		}
@@ -1072,11 +1124,11 @@ sub translate_gapgen {
 	my $fba = translate_fba($oldgg->fbaFormulation(),$modelref,$genomeref,$biochemref,$ws,$wsid.".fba",$id.".fba");
 	my $newgg = {
 		id => $id,
-    	fba_ref => $fba->_reference(),
-    	media_ref => $fba->media_ref(),
-    	referenceMedia_ref => $biochemref."/media/id/".$oldgg->referenceMedia()->id(),
-    	fbamodel_ref => $modelref,
-    	gapgenSolutions => []
+		fba_ref => $fba->_reference(),
+		media_ref => $fba->media_ref(),
+		referenceMedia_ref => $biochemref."/media/id/".$oldgg->referenceMedia()->id(),
+		fbamodel_ref => $modelref,
+		gapgenSolutions => []
 	};
 	my $items = [qw(totalTimeLimit timePerSolution mediaHypothesis biomassHypothesis gprHypothesis reactionRemovalHypothesis)];	
 	foreach my $item (@{$items}) {
@@ -1161,8 +1213,8 @@ sub translate_fba {
 	}
 	my $list = [qw(uptakeLimits inputfiles parameters drainfluxUseVariables fluxUseVariables decomposeReversibleDrainFlux decomposeReversibleFlux PROMKappa defaultMinDrainFlux defaultMaxDrainFlux defaultMaxFlux objectiveConstraintFraction comboDeletions numberOfSolutions maximizeObjective minimizeErrorThermodynamicConstraints noErrorThermodynamicConstraints thermodynamicConstraints fva fluxMinimization findMinimalMedia allReversible simpleThermoConstraints)];
 	foreach my $item (@{$list}) {
-		if (defined($obj->$item())) {
-			$data->{$item} = $obj->$item();
+		if (defined($oldfba->$item())) {
+			$data->{$item} = $oldfba->$item();
 		}
 	}
 	my $items = $oldfba->geneKOs();
@@ -1187,7 +1239,7 @@ sub translate_fba {
 			$data->{biomassflux_objterms}->{$item->entity()->id()} = $item->coefficient();
 		}
 	}
-	my $constraints = $oldfba->FBAConstraints();
+	my $constraints = $oldfba->fbaConstraints();
 	foreach my $constraint (@{$constraints}) {
 		my $newconst = {
 			name => $constraint->name(),
@@ -1209,7 +1261,7 @@ sub translate_fba {
 		}
 		push(@{$data->{FBAConstraints}},$newconst);
 	}
-	my $bounds = $oldfba->FBAReactionBounds();
+	my $bounds = $oldfba->fbaReactionBounds();
 	foreach my $bound (@{$bounds}) {
 		my $newbound = {
 			modelreaction_ref => $modelref."/modelreactions/id/".$bound->modelreaction()->id(),
@@ -1219,7 +1271,7 @@ sub translate_fba {
 		};
 		push(@{$data->{FBAReactionBounds}},$newbound);
 	}
-	$bounds = $oldfba->FBACompoundBounds();
+	$bounds = $oldfba->fbaCompoundBounds();
 	foreach my $bound (@{$bounds}) {
 		my $newbound = {
 			modelcompound_ref => $modelref."/modelcompounds/id/".$bound->modelcompound()->id(),
@@ -1320,7 +1372,12 @@ sub translate_fba {
 			push(@{$data->{FBAMetaboliteProductionResults}},$newobj);
 		}
 	}
+
 	my $NewFBA = Bio::KBase::ObjectAPI::KBaseFBA::FBA->new($data);
+	$NewFBA->FBACompoundVariables();
+	$NewFBA->FBAReactionVariables();
+
+	$NewFBA->parent($newstore);
 	eval {
 		$NewFBA->save($ws."/".$wsid);
 		print "Success:".$ws."/".$wsid."/".$obj->{"_kbaseWSMeta"}->{wsinst}."\n";
@@ -1328,6 +1385,8 @@ sub translate_fba {
 	if ($@) {
 		print "Failed:".$ws."/".$wsid."/".$obj->{"_kbaseWSMeta"}->{wsinst}."\n" ;
 		print "ERROR_MESSAGE".$@."END_ERROR_MESSAGE\n";
+	}else{
+	    return $NewFBA;
 	}
 }
 
