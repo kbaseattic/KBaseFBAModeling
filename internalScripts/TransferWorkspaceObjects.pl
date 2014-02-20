@@ -37,6 +37,7 @@ print @{$objectlist}." objects to print!\n";
 for (my $i=0; $i < @{$objectlist}; $i++) {
 	my $array = [split(/\t/,$objectlist->[$i])];
 	if (!defined($targettype) || $array->[0] eq $targettype) {
+	if ($wshash->{$array->[1]} ne "seaver" ) {
 		$currentproc++;
 		if ($currentproc >= $numprocs) {
 			$currentproc = 0;
@@ -59,6 +60,9 @@ for (my $i=0; $i < @{$objectlist}; $i++) {
 					push(@{$failobj},$objectlist->[$i]);
 					$found = 1;
 				} elsif ($OutputArray->[$j] =~ m/^ERROR_MESSAGE(.+)/) {
+					print "Fail:".$i."\t".$array->[0]."\t".$array->[1]."\t".$array->[2]."\t".$array->[3]."\n";
+					$found = 1;
+					push(@{$failobj},$objectlist->[$i]);
 					$error = $1."\n";
 					my $continue = 1;
 					while ($continue == 1) {
@@ -72,18 +76,20 @@ for (my $i=0; $i < @{$objectlist}; $i++) {
 						}
 						$j++;
 					}
-					print $fh $error."\n\n\n\n";
+					print $fh $error."\n\n";
 					push(@{$errors},$objectlist->[$i]);
 					push(@{$errors},$error);
 				}
 			}
 			if ($found == 0) {
 				my $errordata = Bio::KBase::ObjectAPI::utilities::LOADFILE($directory."/".$targettype."-".$index."-temperror.txt");
+				print "Fail:".$i."\t".$array->[0]."\t".$array->[1]."\t".$array->[2]."\t".$array->[3]."\n";
 				push(@{$errors},"TRANSFERFAIL:".$objectlist->[$i]);
 				push(@{$errors},@{$errordata});
 				push(@{$failobj},$objectlist->[$i]);
 			}
 		}
+	}
 	}
 }
 close($fh);

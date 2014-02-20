@@ -10,8 +10,6 @@ use JSON::XS;
 use DateTime;
 use Bio::KBase::ObjectAPI::KBaseStore;
 use ModelSEED::MS::Model;
-
-use Devel::Size::Report qw(report_size);
 $|=1;
 
 my $config = $ARGV[0];
