@@ -96,7 +96,7 @@ if (-e $array->[4]) {
 	}];
 	$newstore->user_override($array->[2]);
 } else {
-    $obj = $oldstore->get_object("Model",$array->[1]."/".$array->[2]);
+    $obj = $oldstore->get_object($array->[0],$array->[1]."/".$array->[2]);
     $provenance = [{
 	"time" => $array->[5]."+0000",
 	service_ver => 0,
@@ -221,7 +221,7 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 			name => $cpd->name(),
 			charge => $cpd->charge()+1,
 			formula => $cpd->formula(),
-			modelcompartment_ref => "~/compartments/id/".$cpd->modelcompartment()->id(),
+			modelcompartment_ref => "~/modelcompartments/id/".$cpd->modelcompartment()->id(),
 		};
 		push(@{$data->{modelcompounds}},$newcpd);
 	}
