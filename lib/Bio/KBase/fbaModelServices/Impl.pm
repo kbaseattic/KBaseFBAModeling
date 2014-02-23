@@ -558,6 +558,9 @@ sub _get_genomeObj_from_CDM {
   		}
   		if (defined($fidAnnotationHash->{$ftr})) {
   			$feature->{annotations} = $fidAnnotationHash->{$ftr};
+  			for (my $j=0; $j < @{$feature->{annotations}}; $j++) {
+  				$feature->{annotations}->[$j]->[2] = $feature->{annotations}->[$j]->[2]+0;
+  			}
   		}	
   		if (defined($fidProteinSequences->{$ftr})) {
   			$feature->{protein_translation} = $fidProteinSequences->{$ftr};
