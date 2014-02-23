@@ -966,7 +966,6 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 		$genomedata->{num_contigs} = @{$oldcontigs->{contigs}};
 		my $sortedcontigs = [sort { $a->{$label} cmp $b->{$label} } @{$oldcontigs->{contigs}}];
 		my $str = "";
-		
 		for (my $i=0; $i < @{$sortedcontigs}; $i++) {
 		    if (length($str) > 0) {
 			$str .= ";";
@@ -985,32 +984,36 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 		$genomedata->{md5} = $newdata->{md5};
 		my $output = $idserv->register_ids("kb|contigset","md5hash",[$newdata->{md5}]);
 		$newdata->{id} = $output->{$newdata->{md5}};
-		for (my $i=0; $i < @{$oldcontigs->{contigs}}; $i++) {
-		    push(@{$genomedata->{contig_ids}},$oldcontigs->{contigs}->[$i]->{id});
-		    push(@{$genomedata->{contig_lengths}},length($oldcontigs->{contigs}->[$i]->{$label}));
+		for (my $i=0; $i < @{$oldcontigs->{contigs}}; $i++) { 
 		    my $md5 = Digest::MD5::md5_hex($oldcontigs->{contigs}->[$i]->{$label});
-		    push(@{$newdata->{contigs}},{
-			id => $oldcontigs->{contigs}->[$i]->{id},
-			"length" => length($oldcontigs->{contigs}->[$i]->{$label}),
-			md5 => $md5,
-			sequence => $oldcontigs->{contigs}->[$i]->{$label},
-			name => $oldcontigs->{contigs}->[$i]->{id}
-			 });
+		    if (defined($oldcontigs->{contigs}->[$i]->{$label})) {
+			    push(@{$genomedata->{contig_ids}},$oldcontigs->{contigs}->[$i]->{id});
+		    	push(@{$genomedata->{contig_lengths}},length($oldcontigs->{contigs}->[$i]->{$label}));
+			    my $contig = {
+					id => $oldcontigs->{contigs}->[$i]->{id},
+					"length" => length($oldcontigs->{contigs}->[$i]->{$label}),
+					md5 => $md5,
+					sequence => $oldcontigs->{contigs}->[$i]->{$label},
+					name => $oldcontigs->{contigs}->[$i]->{id}
+				};
+			    push(@{$newdata->{contigs}},$contig);
+		    }
 		}
-		my $ContigObj = Bio::KBase::ObjectAPI::KBaseGenomes::ContigSet->new($newdata);
-		$ContigObj->parent($newstore);
-		eval {
-		    $ContigObj->save($array->[1]."/".$array->[2].".contigset");
-		    print "Success:".$array->[1]."/".$array->[2].".contigset\n";
-		};
-		if ($@) {
-		    print "Failed:".$array->[1]."/".$array->[2].".contigset\n" ;
-		    print "ERROR_MESSAGE".$@."END_ERROR_MESSAGE\n";
+		if (@{$newdata->{contigs}} > 0) {
+			my $ContigObj = Bio::KBase::ObjectAPI::KBaseGenomes::ContigSet->new($newdata);
+			$ContigObj->parent($newstore);
+			eval {
+			    $ContigObj->save($array->[1]."/".$array->[2].".contigset");
+			    print "Success:".$array->[1]."/".$array->[2].".contigset\n";
+			};
+			if ($@) {
+			    print "Failed:".$array->[1]."/".$array->[2].".contigset\n" ;
+			    print "ERROR_MESSAGE".$@."END_ERROR_MESSAGE\n";
+			}
+			$genomedata->{contigset_ref} = $ContigObj->_reference();
 		}
-		$genomedata->{contigset_ref} = $ContigObj->_reference();
 	    }
 	}
-
 	my $GenomeObj = Bio::KBase::ObjectAPI::KBaseGenomes::Genome->new($genomedata);
 	my $features = $GenomeObj->features();
 	$GenomeObj->parent($newstore);
