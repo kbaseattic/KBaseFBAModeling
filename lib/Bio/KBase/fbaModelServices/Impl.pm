@@ -1302,12 +1302,13 @@ sub _buildGapfillObject {
 sub _buildRxnProbsGPRArray {
     my ($self, $rxnprobs) = @_;
     my($rxnprobsGPRArray);
-    for(my $i=0; $i < @{$rxnprobs->{reaction_probabilities}}; $i++) {
-	my $rxnarray = $rxnprobs->{reaction_probabilities}->[$i];
+    for(my $i=0; $i < @{$rxnprobs->reaction_probabilities()}; $i++) {
+	my $rxnarray = $rxnprobs->reaction_probabilities()->[$i];
 	my $rxnid = $rxnarray->[0];
 	my $gpr = $rxnarray->[4];
 	if ( $gpr ne "" ) {
-	    $rxnprobsGPRArray->{$rxnid} = Bio::KBase::ObjectAPI::utilities::translateGPRHash(Bio::KBase::ObjectAPI::utilities::parseGPR($gpr));
+#	    $rxnprobsGPRArray->{$rxnid} = Bio::KBase::ObjectAPI::utilities::translateGPRHash(Bio::KBase::ObjectAPI::utilities::parseGPR($gpr));
+	    $rxnprobsGPRArray->{$rxnid} = $gpr;
 	}
     }
     return $rxnprobsGPRArray;
@@ -1698,8 +1699,8 @@ sub _sort_gapfill_solution_reactions {
     my $rxnprobdict = {};
     # Build up the rxnprobs dictionary...
     my $RxnProbs = $self->_get_msobject("RxnProbs", $rxnprobs_workspace, $rxnprobs_id);
-    for(my $i=0; $i<@{$RxnProbs->{reaction_probabilities}}; $i++) {
-		my $rxnarray = $RxnProbs->{reaction_probabilities}->[$i];
+    for(my $i=0; $i<@{$RxnProbs->reaction_probabilities()}; $i++) {
+		my $rxnarray = $RxnProbs->reaction_probabilities()->[$i];
         my $rxnid = $rxnarray->[0];
 		my $likelihood = $rxnarray->[1];
 		$rxnprobdict->{"+".$rxnid} = $likelihood;
