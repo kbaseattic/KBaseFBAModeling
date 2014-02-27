@@ -120,7 +120,7 @@ Description:
 
 sub annotation {
 	my ($self) = @_;
-	$self->model()->annotation();	
+	$self->fbamodel()->annotation();	
 }
 
 =head3 mapping
@@ -134,7 +134,7 @@ Description:
 
 sub mapping {
 	my ($self) = @_;
-	$self->model()->mapping();	
+	$self->fbamodel()->mapping();	
 }
 
 =head3 calculateReactionCosts
@@ -258,7 +258,7 @@ sub prepareFBAFormulation {
 		if (@{$self->targetedreactions()} > 0) {
 			$inactiveList = $self->targetedreactions();
 		} else {
-			my $rxns = $self->model()->modelreactions();
+			my $rxns = $self->fbamodel()->modelreactions();
 			my $rxnhash = {};
 			for (my $i=0; $i < @{$rxns}; $i++) {
 				$rxnhash->{$rxns->[$i]->reaction()->id()} = 0;	
@@ -375,7 +375,7 @@ sub addBiomassComponentReactions {
 	my $form = $self->fba();
 	my $filename = $form->jobDirectory()."/";
 	my $output = ["id\tequation\tname"];
-	my $bio = $self->model()->biomasses()->[0];
+	my $bio = $self->fbamodel()->biomasses()->[0];
 	my $biocpds = $bio->biomasscompounds();
 	my $cpdsWithProducts = {
 		cpd11493 => ["cpd12370"],
