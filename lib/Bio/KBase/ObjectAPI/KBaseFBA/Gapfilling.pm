@@ -465,7 +465,7 @@ sub createSolutionsFromArray {
 	my $line;
 	for (my $i=(@{$data}-1); $i >= 0; $i--) {
 		my $array = [split(/\t/,$data->[$i])];
-		if ($array->[1] =~ m/rxn\d+/ || $array->[1] =~ m/UNNEEDED/) {
+		if ($array->[1] =~ m/rxn\d+/) {
 			$line = $i;
 			last;
 		}
