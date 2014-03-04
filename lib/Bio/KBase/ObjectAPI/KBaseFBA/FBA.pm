@@ -892,7 +892,7 @@ sub setupFBAExperiments {
 			}
 			for (my $j=0; $j < @{$pheno->genekos()}; $j++) {
 				if ($phenoko eq "none") {
-					$phenoko = $pheno->genekos()->[$j];
+					$phenoko = $pheno->genekos()->[$j]->id();
 				} else {
 					$phenoko .= ";".$pheno->genekos()->[$j]->id();
 				}
