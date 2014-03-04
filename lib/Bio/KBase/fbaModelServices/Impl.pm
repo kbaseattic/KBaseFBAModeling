@@ -480,7 +480,7 @@ sub _get_genomeObj_from_CDM {
     my $data = $cdmi->genomes_to_genome_data([$id]);
     if (!defined($data->{$id})) {
     	$self->_error("Genome ".$id." not found!",'get_genomeobject');
-    }
+    } 
     my $genomeObj = {
 		id => $id,
 		scientific_name => $data->{$id}->{scientific_name},
