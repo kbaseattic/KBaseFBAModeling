@@ -1574,11 +1574,11 @@ sub _parse_gapfillsolution_id {
     my ($self, $solution_id) = @_;
     my($gfid, $solid);
     # Handle gapfill solution. Get all the reactions modified by the specified gapfill solution.
-    if ($solution_id =~ m/(.+)\.solution\.(.+)/) {
+    if ($solution_id =~ m/(.+)\.gfsol\.(.+)/) {
 	$gfid = $1;
 	$solid = $2;
     } else { 
-	$self->_error("Specified gapfill solution ID did not have expected format GAPFILLID.solution.NUMBER", "_get_gapfill_solution");
+	$self->_error("Specified gapfill solution ID did not have expected format GAPFILLID.gfsol.NUMBER", "_get_gapfill_solution");
     }
     my $result = [];
     $result->[0] = $gfid;
@@ -1586,13 +1586,13 @@ sub _parse_gapfillsolution_id {
     return $result;
 }
 
-# Get a MS::GapfillSolution object from a model given its ID
+# Get a MS::GapfillSolution object given its ID
 sub _get_gapfill_solution{
-    my ($self, $solution_id, $model) = @_;
+    my ($self, $solution_id, $gapfill_ws) = @_;
     my $parsedsolution = $self->_parse_gapfillsolution_id($solution_id);
     my $gfid = $parsedsolution->[0];
     my $solid = $parsedsolution->[1];
-    my $gapfill = $self->_get_msobject("GapFill", "NO_WORKSPACE", $gfid);
+    my $gapfill = $self->_get_msobject("Gapfilling", $gapfill_ws, $gfid);
     my $gapfillSolutions = $gapfill->gapfillingSolutions();
     if ( ! defined($gapfillSolutions) ) { 
 	$self->_error("Unable to find gapfill solution $solution_id", "_get_gapfill_solution");  
@@ -1607,7 +1607,7 @@ sub _get_gapfill_solution{
 =head3 get_gapfill_solution_reactions
 
 Definition:
-    Array_ref = _get_gapfill_solution_reactions(Gapfill_solution_id, ModelSEED::MS::Model)
+    Array_ref = _get_gapfill_solution_reactions(Gapfill_solution_id, Gapfill_workspace, ModelSEED::MS::Model)
 
 Description:
     Get a GapFill object associated with a solution ID.
@@ -1617,12 +1617,12 @@ Description:
 
 Example:
 
-    Array_ref = _get_gapfill_solution_reactions(GAPFILL_REF.solution.0)
+    Array_ref = _get_gapfill_solution_reactions(GAPFILL_REF.gfsol.0)
 
 =cut
 
 sub _get_gapfill_solution_reactions {
-    my ( $self, $solution_id, $model ) = @_;
+    my ( $self, $solution_id, $gapfill_ws, $model ) = @_;
     my($gfid, $solid);
 
     # Get a hash of the reactions in the model (was the reaction deleted after gapfill?)
@@ -1644,7 +1644,7 @@ sub _get_gapfill_solution_reactions {
 	}
     }
 
-    my $desiredSolution = $self->_get_gapfill_solution($solution_id, $model);
+    my $desiredSolution = $self->_get_gapfill_solution($solution_id, $gapfill_ws);
     my $solutionReactions = $desiredSolution->gapfillingSolutionReactions();
 
     # Get the desired list of reactions.
@@ -3482,7 +3482,7 @@ sub get_gapfills
     for (my $i=0; $i < @{$input->{gapfills}}; $i++) {
     	my $id = $input->{gapfills}->[$i];
     	my $ws = $input->{workspaces}->[$i];
-    	my $obj = $self->_get_msobject("GapFill",$ws,$id);
+    	my $obj = $self->_get_msobject("Gapfilling",$ws,$id);
     	my $data = $self->_GapFill_to_GapFillData($obj);
     	push(@{$out_gapfills},$data);
     }
@@ -11308,6 +11308,7 @@ sub reaction_sensitivity_analysis
 		delete_noncontributing_reactions => 0,
 		fba_ref => undef,
 		reactions_to_delete => undef,
+		gapfill_ws => $input->{workspace},
 		gapfill_solution_id => undef,
 		rxnprobs_id => undef,
 		rxnprobs_ws => $input->{workspace},
@@ -11335,7 +11336,7 @@ sub reaction_sensitivity_analysis
     my $model = $self->_get_msobject("FBAModel",$input->{model_ws},$input->{model});
     if ( defined($input->{gapfill_solution_id}) ) {
 	        # Note - this automatically changes the names to '+-' stuff
-		my $rxnlist = $self->_get_gapfill_solution_reactions($input->{gapfill_solution_id}, $model);
+		my $rxnlist = $self->_get_gapfill_solution_reactions($input->{gapfill_solution_id}, $input->{gapfill_ws}, $model);
 		if ( @{$rxnlist} == 0 ) {
 		    my $msg = "No reactions in the specified gapfill solution were found in the model (did you integrate the gapfill solution first?)";
 		    $self->_error($msg, "reaction_sensitivity_analysis");
