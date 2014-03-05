@@ -8,6 +8,7 @@ use Bio::KBase::workspace::Client;
 use ModelSEED::KBaseStore;
 use JSON::XS;
 use DateTime;
+use Data::Dumper;
 use Bio::KBase::ObjectAPI::KBaseStore;
 use ModelSEED::MS::Model;
 $|=1;
@@ -956,8 +957,8 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 	}
 	if (defined($obj->{contigs_uuid})) {
 	    my $oldcontigs = $oldstore->get_object("GenomeContigs",$obj->{contigs_uuid});
-
-	    if(scalar(@{$oldcontigs->{contigs}})>0){
+		
+	    if(defined($oldcontigs->{contigs}) && scalar(@{$oldcontigs->{contigs}})>0){
 		
 		my $label = "dna";
 		if (defined($oldcontigs->{contigs}->[0]->{seq})) {

@@ -1574,14 +1574,14 @@ sub parseFBAPhenotypeOutput {
 		if (!defined($tbl->{data}->[0]->[5])) {
 			return Bio::KBase::ObjectAPI::utilities::ERROR("output file did not contain necessary data");
 		}
-		my $phenosimset = Bio::KBase::ObjectAPI::KBasePhenotypes::PhenotypeSimulationSet->new({
+		$self->{_tempphenosim} = Bio::KBase::ObjectAPI::KBasePhenotypes::PhenotypeSimulationSet->new({
 			id => Bio::KBase::ObjectAPI::utilities::get_new_id($self->phenotypeset()->id().".phenosim"),
 			fbamodel_ref => $self->fbamodel()->_reference(),
 			phenotypeset_ref => $self->phenotypeset_ref(),
 			phenotypeSimulations => []
 		});
 		$self->phenotypesimulationset_ref("");
-		$self->phenotypesimulationset($phenosimset);
+		$self->phenotypesimulationset($self->{_tempphenosim});
 		my $phenoOutputHash;
 		foreach my $row (@{$tbl->{data}}) {
 			if (defined($row->[5])) {
@@ -1644,7 +1644,7 @@ sub parseFBAPhenotypeOutput {
 						}
 					}
 				}
-				$phenosimset->add("phenotypeSimulations",$phenoOutputHash->{$pheno->id()});	
+				$self->{_tempphenosim}->add("phenotypeSimulations",$phenoOutputHash->{$pheno->id()});	
 			}
 		}
 	}
