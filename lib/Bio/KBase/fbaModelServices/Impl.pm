@@ -1597,10 +1597,10 @@ sub _get_gapfill_solution{
     if ( ! defined($gapfillSolutions) ) { 
 	$self->_error("Unable to find gapfill solution $solution_id", "_get_gapfill_solution");  
     }
-    if ( @{$gapfillSolutions} <= $solid ) { 
-	$self->_error("Solution number $solid specified but there are fewer than that in the specified gapfill object (note that the solution numbers start at 0)", "_get_gapfill_solution"); 
+    if ( @{$gapfillSolutions} < $solid ) { 
+	$self->_error("Solution number $solid specified but there are fewer than that in the specified gapfill object (note that the solution numbers start at 1)", "_get_gapfill_solution"); 
     }
-    my $desiredSolution = $gapfillSolutions->[$solid];
+    my $desiredSolution = $gapfillSolutions->[$solid - 1];
     return $desiredSolution;
 }
 
@@ -11354,7 +11354,7 @@ sub reaction_sensitivity_analysis
 	#Creating FBAFormulation Object
 	my $fba = $self->_buildFBAObject($formulation,$model);
 	$fba->fva(1);
-	push(@{$fba->outputfiles()},"FBAExperimentOutput.txt");
+	$fba->outputfiles()->{"FBAExperimentOutput.txt"} = [];
 	$fba->parameters()->{"deletion experiments"} = "";
 	for (my $i=0; $i < @{$input->{reactions_to_delete}}; $i++) {
 		if (length($fba->parameters()->{"deletion experiments"}) > 0) {
