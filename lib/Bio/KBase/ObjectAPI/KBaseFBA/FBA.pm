@@ -892,7 +892,7 @@ sub setupFBAExperiments {
 			}
 			for (my $j=0; $j < @{$pheno->genekos()}; $j++) {
 				if ($phenoko eq "none") {
-					$phenoko = $pheno->genekos()->[$j];
+					$phenoko = $pheno->genekos()->[$j]->id();
 				} else {
 					$phenoko .= ";".$pheno->genekos()->[$j]->id();
 				}
@@ -1568,6 +1568,13 @@ Description:
 sub parseFBAPhenotypeOutput {
 	my ($self) = @_;
 	my $directory = $self->jobDirectory();
+
+	# Other types of analyses that do not involve phenotype data (e.g. reaction sensitivity) use the same
+	# output file. So we need to check that the data we need exists.
+	if ( !defined($self->phenotypeset_ref()) || !defined($self->phenotypeset())) {
+		return;
+	}
+
 	if (-e $directory."/FBAExperimentOutput.txt") {
 		#Loading file results into a hash
 		my $tbl = Bio::KBase::ObjectAPI::utilities::LOADTABLE($directory."/FBAExperimentOutput.txt","\t");

@@ -84,6 +84,7 @@ use Bio::KBase::ObjectAPI::KBaseFBA::Gapfilling;
 use Bio::KBase::ObjectAPI::KBaseFBA::Gapgeneration;
 use Bio::KBase::ObjectAPI::KBaseFBA::FBA;
 use Bio::KBase::ObjectAPI::KBaseFBA::ModelTemplate;
+use Bio::KBase::ObjectAPI::KBaseFBA::ReactionSensitivityAnalysis;
 use Bio::KBase::workspace::Client;
 use Bio::KBase::ObjectAPI::KBaseGenomes::MetagenomeAnnotation;
 use Bio::KBase::ObjectAPI::utilities qw( args verbose set_verbose translateArrayOptions);
@@ -1597,10 +1598,10 @@ sub _get_gapfill_solution{
     if ( ! defined($gapfillSolutions) ) { 
 	$self->_error("Unable to find gapfill solution $solution_id", "_get_gapfill_solution");  
     }
-    if ( @{$gapfillSolutions} <= $solid ) { 
-	$self->_error("Solution number $solid specified but there are fewer than that in the specified gapfill object (note that the solution numbers start at 0)", "_get_gapfill_solution"); 
+    if ( @{$gapfillSolutions} < $solid ) { 
+	$self->_error("Solution number $solid specified but there are fewer than that in the specified gapfill object (note that the solution numbers start at 1)", "_get_gapfill_solution"); 
     }
-    my $desiredSolution = $gapfillSolutions->[$solid];
+    my $desiredSolution = $gapfillSolutions->[$solid - 1];
     return $desiredSolution;
 }
 
@@ -11354,7 +11355,7 @@ sub reaction_sensitivity_analysis
 	#Creating FBAFormulation Object
 	my $fba = $self->_buildFBAObject($formulation,$model);
 	$fba->fva(1);
-	push(@{$fba->outputfiles()},"FBAExperimentOutput.txt");
+	$fba->outputfiles()->{"FBAExperimentOutput.txt"} = [];
 	$fba->parameters()->{"deletion experiments"} = "";
 	for (my $i=0; $i < @{$input->{reactions_to_delete}}; $i++) {
 		if (length($fba->parameters()->{"deletion experiments"}) > 0) {
@@ -11367,15 +11368,15 @@ sub reaction_sensitivity_analysis
 	}
 	$fba->parameters()->{"optimize metabolite production if objective is zero"} = 1;
 	my $objective;
-    eval {
-		local $SIG{ALRM} = sub { die "FBA timed out! Model likely contains numerical instability!" };
-		alarm 600;
+#    eval {
+#		local $SIG{ALRM} = sub { die "FBA timed out! Model likely contains numerical instability!" };
+#		alarm 600;
 		$objective = $fba->runFBA();
-		alarm 0;
-	};
-	if ($@) {
-		$self->_error($@);
-    }
+#		alarm 0;
+#	};
+#	if ($@) {
+#		$self->_error($@);
+#    }
     if (!defined($objective)) {
     	$self->_error("FBA failed with no solution returned!");
     }
@@ -11384,7 +11385,7 @@ sub reaction_sensitivity_analysis
 	if (!defined($input->{rxnsens_uid})) {
 		$input->{rxnsens_uid} = $kbid;
 	}
-	my $object = Bio::KBase::ObjectAPI::ReactionSensitivity->new({
+	my $object = Bio::KBase::ObjectAPI::KBaseFBA::ReactionSensitivityAnalysis->new({
 		id => $kbid,
 		fbamodel_ref => $model->_reference(),
 		type => $input->{type},
@@ -11393,12 +11394,14 @@ sub reaction_sensitivity_analysis
 		reactions => [],
 		corrected_reactions => []
 	});
+	$object->parent($self->_KBaseStore());
+
 	my $deletehash = {};
 	for (my $j=0; $j < @{$input->{reactions_to_delete}}; $j++ ) {
 	    $deletehash->{$input->{reactions_to_delete}->[$j]} = 1;
 	}
 
-	my $array = $fba->fbaResults()->[0]->outputfiles()->{"FBAExperimentOutput.txt"};
+	my $array = $fba->outputfiles()->{"FBAExperimentOutput.txt"};
 	my $inactiveRxns = {};
 	for (my $i=1; $i < @{$array}; $i++) {
 		my $row = [split(/\t/,$array->[$i])];
@@ -11454,17 +11457,24 @@ sub reaction_sensitivity_analysis
 	}
 	my $rxns = $object->reactions();
 	for (my $i=0; $i < @{$rxns}; $i++) {
+		# How many model reactions were inactivated by removing this reaction?
 		my $rxn = $rxns->[$i];
 		if ( @{$rxn->new_inactive_rxns()} == 0 ) {
 		    next;
 		}
+		# Calculate a weighted sum of reactions activated by each tested reaction (number 'activated' reactions)
+		# and of the number of tested reactions that are required for each model reaction to be activated (number of 'required' reactions)
 		my $value = 1/@{$rxn->new_inactive_rxns()};
-		$rxn->normalized_activated_reaction_count(0);
+		my $normalized_activated_reaction_count = 0;
 		for (my $j=0; $j < @{$rxn->new_inactive_rxns()}; $j++) {
 			my $inactiveRxn = $inactiveRxns->{$rxn->new_inactive_rxns()->[$j]};
-			$rxn->normalized_activated_reaction_count($rxn->normalized_activated_reaction_count()+1/@{$inactiveRxn->required_reactions()});
+			$normalized_activated_reaction_count += 1/@{$inactiveRxn->required_reactions()};
 			$inactiveRxn->normalized_required_reaction_count($inactiveRxn->normalized_required_reaction_count()+$value);
 		}
+		# Save the value back to our object
+		print STDERR "Count:\n";
+		print STDERR $normalized_activated_reaction_count;
+		$object->reactions()->[$i]->normalized_activated_reaction_count($normalized_activated_reaction_count);
 	}
 	$output = $self->_save_msobject($object,"RxnSensitivity",$input->{workspace},$input->{rxnsens_uid});
 	$self->_clearContext();
