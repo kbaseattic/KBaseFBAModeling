@@ -5,14 +5,15 @@
 # Development location: Mathematics and Computer Science Division, Argonne National Lab
 ########################################################################
 package Bio::KBase::ObjectAPI::KBaseFBA::DB::ReactionSensitivityAnalysis;
-use Bio::KBase::ObjectAPI::BaseObject;
+use Bio::KBase::ObjectAPI::IndexedObject;
 use Bio::KBase::ObjectAPI::KBaseFBA::ReactionSensitivityAnalysisCorrectedReaction;
 use Bio::KBase::ObjectAPI::KBaseFBA::ReactionSensitivityAnalysisReaction;
 use Moose;
 use namespace::autoclean;
-extends 'Bio::KBase::ObjectAPI::BaseObject';
+extends 'Bio::KBase::ObjectAPI::IndexedObject';
 
 
+our $VERSION = 1.0;
 # PARENT:
 has parent => (is => 'rw', isa => 'Ref', weak_ref => 1, type => 'parent', metaclass => 'Typed');
 # ATTRIBUTES:
@@ -35,8 +36,8 @@ has fbamodel => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,FBA
 
 
 # BUILDERS:
-sub _build_reference { my ($self) = @_;return $self->parent()->_reference().'//id/'.$self->id(); }
-sub _build_uuid { my ($self) = @_;return $self->_reference(); }
+sub _build_reference { my ($self) = @_;return $self->uuid(); }
+sub _build_uuid { return Data::UUID->new()->create_str(); }
 sub _build_fbamodel {
 	 my ($self) = @_;
 	 return $self->getLinkedObject($self->fbamodel_ref());
@@ -44,10 +45,11 @@ sub _build_fbamodel {
 
 
 # CONSTANTS:
+sub __version__ { return $VERSION; }
 sub _type { return 'KBaseFBA.ReactionSensitivityAnalysis'; }
 sub _module { return 'KBaseFBA'; }
 sub _class { return 'ReactionSensitivityAnalysis'; }
-sub _top { return 0; }
+sub _top { return 1; }
 
 my $attributes = [
           {
