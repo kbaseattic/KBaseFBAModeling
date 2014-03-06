@@ -7347,6 +7347,7 @@ sub simulate_phenotypes
 	if (!defined($input->{phenotypeSimulationSet})) {
 		$input->{phenotypeSimulationSet} = $fba->phenotypesimulationset()->id();
 	}
+	$fba->phenotypesimulationset()->parent($self->_KBaseStore());
 	$output = $self->_save_msobject($fba->phenotypesimulationset(),"PhenotypeSimulationSet",$input->{workspace},$input->{phenotypeSimultationSet});
 	$fba->phenotypesimulationset_ref($fba->phenotypesimulationset()->_reference());
     my $meta = $self->_save_msobject($fba,"FBA",$input->{workspace},$fba->id(),{hidden => 1});

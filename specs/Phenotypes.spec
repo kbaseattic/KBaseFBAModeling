@@ -49,7 +49,7 @@ module KBasePhenotypes {
     typedef string phenotypeset_ref;
     /*
 		Reference to a PhenotypeSet object
-		@id ws KBasePhenotypes.PhenotypeSet.phenotypes.[*].id
+		@id subws KBasePhenotypes.PhenotypeSet.phenotypes.[*].id
 	*/
     typedef string phenotype_ref;
     /*

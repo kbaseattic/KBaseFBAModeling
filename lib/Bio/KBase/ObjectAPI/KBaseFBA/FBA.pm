@@ -1635,9 +1635,10 @@ sub parseFBAPhenotypeOutput {
 		my $phenos = $self->phenotypeset()->phenotypes();
 		for (my $i=0; $i < @{$phenos}; $i++) {
 			my $pheno = $phenos->[$i];
-			if (defined($phenoOutputHash->{$pheno->_reference()})) {
-				if (defined($pheno->observedGrowthFraction())) {
-					if ($pheno->observedGrowthFraction() > 0.0001) {
+			if (defined($phenoOutputHash->{$pheno->id()})) {
+				$phenoOutputHash->{$pheno->id()}->{id} = $pheno->id().".sim";
+				if (defined($pheno->normalizedGrowth())) {
+					if ($pheno->normalizedGrowth() > 0.0001) {
 						if ($phenoOutputHash->{$pheno->id()}->{simulatedGrowthFraction} > 0) {
 							$phenoOutputHash->{$pheno->id()}->{phenoclass} = "CP";
 						} else {
