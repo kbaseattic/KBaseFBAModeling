@@ -146,7 +146,7 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 		print "Failed:".$array->[1]."/".$array->[2]."/".$obj->{"_kbaseWSMeta"}->{wsinst}."\n" ;
 		print "ERROR_MESSAGE".$@."END_ERROR_MESSAGE\n";
 	}
-} elsif ($array->[0] eq "FBAModel") {
+} elsif ($array->[0] eq "Model") {
     my $biochem = $newstore->get_object("kbase/default");
 
 	my $kbid;
@@ -335,7 +335,7 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 			gapfill_id => $gf->id(),
 			gapfill_ref => $gf->_reference(),
 			integrated => 1,
-			integrated_solution => $obj->integratedGapfillingSolutions()->{$gfs->[$i]->uuid()},
+			integrated_solution => $gf->gapfillingSolutions()->[$obj->integratedGapfillingSolutions()->{$gfs->[$i]->uuid()}]->id(),
 			media_ref => $gf->media_ref(),
 		});
 	}
@@ -348,7 +348,6 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 			gapfill_id => $gf->id(),
 			gapfill_ref => $gf->_reference(),
 			integrated => 0,
-			integrated_solution => 0,
 			media_ref => $gf->media_ref(),
 		});
 	}
@@ -362,7 +361,7 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 			gapgen_id => $gg->id(),
 			gapgen_ref => $gg->_reference(),
 			integrated => 1,
-			integrated_solution => $obj->integratedGapgenSolutions()->{$ggs->[$i]->uuid()},
+			integrated_solution => $gg->gapgenSolutions()->[$obj->integratedGapgenSolutions()->{$ggs->[$i]->uuid()}]->id(),
 			media_ref => $gg->media_ref(),
 		});
 	}
@@ -375,7 +374,6 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 			gapgen_id => $gg->id(),
 			gapgen_ref => $gg->_reference(),
 			integrated => 0,
-			integrated_solution => 0,
 			media_ref => $gg->media_ref(),
 		});
 	}
@@ -1381,7 +1379,7 @@ sub translate_fba {
 
 	$NewFBA->parent($newstore);
 	eval {
-		$NewFBA->save($ws."/".$wsid);
+		$NewFBA->save($ws."/".$wsid,{hidden => 1});
 		print "Success:".$ws."/".$wsid."/".$obj->{"_kbaseWSMeta"}->{wsinst}."\n";
 	};
 	if ($@) {
