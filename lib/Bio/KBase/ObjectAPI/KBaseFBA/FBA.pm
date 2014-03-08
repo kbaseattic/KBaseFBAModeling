@@ -1525,6 +1525,9 @@ sub parseFluxFiles {
 							$rxnid = $1;
 							$comp = $2;
 						}
+						if ($row->[1] =~ m/^\[([a-z])\]\s+:\s+/) {
+							$comp = $1;
+						}
 						if ($rxnid =~ m/(.+)_(\d+)/) {
 							$rxnid = $1;
 							$index = $2;
