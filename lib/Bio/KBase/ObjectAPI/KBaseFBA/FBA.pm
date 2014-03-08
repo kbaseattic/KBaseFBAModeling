@@ -1518,14 +1518,17 @@ sub parseFluxFiles {
 			foreach my $row (@{$tbl->{data}}) {
 				foreach my $comp (keys(%{$fluxCompartmentColumns})) {
 					if ($row->[$fluxCompartmentColumns->{$comp}] ne "none") {
-						my $id = $row->[$reactionColumn]."_".$comp."0";
-						if ($row->[$reactionColumn] =~ m/(.+)_(\d+)/) {
-							my $rxn = $1;
-							my $index = $2;
-							if ($index > 0) {
-								$id = $rxn."_".$comp.$index;
-							}
+						my $rxnid = $row->[$reactionColumn];
+						my $index = "0";
+						if ($rxnid =~ m/(.+)\[([a-z])\]/) {
+							$rxnid = $1;
+							$comp = $2;
 						}
+						if ($rxnid =~ m/(.+)_(\d+)/) {
+							$rxnid = $1;
+							$index = $2;
+						}
+						my $id = $rxnid."_".$comp."0";
 						my $mdlrxn = $self->fbamodel()->getObject("modelreactions",$id);
 						if (defined($mdlrxn)) {
 							my $value = $row->[$fluxCompartmentColumns->{$comp}];
