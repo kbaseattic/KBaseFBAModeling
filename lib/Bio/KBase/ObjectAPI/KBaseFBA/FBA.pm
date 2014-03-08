@@ -1518,6 +1518,7 @@ sub parseFluxFiles {
 			foreach my $row (@{$tbl->{data}}) {
 				foreach my $comp (keys(%{$fluxCompartmentColumns})) {
 					if ($row->[$fluxCompartmentColumns->{$comp}] ne "none") {
+						my $value = $row->[$fluxCompartmentColumns->{$comp}];
 						my $rxnid = $row->[$reactionColumn];
 						my $index = "0";
 						if ($rxnid =~ m/(.+)\[([a-z])\]/) {
@@ -1531,7 +1532,6 @@ sub parseFluxFiles {
 						my $id = $rxnid."_".$comp."0";
 						my $mdlrxn = $self->fbamodel()->getObject("modelreactions",$id);
 						if (defined($mdlrxn)) {
-							my $value = $row->[$fluxCompartmentColumns->{$comp}];
 							if (abs($value) < 0.00000001) {
 								$value = 0;
 							}
