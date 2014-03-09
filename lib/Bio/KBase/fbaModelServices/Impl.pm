@@ -11461,6 +11461,7 @@ sub reaction_sensitivity_analysis
 		# How many model reactions were inactivated by removing this reaction?
 		my $rxn = $rxns->[$i];
 		if ( @{$rxn->new_inactive_rxns()} == 0 ) {
+		    $object->reactions()->[$i]->normalized_activated_reaction_count(0);
 		    next;
 		}
 		# Calculate a weighted sum of reactions activated by each tested reaction (number 'activated' reactions)
@@ -11473,8 +11474,6 @@ sub reaction_sensitivity_analysis
 			$inactiveRxn->normalized_required_reaction_count($inactiveRxn->normalized_required_reaction_count()+$value);
 		}
 		# Save the value back to our object
-		print STDERR "Count:\n";
-		print STDERR $normalized_activated_reaction_count;
 		$object->reactions()->[$i]->normalized_activated_reaction_count($normalized_activated_reaction_count);
 	}
 	$output = $self->_save_msobject($object,"RxnSensitivity",$input->{workspace},$input->{rxnsens_uid});
