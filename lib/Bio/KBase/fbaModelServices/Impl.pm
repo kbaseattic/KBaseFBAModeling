@@ -11805,6 +11805,7 @@ sub delete_noncontributing_reactions
 	my $rxnsens = $self->_get_msobject("RxnSensitivity",$input->{rxn_sensitivity_ws},$input->{rxn_sensitivity});
 	$rxnsens->{integrated_deletions_in_model} = 1;
 	my $model = $rxnsens->fbamodel();
+    $model->parent($self->_KBaseStore());
 	for (my $i=0; $i < @{$rxnsens->{reactions}}; $i++) {
 		if ($rxnsens->{reactions}->[$i]->{"delete"} eq "1") {
 			my $rxn = $model->searchForReaction($rxnsens->{reactions}->[$i]->{reaction});
@@ -11840,9 +11841,9 @@ sub delete_noncontributing_reactions
 		$output = $self->_save_msobject($model,"FBAModel",$model->_wsworkspace(),$model->_wsname());
 	}
 	if (defined($input->{new_rxn_sensitivity_uid})) {
-		$self->_save_msobject($rxnsens,"RxnSensitivity",$$model->_wsworkspace(),$model->_wsname());
+		$self->_save_msobject($rxnsens,"RxnSensitivity",$input->{workspace},$input->{new_rxn_sensitivity_uid});
 	} else {
-		$self->_save_msobject($rxnsens,"RxnSensitivity",$model->_wsworkspace(),$model->_wsname());
+		$self->_save_msobject($rxnsens,"RxnSensitivity",$rxnsens->_wsworkspace(),$rxnsens->_wsname());
 	}
 	$self->_clearContext();
     #END delete_noncontributing_reactions
