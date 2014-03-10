@@ -1864,7 +1864,14 @@ sub parseFVAResults {
 					my $row = $tbl->{data}->[$i];
 					if (defined($row->[$idColumn])) {
 						my $comp = "c";
+						if ($row->[$idColumn+1] =~ m/^\[([a-z]+)\]\s+:\s+/) {
+							$comp = $1;
+						}
 						my $id = $row->[$idColumn]."_".$comp."0";
+						if ($id =~ m/(.+)\[([a-z]+)\]/) {
+							$comp = $2;
+							$id = $1."_".$comp."0";	
+						}
 						if ($row->[$idColumn] =~ m/(.+)_(\d+)/) {
 							my $rxn = $1;
 							my $index = $2;
