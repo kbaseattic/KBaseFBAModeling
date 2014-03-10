@@ -498,7 +498,6 @@ sub ImportExternalEquation {
 sub loadGPRFromString {
 	my $self = shift;
 	my $gprstring = shift;
-	print $gprstring."\n";
 	my $geneAliases = $self->parent()->genome()->geneAliasHash();
 	my $gpr = Bio::KBase::ObjectAPI::utilities::translateGPRHash(Bio::KBase::ObjectAPI::utilities::parseGPR($gprstring));
 	my $missingGenes;

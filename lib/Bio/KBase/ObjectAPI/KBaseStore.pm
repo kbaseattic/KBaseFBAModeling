@@ -128,7 +128,9 @@ sub get_objects {
 				my $type = $2;
 				my $class = "Bio::KBase::ObjectAPI::".$module."::".$type;
 				$self->cache()->{$newrefs->[$i]} = $class->new($objdatas->[$i]->{data});
-				$self->cache()->{$info->[6]."/".$info->[0]."/".$info->[4]} = $self->cache()->{$newrefs->[$i]};
+				if (!defined($self->cache()->{$info->[6]."/".$info->[0]."/".$info->[4]})) {
+					$self->cache()->{$info->[6]."/".$info->[0]."/".$info->[4]} = $self->cache()->{$newrefs->[$i]};
+				}
 				$self->cache()->{$newrefs->[$i]}->parent($self);
 				if ($type eq "Biochemistry") {
 					$self->cache()->{$newrefs->[$i]}->add("compounds",{
