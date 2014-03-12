@@ -527,6 +527,9 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 	foreach my $pheno (@{$obj->{phenotypes}}) {
 		if ($pheno->[2] eq "nardevuser1_home") {
 			$pheno->[2] = "KBaseMedia";
+			if ($pheno->[1] eq "GlucoseMin") {
+				$pheno->[1] eq "Carbon-D-Glucose";
+			}
 		}
 		my $media = $newstore->get_object($pheno->[2]."/".$pheno->[1]);
 		my $newpheno = {
