@@ -525,6 +525,9 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 	my $i=1;
 	my $biochem = $newstore->get_object("kbase/default");
 	foreach my $pheno (@{$obj->{phenotypes}}) {
+		if ($pheno->[2] eq "nardevuser1_home") {
+			$pheno->[2] = "KBaseMedia";
+		}
 		my $media = $newstore->get_object($pheno->[2]."/".$pheno->[1]);
 		my $newpheno = {
 			id => $data->{id}.".pheno.".$i,
