@@ -29,7 +29,6 @@ my $specs = [
     [ 'newmodelws:s', 'Workspace for new model with reactions deleted', { "default" => fbaws() } ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
-$params->{auth} = auth();
 
 #Calling the server
 my $output = runFBACommand($params,$servercommand,$opt);
