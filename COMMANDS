@@ -53,6 +53,7 @@ fba-adjusttempbiocpd	modeling
 fba-adjusttempbiomass	modeling
 fba-adjusttemprxn	modeling
 fba-buildfbamodel	modeling
+fba-delete_noncontributing_reactions	modeling
 fba-exportfba	modeling
 fba-exportfbamodel	modeling
 fba-exportgenome	modeling
@@ -79,6 +80,7 @@ fba-importtranslation	modeling
 fba-integratesolution	modeling
 fba-loadgenome	modeling
 fba-queuefba	modeling
+fba-reactionsensitivity	modeling
 fba-runfba	modeling
 fba-runjob	modeling
 fba-simpheno	modeling
