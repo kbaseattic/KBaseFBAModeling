@@ -356,7 +356,7 @@ sub manualReactionAdjustment {
     	$args->{reaction} = $1;
     	$args->{compartment} = $2;
     	$args->{compartmentIndex} = $3;
-    } 
+    }
     my $eq;
     if ($args->{reaction} =~ m/^(.+):(.+)/) {
     	$rxnid = $1;

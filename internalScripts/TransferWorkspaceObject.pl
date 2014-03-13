@@ -485,6 +485,15 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 		print "ERROR_MESSAGE".$@."END_ERROR_MESSAGE\n";
 	}
 } elsif ($array->[0] eq "PhenotypeSet") {
+	if (($obj->{genome_workspace} eq "bob" || $obj->{genome_workspace} eq "Demo" || $obj->{genome_workspace} eq "HHtest") && $obj->{genome} eq "kb|g.0") {
+		$obj->{genome_workspace} = "KBaseCDMGenomes";
+	} elsif ($obj->{genome_workspace} eq "JenniferT" && $obj->{genome} eq "JennifersGenome") {
+		$obj->{genome_workspace} = "KBaseCDMGenomes";
+		$obj->{genome} = "0000000.0";
+	} elsif ($obj->{genome_workspace} eq "nardevuser1_home" && $obj->{genome} eq "EmptyGenome1") {
+		$obj->{genome_workspace} = "KBaseCDMGenomes";
+		$obj->{genome} = "0000000.0";
+	}
 	my $genobj = $newstore->get_object($obj->{genome_workspace}."/".$obj->{genome});
 	my $data = {id => $genobj->id().".phe.".$idserv->allocate_id_range($genobj->id().".phe.",1),phenotypes => []};
 	my $list = [qw(name source source_id importErrors)];
@@ -492,6 +501,9 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 		if (defined($obj->{$item})) {
 			$data->{$item} = $obj->{$item};
 		}
+	}
+	if (!defined($data->{source})) {
+		$data->{source} = "KBase";
 	}
 	if (!defined($data->{name})) {
 		$data->{name} = $data->{id};
@@ -513,11 +525,17 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 	my $i=1;
 	my $biochem = $newstore->get_object("kbase/default");
 	foreach my $pheno (@{$obj->{phenotypes}}) {
+		if ($pheno->[2] eq "nardevuser1_home") {
+			$pheno->[2] = "KBaseMedia";
+			if ($pheno->[1] eq "GlucoseMin") {
+				$pheno->[1] eq "Carbon-D-Glucose";
+			}
+		}
 		my $media = $newstore->get_object($pheno->[2]."/".$pheno->[1]);
 		my $newpheno = {
 			id => $data->{id}.".pheno.".$i,
 			name => $data->{id}.".pheno.".$i,
-			normalizedGrowth => $pheno->[4],
+			normalizedGrowth => $pheno->[4]+0,
 			media_ref => $media->_reference(),
 			geneko_refs => [],
 			additionalcompound_refs => []

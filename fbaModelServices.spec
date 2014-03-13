@@ -2490,6 +2490,40 @@ module fbaModelServices {
 	/*********************************************************************************
 	Code relating to import and analysis of ProteinSets
    	*********************************************************************************/
+	/* Input parameters for the "gtf_to_genome" function.
+	
+		string contigset;
+		workspace_id contigset_ws;
+		workspace_id workspace;	
+		string genome_uid;
+		string source_id - source ID of the genome (optional)
+		string source - source of the genome(optional)
+		string scientific_name;
+		string domain;
+		int genetic_code;
+		string taxonomy;
+		string gtf_file;
+		
+	*/
+	typedef structure {
+		string contigset;
+		workspace_id contigset_ws;
+		workspace_id workspace;	
+		string genome_uid;
+		string source_id;
+		string source;
+		string scientific_name;
+		string domain;
+		int genetic_code;
+		string taxonomy;
+		string gtf_file;
+    } gtf_to_genome_params;
+    /*
+		Loads a gtf file to a genome typed object in the workspace      
+    */
+    authentication required;
+    funcdef gtf_to_genome(gtf_to_genome_params params) returns (object_metadata output);
+	
 	/* Input parameters for the "fasta_to_ProteinSet" function.
 	
 		string uid - user assigned ID for the protein set (optional)
