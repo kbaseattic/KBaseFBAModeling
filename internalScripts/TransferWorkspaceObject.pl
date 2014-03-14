@@ -531,7 +531,13 @@ if ($array->[0] eq "PhenotypeSimulationSet") {
 				$pheno->[1] eq "Carbon-D-Glucose";
 			}
 		}
-		my $media = $newstore->get_object($pheno->[2]."/".$pheno->[1]);
+		my $media;
+		eval {
+			$media = $newstore->get_object($pheno->[2]."/".$pheno->[1]);
+		};
+		if (!defined($media)) {
+			next;
+		}
 		my $newpheno = {
 			id => $data->{id}.".pheno.".$i,
 			name => $data->{id}.".pheno.".$i,
