@@ -37,9 +37,10 @@ DESCRIPTION
       reaction is removed. There are two different inputs you can provide to this function:
 
       1: You can provide a list of reactions (optionally with direction specified by + or -. By default both directions are tested)  Reactions
-         will be tested in the order in which they appear. To do this use --rxnstotest.
+         will be tested in the order in which they appear. To do this use --rxnstotest (note that you have to use the '=' syntax with this command
+         or parsing the option will fail).
 
-      --rxnstotest '+rxn00001;-rxn00002'
+      --rxnstotest='+rxn00001;-rxn00002'
 
       2: You can specify a Gapfill solution ID (GapfillUUID.solution.# where # is the solution number) and the sensitivity of removing each reaction
          will be tested. Gapfill reactions will be tested in the opposite order in which they were gapfilled unless --rxnprobs is specified.
@@ -60,8 +61,8 @@ DESCRIPTION
 
 EXAMPLES
 
-      > fba-reactionsensitivity --rxnstotest '+rxn00001;-rxn00002' MyModel
-      > fba-reactionsensitivity --gapfill 'GapfillID'.solution.0 MyModel
+      > fba-reactionsensitivity --rxnstotest='+rxn00001;-rxn00002' MyModel
+      > fba-reactionsensitivity --gapfill 'GapfillID'.gfsol.0 MyModel
 
 SEE ALSO
       fba-gapfill
@@ -102,6 +103,7 @@ if ( $ok == 0 ) {
 
 #Calling the server
 my $output = runFBACommand($params,$servercommand,$opt,1);
+
 #Checking output and report results
 if (!defined($output)) {
     print "Reaction sensitivity analysis failed.\n"

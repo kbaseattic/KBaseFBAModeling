@@ -2160,7 +2160,7 @@ sub addPhenotypeTransporters {
 	foreach my $ref (keys(%{$mediahash})) {
 		my $cpds = $mediahash->{$ref}->mediacompounds();
 		foreach my $cpd (@{$cpds}) {
-			$cpdhash->{$cpd->id()} = $cpd;
+			$cpdhash->{$cpd->compound()->id()} = $cpd;
 		}
 	}
 	my $NeedTrans = [];
