@@ -93,7 +93,6 @@ module KBasePhenotypes {
     	    	
     	@optional name
     	@searchable ws_subset id source_id source name genome_ref
-    	@searchable ws_subset phenotypes.[*].(media_ref,geneko_refs,normalizedGrowth) 
     */
     typedef structure {
 		phenotypeset_id id;

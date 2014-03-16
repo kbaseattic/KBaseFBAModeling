@@ -66,5 +66,105 @@ sub searchForFeature {
 	return $self->geneAliasHash()->{$id};
 }
 
+=head3 gtf_to_features
+
+Definition:
+	$self->gtf_to_features({gtffile => string,clear_features => 1});
+Description:
+	Builds feature array from gtf file
+		
+=cut
+sub gtf_to_features {
+	my($self,$parameters) = @_;
+	my $args = Bio::KBase::ObjectAPI::utilities::args(["gtffile"], {clear_features => 1}, $parameters );
+	if ($args->{clear_features}) {
+		$self->features([]);
+	}
+	my $array = [split(/\n/,$args->{gtffile})];
+	foreach my $line (@{$array}) {
+		my $row = [split(/\t/,$line)];
+		my $start = $row->[3];
+		my $length = abs($row->[4]-$row->[3]);
+		if ($row->[6] eq "-") {
+			$start += $length;
+		}
+		my $feature = {
+			location => [[$row->[0],$start,$row->[6],$length]],
+			protein_translation_length => int(abs($row->[4]-$row->[3])/3),
+			dna_sequence_length => int(abs($row->[4]-$row->[3])),
+			publications => [],
+			subsystems => [],
+			protein_families => [],
+			aliases => [],
+			annotations => [],
+			subsystem_data => [],
+			regulon_data => [],
+			atomic_regulons => [],
+			coexpressed_fids => [],
+			co_occurring_fids => []
+		};
+		my $items = [split(/;\s*/,$row->[8])];
+		foreach my $item (@{$items}){
+			if ($item =~ m/(.+)\s+\"(.+)\"/) {
+				my $field = $1;
+				my $value = $2;
+				if ($field eq "alias") {
+					push(@{$feature->{aliases}},split(/,/,$value));
+				} elsif ($field eq "gene_id") {
+					$feature->{id} = $value;
+				} elsif ($field eq "product") {
+					$feature->{function} = $value;
+				} elsif ($field eq "orig_coding_type") {
+					$feature->{type} = $value;
+				} elsif ($field eq "transcript_id") {
+					push(@{$feature->{aliases}},$value);
+				}
+			}
+		}
+		$self->add("features",$feature);
+	}
+}
+
+=head3 integrate_contigs
+
+Definition:
+	$self->integrate_contigs({contigobj => Bio::KBase::ObjectAPI::KBaseGenomes::ContigSet,update_features => 0});
+Description:
+	Loads contigs into genome and updates all relevant stats
+		
+=cut
+sub integrate_contigs {
+	my($self,$parameters) = @_;
+	my $args = Bio::KBase::ObjectAPI::utilities::args(["contigobj"], {update_features => 0}, $parameters );
+	print "Integrating contigs!\n";
+	my $contigobj = $args->{contigobj};
+	$self->contigset_ref($contigobj->_reference());
+	my $numcontigs = @{$contigobj->contigs()};
+	$self->num_contigs($numcontigs);
+	my $size = 0;
+	my $gc_content = 0;
+	my $contigs = $contigobj->contigs();
+	for (my $i=0; $i < @{$contigs}; $i++) {
+		$size += length($contigs->[$i]->sequence());
+		$self->contig_lengths()->[$i] = length($contigs->[$i]->sequence());
+		$self->contig_ids()->[$i] = $contigs->[$i]->id();
+		my $copy = $contigs->[$i]->sequence();
+		$copy =~ s/[gcGC]//g;
+		$gc_content += ($self->contig_lengths()->[$i]-length($copy));
+	}
+	print "Integrating gene sequences!\n";
+	$self->md5($contigobj->md5());
+	$self->dna_size($size);
+	$self->gc_content($gc_content/$size);
+	if ($args->{update_features} == 1) {
+		my $ftrs = $self->features();
+		for (my $i=0; $i< @{$ftrs};$i++) {
+			my $ftr = $ftrs->[$i];
+			$ftr->integrate_contigs($contigobj);
+		}
+	}
+	print "Done integrating contigs!\n";
+}
+
 __PACKAGE__->meta->make_immutable;
 1;

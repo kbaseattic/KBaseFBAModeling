@@ -11994,6 +11994,176 @@ sub annotate_workspace_Genome
 
 
 
+=head2 gtf_to_genome
+
+  $output = $obj->gtf_to_genome($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is a gtf_to_genome_params
+$output is an object_metadata
+gtf_to_genome_params is a reference to a hash where the following keys are defined:
+	contigset has a value which is a string
+	contigset_ws has a value which is a workspace_id
+	workspace has a value which is a workspace_id
+	genome_uid has a value which is a string
+	source_id has a value which is a string
+	source has a value which is a string
+	scientific_name has a value which is a string
+	domain has a value which is a string
+	genetic_code has a value which is an int
+	taxonomy has a value which is a string
+	gtf_file has a value which is a string
+workspace_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is a gtf_to_genome_params
+$output is an object_metadata
+gtf_to_genome_params is a reference to a hash where the following keys are defined:
+	contigset has a value which is a string
+	contigset_ws has a value which is a workspace_id
+	workspace has a value which is a workspace_id
+	genome_uid has a value which is a string
+	source_id has a value which is a string
+	source has a value which is a string
+	scientific_name has a value which is a string
+	domain has a value which is a string
+	genetic_code has a value which is an int
+	taxonomy has a value which is a string
+	gtf_file has a value which is a string
+workspace_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+
+
+=item Description
+
+Loads a gtf file to a genome typed object in the workspace
+
+=back
+
+=cut
+
+sub gtf_to_genome
+{
+    my $self = shift;
+    my($params) = @_;
+
+    my @_bad_arguments;
+    (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"params\" (value was \"$params\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to gtf_to_genome:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'gtf_to_genome');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($output);
+    #BEGIN gtf_to_genome
+     $self->_setContext($ctx,$params);
+	$params = $self->_validateargs($params,["gtf_file","workspace"],{
+		contigset => undef,
+		contigset_ws => $params->{workspace},
+		genome_uid => undef,
+		source_id => undef,
+		source => "kbase",
+		scientific_name => "Unknown species",
+		domain => "Bacteria",
+		genetic_code => 11,
+		taxonomy => "Bacteria",
+	});
+	my $kbid = $self->_get_new_id("kb|g");
+	if (!defined($params->{source_id})) {
+		$params->{source_id} = $kbid;
+		$params->{source} = "kbase";
+	}
+	if (!defined($params->{genome_uid})) {
+		$params->{genome_uid} = $params->{source_id};
+	}
+	my $genomeObj = Bio::KBase::ObjectAPI::KBaseGenomes::Genome->new({
+		id => $kbid,
+		scientific_name => $params->{scientific_name},
+		domain => $params->{domain},
+		genetic_code => $params->{genetic_code},
+		dna_size => 0,
+		num_contigs => 0,
+		contig_lengths => [],
+		contig_ids => [],
+		source => $params->{source},
+		source_id => $params->{source_id},
+		taxonomy => $params->{taxonomy},
+		gc_content => 0.5,
+		complete => 0,
+		publications => [],
+		features => []
+	});
+	$genomeObj->gtf_to_features({gtffile => $params->{gtf_file}});
+	if (defined($params->{contigset})) {
+		my $contigObj = $self->_get_msobject("ContigSet",$params->{contigset_ws},$params->{contigset});
+		$genomeObj->integrate_contigs({contigobj => $contigObj,update_features => 1});
+	}
+	$output = $self->_save_msobject($genomeObj,"Genome",$params->{workspace},$params->{genome_uid});
+    $self->_clearContext();
+    #END gtf_to_genome
+    my @_bad_returns;
+    (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to gtf_to_genome:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'gtf_to_genome');
+    }
+    return($output);
+}
+
+
+
+
 =head2 fasta_to_ProteinSet
 
   $output = $obj->fasta_to_ProteinSet($params)
@@ -23529,7 +23699,7 @@ auth has a value which is a string
 
 
 
-=head2 fasta_to_ProteinSet_params
+=head2 gtf_to_genome_params
 
 =over 4
 
@@ -23540,6 +23710,70 @@ auth has a value which is a string
 ********************************************************************************
 	Code relating to import and analysis of ProteinSets
    	********************************************************************************
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+contigset has a value which is a string
+contigset_ws has a value which is a workspace_id
+workspace has a value which is a workspace_id
+genome_uid has a value which is a string
+source_id has a value which is a string
+source has a value which is a string
+scientific_name has a value which is a string
+domain has a value which is a string
+genetic_code has a value which is an int
+taxonomy has a value which is a string
+gtf_file has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+contigset has a value which is a string
+contigset_ws has a value which is a workspace_id
+workspace has a value which is a workspace_id
+genome_uid has a value which is a string
+source_id has a value which is a string
+source has a value which is a string
+scientific_name has a value which is a string
+domain has a value which is a string
+genetic_code has a value which is an int
+taxonomy has a value which is a string
+gtf_file has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 fasta_to_ProteinSet_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "fasta_to_ProteinSet" function.
+
+        string uid - user assigned ID for the protein set (optional)
+        string fasta - string with sequence data from fasta file (required argument)
+        workspace_id workspace - ID of workspace for storing objects (required argument)
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+        string name - name of the protein data (optional)
+        string sourceid - source ID of the protein data (optional)
+        string source - source of the protein data (optional)
+        string type - type of the protein set (optional)
 
 
 =item Definition

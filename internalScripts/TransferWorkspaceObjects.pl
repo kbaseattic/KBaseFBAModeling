@@ -37,6 +37,7 @@ print @{$objectlist}." objects to print!\n";
 for (my $i=0; $i < @{$objectlist}; $i++) {
 	my $array = [split(/\t/,$objectlist->[$i])];
 	if (!defined($targettype) || $array->[0] eq $targettype) {
+#	if ($wshash->{$array->[1]} ne "seaver" ) {
 	if ($wshash->{$array->[1]} ne "seaver" ) {
 		$currentproc++;
 		if ($currentproc >= $numprocs) {
