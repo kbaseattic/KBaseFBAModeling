@@ -2317,6 +2317,7 @@ module fbaModelServices {
 		ws_sub_id model_reaction_wsid - ID of model reaction
 		bool delete - indicates if reaction is to be deleted
 		bool deleted - indicates if the reaction has been deleted
+		string direction - Direction of reaction that was tested (> is forward, < backward and = both)
 		float growth_fraction - Fraction of wild-type growth after knockout
 		float normalized_activated_reaction_count - Normalized number of activated reactions
 		list<ws_sub_id> biomass_compounds  - List of biomass compounds that depend on the reaction
@@ -2330,6 +2331,7 @@ module fbaModelServices {
 		float growth_fraction;
 		bool delete;
 		bool deleted;
+		string direction;
 		float normalized_activated_reaction_count;
 		list<ws_sub_id> biomass_compounds;
 		list<ws_sub_id> new_inactive_rxns;

@@ -24,12 +24,11 @@ has new_inactive_rxns => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', def
 has biomass_compounds => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
 has delete => (is => 'rw', isa => 'Bool', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has id => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has direction => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has new_essentials => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
-
 
 # LINKS:
 has modelreaction => (is => 'rw', type => 'link(FBAModel,modelreactions,modelreaction_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_modelreaction', clearer => 'clear_modelreaction', isa => 'Bio::KBase::ObjectAPI::KBaseFBA::ModelReaction', weak_ref => 1);
-
 
 # BUILDERS:
 sub _build_reference { my ($self) = @_;return $self->parent()->_reference().'/reactions/id/'.$self->id(); }
@@ -38,7 +37,6 @@ sub _build_modelreaction {
 	 my ($self) = @_;
 	 return $self->getLinkedObject($self->modelreaction_ref());
 }
-
 
 # CONSTANTS:
 sub _type { return 'KBaseFBA.ReactionSensitivityAnalysisReaction'; }
@@ -112,7 +110,15 @@ my $attributes = [
             'default' => 'sub {return [];}',
             'type' => 'ArrayRef',
             'perm' => 'rw'
-          }
+          },
+    {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'direction',
+            'type' => 'Str',
+            'perm' => 'rw'
+    }
+
         ];
 
 my $attribute_map = {growth_fraction => 0, deleted => 1, modelreaction_ref => 2, normalized_activated_reaction_count => 3, new_inactive_rxns => 4, biomass_compounds => 5, delete => 6, id => 7, new_essentials => 8};

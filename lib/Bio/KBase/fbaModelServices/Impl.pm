@@ -11450,6 +11450,7 @@ sub reaction_sensitivity_analysis
 		$object->add("reactions",$sensrxn);
 	}
 	foreach my $rxn (keys(%{$inactiveRxns})) {
+	    # Collect a list of reactions inactivated by removing each particular tested reaction
 		$inactiveRxns->{$rxn} = $object->add("corrected_reactions",{
 		    id => $rxn,
 			modelreaction_ref => $model->_reference()."/modelreactions/id/".$rxn."_c0",
@@ -11804,30 +11805,32 @@ sub delete_noncontributing_reactions
 		new_rxn_sensitivity_uid => undef
 	});
 	my $rxnsens = $self->_get_msobject("RxnSensitivity",$input->{rxn_sensitivity_ws},$input->{rxn_sensitivity});
-	$rxnsens->{integrated_deletions_in_model} = 1;
+	$rxnsens->integrated_deletions_in_model(1);
 	my $model = $rxnsens->fbamodel();
     $model->parent($self->_KBaseStore());
 	for (my $i=0; $i < @{$rxnsens->{reactions}}; $i++) {
-		if ($rxnsens->{reactions}->[$i]->{"delete"} eq "1") {
-			my $rxn = $model->searchForReaction($rxnsens->{reactions}->[$i]->{reaction});
+		if ($rxnsens->reactions()->[$i]->delete() eq "1") {
+			my $rxn = $model->getLinkedObject($rxnsens->reactions()->[$i]->modelreaction_ref());
 			if (defined($rxn)) {
-			    if ( ! defined($rxnsens->{reactions}->[$i]->{direction} ) ) {
+			    my $rxnid = $rxn->reaction()->id();
+			    if ( ! defined($rxnsens->reactions()->[$i]->direction() ) ) {
 				# For reverse compatibility with old RxnSensitivity objects
 				$model->remove("modelreactions", $rxn);
-			    } elsif ($rxn->direction eq $rxnsens->{reactions}->[$i]->{direction}) {
+			    } elsif ($rxn->direction() eq $rxnsens->reactions()->[$i]->direction()) {
 				$model->remove("modelreactions",$rxn);
 			    } else {
+				my $dir = $rxnsens->reactions()->[$i]->direction();
 				# Change from a reversible reaction to an irreversible one
 				# (if model has < and rxnsensitivity had > or vice versa we just ignore it, maybe it was just already deleted somewhere else)
-				if ( $rxn->direction eq "=" ) {
+				if ( $rxn->direction() eq "=" ) {
 				    # This should never happen but just in case
-				    if ( $rxnsens->{reactions}->[$i]->{direction} eq "=" ) {
+				    if ( $dir eq "=" ) {
 					$model->remove("modelreactions", $rxn);
-				    } elsif ( $rxnsens->{reactions}->[$i]->{direction} eq ">" ) {
-					$model->manualReactionAdjustment( { reaction => $rxnsens->{reactions}->[$i]->{reaction},
+				    } elsif ( $dir eq ">" ) {
+					$model->manualReactionAdjustment( { reaction => $rxnid,
 									    direction => "<" } );
-				    } elsif ( $rxnsens->{reactions}->[$i]->{direction} eq "<" ) {
-					$model->manualReactionAdjustment( { reaction => $rxnsens->{reactions}->[$i]->{reaction},
+				    } elsif ( $dir eq "<" ) {
+					$model->manualReactionAdjustment( { reaction => $rxnid,
 									    direction => ">" } );
 				    }
 				}
