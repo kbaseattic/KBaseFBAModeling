@@ -11821,7 +11821,7 @@ sub delete_noncontributing_reactions
 	$rxnsens->integrated_deletions_in_model(1);
 	my $model = $rxnsens->fbamodel();
     $model->parent($self->_KBaseStore());
-	for (my $i=0; $i < @{$rxnsens->{reactions}}; $i++) {
+	for (my $i=0; $i < @{$rxnsens->reactions()}; $i++) {
 		if ($rxnsens->reactions()->[$i]->delete() eq "1") {
 			my $rxn = $model->getLinkedObject($rxnsens->reactions()->[$i]->modelreaction_ref());
 			if (defined($rxn)) {
@@ -11849,7 +11849,7 @@ sub delete_noncontributing_reactions
 				}
 			    }
 			}
-			$rxnsens->{reactions}->[$i]->{"deleted"} = 1;
+			$rxnsens->reactions()->[$i]->deleted(1);
 		}
 	}
 	if (defined($input->{new_model_uid})) {
