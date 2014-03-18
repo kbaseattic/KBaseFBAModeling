@@ -16,10 +16,10 @@ has parent => (is => 'rw', isa => 'Ref', weak_ref => 1, type => 'parent', metacl
 # ATTRIBUTES:
 has uuid => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_uuid');
 has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_reference');
+has id => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has modelreaction_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has normalized_required_reaction_count => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has required_reactions => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
-
 
 # LINKS:
 has modelreaction => (is => 'rw', type => 'link(FBAModel,modelreactions,modelreaction_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_modelreaction', clearer => 'clear_modelreaction', isa => 'Bio::KBase::ObjectAPI::KBaseFBA::ModelReaction', weak_ref => 1);
@@ -60,7 +60,14 @@ my $attributes = [
             'default' => 'sub {return [];}',
             'type' => 'ArrayRef',
             'perm' => 'rw'
-          }
+          },
+    { 
+	'req' => 0,
+	'printOrder' => -1,
+	'name' => 'id',
+	'type' => 'Str',
+	'perm' => 'rw'
+    }
         ];
 
 my $attribute_map = {modelreaction_ref => 0, normalized_required_reaction_count => 1, required_reactions => 2};

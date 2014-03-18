@@ -279,7 +279,7 @@ sub runFBA {
 		system("cd ".$self->jobPath().";tar -czf ".Bio::KBase::ObjectAPI::utilities::FinalJobCache()."/".$self->jobID().".tgz ".$self->jobID());
 	}
 	if ($self->jobDirectory() =~ m/\/fbajobs\/.+/) {
-		rmtree($self->jobDirectory());
+#		rmtree($self->jobDirectory());
 	}
 	return $self->objectiveValue();
 }
