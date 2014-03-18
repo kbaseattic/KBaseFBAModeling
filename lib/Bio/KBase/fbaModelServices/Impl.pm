@@ -11857,12 +11857,15 @@ sub delete_noncontributing_reactions
 	} else {
 		$output = $self->_save_msobject($model,"FBAModel",$model->_wsworkspace(),$model->_wsname());
 	}
-	if (defined($input->{new_rxn_sensitivity_uid})) {
-		$self->_save_msobject($rxnsens,"RxnSensitivity",$input->{workspace},$input->{new_rxn_sensitivity_uid});
-	} else {
-		$self->_save_msobject($rxnsens,"RxnSensitivity",$rxnsens->_wsworkspace(),$rxnsens->_wsname());
-	}
-	$self->_clearContext();
+    # This is one alternative fix to the problem that modelreaction references automatically update when re-saving the model to the workspace.
+    # I here update the model ref to match it...
+    $rxnsens->fbamodel_ref($model->_reference());
+    if (defined($input->{new_rxn_sensitivity_uid})) {
+	$self->_save_msobject($rxnsens,"RxnSensitivity",$input->{workspace},$input->{new_rxn_sensitivity_uid});
+    } else {
+	$self->_save_msobject($rxnsens,"RxnSensitivity",$rxnsens->_wsworkspace(),$rxnsens->_wsname());
+    }
+    $self->_clearContext();
     #END delete_noncontributing_reactions
     my @_bad_returns;
     (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
