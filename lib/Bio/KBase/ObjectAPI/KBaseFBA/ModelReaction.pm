@@ -29,6 +29,11 @@ has isTransporter => ( is => 'rw', isa => 'Bool',printOrder => '-1', type => 'ms
 has translatedDirection  => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildtranslatedDirection' );
 has featureIDs  => ( is => 'rw', isa => 'ArrayRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildfeatureIDs' );
 has featureUUIDs  => ( is => 'rw', isa => 'ArrayRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildfeatureUUIDs' );
+has equationCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildequationcode' );
+has revEquationCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildrevequationcode' );
+has equationCompFreeCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcompfreeequationcode' );
+has revEquationCompFreeCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildrevcompfreeequationcode' );
+has equationFormula => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildequationformula' );
 
 #***********************************************************************************************************
 # BUILDERS:
@@ -43,107 +48,42 @@ sub _buildabbreviation {
 }
 sub _builddefinition {
 	my ($self) = @_;
-	my $reactants = "";
-	my $products = "";
-	my $rgts = $self->modelReactionReagents();
-	for (my $i=0; $i < @{$rgts}; $i++) {
-		my $rgt = $rgts->[$i];
-		if ($rgt->coefficient() < 0) {
-			my $coef = -1*$rgt->coefficient();
-			if (length($reactants) > 0) {
-				$reactants .= " + ";	
-			}
-			if ($coef ne "1") {
-				$reactants .= "(".$coef.")";
-			}
-			$reactants .= $rgt->modelcompound()->compound()->name()."[".$rgt->modelcompound()->modelCompartmentLabel()."]";
-		} else {
-			if (length($products) > 0) {
-				$products .= " + ";	
-			}
-			if ($rgt->coefficient() ne "1") {
-				$products .= "(".$rgt->coefficient().")";
-			}
-			$products .= $rgt->modelcompound()->compound()->name()."[".$rgt->modelcompound()->modelCompartmentLabel()."]";
-		}
-		
-	}
-	$reactants .= " ".$self->translatedDirection()." ";
-	return $reactants.$products;
+	return $self->createEquation({format=>"name"});
 }
+
 sub _buildequation {
 	my ($self) = @_;
-	my $reactants = "";
-	my $products = "";
-	my $rgts = $self->modelReactionReagents();
-	for (my $i=0; $i < @{$rgts}; $i++) {
-		my $rgt = $rgts->[$i];
-		if ($rgt->coefficient() < 0) {
-			my $coef = -1*$rgt->coefficient();
-			if (length($reactants) > 0) {
-				$reactants .= " + ";	
-			}
-			if ($coef ne "1") {
-				$reactants .= "(".$coef.")";
-			}
-			$reactants .= $rgt->modelcompound()->id();
-		} else {
-			if (length($products) > 0) {
-				$products .= " + ";	
-			}
-			if ($rgt->coefficient() ne "1") {
-				$products .= "(".$rgt->coefficient().")";
-			}
-			$products .= $rgt->modelcompound()->id();
-		}
-	}
-	$reactants .= " ".$self->translatedDirection()." ";
-	return $reactants.$products;
+	return $self->createEquation({format=>"id"});
+}
+
+sub _buildequationcode {
+	my ($self) = @_;
+	return $self->createEquation({indecies => 0,format=>"id",hashed=>1,protons=>0,direction=>0});
 }
 sub _buildcode {
 	my ($self) = @_;
-	my $reactants = {};
-	my $products = {};
-	my $rgts = $self->modelReactionReagents();
-	for (my $i=0; $i < @{$rgts}; $i++) {
-		my $rgt = $rgts->[$i];
-		my $id = $rgt->modelcompound()->id();
-		if ($id =~ m/(.+)_c\d+$/) {
-			$id = $1;
-		} elsif ($id =~ m/(.+)_[(a-z)]\d+$/) {
-			$id = $1."[".$2."]";
-		}
-		if ($rgt->coefficient() < 0) {
-			my $coef = -1*$rgt->coefficient();
-			$reactants->{$id} = $coef;
-		} else {
-			$products->{$id} = $rgt->coefficient();
-		}
-	}
-	my $code = "";
-	my $array = [sort(keys(%{$reactants}))];
-	foreach my $id (@{$array}) {
-		if (length($code) > 0) {
-			$code .= " + ";
-		}
-		if ($reactants->{$id} != 1) {
-			$code .= "(".$reactants->{$id}.") ";
-		}
-		$code .= $id;
-	}
-	$code .= " <=> ";
-	$array = [sort(keys(%{$products}))];
-	foreach my $id (@{$array}) {
-		if (length($code) > 0) {
-			$code .= " + ";
-		}
-		if ($products->{$id} != 1) {
-			$code .= "(".$products->{$id}.") ";
-		}
-		$code .= $id;
-	}
-	return $code;
+	return $self->createEquation({format=>"id"});
 }
+sub _buildrevequationcode {
+	my ($self) = @_;
+	return $self->createEquation({indecies => 0,format=>"id",hashed=>1,protons=>0,reverse=>1,direction=>0});
+}
+
+sub _buildcompfreeequationcode {
+	my ($self) = @_;
+	return $self->createEquation({indecies => 0,format=>"id",hashed=>1,compts=>0});
+}
+
+sub _buildrevcompfreeequationcode {
+	my ($self) = @_;
+	return $self->createEquation({indecies => 0,format=>"id",hashed=>1,compts=>0,reverse=>1});
+}
+
+sub _buildequationformula {
+    my ($self,$args) = @_;
+    return $self->createEquation({indecies => 0,format=>"formula",hashed=>0,water=>0});
+}
+
 sub _buildmodelCompartmentLabel {
 	my ($self) = @_;
 	return $self->modelcompartment()->id();
@@ -262,6 +202,103 @@ sub _buildfeatureUUIDs {
 #***********************************************************************************************************
 # FUNCTIONS:
 #***********************************************************************************************************
+
+=head3 createEquation
+Definition:
+	string = Bio::KBase::ObjectAPI::KBaseFBA::ModelReaction->createEquation({
+		format => string(uuid),
+		hashed => 0/1(0)
+	});
+Description:
+	Creates an equation for the model reaction with compounds specified according to the input format
+
+=cut
+
+sub createEquation {
+	my ($self) = @_;
+    my $args = Bio::KBase::ObjectAPI::utilities::args([], { indecies => 1,format => "id", hashed => 0, water => 1, compts=>1, reverse=>0, direction=>1,protons => 1 }, @_);
+	
+	my $rgts = $self->modelReactionReagents();
+	my $rgtHash;
+    my $rxnCompID = $self->modelcompartment()->compartment()->id();
+    my $hcpd = $self->parent()->biochemistry()->checkForProton();
+ 	if (!defined($hcpd) && $args->{hashed}==1) {
+	    Bio::KBase::ObjectAPI::utilities::error("Could not find proton in biochemistry!");
+	}
+	my $wcpd = $self->parent()->biochemistry()->checkForWater();
+ 	if (!defined($wcpd) && $args->{water}==1) {
+	    Bio::KBase::ObjectAPI::utilities::error("Could not find water in biochemistry!");
+	}
+	
+	for (my $i=0; $i < @{$rgts}; $i++) {
+		my $rgt = $rgts->[$i];
+		my $id = $rgt->modelcompound()->compound()->id();
+		next if $args->{protons} == 0 && $id eq $hcpd->id() && $rxnCompID eq $rgt->modelcompound()->modelcompartment()->compartment()->id();
+		next if $args->{water} == 0 && $id eq $wcpd->id();
+		if ($args->{format} eq "name") {
+			my $function = $args->{format};
+			$id = $rgt->modelcompound()->compound()->$function();
+		} elsif ($args->{format} ne "uuid") {
+		    if($args->{format} ne "formula"){
+				$id = $rgt->modelcompound()->compound()->getAlias($args->{format});
+		    }
+		}
+		if (!defined($rgtHash->{$id}->{$rgt->modelcompound()->modelcompartment()->id()})) {
+			$rgtHash->{$id}->{$rgt->modelcompound()->modelcompartment()->id()} = 0;
+		}
+		$rgtHash->{$id}->{$rgt->modelcompound()->modelcompartment()->id()} += $rgt->coefficient();
+	}
+	
+	my $reactcode = "";
+	my $productcode = "";
+	my $sign = " <=> ";
+    if($args->{direction}==1){
+		$sign = " => " if $self->direction() eq ">";
+		$sign = " <= " if $self->direction() eq "<";
+    }
+	
+	my $sortedCpd = [sort(keys(%{$rgtHash}))];
+	for (my $i=0; $i < @{$sortedCpd}; $i++) {
+	    my $printId = $sortedCpd->[$i];
+	    if($args->{format} eq "formula"){
+			$printId = $self->parent()->biochemistry()->getObject("compounds",$sortedCpd->[$i])->formula();
+	    }
+		my $comps = [sort(keys(%{$rgtHash->{$sortedCpd->[$i]}}))];
+		for (my $j=0; $j < @{$comps}; $j++) {
+			if ($comps->[$j] =~ m/([a-z])(\d+)/) {
+				my $comp = $1;
+				my $index = $2;
+				my $compartment = "[".$comp.$index."]";
+				if ($args->{indecies} == 0) {
+					$compartment = "[".$comp."]";
+				}
+				$compartment= "" if ($comp eq "c" && ($index == 0 || $args->{indecies} == 0));
+				$compartment= "" if !$args->{compts};
+				if ($rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]} < 0) {
+					my $coef = -1*$rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]};
+					if (length($reactcode) > 0) {
+						$reactcode .= " + ";	
+					}
+					$reactcode .= "(".$coef.") ".$printId.$compartment;
+				} elsif ($rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]} > 0) {
+					if (length($productcode) > 0) {
+						$productcode .= " + ";	
+					}
+					$productcode .= "(".$rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]}.") ".$printId.$compartment;
+				}
+			}
+		}
+	}
+
+	my $code = $productcode.$sign.$reactcode;
+	if($args->{reverse}==1){
+		$code = $productcode.$sign.$reactcode;
+    }
+    if ($args->{hashed} == 1) {
+		return Digest::MD5::md5_hex($code);
+    }
+	return $code;
+}
 
 =head3 addReagentToReaction
 Definition:
@@ -486,10 +523,24 @@ sub ImportExternalEquation {
 				coefficient => $coef
     		});
     	}
+    	
     }
-    my $rxnobj = $bio->queryObject("reactions",{code => $self->code()});
-    if (defined($rxnobj)) {
-    	$self->reaction_ref($bio->_reference()."/reactions/id/".$rxnobj->id());
+    my $output = $bio->searchForReactionByCode($self->equationCode());
+    if (defined($output)) {
+    	push(@{$self->aliases()},$self->id());
+    	$self->id($output->{rxnobj}->id());
+    	$self->reaction_ref($bio->_reference()."/reactions/id/".$output->{rxnobj}->id());
+    	if ($output->{dir} eq "r") {
+    		if ($self->direction() eq ">") {
+    			$self->direction("<");
+    		} elsif ($self->direction() eq "<") {
+    			$self->direction(">");
+    		}
+    		my $rgts = $self->modelReactionReagents();
+    		for (my $i=0; $i < @{$rgts}; $i++) {
+    			$rgts->[$i]->coefficient(-1*$rgts->[$i]->coefficient());
+    		}
+    	}	
     } else {
     	$self->reaction_ref($bio->_reference()."/reactions/id/rxn00000");
     }

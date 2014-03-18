@@ -5600,7 +5600,7 @@ sub import_fbamodel
 	}
 	for (my  $i=0; $i < @{$input->{reactions}}; $i++) {
 		my $rxnrow = $input->{reactions}->[$i];
-		$model->manualReactionAdjustment({
+		my $input = {
 		    reaction => $rxnrow->[0],
 		    direction => $rxnrow->[1],
 		    compartment => $rxnrow->[2],
@@ -5609,7 +5609,20 @@ sub import_fbamodel
 		    removeReaction => 0,
 		    addReaction => 1,
 		    compounds => $compoundhash
-		});
+		};
+		if (defined($rxnrow->[4])) {
+			$input->{name} = $rxnrow->[4];
+		}
+		if (defined($rxnrow->[5])) {
+			$input->{enzyme} = $rxnrow->[5];
+		}
+		if (defined($rxnrow->[6])) {
+			$input->{pathway} = $rxnrow->[6];
+		}
+		if (defined($rxnrow->[7])) {
+			$input->{reference} = $rxnrow->[7];
+		}
+		$model->manualReactionAdjustment($input);
 		#if (defined($report->{missing_genes})) {
 		#	for (my $i=0; $i < @{$report->{missing_genes}}; $i++) {
 		#		$missingGenes->{$report->{missing_genes}->[$i]} = 1;
@@ -6276,10 +6289,10 @@ sub adjust_biomass_reaction
 			$input->{indecies}->[$i] = 1;
 		}
 		$model->adjustBiomassReaction({
-			compound => $input->{compound}->[$i],
-			coefficient => $input->{coefficient}->[$i],
+			compound => $input->{compounds}->[$i],
+			coefficient => $input->{coefficients}->[$i],
 	    	biomass => $input->{biomass},
-	    	compartment => $input->{compartment}->[$i],
+	    	compartment => $input->{compartments}->[$i],
 	    	compartmentIndecies => $input->{compartmentIndecies}->[$i],
 	    });
 	}

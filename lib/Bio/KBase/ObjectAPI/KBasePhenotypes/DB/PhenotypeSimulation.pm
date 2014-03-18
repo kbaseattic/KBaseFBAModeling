@@ -24,7 +24,7 @@ has phenoclass => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attrib
 
 
 # LINKS:
-has phenotype => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,id,phenotype_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_phenotype', clearer => 'clear_phenotype', isa => 'Ref', weak_ref => 1);
+has phenotype => (is => 'rw', type => 'link(PhenotypeSet,phenotypes,phenotype_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_phenotype', clearer => 'clear_phenotype', isa => 'Bio::KBase::ObjectAPI::KBasePhenotypes::Phenotype', weak_ref => 1);
 
 
 # BUILDERS:
@@ -97,13 +97,14 @@ sub _attributes {
 
 my $links = [
           {
-            'attribute' => 'phenotype_ref',
-            'parent' => 'Bio::KBase::ObjectAPI::KBaseStore',
-            'clearer' => 'clear_phenotype',
+            'parent' => 'PhenotypeSet',
             'name' => 'phenotype',
-            'method' => 'id',
-            'class' => 'id',
-            'module' => undef
+            'attribute' => 'phenotype_ref',
+            'clearer' => 'clear_phenotype',
+            'class' => 'Bio::KBase::ObjectAPI::KBasePhenotypes::Phenotype',
+            'method' => 'phenotypes',
+            'module' => 'KBasePhenotypes',
+            'field' => 'id'
           }
         ];
 

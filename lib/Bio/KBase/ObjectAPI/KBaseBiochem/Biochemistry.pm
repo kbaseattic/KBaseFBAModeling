@@ -1010,6 +1010,28 @@ sub searchForReaction {
 	return $rxnobj;
 }
 
+=head3 searchForReactionByCode
+Definition:
+	{rxnobj => ,dir => } = Bio::KBase::ObjectAPI::KBaseBiochem::searchForReactionByCode(string);
+Description:
+	Searches for a reaction by its code
+
+=cut
+
+sub searchForReactionByCode {
+	my ($self,$code) = @_;
+	my $output = {dir => "f"};
+	$output->{rxnobj} = $self->queryObject("reactions",{equationCode => $code});
+	if (!defined($output->{rxnobj})) {
+		$output->{rxnobj} = $self->queryObject("reactions",{revEquationCode => $code});
+		$output->{dir} = "r";
+	}
+	if (!defined($output->{rxnobj})) {
+		return undef;
+	}
+	return $output;
+}
+
 =head3 searchForCompartment
 Definition:
 	Bio::KBase::ObjectAPI::KBaseBiochem::Compartment = Bio::KBase::ObjectAPI::KBaseBiochem::Compartment->searchForCompartment(string);

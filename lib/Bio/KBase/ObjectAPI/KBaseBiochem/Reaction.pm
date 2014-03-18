@@ -50,7 +50,7 @@ sub _buildequationdirection {
 
 sub _buildequationcode {
 	my ($self) = @_;
-	return $self->createEquation({format=>"uuid",hashed=>1});
+	return $self->createEquation({format=>"id",hashed=>1,protons=>0,direction=>0});
 }
 sub _buildcode {
 	my ($self) = @_;
@@ -58,17 +58,17 @@ sub _buildcode {
 }
 sub _buildrevequationcode {
 	my ($self) = @_;
-	return $self->createEquation({format=>"uuid",hashed=>1,reverse=>1});
+	return $self->createEquation({format=>"id",hashed=>1,protons=>0,reverse=>1,direction=>0});
 }
 
 sub _buildcompfreeequationcode {
 	my ($self) = @_;
-	return $self->createEquation({format=>"uuid",hashed=>1,compts=>0});
+	return $self->createEquation({format=>"id",hashed=>1,compts=>0});
 }
 
 sub _buildrevcompfreeequationcode {
 	my ($self) = @_;
-	return $self->createEquation({format=>"uuid",hashed=>1,compts=>0,reverse=>1});
+	return $self->createEquation({format=>"id",hashed=>1,compts=>0,reverse=>1});
 }
 
 sub _buildequationformula {
@@ -222,11 +222,11 @@ Description:
 
 sub createEquation {
     my $self = shift;
-    my $args = Bio::KBase::ObjectAPI::utilities::args([], { format => "uuid", hashed => 0, water => 0, compts=>1, reverse=>0, direction=>0 }, @_);
+    my $args = Bio::KBase::ObjectAPI::utilities::args([], { format => "id", hashed => 0, water => 1, compts=>1, reverse=>0, direction=>1,protons => 1 }, @_);
 	my $rgt = $self->reagents();
 	my $rgtHash;
-        my $rxnCompID = $self->compartment()->id();
-        my $hcpd = $self->parent()->checkForProton();
+    my $rxnCompID = $self->compartment()->id();
+    my $hcpd = $self->parent()->checkForProton();
  	if (!defined($hcpd) && $args->{hashed}==1) {
 	    Bio::KBase::ObjectAPI::utilities::error("Could not find proton in biochemistry!");
 	}
@@ -235,9 +235,9 @@ sub createEquation {
 	    Bio::KBase::ObjectAPI::utilities::error("Could not find water in biochemistry!");
 	}
 	for (my $i=0; $i < @{$rgt}; $i++) {
-		my $id = $rgt->[$i]->compound_ref();
-		next if $args->{hashed}==1 && $id eq $hcpd->uuid() && !$self->isTransport();
-		next if $args->{hashed}==1 && $args->{water}==1 && $id eq $wcpd->uuid();
+		my $id = $rgt->[$i]->compound()->id();
+		next if $args->{protons}==0 && $id eq $hcpd->id() && $rxnCompID eq $rgt->[$i]->compartment()->id();
+		next if $args->{water}==0 && $id eq $wcpd->id();
 		if ($args->{format} eq "name" || $args->{format} eq "id") {
 			my $function = $args->{format};
 			$id = $rgt->[$i]->compound()->$function();
