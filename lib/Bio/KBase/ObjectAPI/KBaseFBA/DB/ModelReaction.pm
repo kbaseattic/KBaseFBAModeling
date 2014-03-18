@@ -21,9 +21,12 @@ has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metacl
 has probability => (is => 'rw', isa => 'Num', printOrder => '8', default => '1', type => 'attribute', metaclass => 'Typed');
 has name => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has protons => (is => 'rw', isa => 'Num', printOrder => '7', default => '0', type => 'attribute', metaclass => 'Typed');
+has pathway => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has reaction_ref => (is => 'rw', isa => 'Str', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
 has direction => (is => 'rw', isa => 'Str', printOrder => '5', default => '=', type => 'attribute', metaclass => 'Typed');
 has modelcompartment_ref => (is => 'rw', isa => 'Str', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
+has reference => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has aliases => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
 has id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 
 
@@ -83,6 +86,13 @@ my $attributes = [
             'perm' => 'rw'
           },
           {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'pathway',
+            'type' => 'Str',
+            'perm' => 'rw'
+          },
+          {
             'req' => 1,
             'printOrder' => -1,
             'name' => 'reaction_ref',
@@ -110,6 +120,21 @@ my $attributes = [
             'perm' => 'rw'
           },
           {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'reference',
+            'type' => 'Str',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'aliases',
+            'default' => 'sub {return [];}',
+            'type' => 'ArrayRef',
+            'perm' => 'rw'
+          },
+          {
             'req' => 1,
             'printOrder' => 0,
             'name' => 'id',
@@ -118,7 +143,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {probability => 0, name => 1, protons => 2, reaction_ref => 3, direction => 4, modelcompartment_ref => 5, id => 6};
+my $attribute_map = {probability => 0, name => 1, protons => 2, pathway => 3, reaction_ref => 4, direction => 5, modelcompartment_ref => 6, reference => 7, aliases => 8, id => 9};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {

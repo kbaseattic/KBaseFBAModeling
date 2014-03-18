@@ -136,7 +136,6 @@ Description:
 sub integrate_contigs {
 	my($self,$parameters) = @_;
 	my $args = Bio::KBase::ObjectAPI::utilities::args(["contigobj"], {update_features => 0}, $parameters );
-	print "Integrating contigs!\n";
 	my $contigobj = $args->{contigobj};
 	$self->contigset_ref($contigobj->_reference());
 	my $numcontigs = @{$contigobj->contigs()};
@@ -152,7 +151,6 @@ sub integrate_contigs {
 		$copy =~ s/[gcGC]//g;
 		$gc_content += ($self->contig_lengths()->[$i]-length($copy));
 	}
-	print "Integrating gene sequences!\n";
 	$self->md5($contigobj->md5());
 	$self->dna_size($size);
 	$self->gc_content($gc_content/$size);
@@ -163,7 +161,6 @@ sub integrate_contigs {
 			$ftr->integrate_contigs($contigobj);
 		}
 	}
-	print "Done integrating contigs!\n";
 }
 
 __PACKAGE__->meta->make_immutable;

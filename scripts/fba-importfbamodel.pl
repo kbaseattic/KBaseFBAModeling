@@ -141,6 +141,18 @@ foreach my $rxn (@{$data}) {
 			$rxn->[$headingColums->{compartment}],
 			$rxn->[$headingColums->{gpr}],
 		];
+		if (defined($headingColums->{name})) {
+			$rxnobj->[4] = $rxn->[$headingColums->{name}];
+		}
+		if (defined($headingColums->{enzyme})) {
+			$rxnobj->[5] = $rxn->[$headingColums->{enzyme}];
+		}
+		if (defined($headingColums->{pathway})) {
+			$rxnobj->[6] = $rxn->[$headingColums->{pathway}];
+		}
+		if (defined($headingColums->{reference})) {
+			$rxnobj->[7] = $rxn->[$headingColums->{reference}];
+		}
 		push(@{$params->{reactions}},$rxnobj);
 	}
 }

@@ -21,6 +21,7 @@ has name => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', 
 has modelcompartment_ref => (is => 'rw', isa => 'Str', printOrder => '5', required => 1, type => 'attribute', metaclass => 'Typed');
 has charge => (is => 'rw', isa => 'Num', printOrder => '3', type => 'attribute', metaclass => 'Typed');
 has formula => (is => 'rw', isa => 'Str', printOrder => '4', default => '', type => 'attribute', metaclass => 'Typed');
+has aliases => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
 has id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 
 
@@ -93,6 +94,14 @@ my $attributes = [
             'perm' => 'rw'
           },
           {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'aliases',
+            'default' => 'sub {return [];}',
+            'type' => 'ArrayRef',
+            'perm' => 'rw'
+          },
+          {
             'req' => 1,
             'printOrder' => 0,
             'name' => 'id',
@@ -101,7 +110,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {compound_ref => 0, name => 1, modelcompartment_ref => 2, charge => 3, formula => 4, id => 5};
+my $attribute_map = {compound_ref => 0, name => 1, modelcompartment_ref => 2, charge => 3, formula => 4, aliases => 5, id => 6};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {

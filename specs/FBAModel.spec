@@ -266,6 +266,7 @@ module KBaseFBA {
     typedef structure {
 		modelcompound_id id;
 		compound_ref compound_ref;
+		list<string> aliases;
 		string name;
 		float charge;
 		string formula;
@@ -309,6 +310,7 @@ module KBaseFBA {
     /* 
     	ModelReaction object
     	
+    	@optional name enzyme pathway reference
 		@searchable ws_subset id reaction_ref direction protons modelcompartment_ref probability
 		@searchable ws_subset modelReactionReagents.[*].(modelcompound_ref,coefficient)
 		@searchable ws_subset modelReactionProteins.[*].(complex_ref,modelReactionProteinSubunits.[*].(role,triggering,optionalSubunit,feature_refs))
@@ -317,6 +319,9 @@ module KBaseFBA {
 		modelreaction_id id;
 		reaction_ref reaction_ref;
 		string name;
+		list<string> aliases;
+		string pathway;
+		string reference;
 		string direction;
 		float protons;
 		modelcompartment_ref modelcompartment_ref;

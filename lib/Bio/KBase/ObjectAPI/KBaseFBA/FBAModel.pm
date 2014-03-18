@@ -348,7 +348,11 @@ sub manualReactionAdjustment {
     	gpr => undef,
     	removeReaction => 0,
     	addReaction => 0,
-    	compounds => {}
+    	compounds => {},
+    	enzyme => undef,
+    	pathway => undef,
+    	name => undef,
+    	reference => undef
     }, @_);
 	my $genealiases = $self->genome()->geneAliasHash();
     my $rxnid = $args->{reaction};
@@ -356,6 +360,9 @@ sub manualReactionAdjustment {
     	$args->{reaction} = $1;
     	$args->{compartment} = $2;
     	$args->{compartmentIndex} = $3;
+    }
+    if (!defined($args->{name})) {
+    	$args->{name} = $rxnid."_".$args->{compartment}.$args->{compartmentIndex};
     }
     my $eq;
     if ($args->{reaction} =~ m/^(.+):(.+)/) {
@@ -394,18 +401,33 @@ sub manualReactionAdjustment {
     			if (defined($args->{gpr})){
     				$mdlrxn->loadGPRFromString($args->{gpr});
     			}
+    			if (defined($args->{name})){
+    				$mdlrxn->name($args->{name});
+    			}
+    			if (defined($args->{enzyme})){
+    				$mdlrxn->enzyme($args->{enzyme});
+    			}
+    			if (defined($args->{pathway})){
+    				$mdlrxn->pathway($args->{pathway});
+    			}
+    			if (defined($args->{reference})){
+    				$mdlrxn->reference($args->{reference});
+    			}
     		}
 		} elsif ($args->{addReaction} == 1) {
     		$mdlrxn = $self->add("modelreactions",{
 				id => $rxnid."_".$args->{compartment}.$args->{compartmentIndex},
 				reaction_ref => $rxnobj->_reference(),
-				name => $rxnid."_".$args->{compartment}.$args->{compartmentIndex},
+				name => $args->{name},
 				direction => $args->{direction},
 				protons => 0,
 				modelcompartment_ref => "~/modelcompartments/id/".$mdlcmp->id(),
 				probability => 0,
 				modelReactionReagents => [],
-				modelReactionProteins => []
+				modelReactionProteins => [],
+				enyzme => $args->{enzyme},
+				reference => $args->{reference},
+				pathway => $args->{pathway},
 			});
 			my $rgts = $rxnobj->reagents();
 			my $cmpchange = 0;
@@ -470,13 +492,16 @@ sub manualReactionAdjustment {
 	    		$mdlrxn = $self->add("modelreactions",{
 					id => $rxnid."_".$args->{compartment}.$args->{compartmentIndex},
 					reaction_ref => "~/reactions/id/rxn00000",
-					name => $rxnid."_".$args->{compartment}.$args->{compartmentIndex},
+					name => $args->{name},
 					direction => $args->{direction},
 					protons => 0,
 					modelcompartment_ref => "~/modelcompartments/id/".$mdlcmp->id(),
 					probability => 0,
 					modelReactionReagents => [],
-					modelReactionProteins => []
+					modelReactionProteins => [],
+					enyzme => $args->{enzyme},
+					reference => $args->{reference},
+					pathway => $args->{pathway},
 				});
 				if (defined($args->{direction})){
     				$mdlrxn->direction($args->{direction});
@@ -2058,18 +2083,22 @@ sub searchForCompound {
     if (!defined($index)) {
     	$index = 0;
     }
-    my $cpd = $self->biochemistry()->searchForCompound($id);
-    if (!defined($cpd)) {
-    	return undef;
+    my $mdlcpd = $self->getObject("modelcompounds",$id."_".$compartment.$index);
+    if (!defined($mdlcpd)) {
+	    my $cpd = $self->biochemistry()->searchForCompound($id);
+	    if (!defined($cpd)) {
+	    	return undef;
+	    }
+	    my $mdlcmp = $self->queryObject("modelcompartments",{label => $compartment.$index});
+	    if (!defined($mdlcmp)) {
+	    	return undef;
+	    }
+	    return $self->queryObject("modelcompounds",{
+	    	modelcompartment_ref => $mdlcmp->_reference(),
+	    	compound_ref => $self->biochemistry()->reference()."/compounds/id/".$cpd->id()
+	    });
     }
-    my $mdlcmp = $self->queryObject("modelcompartments",{label => $compartment.$index});
-    if (!defined($mdlcmp)) {
-    	return undef;
-    }
-    return $self->queryObject("modelcompounds",{
-    	modelcompartment_ref => $mdlcmp->_reference(),
-    	compound_ref => $cpd->_reference()
-    });
+    return $mdlcpd;
 }
 
 =head3 searchForBiomass
