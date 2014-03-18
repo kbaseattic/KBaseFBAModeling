@@ -11456,8 +11456,6 @@ sub reaction_sensitivity_analysis
 			normalized_required_reaction_count => 0,
 			required_reactions => [keys(%{$inactiveRxns->{$rxn}->{required}})]
 		});
-		print STDERR "Added corrected_reaction ID:\n";
-		print STDERR $inactiveRxns->{$rxn}->id()."\n";
 	}
 	my $rxns = $object->reactions();
 	for (my $i=0; $i < @{$rxns}; $i++) {
