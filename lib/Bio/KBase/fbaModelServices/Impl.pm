@@ -11464,9 +11464,10 @@ sub reaction_sensitivity_analysis
 	}
 	foreach my $rxn (keys(%{$inactiveRxns})) {
 		$inactiveRxns->{$rxn} = $object->add("corrected_reactions",{
+		    id => $rxn,
 			modelreaction_ref => $model->_reference()."/modelreactions/id/".$rxn."_c0",
 			normalized_required_reaction_count => 0,
-			required_reactions => [keys(%{$inactiveRxns->{required}})]
+			required_reactions => [keys(%{$inactiveRxns->{$rxn}->{required}})]
 		});
 	}
 	my $rxns = $object->reactions();
