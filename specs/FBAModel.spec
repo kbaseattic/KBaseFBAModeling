@@ -261,6 +261,7 @@ module KBaseFBA {
     /* 
     	ModelCompound object
     	
+    	@optional aliases
 		@searchable ws_subset id compound_ref name charge formula modelcompartment_ref
     */
     typedef structure {
@@ -310,7 +311,7 @@ module KBaseFBA {
     /* 
     	ModelReaction object
     	
-    	@optional name enzyme pathway reference
+    	@optional name pathway reference aliases
 		@searchable ws_subset id reaction_ref direction protons modelcompartment_ref probability
 		@searchable ws_subset modelReactionReagents.[*].(modelcompound_ref,coefficient)
 		@searchable ws_subset modelReactionProteins.[*].(complex_ref,modelReactionProteinSubunits.[*].(role,triggering,optionalSubunit,feature_refs))
@@ -369,8 +370,8 @@ module KBaseFBA {
     	@searchable ws_subset gapgens.[*].(gapgen_id,gapgen_ref,integrated,media_ref,integrated_solution) 
     	@searchable ws_subset biomasses.[*].(id,name,other,dna,rna,protein,cellwall,lipid,cofactor,energy,biomasscompounds.[*].(modelcompound_ref,coefficient)) 
     	@searchable ws_subset modelcompartments.[*].(id,compartment_ref,compartmentIndex,label,pH,potential) 
-    	@searchable ws_subset modelcompounds.[*].(id,compound_ref,name,charge,formula,modelcompartment_ref)
-    	@searchable ws_subset modelreactions.[*].(id,reaction_ref,direction,protons,modelcompartment_ref,probability,modelReactionReagents.[*].(modelcompound_ref,coefficient),modelReactionProteins.[*].(complex_ref,modelReactionProteinSubunits.[*].(role,triggering,optionalSubunit,feature_refs))) 
+    	@searchable ws_subset modelcompounds.[*].(id,name)
+    	@searchable ws_subset modelreactions.[*].(id,modelReactionReagents.[*].(modelcompound_ref,coefficient),modelReactionProteins.[*].(modelReactionProteinSubunits.[*].(feature_refs))) 
     */
     typedef structure {
 		fbamodel_id id;
@@ -826,7 +827,7 @@ module KBaseFBA {
 		list<ws_sub_id> new_essentials - List of new essential genes with reaction knockout
 	
 		@searchable ws_subset id new_essentials new_inactive_rxns biomass_compounds modelreaction_ref delete growth_fraction deleted normalized_activated_reaction_count
-		@optional
+		@optional direction
 	*/
 	typedef structure {
 		string id;
@@ -834,6 +835,7 @@ module KBaseFBA {
 		float growth_fraction;
 		bool delete;
 		bool deleted;
+		string direction;
 		float normalized_activated_reaction_count;
 		list<modelcompound_id> biomass_compounds;
 		list<modelreaction_id> new_inactive_rxns;

@@ -151,7 +151,7 @@ sub _resetKBaseStore {
 	$temp = pop(@{$temp});
 	my $newparams = {};
 	foreach my $param (keys(%{$params})) {
-		if ($param ne "fasta" && $param ne "annotations") {
+		if ($param ne "fasta" && $param ne "annotations" && $param ne "genomeobj") {
 			$newparams->{$param} = $params->{$param};
 		}
 	}
@@ -4897,11 +4897,19 @@ sub genome_object_to_workspace
     });
     #Processing genome object
 	my $genome = $input->{genomeobj};
+	if (!defined($genome->{id})) {
+		$genome->{id} = $self->_get_new_id("kb|g");
+	}
 	if (!defined($genome->{scientific_name})) {
 		$genome->{scientific_name} = $genome->{id};
 	}
 	if (defined($genome->{gc})) {
 		$genome->{gc_content} = $genome->{gc};
+		delete $genome->{gc};
+	}
+	if (!defined($genome->{source})) {
+		$genome->{source} = "KBase";
+		$genome->{source_id} = $genome->{id};
 	}
 	if (defined($genome->{contigs})) {
 		my $label = "dna";
@@ -4961,6 +4969,7 @@ sub genome_object_to_workspace
 		}
 	}
 	my $GenomeObj = Bio::KBase::ObjectAPI::KBaseGenomes::Genome->new($genome);
+	$GenomeObj->features();
 	$genomeMeta = $self->_save_msobject($GenomeObj,"Genome",$input->{workspace},$input->{uid});
 	$self->_clearContext();
     #END genome_object_to_workspace
