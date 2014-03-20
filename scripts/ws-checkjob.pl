@@ -14,10 +14,10 @@ my $serv = get_old_ws_client();
 #Defining globals describing behavior
 my $primaryArgs = ["Job ID"];
 my $servercommand = "get_jobs";
-my $script = "kbws-checkjob";
+my $script = "ws-checkjob";
 #Defining usage and options
 my ($opt, $usage) = describe_options(
-    'kbws-checkjob <Job ID> %o',
+    'ws-checkjob <Job ID> %o',
     [ 'showerror|e', 'Use flag to show any errors in execution',{"default"=>0}],
     [ 'help|h|?', 'Print this usage information' ]
 );

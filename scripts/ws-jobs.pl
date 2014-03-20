@@ -12,18 +12,19 @@ use Bio::KBase::fbaModelServices::ScriptHelpers qw(getToken get_old_ws_client fb
 
 my $serv = get_old_ws_client();
 #Defining globals describing behavior
-my $primaryArgs = ["Job ID"];
-my $servercommand = "set_job_status";
+my $primaryArgs = [];
+my $servercommand = "get_jobs";
 my $translation = {
-	"Job ID" => "jobid", 
-	status => "status",
+    status => "status",
+    type => "type"
 };
 #Defining usage and options
 my ($opt, $usage) = describe_options(
-    'kbws-resetjob <'.join("> <",@{$primaryArgs}).'> %o',
-    [ 'status|s:s', 'New status to assign to job', {"default" => "queued"} ],
-    [ 'delete|d', 'Delete job', {"default" => 0} ],
-    [ 'showerror|e', 'Set as 1 to show any errors in execution',{"default"=>0}],
+    'ws-jobs %o',
+    [ 'type|t:s', 'Job type' ],
+    [ 'status|s:s', 'Job status (queued,running,done)' ],
+    [ 'showqsub|q', 'Use flag to show qsub ID for jobs',{"default"=>0}],
+    [ 'showerror|e', 'Use flag to show any errors in execution',{"default"=>0}],
     [ 'help|h|?', 'Print this usage information' ]
 );
 if (defined($opt->{help})) {
@@ -39,38 +40,15 @@ foreach my $arg (@{$primaryArgs}) {
 	}
 }
 #Instantiating parameters
-my $params = {
-	jobids => [$opt->{"Job ID"}]
-};
-#Retrieving current job status
-my $output;
-if ($opt->{showerror} == 0){
-    eval {
-        $output = $serv->get_jobs($params);
-    };
-}else{
-    $output = $serv->get_jobs($params);
-}
-if (!defined($output)) {
-	print "Could not reset job status!\n";
-}
+my $params = {};
 foreach my $key (keys(%{$translation})) {
 	if (defined($opt->{$key})) {
 		$params->{$translation->{$key}} = $opt->{$key};
 	}
 }
-if (defined($opt->{"delete"}) && $opt->{"delete"} == 1) {
-	$params->{status} = "delete";
-}
-for (my $i=0; $i < @{$output};$i++) {
-	if ($output->[$i]->{id} eq $params->{jobid}) {
-		$params->{currentStatus} = $output->[$i]->{status};
-		last;
-	}
-}
 $params->{auth} = getToken();
 #Calling the server
-$output = undef;
+my $output;
 if ($opt->{showerror} == 0){
     eval {
         $output = $serv->$servercommand($params);
@@ -78,10 +56,42 @@ if ($opt->{showerror} == 0){
 }else{
     $output = $serv->$servercommand($params);
 }
-
 #Checking output and report results
 if (!defined($output)) {
-	print "Could not reset job status!\n";
+	print "Could not retreive job status!\n";
 } else {
-    print "Job status reset to:\n".$params->{status}."\n";
+    if (defined($opt->{status})) {
+        print "Jobs listed with status '".$opt->{status}."'\n";
+    } else {
+        print "Jobs listed with any status:\n";
+    }
+	my $tbl = [];
+    for (my $i=0; $i < @{$output};$i++) {
+        my $j = $output->[$i];
+        my $row = [
+            $j->{id},
+            $j->{owner},
+            $j->{status},
+            $j->{type},
+            $j->{queuetime},
+            $j->{starttime},
+            $j->{completetime}
+        ];
+        if ($opt->{showqsub} == 1) {
+        	push(@{$row},$j->{jobdata}->{qsubid});
+        }
+        push(@{$tbl},$row);
+    }
+    my $table;
+    if ($opt->{showqsub} == 1) {
+    	$table = Text::Table->new(
+    		'ID', 'Owner','Status','Type','Queue time','Start time','Complete time','Qsub ID'
+    	);
+    } else {
+    	$table = Text::Table->new(
+	    	'ID', 'Owner','Status','Type','Queue time','Start time','Complete time'
+	    );
+    }
+    $table->load(@$tbl);
+    print $table;
 }

@@ -2364,7 +2364,7 @@ sub _annotate_genome {
 	});
 	my $gaserv = $self->_gaserv();
 	my $genomeTO = $genome->genome_typed_object();
-	if ($parameters->{call_genes} == 1 && @{$genomeTO->{contigs}} > 0) {
+	if (($parameters->{call_genes} == 1 || @{$genomeTO->{features}} == 0) && @{$genomeTO->{contigs}} > 0) {
 		$genomeTO = $gaserv->annotate_genome($genomeTO);
 	} elsif ($parameters->{annotate_genes} == 1) {
 		$genomeTO = $gaserv->annotate_proteins($genomeTO);
@@ -4950,7 +4950,7 @@ sub genome_object_to_workspace
 			});
 		}
 		my $ContigObj = Bio::KBase::ObjectAPI::KBaseGenomes::ContigSet->new($contigset);
-		$self->_save_msobject($ContigObj,"ContigSet",$input->{workspace},$input->{uid}.".contigset",{hidden => 1});
+		$self->_save_msobject($ContigObj,"ContigSet",$input->{workspace},$input->{uid}.".contigset",{hidden => 0});
 		$genome->{contigset_ref} = $ContigObj->_reference();
 	}
 	if (defined($genome->{features})) {
@@ -6846,6 +6846,7 @@ sub runfba
     	$self->_error("FBA failed with no solution returned!");
     }
 	$fbaMeta = $self->_save_msobject($fba,"FBA",$input->{workspace},$input->{fba});
+    $fbaMeta->{metadata}->{Objective} = $objective;
     $self->_clearContext();
     #END runfba
     my @_bad_returns;

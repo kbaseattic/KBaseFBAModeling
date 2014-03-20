@@ -133,6 +133,10 @@ deploy-kbscripts:
 	cp $(TARGET)/bin/fba-runjob $(TARGET)/bin/kbfba-runjob
 	cp $(TARGET)/bin/fba-simpheno $(TARGET)/bin/kbfba-simpheno
 	cp $(TARGET)/bin/fba-url $(TARGET)/bin/kbfba-url
+	cp $(TARGET)/bin/ws-getjob $(TARGET)/bin/kbws-getjob
+	cp $(TARGET)/bin/ws-jobs $(TARGET)/bin/kbws-jobs
+	cp $(TARGET)/bin/ws-resetjob $(TARGET)/bin/kbws-resetjob
+	cp $(TARGET)/bin/ws-checkjob $(TARGET)/bin/kbws-checkjob
 
 deploy-services:
 	tpage $(SERV_TPAGE_ARGS) service/start_service.tt > $(TARGET)/services/$(SERV_SERVICE)/start_service; \

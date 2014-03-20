@@ -98,8 +98,13 @@ fba-metaanno-to-models	modeling
 ga-compare-genomes	genome_annotation
 ga-loadfasta	genome_annotation
 ga-seq-to-genome	genome_annotation
+ga-importgtf	genome_annotation
 fba-addphenotypetransporters	modeling
 kbws-checkjob	workspace
 kbws-getjob	workspace
 kbws-jobs	workspace
 kbws-resetjob	workspace
+ws-checkjob	workspace
+ws-getjob	workspace
+ws-jobs	workspace
+ws-resetjob	workspace
