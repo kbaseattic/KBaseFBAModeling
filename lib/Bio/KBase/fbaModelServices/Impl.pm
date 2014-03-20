@@ -6846,7 +6846,7 @@ sub runfba
     	$self->_error("FBA failed with no solution returned!");
     }
 	$fbaMeta = $self->_save_msobject($fba,"FBA",$input->{workspace},$input->{fba});
-    $fbaMeta->{metadata}->{Objective} = $objective;
+    $fbaMeta->[10]->{Objective} = $objective;
     $self->_clearContext();
     #END runfba
     my @_bad_returns;
