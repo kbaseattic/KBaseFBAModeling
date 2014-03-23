@@ -206,7 +206,7 @@ sub _buildfeatureUUIDs {
 =head3 createEquation
 Definition:
 	string = Bio::KBase::ObjectAPI::KBaseFBA::ModelReaction->createEquation({
-		format => string(uuid),
+		format => string(id),
 		hashed => 0/1(0)
 	});
 Description:
@@ -236,11 +236,10 @@ sub createEquation {
 		next if $args->{protons} == 0 && $id eq $hcpd->id() && $rxnCompID eq $rgt->modelcompound()->modelcompartment()->compartment()->id();
 		next if $args->{water} == 0 && $id eq $wcpd->id();
 		if ($args->{format} eq "name") {
-			my $function = $args->{format};
-			$id = $rgt->modelcompound()->compound()->$function();
-		} elsif ($args->{format} ne "uuid") {
+		    $id = $rgt->modelcompound()->compound()->name();
+		} elsif ($args->{format} ne "id") {
 		    if($args->{format} ne "formula"){
-				$id = $rgt->modelcompound()->compound()->getAlias($args->{format});
+			$id = $rgt->modelcompound()->compound()->getAlias($args->{format});
 		    }
 		}
 		if (!defined($rgtHash->{$id}->{$rgt->modelcompound()->modelcompartment()->id()})) {
@@ -304,7 +303,7 @@ sub createEquation {
 Definition:
 	Bio::KBase::ObjectAPI::KBaseFBA::FBAModel = Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->addReagentToReaction({
 		coefficient => REQUIRED,
-		modelcompound_uuid => REQUIRED
+		modelcompound_ref => REQUIRED
 	});
 Description:
 	Add a new ModelCompound object to the ModelReaction if the ModelCompound is not already in the reaction
