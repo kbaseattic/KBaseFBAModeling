@@ -103,6 +103,7 @@ sub gtf_to_features {
 			coexpressed_fids => [],
 			co_occurring_fids => []
 		};
+		
 		my $items = [split(/;\s*/,$row->[8])];
 		foreach my $item (@{$items}){
 			if ($item =~ m/(.+)\s+\"(.+)\"/) {
@@ -114,6 +115,7 @@ sub gtf_to_features {
 					$feature->{id} = $value;
 				} elsif ($field eq "product") {
 					$feature->{function} = $value;
+					$feature->{annotations} = [[$value,"GTF import",time()]];
 				} elsif ($field eq "orig_coding_type") {
 					$feature->{type} = $value;
 				} elsif ($field eq "transcript_id") {
