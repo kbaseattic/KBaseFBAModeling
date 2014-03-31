@@ -349,6 +349,16 @@ module KBaseBiochem {
     typedef string map_id;
 	
 	/* 
+    	MapReactionReactant object
+    	
+    	@optional waypoints
+    */
+	typedef structure {
+		mapcompound_ref compound_ref;
+		list<tuple<int,int>> waypoints;
+	} MapReactionReactant;
+	
+	/* 
     	MapReaction object
     	
     	@optional link
@@ -365,19 +375,21 @@ module KBaseBiochem {
 		int y;
 		int x;
 		list<string> rxns;
-		list<mapcompound_ref> substrate_refs;
-		list<mapcompound_ref> product_refs;
+		list<MapReactionReactant> substrate_refs;
+		list<MapReactionReactant> product_refs;
 	} MapReaction;
 	
 	/* 
     	MapCompound object
     	
-    	@optional link
+    	@optional link label_x label_y
     */
 	typedef structure {
 		string id;
+		string label;
+		int label_x;
+		int label_y;
 		string name;
-		string ec;
 		string shape;
 		string link;
 		int h;
@@ -395,7 +407,7 @@ module KBaseBiochem {
     */
 	typedef structure {
 		string id;
-		map_ref map_ref;
+		string map_ref;
 		string name;
 		string shape;
 		string link;
