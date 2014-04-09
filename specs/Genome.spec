@@ -413,4 +413,54 @@ module KBaseGenomes {
 		string confidence_type;
 		list<MetagenomeAnnotationOTU> otus;
     } MetagenomeAnnotation;
+    
+    /*
+		Domain - a subobject holding information on a single protein domain
+		string id - numerical ID assigned by KBase
+		string source_id - assession ID from CDD database;
+		string type - type of CDD, possible values are cd, pfam, smart, COG, PRK, CHL
+		string name - name of CDD
+		string description - description of CDD		
+    */
+    typedef structure {
+		string id;
+		string source_id;
+		string type;
+		string name;
+		string description;
+    } Domain;
+    
+    /*
+		FeatureDomain - a subobject holding information on how a domain appears in a gene
+		string id - numerical ID assigned by KBase
+		string source_id - assession ID from CDD database;
+		string type - type of CDD, possible values are cd, pfam, smart, COG, PRK, CHL
+		string name - name of CDD
+		string description - description of CDD
+    */
+    typedef structure {
+		string id;
+		string feature_id;
+		string feature_ref;
+		string function;
+		int length;
+		list<tuple<int identity,int alignment_length,int mismatches,int gaps,float protein_start,float protein_end,float domain_start,float domain_end,float evalue,float bit_score>> domains;
+    } FeatureDomainData;
+    
+    /*
+    	GenomeDomainData object: this object holds all data regarding protein domains in a genome in KBase
+
+    	@searchable id genome_id scientific_name genome_ref num_domains num_features
+    */
+    typedef structure {
+    	string id;
+		Genome_id genome_id;
+		string scientific_name;
+		Genome_ref genome_ref;
+		int num_domains;
+		int num_features;
+		
+		list<Domain> domains;
+		list<FeatureDomainData> featuredomains;
+	} GenomeDomainData;
 };

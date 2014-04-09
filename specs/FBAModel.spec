@@ -364,7 +364,7 @@ module KBaseFBA {
     /* 
     	FBAModel object
     	
-    	@optional metagenome_otu_ref metagenome_ref genome_ref
+    	@optional metagenome_otu_ref metagenome_ref genome_ref template_refs
     	@searchable ws_subset id source_id source name type genome_ref metagenome_ref metagenome_otu_ref template_ref
     	@searchable ws_subset gapfillings.[*].(gapfill_id,gapfill_ref,integrated,media_ref,integrated_solution) 
     	@searchable ws_subset gapgens.[*].(gapgen_id,gapgen_ref,integrated,media_ref,integrated_solution) 
@@ -384,6 +384,7 @@ module KBaseFBA {
 		metagenome_otu_ref metagenome_otu_ref;
 		template_ref template_ref;
 		
+		list<template_ref> template_refs;
 		list<ModelGapfill> gapfillings;
 		list<ModelGapgen> gapgens;
 		
@@ -766,6 +767,7 @@ module KBaseFBA {
     /* 
     	TemplateReaction object holds data on reaction in template
     	
+    	@optional base_cost forward_penalty reverse_penalty
     	@searchable ws_subset id direction type reaction_ref compartment_ref complex_refs
     */
 	typedef structure {
@@ -775,6 +777,9 @@ module KBaseFBA {
     	list<complex_ref> complex_refs;
     	string direction;
     	string type;
+    	float base_cost;
+    	float forward_penalty;
+    	float reverse_penalty;
     } TemplateReaction;
     
     /* 
