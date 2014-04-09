@@ -151,7 +151,7 @@ sub _resetKBaseStore {
 	$temp = pop(@{$temp});
 	my $newparams = {};
 	foreach my $param (keys(%{$params})) {
-		if ($param ne "fasta" && $param ne "annotations" && $param ne "genomeobj") {
+		if ($param ne "fasta" && $param ne "annotations" && $param ne "genomeobj" && $param ne "gtf_file") {
 			$newparams->{$param} = $params->{$param};
 		}
 	}
@@ -1248,9 +1248,7 @@ sub _buildGapfillObject {
 	foreach my $reaction (@{$formulation->{blacklistedrxns}}) {
 		my $rxnObj = $model->template()->biochemistry()->searchForReaction($reaction);
 		if (defined($rxnObj)) {
-		    # This one is no longer necessary for gapfill itself but I don't know if it's used elsewhere or not.
-			$gapform->addLinkArrayItem("blacklistedReactions",$rxnObj);
-			$gapform->fba()->addLinkArrayItem("reactionKOs",$rxnObj);
+		    $gapform->addLinkArrayItem("blacklistedReactions",$rxnObj);
 		}
 	}
 	my $mdlcmps = $model->modelcompartments();
