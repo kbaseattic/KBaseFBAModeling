@@ -15,9 +15,13 @@ my $script = "kbfba-runjob";
 my $translation = {
 	"Job ID" => "job",
 	auth => "auth",
-	usecpx => "usecpx"
+	usecpx => "usecpx",
+	overrideauth => "overrideauth"
 };
-my $specs = [[ 'usecpx|u', 'Run with alternative solver' ]];
+my $specs = [
+	[ 'usecpx|u', 'Run with alternative solver' ],
+	[ 'overrideauth|o', 'Use current auth key for job instead of job auth key' ],
+];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
 #Calling the server
 my $output = runFBACommand($params,$servercommand,$opt);

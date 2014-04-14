@@ -10585,7 +10585,7 @@ sub run_job
     my($job);
     #BEGIN run_job
     $self->_setContext($ctx,$input);
-    $input = $self->_validateargs($input,["job"],{usecpx => 0});
+    $input = $self->_validateargs($input,["job"],{usecpx => 0,overrideauth => 0});
     $job = $self->_getJob($input->{job});
     Bio::KBase::ObjectAPI::utilities::CurrentJobID($input->{job});
     eval {
@@ -10599,6 +10599,9 @@ sub run_job
     };
     my $params = $job->{jobdata};
     $params->{auth} = $job->{auth};
+    if (defined($input->{overrideauth}) && $input->{overrideauth} == 1) {
+    	$params->{auth} = $self->_authentication();
+    }
     my $command = $job->{queuecommand};
     $self->$command($params);
     eval {
