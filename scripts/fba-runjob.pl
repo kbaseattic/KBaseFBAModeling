@@ -11,7 +11,7 @@ use Bio::KBase::fbaModelServices::ScriptHelpers qw(fbaws printJobData get_fba_cl
 #Defining globals describing behavior
 my $primaryArgs = ["Job ID"];
 my $servercommand = "run_job";
-my $script = "kbfba-runjob";
+my $script = "fba-runjob";
 my $translation = {
 	"Job ID" => "job",
 	auth => "auth",
