@@ -145,6 +145,7 @@ sub _resetCachedBiochemistry {
 
 sub _resetKBaseStore {
 	my ($self,$params) = @_;
+	print "Resetting ".$params->{auth}."\n";
 	delete $self->{_kbasestore};
 	my @calldata = caller(2);
 	my $temp = [split(/:/,$calldata[3])];
@@ -388,9 +389,11 @@ sub _jobserv {
 sub _workspaceServices {
 	my $self = shift;
 	if (defined($self->{_workspaceServiceOveride})) {
+		print "Override!\n";
 		return $self->{_workspaceServiceOveride};
 	}
 	if (!defined($self->{_workspaceServices}->{$self->_workspaceURL()})) {
+		print "New workspace!\n";
 		my $url = $self->_workspaceURL();
 		$url =~ s/https/http/;
 		$self->{_workspaceServices}->{$self->_workspaceURL()} = Bio::KBase::workspace::Client->new($url);
