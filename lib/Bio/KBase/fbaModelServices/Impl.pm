@@ -2398,7 +2398,7 @@ sub _annotate_genome {
 			if (defined($gene->{protein_translation})) {
 				$feature->protein_translation($gene->{protein_translation});
 				$feature->protein_translation_length(length($gene->{protein_translation}));
-				$feature->dna_sequence_length = 3*$gene->{protein_translation_length};
+				$feature->dna_sequence_length(3*$gene->{protein_translation_length});
 				$feature->md5(Digest::MD5::md5_hex($gene->{protein_translation}));
 			}
 			if (defined($gene->{type})) {
