@@ -2325,6 +2325,135 @@ sub genome_to_workspace
 
 
 
+=head2 domains_to_workspace
+
+  $GenomeDomainMeta = $obj->domains_to_workspace($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a domains_to_workspace_params
+$GenomeDomainMeta is an object_metadata
+domains_to_workspace_params is a reference to a hash where the following keys are defined:
+	genome has a value which is a genome_id
+	output_id has a value which is a string
+	workspace has a value which is a workspace_id
+	auth has a value which is a string
+genome_id is a string
+workspace_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a domains_to_workspace_params
+$GenomeDomainMeta is an object_metadata
+domains_to_workspace_params is a reference to a hash where the following keys are defined:
+	genome has a value which is a genome_id
+	output_id has a value which is a string
+	workspace has a value which is a workspace_id
+	auth has a value which is a string
+genome_id is a string
+workspace_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+=item Description
+
+Computes or fetches domains for a genome
+
+=back
+
+=cut
+
+sub domains_to_workspace
+{
+    my($self, @args) = @_;
+
+# Authentication: required
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function domains_to_workspace (received $n, expecting 1)");
+    }
+    {
+	my($input) = @args;
+
+	my @_bad_arguments;
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to domains_to_workspace:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'domains_to_workspace');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.domains_to_workspace",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{error}->{code},
+					       method_name => 'domains_to_workspace',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method domains_to_workspace",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'domains_to_workspace',
+				       );
+    }
+}
+
+
+
 =head2 add_feature_translation
 
   $genomeMeta = $obj->add_feature_translation($input)
@@ -16527,6 +16656,52 @@ overwrite has a value which is a bool
 
 
 
+=head2 domains_to_workspace_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "domains_to_workspace" function.
+
+        genome_id genome - ID of the workspace genome to fetch domains for (a required argument)
+        string output_id - ID in which the domains are to be saved (default is genome ID plus ".dom.0")
+        workspace_id workspace - ID of the workspace into which the domains are to be loaded (a required argument)
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+genome has a value which is a genome_id
+output_id has a value which is a string
+workspace has a value which is a workspace_id
+auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+genome has a value which is a genome_id
+output_id has a value which is a string
+workspace has a value which is a workspace_id
+auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
 =head2 translation
 
 =over 4
@@ -18374,6 +18549,7 @@ kb_sub_id kbid - KBase ID for reaction knockout sensitivity reaction
 ws_sub_id model_reaction_wsid - ID of model reaction
 bool delete - indicates if reaction is to be deleted
 bool deleted - indicates if the reaction has been deleted
+string direction - Direction of reaction that was tested (> is forward, < backward and = both)
 float growth_fraction - Fraction of wild-type growth after knockout
 float normalized_activated_reaction_count - Normalized number of activated reactions
 list<ws_sub_id> biomass_compounds  - List of biomass compounds that depend on the reaction
@@ -18392,6 +18568,7 @@ model_reaction_wsid has a value which is a ws_sub_id
 growth_fraction has a value which is a float
 delete has a value which is a bool
 deleted has a value which is a bool
+direction has a value which is a string
 normalized_activated_reaction_count has a value which is a float
 biomass_compounds has a value which is a reference to a list where each element is a ws_sub_id
 new_inactive_rxns has a value which is a reference to a list where each element is a ws_sub_id
@@ -18409,6 +18586,7 @@ model_reaction_wsid has a value which is a ws_sub_id
 growth_fraction has a value which is a float
 delete has a value which is a bool
 deleted has a value which is a bool
+direction has a value which is a string
 normalized_activated_reaction_count has a value which is a float
 biomass_compounds has a value which is a reference to a list where each element is a ws_sub_id
 new_inactive_rxns has a value which is a reference to a list where each element is a ws_sub_id

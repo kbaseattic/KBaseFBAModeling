@@ -62,7 +62,70 @@ sub _buildformula {
 #***********************************************************************************************************
 # FUNCTIONS:
 #***********************************************************************************************************
+sub getAlias {
+    my ($self,$set) = @_;
+    my $aliases = $self->getAliases($set);
+    return (@$aliases) ? $aliases->[0] : undef;
+}
 
+sub getAliases {
+    my ($self,$setName) = @_;
+    return [] unless(defined($setName));
+    my $output = [];
+    my $aliases = $self->aliases();
+    for (my $i=0; $i < @{$aliases}; $i++) {
+    	if ($aliases->[$i] =~ m/$setName:(.+)/) {
+    		push(@{$output},$1);
+    	} elsif ($aliases->[$i] !~ m/:/ && $setName eq "name") {
+    		push(@{$output},$aliases->[$i]);
+    	}
+    }
+    return $output;
+}
+
+sub allAliases {
+	my ($self) = @_;
+    my $output = [];
+    my $aliases = $self->aliases();
+    for (my $i=0; $i < @{$aliases}; $i++) {
+    	if ($aliases->[$i] =~ m/(.+):(.+)/) {
+    		push(@{$output},$2);
+    	} else {
+    		push(@{$output},$aliases->[$i]);
+    	}
+    }
+    return $output;
+}
+
+sub hasAlias {
+    my ($self,$alias,$setName) = @_;
+    my $aliases = $self->aliases();
+    for (my $i=0; $i < @{$aliases}; $i++) {
+    	if (defined($setName) && $aliases->[$i] eq $setName.":".$alias) {
+    		return 1;
+    	} elsif (!defined($setName) && $aliases->[$i] eq $alias) {
+    		return 1;
+    	}
+    }
+    return 0;
+}
+
+sub addAlias {
+    my ($self,$alias,$setName) = @_;
+    my $aliases = $self->aliases();
+    for (my $i=0; $i < @{$aliases}; $i++) {
+    	if (defined($setName) && $aliases->[$i] eq $setName.":".$alias) {
+    		return ;
+    	} elsif (!defined($setName) && $aliases->[$i] eq $alias) {
+    		return ;
+    	}
+    }
+    if (defined($setName)) {
+    	push(@{$aliases},$setName.":".$alias);
+    } else {
+    	push(@{$aliases},$alias);
+    }
+}
 
 __PACKAGE__->meta->make_immutable;
 1;

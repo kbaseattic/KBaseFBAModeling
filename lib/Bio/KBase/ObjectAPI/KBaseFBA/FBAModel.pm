@@ -356,18 +356,22 @@ sub manualReactionAdjustment {
     }, @_);
 	my $genealiases = $self->genome()->geneAliasHash();
     my $rxnid = $args->{reaction};
+    my $eq;
+    if ($args->{reaction} =~ m/^(.+):(.+)/) {
+    	$rxnid = $1;
+    	$eq = $2;
+    }
     if ($rxnid =~ m/^(.+)\[([a-z]+)(\d*)]$/) {
     	$args->{reaction} = $1;
     	$args->{compartment} = $2;
     	$args->{compartmentIndex} = $3;
     }
+    if ($args->{compartment} =~ m/^([a-z]+)(\d+)$/) {
+    	$args->{compartment} = $1;
+    	$args->{compartmentIndex} = $2;
+    }
     if (!defined($args->{name})) {
     	$args->{name} = $rxnid."_".$args->{compartment}.$args->{compartmentIndex};
-    }
-    my $eq;
-    if ($args->{reaction} =~ m/^(.+):(.+)/) {
-    	$rxnid = $1;
-    	$eq = $2;
     }
     my $bio = $self->template()->biochemistry();
     my $cmp = $bio->searchForCompartment($args->{compartment});
@@ -403,9 +407,10 @@ sub manualReactionAdjustment {
     			}
     			if (defined($args->{name})){
     				$mdlrxn->name($args->{name});
+    				$mdlrxn->addAlias($args->{name},"name");
     			}
     			if (defined($args->{enzyme})){
-    				$mdlrxn->enzyme($args->{enzyme});
+    				$mdlrxn->addAlias($args->{enzyme},"EC");
     			}
     			if (defined($args->{pathway})){
     				$mdlrxn->pathway($args->{pathway});
@@ -425,10 +430,15 @@ sub manualReactionAdjustment {
 				probability => 0,
 				modelReactionReagents => [],
 				modelReactionProteins => [],
-				enyzme => $args->{enzyme},
 				reference => $args->{reference},
 				pathway => $args->{pathway},
 			});
+			if (defined($args->{name})){
+    			$mdlrxn->addAlias($args->{name},"name");
+    		}
+    		if (defined($args->{enzyme})){
+    			$mdlrxn->addAlias($args->{enzyme},"EC");
+    		}
 			my $rgts = $rxnobj->reagents();
 			my $cmpchange = 0;
 			for (my $i=0; $i < @{$rgts}; $i++) {
@@ -487,6 +497,12 @@ sub manualReactionAdjustment {
 	    			if (defined($eq)) {
 	    				$mdlrxn->ImportExternalEquation({equation => $eq,compounds => $args->{compounds}});
 	    			}
+	    			if (defined($args->{name})){
+		    			$mdlrxn->addAlias($args->{name},"name");
+		    		}
+		    		if (defined($args->{enzyme})){
+		    			$mdlrxn->addAlias($args->{enzyme},"EC");
+		    		}
 	    		}
 	    	} elsif ($args->{addReaction} == 1) {
 	    		$mdlrxn = $self->add("modelreactions",{
@@ -499,10 +515,15 @@ sub manualReactionAdjustment {
 					probability => 0,
 					modelReactionReagents => [],
 					modelReactionProteins => [],
-					enyzme => $args->{enzyme},
 					reference => $args->{reference},
 					pathway => $args->{pathway},
 				});
+				if (defined($args->{name})){
+	    			$mdlrxn->addAlias($args->{name},"name");
+	    		}
+	    		if (defined($args->{enzyme})){
+	    			$mdlrxn->addAlias($args->{enzyme},"EC");
+	    		}
 				if (defined($args->{direction})){
     				$mdlrxn->direction($args->{direction});
     			}
@@ -511,6 +532,9 @@ sub manualReactionAdjustment {
     			}
     			if (defined($eq)) {
     				$mdlrxn->ImportExternalEquation({equation => $eq,compounds => $args->{compounds}});
+    				if ($mdlrxn =~ m/rxn\d+/) {
+			    		$mdlrxn->addAlias($rxnid,"id");
+    				}
     			}
 	    	} else {
 	    		Bio::KBase::ObjectAPI::utilities::error("Specified reaction not found:".$rxnid."!");

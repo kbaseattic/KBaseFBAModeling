@@ -83,6 +83,7 @@ my $baseobjects = {
 	RxnProbs => "ProbabilisticAnnotation",
 	ProbAnno => "ProbabilisticAnnotation",
 	ReactionSensitivityAnalysis => "KBaseFBA",
+	GenomeDomainData =>  "KBaseGenomes",
 };
 my $objcorrespondence = {
 	BiochemistryStructures => "BiochemistryStructures",

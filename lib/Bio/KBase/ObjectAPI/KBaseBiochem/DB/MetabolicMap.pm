@@ -9,6 +9,7 @@ use Bio::KBase::ObjectAPI::BaseObject;
 use Bio::KBase::ObjectAPI::KBaseBiochem::MapCompound;
 use Bio::KBase::ObjectAPI::KBaseBiochem::MapReaction;
 use Bio::KBase::ObjectAPI::KBaseBiochem::MapLink;
+use Bio::KBase::ObjectAPI::KBaseBiochem::ReactionGroup;
 use Moose;
 use namespace::autoclean;
 extends 'Bio::KBase::ObjectAPI::BaseObject';
@@ -33,6 +34,7 @@ has id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => '
 has compounds => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(MapCompound)', metaclass => 'Typed', reader => '_compounds', printOrder => '-1');
 has reactions => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(MapReaction)', metaclass => 'Typed', reader => '_reactions', printOrder => '-1');
 has linkedmaps => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(MapLink)', metaclass => 'Typed', reader => '_linkedmaps', printOrder => '-1');
+has groups => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(ReactionGroup)', metaclass => 'Typed', reader => '_groups', printOrder => '-1');
 
 
 # LINKS:
@@ -163,10 +165,17 @@ my $subobjects = [
             'type' => 'child',
             'class' => 'MapLink',
             'module' => 'KBaseBiochem'
+          },
+          {
+            'printOrder' => -1,
+            'name' => 'groups',
+            'type' => 'child',
+            'class' => 'ReactionGroup',
+            'module' => 'KBaseBiochem'
           }
         ];
 
-my $subobject_map = {compounds => 0, reactions => 1, linkedmaps => 2};
+my $subobject_map = {compounds => 0, reactions => 1, linkedmaps => 2, groups => 3};
 sub _subobjects {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -192,6 +201,10 @@ around 'reactions' => sub {
 around 'linkedmaps' => sub {
 	 my ($orig, $self) = @_;
 	 return $self->_build_all_objects('linkedmaps');
+};
+around 'groups' => sub {
+	 my ($orig, $self) = @_;
+	 return $self->_build_all_objects('groups');
 };
 
 

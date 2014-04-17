@@ -165,6 +165,21 @@ sub get_objects {
 				    	reagents => []
 					});
 				}
+				if ($type eq "FBAModel") {
+					if (defined($self->cache()->{$newrefs->[$i]}->template_ref())) {
+						if ($self->cache()->{$newrefs->[$i]}->template_ref() =~ m/(\w+)\/(\w+)\/\d+/) {
+							$self->cache()->{$newrefs->[$i]}->template_ref($1."/".$2);
+						}
+					}
+					if (defined($self->cache()->{$newrefs->[$i]}->template_refs())) {
+						my $temprefs = $self->cache()->{$newrefs->[$i]}->template_refs();
+						for (my $i=0; $i < @{$temprefs}; $i++) {
+							if ($temprefs->[$i] =~ m/(\w+)\/(\w+)\/\d+/) {
+								$temprefs->[$i] = $1."/".$2;
+							}
+						}
+					}
+				}
 				$self->cache()->{$newrefs->[$i]}->_wsobjid($info->[0]);
 				$self->cache()->{$newrefs->[$i]}->_wsname($info->[1]);
 				$self->cache()->{$newrefs->[$i]}->_wstype($info->[2]);

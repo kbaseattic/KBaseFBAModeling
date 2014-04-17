@@ -76,6 +76,7 @@ use Bio::KBase::ObjectAPI::KBaseBiochem::Biochemistry;
 use Bio::KBase::ObjectAPI::KBaseBiochem::Media;
 use Bio::KBase::ObjectAPI::KBaseOntology::Mapping;
 use Bio::KBase::ObjectAPI::KBaseGenomes::Genome;
+use Bio::KBase::ObjectAPI::KBaseGenomes::GenomeDomainData;
 use Bio::KBase::ObjectAPI::KBaseGenomes::ContigSet;
 use Bio::KBase::ObjectAPI::KBaseGenomes::ProteinSet;
 use Bio::KBase::ObjectAPI::KBaseFBA::FBAModel;
@@ -475,13 +476,112 @@ sub _get_msobject {
 	return $obj;
 }
 
+sub _get_CDD_data_from_CDM {
+	my($self,$genome,$reference) = @_;
+	my $cdm = $self->_cdmi();
+	print "Getting genome data\n";
+	my $data = $cdm->genomes_to_genome_data([$genome]);
+	print "Getting fids\n";
+	my $genomeFtrs = $cdm->genomes_to_fids([$genome],[]);
+	print "Getting proteins\n";
+	my $output = $cdm->get_relationship_Produces(
+		$genomeFtrs->{$genome},
+		["function","source_id","sequence_length"],
+		[],
+		["id"]
+	);
+	print "Done\n";
+	my $object = {
+		id => $genome.".dom.0",
+		genome_id => $genome,
+		scientific_name => $data->{$genome}->{scientific_name},
+		num_domains => 0,
+		num_features => 0,
+		domains => [],
+		featuredomains => []
+	};
+	if (defined($reference)) {
+		$object->{genome_ref} = $reference;
+	}
+	my $geneList = [];
+	my $geneHash = {};
+	my $proteinHash = {};
+	for (my $j=0; $j < @{$output};$j++) {
+		$geneHash->{$output->[$j]->[1]->{from_link}} = {
+			id => $genome.".dom.0".".fdoms.".$j,
+			feature_id => $output->[$j]->[0]->{"source_id"},
+			function => $output->[$j]->[0]->{function},
+			feature_length => $output->[$j]->[0]->{"sequence_length"},
+			domains => []
+		};
+		if (defined($reference)) {
+			$geneHash->{$output->[$j]->[1]->{from_link}}->{feature_ref} = $reference."/features/id/".$output->[$j]->[1]->{from_link};
+		}
+		$object->{num_features}++;
+		push(@{$object->{featuredomains}},$geneHash->{$output->[$j]->[1]->{from_link}});
+		$proteinHash->{$output->[$j]->[2]->{id}}->{$output->[$j]->[1]->{from_link}} = 1;
+	}
+	my $proteinList = [keys(%{$proteinHash})];
+	print "Getting genome cdds\n";
+	my $cdds = $cdm->get_relationship_HasConservedDomainModel(
+		$proteinList,
+		[],
+		["mismatches","gap_openings","percent_identity","alignment_length","protein_start","protein_end","domain_start","domain_end","e_value"],
+		["id","short_name"]
+	);
+	print "Done\n";
+	my $cddhash = {};
+	for (my $j=0; $j < @{$cdds};$j++) {
+		my $cdd = $cdds->[$j];
+		my $protein = $cdd->[1]->{from_link};
+		foreach my $gene (keys(%{$proteinHash->{$protein}})) {
+			$cddhash->{$cdd->[2]->{id}} = 1;
+			push(@{$geneHash->{$gene}->{domains}},[
+				"~/domains/id/".$cdd->[2]->{id},
+				$cdd->[1]->{percent_identity},
+				$cdd->[1]->{alignment_length},
+				$cdd->[1]->{mismatches},
+				$cdd->[1]->{gap_openings},
+				$cdd->[1]->{protein_start},
+				$cdd->[1]->{protein_end},
+				$cdd->[1]->{domain_start},
+				$cdd->[1]->{domain_end},
+				$cdd->[1]->{e_value},
+				$cdd->[1]->{bit_score}
+			]);
+		}
+	}
+	my $cddlist = [keys(%{$cddhash})];
+	print "Getting CDDs\n";
+	$cdds = $cdm->get_entity_ConservedDomainModel(
+		$cddlist,
+		["accession","short_name","description"]
+	);
+	print "Done\n";
+	foreach my $cdd (keys(%{$cdds})) {
+		my $type = "Unknown";
+		if ($cdds->{$cdd}->{accession} =~ m/([a-zA-Z]+)(\d+)/) {
+			$type = $1;
+		}
+		push(@{$object->{domains}},{
+			id => $cdd,
+			source_id => $cdds->{$cdd}->{accession},
+			type => $type,
+			name => $cdds->{$cdd}->{short_name},
+			description => $cdds->{$cdd}->{description}
+		});
+	}
+	$object = Bio::KBase::ObjectAPI::KBaseGenomes::GenomeDomainData->new($object);
+	return $object;
+}
+
 sub _get_genomeObj_from_CDM {
 	my($self,$id,$asNew) = @_;
 	my $cdmi = $self->_cdmi();
     my $data = $cdmi->genomes_to_genome_data([$id]);
     if (!defined($data->{$id})) {
     	$self->_error("Genome ".$id." not found!",'get_genomeobject');
-    } 
+    }
     my $genomeObj = {
 		id => $id,
 		scientific_name => $data->{$id}->{scientific_name},
@@ -2341,7 +2441,8 @@ sub _genome_to_model {
     #Building the model
     my $mdl = $template->buildModel({
 	    genome => $genome,
-	    modelid => $mdlid
+	    modelid => $mdlid,
+	    fulldb => $params->{fulldb}
 	});
 	return $mdl;
 }
@@ -5134,6 +5235,129 @@ sub genome_to_workspace
 
 
 
+=head2 domains_to_workspace
+
+  $GenomeDomainMeta = $obj->domains_to_workspace($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a domains_to_workspace_params
+$GenomeDomainMeta is an object_metadata
+domains_to_workspace_params is a reference to a hash where the following keys are defined:
+	genome has a value which is a genome_id
+	output_id has a value which is a string
+	workspace has a value which is a workspace_id
+	auth has a value which is a string
+genome_id is a string
+workspace_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a domains_to_workspace_params
+$GenomeDomainMeta is an object_metadata
+domains_to_workspace_params is a reference to a hash where the following keys are defined:
+	genome has a value which is a genome_id
+	output_id has a value which is a string
+	workspace has a value which is a workspace_id
+	auth has a value which is a string
+genome_id is a string
+workspace_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+
+
+=item Description
+
+Computes or fetches domains for a genome
+
+=back
+
+=cut
+
+sub domains_to_workspace
+{
+    my $self = shift;
+    my($input) = @_;
+
+    my @_bad_arguments;
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to domains_to_workspace:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'domains_to_workspace');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($GenomeDomainMeta);
+    #BEGIN domains_to_workspace
+    $self->_setContext($ctx,$input);
+    $input = $self->_validateargs($input,["genome","workspace"],{
+    	output_id => $input->{genome}.".domains",
+    	genome_workspace => $input->{workspace},
+    });
+	my $obj = $self->_get_CDD_data_from_CDM($input->{genome});
+    $obj->domains();
+    $obj->featuredomains();
+    $GenomeDomainMeta = $self->_save_msobject($obj,"GenomeDomainData",$input->{workspace},$input->{output_id});
+    #END domains_to_workspace
+    my @_bad_returns;
+    (ref($GenomeDomainMeta) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"GenomeDomainMeta\" (value was \"$GenomeDomainMeta\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to domains_to_workspace:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'domains_to_workspace');
+    }
+    return($GenomeDomainMeta);
+}
+
+
+
+
 =head2 add_feature_translation
 
   $genomeMeta = $obj->add_feature_translation($input)
@@ -5409,7 +5633,8 @@ sub genome_to_fbamodel
     	templatemodel_workspace => $input->{workspace},
     	coremodel => 0,
     	genome_workspace => $input->{workspace},
-    	model => undef
+    	model => undef,
+    	fulldb => 0
     });
     #Retreiving genome object from workspace
     my $genome = $self->_get_msobject("Genome",$input->{genome_workspace},$input->{genome});
@@ -21495,6 +21720,52 @@ overwrite has a value which is a bool
 
 
 
+=head2 domains_to_workspace_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "domains_to_workspace" function.
+
+        genome_id genome - ID of the workspace genome to fetch domains for (a required argument)
+        string output_id - ID in which the domains are to be saved (default is genome ID plus ".dom.0")
+        workspace_id workspace - ID of the workspace into which the domains are to be loaded (a required argument)
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+genome has a value which is a genome_id
+output_id has a value which is a string
+workspace has a value which is a workspace_id
+auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+genome has a value which is a genome_id
+output_id has a value which is a string
+workspace has a value which is a workspace_id
+auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
 =head2 translation
 
 =over 4
@@ -23342,6 +23613,7 @@ kb_sub_id kbid - KBase ID for reaction knockout sensitivity reaction
 ws_sub_id model_reaction_wsid - ID of model reaction
 bool delete - indicates if reaction is to be deleted
 bool deleted - indicates if the reaction has been deleted
+string direction - Direction of reaction that was tested (> is forward, < backward and = both)
 float growth_fraction - Fraction of wild-type growth after knockout
 float normalized_activated_reaction_count - Normalized number of activated reactions
 list<ws_sub_id> biomass_compounds  - List of biomass compounds that depend on the reaction
@@ -23360,6 +23632,7 @@ model_reaction_wsid has a value which is a ws_sub_id
 growth_fraction has a value which is a float
 delete has a value which is a bool
 deleted has a value which is a bool
+direction has a value which is a string
 normalized_activated_reaction_count has a value which is a float
 biomass_compounds has a value which is a reference to a list where each element is a ws_sub_id
 new_inactive_rxns has a value which is a reference to a list where each element is a ws_sub_id
@@ -23377,6 +23650,7 @@ model_reaction_wsid has a value which is a ws_sub_id
 growth_fraction has a value which is a float
 delete has a value which is a bool
 deleted has a value which is a bool
+direction has a value which is a string
 normalized_activated_reaction_count has a value which is a float
 biomass_compounds has a value which is a reference to a list where each element is a ws_sub_id
 new_inactive_rxns has a value which is a reference to a list where each element is a ws_sub_id

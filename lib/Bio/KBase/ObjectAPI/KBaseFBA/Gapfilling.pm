@@ -254,11 +254,11 @@ sub prepareFBAFormulation {
 	$form->defaultMaxFlux(10000);
 	$form->defaultMinDrainFlux(-10000);
 	my $inactiveList = ["bio1"];
+	my $rxns = $self->fbamodel()->modelreactions();
 	if ($self->completeGapfill() eq "1") {
 		if (@{$self->targetedreactions()} > 0) {
 			$inactiveList = $self->targetedreactions();
 		} else {
-			my $rxns = $self->fbamodel()->modelreactions();
 			my $rxnhash = {};
 			for (my $i=0; $i < @{$rxns}; $i++) {
 				$rxnhash->{$rxns->[$i]->reaction()->id()} = 0;	
@@ -294,27 +294,21 @@ sub prepareFBAFormulation {
 		}	
 	}
 	$form->parameters()->{"dissapproved compartments"} = join(";",@{$badCompList});
-	#Adding blacklisted reactions to KO list
-	my $rxnhash = {};
-	my $rxns = $self->guaranteedReactions();
-	for (my $i=0; $i < @{$rxns}; $i++) {
-		$rxnhash->{$rxns->[$i]->id()} = 1;	
-	}
-	$rxns = $form->reactionKOs();
-	for (my $i=0; $i < @{$rxns}; $i++) {
-		if (!defined($rxnhash->{$rxns->[$i]->id()})) {
-			push(@{$form->reactionKOs()},$rxns->[$i]);
-			push(@{$form->reactionKO_refs()},$rxns->[$i]->_reference());
-			$rxnhash->{$rxns->[$i]->id()} = 1;
-		}	
-	}
+	
 	#Setting up gauranteed reactions
 	my $rxnlist = [];
 	$rxns = $self->guaranteedReactions();
 	for (my $i=0; $i < @{$rxns}; $i++) {
-		push(@{$rxnlist},$rxns->[$i]->id());	
+		push(@{$rxnlist},$rxns->[$i]->id());
 	}
-	$form->parameters()->{"Allowable unbalanced reactions"} = join(",",@{$rxnlist});
+	$form->parameters()->{"Gapfilling guaranteed reactions"} = join(",",@{$rxnlist});
+	#Adding blacklisted reactions to KO list
+	$rxns = $self->blacklistedReactions();
+	$rxnlist = [];
+	for (my $i=0; $i < @{$rxns}; $i++) {
+		push(@{$rxnlist},$rxns->[$i]->id());
+	}
+	$form->parameters()->{"Gapfilling blacklisted reactions"} = join(",",@{$rxnlist});
 	#Setting other important parameters
 	$form->parameters()->{"Complete gap filling"} = "1";
 	$form->parameters()->{"Reaction activation bonus"} = $self->reactionActivationBonus();

@@ -6,6 +6,8 @@
 ########################################################################
 package Bio::KBase::ObjectAPI::KBaseBiochem::DB::MapReaction;
 use Bio::KBase::ObjectAPI::BaseObject;
+use Bio::KBase::ObjectAPI::KBaseBiochem::MapReactionReactant;
+use Bio::KBase::ObjectAPI::KBaseBiochem::MapReactionReactant;
 use Moose;
 use namespace::autoclean;
 extends 'Bio::KBase::ObjectAPI::BaseObject';
@@ -18,11 +20,9 @@ has uuid => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass =>
 has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_reference');
 has w => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has link => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has substrate_refs => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
 has name => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has rxns => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
 has x => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has product_refs => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
 has y => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has reversible => (is => 'rw', isa => 'Bool', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has h => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
@@ -31,22 +31,17 @@ has id => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', me
 has shape => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 
 
+# SUBOBJECTS:
+has substrate_refs => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(MapReactionReactant)', metaclass => 'Typed', reader => '_substrate_refs', printOrder => '-1');
+has product_refs => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(MapReactionReactant)', metaclass => 'Typed', reader => '_product_refs', printOrder => '-1');
+
+
 # LINKS:
-has substrates => (is => 'rw', type => 'link(MetabolicMap,compounds,substrate_refs)', metaclass => 'Typed', lazy => 1, builder => '_build_substrates', clearer => 'clear_substrates', isa => 'ArrayRef');
-has products => (is => 'rw', type => 'link(MetabolicMap,compounds,product_refs)', metaclass => 'Typed', lazy => 1, builder => '_build_products', clearer => 'clear_products', isa => 'ArrayRef');
 
 
 # BUILDERS:
 sub _build_reference { my ($self) = @_;return $self->parent()->_reference().'/reactions/id/'.$self->id(); }
 sub _build_uuid { my ($self) = @_;return $self->_reference(); }
-sub _build_substrates {
-	 my ($self) = @_;
-	 return $self->getLinkedObjectArray($self->substrate_refs());
-}
-sub _build_products {
-	 my ($self) = @_;
-	 return $self->getLinkedObjectArray($self->product_refs());
-}
 
 
 # CONSTANTS:
@@ -73,14 +68,6 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'substrate_refs',
-            'default' => 'sub {return [];}',
-            'type' => 'ArrayRef',
-            'perm' => 'rw'
-          },
-          {
-            'req' => 0,
-            'printOrder' => -1,
             'name' => 'name',
             'type' => 'Str',
             'perm' => 'rw'
@@ -98,14 +85,6 @@ my $attributes = [
             'printOrder' => -1,
             'name' => 'x',
             'type' => 'Int',
-            'perm' => 'rw'
-          },
-          {
-            'req' => 0,
-            'printOrder' => -1,
-            'name' => 'product_refs',
-            'default' => 'sub {return [];}',
-            'type' => 'ArrayRef',
             'perm' => 'rw'
           },
           {
@@ -152,7 +131,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {w => 0, link => 1, substrate_refs => 2, name => 3, rxns => 4, x => 5, product_refs => 6, y => 7, reversible => 8, h => 9, ec => 10, id => 11, shape => 12};
+my $attribute_map = {w => 0, link => 1, name => 2, rxns => 3, x => 4, y => 5, reversible => 6, h => 7, ec => 8, id => 9, shape => 10};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -167,32 +146,9 @@ sub _attributes {
 	 }
 }
 
-my $links = [
-          {
-            'parent' => 'MetabolicMap',
-            'name' => 'substrates',
-            'attribute' => 'substrate_refs',
-            'array' => 1,
-            'clearer' => 'clear_substrates',
-            'class' => 'Bio::KBase::ObjectAPI::KBaseBiochem::MapCompound',
-            'method' => 'compounds',
-            'module' => 'KBaseBiochem',
-            'field' => 'id'
-          },
-          {
-            'parent' => 'MetabolicMap',
-            'name' => 'products',
-            'attribute' => 'product_refs',
-            'array' => 1,
-            'clearer' => 'clear_products',
-            'class' => 'Bio::KBase::ObjectAPI::KBaseBiochem::MapCompound',
-            'method' => 'compounds',
-            'module' => 'KBaseBiochem',
-            'field' => 'id'
-          }
-        ];
+my $links = [];
 
-my $link_map = {substrates => 0, products => 1};
+my $link_map = {};
 sub _links {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -207,9 +163,24 @@ sub _links {
 	 }
 }
 
-my $subobjects = [];
+my $subobjects = [
+          {
+            'printOrder' => -1,
+            'name' => 'substrate_refs',
+            'type' => 'child',
+            'class' => 'MapReactionReactant',
+            'module' => 'KBaseBiochem'
+          },
+          {
+            'printOrder' => -1,
+            'name' => 'product_refs',
+            'type' => 'child',
+            'class' => 'MapReactionReactant',
+            'module' => 'KBaseBiochem'
+          }
+        ];
 
-my $subobject_map = {};
+my $subobject_map = {substrate_refs => 0, product_refs => 1};
 sub _subobjects {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -223,5 +194,16 @@ sub _subobjects {
 	 	 return $subobjects;
 	 }
 }
+# SUBOBJECT READERS:
+around 'substrate_refs' => sub {
+	 my ($orig, $self) = @_;
+	 return $self->_build_all_objects('substrate_refs');
+};
+around 'product_refs' => sub {
+	 my ($orig, $self) = @_;
+	 return $self->_build_all_objects('product_refs');
+};
+
+
 __PACKAGE__->meta->make_immutable;
 1;

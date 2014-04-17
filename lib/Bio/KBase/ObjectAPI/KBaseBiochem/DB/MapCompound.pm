@@ -18,14 +18,16 @@ has uuid => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass =>
 has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_reference');
 has w => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has link => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has label_x => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has name => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has cpds => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
 has x => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has link_refs => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
 has y => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has h => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has ec => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has label_y => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has id => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has label => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has shape => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 
 
@@ -61,6 +63,13 @@ my $attributes = [
             'printOrder' => -1,
             'name' => 'link',
             'type' => 'Str',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'label_x',
+            'type' => 'Int',
             'perm' => 'rw'
           },
           {
@@ -110,8 +119,8 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'ec',
-            'type' => 'Str',
+            'name' => 'label_y',
+            'type' => 'Int',
             'perm' => 'rw'
           },
           {
@@ -124,13 +133,20 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
+            'name' => 'label',
+            'type' => 'Str',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
             'name' => 'shape',
             'type' => 'Str',
             'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {w => 0, link => 1, name => 2, cpds => 3, x => 4, link_refs => 5, y => 6, h => 7, ec => 8, id => 9, shape => 10};
+my $attribute_map = {w => 0, link => 1, label_x => 2, name => 3, cpds => 4, x => 5, link_refs => 6, y => 7, h => 8, label_y => 9, id => 10, label => 11, shape => 12};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {

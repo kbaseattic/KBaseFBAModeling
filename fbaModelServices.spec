@@ -1463,6 +1463,26 @@ module fbaModelServices {
     authentication required;
     funcdef genome_to_workspace(genome_to_workspace_params input) returns (object_metadata genomeMeta);
     
+    /* Input parameters for the "domains_to_workspace" function.
+	
+		genome_id genome - ID of the workspace genome to fetch domains for (a required argument)
+		string output_id - ID in which the domains are to be saved (default is genome ID plus ".dom.0")
+		workspace_id workspace - ID of the workspace into which the domains are to be loaded (a required argument)
+		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+
+	*/
+    typedef structure {
+		genome_id genome;
+		string output_id;
+		workspace_id workspace;
+		string auth;
+    } domains_to_workspace_params;
+    /*
+        Computes or fetches domains for a genome
+    */
+    authentication required;
+    funcdef domains_to_workspace(domains_to_workspace_params input) returns (object_metadata GenomeDomainMeta);
+    
     /* A link between a KBase gene ID and the ID for the same gene in another database
 	
 		string foreign_id - ID of the gene in another database
@@ -1516,7 +1536,7 @@ module fbaModelServices {
 		bool coremodel;
 		workspace_id workspace;
 		string auth;
-		bool overwrite;
+		bool fulldb;
     } genome_to_fbamodel_params;
     /*
         Build a genome-scale metabolic model based on annotations in an input genome typed object

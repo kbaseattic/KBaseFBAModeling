@@ -16,6 +16,8 @@ use Bio::KBase::ObjectAPI::utilities;
 # ADDITIONAL ATTRIBUTES:
 #***********************************************************************************************************
 has complexIDs => ( is => 'rw', isa => 'ArrayRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcomplexIDs' );
+has isBiomassTransporter => ( is => 'rw', isa => 'Bool',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildisBiomassTransporter' );
+has inSubsystem => ( is => 'rw', isa => 'Bool',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildinSubsystem' );
 
 #***********************************************************************************************************
 # BUILDERS:
@@ -30,6 +32,44 @@ sub _buildcomplexIDs {
 	}
 	return $output;
 }
+sub _buildisBiomassTransporter {
+	my ($self) = @_;
+	my $rxn = $self->reaction();
+	my $rgts = $rxn->reagents();
+	my $rgthash;
+	my $transported;
+	for (my $i=0; $i < @{$rgts}; $i++) {
+		if (defined($rgthash->{$rgts->[$i]->compound()->id()}) && $rgthash->{$rgts->[$i]->compound()->id()} ne $rgts->[$i]->compartment()->id()) {
+			if ($rgts->[$i]->compartment()->id() eq "e") {
+				$transported->{$rgts->[$i]->compound()->id()} = $rgthash->{$rgts->[$i]->compound()->id()};
+			} else {
+				$transported->{$rgts->[$i]->compound()->id()} = $rgts->[$i]->compartment()->id();
+			}
+		}
+		$rgthash->{$rgts->[$i]->compound()->id()} = $rgts->[$i]->compartment()->id();
+	}
+	my $biomasshash = $self->parent()->biomassHash();
+	foreach my $trans (keys(%{$transported})) {
+		if (defined($biomasshash->{$trans."_".$transported->{$trans}})) {
+			return 1;
+		}
+	}
+}
+sub _buildinSubsystem {
+	my ($self) = @_;
+	my $complexes = $self->complexs();
+	foreach my $complex (@{$complexes}) {
+		my $cpxroles = $complex->complexroles();
+		foreach my $cpxrole (@{$cpxroles}) {
+			my $role = $cpxrole->role();
+			my $rolesshash = $role->parent()->roleSubsystemHash();
+			if (defined($rolesshash->{$role->id()})) {
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
 
 #***********************************************************************************************************
 # CONSTANTS:
@@ -38,9 +78,74 @@ sub _buildcomplexIDs {
 #***********************************************************************************************************
 # FUNCTIONS:
 #***********************************************************************************************************
+sub compute_penalties {
+	my $self = shift;
+	my $args = Bio::KBase::ObjectAPI::utilities::args([],{
+		no_KEGG_penalty => 1,
+		no_KEGG_map_penalty => 1,
+		functional_role_penalty => 2,
+		subsystem_penalty => 1,
+		transporter_penalty => 1,
+		unknown_structure_penalty => 1,
+		biomass_transporter_penalty => 1,
+		single_compound_transporter_penalty => 1,
+		direction_penalty => 1,
+		unbalanced_penalty => 10,
+		no_delta_G_penalty => 1
+	}, @_);
+	my $thermopenalty = 0; 
+	my $coefficient = 1;
+	if (!defined($self->reaction()->getAlias("KEGG"))) {
+		$coefficient += $args->{no_KEGG_penalty};
+		$coefficient += $args->{no_KEGG_map_penalty};
+	} elsif (!defined(Bio::KBase::ObjectAPI::utilities::KEGGMapHash()->{$self->reaction()->id()})) {
+		$coefficient += $args->{no_KEGG_map_penalty};
+	}
+	if (!defined($self->reaction()->deltaG()) || $self->reaction()->deltaG() == 10000000) {
+		$coefficient += $args->{no_delta_G_penalty};
+		$thermopenalty += 1.5;
+	} else {
+		$thermopenalty += $self->reaction()->deltaG()/10;
+	}
+	if (@{$self->complexs()} == 0) {
+		$coefficient += $args->{functional_role_penalty};
+		$coefficient += $args->{subsystem_penalty};
+	} elsif ($self->inSubsystem() == 1) {
+		$coefficient += $args->{subsystem_penalty};
+	}
+	if ($self->reaction()->isTransport()) {
+		$coefficient += $args->{transporter_penalty};
+		if (@{$self->reaction()->reagents()} <= 2) {
+			$coefficient += $args->{single_compound_transporter_penalty};
+		}
+		if ($self->isBiomassTransporter() == 1) {
+			$coefficient += $args->{biomass_transporter_penalty};
+		}
+	}
+	if ($self->reaction()->unknownStructure()) {
+		$coefficient += $args->{unknown_structure_penalty};
+	}
+	if ($self->reaction()->status() =~ m/[CM]I/) {
+		$coefficient += $args->{unbalanced_penalty};
+	}
+	if ($self->reaction()->thermoReversibility() eq ">") {
+		$self->forward_penalty(0);
+		$self->reverse_penalty($args->{direction_penalty}+$thermopenalty);	
+	} elsif ($self->reaction()->thermoReversibility() eq "<") {
+		$self->reverse_penalty(0);
+		$self->forward_penalty($args->{direction_penalty}+$thermopenalty);
+	} else {
+		$self->forward_penalty(0);
+		$self->reverse_penalty(0);
+	}
+	$self->base_cost($coefficient);
+}
+
 sub addRxnToModel {
     my $self = shift;
-	my $args = Bio::KBase::ObjectAPI::utilities::args(["role_features","model"],{}, @_);
+	my $args = Bio::KBase::ObjectAPI::utilities::args(["role_features","model"],{
+		fulldb => 0
+	}, @_);
 	my $mdl = $args->{model};
 	#Gathering roles from annotation
 	my $roleFeatures = $args->{role_features};
@@ -85,7 +190,7 @@ sub addRxnToModel {
 		}
 	}
 	#Adding reaction
-	if (@{$proteins} == 0 && $self->type() ne "universal" && $self->type() ne "spontaneous") {
+	if (@{$proteins} == 0 && $self->type() ne "universal" && $self->type() ne "spontaneous" && $args->{fulldb} == 0) {
 		return;
 	}
 	my $mdlcmp = $mdl->addCompartmentToModel({compartment => $self->compartment(),pH => 7,potential => 0,compartmentIndex => 0});
@@ -127,6 +232,8 @@ sub addRxnToModel {
 	}
 	return $mdlrxn;
 }
+
+
 
 __PACKAGE__->meta->make_immutable;
 1;
