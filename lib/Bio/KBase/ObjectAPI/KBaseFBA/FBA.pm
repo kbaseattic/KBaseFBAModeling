@@ -510,6 +510,24 @@ sub createJobDirectory {
 				push(@{$BioCpd},$cpdid."\t".$cpdid."\t".$cpd->defaultCharge()."\t".$cpd->formula()."\t0\t".$cpdid);
 			}
 		}
+	} elsif ($self->minimize_reactions() == 1) {
+		$self->parameters()->{"Use coefficient file exclusively"} = 1;
+		$self->parameters()->{"Objective coefficient file"} = "RxnOptCoef.txt";
+		$self->parameters()->{"Add DB reactions for gapfilling"} = 0;
+		my $CoefFile = ["Reaction\tCoefficient\tDirection"];
+		my $hash = $self->minimize_reaction_costs();
+		foreach my $key (keys(%{$hash})) {
+			my $mdlrxn = $model->getObject("modelreactions",$key);
+			if (defined($mdlrxn)) {
+				if ($mdlrxn->direction() eq ">" || $mdlrxn->direction() eq "=") {
+					push(@{$CoefFile},"forward\t".$key."\t".$hash->{$key});
+				}
+				if ($mdlrxn->direction() eq "<" || $mdlrxn->direction() eq "=") {
+					push(@{$CoefFile},"reverse\t".$key."\t".$hash->{$key});
+				}
+			}
+		}
+		Bio::KBase::ObjectAPI::utilities::PRINTFILE($directory."RxnOptCoef.txt",$CoefFile);
 	}
 	my $biomasses = $model->biomasses();
 	for (my $i=0; $i < @{$biomasses}; $i++) {
@@ -759,6 +777,9 @@ sub createJobDirectory {
 		$parameters->{"Account for error in delta G"} = 1;
 		$parameters->{"minimize deltaG error"} = 1;
 	}
+	if ($self->minimize_reactions() == 1) {
+		$self->parameters()->{"Complete gap filling"} = 1;
+	}
 	#Setting overide parameters
 	foreach my $param (keys(%{$self->parameters()})) {
 		$parameters->{$param} = $self->parameters()->{$param};
@@ -769,6 +790,9 @@ sub createJobDirectory {
 		push(@{$paramData},$param."|".$parameters->{$param}."|Specialized parameters");
 	}
 	Bio::KBase::ObjectAPI::utilities::PRINTFILE($directory."SpecializedParameters.txt",$paramData);
+	if ($self->minimize_reactions() == 1) {
+		$self->parameters()->{"Complete gap filling"} = 0;
+	}
 	#Printing specialized bounds
 	my $mediaData = ["ID\tNAMES\tVARIABLES\tTYPES\tMAX\tMIN\tCOMPARTMENTS"];
 	my $cpdbnds = $self->FBACompoundBounds();
@@ -1446,6 +1470,7 @@ sub loadMFAToolkitResults {
 	$self->parseFVAResults();
 	$self->parsePROMResult();
 	$self->parseOutputFiles();
+	$self->parseReactionMinimization();
 }
 
 =head3 parseFluxFiles
@@ -2026,7 +2051,98 @@ sub parsePROMResult {
 	return 0;
 }
 
+=head3 parseReactionMinimization
 
+Definition:
+	void parseReactionMinimization();
+Description:
+	Parsing reaction minimization results
+
+=cut
+
+sub parseReactionMinimization {
+    my $self = shift;
+    my $directory = $self->jobDirectory();
+	if ($self->minimize_reactions() == 1 && -e $directory."/CompleteGapfillingOutput.txt") {
+    	my $data = Bio::KBase::ObjectAPI::utilities::LOADFILE($directory."/CompleteGapfillingOutput.txt");
+    	my $mdl = $self->fbamodel();
+		my $bio = $mdl->template()->biochemistry();
+		my $line;
+	    my $has_unneeded = 0;
+		for (my $i=(@{$data}-1); $i >= 0; $i--) {
+			my $array = [split(/\t/,$data->[$i])];
+			if ($array->[1] =~ m/rxn\d+/) {
+				$line = $i;
+				last;
+			}
+			# Keep this separate becasue otherwise iterative gap fill breaks.
+			# If we find UNNEEDED and lines with reactions in them we only care about the latter.
+			if ( $array->[1] =~ m/UNNEEDED/ ) {
+			    $has_unneeded = 1;
+			}
+		}
+		if (!defined($self->parameters()->{"suboptimal solutions"})) {
+			$self->parameters()->{"suboptimal solutions"} = 0;
+		}
+		if (defined($line)) {
+			my $array = [split(/\t/,$data->[$line])];
+			my $solutionsArray = [split(/\|/,$array->[1])];
+			my $solcount = 0;
+			for (my $k=0; $k < @{$solutionsArray}; $k++) {
+			    if (length($solutionsArray->[$k]) > 0) {
+					my $count = 0;
+					my $reactions = [];
+					my $directions = [];
+					my $subarray = [split(/[,;]/,$solutionsArray->[$k])];
+					for (my $j=0; $j < @{$subarray}; $j++) {
+					    if ($subarray->[$j] =~ m/([\-\+])(.+)/) {
+							my $rxnid = $2;
+							my $sign = $1;
+							if ($sign eq "+") {
+							    $sign = ">";
+							} else {
+							    $sign = "<";
+							}
+							my $rxn = $mdl->queryObject("modelreactions",{id => $rxnid});
+							if (!defined($rxn)) {
+							    Bio::KBase::ObjectAPI::utilities::ERROR("Could not find reaction ".$rxnid."!");
+							}
+							if (defined($self->minimize_reaction_costs()->{$rxnid})) {
+								$count += $self->minimize_reaction_costs()->{$rxnid};
+							} else {
+								$count++;
+							}
+							push(@{$reactions},$rxn->_reference());
+							push(@{$directions},$sign);
+						}
+					}
+					if (!defined($self->objectiveValue())) {
+						$self->objectiveValue($count);
+					}
+					$self->add("FBAMinimalReactionsResults",{
+				    	id => $self->id().".minrxns.".$solcount,
+				    	suboptimal => $self->parameters()->{"suboptimal solutions"},
+						totalcost => $count,
+						reaction_refs => $reactions,
+						reaction_directions => $directions
+				    });
+				    $solcount++;
+			    }
+			}
+		} elsif ($has_unneeded) {
+		    if (!defined($self->objectiveValue())) {
+				$self->objectiveValue(0);
+			}
+		    $self->add("FBAMinimalReactionsResults",{
+			   	id => $self->id().".minrxns.0",
+			   	suboptimal => $self->parameters()->{"suboptimal solutions"},
+				totalcost => 0,
+				reaction_refs => [],
+				reaction_directions => []
+			});
+		}
+	}
+}
 
 =head3 parseOutputFiles
 
@@ -2046,7 +2162,10 @@ sub parseOutputFiles {
 		}
 	}
 	if (-e $directory."/suboptimalSolutions.txt") {
+		$self->parameters()->{"suboptimal solutions"} = 0;
 		$self->outputfiles()->{"suboptimalSolutions.txt"} = ["1"];
+	} else {
+		$self->parameters()->{"suboptimal solutions"} = 1;
 	}
 }
 

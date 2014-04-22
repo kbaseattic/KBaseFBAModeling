@@ -2619,7 +2619,7 @@ genome_to_fbamodel_params is a reference to a hash where the following keys are 
 	coremodel has a value which is a bool
 	workspace has a value which is a workspace_id
 	auth has a value which is a string
-	overwrite has a value which is a bool
+	fulldb has a value which is a bool
 genome_id is a string
 workspace_id is a string
 template_id is a string
@@ -2660,7 +2660,7 @@ genome_to_fbamodel_params is a reference to a hash where the following keys are 
 	coremodel has a value which is a bool
 	workspace has a value which is a workspace_id
 	auth has a value which is a string
-	overwrite has a value which is a bool
+	fulldb has a value which is a bool
 genome_id is a string
 workspace_id is a string
 template_id is a string
@@ -3939,6 +3939,229 @@ sub runfba
         Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method runfba",
 					    status_line => $self->{client}->status_line,
 					    method_name => 'runfba',
+				       );
+    }
+}
+
+
+
+=head2 minimize_reactions
+
+  $fbaMeta = $obj->minimize_reactions($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a minimize_reactions_params
+$fbaMeta is an object_metadata
+minimize_reactions_params is a reference to a hash where the following keys are defined:
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
+	workspace has a value which is a workspace_id
+	formulation has a value which is an FBAFormulation
+	reactions has a value which is a reference to a list where each element is a string
+	all_model_reactions has a value which is a bool
+	reaction_costs has a value which is a reference to a hash where the key is a string and the value is a float
+	output_id has a value which is a fba_id
+fbamodel_id is a string
+workspace_id is a string
+FBAFormulation is a reference to a hash where the following keys are defined:
+	media has a value which is a media_id
+	additionalcpds has a value which is a reference to a list where each element is a compound_id
+	prommodel has a value which is a prommodel_id
+	prommodel_workspace has a value which is a workspace_id
+	media_workspace has a value which is a workspace_id
+	objfraction has a value which is a float
+	allreversible has a value which is a bool
+	maximizeObjective has a value which is a bool
+	objectiveTerms has a value which is a reference to a list where each element is a term
+	geneko has a value which is a reference to a list where each element is a feature_id
+	rxnko has a value which is a reference to a list where each element is a reaction_id
+	bounds has a value which is a reference to a list where each element is a bound
+	constraints has a value which is a reference to a list where each element is a constraint
+	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
+	defaultmaxflux has a value which is a float
+	defaultminuptake has a value which is a float
+	defaultmaxuptake has a value which is a float
+	simplethermoconst has a value which is a bool
+	thermoconst has a value which is a bool
+	nothermoerror has a value which is a bool
+	minthermoerror has a value which is a bool
+media_id is a string
+compound_id is a string
+prommodel_id is a string
+bool is an int
+term is a reference to a list containing 3 items:
+	0: (coefficient) a float
+	1: (varType) a string
+	2: (variable) a string
+feature_id is a string
+reaction_id is a string
+bound is a reference to a list containing 4 items:
+	0: (min) a float
+	1: (max) a float
+	2: (varType) a string
+	3: (variable) a string
+constraint is a reference to a list containing 4 items:
+	0: (rhs) a float
+	1: (sign) a string
+	2: (terms) a reference to a list where each element is a term
+	3: (name) a string
+fba_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a minimize_reactions_params
+$fbaMeta is an object_metadata
+minimize_reactions_params is a reference to a hash where the following keys are defined:
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
+	workspace has a value which is a workspace_id
+	formulation has a value which is an FBAFormulation
+	reactions has a value which is a reference to a list where each element is a string
+	all_model_reactions has a value which is a bool
+	reaction_costs has a value which is a reference to a hash where the key is a string and the value is a float
+	output_id has a value which is a fba_id
+fbamodel_id is a string
+workspace_id is a string
+FBAFormulation is a reference to a hash where the following keys are defined:
+	media has a value which is a media_id
+	additionalcpds has a value which is a reference to a list where each element is a compound_id
+	prommodel has a value which is a prommodel_id
+	prommodel_workspace has a value which is a workspace_id
+	media_workspace has a value which is a workspace_id
+	objfraction has a value which is a float
+	allreversible has a value which is a bool
+	maximizeObjective has a value which is a bool
+	objectiveTerms has a value which is a reference to a list where each element is a term
+	geneko has a value which is a reference to a list where each element is a feature_id
+	rxnko has a value which is a reference to a list where each element is a reaction_id
+	bounds has a value which is a reference to a list where each element is a bound
+	constraints has a value which is a reference to a list where each element is a constraint
+	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
+	defaultmaxflux has a value which is a float
+	defaultminuptake has a value which is a float
+	defaultmaxuptake has a value which is a float
+	simplethermoconst has a value which is a bool
+	thermoconst has a value which is a bool
+	nothermoerror has a value which is a bool
+	minthermoerror has a value which is a bool
+media_id is a string
+compound_id is a string
+prommodel_id is a string
+bool is an int
+term is a reference to a list containing 3 items:
+	0: (coefficient) a float
+	1: (varType) a string
+	2: (variable) a string
+feature_id is a string
+reaction_id is a string
+bound is a reference to a list containing 4 items:
+	0: (min) a float
+	1: (max) a float
+	2: (varType) a string
+	3: (variable) a string
+constraint is a reference to a list containing 4 items:
+	0: (rhs) a float
+	1: (sign) a string
+	2: (terms) a reference to a list where each element is a term
+	3: (name) a string
+fba_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+=item Description
+
+Minimize the specified set of reactions while maintaining the FBA objective above a specified threshold
+
+=back
+
+=cut
+
+sub minimize_reactions
+{
+    my($self, @args) = @_;
+
+# Authentication: required
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function minimize_reactions (received $n, expecting 1)");
+    }
+    {
+	my($input) = @args;
+
+	my @_bad_arguments;
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to minimize_reactions:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'minimize_reactions');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.minimize_reactions",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{error}->{code},
+					       method_name => 'minimize_reactions',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method minimize_reactions",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'minimize_reactions',
 				       );
     }
 }
@@ -16828,7 +17051,7 @@ model has a value which is a fbamodel_id
 coremodel has a value which is a bool
 workspace has a value which is a workspace_id
 auth has a value which is a string
-overwrite has a value which is a bool
+fulldb has a value which is a bool
 
 </pre>
 
@@ -16845,7 +17068,7 @@ model has a value which is a fbamodel_id
 coremodel has a value which is a bool
 workspace has a value which is a workspace_id
 auth has a value which is a string
-overwrite has a value which is a bool
+fulldb has a value which is a bool
 
 
 =end text
@@ -17367,6 +17590,64 @@ add_to_model has a value which is a bool
 
 
 
+=head2 minimize_reactions_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "minimize_reactions" function.
+
+        fbamodel_id model - ID of the model that FBA should be run on (a required argument)
+        workspace_id model_workspace - workspace where model for FBA should be run (an optional argument; default is the value of the workspace argument)
+        workspace_id workspace - workspace where FBA results will be saved (a required argument)
+        FBAFormulation formulation - a hash specifying the parameters for the FBA study (an optional argument)
+        list<string> reactions - list of model reactions to be minimized (an optional argument)
+        bool all_model_reactions - minimize all reactions in the model (default is 'false' unless 'reactions' list is empty)
+        mapping<string,float> reaction_costs - hash of costs for each reaction to be minimized (default is '1' for every reaction)
+        fba_id output_id - id to which FBA result should be saved
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+workspace has a value which is a workspace_id
+formulation has a value which is an FBAFormulation
+reactions has a value which is a reference to a list where each element is a string
+all_model_reactions has a value which is a bool
+reaction_costs has a value which is a reference to a hash where the key is a string and the value is a float
+output_id has a value which is a fba_id
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+workspace has a value which is a workspace_id
+formulation has a value which is an FBAFormulation
+reactions has a value which is a reference to a list where each element is a string
+all_model_reactions has a value which is a bool
+reaction_costs has a value which is a reference to a hash where the key is a string and the value is a float
+output_id has a value which is a fba_id
+
+
+=end text
+
+=back
+
+
+
 =head2 export_fba_params
 
 =over 4
@@ -17545,16 +17826,16 @@ positive_transporters has a value which is a bool
 
 Input parameters for the add_media_transporters function.
 
-              phenotype_set_id phenotypeSet - ID for a phenotype set (required)
-              workspace_id phenotypeSet_workspace - ID for the workspace in which the phenotype set is found
-              fbamodel_id model - Model to which to add the transport reactions (required)
-              workspace_id model_workspace - workspace containing the input model
-              fbamodel_id outmodel - Name of output model (with transporters added)
-              workspace_id workspace - workspace where the modified model should be saved
-              bool overwrite - Overwrite or not
-              stirng auth - Auth string
-              bool all_transporters - Add transporters for ALL media in the phenotypeset
-              bool positive_transporters - Add transporters for only POSITIVE (non-zero growth) media in the phenotype set
+            phenotype_set_id phenotypeSet - ID for a phenotype set (required)
+            workspace_id phenotypeSet_workspace - ID for the workspace in which the phenotype set is found
+                fbamodel_id model - Model to which to add the transport reactions (required)
+                workspace_id model_workspace - workspace containing the input model
+                fbamodel_id outmodel - Name of output model (with transporters added)
+                workspace_id workspace - workspace where the modified model should be saved
+                bool overwrite - Overwrite or not
+                string auth - Auth string
+                bool all_transporters - Add transporters for ALL media in the phenotypeset
+                bool positive_transporters - Add transporters for only POSITIVE (non-zero growth) media in the phenotype set
 
 
 =item Definition

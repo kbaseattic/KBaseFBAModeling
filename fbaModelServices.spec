@@ -1792,6 +1792,34 @@ module fbaModelServices {
     authentication required;
     funcdef runfba(runfba_params input) returns (object_metadata fbaMeta);
     
+    /* Input parameters for the "minimize_reactions" function.
+	
+		fbamodel_id model - ID of the model that FBA should be run on (a required argument)
+		workspace_id model_workspace - workspace where model for FBA should be run (an optional argument; default is the value of the workspace argument)
+		workspace_id workspace - workspace where FBA results will be saved (a required argument)
+		FBAFormulation formulation - a hash specifying the parameters for the FBA study (an optional argument)
+		list<string> reactions - list of model reactions to be minimized (an optional argument)
+		bool all_model_reactions - minimize all reactions in the model (default is 'false' unless 'reactions' list is empty)
+		mapping<string,float> reaction_costs - hash of costs for each reaction to be minimized (default is '1' for every reaction)
+		fba_id output_id - id to which FBA result should be saved
+				
+	*/
+    typedef structure {
+    	fbamodel_id model;
+		workspace_id model_workspace;
+		workspace_id workspace;
+		FBAFormulation formulation;
+		list<string> reactions;
+		bool all_model_reactions;
+		mapping<string,float> reaction_costs;
+		fba_id output_id;
+    } minimize_reactions_params;
+    /*
+        Minimize the specified set of reactions while maintaining the FBA objective above a specified threshold
+    */
+    authentication required;
+    funcdef minimize_reactions(minimize_reactions_params input) returns (object_metadata fbaMeta);
+    
     /* Input parameters for the "addmedia" function.
 	
 		fba_id fba - ID of the FBA study to be exported (a required argument)
@@ -1879,16 +1907,16 @@ module fbaModelServices {
     
     /* Input parameters for the add_media_transporters function.
 
-              phenotype_set_id phenotypeSet - ID for a phenotype set (required)
-	      workspace_id phenotypeSet_workspace - ID for the workspace in which the phenotype set is found
-	      fbamodel_id model - Model to which to add the transport reactions (required)
-	      workspace_id model_workspace - workspace containing the input model
-	      fbamodel_id outmodel - Name of output model (with transporters added)
-	      workspace_id workspace - workspace where the modified model should be saved
-	      bool overwrite - Overwrite or not
-	      stirng auth - Auth string
-	      bool all_transporters - Add transporters for ALL media in the phenotypeset
-	      bool positive_transporters - Add transporters for only POSITIVE (non-zero growth) media in the phenotype set
+    	phenotype_set_id phenotypeSet - ID for a phenotype set (required)
+	    workspace_id phenotypeSet_workspace - ID for the workspace in which the phenotype set is found
+		fbamodel_id model - Model to which to add the transport reactions (required)
+		workspace_id model_workspace - workspace containing the input model
+		fbamodel_id outmodel - Name of output model (with transporters added)
+		workspace_id workspace - workspace where the modified model should be saved
+		bool overwrite - Overwrite or not
+		string auth - Auth string
+		bool all_transporters - Add transporters for ALL media in the phenotypeset
+		bool positive_transporters - Add transporters for only POSITIVE (non-zero growth) media in the phenotype set
 
     */
     typedef structure {

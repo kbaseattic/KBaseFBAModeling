@@ -17,6 +17,12 @@ my $defaults = {
 	},
 	ModelTemplate => {
 		biochemistry_ref => "kbase/default"
+	},
+	GapfillingReaction => {
+		compartmentIndex => 0
+	},
+	FBA => {
+		minimize_reactions => 0
 	}
 };
 
