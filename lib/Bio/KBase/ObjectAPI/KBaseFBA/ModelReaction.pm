@@ -90,12 +90,28 @@ sub _buildmodelCompartmentLabel {
 }
 sub _buildgprString {
 	my ($self) = @_;
-	my $gpr = "";
+	my $gprs = [];
+	my $allUnknown = 1;
 	foreach my $protein (@{$self->modelReactionProteins()}) {
-		if (length($gpr) > 0) {
-			$gpr .= " or ";	
-		}
-		$gpr .= $protein->gprString();
+	    my $one_gpr = $protein->gprString();
+	    if ( $one_gpr ne "Unknown" ) {
+		$allUnknown = 0;
+	    }
+	    push(@$gprs, $protein->gprString());
+	}
+	my $gpr = "";
+	# Account for possibility that all of the multiple reaction proteins are empty.
+	if ( $allUnknown == 1 ) {
+	    $gpr = "Unknown";
+	    return $gpr;
+	}
+	foreach my $one_gpr (@$gprs) {
+	    # Avoid printing GPRs that look like (unknown or GENE) if one modelReactionProtein is empty and another has genes in it.
+	    if ( $one_gpr eq "Unknown" ) { next; }
+	    if (length($gpr) > 0) {
+		$gpr .= " or ";	
+	    }
+	    $gpr .= $one_gpr;
 	}
 	if (@{$self->modelReactionProteins()} > 1) {
 		$gpr = "(".$gpr.")";	
@@ -206,7 +222,7 @@ sub _buildfeatureUUIDs {
 =head3 createEquation
 Definition:
 	string = Bio::KBase::ObjectAPI::KBaseFBA::ModelReaction->createEquation({
-		format => string(uuid),
+		format => string(id),
 		hashed => 0/1(0)
 	});
 Description:
@@ -236,11 +252,10 @@ sub createEquation {
 		next if $args->{protons} == 0 && $id eq $hcpd->id() && $rxnCompID eq $rgt->modelcompound()->modelcompartment()->compartment()->id();
 		next if $args->{water} == 0 && $id eq $wcpd->id();
 		if ($args->{format} eq "name") {
-			my $function = $args->{format};
-			$id = $rgt->modelcompound()->compound()->$function();
-		} elsif ($args->{format} ne "uuid") {
+		    $id = $rgt->modelcompound()->compound()->name();
+		} elsif ($args->{format} ne "id") {
 		    if($args->{format} ne "formula"){
-				$id = $rgt->modelcompound()->compound()->getAlias($args->{format});
+			$id = $rgt->modelcompound()->compound()->getAlias($args->{format});
 		    }
 		}
 		if (!defined($rgtHash->{$id}->{$rgt->modelcompound()->modelcompartment()->id()})) {
@@ -304,7 +319,7 @@ sub createEquation {
 Definition:
 	Bio::KBase::ObjectAPI::KBaseFBA::FBAModel = Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->addReagentToReaction({
 		coefficient => REQUIRED,
-		modelcompound_uuid => REQUIRED
+		modelcompound_ref => REQUIRED
 	});
 Description:
 	Add a new ModelCompound object to the ModelReaction if the ModelCompound is not already in the reaction

@@ -1537,7 +1537,7 @@ sub _was_reaction_gapfilled {
     } elsif ( @{$proteins} >= 1 ) {
 	my $ok = 1;
 	foreach ( my $j=0; $j<@{$proteins}; $j++ ) {
-	    if ( $proteins->[$j]->complex_ref() ne "00000000-0000-0000-0000-000000000000" || $proteins->[$j]->note() eq "spontaneous" || $proteins->[$j]->note() eq "universal" ) {
+	    if ( $proteins->[$j]->complex_ref() ne "" || $proteins->[$j]->note() eq "spontaneous" || $proteins->[$j]->note() eq "universal" ) {
 		$ok = 0;
 		last;
 	    }
@@ -1545,7 +1545,8 @@ sub _was_reaction_gapfilled {
 	if ( $ok == 1 ) {
 	    $gapfilled = 1;
 	}
-    }   
+    }
+    return $gapfilled;
 }
 
 # Get an array if (rxnid, direction) pairs from the third element of a line in ProblemReport.txt
@@ -2921,7 +2922,7 @@ sub get_models
     			definition => $rxn->definition(),
     			gapfilled => 0
     		};
-			$rxndata->{gapfilled} = $self->_was_reaction_gapfilled($rxn);
+		$rxndata->{gapfilled} = $self->_was_reaction_gapfilled($rxn);
     		push(@{$mdldata->{reactions}},$rxndata);
     	}
     	#Creating fbas, gapfills, and gapgens
