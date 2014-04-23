@@ -57,7 +57,7 @@ my $translation = {
 	core => "coremodel",
 	workspace => "workspace",
 	auth => "auth",
-	overwrite => "overwrite"
+	fulldb => "fulldb"
 };
 #Defining usage and options
 my $specs = [
@@ -66,8 +66,8 @@ my $specs = [
     [ 'templateid=s', 'ID of template model to use' ],
     [ 'templatews=s', 'Workspace with template model' ],
     [ 'core', 'Build core model'],
-    [ 'workspace|w=s', 'Reference default workspace', { "default" => fbaws() } ],
-    [ 'overwrite|o', 'Overwrite any existing model with same name' ]
+    [ 'fulldb|f', 'Add all gapfilling reactions to the model' ],
+    [ 'workspace|w=s', 'Reference default workspace', { "default" => fbaws() } ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation,$manpage);
 #Calling the server

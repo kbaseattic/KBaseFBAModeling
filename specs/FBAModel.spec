@@ -521,10 +521,23 @@ module KBaseFBA {
     	float maximumProduction;
 	} FBAMetaboliteProductionResult;
     
+	/* 
+    	FBAMinimalReactionsResult object
+    	
+    	@searchable ws_subset reaction_refs id
+    */
+    typedef structure {
+    	string id;
+    	bool suboptimal;
+    	float totalcost;
+    	list<modelreaction_ref> reaction_refs;
+    	list<string> reaction_directions;
+	} FBAMinimalReactionsResult;  
+    
     /* 
     	FBA object holds the formulation and results of a flux balance analysis study
     	
-    	@optional PROMKappa phenotypesimulationset_ref objectiveValue phenotypeset_ref prommodel_ref regmodel_ref
+    	@optional minimize_reactions minimize_reaction_costs FBAMinimalReactionsResults PROMKappa phenotypesimulationset_ref objectiveValue phenotypeset_ref prommodel_ref regmodel_ref
     	@searchable ws_subset comboDeletions id fva fluxMinimization findMinimalMedia allReversible simpleThermoConstraints thermodynamicConstraints noErrorThermodynamicConstraints minimizeErrorThermodynamicConstraints
     	@searchable ws_subset regmodel_ref fbamodel_ref prommodel_ref media_ref phenotypeset_ref geneKO_refs reactionKO_refs additionalCpd_refs objectiveValue phenotypesimulationset_ref
     	@searchable ws_subset FBAConstraints.[*].(name,rhs,sign,compound_terms,reaction_terms) 
@@ -567,6 +580,7 @@ module KBaseFBA {
 		bool decomposeReversibleDrainFlux;
 		bool fluxUseVariables;
 		bool drainfluxUseVariables;
+		bool minimize_reactions;
 		
 		regmodel_ref regmodel_ref;
 		fbamodel_ref fbamodel_ref;
@@ -577,6 +591,7 @@ module KBaseFBA {
 		list<modelreaction_ref> reactionKO_refs;
 		list<modelcompound_ref> additionalCpd_refs;
 		mapping<string,float> uptakeLimits;
+		mapping<modelreaction_id,float> minimize_reaction_costs;
 		
 		mapping<string,string> parameters;
 		mapping<string,list<string>> inputfiles;
@@ -596,6 +611,7 @@ module KBaseFBA {
 		list<FBADeletionResult> FBADeletionResults;
 		list<FBAMinimalMediaResult> FBAMinimalMediaResults;
 		list<FBAMetaboliteProductionResult> FBAMetaboliteProductionResults;
+		list<FBAMinimalReactionsResult> FBAMinimalReactionsResults;
     } FBA;
     
     /* 
@@ -653,12 +669,14 @@ module KBaseFBA {
     /* 
     	GapFillingReaction object holds data on a reaction added by gapfilling analysis
     	
+    	@optional compartmentIndex
     	@searchable ws_subset reaction_ref compartment_ref direction candidateFeature_refs
     */
     typedef structure {
     	reaction_ref reaction_ref;
     	compartment_ref compartment_ref;
     	string direction;
+    	int compartmentIndex;
     	list<feature_ref> candidateFeature_refs;
     } GapfillingReaction;
     

@@ -76,6 +76,7 @@ use Bio::KBase::ObjectAPI::KBaseBiochem::Biochemistry;
 use Bio::KBase::ObjectAPI::KBaseBiochem::Media;
 use Bio::KBase::ObjectAPI::KBaseOntology::Mapping;
 use Bio::KBase::ObjectAPI::KBaseGenomes::Genome;
+use Bio::KBase::ObjectAPI::KBaseGenomes::GenomeDomainData;
 use Bio::KBase::ObjectAPI::KBaseGenomes::ContigSet;
 use Bio::KBase::ObjectAPI::KBaseGenomes::ProteinSet;
 use Bio::KBase::ObjectAPI::KBaseFBA::FBAModel;
@@ -475,13 +476,112 @@ sub _get_msobject {
 	return $obj;
 }
 
+sub _get_CDD_data_from_CDM {
+	my($self,$genome,$reference) = @_;
+	my $cdm = $self->_cdmi();
+	print "Getting genome data\n";
+	my $data = $cdm->genomes_to_genome_data([$genome]);
+	print "Getting fids\n";
+	my $genomeFtrs = $cdm->genomes_to_fids([$genome],[]);
+	print "Getting proteins\n";
+	my $output = $cdm->get_relationship_Produces(
+		$genomeFtrs->{$genome},
+		["function","source_id","sequence_length"],
+		[],
+		["id"]
+	);
+	print "Done\n";
+	my $object = {
+		id => $genome.".dom.0",
+		genome_id => $genome,
+		scientific_name => $data->{$genome}->{scientific_name},
+		num_domains => 0,
+		num_features => 0,
+		domains => [],
+		featuredomains => []
+	};
+	if (defined($reference)) {
+		$object->{genome_ref} = $reference;
+	}
+	my $geneList = [];
+	my $geneHash = {};
+	my $proteinHash = {};
+	for (my $j=0; $j < @{$output};$j++) {
+		$geneHash->{$output->[$j]->[1]->{from_link}} = {
+			id => $genome.".dom.0".".fdoms.".$j,
+			feature_id => $output->[$j]->[0]->{"source_id"},
+			function => $output->[$j]->[0]->{function},
+			feature_length => $output->[$j]->[0]->{"sequence_length"},
+			domains => []
+		};
+		if (defined($reference)) {
+			$geneHash->{$output->[$j]->[1]->{from_link}}->{feature_ref} = $reference."/features/id/".$output->[$j]->[1]->{from_link};
+		}
+		$object->{num_features}++;
+		push(@{$object->{featuredomains}},$geneHash->{$output->[$j]->[1]->{from_link}});
+		$proteinHash->{$output->[$j]->[2]->{id}}->{$output->[$j]->[1]->{from_link}} = 1;
+	}
+	my $proteinList = [keys(%{$proteinHash})];
+	print "Getting genome cdds\n";
+	my $cdds = $cdm->get_relationship_HasConservedDomainModel(
+		$proteinList,
+		[],
+		["mismatches","gap_openings","percent_identity","alignment_length","protein_start","protein_end","domain_start","domain_end","e_value"],
+		["id","short_name"]
+	);
+	print "Done\n";
+	my $cddhash = {};
+	for (my $j=0; $j < @{$cdds};$j++) {
+		my $cdd = $cdds->[$j];
+		my $protein = $cdd->[1]->{from_link};
+		foreach my $gene (keys(%{$proteinHash->{$protein}})) {
+			$cddhash->{$cdd->[2]->{id}} = 1;
+			push(@{$geneHash->{$gene}->{domains}},[
+				"~/domains/id/".$cdd->[2]->{id},
+				$cdd->[1]->{percent_identity},
+				$cdd->[1]->{alignment_length},
+				$cdd->[1]->{mismatches},
+				$cdd->[1]->{gap_openings},
+				$cdd->[1]->{protein_start},
+				$cdd->[1]->{protein_end},
+				$cdd->[1]->{domain_start},
+				$cdd->[1]->{domain_end},
+				$cdd->[1]->{e_value},
+				$cdd->[1]->{bit_score}
+			]);
+		}
+	}
+	my $cddlist = [keys(%{$cddhash})];
+	print "Getting CDDs\n";
+	$cdds = $cdm->get_entity_ConservedDomainModel(
+		$cddlist,
+		["accession","short_name","description"]
+	);
+	print "Done\n";
+	foreach my $cdd (keys(%{$cdds})) {
+		my $type = "Unknown";
+		if ($cdds->{$cdd}->{accession} =~ m/([a-zA-Z]+)(\d+)/) {
+			$type = $1;
+		}
+		push(@{$object->{domains}},{
+			id => $cdd,
+			source_id => $cdds->{$cdd}->{accession},
+			type => $type,
+			name => $cdds->{$cdd}->{short_name},
+			description => $cdds->{$cdd}->{description}
+		});
+	}
+	$object = Bio::KBase::ObjectAPI::KBaseGenomes::GenomeDomainData->new($object);
+	return $object;
+}
+
 sub _get_genomeObj_from_CDM {
 	my($self,$id,$asNew) = @_;
 	my $cdmi = $self->_cdmi();
     my $data = $cdmi->genomes_to_genome_data([$id]);
     if (!defined($data->{$id})) {
     	$self->_error("Genome ".$id." not found!",'get_genomeobject');
-    } 
+    }
     my $genomeObj = {
 		id => $id,
 		scientific_name => $data->{$id}->{scientific_name},
@@ -2342,7 +2442,8 @@ sub _genome_to_model {
     #Building the model
     my $mdl = $template->buildModel({
 	    genome => $genome,
-	    modelid => $mdlid
+	    modelid => $mdlid,
+	    fulldb => $params->{fulldb}
 	});
 	return $mdl;
 }
@@ -5135,6 +5236,129 @@ sub genome_to_workspace
 
 
 
+=head2 domains_to_workspace
+
+  $GenomeDomainMeta = $obj->domains_to_workspace($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a domains_to_workspace_params
+$GenomeDomainMeta is an object_metadata
+domains_to_workspace_params is a reference to a hash where the following keys are defined:
+	genome has a value which is a genome_id
+	output_id has a value which is a string
+	workspace has a value which is a workspace_id
+	auth has a value which is a string
+genome_id is a string
+workspace_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a domains_to_workspace_params
+$GenomeDomainMeta is an object_metadata
+domains_to_workspace_params is a reference to a hash where the following keys are defined:
+	genome has a value which is a genome_id
+	output_id has a value which is a string
+	workspace has a value which is a workspace_id
+	auth has a value which is a string
+genome_id is a string
+workspace_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+
+
+=item Description
+
+Computes or fetches domains for a genome
+
+=back
+
+=cut
+
+sub domains_to_workspace
+{
+    my $self = shift;
+    my($input) = @_;
+
+    my @_bad_arguments;
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to domains_to_workspace:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'domains_to_workspace');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($GenomeDomainMeta);
+    #BEGIN domains_to_workspace
+    $self->_setContext($ctx,$input);
+    $input = $self->_validateargs($input,["genome","workspace"],{
+    	output_id => $input->{genome}.".domains",
+    	genome_workspace => $input->{workspace},
+    });
+	my $obj = $self->_get_CDD_data_from_CDM($input->{genome});
+    $obj->domains();
+    $obj->featuredomains();
+    $GenomeDomainMeta = $self->_save_msobject($obj,"GenomeDomainData",$input->{workspace},$input->{output_id});
+    #END domains_to_workspace
+    my @_bad_returns;
+    (ref($GenomeDomainMeta) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"GenomeDomainMeta\" (value was \"$GenomeDomainMeta\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to domains_to_workspace:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'domains_to_workspace');
+    }
+    return($GenomeDomainMeta);
+}
+
+
+
+
 =head2 add_feature_translation
 
   $genomeMeta = $obj->add_feature_translation($input)
@@ -5310,7 +5534,7 @@ genome_to_fbamodel_params is a reference to a hash where the following keys are 
 	coremodel has a value which is a bool
 	workspace has a value which is a workspace_id
 	auth has a value which is a string
-	overwrite has a value which is a bool
+	fulldb has a value which is a bool
 genome_id is a string
 workspace_id is a string
 template_id is a string
@@ -5351,7 +5575,7 @@ genome_to_fbamodel_params is a reference to a hash where the following keys are 
 	coremodel has a value which is a bool
 	workspace has a value which is a workspace_id
 	auth has a value which is a string
-	overwrite has a value which is a bool
+	fulldb has a value which is a bool
 genome_id is a string
 workspace_id is a string
 template_id is a string
@@ -5410,7 +5634,8 @@ sub genome_to_fbamodel
     	templatemodel_workspace => $input->{workspace},
     	coremodel => 0,
     	genome_workspace => $input->{workspace},
-    	model => undef
+    	model => undef,
+    	fulldb => 0
     });
     #Retreiving genome object from workspace
     my $genome = $self->_get_msobject("Genome",$input->{genome_workspace},$input->{genome});
@@ -6842,7 +7067,7 @@ sub runfba
     my $objective;
     eval {
 		local $SIG{ALRM} = sub { die "FBA timed out! Model likely contains numerical instability!" };
-		alarm 600;
+		alarm 3600;
 		$objective = $fba->runFBA();
 		alarm 0;
 	};
@@ -6853,6 +7078,7 @@ sub runfba
     	$self->_error("FBA failed with no solution returned!");
     }
 	$fbaMeta = $self->_save_msobject($fba,"FBA",$input->{workspace},$input->{fba});
+    $fbaMeta->[10]->{Media} = $input->{formulation}->{media_workspace}."/".$input->{formulation}->{media};
     $fbaMeta->[10]->{Objective} = $objective;
     $self->_clearContext();
     #END runfba
@@ -6862,6 +7088,289 @@ sub runfba
 	my $msg = "Invalid returns passed to runfba:\n" . join("", map { "\t$_\n" } @_bad_returns);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
 							       method_name => 'runfba');
+    }
+    return($fbaMeta);
+}
+
+
+
+
+=head2 minimize_reactions
+
+  $fbaMeta = $obj->minimize_reactions($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a minimize_reactions_params
+$fbaMeta is an object_metadata
+minimize_reactions_params is a reference to a hash where the following keys are defined:
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
+	workspace has a value which is a workspace_id
+	formulation has a value which is an FBAFormulation
+	reactions has a value which is a reference to a list where each element is a string
+	all_model_reactions has a value which is a bool
+	reaction_costs has a value which is a reference to a hash where the key is a string and the value is a float
+	output_id has a value which is a fba_id
+fbamodel_id is a string
+workspace_id is a string
+FBAFormulation is a reference to a hash where the following keys are defined:
+	media has a value which is a media_id
+	additionalcpds has a value which is a reference to a list where each element is a compound_id
+	prommodel has a value which is a prommodel_id
+	prommodel_workspace has a value which is a workspace_id
+	media_workspace has a value which is a workspace_id
+	objfraction has a value which is a float
+	allreversible has a value which is a bool
+	maximizeObjective has a value which is a bool
+	objectiveTerms has a value which is a reference to a list where each element is a term
+	geneko has a value which is a reference to a list where each element is a feature_id
+	rxnko has a value which is a reference to a list where each element is a reaction_id
+	bounds has a value which is a reference to a list where each element is a bound
+	constraints has a value which is a reference to a list where each element is a constraint
+	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
+	defaultmaxflux has a value which is a float
+	defaultminuptake has a value which is a float
+	defaultmaxuptake has a value which is a float
+	simplethermoconst has a value which is a bool
+	thermoconst has a value which is a bool
+	nothermoerror has a value which is a bool
+	minthermoerror has a value which is a bool
+media_id is a string
+compound_id is a string
+prommodel_id is a string
+bool is an int
+term is a reference to a list containing 3 items:
+	0: (coefficient) a float
+	1: (varType) a string
+	2: (variable) a string
+feature_id is a string
+reaction_id is a string
+bound is a reference to a list containing 4 items:
+	0: (min) a float
+	1: (max) a float
+	2: (varType) a string
+	3: (variable) a string
+constraint is a reference to a list containing 4 items:
+	0: (rhs) a float
+	1: (sign) a string
+	2: (terms) a reference to a list where each element is a term
+	3: (name) a string
+fba_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a minimize_reactions_params
+$fbaMeta is an object_metadata
+minimize_reactions_params is a reference to a hash where the following keys are defined:
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
+	workspace has a value which is a workspace_id
+	formulation has a value which is an FBAFormulation
+	reactions has a value which is a reference to a list where each element is a string
+	all_model_reactions has a value which is a bool
+	reaction_costs has a value which is a reference to a hash where the key is a string and the value is a float
+	output_id has a value which is a fba_id
+fbamodel_id is a string
+workspace_id is a string
+FBAFormulation is a reference to a hash where the following keys are defined:
+	media has a value which is a media_id
+	additionalcpds has a value which is a reference to a list where each element is a compound_id
+	prommodel has a value which is a prommodel_id
+	prommodel_workspace has a value which is a workspace_id
+	media_workspace has a value which is a workspace_id
+	objfraction has a value which is a float
+	allreversible has a value which is a bool
+	maximizeObjective has a value which is a bool
+	objectiveTerms has a value which is a reference to a list where each element is a term
+	geneko has a value which is a reference to a list where each element is a feature_id
+	rxnko has a value which is a reference to a list where each element is a reaction_id
+	bounds has a value which is a reference to a list where each element is a bound
+	constraints has a value which is a reference to a list where each element is a constraint
+	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
+	defaultmaxflux has a value which is a float
+	defaultminuptake has a value which is a float
+	defaultmaxuptake has a value which is a float
+	simplethermoconst has a value which is a bool
+	thermoconst has a value which is a bool
+	nothermoerror has a value which is a bool
+	minthermoerror has a value which is a bool
+media_id is a string
+compound_id is a string
+prommodel_id is a string
+bool is an int
+term is a reference to a list containing 3 items:
+	0: (coefficient) a float
+	1: (varType) a string
+	2: (variable) a string
+feature_id is a string
+reaction_id is a string
+bound is a reference to a list containing 4 items:
+	0: (min) a float
+	1: (max) a float
+	2: (varType) a string
+	3: (variable) a string
+constraint is a reference to a list containing 4 items:
+	0: (rhs) a float
+	1: (sign) a string
+	2: (terms) a reference to a list where each element is a term
+	3: (name) a string
+fba_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+
+
+=item Description
+
+Minimize the specified set of reactions while maintaining the FBA objective above a specified threshold
+
+=back
+
+=cut
+
+sub minimize_reactions
+{
+    my $self = shift;
+    my($input) = @_;
+
+    my @_bad_arguments;
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to minimize_reactions:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'minimize_reactions');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($fbaMeta);
+    #BEGIN minimize_reactions
+    $self->_setContext($ctx,$input);
+    $input = $self->_validateargs($input,["model","workspace"],{
+		model_workspace => $input->{workspace},
+		formulation => undef,
+		reactions => [],
+		all_model_reactions => 0,
+		reaction_costs => {},
+		output_id => undef,
+		biomass => undef,
+		timelimit => 86000
+	});    
+	my $model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model});
+	if (!defined($input->{output_id})) {
+		$input->{output_id} = $self->_get_new_id($input->{model}.".fba.");
+	}
+	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
+	#Creating FBAFormulation Object
+	my $fba = $self->_buildFBAObject($input->{formulation},$model,$input->{workspace},$input->{fba});
+	$fba->minimize_reactions(1);
+	if (@{$input->{reactions}} == 0 || $input->{all_model_reactions} == 1) {
+		my $mdlrxns = $model->modelreactions();
+		for (my $i=0; $i < @{$mdlrxns}; $i++) {
+			$fba->minimize_reaction_costs()->{$mdlrxns->[$i]->id()} = 1;
+			if (defined($input->{reaction_costs}->{$mdlrxns->[$i]->id()})) {
+				$fba->minimize_reaction_costs()->{$mdlrxns->[$i]->id()} = $input->{reaction_costs}->{$mdlrxns->[$i]->id()};
+			}
+		}
+	} else {
+		for (my $i=0; $i < @{$input->{reactions}}; $i++) {
+			my $mdlrxn = $model->searchForReaction($input->{reactions}->[$i]);
+			if (defined($mdlrxn)) {
+				$fba->minimize_reaction_costs()->{$mdlrxn->id()} = 1;
+				if (defined($input->{reaction_costs}->{$mdlrxn->id()})) {
+					$fba->minimize_reaction_costs()->{$mdlrxn->id()} = $input->{reaction_costs}->{$mdlrxn->id()};
+				}
+			}
+		}
+	}
+	$fba->inputfiles()->{"InactiveModelReactions.txt"} = ["bio1"];
+	$fba->fluxUseVariables(1);
+	$fba->decomposeReversibleFlux(1);
+	if (defined($input->{biomass}) && defined($fba->biomassflux_objterms()->{bio1})) {
+		my $bio = $model->searchForBiomass($input->{biomass});
+		if (defined($bio)) {
+			delete $fba->biomassflux_objterms()->{bio1};
+			$fba->inputfiles()->{"InactiveModelReactions.txt"} = [$bio->id()];
+			$fba->biomassflux_objterms()->{$bio->id()} = 1;
+		}			
+	}
+	$fba->parameters()->{"just print LP file"} = "0";
+	$fba->parameters()->{"use database fields"} = "1";
+	$fba->parameters()->{"REVERSE_USE;FORWARD_USE;REACTION_USE"} = "1";
+	$fba->parameters()->{"CPLEX solver time limit"} = $input->{timelimit};
+	$fba->parameters()->{"Recursive MILP timeout"} = $input->{timelimit};
+	$fba->parameters()->{"Perform gap filling"} = "1";
+	$fba->parameters()->{"Add positive use variable constraints"} = "0";
+	$fba->outputfiles()->{"ProblemReport.txt"} = [];
+	$fba->parameters()->{"Biomass modification hypothesis"} = "0";
+    #Running FBA
+    my $objective;
+    eval {
+		local $SIG{ALRM} = sub { die "FBA timed out! Model likely contains numerical instability!" };
+		alarm 86400;
+		$objective = $fba->runFBA();
+		alarm 0;
+	};
+	if ($@) {
+		$self->_error($@);
+    }
+    if (!defined($objective)) {
+    	$self->_error("FBA failed with no solution returned!");
+    }
+	$fbaMeta = $self->_save_msobject($fba,"FBA",$input->{workspace},$input->{output_id});
+    $fbaMeta->[10]->{Objective} = $objective;
+    $self->_clearContext();
+    #END minimize_reactions
+    my @_bad_returns;
+    (ref($fbaMeta) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"fbaMeta\" (value was \"$fbaMeta\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to minimize_reactions:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'minimize_reactions');
     }
     return($fbaMeta);
 }
@@ -21496,6 +22005,52 @@ overwrite has a value which is a bool
 
 
 
+=head2 domains_to_workspace_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "domains_to_workspace" function.
+
+        genome_id genome - ID of the workspace genome to fetch domains for (a required argument)
+        string output_id - ID in which the domains are to be saved (default is genome ID plus ".dom.0")
+        workspace_id workspace - ID of the workspace into which the domains are to be loaded (a required argument)
+        string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+genome has a value which is a genome_id
+output_id has a value which is a string
+workspace has a value which is a workspace_id
+auth has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+genome has a value which is a genome_id
+output_id has a value which is a string
+workspace has a value which is a workspace_id
+auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
 =head2 translation
 
 =over 4
@@ -21622,7 +22177,7 @@ model has a value which is a fbamodel_id
 coremodel has a value which is a bool
 workspace has a value which is a workspace_id
 auth has a value which is a string
-overwrite has a value which is a bool
+fulldb has a value which is a bool
 
 </pre>
 
@@ -21639,7 +22194,7 @@ model has a value which is a fbamodel_id
 coremodel has a value which is a bool
 workspace has a value which is a workspace_id
 auth has a value which is a string
-overwrite has a value which is a bool
+fulldb has a value which is a bool
 
 
 =end text
@@ -22161,6 +22716,64 @@ add_to_model has a value which is a bool
 
 
 
+=head2 minimize_reactions_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "minimize_reactions" function.
+
+        fbamodel_id model - ID of the model that FBA should be run on (a required argument)
+        workspace_id model_workspace - workspace where model for FBA should be run (an optional argument; default is the value of the workspace argument)
+        workspace_id workspace - workspace where FBA results will be saved (a required argument)
+        FBAFormulation formulation - a hash specifying the parameters for the FBA study (an optional argument)
+        list<string> reactions - list of model reactions to be minimized (an optional argument)
+        bool all_model_reactions - minimize all reactions in the model (default is 'false' unless 'reactions' list is empty)
+        mapping<string,float> reaction_costs - hash of costs for each reaction to be minimized (default is '1' for every reaction)
+        fba_id output_id - id to which FBA result should be saved
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+workspace has a value which is a workspace_id
+formulation has a value which is an FBAFormulation
+reactions has a value which is a reference to a list where each element is a string
+all_model_reactions has a value which is a bool
+reaction_costs has a value which is a reference to a hash where the key is a string and the value is a float
+output_id has a value which is a fba_id
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+workspace has a value which is a workspace_id
+formulation has a value which is an FBAFormulation
+reactions has a value which is a reference to a list where each element is a string
+all_model_reactions has a value which is a bool
+reaction_costs has a value which is a reference to a hash where the key is a string and the value is a float
+output_id has a value which is a fba_id
+
+
+=end text
+
+=back
+
+
+
 =head2 export_fba_params
 
 =over 4
@@ -22339,16 +22952,16 @@ positive_transporters has a value which is a bool
 
 Input parameters for the add_media_transporters function.
 
-              phenotype_set_id phenotypeSet - ID for a phenotype set (required)
-              workspace_id phenotypeSet_workspace - ID for the workspace in which the phenotype set is found
-              fbamodel_id model - Model to which to add the transport reactions (required)
-              workspace_id model_workspace - workspace containing the input model
-              fbamodel_id outmodel - Name of output model (with transporters added)
-              workspace_id workspace - workspace where the modified model should be saved
-              bool overwrite - Overwrite or not
-              stirng auth - Auth string
-              bool all_transporters - Add transporters for ALL media in the phenotypeset
-              bool positive_transporters - Add transporters for only POSITIVE (non-zero growth) media in the phenotype set
+            phenotype_set_id phenotypeSet - ID for a phenotype set (required)
+            workspace_id phenotypeSet_workspace - ID for the workspace in which the phenotype set is found
+                fbamodel_id model - Model to which to add the transport reactions (required)
+                workspace_id model_workspace - workspace containing the input model
+                fbamodel_id outmodel - Name of output model (with transporters added)
+                workspace_id workspace - workspace where the modified model should be saved
+                bool overwrite - Overwrite or not
+                string auth - Auth string
+                bool all_transporters - Add transporters for ALL media in the phenotypeset
+                bool positive_transporters - Add transporters for only POSITIVE (non-zero growth) media in the phenotype set
 
 
 =item Definition
@@ -23343,6 +23956,7 @@ kb_sub_id kbid - KBase ID for reaction knockout sensitivity reaction
 ws_sub_id model_reaction_wsid - ID of model reaction
 bool delete - indicates if reaction is to be deleted
 bool deleted - indicates if the reaction has been deleted
+string direction - Direction of reaction that was tested (> is forward, < backward and = both)
 float growth_fraction - Fraction of wild-type growth after knockout
 float normalized_activated_reaction_count - Normalized number of activated reactions
 list<ws_sub_id> biomass_compounds  - List of biomass compounds that depend on the reaction
@@ -23361,6 +23975,7 @@ model_reaction_wsid has a value which is a ws_sub_id
 growth_fraction has a value which is a float
 delete has a value which is a bool
 deleted has a value which is a bool
+direction has a value which is a string
 normalized_activated_reaction_count has a value which is a float
 biomass_compounds has a value which is a reference to a list where each element is a ws_sub_id
 new_inactive_rxns has a value which is a reference to a list where each element is a ws_sub_id
@@ -23378,6 +23993,7 @@ model_reaction_wsid has a value which is a ws_sub_id
 growth_fraction has a value which is a float
 delete has a value which is a bool
 deleted has a value which is a bool
+direction has a value which is a string
 normalized_activated_reaction_count has a value which is a float
 biomass_compounds has a value which is a reference to a list where each element is a ws_sub_id
 new_inactive_rxns has a value which is a reference to a list where each element is a ws_sub_id

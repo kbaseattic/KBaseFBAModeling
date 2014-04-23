@@ -356,18 +356,22 @@ sub manualReactionAdjustment {
     }, @_);
 	my $genealiases = $self->genome()->geneAliasHash();
     my $rxnid = $args->{reaction};
+    my $eq;
+    if ($args->{reaction} =~ m/^(.+):(.+)/) {
+    	$rxnid = $1;
+    	$eq = $2;
+    }
     if ($rxnid =~ m/^(.+)\[([a-z]+)(\d*)]$/) {
     	$args->{reaction} = $1;
     	$args->{compartment} = $2;
     	$args->{compartmentIndex} = $3;
     }
+    if ($args->{compartment} =~ m/^([a-z]+)(\d+)$/) {
+    	$args->{compartment} = $1;
+    	$args->{compartmentIndex} = $2;
+    }
     if (!defined($args->{name})) {
     	$args->{name} = $rxnid."_".$args->{compartment}.$args->{compartmentIndex};
-    }
-    my $eq;
-    if ($args->{reaction} =~ m/^(.+):(.+)/) {
-    	$rxnid = $1;
-    	$eq = $2;
     }
     my $bio = $self->template()->biochemistry();
     my $cmp = $bio->searchForCompartment($args->{compartment});
@@ -403,9 +407,10 @@ sub manualReactionAdjustment {
     			}
     			if (defined($args->{name})){
     				$mdlrxn->name($args->{name});
+    				$mdlrxn->addAlias($args->{name},"name");
     			}
     			if (defined($args->{enzyme})){
-    				$mdlrxn->enzyme($args->{enzyme});
+    				$mdlrxn->addAlias($args->{enzyme},"EC");
     			}
     			if (defined($args->{pathway})){
     				$mdlrxn->pathway($args->{pathway});
@@ -425,10 +430,15 @@ sub manualReactionAdjustment {
 				probability => 0,
 				modelReactionReagents => [],
 				modelReactionProteins => [],
-				enyzme => $args->{enzyme},
 				reference => $args->{reference},
 				pathway => $args->{pathway},
 			});
+			if (defined($args->{name})){
+    			$mdlrxn->addAlias($args->{name},"name");
+    		}
+    		if (defined($args->{enzyme})){
+    			$mdlrxn->addAlias($args->{enzyme},"EC");
+    		}
 			my $rgts = $rxnobj->reagents();
 			my $cmpchange = 0;
 			for (my $i=0; $i < @{$rgts}; $i++) {
@@ -487,6 +497,12 @@ sub manualReactionAdjustment {
 	    			if (defined($eq)) {
 	    				$mdlrxn->ImportExternalEquation({equation => $eq,compounds => $args->{compounds}});
 	    			}
+	    			if (defined($args->{name})){
+		    			$mdlrxn->addAlias($args->{name},"name");
+		    		}
+		    		if (defined($args->{enzyme})){
+		    			$mdlrxn->addAlias($args->{enzyme},"EC");
+		    		}
 	    		}
 	    	} elsif ($args->{addReaction} == 1) {
 	    		$mdlrxn = $self->add("modelreactions",{
@@ -499,10 +515,15 @@ sub manualReactionAdjustment {
 					probability => 0,
 					modelReactionReagents => [],
 					modelReactionProteins => [],
-					enyzme => $args->{enzyme},
 					reference => $args->{reference},
 					pathway => $args->{pathway},
 				});
+				if (defined($args->{name})){
+	    			$mdlrxn->addAlias($args->{name},"name");
+	    		}
+	    		if (defined($args->{enzyme})){
+	    			$mdlrxn->addAlias($args->{enzyme},"EC");
+	    		}
 				if (defined($args->{direction})){
     				$mdlrxn->direction($args->{direction});
     			}
@@ -511,6 +532,9 @@ sub manualReactionAdjustment {
     			}
     			if (defined($eq)) {
     				$mdlrxn->ImportExternalEquation({equation => $eq,compounds => $args->{compounds}});
+    				if ($mdlrxn =~ m/rxn\d+/) {
+			    		$mdlrxn->addAlias($rxnid,"id");
+    				}
     			}
 	    	} else {
 	    		Bio::KBase::ObjectAPI::utilities::error("Specified reaction not found:".$rxnid."!");
@@ -1488,25 +1512,27 @@ sub integrateGapfillSolution {
 	for (my $i=0; $i < @{$rxns}; $i++) {
 		my $rxn = $rxns->[$i];
 		my $rxnid = $rxn->reaction()->id();
-		my $mdlrxn = $self->queryObject("modelreactions",{reaction_ref => $rxn->reaction_ref()});
+		my $mdlrxn = $self->getObject("modelreactions",$rxn->reaction()->id()."_".$rxn->compartment()->id().$rxn->compartmentIndex());
 		if (defined($mdlrxn) && $rxn->direction() ne $mdlrxn->direction()) {
 			Bio::KBase::ObjectAPI::utilities::verbose(
 				"Making ".$mdlrxn->id()." reversible."
 			);
-			push(@{$IntegrationReport->{reversed}},$rxnid);
+			push(@{$IntegrationReport->{reversed}},$rxn->reaction()->id()."_".$rxn->compartment()->id().$rxn->compartmentIndex());
 			$mdlrxn->direction("=");
 		} else {
 			Bio::KBase::ObjectAPI::utilities::verbose(
-				"Adding ".$rxn->reaction()->id()." to model in ".$rxn->direction()." direction."
+				"Adding ".$rxn->reaction()->id()."_".$rxn->compartment()->id().$rxn->compartmentIndex()." to model in ".$rxn->direction()." direction."
 			);
-			push(@{$IntegrationReport->{added}},$rxnid);
+			push(@{$IntegrationReport->{added}},$rxn->reaction()->id()."_".$rxn->compartment()->id().$rxn->compartmentIndex());
+			my $mdlcmp = $self->addCompartmentToModel({compartment => $rxn->compartment(),pH => 7,potential => 0,compartmentIndex => $rxn->compartmentIndex()});
 			$self->addReactionToModel({
 				reaction => $rxn->reaction(),
-				direction => $rxn->direction()
+				direction => $rxn->direction(),
+				overrideCompartment => $mdlcmp
 			});
 			# If RxnProbs object is defined, use it to assign GPRs to the integrated reactions.
 			if (defined($args->{rxnProbGpr}) && defined($args->{rxnProbGpr}->{$rxnid})) {
-			    $self->manualReactionAdjustment( { reaction => $rxnid,  gpr => $args->{rxnProbGpr}->{$rxnid} } );
+			    $self->manualReactionAdjustment( { reaction => $rxn->reaction()->id()."_".$rxn->compartment()->id().$rxn->compartmentIndex(),  gpr => $args->{rxnProbGpr}->{$rxnid} } );
 			}
 		}
 	}
@@ -2095,7 +2121,7 @@ sub searchForCompound {
 	    }
 	    return $self->queryObject("modelcompounds",{
 	    	modelcompartment_ref => $mdlcmp->_reference(),
-	    	compound_ref => $self->biochemistry()->reference()."/compounds/id/".$cpd->id()
+	    	compound_ref => $self->biochemistry()->_reference()."/compounds/id/".$cpd->id()
 	    });
     }
     return $mdlcpd;
@@ -2145,18 +2171,15 @@ sub searchForReaction {
     if (!defined($index)) {
     	$index = 0;
     }
-    my $reaction = $self->biochemistry()->searchForReaction($id);
-    if (!defined($reaction)) {
-    	return undef;
+    my $mdlrxn = $self->getObject("modelreactions",$id."_".$compartment.$index);
+    if (!defined($mdlrxn)) {
+    	my $rxn = $self->biochemistry()->searchForReaction($id);
+	    if (!defined($rxn)) {
+	    	return undef;
+	    }
+	    $mdlrxn = $self->getObject("modelreactions",$rxn->id()."_".$compartment.$index);
     }
-    my $mdlcmp = $self->queryObject("modelcompartments",{label => $compartment.$index});
-    if (!defined($mdlcmp)) {
-    	return undef;
-    }
-    return $self->queryObject("modelreactions",{
-    	modelcompartment_ref => $mdlcmp->_reference(),
-    	reaction_ref => $reaction->_reference()
-    });
+    return $mdlrxn;
 }
 
 

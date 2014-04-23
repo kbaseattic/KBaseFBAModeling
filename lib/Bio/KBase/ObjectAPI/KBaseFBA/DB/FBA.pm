@@ -12,6 +12,7 @@ use Bio::KBase::ObjectAPI::KBaseFBA::FBAPromResult;
 use Bio::KBase::ObjectAPI::KBaseFBA::FBAMinimalMediaResult;
 use Bio::KBase::ObjectAPI::KBaseFBA::FBABiomassVariable;
 use Bio::KBase::ObjectAPI::KBaseFBA::FBACompoundBound;
+use Bio::KBase::ObjectAPI::KBaseFBA::FBAMinimalReactionsResult;
 use Bio::KBase::ObjectAPI::KBaseFBA::FBAConstraint;
 use Bio::KBase::ObjectAPI::KBaseFBA::FBACompoundVariable;
 use Bio::KBase::ObjectAPI::KBaseFBA::FBADeletionResult;
@@ -42,10 +43,12 @@ has parameters => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => 
 has noErrorThermodynamicConstraints => (is => 'rw', isa => 'Bool', printOrder => '17', default => '1', type => 'attribute', metaclass => 'Typed');
 has objectiveConstraintFraction => (is => 'rw', isa => 'Num', printOrder => '0', default => 'none', type => 'attribute', metaclass => 'Typed');
 has prommodel_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has minimize_reactions => (is => 'rw', isa => 'Bool', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
 has minimizeErrorThermodynamicConstraints => (is => 'rw', isa => 'Bool', printOrder => '18', default => '1', type => 'attribute', metaclass => 'Typed');
 has uptakeLimits => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
 has allReversible => (is => 'rw', isa => 'Bool', printOrder => '14', default => '0', type => 'attribute', metaclass => 'Typed');
 has objectiveValue => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has minimize_reaction_costs => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub {return {};}, type => 'attribute', metaclass => 'Typed');
 has numberOfSolutions => (is => 'rw', isa => 'Int', printOrder => '23', default => '1', type => 'attribute', metaclass => 'Typed');
 has fluxMinimization => (is => 'rw', isa => 'Bool', printOrder => '12', default => '0', type => 'attribute', metaclass => 'Typed');
 has thermodynamicConstraints => (is => 'rw', isa => 'Bool', printOrder => '16', default => '1', type => 'attribute', metaclass => 'Typed');
@@ -74,6 +77,7 @@ has FBAPromResults => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { 
 has FBAMinimalMediaResults => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(FBAMinimalMediaResult)', metaclass => 'Typed', reader => '_FBAMinimalMediaResults', printOrder => '-1');
 has FBABiomassVariables => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(FBABiomassVariable)', metaclass => 'Typed', reader => '_FBABiomassVariables', printOrder => '-1');
 has FBACompoundBounds => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(FBACompoundBound)', metaclass => 'Typed', reader => '_FBACompoundBounds', printOrder => '-1');
+has FBAMinimalReactionsResults => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(FBAMinimalReactionsResult)', metaclass => 'Typed', reader => '_FBAMinimalReactionsResults', printOrder => '-1');
 has FBAConstraints => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(FBAConstraint)', metaclass => 'Typed', reader => '_FBAConstraints', printOrder => '-1');
 has FBACompoundVariables => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(FBACompoundVariable)', metaclass => 'Typed', reader => '_FBACompoundVariables', printOrder => '-1');
 has FBADeletionResults => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(FBADeletionResult)', metaclass => 'Typed', reader => '_FBADeletionResults', printOrder => '-1');
@@ -269,6 +273,14 @@ my $attributes = [
           },
           {
             'req' => 0,
+            'printOrder' => -1,
+            'name' => 'minimize_reactions',
+            'default' => 0,
+            'type' => 'Bool',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
             'printOrder' => 18,
             'name' => 'minimizeErrorThermodynamicConstraints',
             'default' => 1,
@@ -299,6 +311,14 @@ my $attributes = [
             'printOrder' => -1,
             'name' => 'objectiveValue',
             'type' => 'Num',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'minimize_reaction_costs',
+            'default' => 'sub {return {};}',
+            'type' => 'HashRef',
             'perm' => 'rw'
           },
           {
@@ -468,7 +488,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {media_ref => 0, compoundflux_objterms => 1, phenotypesimulationset_ref => 2, maximizeObjective => 3, id => 4, phenotypeset_ref => 5, geneKO_refs => 6, inputfiles => 7, drainfluxUseVariables => 8, additionalCpd_refs => 9, outputfiles => 10, parameters => 11, noErrorThermodynamicConstraints => 12, objectiveConstraintFraction => 13, prommodel_ref => 14, minimizeErrorThermodynamicConstraints => 15, uptakeLimits => 16, allReversible => 17, objectiveValue => 18, numberOfSolutions => 19, fluxMinimization => 20, thermodynamicConstraints => 21, defaultMaxDrainFlux => 22, reactionflux_objterms => 23, fbamodel_ref => 24, regmodel_ref => 25, reactionKO_refs => 26, fluxUseVariables => 27, findMinimalMedia => 28, PROMKappa => 29, simpleThermoConstraints => 30, comboDeletions => 31, defaultMinDrainFlux => 32, fva => 33, decomposeReversibleDrainFlux => 34, biomassflux_objterms => 35, defaultMaxFlux => 36, decomposeReversibleFlux => 37};
+my $attribute_map = {media_ref => 0, compoundflux_objterms => 1, phenotypesimulationset_ref => 2, maximizeObjective => 3, id => 4, phenotypeset_ref => 5, geneKO_refs => 6, inputfiles => 7, drainfluxUseVariables => 8, additionalCpd_refs => 9, outputfiles => 10, parameters => 11, noErrorThermodynamicConstraints => 12, objectiveConstraintFraction => 13, prommodel_ref => 14, minimize_reactions => 15, minimizeErrorThermodynamicConstraints => 16, uptakeLimits => 17, allReversible => 18, objectiveValue => 19, minimize_reaction_costs => 20, numberOfSolutions => 21, fluxMinimization => 22, thermodynamicConstraints => 23, defaultMaxDrainFlux => 24, reactionflux_objterms => 25, fbamodel_ref => 26, regmodel_ref => 27, reactionKO_refs => 28, fluxUseVariables => 29, findMinimalMedia => 30, PROMKappa => 31, simpleThermoConstraints => 32, comboDeletions => 33, defaultMinDrainFlux => 34, fva => 35, decomposeReversibleDrainFlux => 36, biomassflux_objterms => 37, defaultMaxFlux => 38, decomposeReversibleFlux => 39};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -633,6 +653,13 @@ my $subobjects = [
           },
           {
             'printOrder' => -1,
+            'name' => 'FBAMinimalReactionsResults',
+            'type' => 'child',
+            'class' => 'FBAMinimalReactionsResult',
+            'module' => 'KBaseFBA'
+          },
+          {
+            'printOrder' => -1,
             'name' => 'FBAConstraints',
             'type' => 'child',
             'class' => 'FBAConstraint',
@@ -661,7 +688,7 @@ my $subobjects = [
           }
         ];
 
-my $subobject_map = {FBAMetaboliteProductionResults => 0, FBAReactionBounds => 1, FBAPromResults => 2, FBAMinimalMediaResults => 3, FBABiomassVariables => 4, FBACompoundBounds => 5, FBAConstraints => 6, FBACompoundVariables => 7, FBADeletionResults => 8, FBAReactionVariables => 9};
+my $subobject_map = {FBAMetaboliteProductionResults => 0, FBAReactionBounds => 1, FBAPromResults => 2, FBAMinimalMediaResults => 3, FBABiomassVariables => 4, FBACompoundBounds => 5, FBAMinimalReactionsResults => 6, FBAConstraints => 7, FBACompoundVariables => 8, FBADeletionResults => 9, FBAReactionVariables => 10};
 sub _subobjects {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -699,6 +726,10 @@ around 'FBABiomassVariables' => sub {
 around 'FBACompoundBounds' => sub {
 	 my ($orig, $self) = @_;
 	 return $self->_build_all_objects('FBACompoundBounds');
+};
+around 'FBAMinimalReactionsResults' => sub {
+	 my ($orig, $self) = @_;
+	 return $self->_build_all_objects('FBAMinimalReactionsResults');
 };
 around 'FBAConstraints' => sub {
 	 my ($orig, $self) = @_;

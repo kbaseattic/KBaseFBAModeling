@@ -16,7 +16,7 @@ use File::Temp qw(tempfile);
 use LWP::Simple;
 use Config::Simple;
 use Bio::KBase::AuthToken;
-use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
+use Bio::KBase::workspaceService::Helpers qw(auth get_ws_client workspaceURL);
 
 $|=1;
 

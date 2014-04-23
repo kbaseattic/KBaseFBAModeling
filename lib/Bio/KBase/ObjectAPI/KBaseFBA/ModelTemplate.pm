@@ -32,10 +32,23 @@ my $cmpTranslation = {
 #***********************************************************************************************************
 # ADDITIONAL ATTRIBUTES:
 #***********************************************************************************************************
+has biomassHash => ( is => 'rw', isa => 'HashRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildbiomassHash' );
 
 #***********************************************************************************************************
 # BUILDERS:
 #***********************************************************************************************************
+sub _buildbiomassHash {
+	my ($self) = @_;
+	my $biomasshash = {};
+	my $bios = $self->templateBiomasses();
+	foreach my $bio (@{$bios}) {
+		my $biocpds = $bio->templateBiomassComponents();
+		foreach my $cpd (@{$biocpds}) {
+			$biomasshash->{$cpd->compound()->id()."_".$cpd->compartment()->id()} = $cpd;
+		}
+	}
+	return $biomasshash;
+}
 
 #***********************************************************************************************************
 # CONSTANTS:
@@ -267,7 +280,9 @@ sub adjustReaction {
 
 sub buildModel {
     my $self = shift;
-	my $args = Bio::KBase::ObjectAPI::utilities::args(["genome","modelid"],{}, @_);
+	my $args = Bio::KBase::ObjectAPI::utilities::args(["genome","modelid"],{
+		fulldb => 0,
+	}, @_);
 	my $genome = $args->{genome};
 	my $mdl = Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->new({
 		id => $args->{modelid},
@@ -314,14 +329,19 @@ sub buildModel {
 		my $rxn = $rxns->[$i];
 		$rxn->addRxnToModel({
 			role_features => $roleFeatures,
-			model => $mdl
+			model => $mdl,
+			fulldb => $args->{fulldb}
 		});
 	}
 	my $bios = $self->templateBiomasses();
 	for (my $i=0; $i < @{$bios}; $i++) {
 		my $bio = $bios->[$i];
-		$bio->addBioToModel({
-			gc => $genome->gc_content(),
+		my $gc = $genome->gc_content();
+		if (!defined($gc)) {
+			$gc = 0.5;
+		}
+ 		$bio->addBioToModel({
+			gc => $gc,
 			model => $mdl
 		});
 	}
@@ -392,6 +412,22 @@ sub searchForBiomass {
     	$obj = $self->queryObject("templateBiomasses",{name => $id});
     }
     return $obj;
+}
+=head3 calculatePenalties
+
+Definition:
+	calculatePenalties()
+Description:
+	Search for biomass in template model
+	
+=cut
+
+sub calculatePenalties {
+    my $self = shift;
+    my $rxns = $self->templateReactions();
+    foreach my $rxn (@{$rxns}) {
+    	$rxn->compute_penalties();
+    }
 }
 
 __PACKAGE__->meta->make_immutable;

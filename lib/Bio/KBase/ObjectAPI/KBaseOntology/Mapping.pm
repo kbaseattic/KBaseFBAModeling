@@ -26,6 +26,7 @@ has roleComplexHash => ( is => 'rw', isa => 'HashRef',printOrder => '-1', type =
 has rolesByAlias => ( is => 'rw', isa => 'HashRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildrolesByAlias' );
 has subsystemsByAlias => ( is => 'rw', isa => 'HashRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildsubsystemsByAlias' );
 has complexesByAlias => ( is => 'rw', isa => 'HashRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcomplexesByAlias' );
+has roleSubsystemHash => ( is => 'rw', isa => 'HashRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildroleSubsystemHash' );
 
 #***********************************************************************************************************
 # BUILDERS:
@@ -96,6 +97,18 @@ sub _buildcomplexesByAlias {
 			for my $alias (@{$aliases->{$objid}->{$aliastype}}) {
 				$hash->{$aliastype}->{$alias}->{$objid} = 1; 
 			}
+		}
+	}
+	return $hash;
+}
+sub _buildroleSubsystemHash {
+	my ($self) = @_;
+	my $hash = {};
+	my $sss = $self->subsystems();
+	foreach my $ss (@{$sss}) {
+		my $roles = $ss->roles();
+		foreach my $role (@{$roles}) {
+			$hash->{$role->id()}->{$ss->id()} = $ss;
 		}
 	}
 	return $hash;

@@ -29,6 +29,7 @@ has mapped_uuid  => ( is => 'rw', isa => 'ModelSEED::uuid',printOrder => '-1', t
 has compartment  => ( is => 'rw', isa => 'Bio::KBase::ObjectAPI::KBaseBiochem::Compartment',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcompartment' );
 has roles  => ( is => 'rw', isa => 'ArrayRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildroles' );
 has isTransport  => ( is => 'rw', isa => 'Bool',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildisTransport' );
+has unknownStructure  => ( is => 'rw', isa => 'Bool',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildunknownStructure' );
 
 #***********************************************************************************************************
 # BUILDERS:
@@ -100,7 +101,6 @@ sub _buildroles {
 	}
 	return [];
 }
-
 sub _buildisTransport {
 	my ($self) = @_;
 	my $rgts = $self->reagents();
@@ -110,6 +110,16 @@ sub _buildisTransport {
 	my $cmp = $rgts->[0]->compartment_ref();
 	for (my $i=0; $i < @{$rgts}; $i++) {
 		if ($rgts->[$i]->compartment_ref() ne $cmp) {
+			return 1;
+		}
+	}
+	return 0;
+}
+sub _buildunknownStructure {
+	my ($self) = @_;
+	my $rgts = $self->reagents();
+	for (my $i=0; $i < @{$rgts}; $i++) {
+		if (defined($rgts->[$i]->compound()->structure_ref())) {
 			return 1;
 		}
 	}

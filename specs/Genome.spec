@@ -26,7 +26,7 @@ module KBaseGenomes {
 		Reference to a Genome object in the workspace
 		@id ws KBaseGenomes.Genome
 	*/
-    typedef string genome_ref;
+    typedef string Genome_ref;
     /*
 		Reference to a source_id
 		@id external
@@ -347,7 +347,7 @@ module KBaseGenomes {
     */
     typedef structure {
 		ProbabilisticAnnotation_id id;
-		genome_ref genome_ref;
+		Genome_ref genome_ref;
 		mapping<Feature_id,list<function_probability>> roleset_probabilities;
 		list<Feature_id> skipped_features;
     } ProbabilisticAnnotation;
@@ -437,20 +437,23 @@ module KBaseGenomes {
 		string type - type of CDD, possible values are cd, pfam, smart, COG, PRK, CHL
 		string name - name of CDD
 		string description - description of CDD
+		
+		@optional feature_ref domains
     */
     typedef structure {
 		string id;
 		string feature_id;
 		string feature_ref;
 		string function;
-		int length;
-		list<tuple<int identity,int alignment_length,int mismatches,int gaps,float protein_start,float protein_end,float domain_start,float domain_end,float evalue,float bit_score>> domains;
+		int feature_length;
+		list<tuple<string domain_ref,int identity,int alignment_length,int mismatches,int gaps,float protein_start,float protein_end,float domain_start,float domain_end,float evalue,float bit_score>> domains;
     } FeatureDomainData;
     
     /*
     	GenomeDomainData object: this object holds all data regarding protein domains in a genome in KBase
 
-    	@searchable id genome_id scientific_name genome_ref num_domains num_features
+		@optional genome_ref
+    	@searchable ws_subset id genome_id scientific_name genome_ref num_domains num_features
     */
     typedef structure {
     	string id;

@@ -274,6 +274,11 @@ sub serializeToDB {
 				foreach my $key (keys(%{$self->$name()})) {
 					$data->{$name}->{$key} = $self->$name()->{$key}+0;
 				}
+			} elsif ($name =~ m/minimize_reaction_costs/) {
+				$data->{$name} = {};
+				foreach my $key (keys(%{$self->$name()})) {
+					$data->{$name}->{$key} = $self->$name()->{$key}+0;
+				}
 			} elsif ($name =~ m/^parameters$/) {
 				$data->{$name} = {};
 				foreach my $key (keys(%{$self->$name()})) {

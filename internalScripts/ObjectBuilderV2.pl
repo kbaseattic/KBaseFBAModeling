@@ -17,6 +17,12 @@ my $defaults = {
 	},
 	ModelTemplate => {
 		biochemistry_ref => "kbase/default"
+	},
+	GapfillingReaction => {
+		compartmentIndex => 0
+	},
+	FBA => {
+		minimize_reactions => 0
 	}
 };
 
@@ -83,6 +89,7 @@ my $baseobjects = {
 	RxnProbs => "ProbabilisticAnnotation",
 	ProbAnno => "ProbabilisticAnnotation",
 	ReactionSensitivityAnalysis => "KBaseFBA",
+	GenomeDomainData =>  "KBaseGenomes",
 };
 my $objcorrespondence = {
 	BiochemistryStructures => "BiochemistryStructures",

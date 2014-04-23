@@ -16,10 +16,13 @@ has parent => (is => 'rw', isa => 'Ref', weak_ref => 1, type => 'parent', metacl
 # ATTRIBUTES:
 has uuid => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_uuid');
 has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_reference');
+has reverse_penalty => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has compartment_ref => (is => 'rw', isa => 'Str', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
+has base_cost => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has reaction_ref => (is => 'rw', isa => 'Str', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
 has complex_refs => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has direction => (is => 'rw', isa => 'Str', printOrder => '1', type => 'attribute', metaclass => 'Typed');
+has forward_penalty => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 has type => (is => 'rw', isa => 'Str', printOrder => '1', type => 'attribute', metaclass => 'Typed');
 
@@ -55,12 +58,26 @@ sub _top { return 0; }
 
 my $attributes = [
           {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'reverse_penalty',
+            'type' => 'Num',
+            'perm' => 'rw'
+          },
+          {
             'req' => 1,
             'printOrder' => -1,
             'name' => 'compartment_ref',
             'default' => undef,
             'type' => 'Str',
             'description' => undef,
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'base_cost',
+            'type' => 'Num',
             'perm' => 'rw'
           },
           {
@@ -91,6 +108,13 @@ my $attributes = [
             'perm' => 'rw'
           },
           {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'forward_penalty',
+            'type' => 'Num',
+            'perm' => 'rw'
+          },
+          {
             'req' => 1,
             'printOrder' => 0,
             'name' => 'id',
@@ -108,7 +132,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {compartment_ref => 0, reaction_ref => 1, complex_refs => 2, direction => 3, id => 4, type => 5};
+my $attribute_map = {reverse_penalty => 0, compartment_ref => 1, base_cost => 2, reaction_ref => 3, complex_refs => 4, direction => 5, forward_penalty => 6, id => 7, type => 8};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {

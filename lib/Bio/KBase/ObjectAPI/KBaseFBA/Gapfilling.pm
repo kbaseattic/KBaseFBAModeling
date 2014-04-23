@@ -254,11 +254,11 @@ sub prepareFBAFormulation {
 	$form->defaultMaxFlux(10000);
 	$form->defaultMinDrainFlux(-10000);
 	my $inactiveList = ["bio1"];
+	my $rxns = $self->fbamodel()->modelreactions();
 	if ($self->completeGapfill() eq "1") {
 		if (@{$self->targetedreactions()} > 0) {
 			$inactiveList = $self->targetedreactions();
 		} else {
-			my $rxns = $self->fbamodel()->modelreactions();
 			my $rxnhash = {};
 			for (my $i=0; $i < @{$rxns}; $i++) {
 				$rxnhash->{$rxns->[$i]->reaction()->id()} = 0;	
@@ -294,27 +294,21 @@ sub prepareFBAFormulation {
 		}	
 	}
 	$form->parameters()->{"dissapproved compartments"} = join(";",@{$badCompList});
-	#Adding blacklisted reactions to KO list
-	my $rxnhash = {};
-	my $rxns = $self->guaranteedReactions();
-	for (my $i=0; $i < @{$rxns}; $i++) {
-		$rxnhash->{$rxns->[$i]->id()} = 1;	
-	}
-	$rxns = $form->reactionKOs();
-	for (my $i=0; $i < @{$rxns}; $i++) {
-		if (!defined($rxnhash->{$rxns->[$i]->id()})) {
-			push(@{$form->reactionKOs()},$rxns->[$i]);
-			push(@{$form->reactionKO_refs()},$rxns->[$i]->_reference());
-			$rxnhash->{$rxns->[$i]->id()} = 1;
-		}	
-	}
+	
 	#Setting up gauranteed reactions
 	my $rxnlist = [];
 	$rxns = $self->guaranteedReactions();
 	for (my $i=0; $i < @{$rxns}; $i++) {
-		push(@{$rxnlist},$rxns->[$i]->id());	
+		push(@{$rxnlist},$rxns->[$i]->id());
 	}
-	$form->parameters()->{"Allowable unbalanced reactions"} = join(",",@{$rxnlist});
+	$form->parameters()->{"Gapfilling guaranteed reactions"} = join(",",@{$rxnlist});
+	#Adding blacklisted reactions to KO list
+	$rxns = $self->blacklistedReactions();
+	$rxnlist = [];
+	for (my $i=0; $i < @{$rxns}; $i++) {
+		push(@{$rxnlist},$rxns->[$i]->id());
+	}
+	$form->parameters()->{"Gapfilling blacklisted reactions"} = join(",",@{$rxnlist});
 	#Setting other important parameters
 	$form->parameters()->{"Complete gap filling"} = "1";
 	$form->parameters()->{"Reaction activation bonus"} = $self->reactionActivationBonus();
@@ -496,55 +490,64 @@ sub createSolutionsFromArray {
 			my $subarray = [split(/[,;]/,$solutionsArray->[$k])];
 			for (my $j=0; $j < @{$subarray}; $j++) {
 			    if ($subarray->[$j] =~ m/([\+])(.+)DrnRxn/) {
-				my $cpdid = $2;
-				my $sign = $1;
-				my $bio = $mdl->biomasses()->[0];
-				my $biocpds = $bio->biomasscompounds();
-				my $found = 0;
-				for (my $m=0; $m < @{$biocpds}; $m++) {
-				    my $biocpd = $biocpds->[$m];
-				    if ($biocpd->modelcompound()->compound()->id() eq $cpdid) {
-					$found = 1;
-					push(@{$gfsolution->biomassRemovals()},$biocpd->modelcompound());
-					push(@{$gfsolution->biomassRemoval_refs()},$biocpd->modelcompound()->_reference());	
-				    }
-				}
-				if ($found == 0) {
-				    Bio::KBase::ObjectAPI::utilities::ERROR("Could not find compound to remove from biomass ".$cpdid."!");
-				}
-				$count += 5;
+					my $cpdid = $2;
+					my $sign = $1;
+					my $bio = $mdl->biomasses()->[0];
+					my $biocpds = $bio->biomasscompounds();
+					my $found = 0;
+					for (my $m=0; $m < @{$biocpds}; $m++) {
+					    my $biocpd = $biocpds->[$m];
+					    if ($biocpd->modelcompound()->compound()->id() eq $cpdid) {
+						$found = 1;
+						push(@{$gfsolution->biomassRemovals()},$biocpd->modelcompound());
+						push(@{$gfsolution->biomassRemoval_refs()},$biocpd->modelcompound()->_reference());	
+					    }
+					}
+					if ($found == 0) {
+					    Bio::KBase::ObjectAPI::utilities::ERROR("Could not find compound to remove from biomass ".$cpdid."!");
+					}
+					$count += 5;
 			    } elsif ($subarray->[$j] =~ m/([\-\+])(.+)/) {
-				my $comp = "c";
-				my $rxnid = $2;
-				my $sign = $1;
-				if ($sign eq "+") {
-				    $sign = ">";
-				} else {
-				    $sign = "<";
-				}
-				my $rxn = $mdl->template()->biochemistry()->queryObject("reactions",{id => $rxnid});
-				if (!defined($rxn)) {
-				    Bio::KBase::ObjectAPI::utilities::ERROR("Could not find gapfilled reaction ".$rxnid."!");
-				}
-				my $cmp = $mdl->template()->biochemistry()->queryObject("compartments",{id => $comp});
-				if (!defined($rxn)) {
-				    Bio::KBase::ObjectAPI::utilities::ERROR("Could not find gapfilled reaction compartment ".$comp."!");
-				}
-				if (defined($rxnHash->{$rxn->_reference()}->{$cmp->_reference()}) && $rxnHash->{$rxn->_reference()}->{$cmp->_reference()} ne $sign) {
-				    $rxnHash->{$rxn->_reference()}->{$cmp->_reference()} = "=";
-				} else {
-				    $rxnHash->{$rxn->_reference()}->{$cmp->_reference()} = $sign;
-				}
-				$count++;
+					my $rxnid = $2;
+					my $sign = $1;
+					if ($sign eq "+") {
+					    $sign = ">";
+					} else {
+					    $sign = "<";
+					}
+					my $comp = "c";
+					my $index = 0;
+					if ($rxnid =~ m/^(.+)_([a-zA-Z]+)(\d+)$/) {
+						$rxnid = $1;
+						$comp = $2;
+						$index = $3;
+					}
+					my $rxn = $mdl->template()->biochemistry()->queryObject("reactions",{id => $rxnid});
+					if (!defined($rxn)) {
+					    Bio::KBase::ObjectAPI::utilities::ERROR("Could not find gapfilled reaction ".$rxnid."!");
+					}
+					my $cmp = $mdl->template()->biochemistry()->queryObject("compartments",{id => $comp});
+					if (!defined($rxn)) {
+					    Bio::KBase::ObjectAPI::utilities::ERROR("Could not find gapfilled reaction compartment ".$comp."!");
+					}
+					if (defined($rxnHash->{$rxn->_reference()}->{$cmp->_reference()}->{$index}) && $rxnHash->{$rxn->_reference()}->{$cmp->_reference()}->{$index} ne $sign) {
+					    $rxnHash->{$rxn->_reference()}->{$cmp->_reference()}->{$index} = "=";
+					} else {
+					    $rxnHash->{$rxn->_reference()}->{$cmp->_reference()}->{$index} = $sign;
+					}
+					$count++;
 			    }
 			}
 			foreach my $ruuid (keys(%{$rxnHash})) {
 			    foreach my $cuuid (keys(%{$rxnHash->{$ruuid}})) {
-				$gfsolution->add("gapfillingSolutionReactions",{
-				    reaction_ref => $ruuid,
-				    compartment_ref => $cuuid,
-				    direction => $rxnHash->{$ruuid}->{$cuuid}
-						 });
+			    	foreach my $ind (keys(%{$rxnHash->{$ruuid}->{$cuuid}})) {
+						$gfsolution->add("gapfillingSolutionReactions",{
+						    reaction_ref => $ruuid,
+						    compartment_ref => $cuuid,
+						    direction => $rxnHash->{$ruuid}->{$cuuid}->{$ind},
+						    compartmentIndex => $ind
+						});
+			    	}
 			    }
 			}
 		    }

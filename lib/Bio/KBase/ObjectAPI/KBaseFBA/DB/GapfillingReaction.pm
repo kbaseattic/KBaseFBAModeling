@@ -18,6 +18,7 @@ has uuid => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass =>
 has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_reference');
 has candidateFeature_refs => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has direction => (is => 'rw', isa => 'Str', printOrder => '0', default => '1', type => 'attribute', metaclass => 'Typed');
+has compartmentIndex => (is => 'rw', isa => 'Int', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
 has compartment_ref => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 has reaction_ref => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 
@@ -69,6 +70,14 @@ my $attributes = [
             'perm' => 'rw'
           },
           {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'compartmentIndex',
+            'default' => 0,
+            'type' => 'Int',
+            'perm' => 'rw'
+          },
+          {
             'req' => 1,
             'printOrder' => 0,
             'name' => 'compartment_ref',
@@ -88,7 +97,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {candidateFeature_refs => 0, direction => 1, compartment_ref => 2, reaction_ref => 3};
+my $attribute_map = {candidateFeature_refs => 0, direction => 1, compartmentIndex => 2, compartment_ref => 3, reaction_ref => 4};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {

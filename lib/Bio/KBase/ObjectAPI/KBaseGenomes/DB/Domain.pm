@@ -1,10 +1,10 @@
 ########################################################################
-# Bio::KBase::ObjectAPI::KBaseBiochem::DB::MapLink - This is the moose object corresponding to the KBaseBiochem.MapLink object
+# Bio::KBase::ObjectAPI::KBaseGenomes::DB::Domain - This is the moose object corresponding to the KBaseGenomes.Domain object
 # Authors: Christopher Henry, Scott Devoid, Paul Frybarger
 # Contact email: chenry@mcs.anl.gov
 # Development location: Mathematics and Computer Science Division, Argonne National Lab
 ########################################################################
-package Bio::KBase::ObjectAPI::KBaseBiochem::DB::MapLink;
+package Bio::KBase::ObjectAPI::KBaseGenomes::DB::Domain;
 use Bio::KBase::ObjectAPI::BaseObject;
 use Moose;
 use namespace::autoclean;
@@ -16,44 +16,32 @@ has parent => (is => 'rw', isa => 'Ref', weak_ref => 1, type => 'parent', metacl
 # ATTRIBUTES:
 has uuid => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_uuid');
 has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_reference');
-has w => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has link => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has source_id => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has name => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has x => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has y => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has map_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has h => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has type => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has id => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has shape => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has map_id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
+has description => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
 
 
 # BUILDERS:
-sub _build_reference { my ($self) = @_;return $self->parent()->_reference().'/linkedmaps/id/'.$self->id(); }
+sub _build_reference { my ($self) = @_;return $self->parent()->_reference().'/domains/id/'.$self->id(); }
 sub _build_uuid { my ($self) = @_;return $self->_reference(); }
 
 
 # CONSTANTS:
-sub _type { return 'KBaseBiochem.MapLink'; }
-sub _module { return 'KBaseBiochem'; }
-sub _class { return 'MapLink'; }
+sub _type { return 'KBaseGenomes.Domain'; }
+sub _module { return 'KBaseGenomes'; }
+sub _class { return 'Domain'; }
 sub _top { return 0; }
 
 my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'w',
-            'type' => 'Int',
-            'perm' => 'rw'
-          },
-          {
-            'req' => 0,
-            'printOrder' => -1,
-            'name' => 'link',
+            'name' => 'source_id',
             'type' => 'Str',
             'perm' => 'rw'
           },
@@ -67,29 +55,8 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'x',
-            'type' => 'Int',
-            'perm' => 'rw'
-          },
-          {
-            'req' => 0,
-            'printOrder' => -1,
-            'name' => 'y',
-            'type' => 'Int',
-            'perm' => 'rw'
-          },
-          {
-            'req' => 0,
-            'printOrder' => -1,
-            'name' => 'map_ref',
+            'name' => 'type',
             'type' => 'Str',
-            'perm' => 'rw'
-          },
-          {
-            'req' => 0,
-            'printOrder' => -1,
-            'name' => 'h',
-            'type' => 'Int',
             'perm' => 'rw'
           },
           {
@@ -102,20 +69,13 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'shape',
-            'type' => 'Str',
-            'perm' => 'rw'
-          },
-          {
-            'req' => 1,
-            'printOrder' => 0,
-            'name' => 'map_id',
+            'name' => 'description',
             'type' => 'Str',
             'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {w => 0, link => 1, name => 2, x => 3, y => 4, map_ref => 5, h => 6, id => 7, shape => 8, map_id => 9};
+my $attribute_map = {source_id => 0, name => 1, type => 2, id => 3, description => 4};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
