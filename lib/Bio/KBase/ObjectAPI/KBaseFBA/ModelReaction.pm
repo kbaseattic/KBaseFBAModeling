@@ -522,6 +522,7 @@ sub ImportExternalEquation {
     	$self->remove("modelReactionReagents",$rxncpds->[$i])
     }
     $self->modelReactionReagents([]);
+    my $compoundhash = {};
     for (my $i=0; $i < @{$array}; $i++) {
     	if (length($array->[$i]) > 0) {
 	    	my $compounds = [split(/\s\+\s/,$array->[$i])];
@@ -618,13 +619,19 @@ sub ImportExternalEquation {
 	    				});
 	    			}
 	    		}
-	    		$self->add("modelReactionReagents",{
-	    			modelcompound_ref => "~/modelcompounds/id/".$mdlcpd->id(),
-					coefficient => $coef
-	    		});
+	    		if (!defined($compoundhash->{$mdlcpd->id()})) {
+	    			$compoundhash->{$mdlcpd->id()} = 0;
+	    		}
+	    		$compoundhash->{$mdlcpd->id()} += $coef;
 	    	}
     	}
     }
+    foreach my $key (keys(%{$compoundhash})) {
+    	$self->add("modelReactionReagents",{
+	    	modelcompound_ref => "~/modelcompounds/id/".$key,
+			coefficient => $compoundhash->{$key}
+	    });
+    }		
     my $output = $bio->searchForReactionByCode($self->equationCode());
     if (defined($output)) {
     	$self->id($output->{rxnobj}->id()."_".$self->modelcompartment()->id());

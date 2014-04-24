@@ -5880,6 +5880,14 @@ sub import_fbamodel
 		#	}
 		#}
 	}
+	my $rxns = $model->modelreactions();
+	for (my $i=0; $i < @{$rxns}; $i++) {
+		my $rxn = $rxns->[$i];
+		my $rgts = $rxn->modelReactionReagents();
+		if (@{$rgts} == 1 && $rgts->[0]->modelcompound()->id() =~ m/_e\d+$/) {
+			$model->remove("modelreactions",$rxn);
+		}	
+	}
 	my $report = $model->manualReactionAdjustment({
 		biomass => 1,
 		reaction => "bio1:".$input->{biomass},
