@@ -470,6 +470,9 @@ sub _get_msobject {
 		$id = "default-mapping";
 	}
 	my $obj = $self->_KBaseStore()->get_object($ref,$options);
+	if ($obj->_class() ne $type) {
+		$self->_error($obj->_class()." input, but should be ".$type);
+	}
 	if (!defined($self->_cachedBiochemistry()) && $type eq "Biochemistry" && $id eq "default" && $ws eq "kbase") {
 		$self->_cachedBiochemistry($obj);
 	}
@@ -1435,42 +1438,28 @@ sub _setDefaultGapGenFormulation {
 }
 
 sub _buildGapGenObject {
-	my ($self,$formulation,$model) = @_;
-	#Parsing media
-	my $media;
-	my $mediaobj;
-	if ($formulation->{refmedia_workspace} ne "NO_WORKSPACE") {
-		$mediaobj = $self->_get_msobject("Media",$formulation->{refmedia_workspace},$formulation->{refmedia});
-		$model->biochemistry()->add("media",$mediaobj);
-		$media = $formulation->{refmedia_workspace}."/".$formulation->{refmedia};
-	} else {
-		$mediaobj = $model->biochemistry()->queryObject("media",{
-			id => $formulation->{refmedia}
-		});
-		if (!defined($mediaobj)) {
-			$self->_error("Media object ".$formulation->{refmedia}." not found in biochemistry!",'_buildFBAObject');
-		}
-		$media = $mediaobj->uuid();
+	my ($self,$formulation,$model,$ggid) = @_;
+	if (!defined($ggid)) {
+		$ggid = $self->_get_new_id($model->id().".gg.");
 	}
-	my $fbaid = Data::UUID->new()->create_str();
+	my $fba = $self->_buildFBAObject($formulation->{formulation},$model);
+	my $media = $self->_get_msobject("Media",$formulation->{refmedia_workspace},$formulation->{refmedia});
 	my $gapform = Bio::KBase::ObjectAPI::KBaseFBA::Gapgeneration->new({
-		uuid => Data::UUID->new()->create_str(),
-		model_uuid => $model->uuid(),
-		model => $model,
-		fbaFormulation_uuid => $fbaid,
-		fbaFormulation => $self->_buildFBAObject($formulation->{formulation},$model,"NO_WORKSPACE",$fbaid),
-		mediaHypothesis => $self->_invert_boolean($formulation->{nomediahyp}),
+		id => $ggid,
+    	fba_ref => "",
+    	fbamodel_ref => $model->_reference(),
+    	mediaHypothesis => $self->_invert_boolean($formulation->{nomediahyp}),
 		biomassHypothesis => $self->_invert_boolean($formulation->{nobiomasshyp}),
 		gprHypothesis => $self->_invert_boolean($formulation->{nogprhyp}),
-		reactionAdditionHypothesis => $self->_invert_boolean($formulation->{nopathwayhyp}),
-		referenceMedia_uuid => $media,
-		referenceMedia => $mediaobj,
-		timePerSolution => $formulation->{timePerSolution},
-		totalTimeLimit => $formulation->{totalTimeLimit},
+		reactionRemovalHypothesis => $self->_invert_boolean($formulation->{nopathwayhyp}),
+    	media_ref => $fba->media()->_reference(),
+    	referenceMedia_ref => $media->_reference(),
+    	timePerSolution => $formulation->{timePerSolution},
+    	totalTimeLimit => $formulation->{totalTimeLimit},
+    	gapgenSolutions => []
 	});
+	$gapform->fba($fba);
 	$gapform->parent($self->_KBaseStore());
-	$gapform->{_kbaseWSMeta}->{wsid} = $gapform->uuid();
-	$gapform->{_kbaseWSMeta}->{ws} = "NO_WORKSPACE";
 	$gapform->prepareFBAFormulation();
 	$gapform->fbaFormulation()->numberOfSolutions($formulation->{num_solutions});
 	return $gapform;

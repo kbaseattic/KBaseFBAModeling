@@ -1525,14 +1525,14 @@ sub integrateGapfillSolution {
 			);
 			push(@{$IntegrationReport->{added}},$rxn->reaction()->id()."_".$rxn->compartment()->id().$rxn->compartmentIndex());
 			my $mdlcmp = $self->addCompartmentToModel({compartment => $rxn->compartment(),pH => 7,potential => 0,compartmentIndex => $rxn->compartmentIndex()});
-			$self->addReactionToModel({
+			my $mdlrxn = $self->addReactionToModel({
 				reaction => $rxn->reaction(),
 				direction => $rxn->direction(),
 				overrideCompartment => $mdlcmp
 			});
 			# If RxnProbs object is defined, use it to assign GPRs to the integrated reactions.
 			if (defined($args->{rxnProbGpr}) && defined($args->{rxnProbGpr}->{$rxnid})) {
-			    $self->manualReactionAdjustment( { reaction => $rxn->reaction()->id()."_".$rxn->compartment()->id().$rxn->compartmentIndex(),  gpr => $args->{rxnProbGpr}->{$rxnid} } );
+			    $mdlrxn->loadGPRFromString($args->{rxnProbGpr}->{$rxnid});
 			}
 		}
 	}
@@ -2161,6 +2161,10 @@ sub searchForReaction {
     my $compartment = shift;
     my $index = shift;
     if ($id =~ m/^(.+)\[([a-z]+)(\d*)]$/) {
+    	$id = $1;
+    	$compartment = $2;
+    	$index = $3;
+    } elsif ($id =~ m/^(.+)_([a-z]+)(\d+)$/) {
     	$id = $1;
     	$compartment = $2;
     	$index = $3;
