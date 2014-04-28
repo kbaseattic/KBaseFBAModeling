@@ -184,13 +184,15 @@ sub adjustBiomass {
             Bio::KBase::ObjectAPI::utilities::error("Compound ".$compound->[0]." not found!");
         }
         my $found = 0;
+        my $comp;
         for (my $j=0; $j < @{$comps} && $found == 0; $j++) {
-            my $comp = $comps->[$j];
+            $comp = $comps->[$j];
             if ($comp->compound_ref() eq $cpd->_reference()) {
                 $found = 1;
             }
         }
         if ($found == 0) {
+            # Add a new compound to the list of biomass compounds.
 	        my $cmp = $bio->searchForCompartment($compound->[1]);
 	        if (!defined($cmp)) {
 	            Bio::KBase::ObjectAPI::utilities::error("Compartment ".$compound->[1]." not found!");
@@ -206,6 +208,16 @@ sub adjustBiomass {
 	            coefficient => $compound->[5],
 	        });
 			$tempbio->add("templateBiomassComponents", $comp);
+	    } else {
+	        # Update an existing compound in the list of biomass compounds.
+	        my $cmp = $bio->searchForCompartment($compound->[1]);
+	        if (!defined($cmp)) {
+	            Bio::KBase::ObjectAPI::utilities::error("Compartment ".$compound->[1]." not found!");
+	        }
+	        $comp->class($compound->[2]);
+	        $comp->compartment_ref($cmp->_reference());
+	        $comp->coefficientType($compound->[4]);
+	        $comp->coefficient($compound->[5]);
 	    }
 	}
     return $tempbio;
