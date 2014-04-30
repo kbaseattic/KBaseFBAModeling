@@ -7295,7 +7295,8 @@ sub minimize_reactions
 		reaction_costs => {},
 		output_id => undef,
 		biomass => undef,
-		timelimit => 86000
+		timelimit => 86000,
+		solver => undef
 	});    
 	my $model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model});
 	if (!defined($input->{output_id})) {
@@ -7344,11 +7345,14 @@ sub minimize_reactions
 	$fba->parameters()->{"Add positive use variable constraints"} = "0";
 	$fba->outputfiles()->{"ProblemReport.txt"} = [];
 	$fba->parameters()->{"Biomass modification hypothesis"} = "0";
+    if (defined($input->{solver})) {
+    	$fba->parameters()->{MFASolver} = uc($input->{solver});
+    }
     #Running FBA
     my $objective;
     eval {
 		local $SIG{ALRM} = sub { die "FBA timed out! Model likely contains numerical instability!" };
-		alarm 86400;
+		alarm 90000;
 		$objective = $fba->runFBA();
 		alarm 0;
 	};
