@@ -54,5 +54,5 @@ $fba->minimize_reactions({
 	all_model_reactions => 0,
 	reaction_costs => {},
 	output_id => "UnbalancedRxnMinimization",
-	solve => "cplex"
+	solver => "cplex"
 });
