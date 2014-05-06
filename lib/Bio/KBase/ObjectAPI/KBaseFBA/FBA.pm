@@ -280,10 +280,64 @@ sub runFBA {
 		system("cd ".$self->jobPath().";tar -czf ".Bio::KBase::ObjectAPI::utilities::FinalJobCache()."/".$self->jobID().".tgz ".$self->jobID());
 	}
 	if ($self->jobDirectory() =~ m/\/fbajobs\/.+/) {
-		rmtree($self->jobDirectory());
+		if (!defined($self->parameters()->{nodelete}) || $self->parameters()->{nodelete} == 0) {
+			rmtree($self->jobDirectory());
+		}
 	}
 	return $self->objectiveValue();
 }
+
+#=head3 createLPDirectory
+#
+#Definition:
+#	void Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->createLPDirectory();
+#Description:
+#	Creates the LP job directory
+#
+#=cut
+#
+#sub createLPDirectory {
+#	my ($self) = @_;
+#	my $model = $self->fbamodel();
+#	my $directory = $self->jobDirectory()."/";
+#	
+#	my $output = [];
+#	my $variables = {};
+#	#Printing objective
+#	my $line = "";
+#	if () {
+#		#Minimizing deviation from proportional flux
+#		
+#		#Maximizing change to conform with transcriptomics
+#		
+#		#Minimizing deviation from identical ranking
+#	}
+#	
+#	push(@{$output},$line);
+#	
+#	#Printing mass balance constraints
+#	my $cpds = $model->modelcompounds();
+#	my $cpdrxns = {};
+#	my $output = 0;
+#	for (my $i=0; $i < @{$cpds}; $i++) {
+#		my $line = "";
+#		foreach my $rxn (keys(%{$cpdrxns->{$cpds->[$i]}})) {
+#			my $var = $rxn."_f";
+#			$line .= " + ".$cpdrxns->{$cpds->[$i]}->{$rxn}." ".$var;
+#		}
+#		push(@{$output},$line);
+#	}
+#	#Printing variable bounds
+#	
+#	#Printing binary variables
+#	
+#	Bio::KBase::ObjectAPI::utilities::PRINTFILE($directory."Problem.lp",$output);
+#	
+#	#Solve LP
+#	
+#	#Parse solution
+#	
+#}
 
 =head3 createJobDirectory
 
