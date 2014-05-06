@@ -25,7 +25,7 @@ $Bio::KBase::fbaModelServices::Server::CallContext = {token => $c->param("kbclie
 my $fba = Bio::KBase::fbaModelServices::Impl->new({"workspace-url" => "http://kbase.us/services/ws"});
 $fba->_setContext($Bio::KBase::fbaModelServices::Server::CallContext,{});
 
-my $bio = $fba->_get_msobject("Biochemistry","kbase","default");
+my $bio = $fba->_get_msobject("Biochemistry","PlantSEED","KBase-Biochem");
 my $reactions = $bio->reactions();
 
 my $list;
