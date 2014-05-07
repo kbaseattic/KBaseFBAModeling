@@ -240,20 +240,20 @@ sub adjustReaction {
 	Bio::KBase::ObjectAPI::utilities::error("Specified reaction ".$args->{reaction}." not found!") unless(defined($rxn));
 	my $cmp = $bio->searchForCompartment($args->{compartment});
 	Bio::KBase::ObjectAPI::utilities::error("Specified compartment ".$args->{compartment}." not found!") unless(defined($cmp));
-	my $temprxn = $self->queryObjects("templateReactions",{
+	my $temprxn = $self->queryObject("templateReactions",{
 		compartment_ref => $cmp->_reference(),
 		reaction_ref => $rxn->_reference()
 	});
 	if (!defined($temprxn)) {
 		if (defined($args->{"new"}) && $args->{"new"} == 1) {
-			my $rxns = $self->reactions();
+			my $rxns = $self->templateReactions();
 			my $id = @{$rxns}+1;
 			$temprxn = Bio::KBase::ObjectAPI::KBaseFBA::TemplateReaction->new({
-				id => $self->parent()->id().".rxn.".$id,
+				id => $self->id().".temprxn.".$id,
 				compartment_ref => $cmp->_reference(),
 				reaction_ref => $rxn->_reference(),
 				complex_refs => [],
-				direction => "<=>",
+				direction => "=",
 				type => "Conditional"
 			});
 			$self->add("templateReactions",$temprxn);
