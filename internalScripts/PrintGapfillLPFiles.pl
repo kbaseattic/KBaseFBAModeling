@@ -24,17 +24,11 @@ $Bio::KBase::fbaModelServices::Server::CallContext = {token => $c->param("kbclie
 my $fba = Bio::KBase::fbaModelServices::Impl->new({"workspace-url" => "http://kbase.us/services/ws"});
 $fba->_setContext($Bio::KBase::fbaModelServices::Server::CallContext,{});
 my $ws = $fba->_workspaceServices();
-my $genomes = $ws->list_objects({
-	workspaces => ["pubSEEDGenomes"],
-	type => "KBaseGenomes.Genome",#KBaseGenomes.Genome-1.0
+my $models = $ws->list_objects({
+	workspaces => ["chenry:BiomassAnalysisMMModels"],
 });
-for (my $i=0; $i < @{$genomes}; $i++) {
-	$fba->genome_to_fbamodel({
-		genome => $genomes->[$i]->[1],
-		workspace => "chenry:BiomassAnalysisMMModels",
-    	genome_workspace => "pubSEEDGenomes",
-    	model => $genomes->[$i]->[1].".fbamdl",
-	});
+#for (my $i=0; $i < @{$models}; $i++) {
+for (my $i=0; $i < 1; $i++) {
 	my $form = {
 			timePerSolution => 10,
 			totalTimeLimit => 10,
@@ -43,13 +37,15 @@ for (my $i=0; $i < @{$genomes}; $i++) {
 				mediaws => "KBaseMedia"
 			}
 	};
-	my $model = $fba->_get_msobject("FBAModel","chenry:BiomassAnalysisMMModels",$genomes->[$i]->[1].".fbamdl");
+	my $model = $fba->_get_msobject("FBAModel","chenry:BiomassAnalysisMMModels",$models->[$i]->[1]);
 	$form->{num_solutions} = 1;
 	$form = $fba->_setDefaultGapfillFormulation($form);
 	my ($gapfill,$fbaobj) = $fba->_buildGapfillObject($form,$model,"gf.0");
    	$fbaobj->parameters()->{MFASolver} = "SCIP";
 	$fbaobj->parameters()->{nodelete} = 1;
+	$fbaobj->parameters()->{"write variable key"} = 1;
 	$fbaobj->runFBA();
-	system("cp ".$fbaobj->jobDirectory()."/Problem.lp ".$directory.$genomes->[$i]->[1].".lp");
+	system("cp ".$fbaobj->jobDirectory()."/Problem.lp ".$directory.$models->[$i]->[1].".lp");
+	system("cp ".$fbaobj->jobDirectory()."/VariableKey.txt ".$directory.$models->[$i]->[1].".key");
 	rmtree($fbaobj->jobDirectory());
 }
