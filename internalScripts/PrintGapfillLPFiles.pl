@@ -8,6 +8,8 @@ $|=1;
 
 my $config = $ARGV[0];
 my $directory = $ARGV[1];
+my $index = $ARGV[2];
+my $count = $ARGV[3];
 if (!defined($config)) {
 	print STDERR "No config file provided!\n";
 	exit(-1);
@@ -27,25 +29,29 @@ my $ws = $fba->_workspaceServices();
 my $models = $ws->list_objects({
 	workspaces => ["chenry:BiomassAnalysisMMModels"],
 });
-#for (my $i=0; $i < @{$models}; $i++) {
-for (my $i=0; $i < 1; $i++) {
-	my $form = {
-			timePerSolution => 10,
-			totalTimeLimit => 10,
-			formulation => {
-				media => "Carbon-D-Glucose",
-				mediaws => "KBaseMedia"
-			}
-	};
-	my $model = $fba->_get_msobject("FBAModel","chenry:BiomassAnalysisMMModels",$models->[$i]->[1]);
-	$form->{num_solutions} = 1;
-	$form = $fba->_setDefaultGapfillFormulation($form);
-	my ($gapfill,$fbaobj) = $fba->_buildGapfillObject($form,$model,"gf.0");
-   	$fbaobj->parameters()->{MFASolver} = "SCIP";
-	$fbaobj->parameters()->{nodelete} = 1;
-	$fbaobj->parameters()->{"write variable key"} = 1;
-	$fbaobj->runFBA();
-	system("cp ".$fbaobj->jobDirectory()."/Problem.lp ".$directory.$models->[$i]->[1].".lp");
-	system("cp ".$fbaobj->jobDirectory()."/VariableKey.txt ".$directory.$models->[$i]->[1].".key");
-	rmtree($fbaobj->jobDirectory());
+for (my $i=0; $i < @{$models}; $i++) {
+	if (($i-$index)%$count == 0) {
+		print $i."\n";
+		my $form = {
+				timePerSolution => 10,
+				totalTimeLimit => 10,
+				formulation => {
+					media => "Carbon-D-Glucose",
+					mediaws => "KBaseMedia"
+				}
+		};
+		if (!-e $directory.$models->[$i]->[1].".lp") {
+			my $model = $fba->_get_msobject("FBAModel","chenry:BiomassAnalysisMMModels",$models->[$i]->[1]);
+			$form->{num_solutions} = 1;
+			$form = $fba->_setDefaultGapfillFormulation($form);
+			my ($gapfill,$fbaobj) = $fba->_buildGapfillObject($form,$model,"gf.0");
+		   	$fbaobj->parameters()->{MFASolver} = "SCIP";
+			$fbaobj->parameters()->{nodelete} = 1;
+			$fbaobj->parameters()->{"write variable key"} = 1;
+			$fbaobj->runFBA();
+			system("cp ".$fbaobj->jobDirectory()."/Problem.lp ".$directory.$models->[$i]->[1].".lp");
+			system("cp ".$fbaobj->jobDirectory()."/VariableKey.txt ".$directory.$models->[$i]->[1].".key");
+			rmtree($fbaobj->jobDirectory());
+		}
+	}
 }
