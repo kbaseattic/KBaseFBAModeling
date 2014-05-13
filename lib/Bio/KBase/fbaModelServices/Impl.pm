@@ -82,6 +82,7 @@ use Bio::KBase::ObjectAPI::KBaseGenomes::ProteinSet;
 use Bio::KBase::ObjectAPI::KBaseFBA::FBAModel;
 #use Bio::KBase::ObjectAPI::GlobalFunctions;
 use Bio::KBase::ObjectAPI::KBaseFBA::Gapfilling;
+use Bio::KBase::ObjectAPI::KBaseFBA::PromConstraint;
 use Bio::KBase::ObjectAPI::KBaseFBA::Gapgeneration;
 use Bio::KBase::ObjectAPI::KBaseFBA::FBA;
 use Bio::KBase::ObjectAPI::KBaseFBA::ModelTemplate;
