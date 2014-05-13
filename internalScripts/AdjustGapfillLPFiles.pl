@@ -86,6 +86,7 @@ for (my $i=0; $i < @{$models}; $i++) {
 				}
 			}
 		}
+		$fba->_resetKBaseStore();
 		Bio::KBase::ObjectAPI::utilities::PRINTFILE($directory.$models->[$i]->[1].".lp",$output);
 	}
 }
