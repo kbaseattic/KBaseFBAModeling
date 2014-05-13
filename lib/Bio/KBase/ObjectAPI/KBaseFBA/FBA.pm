@@ -155,8 +155,8 @@ sub _buildpromBounds {
 	my $fluxes = $clone->FBAReactionVariables();
 	for (my $i=0; $i < @{$fluxes}; $i++) {
 		my $flux = $fluxes->[$i];
-		$bounds->{$flux->modelreaction()->reaction()->id()}->[0] = $flux->min();
-		$bounds->{$flux->modelreaction()->reaction()->id()}->[1] = $flux->max();
+		$bounds->{$flux->modelreaction()->id()}->[0] = $flux->min();
+		$bounds->{$flux->modelreaction()->id()}->[1] = $flux->max();
 	}
 	my $mdlrxns = $self->fbamodel()->modelreactions();
 	my $geneReactions = {};
@@ -164,7 +164,7 @@ sub _buildpromBounds {
 		foreach my $prot (@{$mdlrxn->modelReactionProteins()}) {
 			foreach my $subunit (@{$prot->modelReactionProteinSubunits()}) {
 				foreach my $feature (@{$subunit->features()}) {
-					$geneReactions->{$feature->id()}->{$mdlrxn->reaction()->id()} = 1;
+					$geneReactions->{$feature->id()}->{$mdlrxn->id()} = 1;
 				}
 			}				
 		} 
