@@ -49,7 +49,7 @@ sub _buildjobid {
 sub _buildjobpath {
 	my ($self) = @_;
 	my $path = Bio::KBase::ObjectAPI::utilities::MFATOOLKIT_JOB_DIRECTORY();
-	if (!defined($path)) {
+	if (!defined($path) || length($path) == 0) {
 		$path = "/tmp/fbajobs/";
 	}
 	if (!-d $path) {

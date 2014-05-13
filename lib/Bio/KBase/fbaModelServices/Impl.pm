@@ -8127,7 +8127,7 @@ sub export_phenotypeSimulationSet
     #BEGIN export_phenotypeSimulationSet
 	$self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["phenotypeSimulationSet","workspace","format"],{});
-    my $phenosim = $self->_get_msobject("PhenotypeSimulation",$input->{workspace},$input->{phenotypeSimulationSet});
+    my $phenosim = $self->_get_msobject("PhenotypeSimulationSet",$input->{workspace},$input->{phenotypeSimulationSet});
     $output = $phenosim->export({format => $input->{format}});
     $self->_clearContext();
 	$self->_clearContext();

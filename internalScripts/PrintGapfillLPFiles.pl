@@ -29,12 +29,13 @@ my $ws = $fba->_workspaceServices();
 my $models = $ws->list_objects({
 	workspaces => ["chenry:BiomassAnalysisMMModels"],
 });
-for (my $i=0; $i < @{$models}; $i++) {
+for (my $i=0; $i < 1; $i++) {
+#for (my $i=0; $i < @{$models}; $i++) {
 	if (($i-$index)%$count == 0) {
 		print $i."\n";
 		my $form = {
-				timePerSolution => 10,
-				totalTimeLimit => 10,
+				timePerSolution => 600,
+				totalTimeLimit => 600,
 				formulation => {
 					media => "Carbon-D-Glucose",
 					mediaws => "KBaseMedia"
@@ -42,14 +43,26 @@ for (my $i=0; $i < @{$models}; $i++) {
 		};
 		if (!-e $directory.$models->[$i]->[1].".lp") {
 			my $model = $fba->_get_msobject("FBAModel","chenry:BiomassAnalysisMMModels",$models->[$i]->[1]);
+			my $biocpds = $model->biomasses()->[0]->biomasscompounds();
+			for (my $j=0; $j < @{$biocpds}; $j++) {
+				if ($biocpds->[$j]->modelcompound()->compound()->id() eq "cpd11715") {
+					$model->biomasses()->[0]->remove("biomasscompounds",$biocpds->[$j]);
+				} elsif ($biocpds->[$j]->modelcompound()->compound()->id() eq "cpd11746") {
+					$model->biomasses()->[0]->remove("biomasscompounds",$biocpds->[$j]);
+				} elsif ($biocpds->[$j]->modelcompound()->compound()->id() eq "cpd09680") {
+					$model->biomasses()->[0]->remove("biomasscompounds",$biocpds->[$j]);
+				}
+			}
 			$form->{num_solutions} = 1;
 			$form = $fba->_setDefaultGapfillFormulation($form);
 			my ($gapfill,$fbaobj) = $fba->_buildGapfillObject($form,$model,"gf.0");
-		   	$fbaobj->parameters()->{MFASolver} = "SCIP";
+		   	$fbaobj->parameters()->{MFASolver} = "CPLEX";
 			$fbaobj->parameters()->{nodelete} = 1;
+			$fbaobj->parameters()->{"just print LP file"} = 1;
+			$fbaobj->parameters()->{"write LP file"} = 1;
 			$fbaobj->parameters()->{"write variable key"} = 1;
 			$fbaobj->runFBA();
-			system("cp ".$fbaobj->jobDirectory()."/Problem.lp ".$directory.$models->[$i]->[1].".lp");
+			system("cp ".$fbaobj->jobDirectory()."/CurrentProblem.lp ".$directory.$models->[$i]->[1].".lp");
 			system("cp ".$fbaobj->jobDirectory()."/VariableKey.txt ".$directory.$models->[$i]->[1].".key");
 			rmtree($fbaobj->jobDirectory());
 		}
