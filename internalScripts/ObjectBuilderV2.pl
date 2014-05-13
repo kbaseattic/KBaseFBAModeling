@@ -90,6 +90,8 @@ my $baseobjects = {
 	ProbAnno => "ProbabilisticAnnotation",
 	ReactionSensitivityAnalysis => "KBaseFBA",
 	GenomeDomainData =>  "KBaseGenomes",
+	PromConstraint =>  "KBaseFBA",
+	regulatory_network =>  "KBaseFBA",
 };
 my $objcorrespondence = {
 	BiochemistryStructures => "BiochemistryStructures",
@@ -594,7 +596,8 @@ foreach my $name (keys(%{$allobjects})) {
 			 push(@$props, "isa => '$type'");
 		  }
 		  push(@$props, "weak_ref => 1") if($weak);
-		  push(@$output, "has $soname => (" . join(", ", @$props) . ");");
+		  my $line = "has $soname => (" . join(", ", @$props) . ");";
+		  push(@$output, $line);
 	   }
 	}
 	push(@$output, "", "");
@@ -673,10 +676,11 @@ foreach my $name (keys(%{$allobjects})) {
 	my $link_map = [];
 	$num = 0;
 	map {push(@$link_map, $_->{name} . " => " . $num++)} @{$object->{links}};
-
+	
 	my $links = Dumper($object->{links});
 	$links =~ s/\$VAR1/my \$links/;
-
+	
+	
 	push(@$output, "",
 		$links,
 		"my \$link_map = {" . join(", ", @$link_map) . "};",
