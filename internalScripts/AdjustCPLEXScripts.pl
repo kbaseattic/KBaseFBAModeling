@@ -38,8 +38,8 @@ for (my $i=0; $i < @{$models}; $i++) {
 		"set feasopt tolerance 1e-09",
 		"set mip display 0",
 		"set mip limits treememory 1000",
-		"read /Users/chenry/workspace/BiomassLPFiles/MinimalMedia/".$models->[$i]->[1].".lp",
+		"read LPFiles/".$models->[$i]->[1].".lp",
 		"mipopt",
-		"write /Users/chenry/workspace/BiomassLPFiles/".$models->[$i]->[1].".txt sol"
+		"write LPSolutions/".$models->[$i]->[1].".txt sol"
 	]);
 }
