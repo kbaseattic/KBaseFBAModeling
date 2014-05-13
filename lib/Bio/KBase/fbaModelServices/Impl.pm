@@ -1091,10 +1091,11 @@ sub _buildFBAObject {
 	});
 	$fbaobj->parent($self->_KBaseStore());
 	if (defined($fbaFormulation->{prommodel}) && defined($fbaFormulation->{prommodel_workspace})) {
-		my $promobj = $self->_get_msobject("PROMModel",$fbaFormulation->{prommodel_workspace},$fbaFormulation->{prommodel});
+		my $promobj = $self->_get_msobject("PromConstraint",$fbaFormulation->{prommodel_workspace},$fbaFormulation->{prommodel});
 		if (defined($promobj)) {
 			$fbaobj->prommodel_ref($promobj->_reference)
 		}
+		$fbaobj->PROMKappa(1);
 	}
 	if (defined($fbaFormulation->{regmodel}) && defined($fbaFormulation->{regmodel_workspace})) {
 		my $regmodel = $self->_get_msobject("RegulatoryModel",$fbaFormulation->{regmodel_workspace},$fbaFormulation->{regmodel});
@@ -7040,8 +7041,6 @@ sub runfba
 		findminmedia => 0,
 		notes => "",
 		model_workspace => $input->{workspace},
-		prommodel => undef,
-		prommodel_workspace => $input->{workspace},
 		fba => undef,
 		biomass => undef
 	});
@@ -7062,11 +7061,6 @@ sub runfba
 			delete $fba->biomassflux_objterms()->{bio1};
 			$fba->biomassflux_objterms()->{$bio->id()} = 1;
 		}			
-	}
-	if (defined($input->{prommodel})) {
-		my $promconst = $self->_get_msobject("PromConstraint",$input->{prommodel_workspace},$input->{prommodel});
-		$fba->prommodel_ref($promconst->_reference());
-		$fba->PROMKappa(1);
 	}
     #Running FBA
     my $objective;
