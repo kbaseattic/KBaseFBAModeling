@@ -90,7 +90,7 @@ has phenotypesimulationset => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::
 has phenotypeset => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,PhenotypeSet,phenotypeset_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_phenotypeset', clearer => 'clear_phenotypeset', isa => 'Bio::KBase::ObjectAPI::KBasePhenotypes::PhenotypeSet', weak_ref => 1);
 has geneKOs => (is => 'rw', type => 'link(Genome,features,geneKO_refs)', metaclass => 'Typed', lazy => 1, builder => '_build_geneKOs', clearer => 'clear_geneKOs', isa => 'ArrayRef');
 has additionalCpds => (is => 'rw', type => 'link(FBAModel,modelcompounds,additionalCpd_refs)', metaclass => 'Typed', lazy => 1, builder => '_build_additionalCpds', clearer => 'clear_additionalCpds', isa => 'ArrayRef');
-has prommodel => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,PROMModel,prommodel_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_prommodel', clearer => 'clear_prommodel', isa => 'Ref', weak_ref => 1);
+has prommodel => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,PromConstraint,prommodel_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_prommodel', clearer => 'clear_prommodel', isa => 'Bio::KBase::ObjectAPI::KBaseFBA::PromConstraint', weak_ref => 1);
 has fbamodel => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,FBAModel,fbamodel_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_fbamodel', clearer => 'clear_fbamodel', isa => 'Bio::KBase::ObjectAPI::KBaseFBA::FBAModel', weak_ref => 1);
 has regmodel => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,RegModel,regmodel_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_regmodel', clearer => 'clear_regmodel', isa => 'Ref', weak_ref => 1);
 has reactionKOs => (is => 'rw', type => 'link(FBAModel,modelreactions,reactionKO_refs)', metaclass => 'Typed', lazy => 1, builder => '_build_reactionKOs', clearer => 'clear_reactionKOs', isa => 'ArrayRef');
@@ -558,9 +558,9 @@ my $links = [
             'parent' => 'Bio::KBase::ObjectAPI::KBaseStore',
             'clearer' => 'clear_prommodel',
             'name' => 'prommodel',
-            'method' => 'PROMModel',
-            'class' => 'PROMModel',
-            'module' => undef
+            'method' => 'PromConstraint',
+            'class' => 'Bio::KBase::ObjectAPI::KBaseFBA::PromConstraint',
+            'module' => 'KBaseFBA'
           },
           {
             'attribute' => 'fbamodel_ref',

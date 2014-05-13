@@ -125,7 +125,7 @@ module KBaseFBA {
     typedef string regmodel_ref;
     /*
 		Reference to PROM model
-		@id ws KBaseRegulation.PROMModel
+		@id ws KBaseFBA.PromConstraint
 	*/
     typedef string prommodel_ref;
     /*

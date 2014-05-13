@@ -169,7 +169,7 @@ sub _buildpromBounds {
 			}				
 		} 
 	}
-	my $promModel = $self->promModel();
+	my $promModel = $self->prommodel();
 	my $genekos = $self->geneKOs();
 	foreach my $gene (@{$genekos}) {
 		my $tfmap = $promModel->queryObject("transcriptionFactorMaps",{

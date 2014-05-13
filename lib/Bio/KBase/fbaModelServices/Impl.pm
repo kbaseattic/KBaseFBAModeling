@@ -7039,6 +7039,8 @@ sub runfba
 		findminmedia => 0,
 		notes => "",
 		model_workspace => $input->{workspace},
+		prommodel => undef,
+		prommodel_workspace => $input->{workspace},
 		fba => undef,
 		biomass => undef
 	});
@@ -7059,6 +7061,11 @@ sub runfba
 			delete $fba->biomassflux_objterms()->{bio1};
 			$fba->biomassflux_objterms()->{$bio->id()} = 1;
 		}			
+	}
+	if (defined($input->{prommodel})) {
+		my $promconst = $self->_get_msobject("PromConstraint",$input->{prommodel_workspace},$input->{prommodel});
+		$fba->prommodel_ref($promconst->_reference());
+		$fba->PROMKappa(1);
 	}
     #Running FBA
     my $objective;
