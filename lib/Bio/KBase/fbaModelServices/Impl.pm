@@ -1191,7 +1191,7 @@ sub _buildFBAObject {
 		foreach my $gene (@{$fbaFormulation->{geneko}}) {
 			my $geneObj = $genome->searchForFeature($gene);
 			if (defined($geneObj)) {
-				$fbaobj->addLinkArrayItem("geneKOs",$geneObj->_reference());
+				$fbaobj->addLinkArrayItem("geneKOs",$geneObj);
 			}
 		}
 	}
@@ -1199,14 +1199,14 @@ sub _buildFBAObject {
 	foreach my $reaction (@{$fbaFormulation->{rxnko}}) {
 		my $rxnObj = $model->searchForReaction($reaction);
 		if (defined($rxnObj)) {
-			$fbaobj->addLinkArrayItem("reactionKOs",$rxnObj->_reference());
+			$fbaobj->addLinkArrayItem("reactionKOs",$rxnObj);
 		}
 	}
 	#Parsing additional Cpds
 	foreach my $compound (@{$fbaFormulation->{additionalcpds}}) {
 		my $cpdObj = $model->searchForCompound($compound);
 		if (defined($cpdObj)) {
-			$fbaobj->addLinkArrayItem("additionalCpds",$cpdObj->_reference());
+			$fbaobj->addLinkArrayItem("additionalCpds",$cpdObj);
 		}
 	}
 	return $fbaobj;
