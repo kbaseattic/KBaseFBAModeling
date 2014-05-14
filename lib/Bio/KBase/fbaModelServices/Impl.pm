@@ -8128,11 +8128,18 @@ sub export_phenotypeSimulationSet
     my($output);
     #BEGIN export_phenotypeSimulationSet
 	$self->_setContext($ctx,$input);
-    $input = $self->_validateargs($input,["phenotypeSimulationSet","workspace","format"],{});
+    $input = $self->_validateargs($input,["phenotypeSimulationSet","workspace"],{});
     my $phenosim = $self->_get_msobject("PhenotypeSimulationSet",$input->{workspace},$input->{phenotypeSimulationSet});
-    $output = $phenosim->export({format => $input->{format}});
+    $output = "Phenosim ID\tPheno ID\tMedia\tKO\tAdditional compounds\tObserved growth\tSimulated growth\tSimulated growth fraction\tClass\n";
+    my $phenos = $phenosim->phenotypeSimulations();
+    foreach my $pheno (@{$phenos}) {
+    	$output .= $pheno->id()."\t".$pheno->phenotype()->id()."\t".
+    		$pheno->phenotype()->media()->_wsworkspace()."/".$pheno->phenotype()->media()->_wsname().
+    		"\t".$pheno->phenotype()->geneKOString()."\t".$pheno->phenotype()->additionalCpdString().
+    		"\t".$pheno->phenotype()->normalizedGrowth()."\t".$pheno->simulatedGrowth()."\t".$pheno->simulatedGrowthFraction().
+    		"\t".$pheno->phenoclass()."\n";
+    }
     $self->_clearContext();
-	$self->_clearContext();
     #END export_phenotypeSimulationSet
     my @_bad_returns;
     (!ref($output)) or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");

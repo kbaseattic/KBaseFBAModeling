@@ -9,11 +9,10 @@ use warnings;
 use Bio::KBase::workspace::ScriptHelpers qw(get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
 use Bio::KBase::fbaModelServices::ScriptHelpers qw(fbaws get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
-my $primaryArgs = ["Phenotype simulation ID","Format (html)"];
+my $primaryArgs = ["Phenotype simulation ID"];
 my $servercommand = "export_phenotypeSimulationSet";
 my $script = "fba-exportphenosim";
 my $translation = {
-	"Format (html)" => "format",
 	"Phenotype simulation ID" => "phenotypeSimulationSet",
 	workspace => "workspace",
 	auth => "auth",
