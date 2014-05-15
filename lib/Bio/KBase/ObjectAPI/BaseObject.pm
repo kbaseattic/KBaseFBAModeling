@@ -653,7 +653,7 @@ sub addLinkArrayItem {
     	my $found = 0;
     	my $id = $object->id();
     	for (my $i=0; $i < @{$data}; $i++) {
-			if ($data->[$i] =~ m/$id$/) {
+			if ($data->[$i] =~ m/\Q$id\E$/) {
 				$found = 1;
 			}
     	}
