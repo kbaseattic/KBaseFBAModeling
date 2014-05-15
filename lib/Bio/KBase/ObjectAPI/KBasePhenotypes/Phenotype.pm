@@ -14,12 +14,44 @@ extends 'Bio::KBase::ObjectAPI::KBasePhenotypes::DB::Phenotype';
 #***********************************************************************************************************
 # ADDITIONAL ATTRIBUTES:
 #***********************************************************************************************************
-
+has geneKOString => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_build_geneKOString' );
+has additionalCpdString => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_build_additionalCpdString' );
 
 #***********************************************************************************************************
 # BUILDERS:
 #***********************************************************************************************************
+sub _build_geneKOString {
+	my ($self) = @_;
+	my $genes = $self->genekos();
+	my $output = "";
+	for (my $i=0; $i < @{$genes};$i++) {
+		if (length($output) > 0) {
+			$output .= ";";
+		}
+		$output .= $genes->[$i]->id();
+		
+	}
+	if (length($output) == 0) {
+		$output = "none";
+	}
+	return $output;
+}
 
+sub _build_additionalCpdString {
+	my ($self) = @_;
+	my $cpds = $self->additionalcompounds();
+	my $output = "";
+	for (my $i=0; $i < @{$cpds};$i++) {
+		if (length($output) > 0) {
+			$output .= ";";
+		}
+		$output .= $cpds->[$i]->id();
+	}
+	if (length($output) == 0) {
+		$output = "none";
+	}
+	return $output;
+}
 
 
 #***********************************************************************************************************
