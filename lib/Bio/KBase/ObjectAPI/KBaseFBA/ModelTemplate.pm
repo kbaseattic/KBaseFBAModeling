@@ -10,6 +10,7 @@ use Bio::KBase::ObjectAPI::KBaseFBA::DB::ModelTemplate;
 package Bio::KBase::ObjectAPI::KBaseFBA::ModelTemplate;
 use Moose;
 use namespace::autoclean;
+use Data::Dumper;
 extends 'Bio::KBase::ObjectAPI::KBaseFBA::DB::ModelTemplate';
 
 my $cmpTranslation = {
@@ -191,12 +192,21 @@ sub adjustBiomass {
                 $found = 1;
             }
         }
+        # Note that the universal flag in the input is ignored.
         if ($found == 0) {
             # Add a new compound to the list of biomass compounds.
 	        my $cmp = $bio->searchForCompartment($compound->[1]);
 	        if (!defined($cmp)) {
 	            Bio::KBase::ObjectAPI::utilities::error("Compartment ".$compound->[1]." not found!");
 	        }
+            my $linkedCpdRefs = [];
+            for (my $k=0; $k < @{$compound->[6]}; $k++) {
+                my $linkedcpd = $bio->searchForCompound($compound->[6]->[$k]);
+                if (!defined($linkedcpd)) {
+                    Bio::KBase::ObjectAPI::utilities::error("Compound ".$compound->[6]->[$k]." not found!");
+                }
+                $linkedCpdRefs->[$k] = $linkedcpd->_reference();
+            }
 	        my $comps = $tempbio->templateBiomassComponents();
 			my $id = @{$comps}+1;
 	        my $comp = Bio::KBase::ObjectAPI::KBaseFBA::TemplateBiomassComponent->new({
@@ -206,18 +216,28 @@ sub adjustBiomass {
 	            compartment_ref => $cmp->_reference(),
 	            coefficientType => $compound->[4],
 	            coefficient => $compound->[5],
+	            linked_compound_refs => $linkedCpdRefs
 	        });
 			$tempbio->add("templateBiomassComponents", $comp);
 	    } else {
 	        # Update an existing compound in the list of biomass compounds.
-	        my $cmp = $bio->searchForCompartment($compound->[1]);
-	        if (!defined($cmp)) {
-	            Bio::KBase::ObjectAPI::utilities::error("Compartment ".$compound->[1]." not found!");
+	        if (defined($compound->[1])) {
+		        my $cmp = $bio->searchForCompartment($compound->[1]);
+		        if (!defined($cmp)) {
+		            Bio::KBase::ObjectAPI::utilities::error("Compartment ".$compound->[1]." not found!");
+		        }
+		        $comp->compartment_ref($cmp->_reference());
 	        }
-	        $comp->class($compound->[2]);
-	        $comp->compartment_ref($cmp->_reference());
-	        $comp->coefficientType($compound->[4]);
-	        $comp->coefficient($compound->[5]);
+	        if (defined($compound->[2])) {
+	            $comp->class($compound->[2]);
+	        }
+	        if (defined($compound->[4])) {
+	            $comp->coefficientType($compound->[4]);
+	        }
+	        if (defined($compound->[5])) {
+	            $comp->coefficient($compound->[5]);
+	        }
+	        # Note that the linked compounds are ignored. Not sure if add to or replace existing linked compounds.
 	    }
 	}
     return $tempbio;
