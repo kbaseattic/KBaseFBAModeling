@@ -171,16 +171,16 @@ sub _buildpromBounds {
 	}
 	my $promModel = $self->prommodel();
 	my $genekos = $self->geneKOs();
+	my $tfmaps = $promModel->transcriptionFactorMaps();
 	foreach my $gene (@{$genekos}) {
-		my $tfmap = $promModel->queryObject("transcriptionFactorMaps",{
-			transcriptionFactor_ref => $gene->_reference()
-		});
-		if (defined($tfmap)) {
+	    foreach my $tfmap (@$tfmaps) {
+		print STDERR "\t tF_ref is ", $tfmap->transcriptionFactor_ref(), "\n";
+		if ($tfmap->transcriptionFactor_ref() eq $gene->id()) {
 			my $targets = $tfmap->transcriptionFactorMapTargets();
 			foreach my $target (@{$targets}) {
 				my $offProb = $target->tfOffProbability();
 				my $onProb = $target->tfOnProbability();
-				my $targetRxns = [keys(%{$geneReactions->{$target->target()->id()}})];
+			        my $targetRxns = [keys(%{$geneReactions->{$target->target_ref()}})];
 				foreach my $rxn (@{$targetRxns}) {
 					my $bounds = $bounds->{$rxn};
 					$bounds->[0] *= $offProb;
@@ -189,7 +189,9 @@ sub _buildpromBounds {
 					$final_bounds->{$rxn}->[1] = $bounds->[1];
 				}
 			}
+			last;
 		}
+	    }
 	}	
 
 	return $final_bounds;

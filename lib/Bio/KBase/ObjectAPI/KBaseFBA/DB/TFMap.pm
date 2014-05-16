@@ -6,6 +6,7 @@
 ########################################################################
 package Bio::KBase::ObjectAPI::KBaseFBA::DB::TFMap;
 use Bio::KBase::ObjectAPI::BaseObject;
+use Bio::KBase::ObjectAPI::KBaseFBA::RegulatoryTarget;
 use Moose;
 use namespace::autoclean;
 extends 'Bio::KBase::ObjectAPI::BaseObject';
@@ -17,6 +18,10 @@ has parent => (is => 'rw', isa => 'Ref', weak_ref => 1, type => 'parent', metacl
 has uuid => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_uuid');
 has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_reference');
 has transcriptionFactor_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+
+
+# SUBOBJECTS:
+has transcriptionFactorMapTargets => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(RegulatoryTarget)', metaclass => 'Typed', reader => '_transcriptionFactorMapTargets', printOrder => '-1');
 
 
 # LINKS:
@@ -73,9 +78,17 @@ sub _links {
 	 }
 }
 
-my $subobjects = [];
+my $subobjects = [
+          {
+            'printOrder' => -1,
+            'name' => 'transcriptionFactorMapTargets',
+            'type' => 'child',
+            'class' => 'RegulatoryTarget',
+            'module' => 'KBaseFBA'
+          }
+        ];
 
-my $subobject_map = {};
+my $subobject_map = {transcriptionFactorMapTargets => 0};
 sub _subobjects {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -89,5 +102,12 @@ sub _subobjects {
 	 	 return $subobjects;
 	 }
 }
+# SUBOBJECT READERS:
+around 'transcriptionFactorMapTargets' => sub {
+	 my ($orig, $self) = @_;
+	 return $self->_build_all_objects('transcriptionFactorMapTargets');
+};
+
+
 __PACKAGE__->meta->make_immutable;
 1;

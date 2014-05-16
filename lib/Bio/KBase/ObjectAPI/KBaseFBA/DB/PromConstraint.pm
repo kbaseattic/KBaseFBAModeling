@@ -6,6 +6,7 @@
 ########################################################################
 package Bio::KBase::ObjectAPI::KBaseFBA::DB::PromConstraint;
 use Bio::KBase::ObjectAPI::IndexedObject;
+use Bio::KBase::ObjectAPI::KBaseFBA::TFMap;
 use Moose;
 use namespace::autoclean;
 extends 'Bio::KBase::ObjectAPI::IndexedObject';
@@ -20,6 +21,10 @@ has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metacl
 has expression_data_collection_id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 has genome_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
+
+
+# SUBOBJECTS:
+has transcriptionFactorMaps => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(TFMap)', metaclass => 'Typed', reader => '_transcriptionFactorMaps', printOrder => '-1');
 
 
 # LINKS:
@@ -108,9 +113,17 @@ sub _links {
 	 }
 }
 
-my $subobjects = [];
+my $subobjects = [
+          {
+            'printOrder' => -1,
+            'name' => 'transcriptionFactorMaps',
+            'type' => 'child',
+            'class' => 'TFMap',
+            'module' => 'KBaseFBA'
+          }
+        ];
 
-my $subobject_map = {};
+my $subobject_map = {transcriptionFactorMaps => 0};
 sub _subobjects {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -124,5 +137,12 @@ sub _subobjects {
 	 	 return $subobjects;
 	 }
 }
+# SUBOBJECT READERS:
+around 'transcriptionFactorMaps' => sub {
+	 my ($orig, $self) = @_;
+	 return $self->_build_all_objects('transcriptionFactorMaps');
+};
+
+
 __PACKAGE__->meta->make_immutable;
 1;
