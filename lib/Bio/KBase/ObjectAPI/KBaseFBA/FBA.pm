@@ -1783,8 +1783,13 @@ sub parseProblemReport {
 				last;
 			}
 		}
-		if (defined($tbl->{data}->[0]) && defined($tbl->{data}->[0]->[$column])) {
-			$self->objectiveValue($tbl->{data}->[0]->[$column]);
+		my $row = 0;
+		while (defined($tbl->{data}->[$row]->[$column])) {
+			$row++;
+		}
+		$row--;
+		if (defined($tbl->{data}->[$row]) && defined($tbl->{data}->[$row]->[$column])) {
+			$self->objectiveValue($tbl->{data}->[$row]->[$column]);
 		}
 		return 1;
 	}

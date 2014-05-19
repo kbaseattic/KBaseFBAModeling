@@ -380,7 +380,7 @@ sub manualReactionAdjustment {
     }
     my $mdlcmp = $self->addCompartmentToModel({compartment => $cmp,pH => 7,potential => 0,compartmentIndex => 0});
     my $mdlrxn;
-    if ($rxnid =~ m/rxn\d+/) {
+    if ($rxnid =~ m/^rxn\d+$/) {
 	    if ($args->{biomass} == 1) {
 	    	Bio::KBase::ObjectAPI::utilities::error("Biomass reactions should not have rxn IDs!");
 	    }
@@ -460,7 +460,7 @@ sub manualReactionAdjustment {
 				});
 				$mdlrxn->addReagentToReaction({
 					coefficient => $coefficient,
-					modelcompound_ref => $mdlcpd->_reference()
+					modelcompound_ref => "~/modelcompounds/id/".$mdlcpd->id()
 				});
 			}
 			if (defined($args->{gpr})){

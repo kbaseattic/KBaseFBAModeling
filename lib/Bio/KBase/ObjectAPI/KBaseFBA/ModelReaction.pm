@@ -571,7 +571,6 @@ sub ImportExternalEquation {
 	    				$cpdobj = $bio->searchForCompound($cpd);
 	    			}
 	    		} else {
-	    			print "No compound data for ".$cpd."\n";
 	    			$cpdobj = $bio->searchForCompound($cpd);
 	    		}
 	    		my $cmp = $bio->searchForCompartment($compartment);
