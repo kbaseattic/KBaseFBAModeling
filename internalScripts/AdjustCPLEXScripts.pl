@@ -27,26 +27,28 @@ my $models = $ws->list_objects({
 	workspaces => ["chenry:BiomassAnalysisMMModels"],
 });
 #for (my $i=0; $i < 1; $i++) {
-for (my $i=1; $i < @{$models}; $i++) {
-	open(LPFILE, "< /homes/chenry/lpfiles/LPFiles/".$models->[$i]->[1].".lp"); 
-	my $sting;
-	{
-	    local $/;
-	    $sting = <LPFILE>;
-		
+for (my $i=28; $i < @{$models}; $i++) {
+	if (-e "/homes/chenry/lpfiles/LPFiles/".$models->[$i]->[1].".lp") {
+		open(LPFILE, "< /homes/chenry/lpfiles/LPFiles/".$models->[$i]->[1].".lp"); 
+		my $sting;
+		{
+		    local $/;
+		    $sting = <LPFILE>;
+			
+		}
+		close(LPFILE);
+		my $input = {
+			type => "Optimization",
+			jobdata => {
+				memlimit => 8000,
+				timelimit => 28800,
+				lpfile => $sting,
+			},
+			queuecommand => "Optimization",
+			"state" => "queued",
+			auth => $c->param("kbclientconfig.auth"),
+			wsurl => "http://kbase.us/services/ws"
+		};
+		$js->queue_job($input);
 	}
-	close(LPFILE);
-	my $input = {
-		type => "Optimization",
-		jobdata => {
-			memlimit => 8000,
-			timelimit => 28800,
-			lpfile => $sting,
-		},
-		queuecommand => "Optimization",
-		"state" => "queued",
-		auth => $c->param("kbclientconfig.auth"),
-		wsurl => "http://kbase.us/services/ws"
-	};
-	$js->queue_job($input);
 }
