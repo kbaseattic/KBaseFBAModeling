@@ -3,6 +3,7 @@
 use strict;
 use Config::Simple;
 use Bio::KBase::workspaceService::Client;
+use Bio::KBase::workspace::Client;
 use File::Path;
 $|=1;
 
@@ -20,7 +21,8 @@ if (!-e $config) {
 my $c = Config::Simple->new();
 $c->read($config);
 
-my $ws = Bio::KBase::workspaceService::Client->new("http://kbase.us/services/workspace");
+my $ws = Bio::KBase::workspace::Client->new("http://kbase.us/services/ws");
+my $js = Bio::KBase::workspaceService::Client->new("http://kbase.us/services/workspace");
 my $models = $ws->list_objects({
 	workspaces => ["chenry:BiomassAnalysisMMModels"],
 });
@@ -46,5 +48,5 @@ for (my $i=0; $i < 1; $i++) {
 		auth => $c->param("kbclientconfig.auth"),
 		wsurl => "http://kbase.us/services/ws"
 	};
-	$ws->queue_job($input);
+	$js->queue_job($input);
 }
