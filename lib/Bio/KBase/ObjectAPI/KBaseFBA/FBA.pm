@@ -174,7 +174,6 @@ sub _buildpromBounds {
 	my $tfmaps = $promModel->transcriptionFactorMaps();
 	foreach my $gene (@{$genekos}) {
 	    foreach my $tfmap (@$tfmaps) {
-		print STDERR "\t tF_ref is ", $tfmap->transcriptionFactor_ref(), "\n";
 		if ($tfmap->transcriptionFactor_ref() eq $gene->id()) {
 			my $targets = $tfmap->transcriptionFactorMapTargets();
 			foreach my $target (@{$targets}) {
