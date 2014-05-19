@@ -2,7 +2,7 @@
 
 use strict;
 use Config::Simple;
-use Bio::KBase::fbaModelServices::Impl;
+use Bio::KBase::workspaceService::Client;
 use File::Path;
 $|=1;
 
@@ -20,26 +20,31 @@ if (!-e $config) {
 my $c = Config::Simple->new();
 $c->read($config);
 
-$Bio::KBase::fbaModelServices::Server::CallContext = {token => $c->param("kbclientconfig.auth")};
-my $fba = Bio::KBase::fbaModelServices::Impl->new({"workspace-url" => "http://kbase.us/services/ws"});
-$fba->_setContext($Bio::KBase::fbaModelServices::Server::CallContext,{});
-my $ws = $fba->_workspaceServices();
+my $ws = Bio::KBase::workspaceService::Client->new("http://kbase.us/services/workspace");
 my $models = $ws->list_objects({
 	workspaces => ["chenry:BiomassAnalysisMMModels"],
 });
-#for (my $i=0; $i < 1; $i++) {
-for (my $i=0; $i < @{$models}; $i++) {
-	print $i."\n";
-	Bio::KBase::ObjectAPI::utilities::PRINTFILE($directory.$models->[$i]->[1].".script",[
-		"set timelimit 28800",
-		"set mip tolerances mipgap 0.02",
-		"set mip tolerances integrality 1e-09",
-		"set simplex tolerances feasibility 1e-09",
-		"set feasopt tolerance 1e-09",
-		"set mip display 0",
-		"set mip limits treememory 1000",
-		"read LPFiles/".$models->[$i]->[1].".lp",
-		"mipopt",
-		"write LPSolutions/".$models->[$i]->[1].".txt sol"
-	]);
+for (my $i=0; $i < 1; $i++) {
+#for (my $i=0; $i < @{$models}; $i++) {
+	open(LPFILE, "< /homes/chenry/lpfiles/LPFiles/".$models->[$i]->[1].".lp"); 
+	my $sting;
+	{
+	    local $/;
+	    $sting = <LPFILE>;
+		
+	}
+	close(LPFILE);
+	my $input = {
+		type => "Optimization",
+		jobdata => {
+			memlimit => 8000,
+			timelimit => 28800,
+			lpfile => $sting,
+		},
+		queuecommand => "Optimization",
+		"state" => "queued",
+		auth => $c->param("kbclientconfig.auth"),
+		wsurl => "http://kbase.us/services/ws"
+	};
+	$ws->queue_job($input);
 }
