@@ -29,14 +29,14 @@ my $filename = $c->param("scheduler.jobdirectory")."jobs/".$ARGV[1]."/jobfile.js
 if (!-e $filename) {
 	die "Cannot open ".$filename;
 }
-open( my $fh, "<", $filename);
+open(JOB, "<", $filename);
 my $job;
 {
     local $/;
-    my $str = <$fh>;
+    my $str = <JOB>;
     $job = decode_json $str;
 }
-close($fh);
+close(JOB);
 open(LPFILE, "> ".$c->param("scheduler.jobdirectory")."jobs/".$ARGV[1]."/prob.lp"); 
 print LPFILE $job->{jobdata}->{lpfile}; 
 close(LPFILE);
@@ -59,7 +59,7 @@ system("cd ".$c->param("scheduler.jobdirectory")."jobs/".$ARGV[1].";/vol/model-p
 open(SOLUTION, "< ".$c->param("scheduler.jobdirectory")."jobs/".$ARGV[1]."/solution"); 
 {
     local $/;
-    my $str = <$fh>;
+    my $str = <SOLUTION>;
     $job->{jobdata}->{solution} = $str;
 }
 close(SOLUTION);

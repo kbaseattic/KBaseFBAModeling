@@ -26,8 +26,8 @@ my $js = Bio::KBase::workspaceService::Client->new("http://kbase.us/services/wor
 my $models = $ws->list_objects({
 	workspaces => ["chenry:BiomassAnalysisMMModels"],
 });
-for (my $i=0; $i < 1; $i++) {
-#for (my $i=0; $i < @{$models}; $i++) {
+#for (my $i=0; $i < 1; $i++) {
+for (my $i=1; $i < @{$models}; $i++) {
 	open(LPFILE, "< /homes/chenry/lpfiles/LPFiles/".$models->[$i]->[1].".lp"); 
 	my $sting;
 	{
