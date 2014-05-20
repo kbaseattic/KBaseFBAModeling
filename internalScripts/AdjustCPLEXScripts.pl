@@ -22,33 +22,23 @@ my $c = Config::Simple->new();
 $c->read($config);
 
 my $ws = Bio::KBase::workspace::Client->new("http://kbase.us/services/ws");
-my $js = Bio::KBase::workspaceService::Client->new("http://kbase.us/services/workspace");
 my $models = $ws->list_objects({
 	workspaces => ["chenry:BiomassAnalysisMMModels"],
 });
-#for (my $i=0; $i < 1; $i++) {
-for (my $i=28; $i < @{$models}; $i++) {
+for (my $i=0; $i < @{$models}; $i++) {
 	if (-e "/homes/chenry/lpfiles/LPFiles/".$models->[$i]->[1].".lp") {
-		open(LPFILE, "< /homes/chenry/lpfiles/LPFiles/".$models->[$i]->[1].".lp"); 
-		my $sting;
-		{
-		    local $/;
-		    $sting = <LPFILE>;
-			
-		}
-		close(LPFILE);
-		my $input = {
-			type => "Optimization",
-			jobdata => {
-				memlimit => 8000,
-				timelimit => 28800,
-				lpfile => $sting,
-			},
-			queuecommand => "Optimization",
-			"state" => "queued",
-			auth => $c->param("kbclientconfig.auth"),
-			wsurl => "http://kbase.us/services/ws"
-		};
-		$js->queue_job($input);
+		Bio::KBase::ObjectAPI::utilities::PRINTFILE($directory.$models->[$i]->[1].".script",[
+			"set timelimit 28800",
+			"set mip tolerances mipgap 0.02",
+			"set mip tolerances integrality 1e-09",
+			"set simplex tolerances feasibility 1e-09",
+			"set feasopt tolerance 1e-09",
+			"set mip display 0",
+			"set mip limits treememory 8000",
+			"read LPFiles/".$models->[$i]->[1].".lp",
+			"mipopt",
+			"write LPSolutions/".$models->[$i]->[1].".txt sol",
+			"quit"
+		]);
 	}
 }

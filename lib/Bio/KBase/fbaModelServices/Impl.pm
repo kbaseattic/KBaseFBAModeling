@@ -5875,6 +5875,7 @@ sub import_fbamodel
 	for (my $i=0; $i < @{$rxns}; $i++) {
 		my $rxn = $rxns->[$i];
 		my $rgts = $rxn->modelReactionReagents();
+		print "Reaction:".$rxn->id()."\n";
 		if (@{$rgts} == 1 && $rgts->[0]->modelcompound()->id() =~ m/_e\d+$/) {
 			$model->remove("modelreactions",$rxn);
 		}	
