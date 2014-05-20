@@ -2,7 +2,7 @@
 
 use strict;
 use Config::Simple;
-use Bio::KBase::workspaceService::Client;
+use Bio::KBase::fbaModelServices::Impl;
 use Bio::KBase::workspace::Client;
 use File::Path;
 $|=1;
