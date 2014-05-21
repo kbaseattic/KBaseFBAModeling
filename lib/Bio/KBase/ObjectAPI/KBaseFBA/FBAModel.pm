@@ -2098,6 +2098,11 @@ sub searchForCompound {
     my $id = shift;
     my $compartment = shift;
     my $index = shift;
+    if ($id =~ m/^(.+)_([a-z]+)(\d*)$/) {
+    	$id = $1;
+    	$compartment = $2;
+    	$index = $3;
+    }
     if ($id =~ m/^(.+)\[([a-z]+)(\d*)]$/) {
     	$id = $1;
     	$compartment = $2;
