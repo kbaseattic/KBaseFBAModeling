@@ -278,6 +278,7 @@ sub addCompoundToModel {
 			$args->{formula} = $args->{compound}->formula();
 		}
 		$mdlcpd = $self->add("modelcompounds",{
+			id => $args->{compound}->id()."_".$args->{modelCompartment}->id(),
 			modelcompartment_ref => "~/modelcompartments/id/".$args->{modelCompartment}->id(),
 			compound_ref => $args->{compound}->_reference(),
 			charge => $args->{charge},

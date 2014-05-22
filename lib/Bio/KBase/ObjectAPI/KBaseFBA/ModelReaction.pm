@@ -592,13 +592,11 @@ sub ImportExternalEquation {
 	    		if (defined($cpdobj)) {
 	    			$mdlcpd = $self->parent()->searchForCompound($cpdobj->id()."_".$compartment.$index);
 	    			if (!defined($mdlcpd)) {
-	    				$mdlcpd = $self->parent()->add("modelcompounds",{
-	    					id => $cpdobj->id()."_".$compartment.$index,
-							compound_ref => $cpdobj->_reference(),
-							name => $cpdobj->name()."_".$compartment.$index,
-							charge => $cpdobj->defaultCharge(),
-							formula => $cpdobj->formula(),
-							modelcompartment_ref => "~/modelcompartments/id/".$mdlcmp->id()
+	    				$mdlcpd = $self->parent()->addCompoundToModel({
+	    					compound => $cpdobj,
+	    					modelCompartment => $mdlcmp,
+	    					charge => $args->{compounds}->{$cpd}->[1],
+	    					formula => $args->{compounds}->{$cpd}->[2]
 	    				});
 	    			}
 	    		} else {
