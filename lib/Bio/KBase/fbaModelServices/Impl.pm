@@ -8292,16 +8292,45 @@ sub integrate_reconciliation_solutions
 				solution => $id,
 				rxnProbGpr => $rxnprobsGPRArray
 			});
+    	} elsif ($id =~ m/^(\d+)\/(\d+)$/) {
+    		my $gf = $1;
+    		my $sol = $2;
+    		my $gfs = $model->gapfillings();
+    		if (defined($gfs->[$gf])) {
+    			my $gfobj = $gfs->[$gf]->gapfill();
+    			if (defined($gfobj->gapfillingSolutions()->[$sol])) {
+    				my $solution = $gfobj->gapfillingSolutions()->[$sol];
+    				$model->integrateGapfillSolution({
+						gapfill=> $gfobj->id(),
+						solution => $solution->id(),
+						rxnProbGpr => $rxnprobsGPRArray
+					});
+    			}
+    		}
     	}
     }
     foreach my $id (@{$input->{gapgenSolutions}}) {
     	if ($id =~ m/^(.+\.gg\.\d+)\./) {
 	    	my $ggid = $1;
-			$model->integrateGapfillSolution({
+			$model->integrateGapgenSolution({
 				gapgen=> $ggid,
 				solution => $id,
 			});
-	    }
+	    } elsif ($id =~ m/^(\d+)\/(\d+)$/) {
+    		my $gg = $1;
+    		my $sol = $2;
+    		my $ggs = $model->gapfillings();
+    		if (defined($ggs->[$gg])) {
+    			my $ggobj = $ggs->[$gg]->gapfill();
+    			if (defined($ggobj->gapfillingSolutions()->[$sol])) {
+    				my $solution = $ggobj->gapfillingSolutions()->[$sol];
+    				$model->integrateGapgenSolution({
+						gapgen=> $ggobj->id(),
+						solution => $solution->id(),
+					});
+    			}
+    		}
+    	}
     }
     
     $model->modelreactions();#This must be called here to ensure that the reaction objects are instantiated
