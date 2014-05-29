@@ -267,7 +267,7 @@ sub _authenticate {
 }
 
 sub _setContext {
-	my ($self,$context,$params) = @_;
+	my ($self,$context,$params,$objects,$essential,$optional) = @_;
 	if (defined($params->{wsurl})) {
 		$self->_getContext()->{_override}->{_wsurl} = $params->{wsurl};
 	}
@@ -282,7 +282,35 @@ sub _setContext {
 		}
     }
     delete $self->{_workspaceServices};
-	$self->_resetKBaseStore($params);		
+	$self->_resetKBaseStore($params);
+	if (defined($objects)) {
+		$params = $self->_validateargs($params,$essential,$optional);
+		foreach my $object (keys(%{$objects})) {
+			my ($lastobj,$obj,$lastkey) = $self->_string_to_object($object,$params);
+			if (defined($obj)) {
+				my $typearray = [split(/\./,$objects->{$object}->{type})];
+				if (ref($obj) eq 'HASH') {
+					$lastobj->{$lastkey} = $self->_get_msobject($typearray->[-1],undef,$obj);
+				} else {
+					my ($lastws,$ws,$lastwskey) = $self->_string_to_object($objects->{$object}->{ws},$params);
+					$lastobj->{$lastkey} = $self->_get_msobject($typearray->[-1],$ws,$obj);
+				}
+			}
+		}
+	}
+	return $params;
+}
+
+sub _string_to_object {
+	my ($self,$string,$objects) = @_;
+	my $array = [split(/:/,$string)];
+	my $obj = $objects->{$array->[0]};
+	my $lastobj = $objects;
+	for (my $i=1; $i < @{$array}; $i++) {
+		$lastobj = $obj;
+		$obj = $obj->{$array->[$i]};
+	}
+	return ($lastobj,$obj,$array->[-1]);
 }
 
 sub _getContext {
@@ -466,16 +494,24 @@ sub _save_msobject {
 
 sub _get_msobject {
 	my($self,$type,$ws,$id,$options) = @_;
-	my $ref = $ws."/".$id;
-	if ($ws eq "kbase" && $id eq "default" && $type eq "Mapping") {
-		$id = "default-mapping";
-	}
-	my $obj = $self->_KBaseStore()->get_object($ref,$options);
-	if ($obj->_class() ne $type) {
-		$self->_error($obj->_class()." input, but should be ".$type);
-	}
-	if (!defined($self->_cachedBiochemistry()) && $type eq "Biochemistry" && $id eq "default" && $ws eq "kbase") {
-		$self->_cachedBiochemistry($obj);
+	my $obj;
+	if (ref($id) eq 'HASH') {
+		$obj = $self->_KBaseStore()->get_object_by_handle($id,$options);
+		if ($obj->_class() ne $type) {
+			$self->_error($obj->_class()." input, but should be ".$type);
+		}
+	} elsif (defined($ws)) {
+		my $ref = $ws."/".$id;
+		if ($ws eq "kbase" && $id eq "default" && $type eq "Mapping") {
+			$id = "default-mapping";
+		}
+		$obj = $self->_KBaseStore()->get_object($ref,$options);
+		if ($obj->_class() ne $type) {
+			$self->_error($obj->_class()." input, but should be ".$type);
+		}
+		if (!defined($self->_cachedBiochemistry()) && $type eq "Biochemistry" && $id eq "default" && $ws eq "kbase") {
+			$self->_cachedBiochemistry($obj);
+		}
 	}
 	return $obj;
 }
@@ -8269,8 +8305,9 @@ sub integrate_reconciliation_solutions
     my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
     my($modelMeta);
     #BEGIN integrate_reconciliation_solutions
-    $self->_setContext($ctx,$input);
-    $input = $self->_validateargs($input,["model","workspace","gapfillSolutions","gapgenSolutions"],{
+    $input = $self->_setContext($ctx,$input,{
+    	model => {type => "KBaseFBA.FBAModel",ws => "model_workspace"}
+    },["model","workspace","gapfillSolutions","gapgenSolutions"],{
 		model_workspace => $input->{workspace},
 		out_model => $input->{model},
 		overwrite => 0,

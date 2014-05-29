@@ -209,6 +209,20 @@ sub get_object {
     return $self->get_objects([$ref])->[0];
 }
 
+sub get_object_by_handle {
+    my ($self,$handle,$type,$options) = @_;
+    my $typehandle = [split(/\./,$type)];
+    my $class = "Bio::KBase::ObjectAPI::".$typehandle->[0]."::".$typehandle->[1];
+    my $data;
+    if ($handle->{type} eq "data") {
+    	$data = $handle->{data};
+    } elsif ($handle->{type} eq "workspace") {
+    	$options->{url} = $handle->{url};
+    	return $self->get_object($handle->{reference},$options);
+    }
+    return $class->new($data);
+}
+
 sub save_object {
     my ($self,$object,$ref,$params) = @_;
     my $output = $self->save_objects({$ref => {hidden => $params->{hidden},meta => $params->{meta},object => $object}});

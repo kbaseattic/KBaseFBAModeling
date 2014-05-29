@@ -85,7 +85,8 @@ my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translat
 $params->{compoundsToAdd} = [$opt->{"Compound ID"},$opt->{compartment},$opt->{class},$opt->{universal},$opt->{coeftype},$opt->{coef},[]];
 if (defined($opt->{linkcpds})) {
 	foreach my $cpd (@{$opt->{linkcpds}}) {
-		$params->{compoundsToAdd}->[6] = [split(/;/,$cpd)];
+		my $array = [split(/;/,$cpd)];
+		push(@{$params->{compoundsToAdd}->[6]},@{$array});
 	}
 }
 #Calling the server

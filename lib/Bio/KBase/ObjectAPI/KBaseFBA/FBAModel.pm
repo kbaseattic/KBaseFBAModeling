@@ -315,8 +315,34 @@ sub adjustBiomassReaction {
     }
     my $mdlcpd = $self->searchForCompound($args->{compound},$args->{compartment},$args->{compartmentIndex});
     if (!defined($mdlcpd)) {
-    	Bio::KBase::ObjectAPI::utilities::error("ModelCompound ".$args->{compound}."_".$args->{compartment}.$args->{compartmentIndex}." not found!");
-    }
+    	my $cpdobj = $self->template()->biochemistry()->searchForCompound($args->{compound});
+    	if (!defined($cpdobj)) {
+    		Bio::KBase::ObjectAPI::utilities::error("Compound ".$args->{compound}." not found!");
+    	}
+    	my $mdlcmp = $self->parent()->getObject("modelcompartments",$args->{compartment}.$args->{compartmentIndex});
+    	if (!defined($mdlcmp)) {
+    		my $cmp = $self->template()->biochemistry()->searchForCompartment($args->{compartment});
+	    	if (!defined($cmp)) {
+	    		Bio::KBase::ObjectAPI::utilities::error("Unrecognized compartment in equation:".$args->{compartment}."!");
+	    	}
+    		$mdlcmp = $self->add("modelcompartments",{
+    			id => $args->{compartment}.$args->{compartmentIndex},
+				compartment_ref => $cmp->_reference(),
+				compartmentIndex => $args->{compartmentIndex},
+				label => $args->{compartment}.$args->{compartmentIndex},
+				pH => 7,
+				potential => 0,
+    		});
+    	}
+    	$mdlcpd = $self->parent()->add("modelcompounds",{
+    		id => $cpdobj->id()."_".$args->{compartment}.$args->{compartmentIndex},
+			compound_ref => $cpdobj->_reference(),
+			name => $cpdobj->name()."_".$args->{compartment}.$args->{compartmentIndex},
+			charge => $cpdobj->defaultCharge(),
+			formula => $cpdobj->formula(),
+			modelcompartment_ref => "~/modelcompartments/id/".$mdlcmp->id()
+		});
+	}
     $bio->adjustBiomassReaction({
     	coefficient => $args->{coefficient},
 		modelcompound => $mdlcpd
