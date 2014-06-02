@@ -8314,7 +8314,7 @@ sub integrate_reconciliation_solutions
 		rxnprobs => undef,
 		rxnprobs_workspace => $input->{workspace}
     });
-    my $model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model});
+    my $model = $input->{model};
     my($rxnprobs);
     my($rxnprobsGPRArray);
     if ( defined($input->{rxnprobs}) ) {

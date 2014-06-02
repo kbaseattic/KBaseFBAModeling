@@ -197,10 +197,21 @@ sub addReactionToModel {
 			modelcompartment_ref => "~/modelcompartments/id/".$mdlcmp->id(),
 		});
 		my $rgts = $rxn->reagents();
+		my $onlyone = 1;
+		for (my $i=1; $i < @{$rgts}; $i++) {
+			if ($rgts->[$i]->compartment()->id() ne $rgts->[0]->compartment()->id()) {
+				$onlyone = 0;
+			}
+		}
 		for (my $i=0; $i < @{$rgts}; $i++) {
 			my $rgt = $rgts->[$i];
-			my $rgtcmp = $self->addCompartmentToModel({compartment => $rgt->compartment(),pH => 7,potential => 0,compartmentIndex => 0});
 			my $coefficient = $rgt->coefficient();
+			my $rgtcmp;
+			if ($onlyone == 1) {
+				$rgtcmp = $mdlcmp;	
+			} else {
+				$rgtcmp = $self->addCompartmentToModel({compartment => $rgt->compartment(),pH => 7,potential => 0,compartmentIndex => 0});
+			}
 			my $mdlcpd = $self->addCompoundToModel({
 				compound => $rgt->compound(),
 				modelCompartment => $rgtcmp,
