@@ -16493,9 +16493,10 @@ sub models_to_community_model
 		#Adding biomass to community model
 		my $bios = $model->biomasses();
 		for (my $j=0; $j < @{$bios}; $j++) {
-			my $bio = $bios->[$j];
+			my $bio = $bios->[$j]->cloneObject();
+			$bio->parent($commdl);
 			for (my $k=0; $k < @{$bio->biomasscompounds()}; $k++) {
-				$bio->biomasscompounds()->[$k]->modelcompound_ref("~/modelcompounds/id/".$translation->{$bio->biomasscompounds()->[$k]->modelcompound()->id()});
+				$bio->biomasscompounds()->[$k]->modelcompound_ref("~/modelcompounds/id/".$translation->{$bios->[$j]->biomasscompounds()->[$k]->modelcompound()->id()});
 			}
 			$bio = $commdl->add("biomasses",$bio);
 			$biocount++;

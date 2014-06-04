@@ -43,12 +43,14 @@ sub _buildgeneAliasHash {
 sub genome_typed_object {
     my ($self) = @_;
 	my $output = $self->serializeToDB();
-	my $contigset = $self->contigset();
-	my $contigserial = $contigset->serializeToDB();
-	$output->{contigs} = $contigserial->{contigs};
-	for (my $i=0; $i < @{$output->{contigs}}; $i++) {
-		$output->{contigs}->[$i]->{dna} = $output->{contigs}->[$i]->{sequence};
-		delete $output->{contigs}->[$i]->{sequence};
+	if (defined($self->contigset_ref())) {
+		my $contigset = $self->contigset();
+		my $contigserial = $contigset->serializeToDB();
+		$output->{contigs} = $contigserial->{contigs};
+		for (my $i=0; $i < @{$output->{contigs}}; $i++) {
+			$output->{contigs}->[$i]->{dna} = $output->{contigs}->[$i]->{sequence};
+			delete $output->{contigs}->[$i]->{sequence};
+		}
 	}
 	return $output;
 }

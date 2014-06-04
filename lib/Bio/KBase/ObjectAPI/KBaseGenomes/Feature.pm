@@ -497,11 +497,31 @@ sub integrate_contigs {
 	if (defined($self->location()->[0])) {
 		my $contig = $contigobj->getObject("contigs",$self->location()->[0]->[0]);
 		if (defined($contig)) {
-			$self->dna_sequence(substr($contig->sequence(),$self->location()->[0]->[1],$self->location()->[0]->[3]));
+			my $seq;
+			if ($self->location()->[0]->[2] eq "-") {
+				$seq = scalar reverse substr($contig->sequence(),$self->location()->[0]->[1]-$self->location()->[0]->[3],$self->location()->[0]->[3]);
+				$seq =~ s/A/M/g;
+				$seq =~ s/a/m/g;
+				$seq =~ s/T/A/g;
+				$seq =~ s/t/a/g;
+				$seq =~ s/M/T/g;
+				$seq =~ s/m/t/g;
+				$seq =~ s/G/M/g;
+				$seq =~ s/g/m/g;
+				$seq =~ s/C/G/g;
+				$seq =~ s/c/g/g;
+				$seq =~ s/M/C/g;
+				$seq =~ s/m/c/g;
+			} else {
+				$seq = substr($contig->sequence(),$self->location()->[0]->[1],$self->location()->[0]->[3]);
+			}
+			$self->dna_sequence($seq);
 			$self->dna_sequence_length(length($self->dna_sequence()));
 		}
 	}
-	$self->protein_translation($self->translate_seq($self->dna_sequence()));
+	my $proteinSeq = $self->translate_seq($self->dna_sequence());
+	$proteinSeq =~ s/[xX]+$//;
+	$self->protein_translation($proteinSeq);
 	$self->protein_translation_length(length($self->protein_translation()));
 	$self->md5(Digest::MD5::md5_hex($self->protein_translation()));
 }
@@ -515,7 +535,7 @@ Description:
 		
 =cut
 sub translate_seq {
-    my $seq = shift;
+    my($self,$seq) = @_;
     $seq =~ tr/-//d;        #  remove gaps
     my @codons = $seq =~ m/(...?)/g;  #  Will try to translate last 2 nt
     #  A second argument that is true forces first amino acid to be Met

@@ -181,7 +181,7 @@ sub addReactionToModel {
 		$args->{direction} = $rxn->direction();	
 	}
 	my $mdlcmp = $args->{overrideCompartment};
-	if (!defined($mdlcmp->{overrideCompartment}) || $rxn->isTransport()) {
+	if (!defined($args->{overrideCompartment}) || $rxn->isTransport()) {
 		$mdlcmp = $self->addCompartmentToModel({compartment => $rxn->compartment(),pH => 7,potential => 0,compartmentIndex => 0});
 	}
 	my $mdlrxn = $self->queryObject("modelreactions",{
