@@ -1,9 +1,6 @@
 #!/usr/bin/perl -w
 
 use strict;
-use Config::Simple;
-use Bio::KBase::fbaModelServices::Impl;
-use File::Path;
 use Bio::KBase::workspace::ScriptHelpers qw(workspaceURL get_ws_client workspace parseObjectMeta parseWorkspaceMeta);
 use Bio::KBase::fbaModelServices::ScriptHelpers qw(getToken fbaws get_fba_client runFBACommand universalFBAScriptCode );
 

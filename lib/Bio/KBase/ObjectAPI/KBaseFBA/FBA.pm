@@ -515,6 +515,9 @@ sub createJobDirectory {
 							$comp = $tmprxn->compartment()->id()
 						}
 						my $suffix = "_".$comp.$compindex;
+						if ($comp eq "e") {
+							$suffix = "_".$comp."0";
+						}
 						$gfcpdhash->{$rgt->compound()->id().$suffix} = $rgt->compound();
 						if ($rgt->compartment()->id() eq "e") {
 							$suffix .= "[e]";
