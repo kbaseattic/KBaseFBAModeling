@@ -9219,7 +9219,7 @@ sub gapfill_model
 	if (!defined($gapfill->gapfillingSolutions()->[0])) {
 		$self->_error("Gapfilling completed, but no valid solutions found!");
 	}
-	my $meta = $self->_save_msobject($fba,"FBA",$input->{workspace},$fba->id());
+	my $meta = $self->_save_msobject($fba,"FBA",$input->{workspace},$fba->id(),{hidden => 1});
 	$gapfill->fba_ref($fba->_reference());
 	$meta = $self->_save_msobject($gapfill,"Gapfilling",$input->{workspace},$gapfill->id(),{hidden => 1});
 	#Since gapfilling can take hours, we retrieve the model again in case it changed since accessed previously

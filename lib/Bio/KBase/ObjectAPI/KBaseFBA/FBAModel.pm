@@ -181,8 +181,12 @@ sub addReactionToModel {
 		$args->{direction} = $rxn->direction();	
 	}
 	my $mdlcmp = $args->{overrideCompartment};
-	if (!defined($args->{overrideCompartment}) || $rxn->isTransport()) {
-		$mdlcmp = $self->addCompartmentToModel({compartment => $rxn->compartment(),pH => 7,potential => 0,compartmentIndex => 0});
+	if (!defined($mdlcmp) || $rxn->isTransport()) {
+		if (defined($mdlcmp)) {
+			$mdlcmp = $self->addCompartmentToModel({compartment => $rxn->compartment(),pH => 7,potential => 0,compartmentIndex => $mdlcmp->compartmentIndex()});
+		} else {
+			$mdlcmp = $self->addCompartmentToModel({compartment => $rxn->compartment(),pH => 7,potential => 0,compartmentIndex => 0});
+		}
 	}
 	my $mdlrxn = $self->queryObject("modelreactions",{
 		reaction_ref => $rxn->_reference(),
@@ -209,8 +213,10 @@ sub addReactionToModel {
 			my $rgtcmp;
 			if ($onlyone == 1) {
 				$rgtcmp = $mdlcmp;	
-			} else {
+			} elsif ($rgt->compartment()->id() eq "e") {
 				$rgtcmp = $self->addCompartmentToModel({compartment => $rgt->compartment(),pH => 7,potential => 0,compartmentIndex => 0});
+			} else {
+				$rgtcmp = $self->addCompartmentToModel({compartment => $rgt->compartment(),pH => 7,potential => 0,compartmentIndex => $mdlcmp->compartmentIndex()});
 			}
 			my $mdlcpd = $self->addCompoundToModel({
 				compound => $rgt->compound(),
