@@ -6888,6 +6888,7 @@ runfba_params is a reference to a hash where the following keys are defined:
 	findminmedia has a value which is a bool
 	notes has a value which is a string
 	fba has a value which is a fba_id
+	eflux has a value which is a string
 	workspace has a value which is a workspace_id
 	auth has a value which is a string
 	overwrite has a value which is a bool
@@ -6973,6 +6974,7 @@ runfba_params is a reference to a hash where the following keys are defined:
 	findminmedia has a value which is a bool
 	notes has a value which is a string
 	fba has a value which is a fba_id
+	eflux has a value which is a string
 	workspace has a value which is a workspace_id
 	auth has a value which is a string
 	overwrite has a value which is a bool
@@ -7073,6 +7075,7 @@ sub runfba
     $input = $self->_validateargs($input,["model","workspace"],{
 		formulation => undef,
 		fva => 0,
+		eflux => "",
 		simulateko => 0,
 		minimizeflux => 0,
 		findminmedia => 0,
@@ -7089,10 +7092,11 @@ sub runfba
 	#Creating FBAFormulation Object
 	my $fba = $self->_buildFBAObject($input->{formulation},$model,$input->{workspace},$input->{fba});
 	$fba->fva($input->{fva});
+	$fba->eflux($input->{eflux});
 	$fba->comboDeletions($input->{simulateko});
 	$fba->fluxMinimization($input->{minimizeflux});
-	$fba->findMinimalMedia($input->{findminmedia});
-	if (defined($input->{biomass}) && defined($fba->biomassflux_objterms()->{bio1})) {
+    $fba->findMinimalMedia($input->{findminmedia});
+    if (defined($input->{biomass}) && defined($fba->biomassflux_objterms()->{bio1})) {
 		my $bio = $model->searchForBiomass($input->{biomass});
 		if (defined($bio)) {
 			delete $fba->biomassflux_objterms()->{bio1};
@@ -22761,6 +22765,7 @@ minimizeflux has a value which is a bool
 findminmedia has a value which is a bool
 notes has a value which is a string
 fba has a value which is a fba_id
+eflux has a value which is a string
 workspace has a value which is a workspace_id
 auth has a value which is a string
 overwrite has a value which is a bool
@@ -22782,6 +22787,7 @@ minimizeflux has a value which is a bool
 findminmedia has a value which is a bool
 notes has a value which is a string
 fba has a value which is a fba_id
+eflux has a value which is a string
 workspace has a value which is a workspace_id
 auth has a value which is a string
 overwrite has a value which is a bool

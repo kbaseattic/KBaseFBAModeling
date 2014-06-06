@@ -67,6 +67,7 @@ has fva => (is => 'rw', isa => 'Bool', printOrder => '10', default => '0', type 
 has decomposeReversibleDrainFlux => (is => 'rw', isa => 'Bool', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
 has biomassflux_objterms => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub {return {};}, type => 'attribute', metaclass => 'Typed');
 has defaultMaxFlux => (is => 'rw', isa => 'Num', printOrder => '20', required => 1, default => '1000', type => 'attribute', metaclass => 'Typed');
+has eflux => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has decomposeReversibleFlux => (is => 'rw', isa => 'Bool', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
 
 
@@ -480,6 +481,13 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
+            'name' => 'eflux',
+            'type' => 'Str',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
             'name' => 'decomposeReversibleFlux',
             'default' => 0,
             'type' => 'Bool',
@@ -488,7 +496,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {media_ref => 0, compoundflux_objterms => 1, phenotypesimulationset_ref => 2, maximizeObjective => 3, id => 4, phenotypeset_ref => 5, geneKO_refs => 6, inputfiles => 7, drainfluxUseVariables => 8, additionalCpd_refs => 9, outputfiles => 10, parameters => 11, noErrorThermodynamicConstraints => 12, objectiveConstraintFraction => 13, prommodel_ref => 14, minimize_reactions => 15, minimizeErrorThermodynamicConstraints => 16, uptakeLimits => 17, allReversible => 18, objectiveValue => 19, minimize_reaction_costs => 20, numberOfSolutions => 21, fluxMinimization => 22, thermodynamicConstraints => 23, defaultMaxDrainFlux => 24, reactionflux_objterms => 25, fbamodel_ref => 26, regmodel_ref => 27, reactionKO_refs => 28, fluxUseVariables => 29, findMinimalMedia => 30, PROMKappa => 31, simpleThermoConstraints => 32, comboDeletions => 33, defaultMinDrainFlux => 34, fva => 35, decomposeReversibleDrainFlux => 36, biomassflux_objterms => 37, defaultMaxFlux => 38, decomposeReversibleFlux => 39};
+my $attribute_map = {media_ref => 0, compoundflux_objterms => 1, phenotypesimulationset_ref => 2, maximizeObjective => 3, id => 4, phenotypeset_ref => 5, geneKO_refs => 6, inputfiles => 7, drainfluxUseVariables => 8, additionalCpd_refs => 9, outputfiles => 10, parameters => 11, noErrorThermodynamicConstraints => 12, objectiveConstraintFraction => 13, prommodel_ref => 14, minimize_reactions => 15, minimizeErrorThermodynamicConstraints => 16, uptakeLimits => 17, allReversible => 18, objectiveValue => 19, minimize_reaction_costs => 20, numberOfSolutions => 21, fluxMinimization => 22, thermodynamicConstraints => 23, defaultMaxDrainFlux => 24, reactionflux_objterms => 25, fbamodel_ref => 26, regmodel_ref => 27, reactionKO_refs => 28, fluxUseVariables => 29, findMinimalMedia => 30, PROMKappa => 31, simpleThermoConstraints => 32, comboDeletions => 33, defaultMinDrainFlux => 34, fva => 35, decomposeReversibleDrainFlux => 36, biomassflux_objterms => 37, defaultMaxFlux => 38, eflux => 39, decomposeReversibleFlux => 40};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {

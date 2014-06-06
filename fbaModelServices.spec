@@ -1781,6 +1781,7 @@ module fbaModelServices {
 		bool findminmedia;
 		string notes;
 		fba_id fba;
+		string eflux;
 		workspace_id workspace;
 		string auth;
 		bool overwrite;

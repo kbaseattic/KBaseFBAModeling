@@ -92,6 +92,7 @@ my $baseobjects = {
 	GenomeDomainData =>  "KBaseGenomes",
 	PromConstraint =>  "KBaseFBA",
 	regulatory_network =>  "KBaseFBA",
+	EfluxExpressionCollection => "KBaseRegulatoryFBA",
 };
 my $objcorrespondence = {
 	BiochemistryStructures => "BiochemistryStructures",
@@ -112,7 +113,7 @@ foreach my $obj (keys(%{$objcorrespondence})) {
 }
 my $subobj = {};
 my $specobjects = {};
-my $speclist = ["FBAModel.spec","Ontology.spec","Biochem.spec","Genome.spec","Phenotypes.spec","ProbabilisticAnnotation.spec"];
+my $speclist = ["FBAModel.spec","Ontology.spec","Biochem.spec","Genome.spec","Phenotypes.spec","ProbabilisticAnnotation.spec","RegulatoryFBA.spec"];
 for (my $i=0; $i < @{$speclist}; $i++) {
 	my $module;
 	my $stringtypes = {};

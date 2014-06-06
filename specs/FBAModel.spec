@@ -592,6 +592,7 @@ module KBaseFBA {
 		bool drainfluxUseVariables;
 		bool minimize_reactions;
 		
+		string eflux;
 		regmodel_ref regmodel_ref;
 		fbamodel_ref fbamodel_ref;
 		prommodel_ref prommodel_ref;
