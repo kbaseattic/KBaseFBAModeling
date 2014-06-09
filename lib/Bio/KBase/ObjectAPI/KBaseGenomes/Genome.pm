@@ -9,13 +9,14 @@ use strict;
 use Bio::KBase::ObjectAPI::KBaseGenomes::DB::Genome;
 package Bio::KBase::ObjectAPI::KBaseGenomes::Genome;
 use Moose;
+use Bio::KBase::ObjectAPI::utilities;
 use namespace::autoclean;
 extends 'Bio::KBase::ObjectAPI::KBaseGenomes::DB::Genome';
 #***********************************************************************************************************
 # ADDITIONAL ATTRIBUTES:
 #***********************************************************************************************************
 has geneAliasHash => ( is => 'rw',printOrder => 2, isa => 'HashRef', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildgeneAliasHash' );
-
+has gene_subsystem_hash => ( is => 'rw',printOrder => 2, isa => 'HashRef', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildgene_subsystem_hash' );
 
 #***********************************************************************************************************
 # BUILDERS:
@@ -31,6 +32,34 @@ sub _buildgeneAliasHash {
     	}
     }
     return $geneAliases;
+}
+sub _buildgene_subsystem_hash {
+	my ($self) = @_;
+	if (!defined($self->{_mapping})) {
+		return {};
+	}
+	my $rolehash = {};
+	my $sss = $self->{_mapping}->subsystems();
+	foreach my $ss (@{$sss}) {
+		if ($ss->class() !~ m/Experimental/ && $ss->class() !~ m/Clustering/) {
+		my $roles = $ss->roles();
+		foreach my $role (@{$roles}) {
+			$rolehash->{$role->searchname()}->{$ss->name()} = $ss;
+		}
+		}
+	}
+	my $ftrhash = {};
+	my $ftrs = $self->features();
+	foreach my $ftr (@{$ftrs}) {
+		my $roles = $ftr->roles();
+		foreach my $role (@{$roles}) {
+			my $sr = Bio::KBase::ObjectAPI::utilities::convertRoleToSearchRole($role);
+			foreach my $ss (keys(%{$rolehash->{$sr}})) {
+				$ftrhash->{$ftr->id()}->{$ss} = $rolehash->{$sr}->{$ss};
+			}
+		}
+	}
+    return $ftrhash;
 }
 
 #***********************************************************************************************************
@@ -165,6 +194,54 @@ sub integrate_contigs {
 			$ftr->integrate_contigs($contigobj);
 		}
 	}
+}
+
+=head3 genome_stats
+
+Definition:
+	$self->genome_stats();
+Description:
+	Computing stats for the genome
+		
+=cut
+sub genome_stats {
+	my($self) = @_;
+	my $genesshash = $self->gene_subsystem_hash();
+	my $ftrs = $self->features();
+	my $numftrs = @{$ftrs};
+	my $output = {
+		id => $self->id(),
+		taxonomy => $self->taxonomy(),
+		genome_ref => $self->_reference(),
+		gc_content => $self->gc_content(),
+		source => $self->source(),
+		num_contigs => $self->num_contigs(),
+		dna_size => $self->dna_size(),
+		domain => $self->domain(),
+		scientific_name => $self->scientific_name(),
+		total_genes => $numftrs,
+		subsystem_genes => 0,
+    	subsystems => []
+	};
+	my $sshash = {};
+	foreach my $gene (keys(%{$genesshash})) {
+		if (keys(%{$genesshash->{$gene}}) > 0) {
+			$output->{subsystem_genes}++;
+			foreach my $ss (keys(%{$genesshash->{$gene}})) {
+				if (!defined($sshash->{$ss})) {
+					$sshash->{$ss} = {
+						name => $ss,
+						class => $genesshash->{$gene}->{$ss}->class(),
+						subclass => $genesshash->{$gene}->{$ss}->subclass(),
+						genes => 0
+					};
+					push(@{$output->{subsystems}},$sshash->{$ss});
+				}
+				$sshash->{$ss}->{genes}++;
+			}
+		}
+	}
+	return $output;
 }
 
 __PACKAGE__->meta->make_immutable;

@@ -3945,6 +3945,177 @@ sub runfba
 
 
 
+=head2 generate_model_stats
+
+  $output = $obj->generate_model_stats($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a generate_model_stats_params
+$output is a model_statistics
+generate_model_stats_params is a reference to a hash where the following keys are defined:
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
+fbamodel_id is a string
+workspace_id is a string
+model_statistics is a reference to a hash where the following keys are defined:
+	total_reactions has a value which is an int
+	total_genes has a value which is an int
+	total_compounds has a value which is an int
+	extracellular_compounds has a value which is an int
+	intracellular_compounds has a value which is an int
+	transport_reactions has a value which is an int
+	subsystem_reactions has a value which is an int
+	subsystem_genes has a value which is an int
+	spontaneous_reactions has a value which is an int
+	reactions_with_genes has a value which is an int
+	gapfilled_reactions has a value which is an int
+	model_genes has a value which is an int
+	minimal_essential_genes has a value which is an int
+	complete_essential_genes has a value which is an int
+	minimal_essential_reactions has a value which is an int
+	complete_essential_reactions has a value which is an int
+	minimal_blocked_reactions has a value which is an int
+	complete_blocked_reactions has a value which is an int
+	minimal_variable_reactions has a value which is an int
+	complete_variable_reactions has a value which is an int
+	growth_complete_media has a value which is a bool
+	growth_minimal_media has a value which is a bool
+	subsystems has a value which is a reference to a list where each element is a subsystem_statistics
+bool is an int
+subsystem_statistics is a reference to a hash where the following keys are defined:
+	name has a value which is a string
+	class_one has a value which is a string
+	class_two has a value which is a string
+	genes has a value which is an int
+	reactions has a value which is an int
+	model_genes has a value which is an int
+	minimal_essential_genes has a value which is an int
+	complete_essential_genes has a value which is an int
+	minimal_essential_reactions has a value which is an int
+	complete_essential_reactions has a value which is an int
+	minimal_blocked_reactions has a value which is an int
+	complete_blocked_reactions has a value which is an int
+	minimal_variable_reactions has a value which is an int
+	complete_variable_reactions has a value which is an int
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a generate_model_stats_params
+$output is a model_statistics
+generate_model_stats_params is a reference to a hash where the following keys are defined:
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
+fbamodel_id is a string
+workspace_id is a string
+model_statistics is a reference to a hash where the following keys are defined:
+	total_reactions has a value which is an int
+	total_genes has a value which is an int
+	total_compounds has a value which is an int
+	extracellular_compounds has a value which is an int
+	intracellular_compounds has a value which is an int
+	transport_reactions has a value which is an int
+	subsystem_reactions has a value which is an int
+	subsystem_genes has a value which is an int
+	spontaneous_reactions has a value which is an int
+	reactions_with_genes has a value which is an int
+	gapfilled_reactions has a value which is an int
+	model_genes has a value which is an int
+	minimal_essential_genes has a value which is an int
+	complete_essential_genes has a value which is an int
+	minimal_essential_reactions has a value which is an int
+	complete_essential_reactions has a value which is an int
+	minimal_blocked_reactions has a value which is an int
+	complete_blocked_reactions has a value which is an int
+	minimal_variable_reactions has a value which is an int
+	complete_variable_reactions has a value which is an int
+	growth_complete_media has a value which is a bool
+	growth_minimal_media has a value which is a bool
+	subsystems has a value which is a reference to a list where each element is a subsystem_statistics
+bool is an int
+subsystem_statistics is a reference to a hash where the following keys are defined:
+	name has a value which is a string
+	class_one has a value which is a string
+	class_two has a value which is a string
+	genes has a value which is an int
+	reactions has a value which is an int
+	model_genes has a value which is an int
+	minimal_essential_genes has a value which is an int
+	complete_essential_genes has a value which is an int
+	minimal_essential_reactions has a value which is an int
+	complete_essential_reactions has a value which is an int
+	minimal_blocked_reactions has a value which is an int
+	complete_blocked_reactions has a value which is an int
+	minimal_variable_reactions has a value which is an int
+	complete_variable_reactions has a value which is an int
+
+
+=end text
+
+=item Description
+
+Generate statistics with model and associated genome properties
+
+=back
+
+=cut
+
+sub generate_model_stats
+{
+    my($self, @args) = @_;
+
+# Authentication: required
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function generate_model_stats (received $n, expecting 1)");
+    }
+    {
+	my($input) = @args;
+
+	my @_bad_arguments;
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to generate_model_stats:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'generate_model_stats');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.generate_model_stats",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{error}->{code},
+					       method_name => 'generate_model_stats',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method generate_model_stats",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'generate_model_stats',
+				       );
+    }
+}
+
+
+
 =head2 minimize_reactions
 
   $fbaMeta = $obj->minimize_reactions($input)
@@ -17582,6 +17753,176 @@ workspace has a value which is a workspace_id
 auth has a value which is a string
 overwrite has a value which is a bool
 add_to_model has a value which is a bool
+
+
+=end text
+
+=back
+
+
+
+=head2 generate_model_stats_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "generate_model_stats" function.
+
+        fbamodel_id model - ID of the models that FBA should be run on (a required argument)
+        workspace_id model_workspace - workspaces where model for FBA should be run (an optional argument; default is the value of the workspace argument)
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+
+
+=end text
+
+=back
+
+
+
+=head2 subsystem_statistics
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+name has a value which is a string
+class_one has a value which is a string
+class_two has a value which is a string
+genes has a value which is an int
+reactions has a value which is an int
+model_genes has a value which is an int
+minimal_essential_genes has a value which is an int
+complete_essential_genes has a value which is an int
+minimal_essential_reactions has a value which is an int
+complete_essential_reactions has a value which is an int
+minimal_blocked_reactions has a value which is an int
+complete_blocked_reactions has a value which is an int
+minimal_variable_reactions has a value which is an int
+complete_variable_reactions has a value which is an int
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+name has a value which is a string
+class_one has a value which is a string
+class_two has a value which is a string
+genes has a value which is an int
+reactions has a value which is an int
+model_genes has a value which is an int
+minimal_essential_genes has a value which is an int
+complete_essential_genes has a value which is an int
+minimal_essential_reactions has a value which is an int
+complete_essential_reactions has a value which is an int
+minimal_blocked_reactions has a value which is an int
+complete_blocked_reactions has a value which is an int
+minimal_variable_reactions has a value which is an int
+complete_variable_reactions has a value which is an int
+
+
+=end text
+
+=back
+
+
+
+=head2 model_statistics
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+total_reactions has a value which is an int
+total_genes has a value which is an int
+total_compounds has a value which is an int
+extracellular_compounds has a value which is an int
+intracellular_compounds has a value which is an int
+transport_reactions has a value which is an int
+subsystem_reactions has a value which is an int
+subsystem_genes has a value which is an int
+spontaneous_reactions has a value which is an int
+reactions_with_genes has a value which is an int
+gapfilled_reactions has a value which is an int
+model_genes has a value which is an int
+minimal_essential_genes has a value which is an int
+complete_essential_genes has a value which is an int
+minimal_essential_reactions has a value which is an int
+complete_essential_reactions has a value which is an int
+minimal_blocked_reactions has a value which is an int
+complete_blocked_reactions has a value which is an int
+minimal_variable_reactions has a value which is an int
+complete_variable_reactions has a value which is an int
+growth_complete_media has a value which is a bool
+growth_minimal_media has a value which is a bool
+subsystems has a value which is a reference to a list where each element is a subsystem_statistics
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+total_reactions has a value which is an int
+total_genes has a value which is an int
+total_compounds has a value which is an int
+extracellular_compounds has a value which is an int
+intracellular_compounds has a value which is an int
+transport_reactions has a value which is an int
+subsystem_reactions has a value which is an int
+subsystem_genes has a value which is an int
+spontaneous_reactions has a value which is an int
+reactions_with_genes has a value which is an int
+gapfilled_reactions has a value which is an int
+model_genes has a value which is an int
+minimal_essential_genes has a value which is an int
+complete_essential_genes has a value which is an int
+minimal_essential_reactions has a value which is an int
+complete_essential_reactions has a value which is an int
+minimal_blocked_reactions has a value which is an int
+complete_blocked_reactions has a value which is an int
+minimal_variable_reactions has a value which is an int
+complete_variable_reactions has a value which is an int
+growth_complete_media has a value which is a bool
+growth_minimal_media has a value which is a bool
+subsystems has a value which is a reference to a list where each element is a subsystem_statistics
 
 
 =end text

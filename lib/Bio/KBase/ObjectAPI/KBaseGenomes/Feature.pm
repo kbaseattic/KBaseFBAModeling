@@ -513,7 +513,7 @@ sub integrate_contigs {
 				$seq =~ s/M/C/g;
 				$seq =~ s/m/c/g;
 			} else {
-				$seq = substr($contig->sequence(),$self->location()->[0]->[1],$self->location()->[0]->[3]);
+				$seq = substr($contig->sequence(),$self->location()->[0]->[1]-1,$self->location()->[0]->[3]);
 			}
 			$self->dna_sequence($seq);
 			$self->dna_sequence_length(length($self->dna_sequence()));

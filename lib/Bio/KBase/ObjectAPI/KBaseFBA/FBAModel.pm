@@ -2309,6 +2309,250 @@ sub addPhenotypeTransporters {
 	}
 }
 
+=head3 compute_model_stats
+
+Definition:
+    $self->compute_model_stats();
+Description:
+    Computing model stats
+
+=cut
+
+sub compute_model_stats {
+	my $self = shift;
+	my $args = Bio::KBase::ObjectAPI::utilities::args([], {}, @_);
+	$self->genome()->{_mapping} = $self->template()->mapping();
+	my $output = $self->genome()->genome_stats();
+	my $genesshash = $self->genome()->gene_subsystem_hash();
+	my $rxnsshash = {};
+	my $sshash;
+	foreach my $ssdata (@{$output->{subsystems}}) {
+		$sshash->{$ssdata->{name}} = $ssdata;
+	}
+	my $reactions = $self->modelreactions();
+	my $compounds = $self->modelcompounds();
+	$output->{total_reactions} = @{$reactions};
+	$output->{total_compounds} = @{$compounds};
+	$output->{extracellular_compounds} = 0;
+	$output->{intracellular_compounds} = 0;
+	$output->{growth_complete_media} = 0;
+	$output->{intracellular_compounds} = 0;
+	$output->{growth_minimal_media} = 0;
+	$output->{reactions_with_genes} = 0;
+	$output->{spontaneous_reactions} = 0;
+	$output->{gapfilled_reactions} = 0;
+	$output->{minimal_essential_genes} = 0;
+	$output->{complete_essential_genes} = 0;
+	$output->{minimal_essential_reactions} = 0;
+	$output->{complete_essential_reactions} = 0;
+	$output->{minimal_blocked_reactions} = 0;
+	$output->{complete_blocked_reactions} = 0;
+	$output->{minimal_variable_reactions} = 0;
+	$output->{complete_variable_reactions} = 0;
+	$output->{subsystem_reactions} = 0;
+	for (my $i=0; $i < @{$compounds}; $i++) {
+    	if ($compounds->[$i]->modelcompartment()->compartment()->id() eq "e") {
+    		$output->{extracellular_compounds}++;
+    	} else {
+    		$output->{intracellular_compounds}++;
+    	}
+    }
+	my $gene_reactions;
+    my $reaction_genes;
+    for (my $i=0; $i < @{$reactions}; $i++) {
+    	if ($reactions->[$i]->isTransporter() == 1) {
+    		$output->{transport_reactions}++;
+    	}
+    	my $rxnprots = $reactions->[$i]->modelReactionProteins();
+    	my $spontaneous = 0;
+    	foreach my $protein (@{$rxnprots}) {
+    		if ($protein->note() eq "spontaneous") {
+    			$spontaneous = 1;
+    		}
+    		my $sunits = $protein->modelReactionProteinSubunits();
+    		foreach my $sunit (@{$sunits}) {
+    			my $rfeatures = $sunit->features();
+    			foreach my $rfeature (@{$rfeatures}) {
+    				foreach my $ss (keys(%{$genesshash->{$rfeature->id()}})) {
+    					$rxnsshash->{$reactions->[$i]->id()}->{$ss} = $genesshash->{$rfeature->id()}->{$ss};
+    				}
+    				$gene_reactions->{$rfeature->id()}->{$reactions->[$i]->id()} = 1;
+    				$reaction_genes->{$reactions->[$i]->id()}->{$rfeature->id()} = 1;
+    			}
+    		}
+    	}
+    	if (defined($rxnsshash->{$reactions->[$i]->id()})) {
+    		$output->{subsystem_reactions}++;
+    		foreach my $ss (keys(%{$rxnsshash->{$reactions->[$i]->id()}})) {
+    			if (!defined($sshash->{$ss})) {
+    				$sshash->{$ss} = {
+    					name => $ss,
+						class => $$rxnsshash->{$reactions->[$i]->id()}->{$ss}->class(),
+						subclass => $rxnsshash->{$reactions->[$i]->id()}->{$ss}->subclass(),
+						genes => 0,
+				    	reactions => 0,
+				    	model_genes => 0,
+				    	minimal_essential_genes => 0,
+				    	complete_essential_genes => 0,
+						minimal_essential_reactions => 0,
+				    	complete_essential_reactions => 0,
+				    	minimal_blocked_reactions => 0,
+				    	complete_blocked_reactions => 0,
+				    	minimal_variable_reactions => 0,
+				    	complete_variable_reactions => 0
+    				};
+    				push(@{$output->{subsystems}},$sshash->{$ss});
+    			}
+    			$sshash->{$ss}->{reactions}++;
+    		}
+    	}
+    	if (!defined($reaction_genes->{$reactions->[$i]->id()})) {
+    		if ($spontaneous == 1) {
+    			$output->{spontaneous_reactions}++;
+    		} else {
+    			$output->{gapfilled_reactions}++;
+    		}
+    	} else {
+    		$output->{reactions_with_genes}++;
+    	}
+    }
+    foreach my $gene (keys(%{$gene_reactions})) {
+    	foreach my $ss (keys(%{$genesshash->{$gene}})) {
+    		$sshash->{$ss}->{model_genes}++;
+    	}
+    }
+	$output->{model_genes} = keys(%{$gene_reactions});
+	#Run FBA in complete media
+	my $fba = $self->build_model_fba();
+	$fba->fva(1);
+	my $objective = $fba->runFBA();
+	if ($objective > 1e-9) {
+		my $rxnfbas = $fba->FBAReactionVariables();
+		for (my $i=0; $i < @{$rxnfbas}; $i++) {
+			if ($rxnfbas->[$i]->class() eq "Blocked" || $rxnfbas->[$i]->class() eq "Dead") {
+				$output->{complete_blocked_reactions}++;
+				if (defined($rxnsshash->{$rxnfbas->[$i]->modelreaction()->id()})) {
+		    		foreach my $ss (keys(%{$rxnsshash->{$rxnfbas->[$i]->modelreaction()->id()}})) {
+		    			$sshash->{$ss}->{complete_blocked_reactions}++;
+		    		}
+    			}
+			} elsif ($rxnfbas->[$i]->class() eq "Positive" || $rxnfbas->[$i]->class() eq "Negative") {
+				$output->{complete_essential_reactions}++;
+				if (defined($rxnsshash->{$rxnfbas->[$i]->modelreaction()->id()})) {
+		    		foreach my $ss (keys(%{$rxnsshash->{$rxnfbas->[$i]->modelreaction()->id()}})) {
+		    			$sshash->{$ss}->{complete_essential_reactions}++;
+		    		}
+    			}
+			} elsif ($rxnfbas->[$i]->class() eq "Variable" || $rxnfbas->[$i]->class() eq "Positive variable" || $rxnfbas->[$i]->class() eq "Negative variable") {
+				$output->{complete_variable_reactions}++;
+				if (defined($rxnsshash->{$rxnfbas->[$i]->modelreaction()->id()})) {
+		    		foreach my $ss (keys(%{$rxnsshash->{$rxnfbas->[$i]->modelreaction()->id()}})) {
+		    			$sshash->{$ss}->{complete_variable_reactions}++;
+		    		}
+    			}
+			}
+		}
+		$output->{growth_complete_media} = 1;
+		$fba = $self->build_model_fba();
+		$fba->fva(1);
+		$fba->media_ref("KBaseMedia/Carbon-D-Glucose");
+		$objective = $fba->runFBA();
+		if ($objective > 1e-9) {
+			$rxnfbas = $fba->FBAReactionVariables();
+			for (my $i=0; $i < @{$rxnfbas}; $i++) {
+				if ($rxnfbas->[$i]->class() eq "Blocked" || $rxnfbas->[$i]->class() eq "Dead") {
+					$output->{minimal_blocked_reactions}++;
+					if (defined($rxnsshash->{$rxnfbas->[$i]->modelreaction()->id()})) {
+			    		foreach my $ss (keys(%{$rxnsshash->{$rxnfbas->[$i]->modelreaction()->id()}})) {
+			    			$sshash->{$ss}->{minimal_blocked_reactions}++;
+			    		}
+	    			}
+				} elsif ($rxnfbas->[$i]->class() eq "Positive" || $rxnfbas->[$i]->class() eq "Negative") {
+					$output->{minimal_essential_reactions}++;
+					if (defined($rxnsshash->{$rxnfbas->[$i]->modelreaction()->id()})) {
+			    		foreach my $ss (keys(%{$rxnsshash->{$rxnfbas->[$i]->modelreaction()->id()}})) {
+			    			$sshash->{$ss}->{minimal_essential_reactions}++;
+			    		}
+	    			}
+				} elsif ($rxnfbas->[$i]->class() eq "Variable" || $rxnfbas->[$i]->class() eq "Positive variable" || $rxnfbas->[$i]->class() eq "Negative variable") {
+					$output->{minimal_variable_reactions}++;
+					if (defined($rxnsshash->{$rxnfbas->[$i]->modelreaction()->id()})) {
+			    		foreach my $ss (keys(%{$rxnsshash->{$rxnfbas->[$i]->modelreaction()->id()}})) {
+			    			$sshash->{$ss}->{minimal_variable_reactions}++;
+			    		}
+	    			}
+				}
+			}
+			$output->{growth_minimal_media} = 1;
+		} else {
+			$output->{minimal_blocked_reactions} = $output->{total_reactions};
+		}
+	} else {
+		$output->{minimal_blocked_reactions} = $output->{total_reactions};
+		$output->{complete_blocked_reactions} = $output->{total_reactions};
+	}
+    return $output;
+}
+
+=head3 build_model_fba
+
+Definition:
+    $self->build_model_fba();
+Description:
+    Build model flux balance analysis
+
+=cut
+
+sub build_model_fba {
+	my $self = shift;
+	my $fba = Bio::KBase::ObjectAPI::KBaseFBA::FBA->new({
+		id => $self->id().".fba",
+		fva => 0,
+		fluxMinimization => 0,
+		findMinimalMedia => 0,
+		allReversible => 0,
+		simpleThermoConstraints => 0,
+		thermodynamicConstraints => 0,
+		noErrorThermodynamicConstraints => 0,
+		minimizeErrorThermodynamicConstraints => 0,
+		maximizeObjective => 1,
+		compoundflux_objterms => {},
+    	reactionflux_objterms => {},
+		biomassflux_objterms => {bio1 => 1},
+		comboDeletions => 0,
+		numberOfSolutions => 1,
+		objectiveConstraintFraction => 0.1,
+		defaultMaxFlux => 100,
+		defaultMaxDrainFlux => 0,
+		defaultMinDrainFlux => -100,
+		decomposeReversibleFlux => 0,
+		decomposeReversibleDrainFlux => 0,
+		fluxUseVariables => 0,
+		drainfluxUseVariables => 0,
+		fbamodel_ref => $self->_reference(),
+		media_ref => "KBaseMedia/Complete",
+		geneKO_refs => [],
+		reactionKO_refs => [],
+		additionalCpd_refs => [],
+		uptakeLimits => {},
+		parameters => {},
+		inputfiles => {},
+		FBAConstraints => [],
+		FBAReactionBounds => [],
+		FBACompoundBounds => [],
+		outputfiles => {},
+		FBACompoundVariables => [],
+		FBAReactionVariables => [],
+		FBABiomassVariables => [],
+		FBAPromResults => [],
+		FBADeletionResults => [],
+		FBAMinimalMediaResults => [],
+		FBAMetaboliteProductionResults => []
+	});
+	$fba->parent($self->parent());
+	return $fba;
+}
+
 sub __upgrade__ {
 	my ($class,$version) = @_;
 	if ($version eq "1") {

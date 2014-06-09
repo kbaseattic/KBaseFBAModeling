@@ -1792,6 +1792,68 @@ module fbaModelServices {
     authentication required;
     funcdef runfba(runfba_params input) returns (object_metadata fbaMeta);
     
+    /* Input parameters for the "generate_model_stats" function.
+	
+		fbamodel_id model - ID of the models that FBA should be run on (a required argument)
+		workspace_id model_workspace - workspaces where model for FBA should be run (an optional argument; default is the value of the workspace argument)
+		
+	*/
+    typedef structure {
+    	fbamodel_id model;
+		workspace_id model_workspace;
+    } generate_model_stats_params;
+    
+    typedef structure {
+    	string name;
+    	string class;
+    	string subclass;
+    	int genes;
+    	int reactions;
+    	int model_genes;
+    	int minimal_essential_genes;
+    	int complete_essential_genes;
+		int minimal_essential_reactions;
+    	int complete_essential_reactions;
+    	int minimal_blocked_reactions;
+    	int complete_blocked_reactions;
+    	int minimal_variable_reactions;
+    	int complete_variable_reactions;
+    } subsystem_statistics;
+    
+    typedef structure {
+    	int total_reactions;
+    	int total_genes;
+    	int total_compounds;
+    	int extracellular_compounds;
+    	int intracellular_compounds;
+    	int transport_reactions;
+    	int subsystem_reactions;
+    	int subsystem_genes;
+    	int spontaneous_reactions;
+    	int reactions_with_genes;
+    	int gapfilled_reactions;
+    	int model_genes;
+    	int minimal_essential_genes;
+    	int complete_essential_genes;
+		int minimal_essential_reactions;
+    	int complete_essential_reactions;
+    	int minimal_blocked_reactions;
+    	int complete_blocked_reactions;
+    	int minimal_variable_reactions;
+    	int complete_variable_reactions;
+    	
+    	bool growth_complete_media;
+    	bool growth_minimal_media;
+    	
+    	list<subsystem_statistics> subsystems;
+    } model_statistics;
+    
+    /*
+        Generate statistics with model and associated genome properties
+    */
+    authentication required;
+    funcdef generate_model_stats(generate_model_stats_params input) returns (model_statistics output);
+    
     /* Input parameters for the "minimize_reactions" function.
 	
 		fbamodel_id model - ID of the model that FBA should be run on (a required argument)

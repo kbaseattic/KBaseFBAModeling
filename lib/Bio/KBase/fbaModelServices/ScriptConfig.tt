@@ -1,0 +1,15 @@
+# The ScriptConfig module is automatically generated from a template file
+# in the Workspace makefile target configure-scripts
+package Bio::KBase::fbaModelServices::ScriptConfig;
+
+use strict;
+use warnings;
+
+our $FBAdefaultURL   = '[% FBAdefaultURL %]';
+our $FBAlocalhostURL = '[% FBAlocalhostURL %]';
+our $FBAdevURL       = '[% FBAdevURL %]';
+our $WSdefaultURL   = '[% WSdefaultURL %]';
+our $WSlocalhostURL = '[% WSlocalhostURL %]';
+our $WSdevURL       = '[% WSdevURL %]';
+
+1;
