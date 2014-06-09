@@ -49,7 +49,7 @@ sub get_fba_client {
 	if ($url eq "impl") {
 		$Bio::KBase::fbaModelServices::Server::CallContext = {token => getToken()};
 		require "Bio/KBase/fbaModelServices/Impl.pm";
-		return Bio::KBase::fbaModelServices::Impl->new();
+		return Bio::KBase::fbaModelServices::Impl->new({"workspace-url" => workspaceURL()});
 	}
 	return Bio::KBase::fbaModelServices::Client->new($url);
 }
@@ -59,7 +59,6 @@ sub fbaURL {
 	my $currentURL;
 	if (defined($newUrl)) {
 		if ($newUrl eq "default") {
-			print "TEST!";
 			$newUrl = $Bio::KBase::fbaModelServices::ScriptConfig::FBAprodURL;
 		} elsif ($newUrl eq "localhost") {
 			$newUrl = $Bio::KBase::fbaModelServices::ScriptConfig::FBAlocalURL;

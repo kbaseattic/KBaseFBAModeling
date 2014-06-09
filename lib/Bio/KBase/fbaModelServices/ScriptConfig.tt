@@ -5,11 +5,10 @@ package Bio::KBase::fbaModelServices::ScriptConfig;
 use strict;
 use warnings;
 
-our $FBAdefaultURL   = '[% FBAdefaultURL %]';
-our $FBAlocalhostURL = '[% FBAlocalhostURL %]';
-our $FBAdevURL       = '[% FBAdevURL %]';
-our $WSdefaultURL   = '[% WSdefaultURL %]';
-our $WSlocalhostURL = '[% WSlocalhostURL %]';
-our $WSdevURL       = '[% WSdevURL %]';
+our $defaultFBAURL   = '[% defaultFBAURL %]';
+our $defaultOldWSURL = '[% defaultOldWSURL %]';
+our $FBAprodURL = '[% FBAprodURL %]';
+our $FBAlocalURL = '[% FBAlocalURL %]';
+our $FBAdevURL = '[% FBAdevURL %]';
 
 1;

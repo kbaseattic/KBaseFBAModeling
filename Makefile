@@ -2,7 +2,10 @@ ROOT_DEV_MODULE_DIR := $(abspath $(dir $lastword $(MAKEFILE_LIST)))
 TOP_DIR = $(shell python -c "import os.path as p; print p.abspath('../..')")
 DEPLOY_RUNTIME ?= /kb/runtime
 TARGET ?= /kb/deployment
- 
+DEFAULT_FBA_URL ?= https://kbase.us/services/KBaseFBAModeling
+DEFAULT_OLDWS_URL ?= http://kbase.us/services/workspace
+DEV_FBA_URL ? http://140.221.85.73:4043
+
 include $(TOP_DIR)/tools/Makefile.common
 
 SRC_PERL = $(wildcard scripts/*.pl)
@@ -163,5 +166,15 @@ compile-typespec:
 	-js javascript/fbaModelServices/Client \
 	-py biokbase/fbaModelServices/Client \
 	fbaModelServices.spec lib
+
+# configure endpoints used by scripts, and possibly other script runtime options in the future
+configure-scripts:
+	$(DEPLOY_RUNTIME)/bin/tpage \
+		--define defaultFBAURL=$(DEFAULT_FBA_URL) \
+		--define defaultOldWSURL=$(DEFAULT_OLDWS_URL) \
+		--define FBAprodURL=$(DEFAULT_FBA_URL) \
+		--define FBAlocalURL=http://127.0.0.1:$(SERV_SERVICE_PORT) \
+		--define FBAdevURL=$(DEV_FBA_URL) \
+		lib/Bio/KBase/$(SERV_SERVICE)/ScriptConfig.tt > lib/Bio/KBase/$(SERV_SERVICE)/ScriptConfig.pm
 
 include $(TOP_DIR)/tools/Makefile.common.rules
