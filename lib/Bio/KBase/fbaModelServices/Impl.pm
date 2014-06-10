@@ -16769,6 +16769,198 @@ sub metagenome_to_fbamodels
 
 
 
+=head2 import_expression
+
+  $expression_meta = $obj->import_expression($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is an import_expression_params
+$expression_meta is an object_metadata
+import_expression_params is a reference to a hash where the following keys are defined:
+	expression_data_sample_series has a value which is a reference to a hash where the key is a sample_id and the value is an ExpressionDataSample
+	series has a value which is a series_id
+	workspace has a value which is a workspace_id
+	auth has a value which is a string
+	overwrite has a value which is a bool
+sample_id is a string
+ExpressionDataSample is a reference to a hash where the following keys are defined:
+	sample_id has a value which is a string
+	data_expression_levels_for_sample has a value which is a reference to a hash where the key is a feature_id and the value is a measurement
+feature_id is a string
+measurement is a float
+series_id is a string
+workspace_id is a string
+bool is an int
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is an import_expression_params
+$expression_meta is an object_metadata
+import_expression_params is a reference to a hash where the following keys are defined:
+	expression_data_sample_series has a value which is a reference to a hash where the key is a sample_id and the value is an ExpressionDataSample
+	series has a value which is a series_id
+	workspace has a value which is a workspace_id
+	auth has a value which is a string
+	overwrite has a value which is a bool
+sample_id is a string
+ExpressionDataSample is a reference to a hash where the following keys are defined:
+	sample_id has a value which is a string
+	data_expression_levels_for_sample has a value which is a reference to a hash where the key is a feature_id and the value is a measurement
+feature_id is a string
+measurement is a float
+series_id is a string
+workspace_id is a string
+bool is an int
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+
+
+=item Description
+
+Import gene expression.
+
+=back
+
+=cut
+
+sub import_expression
+{
+    my $self = shift;
+    my($input) = @_;
+
+    my @_bad_arguments;
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to import_expression:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'import_expression');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($expression_meta);
+    #BEGIN import_expression
+    $self->_setContext($ctx,$input);
+    $input = $self->_validateargs($input,["expression_data_sample_series","series","workspace"],{});
+
+    # Use old format
+    my $genome_id;
+    my $feature_id = (keys $input->{"expression_data_sample_series"}->{(keys $input->{"expression_data_sample_series"})[0]}->{"data_expression_levels_for_sample"})[0];
+    if ( $feature_id =~ /^(kb\|g\.\d+)/) {
+	$genome_id = $1;
+    } else {
+	die("Unexpected feature ID format $feature_id\n");
+    }
+    
+    my $old_series = {
+	id => $input->{"series"},
+	source_id => $input->{"series"},
+	genome_expression_sample_ids_map => {},
+	external_source_date => "06/09/2014",
+    };
+
+    my $ws = $self->_KBaseStore()->workspace();
+    while (my ($series_id, $sample) = each %{$input->{"expression_data_sample_series"}}) {
+	my $old_sample = {
+	    id => $sample->{"sample_id"},
+	    type => "microarray",
+	    expression_levels => $sample->{"data_expression_levels_for_sample"},
+	    source_id => $sample->{"sample_id"}, # What source?
+	    genome_id => $genome_id,
+	    external_source_date => "06/09/2014", # Which data?
+	    numerical_interpretation => "Log2 level intensities", # Is this correct?
+	};
+	
+	my $workspace_save_obj_params = {
+	    id => $sample->{"sample_id"},
+	    type => "KBaseExpression.ExpressionSample", # ExpressionDataSample",
+	    data => $old_sample, 
+	    workspace => $input->{"workspace"},
+	    auth => $self->_authentication(),
+	    json => 0,
+	    compressed => 0,
+	    retrieveFromURL => 0,
+	};
+	my $result = $ws->save_object($workspace_save_obj_params);
+	print STDERR &Dumper($result);
+	my $sample_ref = $input->{"workspace"}."/".$sample->{"sample_id"}."/".$result->[3];
+	print STDERR "sample ref: $sample_ref\n";
+	push(@{$old_series->{"genome_expression_sample_ids_map"}->{$old_sample->{"genome_id"}}}, $sample_ref);
+    }
+    #end debug
+
+    my $workspace_save_obj_params = {
+	id => $old_series->{"id"},
+	type => "KBaseExpression.ExpressionSeries", 
+	data => $old_series, 
+	workspace => $input->{"workspace"},
+	auth => $self->_authentication(),
+	json => 0,
+	compressed => 0,
+	retrieveFromURL => 0,
+    };
+    $DB::single = 1; #debug
+
+    my $expression_meta = $ws->save_object($workspace_save_obj_params);
+    #END import_expression
+    my @_bad_returns;
+    (ref($expression_meta) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"expression_meta\" (value was \"$expression_meta\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to import_expression:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'import_expression');
+    }
+    return($expression_meta);
+}
+
+
+
+
 =head2 version 
 
   $return = $obj->version()
@@ -26784,6 +26976,169 @@ templates has a value which is a reference to a hash where the key is a string a
 1: (template_uid) a template_id
 
 auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 sample_id
+
+=over 4
+
+
+
+=item Description
+
+ID of gene expression sample
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 series_id
+
+=over 4
+
+
+
+=item Description
+
+ID of gene expression sample series
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 measurement
+
+=over 4
+
+
+
+=item Description
+
+Normilized gene expression value
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a float
+</pre>
+
+=end html
+
+=begin text
+
+a float
+
+=end text
+
+=back
+
+
+
+=head2 ExpressionDataSample
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+sample_id has a value which is a string
+data_expression_levels_for_sample has a value which is a reference to a hash where the key is a feature_id and the value is a measurement
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+sample_id has a value which is a string
+data_expression_levels_for_sample has a value which is a reference to a hash where the key is a feature_id and the value is a measurement
+
+
+=end text
+
+=back
+
+
+
+=head2 import_expression_params
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+expression_data_sample_series has a value which is a reference to a hash where the key is a sample_id and the value is an ExpressionDataSample
+series has a value which is a series_id
+workspace has a value which is a workspace_id
+auth has a value which is a string
+overwrite has a value which is a bool
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+expression_data_sample_series has a value which is a reference to a hash where the key is a sample_id and the value is an ExpressionDataSample
+series has a value which is a series_id
+workspace has a value which is a workspace_id
+auth has a value which is a string
+overwrite has a value which is a bool
 
 
 =end text

@@ -3392,4 +3392,36 @@ module fbaModelServices {
     */
     authentication required;
     funcdef metagenome_to_fbamodels(metagenome_to_fbamodels_params params) returns (list<object_metadata> outputs);
+
+    /*
+      ID of gene expression sample
+     */
+    typedef string sample_id;
+    /*
+      ID of gene expression sample series 
+     */
+    typedef string series_id;
+
+    /*
+      Normilized gene expression value
+     */
+    typedef float measurement;
+
+    typedef structure {
+	    string sample_id;
+	    mapping<feature_id, measurement> data_expression_levels_for_sample;
+    } ExpressionDataSample;
+
+    typedef structure {
+o	    mapping<sample_id, ExpressionDataSample> expression_data_sample_series;
+	    series_id series;
+	    workspace_id workspace;
+	    bool overwrite;
+    } import_expression_params;
+
+    /*
+      Import gene expression.
+    */
+    funcdef import_expression(import_expression_params input) returns (object_metadata expression_meta);
+
 };
