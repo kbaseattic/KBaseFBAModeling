@@ -85,13 +85,13 @@ deploy: deploy-client deploy-service
 deploy-all: deploy-client deploy-service
 
 deploy-service: deploy-dir deploy-libs deploy-scripts deploy-services deploy-cfg deploy-kbscripts
-deploy-client: deploy-dir deploy-libs deploy-scripts deploy-docs deploy-kbscripts configure-scripts
+deploy-client: deploy-dir deploy-libs deploy-scripts deploy-docs deploy-kbscripts
 
 deploy-dir:
 	if [ ! -d $(SERV_SERVICE_DIR) ] ; then mkdir $(SERV_SERVICE_DIR) ; fi
 	if [ ! -d $(SERV_SERVICE_DIR)/webroot ] ; then mkdir $(SERV_SERVICE_DIR)/webroot ; fi
 
-deploy-libs:
+deploy-libs: configure-scripts
 	rsync -arv lib/. $(TARGET)/lib/.
 
 deploy-kbscripts:
