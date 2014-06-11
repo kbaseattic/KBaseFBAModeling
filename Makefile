@@ -4,7 +4,7 @@ DEPLOY_RUNTIME ?= /kb/runtime
 TARGET ?= /kb/deployment
 DEFAULT_FBA_URL ?= https://kbase.us/services/KBaseFBAModeling
 DEFAULT_OLDWS_URL ?= http://kbase.us/services/workspace
-DEV_FBA_URL ? http://140.221.85.73:4043
+DEV_FBA_URL ?= http://140.221.85.73:4043
 
 include $(TOP_DIR)/tools/Makefile.common
 
@@ -85,7 +85,7 @@ deploy: deploy-client deploy-service
 deploy-all: deploy-client deploy-service
 
 deploy-service: deploy-dir deploy-libs deploy-scripts deploy-services deploy-cfg deploy-kbscripts
-deploy-client: deploy-dir deploy-libs deploy-scripts deploy-docs deploy-kbscripts
+deploy-client: deploy-dir deploy-libs deploy-scripts deploy-docs deploy-kbscripts configure-scripts
 
 deploy-dir:
 	if [ ! -d $(SERV_SERVICE_DIR) ] ; then mkdir $(SERV_SERVICE_DIR) ; fi
