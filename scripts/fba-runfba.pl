@@ -41,9 +41,11 @@ my $fbaTranslation = {
 	nothermoerror => "nothermoerror",
 	minthermoerror => "minthermoerror",
 	addlcpd => "additionalcpds",
-	eflux => "eflux",
 	prommodel => "prommodel",
 	prommodelws => "prommodel_workspace",
+	efluxsm => "eflux_sample",
+	efluxsr => "eflux_series",
+	efluxws => "eflux_workspace",
 	modelws => "model_workspace",
 };
 #Defining usage and options
@@ -62,7 +64,9 @@ my $specs = [
     [ 'constraints:s@', 'Custom constraints' ],
     [ 'prommodel|p:s', 'ID of PromConstraint' ],
     [ 'prommodelws:s', 'Workspace with PromConstraint', { "default" => fbaws() } ],
-    [ 'eflux:s', 'file/(expression ID) for E-Flux analysis' ],
+    [ 'efluxsm:s', 'ID of ExpressionSample for E-Flux analysis' ],
+    [ 'efluxsr:s', 'ID of ExpressionSeries for E-Flux analysis' ],
+    [ 'efluxws:s', 'Workspace with ExpressionSample/Series', { "default" => fbaws() } ],
     [ 'defaultmaxflux:s', 'Default maximum reaction flux' ],
     [ 'defaultminuptake:s', 'Default minimum nutrient uptake' ],
     [ 'defaultmaxuptake:s', 'Default maximum nutrient uptake' ],

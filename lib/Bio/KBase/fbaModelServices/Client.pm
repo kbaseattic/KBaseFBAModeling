@@ -413,6 +413,9 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	prommodel has a value which is a prommodel_id
 	prommodel_workspace has a value which is a workspace_id
+	eflux_sample has a value which is a sample_id
+	eflux_series has a value which is a series_id
+	eflux_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -433,6 +436,8 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+sample_id is a string
+series_id is a string
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -517,6 +522,9 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	prommodel has a value which is a prommodel_id
 	prommodel_workspace has a value which is a workspace_id
+	eflux_sample has a value which is a sample_id
+	eflux_series has a value which is a series_id
+	eflux_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -537,6 +545,8 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+sample_id is a string
+series_id is a string
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -701,6 +711,9 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	prommodel has a value which is a prommodel_id
 	prommodel_workspace has a value which is a workspace_id
+	eflux_sample has a value which is a sample_id
+	eflux_series has a value which is a series_id
+	eflux_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -721,6 +734,8 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+sample_id is a string
+series_id is a string
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -812,6 +827,9 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	prommodel has a value which is a prommodel_id
 	prommodel_workspace has a value which is a workspace_id
+	eflux_sample has a value which is a sample_id
+	eflux_series has a value which is a series_id
+	eflux_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -832,6 +850,8 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+sample_id is a string
+series_id is a string
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -973,6 +993,9 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	prommodel has a value which is a prommodel_id
 	prommodel_workspace has a value which is a workspace_id
+	eflux_sample has a value which is a sample_id
+	eflux_series has a value which is a series_id
+	eflux_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -993,6 +1016,8 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+sample_id is a string
+series_id is a string
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -1068,6 +1093,9 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	prommodel has a value which is a prommodel_id
 	prommodel_workspace has a value which is a workspace_id
+	eflux_sample has a value which is a sample_id
+	eflux_series has a value which is a series_id
+	eflux_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -1088,6 +1116,8 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+sample_id is a string
+series_id is a string
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -3735,7 +3765,6 @@ runfba_params is a reference to a hash where the following keys are defined:
 	findminmedia has a value which is a bool
 	notes has a value which is a string
 	fba has a value which is a fba_id
-	eflux has a value which is a string
 	workspace has a value which is a workspace_id
 	auth has a value which is a string
 	overwrite has a value which is a bool
@@ -3747,6 +3776,9 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	prommodel has a value which is a prommodel_id
 	prommodel_workspace has a value which is a workspace_id
+	eflux_sample has a value which is a sample_id
+	eflux_series has a value which is a series_id
+	eflux_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -3767,6 +3799,8 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+sample_id is a string
+series_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
@@ -3821,7 +3855,6 @@ runfba_params is a reference to a hash where the following keys are defined:
 	findminmedia has a value which is a bool
 	notes has a value which is a string
 	fba has a value which is a fba_id
-	eflux has a value which is a string
 	workspace has a value which is a workspace_id
 	auth has a value which is a string
 	overwrite has a value which is a bool
@@ -3833,6 +3866,9 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	prommodel has a value which is a prommodel_id
 	prommodel_workspace has a value which is a workspace_id
+	eflux_sample has a value which is a sample_id
+	eflux_series has a value which is a series_id
+	eflux_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -3853,6 +3889,8 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+sample_id is a string
+series_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
@@ -3976,6 +4014,9 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	prommodel has a value which is a prommodel_id
 	prommodel_workspace has a value which is a workspace_id
+	eflux_sample has a value which is a sample_id
+	eflux_series has a value which is a series_id
+	eflux_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -3996,6 +4037,8 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+sample_id is a string
+series_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
@@ -4056,6 +4099,9 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	prommodel has a value which is a prommodel_id
 	prommodel_workspace has a value which is a workspace_id
+	eflux_sample has a value which is a sample_id
+	eflux_series has a value which is a series_id
+	eflux_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -4076,6 +4122,8 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+sample_id is a string
+series_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
@@ -4462,6 +4510,9 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	prommodel has a value which is a prommodel_id
 	prommodel_workspace has a value which is a workspace_id
+	eflux_sample has a value which is a sample_id
+	eflux_series has a value which is a series_id
+	eflux_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -4482,6 +4533,8 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+sample_id is a string
+series_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
@@ -4547,6 +4600,9 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	prommodel has a value which is a prommodel_id
 	prommodel_workspace has a value which is a workspace_id
+	eflux_sample has a value which is a sample_id
+	eflux_series has a value which is a series_id
+	eflux_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -4567,6 +4623,8 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+sample_id is a string
+series_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
@@ -5078,6 +5136,9 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	prommodel has a value which is a prommodel_id
 	prommodel_workspace has a value which is a workspace_id
+	eflux_sample has a value which is a sample_id
+	eflux_series has a value which is a series_id
+	eflux_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -5098,6 +5159,8 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+sample_id is a string
+series_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
@@ -5158,6 +5221,9 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	prommodel has a value which is a prommodel_id
 	prommodel_workspace has a value which is a workspace_id
+	eflux_sample has a value which is a sample_id
+	eflux_series has a value which is a series_id
+	eflux_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -5178,6 +5244,8 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+sample_id is a string
+series_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
@@ -5325,6 +5393,9 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	prommodel has a value which is a prommodel_id
 	prommodel_workspace has a value which is a workspace_id
+	eflux_sample has a value which is a sample_id
+	eflux_series has a value which is a series_id
+	eflux_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -5345,6 +5416,8 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+sample_id is a string
+series_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
@@ -5432,6 +5505,9 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	prommodel has a value which is a prommodel_id
 	prommodel_workspace has a value which is a workspace_id
+	eflux_sample has a value which is a sample_id
+	eflux_series has a value which is a series_id
+	eflux_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -5452,6 +5528,8 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+sample_id is a string
+series_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
@@ -5602,6 +5680,9 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	prommodel has a value which is a prommodel_id
 	prommodel_workspace has a value which is a workspace_id
+	eflux_sample has a value which is a sample_id
+	eflux_series has a value which is a series_id
+	eflux_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -5622,6 +5703,8 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+sample_id is a string
+series_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
@@ -5714,6 +5797,9 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	prommodel has a value which is a prommodel_id
 	prommodel_workspace has a value which is a workspace_id
+	eflux_sample has a value which is a sample_id
+	eflux_series has a value which is a series_id
+	eflux_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -5734,6 +5820,8 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+sample_id is a string
+series_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
@@ -5874,6 +5962,9 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	prommodel has a value which is a prommodel_id
 	prommodel_workspace has a value which is a workspace_id
+	eflux_sample has a value which is a sample_id
+	eflux_series has a value which is a series_id
+	eflux_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -5894,6 +5985,8 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+sample_id is a string
+series_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
@@ -5964,6 +6057,9 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	prommodel has a value which is a prommodel_id
 	prommodel_workspace has a value which is a workspace_id
+	eflux_sample has a value which is a sample_id
+	eflux_series has a value which is a series_id
+	eflux_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -5984,6 +6080,8 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+sample_id is a string
+series_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
@@ -6117,6 +6215,9 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	prommodel has a value which is a prommodel_id
 	prommodel_workspace has a value which is a workspace_id
+	eflux_sample has a value which is a sample_id
+	eflux_series has a value which is a series_id
+	eflux_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -6137,6 +6238,8 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+sample_id is a string
+series_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
@@ -6212,6 +6315,9 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	prommodel has a value which is a prommodel_id
 	prommodel_workspace has a value which is a workspace_id
+	eflux_sample has a value which is a sample_id
+	eflux_series has a value which is a series_id
+	eflux_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -6232,6 +6338,8 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+sample_id is a string
+series_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
@@ -6363,6 +6471,9 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	prommodel has a value which is a prommodel_id
 	prommodel_workspace has a value which is a workspace_id
+	eflux_sample has a value which is a sample_id
+	eflux_series has a value which is a series_id
+	eflux_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -6383,6 +6494,8 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+sample_id is a string
+series_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
@@ -6480,6 +6593,9 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	prommodel has a value which is a prommodel_id
 	prommodel_workspace has a value which is a workspace_id
+	eflux_sample has a value which is a sample_id
+	eflux_series has a value which is a series_id
+	eflux_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -6500,6 +6616,8 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+sample_id is a string
+series_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
@@ -6660,6 +6778,9 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	prommodel has a value which is a prommodel_id
 	prommodel_workspace has a value which is a workspace_id
+	eflux_sample has a value which is a sample_id
+	eflux_series has a value which is a series_id
+	eflux_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -6680,6 +6801,8 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+sample_id is a string
+series_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
@@ -6777,6 +6900,9 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	prommodel has a value which is a prommodel_id
 	prommodel_workspace has a value which is a workspace_id
+	eflux_sample has a value which is a sample_id
+	eflux_series has a value which is a series_id
+	eflux_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -6797,6 +6923,8 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+sample_id is a string
+series_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
@@ -6955,6 +7083,9 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	prommodel has a value which is a prommodel_id
 	prommodel_workspace has a value which is a workspace_id
+	eflux_sample has a value which is a sample_id
+	eflux_series has a value which is a series_id
+	eflux_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -6975,6 +7106,8 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+sample_id is a string
+series_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
@@ -7070,6 +7203,9 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
 	prommodel has a value which is a prommodel_id
 	prommodel_workspace has a value which is a workspace_id
+	eflux_sample has a value which is a sample_id
+	eflux_series has a value which is a series_id
+	eflux_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -7090,6 +7226,8 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 media_id is a string
 compound_id is a string
 prommodel_id is a string
+sample_id is a string
+series_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
@@ -11544,6 +11682,149 @@ sub metagenome_to_fbamodels
 
 
 
+=head2 import_expression
+
+  $expression_meta = $obj->import_expression($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is an import_expression_params
+$expression_meta is an object_metadata
+import_expression_params is a reference to a hash where the following keys are defined:
+	expression_data_sample_series has a value which is a reference to a hash where the key is a sample_id and the value is an ExpressionDataSample
+	series has a value which is a series_id
+	workspace has a value which is a workspace_id
+	overwrite has a value which is a bool
+sample_id is a string
+ExpressionDataSample is a reference to a hash where the following keys are defined:
+	sample_id has a value which is a string
+	data_expression_levels_for_sample has a value which is a reference to a hash where the key is a feature_id and the value is a measurement
+feature_id is a string
+measurement is a float
+series_id is a string
+workspace_id is a string
+bool is an int
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is an import_expression_params
+$expression_meta is an object_metadata
+import_expression_params is a reference to a hash where the following keys are defined:
+	expression_data_sample_series has a value which is a reference to a hash where the key is a sample_id and the value is an ExpressionDataSample
+	series has a value which is a series_id
+	workspace has a value which is a workspace_id
+	overwrite has a value which is a bool
+sample_id is a string
+ExpressionDataSample is a reference to a hash where the following keys are defined:
+	sample_id has a value which is a string
+	data_expression_levels_for_sample has a value which is a reference to a hash where the key is a feature_id and the value is a measurement
+feature_id is a string
+measurement is a float
+series_id is a string
+workspace_id is a string
+bool is an int
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+=item Description
+
+Import gene expression.
+
+=back
+
+=cut
+
+sub import_expression
+{
+    my($self, @args) = @_;
+
+# Authentication: required
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function import_expression (received $n, expecting 1)");
+    }
+    {
+	my($input) = @args;
+
+	my @_bad_arguments;
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to import_expression:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'import_expression');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.import_expression",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{error}->{code},
+					       method_name => 'import_expression',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method import_expression",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'import_expression',
+				       );
+    }
+}
+
+
+
 sub version {
     my ($self) = @_;
     my $result = $self->{client}->call($self->{url}, {
@@ -11555,16 +11836,16 @@ sub version {
             Bio::KBase::Exceptions::JSONRPC->throw(
                 error => $result->error_message,
                 code => $result->content->{code},
-                method_name => 'metagenome_to_fbamodels',
+                method_name => 'import_expression',
             );
         } else {
             return wantarray ? @{$result->result} : $result->result->[0];
         }
     } else {
         Bio::KBase::Exceptions::HTTP->throw(
-            error => "Error invoking method metagenome_to_fbamodels",
+            error => "Error invoking method import_expression",
             status_line => $self->{client}->status_line,
-            method_name => 'metagenome_to_fbamodels',
+            method_name => 'import_expression',
         );
     }
 }
@@ -12077,6 +12358,68 @@ a string
 =item Description
 
 A string identifier for a prommodel in KBase.
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 sample_id
+
+=over 4
+
+
+
+=item Description
+
+A string identifier for a gene expression sample in KBase.
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 series_id
+
+=over 4
+
+
+
+=item Description
+
+A string identifier for a gene expression sample series in KBase.
 
 
 =item Definition
@@ -14641,6 +14984,9 @@ media_id media - ID of media formulation to be used
 list<compound_id> additionalcpds - list of additional compounds to allow update
 prommodel_id prommodel - ID of prommodel
 workspace_id prommodel_workspace - workspace containing prommodel
+sample_id eflux_sample - ID of gene expression sample to run eflux
+series_id eflux_series - ID of series that a sample belongs to.
+workspace_id eflux_workspace - workspace containng gene expression sample series for eflux
 workspace_id media_workspace - workspace containing media for FBA study
 float objfraction - fraction of objective to use for constraints
 bool allreversible - flag indicating if all reactions should be reversible
@@ -14670,6 +15016,9 @@ media has a value which is a media_id
 additionalcpds has a value which is a reference to a list where each element is a compound_id
 prommodel has a value which is a prommodel_id
 prommodel_workspace has a value which is a workspace_id
+eflux_sample has a value which is a sample_id
+eflux_series has a value which is a series_id
+eflux_workspace has a value which is a workspace_id
 media_workspace has a value which is a workspace_id
 objfraction has a value which is a float
 allreversible has a value which is a bool
@@ -14699,6 +15048,9 @@ media has a value which is a media_id
 additionalcpds has a value which is a reference to a list where each element is a compound_id
 prommodel has a value which is a prommodel_id
 prommodel_workspace has a value which is a workspace_id
+eflux_sample has a value which is a sample_id
+eflux_series has a value which is a series_id
+eflux_workspace has a value which is a workspace_id
 media_workspace has a value which is a workspace_id
 objfraction has a value which is a float
 allreversible has a value which is a bool
@@ -17559,7 +17911,6 @@ minimizeflux has a value which is a bool
 findminmedia has a value which is a bool
 notes has a value which is a string
 fba has a value which is a fba_id
-eflux has a value which is a string
 workspace has a value which is a workspace_id
 auth has a value which is a string
 overwrite has a value which is a bool
@@ -17581,7 +17932,6 @@ minimizeflux has a value which is a bool
 findminmedia has a value which is a bool
 notes has a value which is a string
 fba has a value which is a fba_id
-eflux has a value which is a string
 workspace has a value which is a workspace_id
 auth has a value which is a string
 overwrite has a value which is a bool
@@ -21578,6 +21928,167 @@ templates has a value which is a reference to a hash where the key is a string a
 1: (template_uid) a template_id
 
 auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 sample_id
+
+=over 4
+
+
+
+=item Description
+
+ID of gene expression sample
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 series_id
+
+=over 4
+
+
+
+=item Description
+
+ID of gene expression sample series
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 measurement
+
+=over 4
+
+
+
+=item Description
+
+Normilized gene expression value
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a float
+</pre>
+
+=end html
+
+=begin text
+
+a float
+
+=end text
+
+=back
+
+
+
+=head2 ExpressionDataSample
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+sample_id has a value which is a string
+data_expression_levels_for_sample has a value which is a reference to a hash where the key is a feature_id and the value is a measurement
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+sample_id has a value which is a string
+data_expression_levels_for_sample has a value which is a reference to a hash where the key is a feature_id and the value is a measurement
+
+
+=end text
+
+=back
+
+
+
+=head2 import_expression_params
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+expression_data_sample_series has a value which is a reference to a hash where the key is a sample_id and the value is an ExpressionDataSample
+series has a value which is a series_id
+workspace has a value which is a workspace_id
+overwrite has a value which is a bool
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+expression_data_sample_series has a value which is a reference to a hash where the key is a sample_id and the value is an ExpressionDataSample
+series has a value which is a series_id
+workspace has a value which is a workspace_id
+overwrite has a value which is a bool
 
 
 =end text

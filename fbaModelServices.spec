@@ -97,6 +97,12 @@ module fbaModelServices {
     
     /* A string identifier for a prommodel in KBase. */
     typedef string prommodel_id;
+
+    /* A string identifier for a gene expression sample in KBase. */
+    typedef string sample_id;
+    
+    /* A string identifier for a gene expression sample series in KBase. */
+    typedef string series_id;
     
     /* A string identifier for a contiguous piece of DNA in KBase, representing a chromosome or an assembled fragment */
     typedef string contig_id;
@@ -662,6 +668,9 @@ module fbaModelServices {
 		list<compound_id> additionalcpds - list of additional compounds to allow update
 		prommodel_id prommodel - ID of prommodel
 		workspace_id prommodel_workspace - workspace containing prommodel
+		sample_id eflux_sample - ID of gene expression sample to run eflux
+		series_id eflux_series - ID of series that a sample belongs to.
+		workspace_id eflux_workspace - workspace containng gene expression sample series for eflux
 		workspace_id media_workspace - workspace containing media for FBA study
 		float objfraction - fraction of objective to use for constraints
 		bool allreversible - flag indicating if all reactions should be reversible
@@ -686,6 +695,9 @@ module fbaModelServices {
 		list<compound_id> additionalcpds;
 		prommodel_id prommodel;
 		workspace_id prommodel_workspace;
+		sample_id eflux_sample;
+		series_id eflux_series;
+		workspace_id eflux_workspace;
 		workspace_id media_workspace;
 		float objfraction;
 		bool allreversible;
@@ -1781,7 +1793,6 @@ module fbaModelServices {
 		bool findminmedia;
 		string notes;
 		fba_id fba;
-		string eflux;
 		workspace_id workspace;
 		string auth;
 		bool overwrite;
@@ -3413,7 +3424,7 @@ module fbaModelServices {
     } ExpressionDataSample;
 
     typedef structure {
-o	    mapping<sample_id, ExpressionDataSample> expression_data_sample_series;
+	    mapping<sample_id, ExpressionDataSample> expression_data_sample_series;
 	    series_id series;
 	    workspace_id workspace;
 	    bool overwrite;
