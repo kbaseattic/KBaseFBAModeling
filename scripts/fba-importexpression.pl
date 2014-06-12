@@ -6,6 +6,7 @@ use Bio::KBase::workspace::ScriptHelpers qw(printObjectInfo get_ws_client worksp
 use Bio::KBase::fbaModelServices::ScriptHelpers qw(fbaws get_fba_client runFBACommand universalFBAScriptCode getToken);
 use Bio::KBase::ObjectAPI::utilities qw(LOADTABLE);
 use File::Basename;
+use POSIX qw/strftime/;
 
 #Defining globals describing behavior
 my $primaryArgs = ["Gene expression flat file"];
@@ -13,7 +14,8 @@ my $servercommand = "import_expression";
 my $script = "fba-importexpression";
 my $translation = {
 	workspace => "workspace",
-	auth => "auth",
+	sourceid => "source_id",
+	sourcedate => "source_date",
 	ignoreerrors => "ignore_errors",
 };
 
@@ -25,46 +27,30 @@ NAME
 DESCRIPTION
 
       The following infomation is not accurate at all.
-      Import an FBA Model from text and save the results as a Model object in a workspace.
-      The text file describes the reactions and gene-protein-reaction relationships (GPR)
-      in the model. Each row (except the header row) in the data file contains data for one
-      reaction.
+      Import an expression data sample series from a flat file and save the results as a ExpressionSeries object in a workspace.
+      The flat file describes expression values of a feature in given sample.
+      Each row (except the header row) in the data file contains gene expression value for one
+      feature.
 
-      The first line of the model file is required and contains the following four headers 
-      (in any order):
+      The first line of the model file is required and contains the ID of samples. Lines follows it
+      should contain a feature ID in the first column, and expression values in any other column.
+      Notice that since the first row does not contain a feature ID, it is shorter than other rows
+      By one column.
 
-      - id : The ID of the reaction in the model. It must match with one of the IDs or aliases
-             existing in the ModelSEED
-      - direction: > for forward, < for backward or = for reversible. Direction is relative to
-             the direction stored in the ModleSEED
-      - compartment: Compartment in which the reaction is found (e.g. c0 for 0'th cytosol)
-      - gpr: Gene-protein-reaction relationship in Boolean form.
-             The gene IDs in the GPR must match the IDs in the genome object.
-      
-      The biomass equation should be written as an equation with compound IDs recognizable by 
-      the modelSEED, for example:
-      
-      'atp + h2o --> adp + pi + h'
+      The following is an example data file
 
-      The following is an example data file (note 0 leave an empty space for gpr even if your reaction
-      does not have one). Note that some old versions of this tool will only work if you use 'or' or 'and', not
-      'OR' or 'AND', in the Boolean rules.
-
-      id   direction   compartment   gpr
-      atp + h2o --> adp + pi + h  >    c0    
-      rxn00001  =    c0    kb|g.0.peg.1
-      rxn00002  >    c0    
-      rxn00003  <    c0    kb|g.0.peg.2 or kb|g.0.peg.3
+      10_FB1-2.CEL.gz	11_FB2-2.CEL.gz	12_FB2-2.CEL.gz
+      kb|g.0.peg.634	8.63830081697123	8.64678476189026	8.66268102487218
+      kb|g.0.peg.167	9.79555993848683	8.89302312434434	8.67845774993186
+      kb|g.0.peg.236	8.6230928295351	8.07082173268051	8.23579628596348
+      kb|g.0.peg.252	10.8347290927555	10.6194852417206	10.5003587573257
 
 EXAMPLES
-      Import an E coli model with 'biomass equation' atp + h2o --> adp + pi + h:
 
-      fba-importfbamodel 'kb|g.0.genome' 'kb|g.0.modelfile' 'atp + h2o --> adp + pi + h'
+      fba-importexpression 'sample.gexp'
 
 SEE ALSO
       fba-loadgenome
-      fba-runfba
-      fba-buildfbamodel
 
 AUTHORS
       Shinnosuke Kondo
@@ -74,6 +60,8 @@ AUTHORS
 #Defining usage and options
 my $specs = [
     [ 'workspace|w:s', 'Workspace to save imported gene expression in', { "default" => fbaws() } ],
+    [ 'sourceid:s', 'ID of the source'],
+    [ 'sourcedate|d:s', 'Date of the source', { "default", => strftime("%Y-%m-%d", localtime)}],
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation, $manpage);
 if (!-e $opt->{"Gene expression flat file"}) {

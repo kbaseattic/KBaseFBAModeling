@@ -11698,8 +11698,9 @@ $expression_meta is an object_metadata
 import_expression_params is a reference to a hash where the following keys are defined:
 	expression_data_sample_series has a value which is a reference to a hash where the key is a sample_id and the value is an ExpressionDataSample
 	series has a value which is a series_id
+	source_id has a value which is a string
+	source_date has a value which is a string
 	workspace has a value which is a workspace_id
-	overwrite has a value which is a bool
 sample_id is a string
 ExpressionDataSample is a reference to a hash where the following keys are defined:
 	sample_id has a value which is a string
@@ -11708,7 +11709,6 @@ feature_id is a string
 measurement is a float
 series_id is a string
 workspace_id is a string
-bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -11738,8 +11738,9 @@ $expression_meta is an object_metadata
 import_expression_params is a reference to a hash where the following keys are defined:
 	expression_data_sample_series has a value which is a reference to a hash where the key is a sample_id and the value is an ExpressionDataSample
 	series has a value which is a series_id
+	source_id has a value which is a string
+	source_date has a value which is a string
 	workspace has a value which is a workspace_id
-	overwrite has a value which is a bool
 sample_id is a string
 ExpressionDataSample is a reference to a hash where the following keys are defined:
 	sample_id has a value which is a string
@@ -11748,7 +11749,6 @@ feature_id is a string
 measurement is a float
 series_id is a string
 workspace_id is a string
-bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -22067,6 +22067,17 @@ data_expression_levels_for_sample has a value which is a reference to a hash whe
 
 
 
+=item Description
+
+Input parameters for the "simulate_expression" function.
+
+               mapping<sample_id, ExpressionDataSample> expression_data_sample_series - gene expression data (a required argument)
+        series_id series -  ID of series (a required argument)
+        string source_id - ID of the source (an optional argument: default is '')
+        string source_date - Date of the source (an optional argument: default is '')
+        workspace_id workspace - workspace to contain the data (an optional argument: default is value of workspace argument)
+
+
 =item Definition
 
 =begin html
@@ -22075,8 +22086,9 @@ data_expression_levels_for_sample has a value which is a reference to a hash whe
 a reference to a hash where the following keys are defined:
 expression_data_sample_series has a value which is a reference to a hash where the key is a sample_id and the value is an ExpressionDataSample
 series has a value which is a series_id
+source_id has a value which is a string
+source_date has a value which is a string
 workspace has a value which is a workspace_id
-overwrite has a value which is a bool
 
 </pre>
 
@@ -22087,8 +22099,9 @@ overwrite has a value which is a bool
 a reference to a hash where the following keys are defined:
 expression_data_sample_series has a value which is a reference to a hash where the key is a sample_id and the value is an ExpressionDataSample
 series has a value which is a series_id
+source_id has a value which is a string
+source_date has a value which is a string
 workspace has a value which is a workspace_id
-overwrite has a value which is a bool
 
 
 =end text

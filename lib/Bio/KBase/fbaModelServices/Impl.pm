@@ -2644,7 +2644,6 @@ sub _compute_eflux_scores {
     my $scores_collection = {}; # expression scores for each reaction.
     my $unknown = {};
 
-    $DB::single = 1;
     my $matched = 0;    
     foreach my $sample (@$samples) {
 	$matched = 1 if ($sample->{"data"}->{"id"} eq $picked_sample_id);	
@@ -17049,8 +17048,9 @@ $expression_meta is an object_metadata
 import_expression_params is a reference to a hash where the following keys are defined:
 	expression_data_sample_series has a value which is a reference to a hash where the key is a sample_id and the value is an ExpressionDataSample
 	series has a value which is a series_id
+	source_id has a value which is a string
+	source_date has a value which is a string
 	workspace has a value which is a workspace_id
-	overwrite has a value which is a bool
 sample_id is a string
 ExpressionDataSample is a reference to a hash where the following keys are defined:
 	sample_id has a value which is a string
@@ -17059,7 +17059,6 @@ feature_id is a string
 measurement is a float
 series_id is a string
 workspace_id is a string
-bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -17089,8 +17088,9 @@ $expression_meta is an object_metadata
 import_expression_params is a reference to a hash where the following keys are defined:
 	expression_data_sample_series has a value which is a reference to a hash where the key is a sample_id and the value is an ExpressionDataSample
 	series has a value which is a series_id
+	source_id has a value which is a string
+	source_date has a value which is a string
 	workspace has a value which is a workspace_id
-	overwrite has a value which is a bool
 sample_id is a string
 ExpressionDataSample is a reference to a hash where the following keys are defined:
 	sample_id has a value which is a string
@@ -17099,7 +17099,6 @@ feature_id is a string
 measurement is a float
 series_id is a string
 workspace_id is a string
-bool is an int
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -17147,10 +17146,10 @@ sub import_expression
     my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
     my($expression_meta);
     #BEGIN import_expression
-    $self->_setContext($ctx,$input);
-    $input = $self->_validateargs($input,["expression_data_sample_series","series","workspace"],{});
+    $self->_setContext($ctx,$input);    
+    $input = $self->_validateargs($input,["expression_data_sample_series","series","workspace","source_date"],
+				  {source_id => $input->{"series"},});
 
-    # Use old format
     my $genome_id;
     my $feature_id = (keys $input->{"expression_data_sample_series"}->{(keys $input->{"expression_data_sample_series"})[0]}->{"data_expression_levels_for_sample"})[0];
     if ( $feature_id =~ /^(kb\|g\.\d+)/) {
@@ -17161,9 +17160,9 @@ sub import_expression
     
     my $old_series = {
 	id => $input->{"series"},
-	source_id => $input->{"series"},
+	source_id => $input->{"source_id"},
 	genome_expression_sample_ids_map => {},
-	external_source_date => "06/09/2014",
+	external_source_date => $input->{"source_date"},
     };
 
     my $ws = $self->_KBaseStore()->workspace();
@@ -17172,9 +17171,9 @@ sub import_expression
 	    id => $sample->{"sample_id"},
 	    type => "microarray",
 	    expression_levels => $sample->{"data_expression_levels_for_sample"},
-	    source_id => $sample->{"sample_id"}, # What source?
+	    source_id => $input->{"source_id"}, # What source?
 	    genome_id => $genome_id,
-	    external_source_date => "06/09/2014", # Which data?
+	    external_source_date => $input->{"source_date"}, # Which data?
 	    numerical_interpretation => "Log2 level intensities", # Is this correct?
 	};
 	
@@ -27444,6 +27443,17 @@ data_expression_levels_for_sample has a value which is a reference to a hash whe
 
 
 
+=item Description
+
+Input parameters for the "simulate_expression" function.
+
+               mapping<sample_id, ExpressionDataSample> expression_data_sample_series - gene expression data (a required argument)
+        series_id series -  ID of series (a required argument)
+        string source_id - ID of the source (an optional argument: default is '')
+        string source_date - Date of the source (an optional argument: default is '')
+        workspace_id workspace - workspace to contain the data (an optional argument: default is value of workspace argument)
+
+
 =item Definition
 
 =begin html
@@ -27452,8 +27462,9 @@ data_expression_levels_for_sample has a value which is a reference to a hash whe
 a reference to a hash where the following keys are defined:
 expression_data_sample_series has a value which is a reference to a hash where the key is a sample_id and the value is an ExpressionDataSample
 series has a value which is a series_id
+source_id has a value which is a string
+source_date has a value which is a string
 workspace has a value which is a workspace_id
-overwrite has a value which is a bool
 
 </pre>
 
@@ -27464,8 +27475,9 @@ overwrite has a value which is a bool
 a reference to a hash where the following keys are defined:
 expression_data_sample_series has a value which is a reference to a hash where the key is a sample_id and the value is an ExpressionDataSample
 series has a value which is a series_id
+source_id has a value which is a string
+source_date has a value which is a string
 workspace has a value which is a workspace_id
-overwrite has a value which is a bool
 
 
 =end text

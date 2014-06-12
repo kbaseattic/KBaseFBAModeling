@@ -3423,11 +3423,20 @@ module fbaModelServices {
 	    mapping<feature_id, measurement> data_expression_levels_for_sample;
     } ExpressionDataSample;
 
+        /* Input parameters for the "simulate_expression" function.
+	
+    	   	mapping<sample_id, ExpressionDataSample> expression_data_sample_series - gene expression data (a required argument)
+		series_id series -  ID of series (a required argument)
+		string source_id - ID of the source (an optional argument: default is '')
+		string source_date - Date of the source (an optional argument: default is '')
+		workspace_id workspace - workspace to contain the data (an optional argument: default is value of workspace argument)		
+	*/
     typedef structure {
 	    mapping<sample_id, ExpressionDataSample> expression_data_sample_series;
 	    series_id series;
+	    string source_id;
+	    string source_date;
 	    workspace_id workspace;
-	    bool overwrite;
     } import_expression_params;
 
     /*
