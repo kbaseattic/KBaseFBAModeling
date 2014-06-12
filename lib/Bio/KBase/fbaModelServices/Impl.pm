@@ -2649,22 +2649,21 @@ sub _compute_eflux_scores {
 	$matched = 1 if ($sample->{"data"}->{"id"} eq $picked_sample_id);	
 	my $mdlrxns = $model->modelreactions();
 	foreach my $mdlrxn (@{$mdlrxns}) {			
-	    # OR. Add them
 	    $scores_collection->{$mdlrxn->id()}->{$sample->{"data"}->{"id"}} = 0;
 	    $unknown->{$mdlrxn->id()} = 1 if (@{$mdlrxn->modelReactionProteins()} == 0);
+	    # OR, meaning there may be isozymes for this reaction. Add their expression scores.
 	    foreach my $prot (@{$mdlrxn->modelReactionProteins()}) {
-		# AND. Take min
+		# AND, meaning each isozyme may have multiple subunits.  Take minimum expression score.
 		my $prot_score = POSIX::FLT_MAX;
-		# No need to handle 0 subunit case.
 		foreach my $subunit (@{$prot->modelReactionProteinSubunits()}) {
 		    if (@{$subunit->features()} == 0) {
-			next; # Not last, since other scores may be smaller than this.
+			next; # Not last, since there may be scores for other subunits
 		    }
-		    # OR. Add them
+		    # OR, meaning there may be isozymes for the subunit. Add their expression scores.
 		    my $subunit_score = 0;
 		    foreach my $feature (@{$subunit->features()}) {
 			if (!exists $sample->{"data"}->{"expression_levels"}->{$feature->id()}) {
-			    # exp level is Unknown -> feature is Unknown -> subunit is unknown.			   
+			    # exp level is Unknown, so we can't compute a score for the subunit
 			    $subunit_score = POSIX::FLT_MAX;
 			    last;
 			}
@@ -2673,6 +2672,7 @@ sub _compute_eflux_scores {
 		    $prot_score = ($prot_score < $subunit_score) ? $prot_score : $subunit_score;
 		}
 		if ($prot_score == POSIX::FLT_MAX) {
+		    # there was insufficient information to compute a protein score
 		    $unknown->{$mdlrxn->id()} = 1;
 		    last;
 		}
@@ -2687,32 +2687,32 @@ sub _compute_eflux_scores {
     }
 
     # debug
-    warn "Unknown reactions are " . (scalar keys %$unknown) ." out of ". (scalar keys %$scores_collection);
+    warn "Number of reactions with unavailable expression scores is " . (scalar keys %$unknown) ." out of ". (scalar keys %$scores_collection)."\n";
 
-    my $scores = {};
+    my $scores_for_picked_sample = {};
     foreach my $rxn_id (keys %$scores_collection) {
 	if (exists $unknown->{$rxn_id}) {
-	    $scores->{$rxn_id} = 1;
+	    $scores_for_picked_sample->{$rxn_id} = 1; # i.e., 100% flux bounds when expression score is not available
 	} else {
-	    # Take max
+	    # Take max expression score across all samples for this reaction
 	    my $max_score = (sort {$b <=> $a } map {$scores_collection->{$rxn_id}->{$_}} keys $scores_collection->{$rxn_id})[0];
-	    # Then normalize by it
-	    $scores->{$rxn_id} = $scores_collection->{$rxn_id}->{$picked_sample_id} / $max_score;
+	    # Then normalize the picked sample's expression score by the max
+	    $scores_for_picked_sample->{$rxn_id} = $scores_collection->{$rxn_id}->{$picked_sample_id} / $max_score;
 	}
     }
-    return $scores;      
+    return $scores_for_picked_sample;      
 }
 
 =head3 _add_eflux_bounds
 
 Definition:
-	(Void) = $self->_classify_genome(Genome genome);
+	(Void) = $self->_add_eflux_bounds(FBA, Model, Eflux-scores)
 Description:
 	Add reaction bounds computed by eflux.
 		
 =cut
 sub _add_eflux_bounds {
-    my ($self, $fba, $model, $scores) = @_;
+    my ($self, $fba, $model, $eflux_scores) = @_;
 
     my $clone = $fba->cloneObject();
     $clone->parent($fba->parent());
@@ -2721,13 +2721,10 @@ sub _add_eflux_bounds {
 
     my $fluxes = $clone->FBAReactionVariables();
     foreach my $flux (@{$fluxes}) {
-	my $obj = $model->searchForReaction($flux->modelreaction()->id());
-	if (!defined($obj)) {
-	    $self->_error("Reaction ".$flux->modelreaction()->id()." not found!");
-	}
+	# reset the upper flux bound to the e-flux percentage of the maximum computed by FVA
 	$fba->add("FBAReactionBounds",{modelreaction_ref => $flux->modelreaction_ref(),
 				       variableType=> $flux->variableType,
-				       upperBound => $flux->max() * $scores->{$flux->modelreaction()->id()},
+				       upperBound => $flux->max() * $eflux_scores->{$flux->modelreaction()->id()},
 				       lowerBound => $flux->min()
 		  });
     }
