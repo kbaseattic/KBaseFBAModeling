@@ -59,9 +59,9 @@ foreach my $gene (keys(%{$GeneCDDs})) {
 	if ($GeneData->{$gene}->[0] != 0) {
 		my $sg = $GeneCDDs->{$gene};
 		foreach my $cdd (keys(%{$sg})) {
-			if ($CDDData->{$items->[2]}->[0] != 0) {
-				my $genefraction = $sg->{$cdd}->[6]/$GeneData->{$items->[0]}->[0];
-				my $cddfraction = $sg->{$cdd}->[6]/$CDDData->{$items->[2]}->[0];
+			if ($CDDData->{$cdd}->[0] != 0) {
+				my $genefraction = $sg->{$cdd}->[6]/$GeneData->{$cdd}->[0];
+				my $cddfraction = $sg->{$cdd}->[6]/$CDDData->{$cdd}->[0];
 				for (my $i=0; $i <= 9; $i++) {
 					if ($genefraction >= (0.1*$i)  && $cddfraction >= (0.1*$i)) {
 						$counts->[$i]++;
@@ -74,7 +74,7 @@ foreach my $gene (keys(%{$GeneCDDs})) {
 					}
 				}
 				if ($genefraction >= 0.9  && $cddfraction >= 0.9) {
-					$SingleGeneCDDs->{$gene}->{$cdd} = [$items->[12],$genefraction,$cddfraction];
+					$SingleGeneCDDs->{$gene}->{$cdd} = [$sg->{$cdd}->[4],$genefraction,$cddfraction];
 					$CDDData->{$cdd}->[3]++;
 				}
 				if ($cddfraction < 0.9) {
