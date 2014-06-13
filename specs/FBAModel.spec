@@ -544,10 +544,21 @@ module KBaseFBA {
     	list<string> reaction_directions;
 	} FBAMinimalReactionsResult;  
     
+
+    typedef float probability;
+    /*
+      collection of tintle probability scores for each feature in a genome,
+      representing a single gene probability sample
+    */
+    typedef structure {
+	    mapping<feature_id,probability> tintle_probability;
+	    string expression_sample_ref;	    
+    } TintleProbabilitySample;
+
     /* 
     	FBA object holds the formulation and results of a flux balance analysis study
     	
-    	@optional minimize_reactions minimize_reaction_costs FBAMinimalReactionsResults PROMKappa phenotypesimulationset_ref objectiveValue phenotypeset_ref prommodel_ref regmodel_ref
+    	@optional minimize_reactions minimize_reaction_costs FBAMinimalReactionsResults PROMKappa tintleW phenotypesimulationset_ref objectiveValue phenotypeset_ref prommodel_ref regmodel_ref
     	@searchable ws_subset comboDeletions id fva fluxMinimization findMinimalMedia allReversible simpleThermoConstraints thermodynamicConstraints noErrorThermodynamicConstraints minimizeErrorThermodynamicConstraints
     	@searchable ws_subset regmodel_ref fbamodel_ref prommodel_ref media_ref phenotypeset_ref geneKO_refs reactionKO_refs additionalCpd_refs objectiveValue phenotypesimulationset_ref
     	@searchable ws_subset FBAConstraints.[*].(name,rhs,sign,compound_terms,reaction_terms) 
@@ -560,6 +571,7 @@ module KBaseFBA {
 		@searchable ws_subset FBADeletionResults.[*].(feature_refs,growthFraction)
 		@searchable ws_subset FBAMinimalMediaResults.[*].(essentialNutrient_refs,optionalNutrient_refs)
 		@searchable ws_subset FBAMetaboliteProductionResults.[*].(modelcompound_ref,maximumProduction)
+    	@searchable ws_subset tintleSamples.[*].(expression_sample_ref) 
     */
     typedef structure {
 		fba_id id;
@@ -585,6 +597,8 @@ module KBaseFBA {
 		float defaultMaxDrainFlux;
 		float defaultMinDrainFlux;
 		float PROMKappa;
+		float tintleW;
+		float tintleKappa;
 		
 		bool decomposeReversibleFlux;
 		bool decomposeReversibleDrainFlux;
@@ -592,7 +606,6 @@ module KBaseFBA {
 		bool drainfluxUseVariables;
 		bool minimize_reactions;
 		
-		string eflux;
 		regmodel_ref regmodel_ref;
 		fbamodel_ref fbamodel_ref;
 		prommodel_ref prommodel_ref;
@@ -610,6 +623,7 @@ module KBaseFBA {
 		list<FBAConstraint> FBAConstraints;
 		list<FBAReactionBound> FBAReactionBounds;
 		list<FBACompoundBound> FBACompoundBounds;
+		list<TintleProbabilitySample> tintleSamples;
 			
 		float objectiveValue;
 		mapping<string,list<string>> outputfiles;

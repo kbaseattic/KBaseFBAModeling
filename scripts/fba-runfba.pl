@@ -46,6 +46,10 @@ my $fbaTranslation = {
 	efluxsm => "eflux_sample",
 	efluxsr => "eflux_series",
 	efluxws => "eflux_workspace",
+	tintlesample => "tintle_sample",
+	tintlews => "tintle_workspace",
+	tintlew => "tintle_w",
+	tintlek => "tintle_kappa",
 	modelws => "model_workspace",
 };
 #Defining usage and options
@@ -67,6 +71,10 @@ my $specs = [
     [ 'efluxsm:s', 'ID of ExpressionSample for E-Flux analysis' ],
     [ 'efluxsr:s', 'ID of ExpressionSeries for E-Flux analysis' ],
     [ 'efluxws:s', 'Workspace with ExpressionSample/Series', { "default" => fbaws() } ],
+    [ 'tintlesample:s', 'ID of ProbabilitySample for Tintle2014 analysis' ],
+    [ 'tintlews:s', 'Workspace with ProbabilitySample/Series', { "default" => fbaws() } ],
+    [ 'tintlew:s', 'Weights of biomass against gene penalty. In [0,1]', { "default" => 0.5}],
+    [ 'tintlek:s', 'Tolerance to classify genes as unknown, not on or off. In [0,0.5]', {"default" => 0.1}],
     [ 'defaultmaxflux:s', 'Default maximum reaction flux' ],
     [ 'defaultminuptake:s', 'Default minimum nutrient uptake' ],
     [ 'defaultmaxuptake:s', 'Default maximum nutrient uptake' ],

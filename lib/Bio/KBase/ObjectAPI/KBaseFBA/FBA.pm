@@ -26,6 +26,7 @@ has readableObjective => ( is => 'rw', isa => 'Str',printOrder => '30', type => 
 has mediaID => ( is => 'rw', isa => 'Str',printOrder => '0', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildmediaID' );
 has knockouts => ( is => 'rw', isa => 'Str',printOrder => '3', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildknockouts' );
 has promBounds => ( is => 'rw', isa => 'HashRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildpromBounds' );
+has tintlePenalty => ( is => 'rw', isa => 'HashRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildtintlePenalty' );
 has additionalCompoundString => ( is => 'rw', isa => 'Str',printOrder => '4', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildadditionalCompoundString' );
 has templates => ( is => 'rw', isa => 'HashRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, default => sub { return {}; } );
 
@@ -195,6 +196,31 @@ sub _buildpromBounds {
 
 	return $final_bounds;
 }
+
+sub _buildtintlePenalty {
+    my ($self) = @_;
+
+    my $penalty = {};
+
+    my $sample = $self->tintleSamples()->[0];
+    my $kappa =  $self->tintleKappa();
+    foreach my $feature_id (keys %{$sample->{"tintle_probability"}}) {
+	my $p = $sample->{"tintle_probability"}->{$feature_id};
+	$penalty->{$feature_id}->{"penalty_score"} = abs($p - 0.5);
+	if ($p > 0.5 + $kappa) {
+	    # This feature is likely to be on
+	    $penalty->{$feature_id}->{"case"} = "3";
+	} elsif ($p < 0.5 -$kappa) {
+	    # This feature is likely to be off
+	    $penalty->{$feature_id}->{"case"} = "1";
+	} else {
+	    # This feature state is unknown
+	    $penalty->{$feature_id}->{"case"} = "2";
+	}
+    }
+    return $penalty;
+}
+
 sub _buildadditionalCompoundString {
 	my ($self) = @_;
 	my $output = "";
@@ -803,6 +829,22 @@ sub createJobDirectory {
 			$softConst .= ";".$key.":".$bounds->{$key}->[0].":".$bounds->{$key}->[1];
 		}
 		$parameters->{"Soft Constraint"} = $softConst;
+	}
+	if (defined($self->tintleSamples()) && @{$self->tintleSamples()} > 0) {	    
+	    my @exchange_array = ($self->tintleW());	    
+	    my $penalty = $self->tintlePenalty();
+	    foreach my $feature_id (keys %$penalty) {
+		my $escaped_id = $feature_id;
+		$escaped_id =~ s/\|/___/g;
+		push(@exchange_array, join(":", ($escaped_id, $penalty->{$feature_id}->{"penalty_score"}, $penalty->{$feature_id}->{"case"})));
+	    }
+	    $parameters->{"Gene Activity State"} = join(";",@exchange_array);
+	    $parameters->{"Add positive use variable constraints"} = 1;
+	    $parameters->{"Minimum flux for use variable positive constraint"} = 0.000001;
+	    # Not required if the too long name problem is solved
+	    $parameters->{"use simple variable and constraint names"} = 1;	    
+	    # Might be too specific
+	    $parameters->{"MFASolver"} = "CPLEX";
 	}
 	if ($solver eq "SCIP") {
 		$parameters->{"use simple variable and constraint names"} = 1;

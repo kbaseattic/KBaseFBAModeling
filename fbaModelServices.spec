@@ -670,7 +670,7 @@ module fbaModelServices {
 		workspace_id prommodel_workspace - workspace containing prommodel
 		sample_id eflux_sample - ID of gene expression sample to run eflux
 		series_id eflux_series - ID of series that a sample belongs to.
-		workspace_id eflux_workspace - workspace containng gene expression sample series for eflux
+		workspace_id eflux_workspace - workspace containing gene expression sample series for eflux
 		workspace_id media_workspace - workspace containing media for FBA study
 		float objfraction - fraction of objective to use for constraints
 		bool allreversible - flag indicating if all reactions should be reversible
