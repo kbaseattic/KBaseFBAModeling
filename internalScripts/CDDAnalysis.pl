@@ -32,7 +32,7 @@ for (my $i=0; $i < 1000; $i++) {
 		#Setting gene data
 		if (!defined($GeneData->{$items->[0]})) {
 			#Length/Function/ID
-			$GeneData->{$items->[0]} = [$items->[1],$items->[6],$items->[13]];
+			$GeneData->{$items->[0]} = [$items->[1]/3,$items->[6],$items->[13]];
 		}
 		#Setting CDD data
 		if (!defined($CDDData->{$items->[2]})) {
