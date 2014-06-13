@@ -99,7 +99,7 @@ $CDDData = {};
 store $GeneData, $directory."GeneData.store";
 $GeneData = {};
 store $GeneCDDs, $directory."GeneCDDs.store";
-$CDDGenes = {};
+$GeneCDDs = {};
 store $CDDGenes, $directory."CDDGenes.store";
 
 1;
