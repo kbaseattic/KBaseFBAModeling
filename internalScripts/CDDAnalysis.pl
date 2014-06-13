@@ -19,7 +19,8 @@ while (my $line = <$fh>) {
 	push(@{$array},$line);
 }
 close($fh);
-for (my $i=1000; $i < 2000; $i++) {
+$array->[0] = "kb|g.1870";
+for (my $i=0; $i < 1000; $i++) {
 #for (my $i=0; $i < @{$array}; $i++) {
 	print "Loading ".$i.":".$array->[$i]."\n";
 	my $fh;
@@ -55,28 +56,41 @@ my $counts = [0,0,0,0,0,0,0,0,0,0];
 my $gcounts = [0,0,0,0,0,0,0,0,0,0];
 my $ccounts = [0,0,0,0,0,0,0,0,0,0];
 foreach my $gene (keys(%{$GeneCDDs})) {
-	foreach my $cdd (keys(%{$GeneCDDs->{$gene}})) {
-		my $genefraction = $GeneCDDs->{$gene}->{$cdd}->[6]/$GeneData->{$items->[0]}->[0];
-		my $cddfraction = $GeneCDDs->{$gene}->{$cdd}->[6]/$CDDData->{$items->[2]}->[0];
-		for (my $i=0; $i <= 9; $i++) {
-			if ($genefraction >= 0.1*$i  && $cddfraction >= 0.1*$i) {
-				$counts->[$i]++;
-			}
-			if ($genefraction >= 0.1*$i) {
-				$gcounts->[$i]++;
-			}
-			if ($genefraction >= 0.1*$i) {
-				$ccounts->[$i]++;
+	if ($GeneData->{$items->[0]}->[0] != 0) {
+		my $sg = $GeneCDDs->{$gene};
+		foreach my $cdd (keys(%{$sg})) {
+			if ($CDDData->{$items->[2]}->[0] != 0) {
+				my $genefraction = $sg->{$cdd}->[6]/$GeneData->{$items->[0]}->[0];
+				my $cddfraction = $sg->{$cdd}->[6]/$CDDData->{$items->[2]}->[0];
+				for (my $i=0; $i <= 9; $i++) {
+					if ($genefraction >= 0.1*$i  && $cddfraction >= 0.1*$i) {
+						$counts->[$i]++;
+					}
+					if ($genefraction >= 0.1*$i) {
+						$gcounts->[$i]++;
+					}
+					if ($genefraction >= 0.1*$i) {
+						$ccounts->[$i]++;
+					}
+				}
+				if ($genefraction >= 0.9  && $cddfraction >= 0.9) {
+					$SingleGeneCDDs->{$gene}->{$cdd} = [$items->[12],$genefraction,$cddfraction];
+					$CDDData->{$cdd}->[3]++;
+				}
+				if ($cddfraction < 0.9) {
+					delete $CDDGenes->{$cdd}->{$gene};
+					delete $sg->{$cdd};
+				}
+			} else {
+				print "Zero length CDD!\n";
+				delete $CDDGenes->{$cdd}->{$gene};
+				delete $sg->{$cdd};
 			}
 		}
-		if ($genefraction >= 0.9  && $cddfraction >= 0.9) {
-			$SingleGeneCDDs->{$gene}->{$cdd} = [$items->[12],$genefraction,$cddfraction];
-			$CDDData->{$cdd}->[3]++;
-		}
-		if ($cddfraction < 0.9) {
-			delete $CDDGenes->{$cdd}->{$gene};
-			delete $GeneCDDs->{$gene}->{$cdd};
-		}
+	} else {
+		print "Zero length gene!\n";
+		delete $CDDGenes->{$cdd}->{$gene};
+		delete $GeneCDDs->{$gene}->{$cdd};
 	}
 }
 
