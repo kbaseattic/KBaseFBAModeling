@@ -60,7 +60,7 @@ foreach my $gene (keys(%{$GeneCDDs})) {
 		my $sg = $GeneCDDs->{$gene};
 		foreach my $cdd (keys(%{$sg})) {
 			if ($CDDData->{$cdd}->[0] != 0) {
-				my $genefraction = $sg->{$cdd}->[6]/$GeneData->{$cdd}->[0];
+				my $genefraction = $sg->{$cdd}->[6]/$GeneData->{$gene}->[0];
 				my $cddfraction = $sg->{$cdd}->[6]/$CDDData->{$cdd}->[0];
 				for (my $i=0; $i <= 9; $i++) {
 					if ($genefraction >= (0.1*$i)  && $cddfraction >= (0.1*$i)) {
