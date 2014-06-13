@@ -100,10 +100,10 @@ for (my $i=0; $i <= 9; $i++) {
 	print "Bcount:".$i."\t".$counts->[$i]."\n";
 }
 for (my $i=0; $i <= 9; $i++) {
-	print "Gcount:".$i."\t".$counts->[$i]."\n";
+	print "Gcount:".$i."\t".$gcounts->[$i]."\n";
 }
 for (my $i=0; $i <= 9; $i++) {
-	print "Ccount:".$i."\t".$counts->[$i]."\n";
+	print "Ccount:".$i."\t".$ccounts->[$i]."\n";
 }
 
 print "Printing SingleGeneCDDs!\n";
