@@ -56,20 +56,20 @@ my $counts = [0,0,0,0,0,0,0,0,0,0];
 my $gcounts = [0,0,0,0,0,0,0,0,0,0];
 my $ccounts = [0,0,0,0,0,0,0,0,0,0];
 foreach my $gene (keys(%{$GeneCDDs})) {
-	if ($GeneData->{$items->[0]}->[0] != 0) {
+	if ($GeneData->{$gene}->[0] != 0) {
 		my $sg = $GeneCDDs->{$gene};
 		foreach my $cdd (keys(%{$sg})) {
 			if ($CDDData->{$items->[2]}->[0] != 0) {
 				my $genefraction = $sg->{$cdd}->[6]/$GeneData->{$items->[0]}->[0];
 				my $cddfraction = $sg->{$cdd}->[6]/$CDDData->{$items->[2]}->[0];
 				for (my $i=0; $i <= 9; $i++) {
-					if ($genefraction >= 0.1*$i  && $cddfraction >= 0.1*$i) {
+					if ($genefraction >= (0.1*$i)  && $cddfraction >= (0.1*$i)) {
 						$counts->[$i]++;
 					}
-					if ($genefraction >= 0.1*$i) {
+					if ($genefraction >= (0.1*$i)) {
 						$gcounts->[$i]++;
 					}
-					if ($genefraction >= 0.1*$i) {
+					if ($cddfraction >= (0.1*$i)) {
 						$ccounts->[$i]++;
 					}
 				}
@@ -106,14 +106,24 @@ for (my $i=0; $i <= 9; $i++) {
 	print "Ccount:".$i."\t".$counts->[$i]."\n";
 }
 
+print "Printing SingleGeneCDDs!\n";
 store $SingleGeneCDDs, $directory."SingleGeneCDDs.store";
+print "Done!\n";
 $SingleGeneCDDs = {};
+print "Printing CDDData!\n";
 store $CDDData, $directory."CDDData.store";
+print "Done!\n";
 $CDDData = {};
+print "Printing GeneData!\n";
 store $GeneData, $directory."GeneData.store";
+print "Done!\n";
 $GeneData = {};
+print "Printing GeneCDDs!\n";
 store $GeneCDDs, $directory."GeneCDDs.store";
+print "Done!\n";
 $GeneCDDs = {};
+print "Printing CDDGenes!\n";
 store $CDDGenes, $directory."CDDGenes.store";
+print "Done!\n";
 
 1;
