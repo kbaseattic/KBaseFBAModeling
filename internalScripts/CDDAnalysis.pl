@@ -1,6 +1,6 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
 
-use JSON;
+use Storable;
 
 $|=1;
 my $directory = $ARGV[0];
@@ -92,24 +92,14 @@ for (my $i=0; $i <= 9; $i++) {
 	print "Ccount:".$i."\t".$counts->[$i]."\n";
 }
 
-#open($fh, ">", $directory."SingleGeneCDDs.json");
-#print $fh to_json( $SingleGeneCDDs, { utf8 => 1, pretty => $opt->{pretty} } )."\n";
-#close($fh);
-#
-#open($fh, ">", $directory."GeneCDDs.json");
-#print $fh to_json( $GeneCDDs, { utf8 => 1, pretty => $opt->{pretty} } )."\n";
-#close($fh);
-#
-#open($fh, ">", $directory."CDDData.json");
-#print $fh to_json( $CDDData, { utf8 => 1, pretty => $opt->{pretty} } )."\n";
-#close($fh);
-#
-#open($fh, ">", $directory."CDDGenes.json");
-#print $fh to_json( $CDDGenes, { utf8 => 1, pretty => $opt->{pretty} } )."\n";
-#close($fh);
-#
-#open($fh, ">", $directory."GeneData.json");
-#print $fh to_json( $GeneData, { utf8 => 1, pretty => $opt->{pretty} } )."\n";
-#close($fh);
+store $SingleGeneCDDs, $directory."SingleGeneCDDs.store";
+$SingleGeneCDDs = {};
+store $CDDData, $directory."CDDData.store";
+$CDDData = {};
+store $GeneData, $directory."GeneData.store";
+$GeneData = {};
+store $GeneCDDs, $directory."GeneCDDs.store";
+$CDDGenes = {};
+store $CDDGenes, $directory."CDDGenes.store";
 
 1;
