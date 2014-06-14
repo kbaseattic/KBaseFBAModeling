@@ -8,7 +8,8 @@ my $inputdir = $ARGV[1];
 
 #Loading data
 my $GeneData = {};
-my $SingleGeneCDDs = {};
+my $LongCDDs = retrieve($directory."LongCDDs.store");
+my $SingleGeneCDDs = retrieve($directory."GeneCDDs.store");
 my $GeneCDDs = retrieve($directory."GeneCDDs.store");
 my $CDDData = {};
 my $CDDGenes = {};
@@ -179,38 +180,42 @@ foreach my $gene (keys(%{$GeneCDDs})) {
 				$overlapsg++;
 			}
 		}
+		$longgene = 0;
 		my $matches = 0;
 		foreach my $cdd (keys(%{$sg})) {
+			if (defined($SingleGeneCDDs->{$cdd}) && defined($LongCDDs->{$cdd})) {
+				$longgene = 1;
+			}
 			if ($sg->{$cdd}->[0] >= $currdiv && defined($lefts->{$cdd})) {
 				$matches++;
 			}
 		}
-		$candidates->{$gene} = [$currdiv,$highscore,$left,$right,(@{$starts}-$left-$right),$leftsg,$rightsg,$overlapsg,$matches,$GeneData->{$gene}->[0],$GeneData->{$gene}->[1],$GeneData->{$gene}->[2]];
+		$candidates->{$gene} = [$currdiv,$highscore,$left,$right,(@{$starts}-$left-$right),$leftsg,$rightsg,$overlapsg,$matches,$GeneData->{$gene}->[0],$GeneData->{$gene}->[1],$GeneData->{$gene}->[2],$longgene];
 	}
 }
 
 open($fh, "> ".$directory."AllFusions.txt");
 open($fhh, "> ".$directory."FilteredFusions.txt"); 
-print $fh "Gene\tDivide\tScore\tLeft\tRight\tOverlap\tLeft SG\tRight SG\tOverlap SG\tMatches\tLength\tFunction\tSEED\n";
-print $fhh "Gene\tDivide\tScore\tLeft\tRight\tOverlap\tLeft SG\tRight SG\tOverlap SG\tMatches\tLength\tFunction\tSEED\n";
+print $fh "Gene\tDivide\tScore\tLeft\tRight\tOverlap\tLeft SG\tRight SG\tOverlap SG\tMatches\tLength\tFunction\tSEED\tLongCDD\n";
+print $fhh "Gene\tDivide\tScore\tLeft\tRight\tOverlap\tLeft SG\tRight SG\tOverlap SG\tMatches\tLength\tFunction\tSEED\tLongCDD\n";
 foreach my $gene (keys(%{$candidates})) {
 	my $g = $candidates->{$gene};
-	print $fh $gene."\t".$g->[0]."\t".$g->[1]."\t".$g->[2]."\t".$g->[3]."\t".$g->[4]."\t".$g->[5]."\t".$g->[6]."\t".$g->[7]."\t".$g->[8]."\t".$g->[9]."\t".$g->[10]."\t".$g->[11]."\n";
+	print $fh $gene."\t".$g->[0]."\t".$g->[1]."\t".$g->[2]."\t".$g->[3]."\t".$g->[4]."\t".$g->[5]."\t".$g->[6]."\t".$g->[7]."\t".$g->[8]."\t".$g->[9]."\t".$g->[10]."\t".$g->[11]."\t".$g->[12]."\n";
 	if ($g->[5] > 0 && $g->[6] > 0) {
-		print $fhh $gene."\t".$g->[0]."\t".$g->[1]."\t".$g->[2]."\t".$g->[3]."\t".$g->[4]."\t".$g->[5]."\t".$g->[6]."\t".$g->[7]."\t".$g->[8]."\t".$g->[9]."\t".$g->[10]."\t".$g->[11]."\n";
+		print $fhh $gene."\t".$g->[0]."\t".$g->[1]."\t".$g->[2]."\t".$g->[3]."\t".$g->[4]."\t".$g->[5]."\t".$g->[6]."\t".$g->[7]."\t".$g->[8]."\t".$g->[9]."\t".$g->[10]."\t".$g->[11]."\t".$g->[12]."\n";
 	}
 }
 close($fh);
 close($fhh);
 
 open($fh, "> ".$directory."EcoliFusions.txt");
-print $fh "Gene\tDivide\tScore\tLeft\tRight\tOverlap\tLeft SG\tRight SG\tOverlap SG\tMatches\tLength\tFunction\tSEED\n";
+print $fh "Gene\tDivide\tScore\tLeft\tRight\tOverlap\tLeft SG\tRight SG\tOverlap SG\tMatches\tLength\tFunction\tSEED\tLongCDD\tFusion\n";
 foreach my $gene (@{$targgenes}) {
 	my $g = $candidates->{$gene};
 	if (defined($fusions->{$gene})){
-		print $fh $gene."\t".$g->[0]."\t".$g->[1]."\t".$g->[2]."\t".$g->[3]."\t".$g->[4]."\t".$g->[5]."\t".$g->[6]."\t".$g->[7]."\t".$g->[8]."\t".$g->[9]."\t".$g->[10]."\t".$g->[11]."\t1\n";
+		print $fh $gene."\t".$g->[0]."\t".$g->[1]."\t".$g->[2]."\t".$g->[3]."\t".$g->[4]."\t".$g->[5]."\t".$g->[6]."\t".$g->[7]."\t".$g->[8]."\t".$g->[9]."\t".$g->[10]."\t".$g->[11]."\t".$g->[12]."\t1\n";
 	} else {
-		print $fh $gene."\t".$g->[0]."\t".$g->[1]."\t".$g->[2]."\t".$g->[3]."\t".$g->[4]."\t".$g->[5]."\t".$g->[6]."\t".$g->[7]."\t".$g->[8]."\t".$g->[9]."\t".$g->[10]."\t".$g->[11]."\t0\n";
+		print $fh $gene."\t".$g->[0]."\t".$g->[1]."\t".$g->[2]."\t".$g->[3]."\t".$g->[4]."\t".$g->[5]."\t".$g->[6]."\t".$g->[7]."\t".$g->[8]."\t".$g->[9]."\t".$g->[10]."\t".$g->[11]."\t".$g->[12]."\t0\n";
 	}
 }
 close($fh);
