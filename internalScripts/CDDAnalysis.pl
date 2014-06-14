@@ -8,6 +8,7 @@ my $inputdir = $ARGV[1];
 
 my $GeneData = {};
 my $SingleGeneCDDs = {};
+my $LongCDDs = {};
 my $GeneCDDs = {};
 my $CDDData = {};
 my $CDDGenes = {};
@@ -37,7 +38,7 @@ for (my $i=0; $i < 1000; $i++) {
 		#Setting CDD data
 		if (!defined($CDDData->{$items->[2]})) {
 			#CDD stop/CDD name/Gene count/Single gene count
-			$CDDData->{$items->[2]} = [$items->[11],$items->[8],0,0];
+			$CDDData->{$items->[2]} = [$items->[11],$items->[8],0,0,0];
 		} elsif ($CDDData->{$items->[2]}->[0] < $items->[11]) {
 			$CDDData->{$items->[2]}->[0] = $items->[11]
 		}
@@ -74,12 +75,18 @@ foreach my $gene (keys(%{$GeneCDDs})) {
 					}
 				}
 				if ($genefraction >= 0.9  && $cddfraction >= 0.9) {
-					$SingleGeneCDDs->{$gene}->{$cdd} = [$sg->{$cdd}->[4],$genefraction,$cddfraction];
+					$SingleGeneCDDs->{$cdd}->{$gene} = [$sg->{$cdd}->[4],$genefraction,$cddfraction];
 					$CDDData->{$cdd}->[3]++;
 				}
 				if ($cddfraction < 0.9) {
 					delete $CDDGenes->{$cdd}->{$gene};
 					delete $sg->{$cdd};
+				}
+				if ($genefraction >= 0.9  && ($CDDData->{$cdd}->[0]-$GeneData->{$gene}->[0]) >= 50) {
+					if ($sg->{$cdd}->[2] <= 20 || ($CDDData->{$cdd}->[0]-$sg->{$cdd}->[3]) <= 20) {
+						$LongCDDs->{$cdd}->{$gene} = [$sg->{$cdd}->[4],$genefraction,$cddfraction];
+						$CDDData->{$cdd}->[4]++;
+					}
 				}
 			} else {
 				print "Zero length CDD!\n";
@@ -105,6 +112,8 @@ for (my $i=0; $i <= 9; $i++) {
 for (my $i=0; $i <= 9; $i++) {
 	print "Ccount:".$i."\t".$ccounts->[$i]."\n";
 }
+print "Long count:".keys(%{$LongCDDs})."\n";
+print "SingleGeneCDD:".keys(%{$SingleGeneCDDs})."\n";
 
 print "Printing SingleGeneCDDs!\n";
 store $SingleGeneCDDs, $directory."SingleGeneCDDs.store";
@@ -125,5 +134,10 @@ $GeneCDDs = {};
 print "Printing CDDGenes!\n";
 store $CDDGenes, $directory."CDDGenes.store";
 print "Done!\n";
+$CDDGenes = {};
+print "Printing LongCDDs!\n";
+store $LongCDDs, $directory."LongCDDs.store";
+print "Done!\n";
+$CDDGenes = {};
 
 1;
