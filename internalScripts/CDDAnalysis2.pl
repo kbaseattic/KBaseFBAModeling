@@ -7,10 +7,10 @@ my $directory = $ARGV[0];
 my $inputdir = $ARGV[1];
 
 #Loading data
-my $GeneData = {};
-my $LongCDDs = retrieve($directory."LongCDDs.store");
-my $SingleGeneCDDs = retrieve($directory."GeneCDDs.store");
-my $GeneCDDs = retrieve($directory."GeneCDDs.store");
+my $GeneData = retrieve($inputdir."GeneData.store");;
+my $LongCDDs = retrieve($inputdir."LongCDDs.store");
+my $SingleGeneCDDs = retrieve($inputdir."GeneCDDs.store");
+my $GeneCDDs = retrieve($inputdir."GeneCDDs.store");
 my $CDDData = {};
 my $CDDGenes = {};
 my $targgenes = [];
@@ -176,7 +176,7 @@ foreach my $gene (keys(%{$GeneCDDs})) {
 				$rightsg++;
 			} elsif ($sg->{$cdd}->[1] <= $currdiv && defined($SingleGeneCDDs->{$cdd})) {
 				$leftsg++;
-			} else { 
+			} elsif (defined($SingleGeneCDDs->{$cdd})) { 
 				$overlapsg++;
 			}
 		}
