@@ -16,6 +16,7 @@ use Bio::KBase::ObjectAPI::KBaseFBA::FBAMinimalReactionsResult;
 use Bio::KBase::ObjectAPI::KBaseFBA::TintleProbabilitySample;
 use Bio::KBase::ObjectAPI::KBaseFBA::FBAConstraint;
 use Bio::KBase::ObjectAPI::KBaseFBA::FBACompoundVariable;
+use Bio::KBase::ObjectAPI::KBaseFBA::FBATintleResult;
 use Bio::KBase::ObjectAPI::KBaseFBA::FBADeletionResult;
 use Bio::KBase::ObjectAPI::KBaseFBA::FBAReactionVariable;
 use Moose;
@@ -84,6 +85,7 @@ has FBAMinimalReactionsResults => (is => 'rw', isa => 'ArrayRef[HashRef]', defau
 has tintleSamples => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(TintleProbabilitySample)', metaclass => 'Typed', reader => '_tintleSamples', printOrder => '-1');
 has FBAConstraints => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(FBAConstraint)', metaclass => 'Typed', reader => '_FBAConstraints', printOrder => '-1');
 has FBACompoundVariables => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(FBACompoundVariable)', metaclass => 'Typed', reader => '_FBACompoundVariables', printOrder => '-1');
+has FBATintleResults => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(FBATintleResult)', metaclass => 'Typed', reader => '_FBATintleResults', printOrder => '-1');
 has FBADeletionResults => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(FBADeletionResult)', metaclass => 'Typed', reader => '_FBADeletionResults', printOrder => '-1');
 has FBAReactionVariables => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(FBAReactionVariable)', metaclass => 'Typed', reader => '_FBAReactionVariables', printOrder => '-1');
 
@@ -699,6 +701,13 @@ my $subobjects = [
           },
           {
             'printOrder' => -1,
+            'name' => 'FBATintleResults',
+            'type' => 'child',
+            'class' => 'FBATintleResult',
+            'module' => 'KBaseFBA'
+          },
+          {
+            'printOrder' => -1,
             'name' => 'FBADeletionResults',
             'type' => 'child',
             'class' => 'FBADeletionResult',
@@ -713,7 +722,7 @@ my $subobjects = [
           }
         ];
 
-my $subobject_map = {FBAMetaboliteProductionResults => 0, FBAReactionBounds => 1, FBAPromResults => 2, FBAMinimalMediaResults => 3, FBABiomassVariables => 4, FBACompoundBounds => 5, FBAMinimalReactionsResults => 6, tintleSamples => 7, FBAConstraints => 8, FBACompoundVariables => 9, FBADeletionResults => 10, FBAReactionVariables => 11};
+my $subobject_map = {FBAMetaboliteProductionResults => 0, FBAReactionBounds => 1, FBAPromResults => 2, FBAMinimalMediaResults => 3, FBABiomassVariables => 4, FBACompoundBounds => 5, FBAMinimalReactionsResults => 6, tintleSamples => 7, FBAConstraints => 8, FBACompoundVariables => 9, FBATintleResults => 10, FBADeletionResults => 11, FBAReactionVariables => 12};
 sub _subobjects {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -767,6 +776,10 @@ around 'FBAConstraints' => sub {
 around 'FBACompoundVariables' => sub {
 	 my ($orig, $self) = @_;
 	 return $self->_build_all_objects('FBACompoundVariables');
+};
+around 'FBATintleResults' => sub {
+	 my ($orig, $self) = @_;
+	 return $self->_build_all_objects('FBATintleResults');
 };
 around 'FBADeletionResults' => sub {
 	 my ($orig, $self) = @_;

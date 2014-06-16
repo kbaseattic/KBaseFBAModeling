@@ -501,6 +501,26 @@ module KBaseFBA {
     	float beta;
 	} FBAPromResult;
     
+
+	/*
+	  Either of two values: 
+	   - InactiveOn: specified as on, but turns out as inactive
+	   - ActiveOff: specified as off, but turns out as active
+	 */
+	typedef string conflict_state;
+	/*
+	  FBATintleResult object
+	  
+	  @searchable ws_subset growthFraction 
+	 */
+	typedef structure {
+		float originalGrowth;
+		float growth;
+		float originalObjective;
+		float objective;
+		mapping<conflict_state,feature_id> conflicts;		    
+	} FBATintleResult;
+
     /* 
     	FBADeletionResult object
     	
@@ -568,6 +588,7 @@ module KBaseFBA {
 		@searchable ws_subset FBAReactionVariables.[*].(modelreaction_ref,variableType,upperBound,lowerBound,class,min,max,value)
 		@searchable ws_subset FBABiomassVariables.[*].(biomass_ref,variableType,upperBound,lowerBound,class,min,max,value)
 		@searchable ws_subset FBAPromResults.[*].(objectFraction,alpha,beta)
+		@searchable ws_subset FBATintleResults.[*].(growth,object,conflicts)
 		@searchable ws_subset FBADeletionResults.[*].(feature_refs,growthFraction)
 		@searchable ws_subset FBAMinimalMediaResults.[*].(essentialNutrient_refs,optionalNutrient_refs)
 		@searchable ws_subset FBAMetaboliteProductionResults.[*].(modelcompound_ref,maximumProduction)
@@ -633,6 +654,7 @@ module KBaseFBA {
 		list<FBAReactionVariable> FBAReactionVariables;
 		list<FBABiomassVariable> FBABiomassVariables;
 		list<FBAPromResult> FBAPromResults;
+		list<FBATintleResult> FBATintleResults;
 		list<FBADeletionResult> FBADeletionResults;
 		list<FBAMinimalMediaResult> FBAMinimalMediaResults;
 		list<FBAMetaboliteProductionResult> FBAMetaboliteProductionResults;

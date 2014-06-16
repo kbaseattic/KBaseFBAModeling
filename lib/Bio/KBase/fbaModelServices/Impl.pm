@@ -1141,6 +1141,7 @@ sub _buildFBAObject {
 		if (defined($regmodel)) {
 			$fbaobj->regmodel_ref($regmodel->_reference)
 		}
+	}
 	if (defined($fbaFormulation->{tintle_sample}) && defined($fbaFormulation->{tintle_workspace})) {
 	    my $ws = $self->_KBaseStore()->workspace();
 	    my $getparams = {

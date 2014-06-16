@@ -1569,6 +1569,7 @@ sub loadMFAToolkitResults {
 	$self->parseCombinatorialDeletionResults();
 	$self->parseFVAResults();
 	$self->parsePROMResult();
+	$self->parseTintleResult();
 	$self->parseOutputFiles();
 	$self->parseReactionMinimization();
 }
@@ -2151,6 +2152,42 @@ sub parsePROMResult {
 		    $promOutputHash->{$line[0]} = $line[1] if ($line[0] =~ /alpha|beta|objectFraction/);
 		}		
 		$self->add("FBAPromResults",$promOutputHash);			       
+		return 1;
+	}
+	return 0;
+}
+
+=head3 parseTintleResult
+
+Definition:
+	void parseTintleResult();
+Description:
+	Parses Tintle2014 result file.
+
+=cut
+
+sub parseTintleResult {
+	my ($self) = @_;
+	my $directory = $self->jobDirectory();
+	if (-e $directory."/GeneActivityStateFBAResult.txt") {
+		#Loading file results into a hash
+		my $table = Bio::KBase::ObjectAPI::utilities::LOADTABLE($directory."/GeneActivityStateFBAResult.txt", "\t", 0);
+		my $tintleOutputHash;
+		foreach my $row (@{$table->{"data"}}) {
+		    if ($row->[0] =~ /kb___g/) {
+			$row->[0] =~ s/___/|/;
+			if ($row->[0] =~ /Not_(.*)/) {
+			    $tintleOutputHash->{"conflicts"}->{$1} = "InactiveOn";
+			} else {
+			    $tintleOutputHash->{"conflicts"}->{$row->[0]} = "ActiveOff";			    
+			}
+		    } else {
+			$tintleOutputHash->{$row->[0]} = $row->[1];
+		    }
+		}
+		$self->add("FBATintleResults",$tintleOutputHash);		
+		use Data::Dumper; print(Dumper([{"W" => $self->tintleW, "K" => $self->tintleKappa},$tintleOutputHash, $self->tintleSamples()->[0]->{tintle_probability}]));
+
 		return 1;
 	}
 	return 0;
