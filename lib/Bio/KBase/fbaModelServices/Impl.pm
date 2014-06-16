@@ -90,6 +90,7 @@ use Bio::KBase::ObjectAPI::KBaseFBA::ReactionSensitivityAnalysis;
 use Bio::KBase::workspace::Client;
 use Bio::KBase::ObjectAPI::KBaseGenomes::MetagenomeAnnotation;
 use Bio::KBase::ObjectAPI::utilities qw( args verbose set_verbose translateArrayOptions);
+use File::Basename;
 use Try::Tiny;
 use Data::Dumper;
 use Config::Simple;
@@ -2610,6 +2611,312 @@ sub _classify_genome {
 		}
 	}
 	return $largestClass;
+}
+
+=head3 _parse_SBML
+
+Definition:
+	? = $self->_parse_SBML(?);
+Description:
+	?
+		
+=cut
+sub _parse_SBML {
+	my($self,$genome,$bio,$sbml) = @_;
+	#Parsing XML
+	require "XML/DOM.pm";
+	my $parser = new XML::DOM::Parser;
+	my $doc = $parser->parse($sbml);
+	#Parsing compartments
+    my $cmpts = [$doc->getElementsByTagName("compartment")];
+    my $cmptrans;
+    my $nonexactcmptrans = {
+    	extracell => "e",
+    	wall => "w",
+    	peri => "p",
+    	cyto => "c",
+    	retic => "r",
+    	lys => "l",
+    	nucl => "n",
+    	cholor => "h",
+    	mito => "m",
+    	perox => "x",
+    	vacu => "v",
+    	plast => "d"
+    };
+    foreach my $cmpt (@$cmpts){
+    	my $cmp_SEED_id;
+    	my $cmpid;
+    	my $cmpname;
+    	foreach my $attr ($cmpt->getAttributes()->getValues()) {
+    		my $name = $attr->getName();
+    		my $value = $attr->getValue();
+    		if ($name eq "id") {
+    			$cmpid = $value;
+    		} elsif ($name eq "name") {
+    			$cmpname = $value;
+    		}
+    	}
+    	my $cmp = $bio->searchForCompartment($cmpid);
+    	if (defined($cmp)) {
+    		$cmp_SEED_id = $cmp->id();
+    	} else {
+    		foreach my $term (keys(%{$nonexactcmptrans})) {
+    			if ($cmpid =~ m/$term/i) {
+    				$cmp_SEED_id = $nonexactcmptrans->{$term};
+    			} elsif ($cmpname =~ m/$term/i) {
+    				$cmp_SEED_id = $nonexactcmptrans->{$term};
+    			}
+    		} 
+    	}
+    	if (!defined($cmp_SEED_id)) {
+    		Bio::KBase::ObjectAPI::utilities::ERROR("Unrecognized compartment '".$cmpid."' in SBML file!");
+    	} else {
+    		$cmptrans->{$cmpid} = $cmp_SEED_id;
+    	}
+    }
+	#Parsing compounds
+	my $compounds;
+    my $cpds = [$doc->getElementsByTagName("species")];
+    foreach my $cpd (@$cpds){
+    	my $formula = "Unknown";
+    	my $charge = "0";
+    	my $sbmlid = "0";
+    	my $compartment = "c";
+    	my $name;
+    	my $id;
+    	foreach my $attr ($cpd->getAttributes()->getValues()) {
+    		my $nm = $attr->getName();
+    		my $value = $attr->getValue();
+    		if ($nm eq "id") {
+    			$sbmlid = $value;
+    			$id = $value;
+    			if ($id =~ m/^M_(.+)/) {
+    				$id = $1;
+    			}
+    			if ($id =~ m/(.+)_([a-z])$/) {
+    				$id = $1;
+    			}
+    		} elsif ($nm eq "name") {
+    			$name = $value;
+    			if ($name =~ m/^M_(.+)/) {
+    				$name = $1;
+    			}
+    			if ($name =~ m/(.+)_([A-Z0123456789]+)$/) {
+    				$name = $1;
+    				$formula = $2;
+    			}
+    		} elsif ($nm eq "compartment") {
+    			$compartment = $value;
+    			if (defined($cmptrans->{$compartment})) {
+    				$compartment = $cmptrans->{$compartment}->{id};
+    			}
+    		} elsif ($nm eq "charge") {
+    			$charge = $value;
+    		} elsif ($nm eq "formula") {
+    			$formula = $value;
+    		}
+    	}
+    	if (!defined($name)) {
+    		$name = $id;
+    	}
+    	push(@{$compounds},[$sbmlid,$charge,$formula,$name,undef,$compartment]);
+    }
+    #Parsing reactions
+    my $reactions;
+    my $rxns = [$doc->getElementsByTagName("reaction")];
+    foreach my $rxn (@$rxns){
+    	my $id = undef;
+    	my $name = undef;
+    	my $direction = "=";
+    	my $reactants;
+    	my $products;
+    	my $compartment = "c";
+    	my $gpr;
+    	my $pathway;
+    	my $enzyme;
+    	my $protein = "Unknown";
+    	foreach my $attr ($rxn->getAttributes()->getValues()) {
+    		my $nm = $attr->getName();
+    		my $value = $attr->getValue();
+    		if ($nm eq "id") {
+    			if ($value =~ m/^R_(.+)/) {
+    				$value = $1;
+    			}
+    			$id = $value;
+    		} elsif ($nm eq "name") {
+    			if ($value =~ m/^R_(.+)/) {
+    				$value = $1;
+    			}
+    			$value =~ s/_/-/g;
+    			$name = $value;
+    		} elsif ($nm eq "reversible") {
+    			if ($value ne "true") {
+    				$direction = ">";
+    			}
+    		} else {
+    			print $nm.":".$value."\n";
+    		}
+    	}
+    	foreach my $node ($rxn->getElementsByTagName("*",0)){
+    		if ($node->getNodeName() eq "listOfReactants" || $node->getNodeName() eq "listOfProducts") {
+    			foreach my $species ($node->getElementsByTagName("speciesReference",0)){
+    				my $spec;
+    				my $stoich = 1;
+    				foreach my $attr ($species->getAttributes()->getValues()) {
+    					if ($attr->getName() eq "species") {
+    						$spec = $attr->getValue();
+    					} elsif ($attr->getName() eq "stoichiometry") {
+    						$stoich = $attr->getValue();
+    					}
+    				}
+    				if ($node->getNodeName() eq "listOfReactants") {
+    					if (length($reactants) > 0) {
+    						$reactants .= " + ";
+    					}
+    					$reactants .= "(".$stoich.") ".$spec;
+    				} else {
+    					if (length($products) > 0) {
+    						$products .= " + ";
+    					}
+    					$products .= "(".$stoich.") ".$spec;
+    				}
+    			}	
+    		} elsif ($node->getNodeName() eq "notes") {
+    			foreach my $html ($node->getElementsByTagName("*",0)){
+    				my $text = $html->getFirstChild()->getNodeValue();
+					if ($text =~ m/GENE_ASSOCIATION:\s*(.+)/) {
+						$gpr = $1;
+					} elsif ($text =~ m/PROTEIN_ASSOCIATION:\s*/) {
+						$protein = $1;
+					} elsif ($text =~ m/PROTEIN_CLASS:\s*(.+)/) {
+						my $array = [split(/\s/,$1)];
+						$enzyme = $array->[0];
+					} elsif ($text =~ m/SUBSYSTEM:\s*(.+)/) {
+						$pathway = $1;
+						$pathway =~ s/^S_//;
+					}
+    			}
+    		}
+    	}
+    	if (!defined($name)) {
+    		$name = $id;
+    	}
+    	push(@{$reactions},[$id,$direction,$compartment,$gpr,$name,$enzyme,$pathway,undef,$reactants." => ".$products]);
+    }
+    return ($reactions,$compounds);
+}
+
+=head3 _cdd_database
+
+Definition:
+	? = $self->_cdd_database(?);
+Description:
+	?
+		
+=cut
+sub _cdd_database {
+	return "/vol/model-prod/kbase/deploy/CDD/data/";
+}
+
+=head3 _cdd_temp
+
+Definition:
+	? = $self->_cdd_temp(?);
+Description:
+	?
+		
+=cut
+sub _cdd_temp {
+	return "/vol/model-prod/kbase/deploy/CDD/tmp/";
+}
+
+=head3 _update_CDD_database
+
+Definition:
+	? = $self->_update_CDD_database(?);
+Description:
+	?
+		
+=cut
+sub _update_CDD_database {
+	my($self) = @_;
+	my $cdd_url = 'ftp://ftp.ncbi.nih.gov/pub/mmdb/cdd/cdd.tar.gz';
+	my $cddid_url = 'ftp://ftp.ncbi.nih.gov/pub/mmdb/cdd/cddid.tbl.gz';
+	my $cdd_file = basename($cdd_url);
+	my $cddid_file = basename($cddid_url);
+
+	my @format_cmds = (
+		'makeprofiledb -title Pfam.v.26.0 -in Pfam.pn -out Pfam -threshold 9.82 -scale 100.0 -dbtype rps -index true',
+		'makeprofiledb -title COG.v.1.0 -in Cog.pn -out Cog -threshold 9.82 -scale 100.0 -dbtype rps -index true',
+		'makeprofiledb -title KOG.v.1.0 -in Kog.pn -out Kog -threshold 9.82 -scale 100.0 -dbtype rps -index true',
+		'makeprofiledb -title CDD.v.3.10 -in Cdd.pn -out Cdd -threshold 9.82 -scale 100.0 -dbtype rps -index true',
+		'makeprofiledb -title PRK.v.6.00 -in Prk.pn -out Prk -threshold 9.82 -scale 100.0 -dbtype rps -index true',
+	);
+
+    my $rc;
+    my $cdd_tmp = $self->_cdd_temp();
+    if (! -s "$cdd_tmp/$cdd_file") {
+		$rc = system("curl", "-L", "-o", "$cdd_tmp/$cdd_file", $cdd_url);
+		$rc == 0 or die "Error downloading $cdd_url to $cdd_tmp/$cdd_file";
+    }
+    if (! -s "$cdd_tmp/$cddid_file") {
+		$rc = system("curl", "-L", "-o", "$cdd_tmp/$cddid_file", $cddid_url);
+		$rc == 0 or die "Error downloading $cddid_url to $cdd_tmp/$cddid_file";
+    }
+
+
+	chdir($self->_cdd_database()) or die "cannot chdir: $!";
+	if (! -f "Cdd.pn") {
+	    $rc = system(("tar", "-z", "-x", "-f", "$cdd_tmp/$cdd_file"));
+    	$rc == 0 or die "tar failed!";
+	}
+	
+	$rc = system(("gunzip < $cdd_tmp/$cddid_file > cddid.tbl"));
+    $rc == 0 or die "gunzip failed!";
+	
+	$rc = system(("formatrpsdb", "-t", "Cdd", "-i", "Cdd.pn", "-o", "T", "-f", "9.82", "-n", "Cdd", "-S", "100.0"));
+    $rc == 0 or die "formatrpsdb failed!";
+}
+
+=head3 _compute_CDD
+
+Definition:
+	? = $self->_compute_CDD(?);
+Description:
+	?
+		
+=cut
+
+sub _compute_CDD {
+	my($self,$proteins,$update) = @_;
+	if (!-e $self->_cdd_database()."/Cdd.pn" || $update == 1) {
+		$self->_update_CDD_database();
+	}
+	my $output;
+	my $input;
+	foreach my $protein (keys(%{$proteins})) {
+		my $seq = $proteins->{$protein};
+		$input .= ">$protein\n" . $seq . "\n";
+	}
+	my @cmd = ('rpsblast', "-d", $self->_cdd_database()."/Cdd", "-F", "T", "-e", "0.01", "-m", "9");
+	my $output;
+    open(my $fh, "> ".$self->_cdd_temp()."tempinput.txt");
+    print $fh $input;
+    close $fh;
+    system(\@cmd, '<', $self->_cdd_temp()."tempinput.txt", '>', $self->_cdd_temp()."tempoutput.txt");
+    open($fh, "< ".$self->_cdd_temp()."tempoutput.txt");
+   	my $output;
+   	while (my $line = <$fh>) {
+   		$output .= $line;
+   	}
+    close $fh;
+	for my $l (split(/\n/, $output)){
+        next if $l =~ /^#/;
+        my($qry, $subj, @x) = split(/\t/, $l);
+		$subj =~ s/^gnl\|CDD\|//;
+		print join("\t", $subj, $qry, @x), "\n";
+    }
 }
 
 #END_HEADER
@@ -5386,6 +5693,142 @@ sub domains_to_workspace
 
 
 
+=head2 compute_domains
+
+  $output = $obj->compute_domains($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is a compute_domains_params
+$output is an object_metadata
+compute_domains_params is a reference to a hash where the following keys are defined:
+	genome has a value which is a string
+	genome_workspace has a value which is a string
+	proteins has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+	0: a string
+	1: a string
+
+	workspace has a value which is a workspace_id
+workspace_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is a compute_domains_params
+$output is an object_metadata
+compute_domains_params is a reference to a hash where the following keys are defined:
+	genome has a value which is a string
+	genome_workspace has a value which is a string
+	proteins has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+	0: a string
+	1: a string
+
+	workspace has a value which is a workspace_id
+workspace_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+
+
+=item Description
+
+Computes domains for either a genome or a list of proteins
+
+=back
+
+=cut
+
+sub compute_domains
+{
+    my $self = shift;
+    my($params) = @_;
+
+    my @_bad_arguments;
+    (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"params\" (value was \"$params\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to compute_domains:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'compute_domains');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($output);
+    #BEGIN compute_domains
+    $self->_setContext($ctx,$params);
+    $params = $self->_validateargs($params,["workspace"],{
+    	update => 0,
+    	genome => undef,
+    	genome_workspace => $params->{workspace},
+    	proteins => {}
+    });
+    my $proteins = $params->{proteins};
+    if (defined($params->{genome})) {
+    	my $genome = $self->_get_msobject("Genome",$params->{genome_workspace},$params->{genome});
+	    my $features = $genome->features();
+	    for (my $i=0; $i < @{$features}; $i++) {
+	    	if (defined($features->[$i]->protein_translation())) {
+	    		$proteins->{$features->[$i]->id()} = $features->[$i]->protein_translation();
+	    	}
+	    }    
+    }
+    $self->_compute_CDD($proteins);
+    #END compute_domains
+    my @_bad_returns;
+    (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to compute_domains:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'compute_domains');
+    }
+    return($output);
+}
+
+
+
+
 =head2 add_feature_translation
 
   $genomeMeta = $obj->add_feature_translation($input)
@@ -5814,7 +6257,10 @@ sub import_fbamodel
     my($modelMeta);
     #BEGIN import_fbamodel
     $self->_setContext($ctx,$input);
-    $input = $self->_validateargs($input,["genome","workspace","reactions","biomass"],{
+    $input = $self->_validateargs($input,["genome","workspace"],{
+    	reactions => undef,
+    	biomass => undef,
+    	sbml => undef,
     	genome_workspace => $input->{workspace},
     	model => undef,
     	ignore_errors => 0,
@@ -5825,10 +6271,6 @@ sub import_fbamodel
     	compounds => [],
     });
     my $genome = $self->_get_msobject("Genome",$input->{genome_workspace},$input->{genome});
-    my $kbid = $self->_get_new_id($genome->id().".fbamdl.");
-    if (!defined($input->{model})) {
-    	$input->{model} = $kbid;
-    }
     my $template;
     if (defined($input->{template})) {
     	$template = $self->_get_msobject("ModelTemplate",$input->{template_workspace},$input->{template});
@@ -5841,6 +6283,15 @@ sub import_fbamodel
     	} elsif ($class eq "Plant") {
     		$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","PlantModelTemplate");
     	}
+    }
+    if (!defined($input->{sbml}) && (!defined($input->{biomass}) || !defined($input->{reactions}))) {
+    	$self->_error("Must provide either SBML or reaction list to import model");
+    } elsif (defined($input->{sbml})) {
+    	($input->{reactions},$input->{compounds}) = $self->_parse_SBML($genome,$template->biochemistry(),$input->{sbml});
+    }
+    my $kbid = $self->_get_new_id($genome->id().".fbamdl.");
+    if (!defined($input->{model})) {
+    	$input->{model} = $kbid;
     }
     my $model = Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->new({
 		id => $kbid,
@@ -5858,6 +6309,58 @@ sub import_fbamodel
 		modelreactions => []
 	});
 	$model->parent($self->_KBaseStore());
+    #Reprocessing IDs
+    my $translation = {};
+    for (my $i=0; $i < @{$input->{compounds}}; $i++) {
+    	my $cpd = $input->{compounds}->[$i];
+    	my $id = $cpd->[0];
+    	if ($id =~ m/[^\W]/) {
+    		$cpd->[0] =~ s/[^\W]/_/g;
+    		print $id." => ".$cpd->[0]."\n";
+    	}
+    	$translation->{$id} = $cpd->[0];
+    }
+    for (my $i=0; $i < @{$input->{reactions}}; $i++) {
+    	my $rxn = $input->{reactions}->[$i];
+    	$rxn->[0] =~ s/[^\w]/_/g;
+    	if (defined($rxn->[8])) {
+    		my $eqn = $rxn->[8];
+    		foreach my $cpd (keys(%{$translation})) {
+    			if (index($eqn,$cpd >= 0) && $cpd ne $translation->{$cpd}) {
+    				my $array = [split($cpd,$eqn)];
+    				$eqn = join($translation->{$cpd},@{$array});
+    			}
+    		}
+    		while ($eqn =~ m/\[([A-Z])\]/) {
+    			print $eqn."\n";
+    			my $reqplace = "[".lc($1)."]";
+    			$eqn =~ s/\[[A-Z]\]/$reqplace/;
+    			print $eqn."\n";
+    		}
+    		$eqn =~ s/\[[(A-Z)]\]/[\L$1]/g;
+    		if ($eqn =~ m/<[-=]+>/) {
+    			if (!defined($rxn->[1])) {
+    				$rxn->[1] = "=";
+    			}
+    		} elsif ($eqn =~ m/[-=]+>/) {
+    			if (!defined($rxn->[1])) {
+    				$rxn->[1] = ">";
+    			}
+    		} elsif ($eqn =~ m/<[-=]+/) {
+    			if (!defined($rxn->[1])) {
+    				$rxn->[1] = "<";
+    			}
+    		}
+    		$rxn->[8] = $eqn;
+    	}
+    }
+    $input->{biomass} =~ s/\[[(A-Z)]\]/[\L$1]/g;
+    foreach my $cpd (keys(%{$translation})) {
+    	if (index($input->{biomass},$cpd >= 0) && $cpd ne $translation->{$cpd}) {
+    		my $array = [split($cpd,$input->{biomass})];
+    		$input->{biomass} = join($translation->{$cpd},@{$array});
+    	}
+    }
     #Loading reactions to model
 	my $missingGenes = {};
 	my $missingCompounds = {};
@@ -5890,6 +6393,9 @@ sub import_fbamodel
 		if (defined($rxnrow->[7])) {
 			$input->{reference} = $rxnrow->[7];
 		}
+		if (defined($rxnrow->[8])) {
+			$input->{equation} = $rxnrow->[8];
+		}
 		$model->manualReactionAdjustment($input);
 		#if (defined($report->{missing_genes})) {
 		#	for (my $i=0; $i < @{$report->{missing_genes}}; $i++) {
@@ -5918,7 +6424,8 @@ sub import_fbamodel
 	}
 	my $report = $model->manualReactionAdjustment({
 		biomass => 1,
-		reaction => "bio1:".$input->{biomass},
+		reaction => "bio1",
+		equation => $input->{biomass},
 		direction => ">",
 		compartment => "c",
 		compartmentIndex => 0,
@@ -7176,8 +7683,8 @@ model_statistics is a reference to a hash where the following keys are defined:
 bool is an int
 subsystem_statistics is a reference to a hash where the following keys are defined:
 	name has a value which is a string
-	class_one has a value which is a string
-	class_two has a value which is a string
+	class has a value which is a string
+	subclass has a value which is a string
 	genes has a value which is an int
 	reactions has a value which is an int
 	model_genes has a value which is an int
@@ -7230,8 +7737,8 @@ model_statistics is a reference to a hash where the following keys are defined:
 bool is an int
 subsystem_statistics is a reference to a hash where the following keys are defined:
 	name has a value which is a string
-	class_one has a value which is a string
-	class_two has a value which is a string
+	class has a value which is a string
+	subclass has a value which is a string
 	genes has a value which is an int
 	reactions has a value which is an int
 	model_genes has a value which is an int
@@ -22291,6 +22798,57 @@ auth has a value which is a string
 
 
 
+=head2 compute_domains_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "compute_domains_params" function.
+string genome;
+string genome_workspace;
+list<tuple<string,string>> proteins;
+workspace_id workspace;
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+genome has a value which is a string
+genome_workspace has a value which is a string
+proteins has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+0: a string
+1: a string
+
+workspace has a value which is a workspace_id
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+genome has a value which is a string
+genome_workspace has a value which is a string
+proteins has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+0: a string
+1: a string
+
+workspace has a value which is a workspace_id
+
+
+=end text
+
+=back
+
+
+
 =head2 translation
 
 =over 4
@@ -23009,8 +23567,8 @@ model_workspace has a value which is a workspace_id
 <pre>
 a reference to a hash where the following keys are defined:
 name has a value which is a string
-class_one has a value which is a string
-class_two has a value which is a string
+class has a value which is a string
+subclass has a value which is a string
 genes has a value which is an int
 reactions has a value which is an int
 model_genes has a value which is an int
@@ -23031,8 +23589,8 @@ complete_variable_reactions has a value which is an int
 
 a reference to a hash where the following keys are defined:
 name has a value which is a string
-class_one has a value which is a string
-class_two has a value which is a string
+class has a value which is a string
+subclass has a value which is a string
 genes has a value which is an int
 reactions has a value which is an int
 model_genes has a value which is an int

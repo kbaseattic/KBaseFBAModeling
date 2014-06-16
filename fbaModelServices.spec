@@ -1483,6 +1483,25 @@ module fbaModelServices {
     authentication required;
     funcdef domains_to_workspace(domains_to_workspace_params input) returns (object_metadata GenomeDomainMeta);
     
+    /* Input parameters for the "compute_domains_params" function.
+		string genome;
+		string genome_workspace;
+		list<tuple<string,string>> proteins;
+		workspace_id workspace;
+	*/
+	typedef structure {
+		string genome;
+		string genome_workspace;
+		list<tuple<string,string>> proteins;
+		workspace_id workspace;
+    } compute_domains_params;
+    
+    /*
+		Computes domains for either a genome or a list of proteins
+    */
+    authentication required;
+    funcdef compute_domains(compute_domains_params params) returns (object_metadata output);
+    
     /* A link between a KBase gene ID and the ID for the same gene in another database
 	
 		string foreign_id - ID of the gene in another database

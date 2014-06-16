@@ -9,7 +9,7 @@ my $inputdir = $ARGV[1];
 #Loading data
 my $GeneData = retrieve($inputdir."GeneData.store");;
 my $LongCDDs = retrieve($inputdir."LongCDDs.store");
-my $SingleGeneCDDs = retrieve($inputdir."GeneCDDs.store");
+my $SingleGeneCDDs = retrieve($inputdir."SingleGeneCDDs.store");
 my $GeneCDDs = retrieve($inputdir."GeneCDDs.store");
 my $CDDData = {};
 my $CDDGenes = {};

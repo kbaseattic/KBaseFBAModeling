@@ -2454,6 +2454,139 @@ sub domains_to_workspace
 
 
 
+=head2 compute_domains
+
+  $output = $obj->compute_domains($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is a compute_domains_params
+$output is an object_metadata
+compute_domains_params is a reference to a hash where the following keys are defined:
+	genome has a value which is a string
+	genome_workspace has a value which is a string
+	proteins has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+	0: a string
+	1: a string
+
+	workspace has a value which is a workspace_id
+workspace_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is a compute_domains_params
+$output is an object_metadata
+compute_domains_params is a reference to a hash where the following keys are defined:
+	genome has a value which is a string
+	genome_workspace has a value which is a string
+	proteins has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+	0: a string
+	1: a string
+
+	workspace has a value which is a workspace_id
+workspace_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+=item Description
+
+Computes domains for either a genome or a list of proteins
+
+=back
+
+=cut
+
+sub compute_domains
+{
+    my($self, @args) = @_;
+
+# Authentication: required
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function compute_domains (received $n, expecting 1)");
+    }
+    {
+	my($params) = @args;
+
+	my @_bad_arguments;
+        (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to compute_domains:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'compute_domains');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.compute_domains",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{error}->{code},
+					       method_name => 'compute_domains',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method compute_domains",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'compute_domains',
+				       );
+    }
+}
+
+
+
 =head2 add_feature_translation
 
   $genomeMeta = $obj->add_feature_translation($input)
@@ -3990,8 +4123,8 @@ model_statistics is a reference to a hash where the following keys are defined:
 bool is an int
 subsystem_statistics is a reference to a hash where the following keys are defined:
 	name has a value which is a string
-	class_one has a value which is a string
-	class_two has a value which is a string
+	class has a value which is a string
+	subclass has a value which is a string
 	genes has a value which is an int
 	reactions has a value which is an int
 	model_genes has a value which is an int
@@ -4044,8 +4177,8 @@ model_statistics is a reference to a hash where the following keys are defined:
 bool is an int
 subsystem_statistics is a reference to a hash where the following keys are defined:
 	name has a value which is a string
-	class_one has a value which is a string
-	class_two has a value which is a string
+	class has a value which is a string
+	subclass has a value which is a string
 	genes has a value which is an int
 	reactions has a value which is an int
 	model_genes has a value which is an int
@@ -17096,6 +17229,57 @@ auth has a value which is a string
 
 
 
+=head2 compute_domains_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "compute_domains_params" function.
+string genome;
+string genome_workspace;
+list<tuple<string,string>> proteins;
+workspace_id workspace;
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+genome has a value which is a string
+genome_workspace has a value which is a string
+proteins has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+0: a string
+1: a string
+
+workspace has a value which is a workspace_id
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+genome has a value which is a string
+genome_workspace has a value which is a string
+proteins has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+0: a string
+1: a string
+
+workspace has a value which is a workspace_id
+
+
+=end text
+
+=back
+
+
+
 =head2 translation
 
 =over 4
@@ -17814,8 +17998,8 @@ model_workspace has a value which is a workspace_id
 <pre>
 a reference to a hash where the following keys are defined:
 name has a value which is a string
-class_one has a value which is a string
-class_two has a value which is a string
+class has a value which is a string
+subclass has a value which is a string
 genes has a value which is an int
 reactions has a value which is an int
 model_genes has a value which is an int
@@ -17836,8 +18020,8 @@ complete_variable_reactions has a value which is an int
 
 a reference to a hash where the following keys are defined:
 name has a value which is a string
-class_one has a value which is a string
-class_two has a value which is a string
+class has a value which is a string
+subclass has a value which is a string
 genes has a value which is an int
 reactions has a value which is an int
 model_genes has a value which is an int
