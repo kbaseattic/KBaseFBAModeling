@@ -138,29 +138,31 @@ sub getObjectByAlias {
 sub getObjectsByAlias {
 	my ($self,$attribute,$alias,$aliasName) = @_;
 	my $objects = [];
-	my $aliasHash;
-	if ($attribute eq "compounds") {
-		$aliasHash = $self->compoundsByAlias();
-	} elsif ($attribute eq "reactions") {
-		$aliasHash = $self->reactionsByAlias();
-	}
-	if (!defined($aliasName)) {
-		my $uuidhash = {};
-		foreach my $set (keys(%{$aliasHash})) {
-			if (defined($aliasHash->{$set}->{$alias})) {
-				foreach my $uuid (keys(%{$aliasHash->{$set}->{$alias}})) {
-					$uuidhash->{$uuid} = 1;
+	if (defined($alias)) {
+		my $aliasHash;
+		if ($attribute eq "compounds") {
+			$aliasHash = $self->compoundsByAlias();
+		} elsif ($attribute eq "reactions") {
+			$aliasHash = $self->reactionsByAlias();
+		}
+		if (!defined($aliasName)) {
+			my $uuidhash = {};
+			foreach my $set (keys(%{$aliasHash})) {
+				if (defined($aliasHash->{$set}->{$alias})) {
+					foreach my $uuid (keys(%{$aliasHash->{$set}->{$alias}})) {
+						$uuidhash->{$uuid} = 1;
+					}
 				}
 			}
-		}
-		$objects = $self->getObjects($attribute,[keys(%{$uuidhash})]);
-	} else {
-		my $uuidhash = {};
-		if (defined($aliasHash->{$aliasName})) {
-			foreach my $uuid (keys(%{$aliasHash->{$aliasName}->{$alias}})) {
-				$uuidhash->{$uuid} = 1;
-			}
 			$objects = $self->getObjects($attribute,[keys(%{$uuidhash})]);
+		} else {
+			my $uuidhash = {};
+			if (defined($aliasHash->{$aliasName})) {
+				foreach my $uuid (keys(%{$aliasHash->{$aliasName}->{$alias}})) {
+					$uuidhash->{$uuid} = 1;
+				}
+				$objects = $self->getObjects($attribute,[keys(%{$uuidhash})]);
+			}
 		}
 	}
 	return $objects;

@@ -385,6 +385,7 @@ Description:
 sub manualReactionAdjustment {
     my $self = shift;
     my $args = Bio::KBase::ObjectAPI::utilities::args(["reaction"],{
+    	equation => undef,
     	biomass => 0,
     	direction => undef,
     	compartment => "c",
@@ -401,10 +402,13 @@ sub manualReactionAdjustment {
 	my $genealiases = $self->genome()->geneAliasHash();
     my $rxnid = $args->{reaction};
     my $eq;
-    if ($args->{reaction} =~ m/^(.+):(.+)/) {
-    	$rxnid = $1;
-    	$eq = $2;
-    }
+    if (defined($args->{equation})) {
+    	$eq = $args->{equation};
+    	if ($eq =~ m/\[([a-zA-Z])\]\s*:\s*(.+)/) {
+    		$args->{compartment} = lc($1);
+    		$eq = $2;
+    	}
+    }    
     if ($rxnid =~ m/^(.+)\[([a-z]+)(\d*)]$/) {
     	$args->{reaction} = $1;
     	$args->{compartment} = $2;
@@ -420,7 +424,7 @@ sub manualReactionAdjustment {
     my $bio = $self->template()->biochemistry();
     my $cmp = $bio->searchForCompartment($args->{compartment});
     if (!defined($cmp)) {
-    	Bio::KBase::ObjectAPI::utilities::error("Unrecognized compartment in reaction:".$rxnid."!");
+    	Bio::KBase::ObjectAPI::utilities::error("Unrecognized compartment ".$cmp." in reaction:".$rxnid."!");
     }
     my $mdlcmp = $self->addCompartmentToModel({compartment => $cmp,pH => 7,potential => 0,compartmentIndex => 0});
     my $mdlrxn;
@@ -2492,6 +2496,76 @@ sub compute_model_stats {
 		$output->{complete_blocked_reactions} = $output->{total_reactions};
 	}
     return $output;
+}
+
+=head3 translate_model
+
+Definition:
+    $self->translate_model(ProteomeComparison:comparison);
+Description:
+    Translates model to new genome based on proteome comparison
+
+=cut
+sub translate_model {
+	my $self = shift;
+	my $protcomp = shift;
+	my $genome = $self->genome();	
+	my $ref = $protcomp->genome2ws()."/".$protcomp->genome2id();
+	my $map = $protcomp->proteome1map();
+	my $list = $protcomp->proteome1names();
+	my $data = $protcomp->data1();
+	my $omap = $protcomp->proteome2map();
+	my $olist = $protcomp->proteome2names();
+	my $odata = $protcomp->data2();
+	if ($genome->_wsname() eq $protcomp->genome2id() && $genome->_wsworkspace() eq $protcomp->genome2ws()) {
+		$ref = $protcomp->genome1ws()."/".$protcomp->genome1id();
+		$map = $protcomp->proteome2map();
+		$list = $protcomp->proteome2names();
+		$data = $protcomp->data2();
+		$omap = $protcomp->proteome1map();
+		$olist = $protcomp->proteome1names();
+		$odata = $protcomp->data1();
+	}
+	my $newgenome = $self->store()->get_object($ref);
+	my $translate;
+	for(my $i=0; $i < @{$data}; $i++) {
+		for (my $j=0; $j < @{$data->[$i]}; $j++) {
+			if ($data->[$i]->[$j]->[2] == 100) {
+				$translate->{$list->[$i]} = $olist->[$data->[$i]->[$j]->[0]];
+			}
+		}
+	}
+	my $reactions = $self->modelreactions();
+	for (my $i=0; $i < @{$reactions}; $i++) {
+		my $rxn = $reactions->[$i];
+		my $prots = $rxn->modelReactionProteins();
+		for (my $j=0; $j < @{$prots}; $j++) {
+			my $sus = $prots->[$j]->modelReactionProteinSubunits();
+			my $keep = 0;
+			for (my $k=0; $k < @{$sus}; $k++) {
+				my $ftrs = $sus->[$k]->features();
+				my $newftrs = [];
+				for (my $m=0; $m < @{$ftrs}; $m++) {
+					if (defined($translate->{$ftrs->[$m]->id()})) {
+						my $newftr = $newgenome->getObject("features",$translate->{$ftrs->[$m]->id()});
+						push(@{$newftrs},$newftr->_reference());
+					}
+				}
+				if (@{$newftrs} > 0) {
+					$keep = 1;
+				}
+				$sus->[$k]->feature_refs($newftrs);
+			}
+			if ($keep == 0) {
+				$rxn->removeLinkArrayItem("modelReactionProteins",$prots->[$j]);
+			}
+		}
+		if (@{$rxn->modelReactionProteins()} == 0) {
+			$self->remove("reactions",$rxn);
+		}
+	}
+	$self->genome_ref($ref);
+	$self->genome($newgenome);
 }
 
 =head3 build_model_fba

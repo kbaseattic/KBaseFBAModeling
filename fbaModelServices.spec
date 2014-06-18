@@ -1561,7 +1561,28 @@ module fbaModelServices {
         Build a genome-scale metabolic model based on annotations in an input genome typed object
     */
     authentication required;
-    funcdef genome_to_fbamodel (genome_to_fbamodel_params input) returns (object_metadata modelMeta);
+    funcdef genome_to_fbamodel(genome_to_fbamodel_params input) returns (object_metadata modelMeta);
+	
+	/* Input parameters for the "translate_fbamodel" function.
+	
+		gencomp
+		gencomp_workspace
+		fbamodel_id model;
+		fbamodel_id model_workspace;
+		
+	*/
+    typedef structure {
+		string protcomp;
+		string protcomp_workspace;
+		string model;
+		string model_workspace;
+		workspace_id workspace;
+    } translate_fbamodel_params;
+    /*
+        Translate an existing model to a new genome based on the genome comparison object
+    */
+    authentication required;
+    funcdef translate_fbamodel(translate_fbamodel_params input) returns (object_metadata modelMeta);
 	
 	/* Input parameters for the "import_fbamodel" function.
 	

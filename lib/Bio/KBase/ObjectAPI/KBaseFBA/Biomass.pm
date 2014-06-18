@@ -440,16 +440,21 @@ sub ImportExternalEquation {
 	    			$mdlcpd = $self->parent()->searchForCompound($cpd."_".$compartment.$index);
 	    			if (!defined($mdlcpd)) {
 	    				if (!defined($args->{compounds}->{$cpd})) {
-	    					Bio::KBase::ObjectAPI::utilities::error("Ill defined compound:".$cpd."!");
+	    					print "Ill defined compound:".$cpd."!\n";
+	    					$cpd =~ s/[^\w]/_/g;
+	    					$mdlcpd = $self->parent()->searchForCompound($cpd."_".$compartment.$index);
+	    					#Bio::KBase::ObjectAPI::utilities::error("Ill defined compound:".$cpd."!");
 	    				}
-	    				$mdlcpd = $self->parent()->add("modelcompounds",{
-	    					id => $cpd."_".$compartment.$index,
-							compound_ref => $bio->_reference()."/compounds/id/cpd00000",
-							name => $args->{compounds}->{$cpd}->[3]."_".$compartment.$index,
-							charge => $args->{compounds}->{$cpd}->[1],
-							formula => $args->{compounds}->{$cpd}->[2],
-							modelcompartment_ref => "~/modelcompartments/id/".$mdlcmp->id()
-	    				});
+	    				if (!defined($mdlcpd)) {
+		    				$mdlcpd = $self->parent()->add("modelcompounds",{
+		    					id => $cpd."_".$compartment.$index,
+								compound_ref => $bio->_reference()."/compounds/id/cpd00000",
+								name => $args->{compounds}->{$cpd}->[3]."_".$compartment.$index,
+								charge => $args->{compounds}->{$cpd}->[1],
+								formula => $args->{compounds}->{$cpd}->[2],
+								modelcompartment_ref => "~/modelcompartments/id/".$mdlcmp->id()
+		    				});
+	    				}
 	    			}
 	    		}
 	    		$self->add("biomasscompounds",{

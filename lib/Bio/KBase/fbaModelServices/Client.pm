@@ -2875,6 +2875,135 @@ sub genome_to_fbamodel
 
 
 
+=head2 translate_fbamodel
+
+  $modelMeta = $obj->translate_fbamodel($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a translate_fbamodel_params
+$modelMeta is an object_metadata
+translate_fbamodel_params is a reference to a hash where the following keys are defined:
+	gencomp has a value which is a string
+	gencomp_workspace has a value which is a string
+	model has a value which is a string
+	model_workspace has a value which is a string
+	workspace has a value which is a workspace_id
+workspace_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a translate_fbamodel_params
+$modelMeta is an object_metadata
+translate_fbamodel_params is a reference to a hash where the following keys are defined:
+	gencomp has a value which is a string
+	gencomp_workspace has a value which is a string
+	model has a value which is a string
+	model_workspace has a value which is a string
+	workspace has a value which is a workspace_id
+workspace_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+=item Description
+
+Translate an existing model to a new genome based on the genome comparison object
+
+=back
+
+=cut
+
+sub translate_fbamodel
+{
+    my($self, @args) = @_;
+
+# Authentication: required
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function translate_fbamodel (received $n, expecting 1)");
+    }
+    {
+	my($input) = @args;
+
+	my @_bad_arguments;
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to translate_fbamodel:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'translate_fbamodel');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.translate_fbamodel",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{error}->{code},
+					       method_name => 'translate_fbamodel',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method translate_fbamodel",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'translate_fbamodel',
+				       );
+    }
+}
+
+
+
 =head2 import_fbamodel
 
   $modelMeta = $obj->import_fbamodel($input)
@@ -17424,6 +17553,54 @@ coremodel has a value which is a bool
 workspace has a value which is a workspace_id
 auth has a value which is a string
 fulldb has a value which is a bool
+
+
+=end text
+
+=back
+
+
+
+=head2 translate_fbamodel_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "translate_fbamodel" function.
+
+        gencomp
+        gencomp_workspace
+        fbamodel_id model;
+        fbamodel_id model_workspace;
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+gencomp has a value which is a string
+gencomp_workspace has a value which is a string
+model has a value which is a string
+model_workspace has a value which is a string
+workspace has a value which is a workspace_id
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+gencomp has a value which is a string
+gencomp_workspace has a value which is a string
+model has a value which is a string
+model_workspace has a value which is a string
+workspace has a value which is a workspace_id
 
 
 =end text

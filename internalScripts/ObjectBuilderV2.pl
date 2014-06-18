@@ -67,6 +67,7 @@ foreach my $key (keys(%{$objtranslation})) {
 	$refobjtrans->{$objtranslation->{$key}} = $key;
 }
 my $baseobjects = {
+	ProteomeComparison => "GenomeComparison",
 	MetagenomeAnnotation => "KBaseGenomes",
 	Genome => "KBaseGenomes",
 	ContigSet => "KBaseGenomes",
@@ -112,7 +113,7 @@ foreach my $obj (keys(%{$objcorrespondence})) {
 }
 my $subobj = {};
 my $specobjects = {};
-my $speclist = ["FBAModel.spec","Ontology.spec","Biochem.spec","Genome.spec","Phenotypes.spec","ProbabilisticAnnotation.spec"];
+my $speclist = ["GenomeComparison.spec","FBAModel.spec","Ontology.spec","Biochem.spec","Genome.spec","Phenotypes.spec","ProbabilisticAnnotation.spec"];
 for (my $i=0; $i < @{$speclist}; $i++) {
 	my $module;
 	my $stringtypes = {};

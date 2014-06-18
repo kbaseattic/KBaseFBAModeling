@@ -122,7 +122,7 @@ my $headingColums;
 for (my $i=0;$i < @{$headings}; $i++) {
 	$headingColums->{$headings->[$i]} = $i;
 }
-my $reqheadings = ["id","direction","compartment","gpr"];
+my $reqheadings = ["id","gpr"];
 my $error = 0;
 foreach my $heading (@{$reqheadings}) {
 	if (!defined($headingColums->{$heading})) {
@@ -134,27 +134,35 @@ if ($error == 1) {
 	exit();
 }
 foreach my $rxn (@{$data}) {
-	if (@{$rxn} >= 4) {
-		my $rxnobj = [
-			$rxn->[$headingColums->{id}],
-			$rxn->[$headingColums->{direction}],
-			$rxn->[$headingColums->{compartment}],
-			$rxn->[$headingColums->{gpr}],
-		];
-		if (defined($headingColums->{name})) {
-			$rxnobj->[4] = $rxn->[$headingColums->{name}];
-		}
-		if (defined($headingColums->{enzyme})) {
-			$rxnobj->[5] = $rxn->[$headingColums->{enzyme}];
-		}
-		if (defined($headingColums->{pathway})) {
-			$rxnobj->[6] = $rxn->[$headingColums->{pathway}];
-		}
-		if (defined($headingColums->{reference})) {
-			$rxnobj->[7] = $rxn->[$headingColums->{reference}];
-		}
-		push(@{$params->{reactions}},$rxnobj);
+	my $rxnobj = [
+		$rxn->[$headingColums->{id}],
+		"=",
+		"c",
+		$rxn->[$headingColums->{gpr}],
+	];
+	if (defined($headingColums->{direction})) {
+		$rxnobj->[1] = $rxn->[$headingColums->{direction}];
 	}
+	if (defined($headingColums->{compartment})) {
+		$rxnobj->[2] = $rxn->[$headingColums->{compartment}];
+	}
+	if (defined($headingColums->{name})) {
+		$rxnobj->[4] = $rxn->[$headingColums->{name}];
+	}
+	if (defined($headingColums->{enzyme})) {
+		$rxnobj->[5] = $rxn->[$headingColums->{enzyme}];
+	}
+	if (defined($headingColums->{pathway})) {
+		$rxnobj->[6] = $rxn->[$headingColums->{pathway}];
+	}
+	if (defined($headingColums->{reference})) {
+		$rxnobj->[7] = $rxn->[$headingColums->{reference}];
+	}
+	if (defined($headingColums->{equation})) {
+		$rxnobj->[8] = $rxn->[$headingColums->{equation}];
+	}
+	print $rxnobj->[0]."\n";
+	push(@{$params->{reactions}},$rxnobj);
 }
 if (defined($opt->{compoundfile})) {
 	if (!-e $opt->{compoundfile}) {
@@ -174,7 +182,7 @@ if (defined($opt->{compoundfile})) {
 	for (my $i=0;$i < @{$headings}; $i++) {
 		$headingColums->{$headings->[$i]} = $i;
 	}
-	my $reqheadings = ["id","charge","formula","name"];
+	my $reqheadings = ["id","name"];
 	my $error = 0;
 	foreach my $heading (@{$reqheadings}) {
 		if (!defined($headingColums->{$heading})) {
@@ -186,18 +194,23 @@ if (defined($opt->{compoundfile})) {
 		exit();
 	}
 	foreach my $cpd (@{$data}) {
-		if (@{$cpd} >= 4) {
-			my $cpdobj = [
-				$cpd->[$headingColums->{id}],
-				$cpd->[$headingColums->{charge}],
-				$cpd->[$headingColums->{formula}],
-				$cpd->[$headingColums->{name}],
-			];
-			if (defined($headingColums->{aliases})) {
-				$cpdobj->[4] = $cpd->[$headingColums->{aliases}];
-			}
-			push(@{$params->{compounds}},$cpdobj);
+		my $cpdobj = [
+			$cpd->[$headingColums->{id}],
+			undef,
+			undef,
+			$cpd->[$headingColums->{name}],
+		];
+		if (defined($headingColums->{formula})) {
+			$cpdobj->[2] = $cpd->[$headingColums->{formula}];
 		}
+		if (defined($headingColums->{charge})) {
+			$cpdobj->[1] = $cpd->[$headingColums->{charge}];
+		}
+		if (defined($headingColums->{aliases})) {
+			$cpdobj->[4] = $cpd->[$headingColums->{aliases}];
+		}
+		print $cpdobj->[0]."\n";
+		push(@{$params->{compounds}},$cpdobj);
 	}
 }
 #Calling the server

@@ -89,6 +89,7 @@ use Bio::KBase::ObjectAPI::KBaseFBA::ModelTemplate;
 use Bio::KBase::ObjectAPI::KBaseFBA::ReactionSensitivityAnalysis;
 use Bio::KBase::workspace::Client;
 use Bio::KBase::ObjectAPI::KBaseGenomes::MetagenomeAnnotation;
+use Bio::KBase::ObjectAPI::GenomeComparison::ProteomeComparison;
 use Bio::KBase::ObjectAPI::utilities qw( args verbose set_verbose translateArrayOptions);
 use File::Basename;
 use Try::Tiny;
@@ -6132,6 +6133,130 @@ sub genome_to_fbamodel
 
 
 
+=head2 translate_fbamodel
+
+  $modelMeta = $obj->translate_fbamodel($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a translate_fbamodel_params
+$modelMeta is an object_metadata
+translate_fbamodel_params is a reference to a hash where the following keys are defined:
+	gencomp has a value which is a string
+	gencomp_workspace has a value which is a string
+	model has a value which is a string
+	model_workspace has a value which is a string
+	workspace has a value which is a workspace_id
+workspace_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a translate_fbamodel_params
+$modelMeta is an object_metadata
+translate_fbamodel_params is a reference to a hash where the following keys are defined:
+	gencomp has a value which is a string
+	gencomp_workspace has a value which is a string
+	model has a value which is a string
+	model_workspace has a value which is a string
+	workspace has a value which is a workspace_id
+workspace_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+
+
+=item Description
+
+Translate an existing model to a new genome based on the genome comparison object
+
+=back
+
+=cut
+
+sub translate_fbamodel
+{
+    my $self = shift;
+    my($input) = @_;
+
+    my @_bad_arguments;
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to translate_fbamodel:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'translate_fbamodel');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($modelMeta);
+    #BEGIN translate_fbamodel
+    $self->_setContext($ctx,$input);
+    $input = $self->_validateargs($input,["protcomp","model","workspace"],{
+    	protcomp_workspace => $input->{workspace},
+    	model_workspace => $input->{workspace},
+    	modelout => $input->{model}
+    });
+    my $model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model});
+    my $protcomp = $self->_get_msobject("ProteomeComparison",$input->{protcomp_workspace},$input->{protcomp});
+	$model->translate_model($protcomp);
+	$modelMeta = $self->_save_msobject($model,"",$input->{workspace},$input->{modelout});
+    #END translate_fbamodel
+    my @_bad_returns;
+    (ref($modelMeta) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"modelMeta\" (value was \"$modelMeta\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to translate_fbamodel:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'translate_fbamodel');
+    }
+    return($modelMeta);
+}
+
+
+
+
 =head2 import_fbamodel
 
   $modelMeta = $obj->import_fbamodel($input)
@@ -6314,9 +6439,8 @@ sub import_fbamodel
     for (my $i=0; $i < @{$input->{compounds}}; $i++) {
     	my $cpd = $input->{compounds}->[$i];
     	my $id = $cpd->[0];
-    	if ($id =~ m/[^\W]/) {
-    		$cpd->[0] =~ s/[^\W]/_/g;
-    		print $id." => ".$cpd->[0]."\n";
+    	if ($id =~ m/[^\w^-]/) {
+    		$cpd->[0] =~ s/[^\w^-]/_/g;
     	}
     	$translation->{$id} = $cpd->[0];
     }
@@ -6324,20 +6448,29 @@ sub import_fbamodel
     	my $rxn = $input->{reactions}->[$i];
     	$rxn->[0] =~ s/[^\w]/_/g;
     	if (defined($rxn->[8])) {
-    		my $eqn = $rxn->[8];
+    		if ($rxn->[8] =~ m/^\[([A-Za-z])\]\s*:\s*(.+)/) {
+    			$rxn->[2] = lc($1);
+    			$rxn->[8] = $2;
+    		}
+    		my $eqn = "| ".$rxn->[8]." |";
     		foreach my $cpd (keys(%{$translation})) {
-    			if (index($eqn,$cpd >= 0) && $cpd ne $translation->{$cpd}) {
-    				my $array = [split($cpd,$eqn)];
-    				$eqn = join($translation->{$cpd},@{$array});
+    			if (index($eqn,$cpd) >= 0 && $cpd ne $translation->{$cpd}) {
+    				my $origcpd = $cpd;
+    				$cpd =~ s/\+/\\+/g;
+    				$cpd =~ s/\(/\\(/g;
+    				$cpd =~ s/\)/\\)/g;
+    				my $array = [split(/\s$cpd\s/,$eqn)];
+    				$eqn = join(" ".$translation->{$origcpd}." ",@{$array});
+    				$array = [split(/\s$cpd\[/,$eqn)];
+    				$eqn = join(" ".$translation->{$origcpd}."[",@{$array});
     			}
     		}
+    		$eqn =~ s/^\|\s//;
+    		$eqn =~ s/\s\|$//;
     		while ($eqn =~ m/\[([A-Z])\]/) {
-    			print $eqn."\n";
     			my $reqplace = "[".lc($1)."]";
     			$eqn =~ s/\[[A-Z]\]/$reqplace/;
-    			print $eqn."\n";
     		}
-    		$eqn =~ s/\[[(A-Z)]\]/[\L$1]/g;
     		if ($eqn =~ m/<[-=]+>/) {
     			if (!defined($rxn->[1])) {
     				$rxn->[1] = "=";
@@ -6354,13 +6487,27 @@ sub import_fbamodel
     		$rxn->[8] = $eqn;
     	}
     }
-    $input->{biomass} =~ s/\[[(A-Z)]\]/[\L$1]/g;
+    my $eqn = "| ".$input->{biomass}." |";
     foreach my $cpd (keys(%{$translation})) {
-    	if (index($input->{biomass},$cpd >= 0) && $cpd ne $translation->{$cpd}) {
-    		my $array = [split($cpd,$input->{biomass})];
-    		$input->{biomass} = join($translation->{$cpd},@{$array});
+    	if (index($input->{biomass},$cpd) >= 0 && $cpd ne $translation->{$cpd}) {
+    		my $origcpd = $cpd;
+    		$cpd =~ s/\+/\\+/g;
+    		$cpd =~ s/\(/\\(/g;
+    		$cpd =~ s/\)/\\)/g;
+    		print "Compound:".$cpd."\n";
+    		my $array = [split(/\s$cpd\s/,$eqn)];
+    		$eqn = join(" ".$translation->{$origcpd}." ",@{$array});
+    		$array = [split(/\s$cpd\[/,$eqn)];
+    		$eqn = join(" ".$translation->{$origcpd}."[",@{$array});
     	}
     }
+    $eqn =~ s/^\|\s//;
+    $eqn =~ s/\s\|$//;
+    while ($eqn =~ m/\[([A-Z])\]/) {
+    	my $reqplace = "[".lc($1)."]";
+    	$eqn =~ s/\[[A-Z]\]/$reqplace/;
+    }
+    $input->{biomass} = $eqn;
     #Loading reactions to model
 	my $missingGenes = {};
 	my $missingCompounds = {};
@@ -6396,6 +6543,7 @@ sub import_fbamodel
 		if (defined($rxnrow->[8])) {
 			$input->{equation} = $rxnrow->[8];
 		}
+		print $input->{equation}."\n";
 		$model->manualReactionAdjustment($input);
 		#if (defined($report->{missing_genes})) {
 		#	for (my $i=0; $i < @{$report->{missing_genes}}; $i++) {
@@ -6417,11 +6565,12 @@ sub import_fbamodel
 	for (my $i=0; $i < @{$rxns}; $i++) {
 		my $rxn = $rxns->[$i];
 		my $rgts = $rxn->modelReactionReagents();
-		print "Reaction:".$rxn->id()."\n";
 		if (@{$rgts} == 1 && $rgts->[0]->modelcompound()->id() =~ m/_e\d+$/) {
+			print "Removing reaction:".$rxn->definition()."\n";
 			$model->remove("modelreactions",$rxn);
 		}	
 	}
+	print "Biomass:".$input->{biomass}."\n";
 	my $report = $model->manualReactionAdjustment({
 		biomass => 1,
 		reaction => "bio1",
@@ -22993,6 +23142,54 @@ coremodel has a value which is a bool
 workspace has a value which is a workspace_id
 auth has a value which is a string
 fulldb has a value which is a bool
+
+
+=end text
+
+=back
+
+
+
+=head2 translate_fbamodel_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "translate_fbamodel" function.
+
+        gencomp
+        gencomp_workspace
+        fbamodel_id model;
+        fbamodel_id model_workspace;
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+gencomp has a value which is a string
+gencomp_workspace has a value which is a string
+model has a value which is a string
+model_workspace has a value which is a string
+workspace has a value which is a workspace_id
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+gencomp has a value which is a string
+gencomp_workspace has a value which is a string
+model has a value which is a string
+model_workspace has a value which is a string
+workspace has a value which is a workspace_id
 
 
 =end text

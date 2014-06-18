@@ -79,8 +79,8 @@ sub universalFBAScriptCode {
     my $primaryArgs = shift;
     my $translation = shift;
     my $manpage = shift;
-    $translation->{workspace} = "workspace";
-    #$translation->{auth} = "auth";
+    my $command_param = shift;
+    my $in_fh;
     #Setting arguments to "describe_options" function
     my $options = [];
     if (@{$primaryArgs} > 0) {
@@ -94,7 +94,27 @@ sub universalFBAScriptCode {
     push(@{$options},[ 'help|h|?', 'Print this usage information' ]);
     #Defining usage and options
 	my ($opt, $usage) = describe_options(@{$options});
-	if (defined($opt->{help})) {
+	#Reading any piped data
+	if ( -p \*STDIN) {
+		my $in_fh = \*STDIN;
+		my $data;
+		{
+		    local $/;
+		    undef $/;
+		    $data = <$in_fh>;
+		    
+		}
+		if ($command_param->{primary}->{type} eq "json") {
+			my $json = JSON::XS->new;
+			$data = $json->decode($data);
+		}
+		$opt->{$command_param->{primary}->{dest}} = {data => $data,type => "data"};
+	}
+	#Reading data from files
+	#TODO
+    $translation->{workspace} = "workspace";
+    #$translation->{auth} = "auth";
+    if (defined($opt->{help})) {
         if (defined($manpage)) {
             print "SYNOPSIS\n      ".$usage;
             print $manpage;
