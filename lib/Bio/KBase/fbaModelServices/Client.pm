@@ -416,8 +416,6 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
-	tintle_sample has a value which is a tintlesample_id
-	tintle_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -440,7 +438,6 @@ compound_id is a string
 prommodel_id is a string
 sample_id is a string
 series_id is a string
-tintlesample_id is a string
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -528,8 +525,6 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
-	tintle_sample has a value which is a tintlesample_id
-	tintle_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -552,7 +547,6 @@ compound_id is a string
 prommodel_id is a string
 sample_id is a string
 series_id is a string
-tintlesample_id is a string
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -720,8 +714,6 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
-	tintle_sample has a value which is a tintlesample_id
-	tintle_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -744,7 +736,6 @@ compound_id is a string
 prommodel_id is a string
 sample_id is a string
 series_id is a string
-tintlesample_id is a string
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -839,8 +830,6 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
-	tintle_sample has a value which is a tintlesample_id
-	tintle_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -863,7 +852,6 @@ compound_id is a string
 prommodel_id is a string
 sample_id is a string
 series_id is a string
-tintlesample_id is a string
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -1008,8 +996,6 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
-	tintle_sample has a value which is a tintlesample_id
-	tintle_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -1032,7 +1018,6 @@ compound_id is a string
 prommodel_id is a string
 sample_id is a string
 series_id is a string
-tintlesample_id is a string
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -1111,8 +1096,6 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
-	tintle_sample has a value which is a tintlesample_id
-	tintle_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -1135,7 +1118,6 @@ compound_id is a string
 prommodel_id is a string
 sample_id is a string
 series_id is a string
-tintlesample_id is a string
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
 	1: (varType) a string
@@ -3797,8 +3779,6 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
-	tintle_sample has a value which is a tintlesample_id
-	tintle_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -3821,7 +3801,6 @@ compound_id is a string
 prommodel_id is a string
 sample_id is a string
 series_id is a string
-tintlesample_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
@@ -3890,8 +3869,6 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
-	tintle_sample has a value which is a tintlesample_id
-	tintle_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -3914,7 +3891,6 @@ compound_id is a string
 prommodel_id is a string
 sample_id is a string
 series_id is a string
-tintlesample_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
@@ -4041,8 +4017,6 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
-	tintle_sample has a value which is a tintlesample_id
-	tintle_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -4065,7 +4039,6 @@ compound_id is a string
 prommodel_id is a string
 sample_id is a string
 series_id is a string
-tintlesample_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
@@ -4129,8 +4102,6 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
-	tintle_sample has a value which is a tintlesample_id
-	tintle_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -4153,7 +4124,6 @@ compound_id is a string
 prommodel_id is a string
 sample_id is a string
 series_id is a string
-tintlesample_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
@@ -4543,8 +4513,6 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
-	tintle_sample has a value which is a tintlesample_id
-	tintle_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -4567,7 +4535,6 @@ compound_id is a string
 prommodel_id is a string
 sample_id is a string
 series_id is a string
-tintlesample_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
@@ -4636,8 +4603,6 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
-	tintle_sample has a value which is a tintlesample_id
-	tintle_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -4660,7 +4625,6 @@ compound_id is a string
 prommodel_id is a string
 sample_id is a string
 series_id is a string
-tintlesample_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
@@ -5175,8 +5139,6 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
-	tintle_sample has a value which is a tintlesample_id
-	tintle_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -5199,7 +5161,6 @@ compound_id is a string
 prommodel_id is a string
 sample_id is a string
 series_id is a string
-tintlesample_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
@@ -5263,8 +5224,6 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
-	tintle_sample has a value which is a tintlesample_id
-	tintle_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -5287,7 +5246,6 @@ compound_id is a string
 prommodel_id is a string
 sample_id is a string
 series_id is a string
-tintlesample_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
@@ -5438,8 +5396,6 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
-	tintle_sample has a value which is a tintlesample_id
-	tintle_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -5462,7 +5418,6 @@ compound_id is a string
 prommodel_id is a string
 sample_id is a string
 series_id is a string
-tintlesample_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
@@ -5553,8 +5508,6 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
-	tintle_sample has a value which is a tintlesample_id
-	tintle_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -5577,7 +5530,6 @@ compound_id is a string
 prommodel_id is a string
 sample_id is a string
 series_id is a string
-tintlesample_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
@@ -5731,8 +5683,6 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
-	tintle_sample has a value which is a tintlesample_id
-	tintle_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -5755,7 +5705,6 @@ compound_id is a string
 prommodel_id is a string
 sample_id is a string
 series_id is a string
-tintlesample_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
@@ -5851,8 +5800,6 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
-	tintle_sample has a value which is a tintlesample_id
-	tintle_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -5875,7 +5822,6 @@ compound_id is a string
 prommodel_id is a string
 sample_id is a string
 series_id is a string
-tintlesample_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
@@ -6019,8 +5965,6 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
-	tintle_sample has a value which is a tintlesample_id
-	tintle_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -6043,7 +5987,6 @@ compound_id is a string
 prommodel_id is a string
 sample_id is a string
 series_id is a string
-tintlesample_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
@@ -6117,8 +6060,6 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
-	tintle_sample has a value which is a tintlesample_id
-	tintle_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -6141,7 +6082,6 @@ compound_id is a string
 prommodel_id is a string
 sample_id is a string
 series_id is a string
-tintlesample_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
@@ -6278,8 +6218,6 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
-	tintle_sample has a value which is a tintlesample_id
-	tintle_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -6302,7 +6240,6 @@ compound_id is a string
 prommodel_id is a string
 sample_id is a string
 series_id is a string
-tintlesample_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
@@ -6381,8 +6318,6 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
-	tintle_sample has a value which is a tintlesample_id
-	tintle_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -6405,7 +6340,6 @@ compound_id is a string
 prommodel_id is a string
 sample_id is a string
 series_id is a string
-tintlesample_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
@@ -6540,8 +6474,6 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
-	tintle_sample has a value which is a tintlesample_id
-	tintle_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -6564,7 +6496,6 @@ compound_id is a string
 prommodel_id is a string
 sample_id is a string
 series_id is a string
-tintlesample_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
@@ -6665,8 +6596,6 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
-	tintle_sample has a value which is a tintlesample_id
-	tintle_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -6689,7 +6618,6 @@ compound_id is a string
 prommodel_id is a string
 sample_id is a string
 series_id is a string
-tintlesample_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
@@ -6853,8 +6781,6 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
-	tintle_sample has a value which is a tintlesample_id
-	tintle_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -6877,7 +6803,6 @@ compound_id is a string
 prommodel_id is a string
 sample_id is a string
 series_id is a string
-tintlesample_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
@@ -6978,8 +6903,6 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
-	tintle_sample has a value which is a tintlesample_id
-	tintle_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -7002,7 +6925,6 @@ compound_id is a string
 prommodel_id is a string
 sample_id is a string
 series_id is a string
-tintlesample_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
@@ -7164,8 +7086,6 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
-	tintle_sample has a value which is a tintlesample_id
-	tintle_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -7188,7 +7108,6 @@ compound_id is a string
 prommodel_id is a string
 sample_id is a string
 series_id is a string
-tintlesample_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
@@ -7287,8 +7206,6 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
-	tintle_sample has a value which is a tintlesample_id
-	tintle_workspace has a value which is a workspace_id
 	media_workspace has a value which is a workspace_id
 	objfraction has a value which is a float
 	allreversible has a value which is a bool
@@ -7311,7 +7228,6 @@ compound_id is a string
 prommodel_id is a string
 sample_id is a string
 series_id is a string
-tintlesample_id is a string
 bool is an int
 term is a reference to a list containing 3 items:
 	0: (coefficient) a float
@@ -11782,7 +11698,10 @@ $expression_meta is an object_metadata
 import_expression_params is a reference to a hash where the following keys are defined:
 	expression_data_sample_series has a value which is a reference to a hash where the key is a sample_id and the value is an ExpressionDataSample
 	series has a value which is a series_id
+	source_id has a value which is a string
+	source_date has a value which is a string
 	workspace has a value which is a workspace_id
+	genome_id has a value which is a genome_id
 sample_id is a string
 ExpressionDataSample is a reference to a hash where the following keys are defined:
 	sample_id has a value which is a string
@@ -11791,6 +11710,7 @@ feature_id is a string
 measurement is a float
 series_id is a string
 workspace_id is a string
+genome_id is a string
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -11820,7 +11740,10 @@ $expression_meta is an object_metadata
 import_expression_params is a reference to a hash where the following keys are defined:
 	expression_data_sample_series has a value which is a reference to a hash where the key is a sample_id and the value is an ExpressionDataSample
 	series has a value which is a series_id
+	source_id has a value which is a string
+	source_date has a value which is a string
 	workspace has a value which is a workspace_id
+	genome_id has a value which is a genome_id
 sample_id is a string
 ExpressionDataSample is a reference to a hash where the following keys are defined:
 	sample_id has a value which is a string
@@ -11829,6 +11752,7 @@ feature_id is a string
 measurement is a float
 series_id is a string
 workspace_id is a string
+genome_id is a string
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -11905,129 +11829,6 @@ sub import_expression
 
 
 
-=head2 import_tintleprob
-
-  $titnleprob_meta = $obj->import_tintleprob($input)
-
-=over 4
-
-=item Parameter and return types
-
-=begin html
-
-<pre>
-$input is an import_tintleprob_params
-$titnleprob_meta is an object_metadata
-import_tintleprob_params is a reference to a hash where the following keys are defined:
-	tintle_collection_id has a value which is a string
-	tintleProbablitySamples has a value which is a reference to a hash where the key is a string and the value is a reference to a hash where the key is a string and the value is a float
-object_metadata is a reference to a list containing 11 items:
-	0: (id) an object_id
-	1: (type) an object_type
-	2: (moddate) a timestamp
-	3: (instance) an int
-	4: (command) a string
-	5: (lastmodifier) a username
-	6: (owner) a username
-	7: (workspace) a workspace_id
-	8: (ref) a workspace_ref
-	9: (chsum) a string
-	10: (metadata) a reference to a hash where the key is a string and the value is a string
-object_id is a string
-object_type is a string
-timestamp is a string
-username is a string
-workspace_id is a string
-workspace_ref is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-$input is an import_tintleprob_params
-$titnleprob_meta is an object_metadata
-import_tintleprob_params is a reference to a hash where the following keys are defined:
-	tintle_collection_id has a value which is a string
-	tintleProbablitySamples has a value which is a reference to a hash where the key is a string and the value is a reference to a hash where the key is a string and the value is a float
-object_metadata is a reference to a list containing 11 items:
-	0: (id) an object_id
-	1: (type) an object_type
-	2: (moddate) a timestamp
-	3: (instance) an int
-	4: (command) a string
-	5: (lastmodifier) a username
-	6: (owner) a username
-	7: (workspace) a workspace_id
-	8: (ref) a workspace_ref
-	9: (chsum) a string
-	10: (metadata) a reference to a hash where the key is a string and the value is a string
-object_id is a string
-object_type is a string
-timestamp is a string
-username is a string
-workspace_id is a string
-workspace_ref is a string
-
-
-=end text
-
-=item Description
-
-
-
-=back
-
-=cut
-
-sub import_tintleprob
-{
-    my($self, @args) = @_;
-
-# Authentication: required
-
-    if ((my $n = @args) != 1)
-    {
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
-							       "Invalid argument count for function import_tintleprob (received $n, expecting 1)");
-    }
-    {
-	my($input) = @args;
-
-	my @_bad_arguments;
-        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
-        if (@_bad_arguments) {
-	    my $msg = "Invalid arguments passed to import_tintleprob:\n" . join("", map { "\t$_\n" } @_bad_arguments);
-	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-								   method_name => 'import_tintleprob');
-	}
-    }
-
-    my $result = $self->{client}->call($self->{url}, {
-	method => "fbaModelServices.import_tintleprob",
-	params => \@args,
-    });
-    if ($result) {
-	if ($result->is_error) {
-	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{error}->{code},
-					       method_name => 'import_tintleprob',
-					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
-					      );
-	} else {
-	    return wantarray ? @{$result->result} : $result->result->[0];
-	}
-    } else {
-        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method import_tintleprob",
-					    status_line => $self->{client}->status_line,
-					    method_name => 'import_tintleprob',
-				       );
-    }
-}
-
-
-
 sub version {
     my ($self) = @_;
     my $result = $self->{client}->call($self->{url}, {
@@ -12039,16 +11840,16 @@ sub version {
             Bio::KBase::Exceptions::JSONRPC->throw(
                 error => $result->error_message,
                 code => $result->content->{code},
-                method_name => 'import_tintleprob',
+                method_name => 'import_expression',
             );
         } else {
             return wantarray ? @{$result->result} : $result->result->[0];
         }
     } else {
         Bio::KBase::Exceptions::HTTP->throw(
-            error => "Error invoking method import_tintleprob",
+            error => "Error invoking method import_expression",
             status_line => $self->{client}->status_line,
-            method_name => 'import_tintleprob',
+            method_name => 'import_expression',
         );
     }
 }
@@ -12623,37 +12424,6 @@ a string
 =item Description
 
 A string identifier for a gene expression sample series in KBase.
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a string
-</pre>
-
-=end html
-
-=begin text
-
-a string
-
-=end text
-
-=back
-
-
-
-=head2 tintlesample_id
-
-=over 4
-
-
-
-=item Description
-
-A string identifier for a Tintle Probability Sample in KBase
 
 
 =item Definition
@@ -15221,8 +14991,6 @@ workspace_id prommodel_workspace - workspace containing prommodel
 sample_id eflux_sample - ID of gene expression sample to run eflux
 series_id eflux_series - ID of series that a sample belongs to.
 workspace_id eflux_workspace - workspace containing gene expression sample series for eflux
-tintlesample_id tintle_sample - ID of sample to run Tintle2014
-workspace_id tintle_workspace - workspace containing sample series for Tintle2014;
 workspace_id media_workspace - workspace containing media for FBA study
 float objfraction - fraction of objective to use for constraints
 bool allreversible - flag indicating if all reactions should be reversible
@@ -15255,8 +15023,6 @@ prommodel_workspace has a value which is a workspace_id
 eflux_sample has a value which is a sample_id
 eflux_series has a value which is a series_id
 eflux_workspace has a value which is a workspace_id
-tintle_sample has a value which is a tintlesample_id
-tintle_workspace has a value which is a workspace_id
 media_workspace has a value which is a workspace_id
 objfraction has a value which is a float
 allreversible has a value which is a bool
@@ -15289,8 +15055,6 @@ prommodel_workspace has a value which is a workspace_id
 eflux_sample has a value which is a sample_id
 eflux_series has a value which is a series_id
 eflux_workspace has a value which is a workspace_id
-tintle_sample has a value which is a tintlesample_id
-tintle_workspace has a value which is a workspace_id
 media_workspace has a value which is a workspace_id
 objfraction has a value which is a float
 allreversible has a value which is a bool
@@ -22329,6 +22093,7 @@ series has a value which is a series_id
 source_id has a value which is a string
 source_date has a value which is a string
 workspace has a value which is a workspace_id
+genome_id has a value which is a genome_id
 
 </pre>
 
@@ -22342,72 +22107,7 @@ series has a value which is a series_id
 source_id has a value which is a string
 source_date has a value which is a string
 workspace has a value which is a workspace_id
-
-
-=end text
-
-=back
-
-
-
-=head2 import_expression_params
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-expression_data_sample_series has a value which is a reference to a hash where the key is a sample_id and the value is an ExpressionDataSample
-series has a value which is a series_id
-workspace has a value which is a workspace_id
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-expression_data_sample_series has a value which is a reference to a hash where the key is a sample_id and the value is an ExpressionDataSample
-series has a value which is a series_id
-workspace has a value which is a workspace_id
-
-
-=end text
-
-=back
-
-
-
-=head2 import_tintleprob_params
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-tintle_collection_id has a value which is a string
-tintleProbablitySamples has a value which is a reference to a hash where the key is a string and the value is a reference to a hash where the key is a string and the value is a float
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-tintle_collection_id has a value which is a string
-tintleProbablitySamples has a value which is a reference to a hash where the key is a string and the value is a reference to a hash where the key is a string and the value is a float
+genome_id has a value which is a genome_id
 
 
 =end text

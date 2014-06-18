@@ -3437,6 +3437,7 @@ module fbaModelServices {
 	    string source_id;
 	    string source_date;
 	    workspace_id workspace;
+	    genome_id genome_id;
     } import_expression_params;
 
     /*

@@ -17,6 +17,7 @@ my $translation = {
 	sourceid => "source_id",
 	sourcedate => "source_date",
 	ignoreerrors => "ignore_errors",
+	genomeid => "genome_id",
 };
 
 my $manpage = 
@@ -26,7 +27,6 @@ NAME
 
 DESCRIPTION
 
-      The following infomation is not accurate at all.
       Import an expression data sample series from a flat file and save the results as a ExpressionSeries object in a workspace.
       The flat file describes expression values of a feature in given sample.
       Each row (except the header row) in the data file contains gene expression value for one
@@ -62,6 +62,7 @@ my $specs = [
     [ 'workspace|w:s', 'Workspace to save imported gene expression in', { "default" => fbaws() } ],
     [ 'sourceid:s', 'ID of the source'],
     [ 'sourcedate|d:s', 'Date of the source', { "default", => strftime("%Y-%m-%d", localtime)}],
+    [ 'genomeid|g:s', "ID of genome to which features belong"],
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation, $manpage);
 if (!-e $opt->{"Gene expression flat file"}) {
