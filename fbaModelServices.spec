@@ -1583,6 +1583,25 @@ module fbaModelServices {
     */
     authentication required;
     funcdef translate_fbamodel(translate_fbamodel_params input) returns (object_metadata modelMeta);
+
+	/* Input parameters for the "translate_fbamodel" function.
+	
+		gencomp
+		gencomp_workspace
+		fbamodel_id model;
+		fbamodel_id model_workspace;
+		
+	*/
+    typedef structure {
+		list<string> genomes;
+		list<string> genome_workspaces;
+		workspace_id workspace;
+    } build_pangenome_params;
+    /*
+        Translate an existing model to a new genome based on the genome comparison object
+    */
+    authentication required;
+    funcdef build_pangenome(build_pangenome_params input) returns (object_metadata modelMeta);
 	
 	/* Input parameters for the "import_fbamodel" function.
 	

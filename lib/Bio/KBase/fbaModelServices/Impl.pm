@@ -2632,7 +2632,7 @@ sub _parse_SBML {
     my $cmpts = [$doc->getElementsByTagName("compartment")];
     my $cmptrans;
     my $nonexactcmptrans = {
-    	extracell => "e",
+    	xtra => "e",
     	wall => "w",
     	peri => "p",
     	cyto => "c",
@@ -2679,6 +2679,8 @@ sub _parse_SBML {
 	#Parsing compounds
 	my $compounds;
     my $cpds = [$doc->getElementsByTagName("species")];
+    my $cpdhash = {};
+    my $cpdidhash = {};
     foreach my $cpd (@$cpds){
     	my $formula = "Unknown";
     	my $charge = "0";
@@ -2686,6 +2688,7 @@ sub _parse_SBML {
     	my $compartment = "c";
     	my $name;
     	my $id;
+    	my $boundary = 0;
     	foreach my $attr ($cpd->getAttributes()->getValues()) {
     		my $nm = $attr->getName();
     		my $value = $attr->getValue();
@@ -2710,18 +2713,25 @@ sub _parse_SBML {
     		} elsif ($nm eq "compartment") {
     			$compartment = $value;
     			if (defined($cmptrans->{$compartment})) {
-    				$compartment = $cmptrans->{$compartment}->{id};
+    				$compartment = $cmptrans->{$compartment};
     			}
     		} elsif ($nm eq "charge") {
     			$charge = $value;
     		} elsif ($nm eq "formula") {
     			$formula = $value;
+    		} elsif ($nm eq "boundaryCondition" && $value =~ m/true/i) {
+    			$boundary = 1;
     		}
     	}
     	if (!defined($name)) {
     		$name = $id;
     	}
-    	push(@{$compounds},[$sbmlid,$charge,$formula,$name,undef,$compartment]);
+    	if (!defined($cpdidhash->{$id})) {
+    		$cpdidhash->{$id} = [$id,$charge,$formula,lc($name),undef];
+    		push(@{$compounds},$cpdidhash->{$id});
+    	}
+    	$cpdhash->{$sbmlid} = [$id,$compartment,$boundary];
+    	
     }
     #Parsing reactions
     my $reactions;
@@ -2756,7 +2766,7 @@ sub _parse_SBML {
     				$direction = ">";
     			}
     		} else {
-    			print $nm.":".$value."\n";
+    			#print $nm.":".$value."\n";
     		}
     	}
     	foreach my $node ($rxn->getElementsByTagName("*",0)){
@@ -2764,23 +2774,30 @@ sub _parse_SBML {
     			foreach my $species ($node->getElementsByTagName("speciesReference",0)){
     				my $spec;
     				my $stoich = 1;
+    				my $boundary = 0;
     				foreach my $attr ($species->getAttributes()->getValues()) {
     					if ($attr->getName() eq "species") {
     						$spec = $attr->getValue();
+    						if (defined($cpdhash->{$spec})) {
+    							$boundary = $cpdhash->{$spec}->[2];
+    							$spec = $cpdhash->{$spec}->[0]."[".$cpdhash->{$spec}->[1]."]";
+    						}
     					} elsif ($attr->getName() eq "stoichiometry") {
     						$stoich = $attr->getValue();
     					}
     				}
-    				if ($node->getNodeName() eq "listOfReactants") {
-    					if (length($reactants) > 0) {
-    						$reactants .= " + ";
-    					}
-    					$reactants .= "(".$stoich.") ".$spec;
-    				} else {
-    					if (length($products) > 0) {
-    						$products .= " + ";
-    					}
-    					$products .= "(".$stoich.") ".$spec;
+    				if ($boundary == 0) {
+	    				if ($node->getNodeName() eq "listOfReactants") {
+	    					if (length($reactants) > 0) {
+	    						$reactants .= " + ";
+	    					}
+	    					$reactants .= "(".$stoich.") ".$spec;
+	    				} else {
+	    					if (length($products) > 0) {
+	    						$products .= " + ";
+	    					}
+	    					$products .= "(".$stoich.") ".$spec;
+	    				}
     				}
     			}	
     		} elsif ($node->getNodeName() eq "notes") {
@@ -6485,6 +6502,11 @@ sub import_fbamodel
     			}
     		}
     		$rxn->[8] = $eqn;
+    		if ($rxn->[0] eq $input->{biomass}) {
+    			$input->{biomass} = $eqn;
+    			splice(@{$input->{reactions}},$i,1);
+    			$i--;
+    		}
     	}
     }
     my $eqn = "| ".$input->{biomass}." |";

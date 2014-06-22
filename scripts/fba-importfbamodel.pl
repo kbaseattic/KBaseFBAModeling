@@ -95,6 +95,7 @@ AUTHORS
 
 #Defining usage and options
 my $specs = [
+    [ 'sbml', 'Reactions file is in SBML format' ],
     [ 'modelid|m:s', 'ID for imported model in workspace' ],
     [ 'compoundfile:s', 'Name of file with compound data' ],
     [ 'genomews:s', 'Workspace with genome object' ],
@@ -102,115 +103,124 @@ my $specs = [
     [ 'workspace|w:s', 'Workspace to save imported model in', { "default" => fbaws() } ],
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation, $manpage);
-$params->{reactions} = [];
 if (!-e $opt->{"Model reactions file"}) {
 	print "Could not find input model file!\n";
 	exit();
 }
 open(my $fh, "<", $opt->{"Model reactions file"}) || return;
-$opt->{"Model reactions file"} = "";
-my $headingline = <$fh>;
-chomp($headingline);
-my $headings = [split(/\t/,$headingline)];
-my $data = [];
-while (my $line = <$fh>) {
-	chomp($line);
-	push(@{$data},[split(/\t/,$line)]);
-}
-close($fh);
-my $headingColums;
-for (my $i=0;$i < @{$headings}; $i++) {
-	$headingColums->{$headings->[$i]} = $i;
-}
-my $reqheadings = ["id","gpr"];
-my $error = 0;
-foreach my $heading (@{$reqheadings}) {
-	if (!defined($headingColums->{$heading})) {
-		$error = 1;
-		print "Model file missing required column '".$heading."'!\n";
-	} 
-}
-if ($error == 1) {
-	exit();
-}
-foreach my $rxn (@{$data}) {
-	my $rxnobj = [
-		$rxn->[$headingColums->{id}],
-		"=",
-		"c",
-		$rxn->[$headingColums->{gpr}],
-	];
-	if (defined($headingColums->{direction})) {
-		$rxnobj->[1] = $rxn->[$headingColums->{direction}];
+if (defined($opt->{sbml}) && $opt->{sbml} == 1) {
+	my $string;
+	while (my $line = <$fh>) {
+		$string .= $line;
 	}
-	if (defined($headingColums->{compartment})) {
-		$rxnobj->[2] = $rxn->[$headingColums->{compartment}];
-	}
-	if (defined($headingColums->{name})) {
-		$rxnobj->[4] = $rxn->[$headingColums->{name}];
-	}
-	if (defined($headingColums->{enzyme})) {
-		$rxnobj->[5] = $rxn->[$headingColums->{enzyme}];
-	}
-	if (defined($headingColums->{pathway})) {
-		$rxnobj->[6] = $rxn->[$headingColums->{pathway}];
-	}
-	if (defined($headingColums->{reference})) {
-		$rxnobj->[7] = $rxn->[$headingColums->{reference}];
-	}
-	if (defined($headingColums->{equation})) {
-		$rxnobj->[8] = $rxn->[$headingColums->{equation}];
-	}
-	print $rxnobj->[0]."\n";
-	push(@{$params->{reactions}},$rxnobj);
-}
-if (defined($opt->{compoundfile})) {
-	if (!-e $opt->{compoundfile}) {
-		print "Could not find input compound file!\n";
-		exit();
-	}
-	open(my $fhh, "<", $opt->{compoundfile}) || return;
-	$headingline = <$fhh>;
+	close($fh);
+	$params->{sbml} = $string;
+} else {
+	$params->{reactions} = [];
+	$opt->{"Model reactions file"} = "";
+	my $headingline = <$fh>;
 	chomp($headingline);
-	$headings = [split(/\t/,$headingline)];
-	$data = [];
-	while (my $line = <$fhh>) {
+	my $headings = [split(/\t/,$headingline)];
+	my $data = [];
+	while (my $line = <$fh>) {
 		chomp($line);
 		push(@{$data},[split(/\t/,$line)]);
 	}
-	close($fhh);
+	close($fh);
+	my $headingColums;
 	for (my $i=0;$i < @{$headings}; $i++) {
 		$headingColums->{$headings->[$i]} = $i;
 	}
-	my $reqheadings = ["id","name"];
+	my $reqheadings = ["id","gpr"];
 	my $error = 0;
 	foreach my $heading (@{$reqheadings}) {
 		if (!defined($headingColums->{$heading})) {
 			$error = 1;
-			print "Compound file missing required column '".$heading."'!\n";
+			print "Model file missing required column '".$heading."'!\n";
 		} 
 	}
 	if ($error == 1) {
 		exit();
 	}
-	foreach my $cpd (@{$data}) {
-		my $cpdobj = [
-			$cpd->[$headingColums->{id}],
-			undef,
-			undef,
-			$cpd->[$headingColums->{name}],
+	foreach my $rxn (@{$data}) {
+		my $rxnobj = [
+			$rxn->[$headingColums->{id}],
+			"=",
+			"c",
+			$rxn->[$headingColums->{gpr}],
 		];
-		if (defined($headingColums->{formula})) {
-			$cpdobj->[2] = $cpd->[$headingColums->{formula}];
+		if (defined($headingColums->{direction})) {
+			$rxnobj->[1] = $rxn->[$headingColums->{direction}];
 		}
-		if (defined($headingColums->{charge})) {
-			$cpdobj->[1] = $cpd->[$headingColums->{charge}];
+		if (defined($headingColums->{compartment})) {
+			$rxnobj->[2] = $rxn->[$headingColums->{compartment}];
 		}
-		if (defined($headingColums->{aliases})) {
-			$cpdobj->[4] = $cpd->[$headingColums->{aliases}];
+		if (defined($headingColums->{name})) {
+			$rxnobj->[4] = $rxn->[$headingColums->{name}];
 		}
-		print $cpdobj->[0]."\n";
-		push(@{$params->{compounds}},$cpdobj);
+		if (defined($headingColums->{enzyme})) {
+			$rxnobj->[5] = $rxn->[$headingColums->{enzyme}];
+		}
+		if (defined($headingColums->{pathway})) {
+			$rxnobj->[6] = $rxn->[$headingColums->{pathway}];
+		}
+		if (defined($headingColums->{reference})) {
+			$rxnobj->[7] = $rxn->[$headingColums->{reference}];
+		}
+		if (defined($headingColums->{equation})) {
+			$rxnobj->[8] = $rxn->[$headingColums->{equation}];
+		}
+		print $rxnobj->[0]."\n";
+		push(@{$params->{reactions}},$rxnobj);
+	}
+	if (defined($opt->{compoundfile})) {
+		if (!-e $opt->{compoundfile}) {
+			print "Could not find input compound file!\n";
+			exit();
+		}
+		open(my $fhh, "<", $opt->{compoundfile}) || return;
+		$headingline = <$fhh>;
+		chomp($headingline);
+		$headings = [split(/\t/,$headingline)];
+		$data = [];
+		while (my $line = <$fhh>) {
+			chomp($line);
+			push(@{$data},[split(/\t/,$line)]);
+		}
+		close($fhh);
+		for (my $i=0;$i < @{$headings}; $i++) {
+			$headingColums->{$headings->[$i]} = $i;
+		}
+		my $reqheadings = ["id","name"];
+		my $error = 0;
+		foreach my $heading (@{$reqheadings}) {
+			if (!defined($headingColums->{$heading})) {
+				$error = 1;
+				print "Compound file missing required column '".$heading."'!\n";
+			} 
+		}
+		if ($error == 1) {
+			exit();
+		}
+		foreach my $cpd (@{$data}) {
+			my $cpdobj = [
+				$cpd->[$headingColums->{id}],
+				undef,
+				undef,
+				$cpd->[$headingColums->{name}],
+			];
+			if (defined($headingColums->{formula})) {
+				$cpdobj->[2] = $cpd->[$headingColums->{formula}];
+			}
+			if (defined($headingColums->{charge})) {
+				$cpdobj->[1] = $cpd->[$headingColums->{charge}];
+			}
+			if (defined($headingColums->{aliases})) {
+				$cpdobj->[4] = $cpd->[$headingColums->{aliases}];
+			}
+			print $cpdobj->[0]."\n";
+			push(@{$params->{compounds}},$cpdobj);
+		}
 	}
 }
 #Calling the server
