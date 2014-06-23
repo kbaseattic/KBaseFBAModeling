@@ -3443,6 +3443,31 @@ module fbaModelServices {
     /*
       Import gene expression.
     */
+    authentication required;
     funcdef import_expression(import_expression_params input) returns (object_metadata expression_meta);
 
+    /*
+     Import RegPrecise regulome.
+    */
+
+    typedef structure {
+	string name;
+	string locus;
+    } locus;
+
+    typedef list<locus> operon;
+
+    typedef structure {
+	list<operon> operons;
+	locus transcription_factor;
+    } regulon;
+
+    typedef structure {
+	list<regulon> regulons;
+	workspace_id workspace;
+	genome_id genome_id;
+    } import_regulome_params;
+
+    authentication required;
+    funcdef import_regulome(import_regulome_params input) returns (object_metadata regulome_meta);
 };

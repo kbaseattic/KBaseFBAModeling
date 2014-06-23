@@ -88,6 +88,7 @@ our %return_counts = (
         'models_to_community_model' => 1,
         'metagenome_to_fbamodels' => 1,
         'import_expression' => 1,
+        'import_regulome' => 1,
         'version' => 1,
 );
 
@@ -163,6 +164,7 @@ our %method_authentication = (
         'models_to_community_model' => 'required',
         'metagenome_to_fbamodels' => 'required',
         'import_expression' => 'required',
+        'import_regulome' => 'required',
 );
 
 
@@ -241,6 +243,7 @@ sub _build_valid_methods
         'models_to_community_model' => 1,
         'metagenome_to_fbamodels' => 1,
         'import_expression' => 1,
+        'import_regulome' => 1,
         'version' => 1,
     };
     return $methods;

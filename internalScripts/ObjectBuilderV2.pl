@@ -93,6 +93,7 @@ my $baseobjects = {
 	PromConstraint =>  "KBaseFBA",
 	regulatory_network =>  "KBaseFBA",
 	EfluxExpressionCollection => "KBaseRegulatoryFBA",
+	Regulome => "KBaseRegulation",
 };
 my $objcorrespondence = {
 	BiochemistryStructures => "BiochemistryStructures",
@@ -113,7 +114,7 @@ foreach my $obj (keys(%{$objcorrespondence})) {
 }
 my $subobj = {};
 my $specobjects = {};
-my $speclist = ["FBAModel.spec","Ontology.spec","Biochem.spec","Genome.spec","Phenotypes.spec","ProbabilisticAnnotation.spec","RegulatoryFBA.spec"];
+my $speclist = ["FBAModel.spec","Ontology.spec","Biochem.spec","Genome.spec","Phenotypes.spec","ProbabilisticAnnotation.spec","Regulation.spec","Expression.spec"];
 for (my $i=0; $i < @{$speclist}; $i++) {
 	my $module;
 	my $stringtypes = {};
@@ -125,7 +126,7 @@ for (my $i=0; $i < @{$speclist}; $i++) {
 		chomp($line);
 		if ($line =~ m/module\s(.+)\s\{/) {
 			$module = $1;
-		} elsif ($line =~ m/typedef\sstring\s(.+);/) {
+		} elsif ($line =~ m/typedef\s+string\s+(\w+);/) {
 			my $type = $1;
 			$stringtypes->{$type} = $currref;
 			if ($type =~ m/_ref$/) {
@@ -321,6 +322,24 @@ foreach my $module (keys(%{$specobjects})) {
 							type       => 'Str',
 							req        => 1
 						});
+					} elsif (exists $specobjects->{$module}->{stringtypes}->{$type}) {
+						push(@{$newobj->{attributes}},{
+							name       => $att,
+							printOrder => 0,
+							perm       => 'rw',
+							type       => 'Str',
+							req        => 1
+						});
+					} elsif (defined($subobj->{$type})) {
+					    $methods->{$type} = $att;
+					    push(@{$newobj->{subobjects}},{
+						module => $module,
+						name       => $att,
+						printOrder => -1,
+						class      => $type,
+						type       => "child",
+						singleton => 1
+						 });
 					} else {
 						print $objname."::".$att."\n";
 						print STDERR "Unhandled type:".$type."\n";
@@ -501,7 +520,7 @@ foreach my $name (keys(%{$allobjects})) {
 				push(@$props, "default => '" . $attribute->{default} . "'");
 			}
 	   }
-	   if ($attribute->{name} eq "id") {
+	   if ($attribute->{name} eq "id" || $attribute->{name} eq lc $name . "_id") {
 		  $uuid = 1;
 	   }
 	   push(@$props, "type => 'attribute'", "metaclass => 'Typed'");
@@ -531,14 +550,18 @@ foreach my $name (keys(%{$allobjects})) {
 			my $props = [ "is => 'rw'" ];
 			my $type = $subobject->{type};
 
+			if (defined $subobject->{"singleton"}) {
+			    push (@$props, "singleton => 1");
+			}
+
 			push(@$props,
-				"isa => 'ArrayRef[HashRef]'",
-				"default => sub { return []; }",
-				"type => '$type($class)'",
-				"metaclass => 'Typed'",
-				"reader => '_$soname'",
-				"printOrder => '". $subobject->{printOrder} ."'"
-			);
+			     "isa => 'ArrayRef[HashRef]'",
+			     "default => sub { return []; }",
+			     "type => '$type($class)'",
+			     "metaclass => 'Typed'",
+			     "reader => '_$soname'",
+			     "printOrder => '". $subobject->{printOrder} ."'"
+			    );
 
 			push(@$output, "has $soname => (" . join(", ", @$props) . ");");
 		}

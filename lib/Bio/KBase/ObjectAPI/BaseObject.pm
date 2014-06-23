@@ -316,20 +316,28 @@ sub serializeToDB {
     foreach my $item (@{$subobjects}) {
     	my $name = "_".$item->{name};
     	my $arrayRef = $self->$name();
-    	$data->{$item->{name}} = [];
-    	foreach my $subobject (@{$arrayRef}) {
-			if ($subobject->{created} == 1) {
-				push(@{$data->{$item->{name}}},$subobject->{object}->serializeToDB());	
-			} else {
-				my $newData;
-				foreach my $key (keys(%{$subobject->{data}})) {
-					if ($key ne "parent") {
-						$newData->{$key} = $subobject->{data}->{$key};
-					}
-				}
-				push(@{$data->{$item->{name}}},$newData);
-			}
+	$data->{$item->{name}} = [];
+	foreach my $subobject (@{$arrayRef}) {
+	    if ($subobject->{created} == 1) {
+		push(@{$data->{$item->{name}}},$subobject->{object}->serializeToDB());	
+	    } else {
+		my $newData;
+		foreach my $key (keys(%{$subobject->{data}})) {
+		    if ($key ne "parent") {
+			$newData->{$key} = $subobject->{data}->{$key};
+		    }
 		}
+		push(@{$data->{$item->{name}}},$newData);
+	    }
+	}
+	if (defined $item->{"singleton"} && $item->{"singleton"} == 1) {
+	    if (scalar @{$data->{$item->{name}}} > 0) {
+		$data->{$item->{name}} = $data->{$item->{name}}->[0];
+	    }
+	    else {
+		delete $data->{$item->{name}};
+	    }
+	}
     }
     return $data;
 }

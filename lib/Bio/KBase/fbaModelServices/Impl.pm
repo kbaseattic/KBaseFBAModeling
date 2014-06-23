@@ -70,6 +70,12 @@ use Bio::KBase::probabilistic_annotation::Client;
 use Bio::KBase::GenomeAnnotation::Client;
 use Bio::KBase::ObjectAPI::KBaseStore;
 use Data::UUID;
+use Bio::KBase::ObjectAPI::KBaseRegulation::Regulome;
+use Bio::KBase::ObjectAPI::KBaseRegulation::Regulon;
+use Bio::KBase::ObjectAPI::KBaseRegulation::Gene;
+use Bio::KBase::ObjectAPI::KBaseRegulation::RGenome;
+use Bio::KBase::ObjectAPI::KBaseRegulation::RegulatedOperon;
+use Bio::KBase::ObjectAPI::KBaseRegulation::TranscriptionFactor;
 use Bio::KBase::ObjectAPI::ProbabilisticAnnotation::ProbAnno;
 use Bio::KBase::ObjectAPI::ProbabilisticAnnotation::RxnProbs;
 use Bio::KBase::ObjectAPI::KBaseBiochem::Biochemistry;
@@ -17236,6 +17242,178 @@ sub import_expression
 
 
 
+=head2 import_regulome
+
+  $regulome_meta = $obj->import_regulome($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is an import_regulome_params
+$regulome_meta is an object_metadata
+import_regulome_params is a reference to a hash where the following keys are defined:
+	regulons has a value which is a reference to a list where each element is a regulon
+	workspace has a value which is a workspace_id
+	genome_id has a value which is a genome_id
+regulon is a reference to a hash where the following keys are defined:
+	operons has a value which is a reference to a list where each element is an operon
+	transcription_factor has a value which is a locus
+operon is a reference to a list where each element is a locus
+locus is a reference to a hash where the following keys are defined:
+	name has a value which is a string
+	locus has a value which is a string
+workspace_id is a string
+genome_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is an import_regulome_params
+$regulome_meta is an object_metadata
+import_regulome_params is a reference to a hash where the following keys are defined:
+	regulons has a value which is a reference to a list where each element is a regulon
+	workspace has a value which is a workspace_id
+	genome_id has a value which is a genome_id
+regulon is a reference to a hash where the following keys are defined:
+	operons has a value which is a reference to a list where each element is an operon
+	transcription_factor has a value which is a locus
+operon is a reference to a list where each element is a locus
+locus is a reference to a hash where the following keys are defined:
+	name has a value which is a string
+	locus has a value which is a string
+workspace_id is a string
+genome_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+
+
+=item Description
+
+
+
+=back
+
+=cut
+
+sub import_regulome
+{
+    my $self = shift;
+    my($input) = @_;
+
+    my @_bad_arguments;
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to import_regulome:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'import_regulome');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($regulome_meta);
+    #BEGIN import_regulome
+    $self->_setContext($ctx,$input);    
+    $input = $self->_validateargs($input,["regulons","workspace"],{});
+    my $genome_id = $input->{"genome_id"};
+    my $genome = $self->_get_msobject("Genome",$input->{"workspace"},$genome_id);
+    my $ws = $self->_KBaseStore()->workspace();
+
+    my $genomeObj = Bio::KBase::ObjectAPI::KBaseRegulation::RGenome->new({ "genome_name" => "", "genome_id" => $genome_id, "genome_ref" => $genome->_reference() });
+    $genomeObj->parent($self->_KBaseStore());
+
+    my $regulome = Bio::KBase::ObjectAPI::KBaseRegulation::Regulome->new({
+	regulome_id => "kb|regulome.".$self->_idServer()->allocate_id_range("kb|regulome",1),
+	regulome_source => "REGPRECISE_PROPAGATED",
+	regulome_name => ""
+    });
+
+    $regulome->add("genome",$genomeObj);
+
+    use Data::Dumper;
+    print &Dumper($regulome);
+
+    foreach my $regulon (@{$input->{"regulons"}}) {
+	my $regulonObj = Bio::KBase::ObjectAPI::KBaseRegulation::Regulon->new({"regulon_id"=>""});
+	$regulonObj->parent($self->_KBaseStore());
+	my $tf_locus = $regulon->{"transcription_factor"}->{"locus"};
+	my $tf_name = $regulon->{"transcription_factor"}->{"name"};
+	my $tfObj = Bio::KBase::ObjectAPI::KBaseRegulation::TranscriptionFactor->new({ "transcription_factor_id" => "", "locus_tag" => $tf_locus, "name" => $tf_name });
+	$tfObj->parent($self->_KBaseStore());
+	$regulonObj->add("tfs", $tfObj);
+	foreach my $operon (@{$regulon->{"operons"}}) {
+	    my $regulatedOperonObj = Bio::KBase::ObjectAPI::KBaseRegulation::RegulatedOperon->new({ operon_id => "", sites => [] });
+	    $regulatedOperonObj->parent($self->_KBaseStore());
+	    foreach my $gene (@$operon) {
+		my $geneObj = Bio::KBase::ObjectAPI::KBaseRegulation::Gene->new({ gene_id => "", locus_tag => $gene->{"locus"}, name => $gene->{"name"} });
+		$geneObj->parent($self->_KBaseStore());
+		$regulatedOperonObj->add("genes",$geneObj);
+	    }
+	    $regulonObj->add("operons",$regulatedOperonObj);
+	}
+	$regulome->add("regulons",$regulonObj);
+    }
+
+    #Saving regulome in database
+    $regulome->parent($self->_KBaseStore());
+    $regulome_meta = $self->_save_msobject($regulome,"Regulome",$input->{workspace},$genome_id."-regprecise-regulome");
+    $self->_clearContext();
+
+    #END import_regulome
+    my @_bad_returns;
+    (ref($regulome_meta) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"regulome_meta\" (value was \"$regulome_meta\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to import_regulome:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'import_regulome');
+    }
+    return($regulome_meta);
+}
+
+
+
+
 =head2 version 
 
   $return = $obj->version()
@@ -27494,6 +27672,135 @@ expression_data_sample_series has a value which is a reference to a hash where t
 series has a value which is a series_id
 source_id has a value which is a string
 source_date has a value which is a string
+workspace has a value which is a workspace_id
+genome_id has a value which is a genome_id
+
+
+=end text
+
+=back
+
+
+
+=head2 locus
+
+=over 4
+
+
+
+=item Description
+
+Import RegPrecise regulome.
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+name has a value which is a string
+locus has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+name has a value which is a string
+locus has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 operon
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a list where each element is a locus
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a list where each element is a locus
+
+=end text
+
+=back
+
+
+
+=head2 regulon
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+operons has a value which is a reference to a list where each element is an operon
+transcription_factor has a value which is a locus
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+operons has a value which is a reference to a list where each element is an operon
+transcription_factor has a value which is a locus
+
+
+=end text
+
+=back
+
+
+
+=head2 import_regulome_params
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+regulons has a value which is a reference to a list where each element is a regulon
+workspace has a value which is a workspace_id
+genome_id has a value which is a genome_id
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+regulons has a value which is a reference to a list where each element is a regulon
 workspace has a value which is a workspace_id
 genome_id has a value which is a genome_id
 

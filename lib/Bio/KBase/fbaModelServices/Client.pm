@@ -11829,6 +11829,147 @@ sub import_expression
 
 
 
+=head2 import_regulome
+
+  $regulome_meta = $obj->import_regulome($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is an import_regulome_params
+$regulome_meta is an object_metadata
+import_regulome_params is a reference to a hash where the following keys are defined:
+	regulons has a value which is a reference to a list where each element is a regulon
+	workspace has a value which is a workspace_id
+	genome_id has a value which is a genome_id
+regulon is a reference to a hash where the following keys are defined:
+	operons has a value which is a reference to a list where each element is an operon
+	transcription_factor has a value which is a locus
+operon is a reference to a list where each element is a locus
+locus is a reference to a hash where the following keys are defined:
+	name has a value which is a string
+	locus has a value which is a string
+workspace_id is a string
+genome_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is an import_regulome_params
+$regulome_meta is an object_metadata
+import_regulome_params is a reference to a hash where the following keys are defined:
+	regulons has a value which is a reference to a list where each element is a regulon
+	workspace has a value which is a workspace_id
+	genome_id has a value which is a genome_id
+regulon is a reference to a hash where the following keys are defined:
+	operons has a value which is a reference to a list where each element is an operon
+	transcription_factor has a value which is a locus
+operon is a reference to a list where each element is a locus
+locus is a reference to a hash where the following keys are defined:
+	name has a value which is a string
+	locus has a value which is a string
+workspace_id is a string
+genome_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+=item Description
+
+
+
+=back
+
+=cut
+
+sub import_regulome
+{
+    my($self, @args) = @_;
+
+# Authentication: required
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function import_regulome (received $n, expecting 1)");
+    }
+    {
+	my($input) = @args;
+
+	my @_bad_arguments;
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to import_regulome:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'import_regulome');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.import_regulome",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{error}->{code},
+					       method_name => 'import_regulome',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method import_regulome",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'import_regulome',
+				       );
+    }
+}
+
+
+
 sub version {
     my ($self) = @_;
     my $result = $self->{client}->call($self->{url}, {
@@ -11840,16 +11981,16 @@ sub version {
             Bio::KBase::Exceptions::JSONRPC->throw(
                 error => $result->error_message,
                 code => $result->content->{code},
-                method_name => 'import_expression',
+                method_name => 'import_regulome',
             );
         } else {
             return wantarray ? @{$result->result} : $result->result->[0];
         }
     } else {
         Bio::KBase::Exceptions::HTTP->throw(
-            error => "Error invoking method import_expression",
+            error => "Error invoking method import_regulome",
             status_line => $self->{client}->status_line,
-            method_name => 'import_expression',
+            method_name => 'import_regulome',
         );
     }
 }
@@ -22106,6 +22247,135 @@ expression_data_sample_series has a value which is a reference to a hash where t
 series has a value which is a series_id
 source_id has a value which is a string
 source_date has a value which is a string
+workspace has a value which is a workspace_id
+genome_id has a value which is a genome_id
+
+
+=end text
+
+=back
+
+
+
+=head2 locus
+
+=over 4
+
+
+
+=item Description
+
+Import RegPrecise regulome.
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+name has a value which is a string
+locus has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+name has a value which is a string
+locus has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 operon
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a list where each element is a locus
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a list where each element is a locus
+
+=end text
+
+=back
+
+
+
+=head2 regulon
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+operons has a value which is a reference to a list where each element is an operon
+transcription_factor has a value which is a locus
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+operons has a value which is a reference to a list where each element is an operon
+transcription_factor has a value which is a locus
+
+
+=end text
+
+=back
+
+
+
+=head2 import_regulome_params
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+regulons has a value which is a reference to a list where each element is a regulon
+workspace has a value which is a workspace_id
+genome_id has a value which is a genome_id
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+regulons has a value which is a reference to a list where each element is a regulon
 workspace has a value which is a workspace_id
 genome_id has a value which is a genome_id
 
