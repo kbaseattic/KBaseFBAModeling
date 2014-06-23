@@ -25,12 +25,14 @@ has dna_sequence => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attr
 has protein_translation => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has co_occurring_fids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
 has regulon_data => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
+has feature_creation_event => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 has publications => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
 has id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 has location => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
 has subsystem_data => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
-has dna_sequence_length => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has annotations => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
+has dna_sequence_length => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has orthologs => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
 has protein_translation_length => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has aliases => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
 has type => (is => 'rw', isa => 'Str', printOrder => '1', default => 'peg', type => 'attribute', metaclass => 'Typed');
@@ -118,6 +120,13 @@ my $attributes = [
             'perm' => 'rw'
           },
           {
+            'req' => 1,
+            'printOrder' => 0,
+            'name' => 'feature_creation_event',
+            'type' => 'Str',
+            'perm' => 'rw'
+          },
+          {
             'req' => 0,
             'printOrder' => -1,
             'name' => 'publications',
@@ -153,6 +162,14 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
+            'name' => 'annotations',
+            'default' => 'sub {return [];}',
+            'type' => 'ArrayRef',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
             'name' => 'dna_sequence_length',
             'type' => 'Int',
             'perm' => 'rw'
@@ -160,7 +177,7 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'annotations',
+            'name' => 'orthologs',
             'default' => 'sub {return [];}',
             'type' => 'ArrayRef',
             'perm' => 'rw'
@@ -198,7 +215,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {function => 0, subsystems => 1, atomic_regulons => 2, coexpressed_fids => 3, dna_sequence => 4, protein_translation => 5, co_occurring_fids => 6, regulon_data => 7, publications => 8, id => 9, location => 10, subsystem_data => 11, dna_sequence_length => 12, annotations => 13, protein_translation_length => 14, aliases => 15, type => 16, md5 => 17};
+my $attribute_map = {function => 0, subsystems => 1, atomic_regulons => 2, coexpressed_fids => 3, dna_sequence => 4, protein_translation => 5, co_occurring_fids => 6, regulon_data => 7, feature_creation_event => 8, publications => 9, id => 10, location => 11, subsystem_data => 12, annotations => 13, dna_sequence_length => 14, orthologs => 15, protein_translation_length => 16, aliases => 17, type => 18, md5 => 19};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {

@@ -1594,7 +1594,7 @@ module fbaModelServices {
 	*/
     typedef structure {
 		list<string> genomes;
-		list<string> genome_workspaces;
+		list<string> genome_workspace;
 		workspace_id workspace;
     } build_pangenome_params;
     /*

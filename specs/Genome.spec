@@ -280,12 +280,12 @@ module KBaseGenomes {
 		We may want to add additional fields for other CDM functions
 		(e.g., atomic regulons, coexpressed fids, co_occurring fids,...)
 
-		@optional quality feature_creation_event md5 location function protein_translation protein_families subsystems publications subsystem_data aliases annotations regulon_data atomic_regulons coexpressed_fids co_occurring_fids dna_sequence protein_translation_length dna_sequence_length
+		@optional orthologs quality feature_creation_event md5 location function protein_translation protein_families subsystems publications subsystem_data aliases annotations regulon_data atomic_regulons coexpressed_fids co_occurring_fids dna_sequence protein_translation_length dna_sequence_length
     */
     typedef structure {
 		Feature_id id;
 		list<tuple<Contig_id,int,string,int>> location;
-		Feature_type type;
+		string type;
 		string function;
 		string md5;
 		string protein_translation;
@@ -296,6 +296,7 @@ module KBaseGenomes {
 		list<string> subsystems;
 		list<ProteinFamily> protein_families;
 		list<string> aliases;
+		list<tuple<string,float>> orthologs;
 		list<annotation> annotations;
 		list<subsystem_data> subsystem_data;
 		list<regulon_data> regulon_data;
@@ -546,4 +547,31 @@ module KBaseGenomes {
 		list<Domain> domains;
 		list<FeatureDomainData> featuredomains;
 	} GenomeDomainData;
+	
+	/*
+    	OrthologFamily object: this object holds all data for a single ortholog family in a metagenome
+
+    	@searchable ws_subset id type function md5 protein_translation
+    */
+	typedef structure {
+    	string id;
+		string type;
+		string function;
+		string md5;
+		string protein_translation;
+		list<tuple<string,float>> orthologs;
+	} OrthologFamily;
+	
+	/*
+    	Pangenome object: this object holds all data regarding a pangenome
+
+    	@searchable ws_subset id name
+    */
+    typedef structure {
+    	string id;
+    	string name;
+    	string type;
+    	list<Genome_ref> genome_refs;
+    	list<OrthologFamily> orthologs;
+	} Pangenome;
 };

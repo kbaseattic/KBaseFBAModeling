@@ -6370,6 +6370,139 @@ sub build_pangenome
     my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
     my($modelMeta);
     #BEGIN build_pangenome
+    $self->_setContext($ctx,$input);
+    $input = $self->_validateargs($input,["genomes","genome_workspaces","workspace"],{
+    	outputid => undef,
+    	name => undef,
+    });
+    my $orthlist = [];
+    my $okdb;
+    my $id = $self->_get_new_id("kb|pangen");
+    if (!defined($input->{outputid})) {
+    	$input->{outputid} = $id;
+    }
+    my $pangenome = {
+    	id => $id,
+		type => "kmer",
+		genome_refs => [],
+		orthologs => [],
+    };
+    for (my $i=0; $i < @{$input->{genomes}}; $i++) {
+    	print "Processing genome ".$i."\n";
+    	my $gkdb = {};
+    	my $genepairs;
+    	my $bestorthos = [];
+    	my $currgenome = $self->_get_msobject("Genome",$input->{genome_workspaces}->[$i],$input->{genomes}->[$i]);
+    	push(@{$pangenome->{genome_refs}},$currgenome->_reference());
+    	if ($i==0) {
+    		my $array = [split(/\s/,$currgenome->scientific_name())];
+    		$genome->{name} = $array->[0]." pangenome";
+    	}
+    	my $ftrs = $currgenome->features();
+    	for (my $j=0; $j < @{$ftrs}; $j++) {
+    		my $feature = $ftrs->[$j];
+    		if (defined($feature->protein_translation())) {
+    			my $matchortho;
+    			my $bestortho;
+    			my $bestscore = 0;
+    			my $seq = $feature->protein_translation();
+    			for (my $k=	0; $k < (length($seq)-8); $k++) {
+    				my $kmer = substr($seq,$k,8);
+    				if ($i > 0) {
+	    				if (defined($okdb->{$kmer})) {
+	    					if (!defined($matchortho->{$okdb->{$kmer}})) {
+	    						$matchortho->{$okdb->{$kmer}} = 0;
+	    					}
+	    					$matchortho->{$okdb->{$kmer}}++;
+	    					if ($matchortho->{$okdb->{$kmer}} > $bestscore) {
+	    						$bestscore = $matchortho->{$okdb->{$kmer}};
+	    						$bestortho = $okdb->{$kmer};
+	    					}
+	    				}
+    				}
+    				if (defined($gkdb->{$kmer}) && !defined($gkdb->{$kmer}->{-1})) {
+    					if (keys(%{$gkdb->{$kmer}}) >= 5) {
+    						my $keylist = [keys(%{$gkdb->{$kmer}})];
+    						for (my $m=0; $m < 4; $m++) {
+    							for (my $n=($m+1); $n < 5; $n++) {
+    								$genepairs->{$keylist->[$m]}->{$keylist->[$n]}--;
+    								$genepairs->{$keylist->[$n]}->{$keylist->[$m]}--;
+    							}
+    						}
+    						$gkdb->{$kmer} = {-1 => 0};
+    					} else {
+    						foreach my $key (keys(%{$gkdb->{$kmer}})) {
+    							if ($key ne $j) {
+    								if (!defined($genepairs->{$key}->{$j})) {
+    									$genepairs->{$key}->{$j} = 0;
+    									$genepairs->{$j}->{$key} = 0;
+    								}
+    								$genepairs->{$key}->{$j}++;
+    								$genepairs->{$j}->{$key}++;
+    							}
+    						}
+    						$gkdb->{$kmer}->{$j} = 1;
+    					}
+    				} else {
+    					$gkdb->{$kmer}->{$j} = 1;
+    				}
+    			}
+    			if ($bestscore < 10) {
+    				$bestorthos->[$j] = -1;
+    			} else {
+    				$bestorthos->[$j] = $bestortho;
+    				push(@{$genome->{features}->[$bestortho]->{orthologs}},[$ftrs->[$j]->id(),$bestscore]);
+    			}
+    		}
+    	};
+    	foreach my $kmer (keys(%{$gkdb})) {
+    		if (!defined($gkdb->{$kmer}->{-1})) {
+	    		my $keep = 1;
+	    		if (keys(%{$gkdb->{$kmer}}) > 1) {
+	    			my $keylist = [keys(%{$gkdb->{$kmer}})];
+	    			for (my $m=0; $m < (@{$keylist}-1); $m++) {
+	    				for (my $n=($m+1); $n < @{$keylist}; $n++) {
+	    					if ($genepairs->{$keylist->[$m]}->{$keylist->[$n]} < 10 && $bestorthos->[$keylist->[$m]] == $bestorthos->[$keylist->[$n]]) {
+	    						$keep = 0;
+	    						$m = 1000;
+	    						last;
+	    					};
+	    				}
+	    			}
+	    		}
+	    		if ($keep == 1) {
+	    			foreach my $gene (keys(%{$gkdb->{$kmer}})) {
+	    				if ($bestorthos->[$gene] == -1) {
+	    					$bestorthos->[$gene] = @{$genome->{features}};
+	    					my $list = [];
+	    					foreach my $partner (keys(%{$genepairs->{$gene}})) {
+	    						if ($genepairs->{$gene}->{$partner} >= 10 && $bestorthos->[$partner] == -1) {
+	    							$bestorthos->[$partner] = @{$genome->{features}};
+	    							push(@{$list},[$ftrs->[$partner]->id(),$genepairs->{$gene}->{$partner}]);
+	    						}
+	    					}
+	    					my $seq = $ftrs->[$gene]->protein_translation();
+	    					my $index = @{$genome->{features}};
+	    					push(@{$genome->{features}},{
+						    	id => $ftrs->[$gene]->id(),
+						    	type => $ftrs->[$gene]->type(),
+						    	function => $ftrs->[$gene]->function(),
+								md5 => $ftrs->[$gene]->md5(),
+								protein_translation => $ftrs->[$gene]->protein_translation(),
+								orthologs => $list
+						    });
+	    				}
+	    				$okdb->{$kmer} = $bestorthos->[$gene];
+	    			}
+	    		}
+    		}
+    	}
+    	$self->_resetKBaseStore();
+    }
+    $pangenome = Bio::KBase::ObjectAPI::KBaseGenomes::Pangenome->new($pangenome);
+	$pangenome->orthologs();
+	$modelMeta = $self->_save_msobject($pangenome,"Pangenome",$input->{workspace},$input->{outputid});
+	$self->_clearContext();
     #END build_pangenome
     my @_bad_returns;
     (ref($modelMeta) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"modelMeta\" (value was \"$modelMeta\")");

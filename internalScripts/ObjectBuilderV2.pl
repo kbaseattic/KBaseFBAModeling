@@ -93,6 +93,7 @@ my $baseobjects = {
 	GenomeDomainData =>  "KBaseGenomes",
 	PromConstraint =>  "KBaseFBA",
 	regulatory_network =>  "KBaseFBA",
+	Pangenome =>  "KBaseGenomes",
 };
 my $objcorrespondence = {
 	BiochemistryStructures => "BiochemistryStructures",
