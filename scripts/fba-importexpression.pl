@@ -16,8 +16,11 @@ my $translation = {
 	workspace => "workspace",
 	sourceid => "source_id",
 	sourcedate => "source_date",
+	description => "description",
+	processing_comments => "processing_comments",
 	ignoreerrors => "ignore_errors",
 	genomeid => "genome_id",
+	numinterpret => "numerical_interpretation",
 };
 
 my $manpage = 
@@ -61,8 +64,11 @@ AUTHORS
 my $specs = [
     [ 'workspace|w:s', 'Workspace to save imported gene expression in', { "default" => fbaws() } ],
     [ 'sourceid:s', 'ID of the source'],
-    [ 'sourcedate|d:s', 'Date of the source', { "default", => strftime("%Y-%m-%d", localtime)}],
+    [ 'description|d:s', 'Optional description'],
+    [ 'processing_comments|p:s', 'Optional comments'],
+    [ 'sourcedate:s', 'Date of the source', { "default", => strftime("%Y-%m-%d", localtime)}],
     [ 'genomeid|g:s', "ID of genome to which features belong"],
+    [ 'numinterpret|n:s', "Numerical Interpretation:[ 'Log2 level intensities',  'Log2 level ratios','Log2 level ratios genomic DNA control','FPKM',]"  ],
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation, $manpage);
 if (!-e $opt->{"Gene expression flat file"}) {
