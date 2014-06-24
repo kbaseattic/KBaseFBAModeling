@@ -18487,8 +18487,11 @@ import_expression_params is a reference to a hash where the following keys are d
 	series has a value which is a series_id
 	source_id has a value which is a string
 	source_date has a value which is a string
+	description has a value which is a string
+	processing_comments has a value which is a string
 	workspace has a value which is a workspace_id
 	genome_id has a value which is a genome_id
+	numerical_interpretation has a value which is a string
 sample_id is a string
 ExpressionDataSample is a reference to a hash where the following keys are defined:
 	sample_id has a value which is a string
@@ -18529,8 +18532,11 @@ import_expression_params is a reference to a hash where the following keys are d
 	series has a value which is a series_id
 	source_id has a value which is a string
 	source_date has a value which is a string
+	description has a value which is a string
+	processing_comments has a value which is a string
 	workspace has a value which is a workspace_id
 	genome_id has a value which is a genome_id
+	numerical_interpretation has a value which is a string
 sample_id is a string
 ExpressionDataSample is a reference to a hash where the following keys are defined:
 	sample_id has a value which is a string
@@ -18687,10 +18693,15 @@ import_regulome_params is a reference to a hash where the following keys are def
 regulon is a reference to a hash where the following keys are defined:
 	operons has a value which is a reference to a list where each element is an operon
 	transcription_factor has a value which is a locus
+	effectors has a value which is a reference to a list where each element is an effector
+	sign has a value which is a string
 operon is a reference to a list where each element is a locus
 locus is a reference to a hash where the following keys are defined:
 	name has a value which is a string
 	locus has a value which is a string
+effector is a reference to a hash where the following keys are defined:
+	name has a value which is a string
+	class has a value which is a string
 workspace_id is a string
 genome_id is a string
 object_metadata is a reference to a list containing 11 items:
@@ -18726,10 +18737,15 @@ import_regulome_params is a reference to a hash where the following keys are def
 regulon is a reference to a hash where the following keys are defined:
 	operons has a value which is a reference to a list where each element is an operon
 	transcription_factor has a value which is a locus
+	effectors has a value which is a reference to a list where each element is an effector
+	sign has a value which is a string
 operon is a reference to a list where each element is a locus
 locus is a reference to a hash where the following keys are defined:
 	name has a value which is a string
 	locus has a value which is a string
+effector is a reference to a hash where the following keys are defined:
+	name has a value which is a string
+	class has a value which is a string
 workspace_id is a string
 genome_id is a string
 object_metadata is a reference to a list containing 11 items:
@@ -29947,7 +29963,10 @@ Input parameters for the "simulate_expression" function.
         series_id series -  ID of series (a required argument)
         string source_id - ID of the source (an optional argument: default is '')
         string source_date - Date of the source (an optional argument: default is '')
-        workspace_id workspace - workspace to contain the data (an optional argument: default is value of workspace argument)
+        string processing_comments - comment (an optional argument: default is '')
+        string description - description (an optional argument: default is '')
+        workspace_id workspace - workspace to contain the data (an optional argument: default is value of workspace argument)                
+        string numerical_interpretation - Numerical interpretation
 
 
 =item Definition
@@ -29960,8 +29979,11 @@ expression_data_sample_series has a value which is a reference to a hash where t
 series has a value which is a series_id
 source_id has a value which is a string
 source_date has a value which is a string
+description has a value which is a string
+processing_comments has a value which is a string
 workspace has a value which is a workspace_id
 genome_id has a value which is a genome_id
+numerical_interpretation has a value which is a string
 
 </pre>
 
@@ -29974,8 +29996,48 @@ expression_data_sample_series has a value which is a reference to a hash where t
 series has a value which is a series_id
 source_id has a value which is a string
 source_date has a value which is a string
+description has a value which is a string
+processing_comments has a value which is a string
 workspace has a value which is a workspace_id
 genome_id has a value which is a genome_id
+numerical_interpretation has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 effector
+
+=over 4
+
+
+
+=item Description
+
+Import RegPrecise regulome.
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+name has a value which is a string
+class has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+name has a value which is a string
+class has a value which is a string
 
 
 =end text
@@ -29988,11 +30050,6 @@ genome_id has a value which is a genome_id
 
 =over 4
 
-
-
-=item Description
-
-Import RegPrecise regulome.
 
 
 =item Definition
@@ -30061,6 +30118,8 @@ a reference to a list where each element is a locus
 a reference to a hash where the following keys are defined:
 operons has a value which is a reference to a list where each element is an operon
 transcription_factor has a value which is a locus
+effectors has a value which is a reference to a list where each element is an effector
+sign has a value which is a string
 
 </pre>
 
@@ -30071,6 +30130,8 @@ transcription_factor has a value which is a locus
 a reference to a hash where the following keys are defined:
 operons has a value which is a reference to a list where each element is an operon
 transcription_factor has a value which is a locus
+effectors has a value which is a reference to a list where each element is an effector
+sign has a value which is a string
 
 
 =end text
