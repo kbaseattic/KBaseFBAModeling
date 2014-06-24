@@ -1,10 +1,10 @@
 ########################################################################
-# Bio::KBase::ObjectAPI::KBaseOntology::DB::Ontology - This is the moose object corresponding to the KBaseOntology.Ontology object
+# Bio::KBase::ObjectAPI::KBaseGenomes::DB::OrthologFamily - This is the moose object corresponding to the KBaseGenomes.OrthologFamily object
 # Authors: Christopher Henry, Scott Devoid, Paul Frybarger
 # Contact email: chenry@mcs.anl.gov
 # Development location: Mathematics and Computer Science Division, Argonne National Lab
 ########################################################################
-package Bio::KBase::ObjectAPI::KBaseOntology::DB::Ontology;
+package Bio::KBase::ObjectAPI::KBaseGenomes::DB::OrthologFamily;
 use Bio::KBase::ObjectAPI::BaseObject;
 use Moose;
 use namespace::autoclean;
@@ -16,55 +16,47 @@ has parent => (is => 'rw', isa => 'Ref', weak_ref => 1, type => 'parent', metacl
 # ATTRIBUTES:
 has uuid => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_uuid');
 has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_reference');
-has gene_list => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub {return {};}, type => 'attribute', metaclass => 'Typed');
-has ontology_type => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has ontology_description => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has evidence_codes => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
-has ontology_id => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has ontology_domain => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has function => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has protein_translation => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has orthologs => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
+has id => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has type => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has md5 => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
 
 
 # BUILDERS:
-sub _build_reference { my ($self) = @_;return $self->parent()->_reference().'//id/'.$self->id(); }
+sub _build_reference { my ($self) = @_;return $self->parent()->_reference().'/orthologs/id/'.$self->id(); }
 sub _build_uuid { my ($self) = @_;return $self->_reference(); }
 
 
 # CONSTANTS:
-sub _type { return 'KBaseOntology.Ontology'; }
-sub _module { return 'KBaseOntology'; }
-sub _class { return 'Ontology'; }
+sub _type { return 'KBaseGenomes.OrthologFamily'; }
+sub _module { return 'KBaseGenomes'; }
+sub _class { return 'OrthologFamily'; }
 sub _top { return 0; }
 
 my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'gene_list',
-            'default' => 'sub {return {};}',
-            'type' => 'HashRef',
-            'perm' => 'rw'
-          },
-          {
-            'req' => 0,
-            'printOrder' => -1,
-            'name' => 'ontology_type',
+            'name' => 'function',
             'type' => 'Str',
             'perm' => 'rw'
           },
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'ontology_description',
+            'name' => 'protein_translation',
             'type' => 'Str',
             'perm' => 'rw'
           },
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'evidence_codes',
+            'name' => 'orthologs',
             'default' => 'sub {return [];}',
             'type' => 'ArrayRef',
             'perm' => 'rw'
@@ -72,20 +64,27 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'ontology_id',
+            'name' => 'id',
             'type' => 'Str',
             'perm' => 'rw'
           },
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'ontology_domain',
+            'name' => 'type',
+            'type' => 'Str',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'md5',
             'type' => 'Str',
             'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {gene_list => 0, ontology_type => 1, ontology_description => 2, evidence_codes => 3, ontology_id => 4, ontology_domain => 5};
+my $attribute_map = {function => 0, protein_translation => 1, orthologs => 2, id => 3, type => 4, md5 => 5};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {

@@ -1498,6 +1498,25 @@ module fbaModelServices {
     authentication required;
     funcdef domains_to_workspace(domains_to_workspace_params input) returns (object_metadata GenomeDomainMeta);
     
+    /* Input parameters for the "compute_domains_params" function.
+		string genome;
+		string genome_workspace;
+		list<tuple<string,string>> proteins;
+		workspace_id workspace;
+	*/
+	typedef structure {
+		string genome;
+		string genome_workspace;
+		list<tuple<string,string>> proteins;
+		workspace_id workspace;
+    } compute_domains_params;
+    
+    /*
+		Computes domains for either a genome or a list of proteins
+    */
+    authentication required;
+    funcdef compute_domains(compute_domains_params params) returns (object_metadata output);
+    
     /* A link between a KBase gene ID and the ID for the same gene in another database
 	
 		string foreign_id - ID of the gene in another database
@@ -1557,7 +1576,82 @@ module fbaModelServices {
         Build a genome-scale metabolic model based on annotations in an input genome typed object
     */
     authentication required;
-    funcdef genome_to_fbamodel (genome_to_fbamodel_params input) returns (object_metadata modelMeta);
+    funcdef genome_to_fbamodel(genome_to_fbamodel_params input) returns (object_metadata modelMeta);
+	
+	/* Input parameters for the "translate_fbamodel" function.
+	
+		gencomp
+		gencomp_workspace
+		fbamodel_id model;
+		fbamodel_id model_workspace;
+		
+	*/
+    typedef structure {
+		string protcomp;
+		string protcomp_workspace;
+		string model;
+		string model_workspace;
+		workspace_id workspace;
+    } translate_fbamodel_params;
+    /*
+        Translate an existing model to a new genome based on the genome comparison object
+    */
+    authentication required;
+    funcdef translate_fbamodel(translate_fbamodel_params input) returns (object_metadata modelMeta);
+
+	/* Input parameters for the "translate_fbamodel" function.
+	
+		gencomp
+		gencomp_workspace
+		fbamodel_id model;
+		fbamodel_id model_workspace;
+		
+	*/
+    typedef structure {
+		list<string> genomes;
+		list<string> genome_workspace;
+		workspace_id workspace;
+    } build_pangenome_params;
+    /*
+        Translate an existing model to a new genome based on the genome comparison object
+    */
+    authentication required;
+    funcdef build_pangenome(build_pangenome_params input) returns (object_metadata output);
+    
+    typedef structure {
+    	bool is_refs;
+		list<string> labels;
+		list<list<float>> matrix;
+    } heat_map_matrix;
+    
+    typedef structure {
+		string pangenome;
+		string pangenome_workspace;
+		string workspace;
+    } genome_compare_from_pangenome_params;
+    /*
+        Builds a comparason matrix for genomes included in a pangenome object
+    */
+    authentication required;
+    funcdef genome_heatmap_from_pangenome(genome_compare_from_pangenome_params input) returns (heat_map_matrix output);
+	
+	/*gene ID,gene ref,protein sequence,function,score*/
+	typedef structure {
+		list<tuple<string,string,string,string,float>> gene_data;
+		heat_map_matrix protein_heatmap;
+    } ortholog_data;
+    
+    typedef structure {
+		string pangenome;
+		string pangenome_workspace;
+		string orthologid;
+		string workspace;
+    } ortholog_family_from_pangenome_params;
+    /*
+        Returns more detailed data from a single ortholog family from a pangenome object
+    */
+    authentication required;
+    funcdef ortholog_family_from_pangenome(ortholog_family_from_pangenome_params input) returns (ortholog_data output);
 	
 	/* Input parameters for the "import_fbamodel" function.
 	
@@ -1806,6 +1900,68 @@ module fbaModelServices {
     */
     authentication required;
     funcdef runfba(runfba_params input) returns (object_metadata fbaMeta);
+    
+    /* Input parameters for the "generate_model_stats" function.
+	
+		fbamodel_id model - ID of the models that FBA should be run on (a required argument)
+		workspace_id model_workspace - workspaces where model for FBA should be run (an optional argument; default is the value of the workspace argument)
+		
+	*/
+    typedef structure {
+    	fbamodel_id model;
+		workspace_id model_workspace;
+    } generate_model_stats_params;
+    
+    typedef structure {
+    	string name;
+    	string class;
+    	string subclass;
+    	int genes;
+    	int reactions;
+    	int model_genes;
+    	int minimal_essential_genes;
+    	int complete_essential_genes;
+		int minimal_essential_reactions;
+    	int complete_essential_reactions;
+    	int minimal_blocked_reactions;
+    	int complete_blocked_reactions;
+    	int minimal_variable_reactions;
+    	int complete_variable_reactions;
+    } subsystem_statistics;
+    
+    typedef structure {
+    	int total_reactions;
+    	int total_genes;
+    	int total_compounds;
+    	int extracellular_compounds;
+    	int intracellular_compounds;
+    	int transport_reactions;
+    	int subsystem_reactions;
+    	int subsystem_genes;
+    	int spontaneous_reactions;
+    	int reactions_with_genes;
+    	int gapfilled_reactions;
+    	int model_genes;
+    	int minimal_essential_genes;
+    	int complete_essential_genes;
+		int minimal_essential_reactions;
+    	int complete_essential_reactions;
+    	int minimal_blocked_reactions;
+    	int complete_blocked_reactions;
+    	int minimal_variable_reactions;
+    	int complete_variable_reactions;
+    	
+    	bool growth_complete_media;
+    	bool growth_minimal_media;
+    	
+    	list<subsystem_statistics> subsystems;
+    } model_statistics;
+    
+    /*
+        Generate statistics with model and associated genome properties
+    */
+    authentication required;
+    funcdef generate_model_stats(generate_model_stats_params input) returns (model_statistics output);
     
     /* Input parameters for the "minimize_reactions" function.
 	
@@ -2783,6 +2939,19 @@ module fbaModelServices {
     */
     authentication optional;
     funcdef get_mapping(get_mapping_params params) returns (Mapping output);
+    
+    typedef tuple<string,string> subsysclass;
+    typedef mapping<string,subsysclass> subsysclasses;
+    typedef structure {
+		list<string> roles;
+		string map;
+		string map_workspace;
+    } subsystem_of_roles_params;
+    /*
+		Returns subsystems for list roles       
+    */
+    authentication optional;
+    funcdef subsystem_of_roles(subsystem_of_roles_params params) returns (mapping<string,subsysclasses> output);
     
 	/* Input parameters for the "adjust_mapping_role" function.
 	

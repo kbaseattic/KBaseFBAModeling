@@ -8,86 +8,37 @@ use Text::Table;
 use Bio::KBase::Auth;
 use Bio::KBase::fbaModelServices::Client;
 use Bio::KBase::workspaceService::Client;
+use Bio::KBase::fbaModelServices::ClientConfig;
 use Bio::KBase::workspace::ScriptHelpers qw(workspaceURL get_ws_client workspace parseObjectMeta parseWorkspaceMeta);
 use Exporter;
 use parent qw(Exporter);
 our @EXPORT_OK = qw(getToken get_old_ws_client fbaws printJobData fbaURL get_fba_client runFBACommand universalFBAScriptCode fbaTranslation roles_of_function );
 
-our $defaultURL = "https://kbase.us/services/KBaseFBAModeling";
-our $localhostURL = "http://127.0.0.1:4043";
-our $devURL = "http://140.221.85.73:4043";
-
-sub getKBaseCfg {
-	my $kbConfPath = $Bio::KBase::Auth::ConfPath;
-	if (!-e $kbConfPath) {
-		my $newcfg = new Config::Simple(syntax=>'ini') or die Config::Simple->error();
-		$newcfg->param("fbaModelServices.url",$defaultURL);
-		$newcfg->write($kbConfPath);
-		$newcfg->close();
-	}
-	my $cfg = new Config::Simple(filename=>$kbConfPath) or die Config::Simple->error();
-	return $cfg;
-}
-
 sub getToken {
 	my $token='';
-	my $kbConfPath = $Bio::KBase::Auth::ConfPath;
 	if (defined($ENV{KB_RUNNING_IN_IRIS})) {
 		$token = $ENV{KB_AUTH_TOKEN};
-	} elsif ( -e $kbConfPath ) {
-		my $cfg = new Config::Simple($kbConfPath);
-		$token = $cfg->param("authentication.token");
-		$cfg->close();
+	} else {
+		my $configs = Bio::KBase::Auth::GetConfigs();
+		$token = $configs->{token};
 	}
 	return $token;
 }
 
 sub fbaws {
-	my $newWs = shift;
-	my $currentWs;
-	if (defined($newWs)) {
-		$currentWs = $newWs;
-		if (!defined($ENV{KB_RUNNING_IN_IRIS})) {
-			my $cfg = getKBaseCfg();
-			$cfg->param("workspace_deluxe.workspace",$newWs);
-			$cfg->save();
-			$cfg->close();
-		} else {
-			my $client = get_old_ws_client();
-			$client->set_user_settings({
-				setting => "workspace",
-				value => $currentWs,
-				auth => getToken()
-			});
-		}
-	} else {
-		if (!defined($ENV{KB_RUNNING_IN_IRIS})) {
-			my $cfg = getKBaseCfg();
-			$currentWs = $cfg->param("workspace_deluxe.workspace");
-			if (!defined($currentWs)) {
-				$cfg->param("workspace_deluxe.workspace","no_workspace_set");
-				$cfg->save();
-				$currentWs="no_workspace_set";
-			}
-			$cfg->close();
-		} else {
-			my $client = get_old_ws_client();
-			my $settings = $client->get_user_settings({auth => getToken()});
-			$currentWs = $settings->{workspace};
-		}
-	}
-	return $currentWs;
+	return Bio::KBase::workspace::ScriptHelpers::workspace();
+}
+
+sub oldwsurl {
+	return Bio::KBase::fbaModelServices::ClientConfig::GetConfigParam("oldworkspace.url");
 }
 
 sub get_old_ws_client {
 	my $url = shift;
 	if (!defined($url)) {
-		$url = "http://kbase.us/services/workspace/";
+		$url = oldwsurl();
 	}
-	my $client = Bio::KBase::workspaceService::Client->new($url);
-	#$client->{token} = getToken();
-	#$client->{client}->{token} = getToken();
-    return $client;
+	return Bio::KBase::workspaceService::Client->new($url);
 }
 
 sub get_fba_client {
@@ -98,10 +49,9 @@ sub get_fba_client {
 	if ($url eq "impl") {
 		$Bio::KBase::fbaModelServices::Server::CallContext = {token => getToken()};
 		require "Bio/KBase/fbaModelServices/Impl.pm";
-		return Bio::KBase::fbaModelServices::Impl->new();
+		return Bio::KBase::fbaModelServices::Impl->new({"workspace-url" => workspaceURL()});
 	}
-	my $client = Bio::KBase::fbaModelServices::Client->new(fbaURL());
-    return $client;
+	return Bio::KBase::fbaModelServices::Client->new($url);
 }
 
 sub fbaURL {
@@ -109,35 +59,16 @@ sub fbaURL {
 	my $currentURL;
 	if (defined($newUrl)) {
 		if ($newUrl eq "default") {
-			$newUrl = $defaultURL;
+			$newUrl = $Bio::KBase::fbaModelServices::ScriptConfig::FBAprodURL;
 		} elsif ($newUrl eq "localhost") {
-			$newUrl = $localhostURL;
+			$newUrl = $Bio::KBase::fbaModelServices::ScriptConfig::FBAlocalURL;
 		} elsif ($newUrl eq "dev") {
-			$newUrl = $devURL;
+			$newUrl = $Bio::KBase::fbaModelServices::ScriptConfig::FBAdevURL;
 		}
-		
+		Bio::KBase::fbaModelServices::ClientConfig::SetConfig({url => $newUrl});
 		$currentURL = $newUrl;
-		if (!defined($ENV{KB_RUNNING_IN_IRIS})) {
-			my $cfg = getKBaseCfg();
-			$cfg->param("fbaModelServices.url",$newUrl);
-			$cfg->save();
-			$cfg->close();
-		} elsif ($ENV{KB_FBAURL}) {
-			$ENV{KB_FBAURL} = $currentURL;
-		}
 	} else {
-		if (!defined($ENV{KB_RUNNING_IN_IRIS})) {
-			my $cfg = getKBaseCfg();
-			$currentURL = $cfg->param("fbaModelServices.url");
-			if (!defined($currentURL)) {
-				$cfg->param("fbaModelServices.url",$defaultURL);
-				$cfg->save();
-				$currentURL=$defaultURL;
-			}
-			$cfg->close();
-		} else {
-			$currentURL = $ENV{KB_FBAURL};
-		}
+		$currentURL = Bio::KBase::fbaModelServices::ClientConfig::GetConfigParam("fbaModelServices.url");
 	}
 	return $currentURL;
 }
@@ -148,8 +79,8 @@ sub universalFBAScriptCode {
     my $primaryArgs = shift;
     my $translation = shift;
     my $manpage = shift;
-    $translation->{workspace} = "workspace";
-    #$translation->{auth} = "auth";
+    my $command_param = shift;
+    my $in_fh;
     #Setting arguments to "describe_options" function
     my $options = [];
     if (@{$primaryArgs} > 0) {
@@ -163,7 +94,27 @@ sub universalFBAScriptCode {
     push(@{$options},[ 'help|h|?', 'Print this usage information' ]);
     #Defining usage and options
 	my ($opt, $usage) = describe_options(@{$options});
-	if (defined($opt->{help})) {
+	#Reading any piped data
+	if ( -p \*STDIN) {
+		my $in_fh = \*STDIN;
+		my $data;
+		{
+		    local $/;
+		    undef $/;
+		    $data = <$in_fh>;
+		    
+		}
+		if ($command_param->{primary}->{type} eq "json") {
+			my $json = JSON::XS->new;
+			$data = $json->decode($data);
+		}
+		$opt->{$command_param->{primary}->{dest}} = {data => $data,type => "data"};
+	}
+	#Reading data from files
+	#TODO
+    $translation->{workspace} = "workspace";
+    #$translation->{auth} = "auth";
+    if (defined($opt->{help})) {
         if (defined($manpage)) {
             print "SYNOPSIS\n      ".$usage;
             print $manpage;

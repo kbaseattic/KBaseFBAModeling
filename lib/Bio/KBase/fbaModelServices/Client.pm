@@ -2484,6 +2484,139 @@ sub domains_to_workspace
 
 
 
+=head2 compute_domains
+
+  $output = $obj->compute_domains($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is a compute_domains_params
+$output is an object_metadata
+compute_domains_params is a reference to a hash where the following keys are defined:
+	genome has a value which is a string
+	genome_workspace has a value which is a string
+	proteins has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+	0: a string
+	1: a string
+
+	workspace has a value which is a workspace_id
+workspace_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is a compute_domains_params
+$output is an object_metadata
+compute_domains_params is a reference to a hash where the following keys are defined:
+	genome has a value which is a string
+	genome_workspace has a value which is a string
+	proteins has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+	0: a string
+	1: a string
+
+	workspace has a value which is a workspace_id
+workspace_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+=item Description
+
+Computes domains for either a genome or a list of proteins
+
+=back
+
+=cut
+
+sub compute_domains
+{
+    my($self, @args) = @_;
+
+# Authentication: required
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function compute_domains (received $n, expecting 1)");
+    }
+    {
+	my($params) = @args;
+
+	my @_bad_arguments;
+        (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to compute_domains:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'compute_domains');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.compute_domains",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{error}->{code},
+					       method_name => 'compute_domains',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method compute_domains",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'compute_domains',
+				       );
+    }
+}
+
+
+
 =head2 add_feature_translation
 
   $genomeMeta = $obj->add_feature_translation($input)
@@ -2766,6 +2899,478 @@ sub genome_to_fbamodel
         Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method genome_to_fbamodel",
 					    status_line => $self->{client}->status_line,
 					    method_name => 'genome_to_fbamodel',
+				       );
+    }
+}
+
+
+
+=head2 translate_fbamodel
+
+  $modelMeta = $obj->translate_fbamodel($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a translate_fbamodel_params
+$modelMeta is an object_metadata
+translate_fbamodel_params is a reference to a hash where the following keys are defined:
+	protcomp has a value which is a string
+	protcomp_workspace has a value which is a string
+	model has a value which is a string
+	model_workspace has a value which is a string
+	workspace has a value which is a workspace_id
+workspace_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a translate_fbamodel_params
+$modelMeta is an object_metadata
+translate_fbamodel_params is a reference to a hash where the following keys are defined:
+	protcomp has a value which is a string
+	protcomp_workspace has a value which is a string
+	model has a value which is a string
+	model_workspace has a value which is a string
+	workspace has a value which is a workspace_id
+workspace_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+=item Description
+
+Translate an existing model to a new genome based on the genome comparison object
+
+=back
+
+=cut
+
+sub translate_fbamodel
+{
+    my($self, @args) = @_;
+
+# Authentication: required
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function translate_fbamodel (received $n, expecting 1)");
+    }
+    {
+	my($input) = @args;
+
+	my @_bad_arguments;
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to translate_fbamodel:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'translate_fbamodel');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.translate_fbamodel",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{error}->{code},
+					       method_name => 'translate_fbamodel',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method translate_fbamodel",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'translate_fbamodel',
+				       );
+    }
+}
+
+
+
+=head2 build_pangenome
+
+  $output = $obj->build_pangenome($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a build_pangenome_params
+$output is an object_metadata
+build_pangenome_params is a reference to a hash where the following keys are defined:
+	genomes has a value which is a reference to a list where each element is a string
+	genome_workspace has a value which is a reference to a list where each element is a string
+	workspace has a value which is a workspace_id
+workspace_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a build_pangenome_params
+$output is an object_metadata
+build_pangenome_params is a reference to a hash where the following keys are defined:
+	genomes has a value which is a reference to a list where each element is a string
+	genome_workspace has a value which is a reference to a list where each element is a string
+	workspace has a value which is a workspace_id
+workspace_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+=item Description
+
+Translate an existing model to a new genome based on the genome comparison object
+
+=back
+
+=cut
+
+sub build_pangenome
+{
+    my($self, @args) = @_;
+
+# Authentication: required
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function build_pangenome (received $n, expecting 1)");
+    }
+    {
+	my($input) = @args;
+
+	my @_bad_arguments;
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to build_pangenome:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'build_pangenome');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.build_pangenome",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{error}->{code},
+					       method_name => 'build_pangenome',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method build_pangenome",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'build_pangenome',
+				       );
+    }
+}
+
+
+
+=head2 genome_heatmap_from_pangenom
+
+  $output = $obj->genome_heatmap_from_pangenom($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a genome_compare_from_pangenom_params
+$output is a heat_map_matrix
+genome_compare_from_pangenom_params is a reference to a hash where the following keys are defined:
+	pangenome has a value which is a string
+	pangenome_workspace has a value which is a string
+	workspace has a value which is a string
+heat_map_matrix is a reference to a hash where the following keys are defined:
+	is_refs has a value which is a bool
+	labels has a value which is a reference to a list where each element is a string
+	matrix has a value which is a reference to a list where each element is a reference to a list where each element is a float
+bool is an int
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a genome_compare_from_pangenom_params
+$output is a heat_map_matrix
+genome_compare_from_pangenom_params is a reference to a hash where the following keys are defined:
+	pangenome has a value which is a string
+	pangenome_workspace has a value which is a string
+	workspace has a value which is a string
+heat_map_matrix is a reference to a hash where the following keys are defined:
+	is_refs has a value which is a bool
+	labels has a value which is a reference to a list where each element is a string
+	matrix has a value which is a reference to a list where each element is a reference to a list where each element is a float
+bool is an int
+
+
+=end text
+
+=item Description
+
+Builds a comparason matrix for genomes included in a pangenome object
+
+=back
+
+=cut
+
+sub genome_heatmap_from_pangenom
+{
+    my($self, @args) = @_;
+
+# Authentication: required
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function genome_heatmap_from_pangenom (received $n, expecting 1)");
+    }
+    {
+	my($input) = @args;
+
+	my @_bad_arguments;
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to genome_heatmap_from_pangenom:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'genome_heatmap_from_pangenom');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.genome_heatmap_from_pangenom",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{error}->{code},
+					       method_name => 'genome_heatmap_from_pangenom',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method genome_heatmap_from_pangenom",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'genome_heatmap_from_pangenom',
+				       );
+    }
+}
+
+
+
+=head2 ortholog_family_from_pangenome
+
+  $output = $obj->ortholog_family_from_pangenome($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is an ortholog_family_from_pangenome_params
+$output is an ortholog_data
+ortholog_family_from_pangenome_params is a reference to a hash where the following keys are defined:
+	pangenome has a value which is a string
+	pangenome_workspace has a value which is a string
+	orthologid has a value which is a string
+	workspace has a value which is a string
+ortholog_data is a reference to a hash where the following keys are defined:
+	gene_data has a value which is a reference to a list where each element is a reference to a list containing 5 items:
+	0: a string
+	1: a string
+	2: a string
+	3: a string
+	4: a float
+
+	protein_heatmap has a value which is a heat_map_matrix
+heat_map_matrix is a reference to a hash where the following keys are defined:
+	is_refs has a value which is a bool
+	labels has a value which is a reference to a list where each element is a string
+	matrix has a value which is a reference to a list where each element is a reference to a list where each element is a float
+bool is an int
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is an ortholog_family_from_pangenome_params
+$output is an ortholog_data
+ortholog_family_from_pangenome_params is a reference to a hash where the following keys are defined:
+	pangenome has a value which is a string
+	pangenome_workspace has a value which is a string
+	orthologid has a value which is a string
+	workspace has a value which is a string
+ortholog_data is a reference to a hash where the following keys are defined:
+	gene_data has a value which is a reference to a list where each element is a reference to a list containing 5 items:
+	0: a string
+	1: a string
+	2: a string
+	3: a string
+	4: a float
+
+	protein_heatmap has a value which is a heat_map_matrix
+heat_map_matrix is a reference to a hash where the following keys are defined:
+	is_refs has a value which is a bool
+	labels has a value which is a reference to a list where each element is a string
+	matrix has a value which is a reference to a list where each element is a reference to a list where each element is a float
+bool is an int
+
+
+=end text
+
+=item Description
+
+Returns more detailed data from a single ortholog family from a pangenome object
+
+=back
+
+=cut
+
+sub ortholog_family_from_pangenome
+{
+    my($self, @args) = @_;
+
+# Authentication: required
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function ortholog_family_from_pangenome (received $n, expecting 1)");
+    }
+    {
+	my($input) = @args;
+
+	my @_bad_arguments;
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to ortholog_family_from_pangenome:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'ortholog_family_from_pangenome');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.ortholog_family_from_pangenome",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{error}->{code},
+					       method_name => 'ortholog_family_from_pangenome',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method ortholog_family_from_pangenome",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'ortholog_family_from_pangenome',
 				       );
     }
 }
@@ -3979,6 +4584,177 @@ sub runfba
         Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method runfba",
 					    status_line => $self->{client}->status_line,
 					    method_name => 'runfba',
+				       );
+    }
+}
+
+
+
+=head2 generate_model_stats
+
+  $output = $obj->generate_model_stats($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a generate_model_stats_params
+$output is a model_statistics
+generate_model_stats_params is a reference to a hash where the following keys are defined:
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
+fbamodel_id is a string
+workspace_id is a string
+model_statistics is a reference to a hash where the following keys are defined:
+	total_reactions has a value which is an int
+	total_genes has a value which is an int
+	total_compounds has a value which is an int
+	extracellular_compounds has a value which is an int
+	intracellular_compounds has a value which is an int
+	transport_reactions has a value which is an int
+	subsystem_reactions has a value which is an int
+	subsystem_genes has a value which is an int
+	spontaneous_reactions has a value which is an int
+	reactions_with_genes has a value which is an int
+	gapfilled_reactions has a value which is an int
+	model_genes has a value which is an int
+	minimal_essential_genes has a value which is an int
+	complete_essential_genes has a value which is an int
+	minimal_essential_reactions has a value which is an int
+	complete_essential_reactions has a value which is an int
+	minimal_blocked_reactions has a value which is an int
+	complete_blocked_reactions has a value which is an int
+	minimal_variable_reactions has a value which is an int
+	complete_variable_reactions has a value which is an int
+	growth_complete_media has a value which is a bool
+	growth_minimal_media has a value which is a bool
+	subsystems has a value which is a reference to a list where each element is a subsystem_statistics
+bool is an int
+subsystem_statistics is a reference to a hash where the following keys are defined:
+	name has a value which is a string
+	class has a value which is a string
+	subclass has a value which is a string
+	genes has a value which is an int
+	reactions has a value which is an int
+	model_genes has a value which is an int
+	minimal_essential_genes has a value which is an int
+	complete_essential_genes has a value which is an int
+	minimal_essential_reactions has a value which is an int
+	complete_essential_reactions has a value which is an int
+	minimal_blocked_reactions has a value which is an int
+	complete_blocked_reactions has a value which is an int
+	minimal_variable_reactions has a value which is an int
+	complete_variable_reactions has a value which is an int
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a generate_model_stats_params
+$output is a model_statistics
+generate_model_stats_params is a reference to a hash where the following keys are defined:
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
+fbamodel_id is a string
+workspace_id is a string
+model_statistics is a reference to a hash where the following keys are defined:
+	total_reactions has a value which is an int
+	total_genes has a value which is an int
+	total_compounds has a value which is an int
+	extracellular_compounds has a value which is an int
+	intracellular_compounds has a value which is an int
+	transport_reactions has a value which is an int
+	subsystem_reactions has a value which is an int
+	subsystem_genes has a value which is an int
+	spontaneous_reactions has a value which is an int
+	reactions_with_genes has a value which is an int
+	gapfilled_reactions has a value which is an int
+	model_genes has a value which is an int
+	minimal_essential_genes has a value which is an int
+	complete_essential_genes has a value which is an int
+	minimal_essential_reactions has a value which is an int
+	complete_essential_reactions has a value which is an int
+	minimal_blocked_reactions has a value which is an int
+	complete_blocked_reactions has a value which is an int
+	minimal_variable_reactions has a value which is an int
+	complete_variable_reactions has a value which is an int
+	growth_complete_media has a value which is a bool
+	growth_minimal_media has a value which is a bool
+	subsystems has a value which is a reference to a list where each element is a subsystem_statistics
+bool is an int
+subsystem_statistics is a reference to a hash where the following keys are defined:
+	name has a value which is a string
+	class has a value which is a string
+	subclass has a value which is a string
+	genes has a value which is an int
+	reactions has a value which is an int
+	model_genes has a value which is an int
+	minimal_essential_genes has a value which is an int
+	complete_essential_genes has a value which is an int
+	minimal_essential_reactions has a value which is an int
+	complete_essential_reactions has a value which is an int
+	minimal_blocked_reactions has a value which is an int
+	complete_blocked_reactions has a value which is an int
+	minimal_variable_reactions has a value which is an int
+	complete_variable_reactions has a value which is an int
+
+
+=end text
+
+=item Description
+
+Generate statistics with model and associated genome properties
+
+=back
+
+=cut
+
+sub generate_model_stats
+{
+    my($self, @args) = @_;
+
+# Authentication: required
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function generate_model_stats (received $n, expecting 1)");
+    }
+    {
+	my($input) = @args;
+
+	my @_bad_arguments;
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to generate_model_stats:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'generate_model_stats');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.generate_model_stats",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{error}->{code},
+					       method_name => 'generate_model_stats',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method generate_model_stats",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'generate_model_stats',
 				       );
     }
 }
@@ -9524,6 +10300,103 @@ sub get_mapping
         Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method get_mapping",
 					    status_line => $self->{client}->status_line,
 					    method_name => 'get_mapping',
+				       );
+    }
+}
+
+
+
+=head2 subsystem_of_roles
+
+  $output = $obj->subsystem_of_roles($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is a subsystem_of_roles_params
+$output is a reference to a hash where the key is a string and the value is a subsysclasses
+subsystem_of_roles_params is a reference to a hash where the following keys are defined:
+	roles has a value which is a reference to a list where each element is a string
+	map has a value which is a string
+	map_workspace has a value which is a string
+subsysclasses is a reference to a hash where the key is a string and the value is a subsysclass
+subsysclass is a reference to a list containing 2 items:
+	0: a string
+	1: a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is a subsystem_of_roles_params
+$output is a reference to a hash where the key is a string and the value is a subsysclasses
+subsystem_of_roles_params is a reference to a hash where the following keys are defined:
+	roles has a value which is a reference to a list where each element is a string
+	map has a value which is a string
+	map_workspace has a value which is a string
+subsysclasses is a reference to a hash where the key is a string and the value is a subsysclass
+subsysclass is a reference to a list containing 2 items:
+	0: a string
+	1: a string
+
+
+=end text
+
+=item Description
+
+Returns subsystems for list roles
+
+=back
+
+=cut
+
+sub subsystem_of_roles
+{
+    my($self, @args) = @_;
+
+# Authentication: optional
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function subsystem_of_roles (received $n, expecting 1)");
+    }
+    {
+	my($params) = @args;
+
+	my @_bad_arguments;
+        (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to subsystem_of_roles:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'subsystem_of_roles');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.subsystem_of_roles",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{error}->{code},
+					       method_name => 'subsystem_of_roles',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method subsystem_of_roles",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'subsystem_of_roles',
 				       );
     }
 }
@@ -17590,6 +18463,57 @@ auth has a value which is a string
 
 
 
+=head2 compute_domains_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "compute_domains_params" function.
+string genome;
+string genome_workspace;
+list<tuple<string,string>> proteins;
+workspace_id workspace;
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+genome has a value which is a string
+genome_workspace has a value which is a string
+proteins has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+0: a string
+1: a string
+
+workspace has a value which is a workspace_id
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+genome has a value which is a string
+genome_workspace has a value which is a string
+proteins has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+0: a string
+1: a string
+
+workspace has a value which is a workspace_id
+
+
+=end text
+
+=back
+
+
+
 =head2 translation
 
 =over 4
@@ -17734,6 +18658,251 @@ coremodel has a value which is a bool
 workspace has a value which is a workspace_id
 auth has a value which is a string
 fulldb has a value which is a bool
+
+
+=end text
+
+=back
+
+
+
+=head2 translate_fbamodel_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "translate_fbamodel" function.
+
+        gencomp
+        gencomp_workspace
+        fbamodel_id model;
+        fbamodel_id model_workspace;
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+protcomp has a value which is a string
+protcomp_workspace has a value which is a string
+model has a value which is a string
+model_workspace has a value which is a string
+workspace has a value which is a workspace_id
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+protcomp has a value which is a string
+protcomp_workspace has a value which is a string
+model has a value which is a string
+model_workspace has a value which is a string
+workspace has a value which is a workspace_id
+
+
+=end text
+
+=back
+
+
+
+=head2 build_pangenome_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "translate_fbamodel" function.
+
+        gencomp
+        gencomp_workspace
+        fbamodel_id model;
+        fbamodel_id model_workspace;
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+genomes has a value which is a reference to a list where each element is a string
+genome_workspace has a value which is a reference to a list where each element is a string
+workspace has a value which is a workspace_id
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+genomes has a value which is a reference to a list where each element is a string
+genome_workspace has a value which is a reference to a list where each element is a string
+workspace has a value which is a workspace_id
+
+
+=end text
+
+=back
+
+
+
+=head2 heat_map_matrix
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+is_refs has a value which is a bool
+labels has a value which is a reference to a list where each element is a string
+matrix has a value which is a reference to a list where each element is a reference to a list where each element is a float
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+is_refs has a value which is a bool
+labels has a value which is a reference to a list where each element is a string
+matrix has a value which is a reference to a list where each element is a reference to a list where each element is a float
+
+
+=end text
+
+=back
+
+
+
+=head2 genome_compare_from_pangenom_params
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+pangenome has a value which is a string
+pangenome_workspace has a value which is a string
+workspace has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+pangenome has a value which is a string
+pangenome_workspace has a value which is a string
+workspace has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 ortholog_data
+
+=over 4
+
+
+
+=item Description
+
+gene ID,gene ref,protein sequence,function,score
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+gene_data has a value which is a reference to a list where each element is a reference to a list containing 5 items:
+0: a string
+1: a string
+2: a string
+3: a string
+4: a float
+
+protein_heatmap has a value which is a heat_map_matrix
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+gene_data has a value which is a reference to a list where each element is a reference to a list containing 5 items:
+0: a string
+1: a string
+2: a string
+3: a string
+4: a float
+
+protein_heatmap has a value which is a heat_map_matrix
+
+
+=end text
+
+=back
+
+
+
+=head2 ortholog_family_from_pangenome_params
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+pangenome has a value which is a string
+pangenome_workspace has a value which is a string
+orthologid has a value which is a string
+workspace has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+pangenome has a value which is a string
+pangenome_workspace has a value which is a string
+orthologid has a value which is a string
+workspace has a value which is a string
 
 
 =end text
@@ -18247,6 +19416,176 @@ workspace has a value which is a workspace_id
 auth has a value which is a string
 overwrite has a value which is a bool
 add_to_model has a value which is a bool
+
+
+=end text
+
+=back
+
+
+
+=head2 generate_model_stats_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "generate_model_stats" function.
+
+        fbamodel_id model - ID of the models that FBA should be run on (a required argument)
+        workspace_id model_workspace - workspaces where model for FBA should be run (an optional argument; default is the value of the workspace argument)
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+
+
+=end text
+
+=back
+
+
+
+=head2 subsystem_statistics
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+name has a value which is a string
+class has a value which is a string
+subclass has a value which is a string
+genes has a value which is an int
+reactions has a value which is an int
+model_genes has a value which is an int
+minimal_essential_genes has a value which is an int
+complete_essential_genes has a value which is an int
+minimal_essential_reactions has a value which is an int
+complete_essential_reactions has a value which is an int
+minimal_blocked_reactions has a value which is an int
+complete_blocked_reactions has a value which is an int
+minimal_variable_reactions has a value which is an int
+complete_variable_reactions has a value which is an int
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+name has a value which is a string
+class has a value which is a string
+subclass has a value which is a string
+genes has a value which is an int
+reactions has a value which is an int
+model_genes has a value which is an int
+minimal_essential_genes has a value which is an int
+complete_essential_genes has a value which is an int
+minimal_essential_reactions has a value which is an int
+complete_essential_reactions has a value which is an int
+minimal_blocked_reactions has a value which is an int
+complete_blocked_reactions has a value which is an int
+minimal_variable_reactions has a value which is an int
+complete_variable_reactions has a value which is an int
+
+
+=end text
+
+=back
+
+
+
+=head2 model_statistics
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+total_reactions has a value which is an int
+total_genes has a value which is an int
+total_compounds has a value which is an int
+extracellular_compounds has a value which is an int
+intracellular_compounds has a value which is an int
+transport_reactions has a value which is an int
+subsystem_reactions has a value which is an int
+subsystem_genes has a value which is an int
+spontaneous_reactions has a value which is an int
+reactions_with_genes has a value which is an int
+gapfilled_reactions has a value which is an int
+model_genes has a value which is an int
+minimal_essential_genes has a value which is an int
+complete_essential_genes has a value which is an int
+minimal_essential_reactions has a value which is an int
+complete_essential_reactions has a value which is an int
+minimal_blocked_reactions has a value which is an int
+complete_blocked_reactions has a value which is an int
+minimal_variable_reactions has a value which is an int
+complete_variable_reactions has a value which is an int
+growth_complete_media has a value which is a bool
+growth_minimal_media has a value which is a bool
+subsystems has a value which is a reference to a list where each element is a subsystem_statistics
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+total_reactions has a value which is an int
+total_genes has a value which is an int
+total_compounds has a value which is an int
+extracellular_compounds has a value which is an int
+intracellular_compounds has a value which is an int
+transport_reactions has a value which is an int
+subsystem_reactions has a value which is an int
+subsystem_genes has a value which is an int
+spontaneous_reactions has a value which is an int
+reactions_with_genes has a value which is an int
+gapfilled_reactions has a value which is an int
+model_genes has a value which is an int
+minimal_essential_genes has a value which is an int
+complete_essential_genes has a value which is an int
+minimal_essential_reactions has a value which is an int
+complete_essential_reactions has a value which is an int
+minimal_blocked_reactions has a value which is an int
+complete_blocked_reactions has a value which is an int
+minimal_variable_reactions has a value which is an int
+complete_variable_reactions has a value which is an int
+growth_complete_media has a value which is a bool
+growth_minimal_media has a value which is a bool
+subsystems has a value which is a reference to a list where each element is a subsystem_statistics
 
 
 =end text
@@ -20475,6 +21814,98 @@ a reference to a hash where the following keys are defined:
 map has a value which is a mapping_id
 workspace has a value which is a workspace_id
 auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 subsysclass
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a list containing 2 items:
+0: a string
+1: a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a list containing 2 items:
+0: a string
+1: a string
+
+
+=end text
+
+=back
+
+
+
+=head2 subsysclasses
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the key is a string and the value is a subsysclass
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the key is a string and the value is a subsysclass
+
+=end text
+
+=back
+
+
+
+=head2 subsystem_of_roles_params
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+roles has a value which is a reference to a list where each element is a string
+map has a value which is a string
+map_workspace has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+roles has a value which is a reference to a list where each element is a string
+map has a value which is a string
+map_workspace has a value which is a string
 
 
 =end text

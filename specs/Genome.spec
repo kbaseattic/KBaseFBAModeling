@@ -88,6 +88,9 @@ module KBaseGenomes {
 	*/
     typedef string Fasta_ref;
     
+    typedef string Feature_type;
+    typedef int Bool;
+    
     /* Type spec for a "Contig" subobject in the "ContigSet" object
 
 		Contig_id id - ID of contig in contigset
@@ -95,16 +98,21 @@ module KBaseGenomes {
 		string sequence - sequence of the contig
 		string description - Description of the contig (e.g. everything after the ID in a FASTA file)
 
-		@optional length name description
-		@searchable ws_subset id md5
+		@optional length md5 genetic_code cell_compartment replicon_geometry replicon_type name description complete
 	*/
 	typedef structure {
 		Contig_id id;
 		int length;
 		string md5;
-		string sequence;
+		string sequence;/*using "sequence" instead of "dna"*/
+		int genetic_code;
+		string cell_compartment;
+		string replicon_type;
+		/* circular / linear */
+		string replicon_geometry;
 		string name;
 		string description;
+		Bool complete;
     } Contig;
 
     /* Type spec for the "ContigSet" object
@@ -211,17 +219,68 @@ module KBaseGenomes {
     */
     typedef tuple<string comment, string annotator, int annotation_time> annotation;
 	
+	typedef string Analysis_event_id;
+    
+    /*
+    	@optional tool_name execution_time parameters hostname
+    */
+    typedef structure {
+		Analysis_event_id id;
+		string tool_name;
+		float execution_time;
+		list<string> parameters;
+		string hostname;
+    } Analysis_event;
+	
 	/*
-    	Structure for a single feature of a Feature
-	Should genome_id contain the genome_id in the Genome object,
-	the workspace id of the Genome object, a genomeref,
-	something else?
-	Should sequence be in separate objects too?
-	We may want to add additional fields for other CDM functions
-	(e.g., atomic regulons, coexpressed fids, co_occurring fids,...)
+    	@optional weighted_hit_count hit_count existence_priority overlap_rules pyrrolysylprotein truncated_begin truncated_end existence_confidence frameshifted selenoprotein
+    */
+	typedef structure {
+		Bool truncated_begin;
+		Bool truncated_end;
+		/* Is this a real feature? */
+		float existence_confidence;
 
-		@optional md5 location function protein_translation protein_families subsystems publications subsystems subsystem_data aliases annotations regulon_data atomic_regulons coexpressed_fids co_occurring_fids dna_sequence protein_translation_length dna_sequence_length
-		@searchable ws_subset id type function aliases md5
+		Bool frameshifted;
+		Bool selenoprotein;
+		Bool pyrrolysylprotein;
+
+		/*
+		 * List of rules that govern the overlap removal procedure for
+		 * this feature. We don't yet have a strict definition for this but
+		 * the notion is that this will consiste of entries of the form
+		 * +feature-type which will allow overlap with the given feature type;
+		 * -feature-type which will disallow overlap with the given feature type.
+		 */
+		list<string> overlap_rules;
+
+		/*
+		 * The numeric priority of this feature's right to exist. Specialty
+		 * tools will give the features they create a high priority; more generic
+		 * tools will give their features a lower priority. The overlap removal procedure
+		 * will use this priority to determine which of a set of overlapping features
+		 * should be removed.
+		 *
+		 * The intent is that a change of 1 in the priority value represents a factor of 2 in
+		 * preference.
+		 */
+		float existence_priority;
+
+		float hit_count;
+		float weighted_hit_count;
+    } Feature_quality_measure;
+	
+	/*
+    	Structure for a single feature of a genome
+		
+		Should genome_id contain the genome_id in the Genome object,
+		the workspace id of the Genome object, a genomeref,
+		something else?
+		Should sequence be in separate objects too?
+		We may want to add additional fields for other CDM functions
+		(e.g., atomic regulons, coexpressed fids, co_occurring fids,...)
+
+		@optional orthologs quality feature_creation_event md5 location function protein_translation protein_families subsystems publications subsystem_data aliases annotations regulon_data atomic_regulons coexpressed_fids co_occurring_fids dna_sequence protein_translation_length dna_sequence_length
     */
     typedef structure {
 		Feature_id id;
@@ -237,13 +296,32 @@ module KBaseGenomes {
 		list<string> subsystems;
 		list<ProteinFamily> protein_families;
 		list<string> aliases;
+		list<tuple<string,float>> orthologs;
 		list<annotation> annotations;
 		list<subsystem_data> subsystem_data;
 		list<regulon_data> regulon_data;
 		list<atomic_regulon> atomic_regulons;
 		list<coexpressed_fid> coexpressed_fids;
 		list<co_occurring_fid> co_occurring_fids;
+		Feature_quality_measure quality;
+		Analysis_event feature_creation_event;
     } Feature;
+	
+	/*
+    	@optional genome closeness_measure
+    */
+	typedef structure {
+		Genome_id genome;
+		float closeness_measure;
+    } Close_genome;
+
+	/*
+    	@optional frameshift_error_rate sequence_error_rate
+    */
+    typedef structure {
+		float frameshift_error_rate;
+		float sequence_error_rate;
+    } Genome_quality_measure;
 
     /*
     	Genome object holds much of the data relevant for a genome in KBase
@@ -254,8 +332,8 @@ module KBaseGenomes {
 	addition to having a list of feature_refs)
 	Should the Genome object contain a list of contig_ids too?
 
-    	@optional contig_ids publications md5 taxonomy gc_content complete dna_size num_contigs contig_lengths contigset_ref proteinset_ref transcriptset_ref
-    	@searchable ws_subset features.[*].(md5,id,type,function,aliases) taxonomy num_contigs source_id source genetic_code id scientific_name domain contigset_ref proteinset_ref transcriptset_ref
+    	@optional quality close_genomes analysis_events features source_id source contigs contig_ids publications md5 taxonomy gc_content complete dna_size num_contigs contig_lengths contigset_ref
+    	@searchable ws_subset taxonomy num_contigs source_id source genetic_code id scientific_name domain contigset_ref
     */
     typedef structure {
 		Genome_id id;
@@ -264,6 +342,7 @@ module KBaseGenomes {
 		int genetic_code;
 		int dna_size;
 		int num_contigs;
+		list<Contig> contigs;
 		list<int> contig_lengths;
 		list<Contig_id> contig_ids;
 		string source;
@@ -275,8 +354,10 @@ module KBaseGenomes {
 		list<publication> publications;
 		list<Feature> features;
 		ContigSet_ref contigset_ref;
-		ProteinSet_ref proteinset_ref;
-		TranscriptSet_ref transcriptset_ref;
+		
+		Genome_quality_measure quality;
+		list<Close_genome> close_genomes;
+		list <Analysis_event> analysis_events;
     } Genome;
     
 	/* Type spec for the "Protein" object
@@ -466,4 +547,31 @@ module KBaseGenomes {
 		list<Domain> domains;
 		list<FeatureDomainData> featuredomains;
 	} GenomeDomainData;
+	
+	/*
+    	OrthologFamily object: this object holds all data for a single ortholog family in a metagenome
+
+    	@optional type function md5 protein_translation
+    */
+	typedef structure {
+    	string id;
+		string type;
+		string function;
+		string md5;
+		string protein_translation;
+		list<tuple<string,float,string>> orthologs;
+	} OrthologFamily;
+	
+	/*
+    	Pangenome object: this object holds all data regarding a pangenome
+
+    	@searchable ws_subset id name
+    */
+    typedef structure {
+    	string id;
+    	string name;
+    	string type;
+    	list<Genome_ref> genome_refs;
+    	list<OrthologFamily> orthologs;
+	} Pangenome;
 };

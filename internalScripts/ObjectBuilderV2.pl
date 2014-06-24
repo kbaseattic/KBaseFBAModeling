@@ -67,6 +67,7 @@ foreach my $key (keys(%{$objtranslation})) {
 	$refobjtrans->{$objtranslation->{$key}} = $key;
 }
 my $baseobjects = {
+	ProteomeComparison => "GenomeComparison",
 	MetagenomeAnnotation => "KBaseGenomes",
 	Genome => "KBaseGenomes",
 	ContigSet => "KBaseGenomes",
@@ -90,8 +91,7 @@ my $baseobjects = {
 	ReactionSensitivityAnalysis => "KBaseFBA",
 	GenomeDomainData =>  "KBaseGenomes",
 	PromConstraint =>  "KBaseFBA",
-	regulatory_network =>  "KBaseFBA",
-	EfluxExpressionCollection => "KBaseRegulatoryFBA",
+	Pangenome =>  "KBaseGenomes",
 	Regulome => "KBaseRegulation",
 	ExpressionSeries => "KBaseExpression",
 	ExpressionSample => "KBaseExpression",
@@ -100,6 +100,7 @@ my $objcorrespondence = {
 	BiochemistryStructures => "BiochemistryStructures",
 	Biochemistry => "Biochemistry",
 	RegulatoryModel => "RegulatoryModel",
+	PROMModel => "PROMModel",
 	Stimuli => "Stimuli",
 	Mapping => "Mapping",
 	ModelTemplate => "ModelTemplate",
@@ -112,9 +113,15 @@ my $revcorrespondence = {};
 foreach my $obj (keys(%{$objcorrespondence})) {
 	$revcorrespondence->{$objcorrespondence->{$obj}} = $obj;
 }
+my $typetrans = {
+	string => "Str",
+	"int" => "Int",
+	bool => "Bool",
+	float => "Num",
+};
 my $subobj = {};
 my $specobjects = {};
-my $speclist = ["FBAModel.spec","Ontology.spec","Biochem.spec","Genome.spec","Phenotypes.spec","ProbabilisticAnnotation.spec","Regulation.spec","Expression.spec"];
+my $speclist = ["FBAModel.spec","Ontology.spec","Biochem.spec","Genome.spec","Phenotypes.spec","ProbabilisticAnnotation.spec","Regulation.spec","Expression.spec","GenomeComparison.spec"];
 
 for (my $i=0; $i < @{$speclist}; $i++) {
 	my $module;
@@ -162,7 +169,9 @@ for (my $i=0; $i < @{$speclist}; $i++) {
 		} elsif ($line =~ m/typedef\s+(.+)\s+(\w+);/) {
 		        my $def = $1;
 			my $type = $2;
-			$othertypes->{$type} = $def;
+			if (! exists $typetrans->{$type}) {
+			    $othertypes->{$type} = $def;
+			}
 		} elsif ($line =~ m/\}\s*(.+);/) {
 			my $objname = $1;
 			$specobjects->{$module}->{$objname} = $currentobject;
@@ -184,12 +193,6 @@ for (my $i=0; $i < @{$speclist}; $i++) {
 	$specobjects->{$module}->{othertypes} = $othertypes;
 }
 #Building full spec
-my $typetrans = {
-	string => "Str",
-	"int" => "Int",
-	bool => "Bool",
-	float => "Num",
-};
 my $finalbase;
 my $finalsub;
 my $methods;

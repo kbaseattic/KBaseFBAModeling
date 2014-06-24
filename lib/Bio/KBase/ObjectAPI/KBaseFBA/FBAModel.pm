@@ -385,6 +385,7 @@ Description:
 sub manualReactionAdjustment {
     my $self = shift;
     my $args = Bio::KBase::ObjectAPI::utilities::args(["reaction"],{
+    	equation => undef,
     	biomass => 0,
     	direction => undef,
     	compartment => "c",
@@ -401,10 +402,13 @@ sub manualReactionAdjustment {
 	my $genealiases = $self->genome()->geneAliasHash();
     my $rxnid = $args->{reaction};
     my $eq;
-    if ($args->{reaction} =~ m/^(.+):(.+)/) {
-    	$rxnid = $1;
-    	$eq = $2;
-    }
+    if (defined($args->{equation})) {
+    	$eq = $args->{equation};
+    	if ($eq =~ m/\[([a-zA-Z])\]\s*:\s*(.+)/) {
+    		$args->{compartment} = lc($1);
+    		$eq = $2;
+    	}
+    }    
     if ($rxnid =~ m/^(.+)\[([a-z]+)(\d*)]$/) {
     	$args->{reaction} = $1;
     	$args->{compartment} = $2;
@@ -420,7 +424,7 @@ sub manualReactionAdjustment {
     my $bio = $self->template()->biochemistry();
     my $cmp = $bio->searchForCompartment($args->{compartment});
     if (!defined($cmp)) {
-    	Bio::KBase::ObjectAPI::utilities::error("Unrecognized compartment in reaction:".$rxnid."!");
+    	Bio::KBase::ObjectAPI::utilities::error("Unrecognized compartment ".$cmp." in reaction:".$rxnid."!");
     }
     my $mdlcmp = $self->addCompartmentToModel({compartment => $cmp,pH => 7,potential => 0,compartmentIndex => 0});
     my $mdlrxn;
@@ -525,7 +529,7 @@ sub manualReactionAdjustment {
 					biomasscompounds => []
 				});
     		}
-	    	$biorxn->ImportExternalEquation({equation => $eq,compounds => $args->{compounds}});
+	    	$self->LoadExternalReactionEquation({biomass => $biorxn,equation => $eq,compounds => $args->{compounds}});
     	} else {
 	    	my $mdlrxn = $self->searchForReaction($rxnid,$args->{compartment},$args->{compartmentIndex});
 	    	if (defined($mdlrxn)) {
@@ -539,7 +543,7 @@ sub manualReactionAdjustment {
 	    				$mdlrxn->loadGPRFromString($args->{gpr});
 	    			}
 	    			if (defined($eq)) {
-	    				$mdlrxn->ImportExternalEquation({equation => $eq,compounds => $args->{compounds}});
+	    				$self->LoadExternalReactionEquation({reaction => $mdlrxn,equation => $eq,compounds => $args->{compounds}});
 	    			}
 	    			if (defined($args->{name})){
 		    			$mdlrxn->addAlias($args->{name},"name");
@@ -575,7 +579,7 @@ sub manualReactionAdjustment {
     				$mdlrxn->loadGPRFromString($args->{gpr});
     			}
     			if (defined($eq)) {
-    				$mdlrxn->ImportExternalEquation({equation => $eq,compounds => $args->{compounds}});
+    				$self->LoadExternalReactionEquation({reaction => $mdlrxn,equation => $eq,compounds => $args->{compounds}});
     				if ($mdlrxn =~ m/rxn\d+/) {
 			    		$mdlrxn->addAlias($rxnid,"id");
     				}
@@ -584,6 +588,163 @@ sub manualReactionAdjustment {
 	    		Bio::KBase::ObjectAPI::utilities::error("Specified reaction not found:".$rxnid."!");
 	    	}
     	}
+    }
+}
+
+sub LoadExternalReactionEquation {
+	my $self = shift;
+    my $args = Bio::KBase::ObjectAPI::utilities::args(["equation","compounds"],{
+    	biomass => undef,
+    	reaction => undef
+    }, @_);
+	$args->{equation} =~ s/\s*\<*[-=]+\>\s*/ = /g;
+	$args->{equation} =~ s/\s*\<[-=]+\s*/ = /g;
+    $args->{equation} =~ s/\s*\+\s*/ + /g;
+    my $array = [];
+    if ($args->{equation} =~ m/^(.*)\s=\s(.*)$/) {
+    	$array->[0] = $1;
+    	$array->[1] = $2;
+    } else {
+		Bio::KBase::ObjectAPI::utilities::error("No equal sign in ".$args->{equation}."!");
+	}
+	my $bio = $self->template()->biochemistry();
+    my $compoundhash = {};
+    for (my $i=0; $i < @{$array}; $i++) {
+    	if (length($array->[$i]) > 0) {
+	    	my $compounds = [split(/\s\+\s/,$array->[$i])];
+	    	foreach my $cpd (@{$compounds}) {
+	    		$cpd  =~ s/^\s+//;
+	    		$cpd  =~ s/\s+$//;
+	    		my $coef = 1;
+	    		my $compartment = "c";
+	    		if (defined($args->{reaction})) {
+	    			$compartment = $args->{reaction}->modelcompartment()->compartment()->id();
+	    		}
+	    		my $index = 0;
+	    		if ($cpd =~ m/^\(*(\d+\.*\d*E*-*\d*)\)*\s+(.+)/) {
+	    			$coef = $1;
+	    			$cpd = $2;
+	    		}
+	    		if ($cpd =~ m/^(.+)\[([a-z]\d*)\]$/) {
+	    			$cpd = $1;
+	    			$compartment = $2;	
+	    		}
+	    		if ($compartment =~ m/([a-z])(\d+)/) {
+	    			$index = $2;
+	    			$compartment = $1;	
+	    		}
+	    		if ($i == 0) {
+	    			$coef = -1*$coef;
+	    		}
+	    		my $cpdobj;
+	    		if (defined($args->{compounds}->{$cpd})) {
+	    			my $name = $args->{compounds}->{$cpd}->[3];
+	    			if ($name =~ m/^(.+)\[([a-z])\]$/) {
+	    				$compartment = $2;
+	    				$name = $1;
+	    			}
+	    			$cpdobj = $bio->searchForCompound($name);
+	    			if (!defined($cpdobj) && defined($args->{compounds}->{$cpd}->[4])) {
+	    				my $aliases = [split(/\|/,$args->{compounds}->{$cpd}->[4])];
+	    				foreach my $alias (@{$aliases}) {
+	    					if ($alias =~ m/^(.+):(.+)/) {
+	    						$alias = $2;
+	    					}
+	    					$cpdobj = $bio->searchForCompound($alias);
+	    					if (defined($cpdobj)) {
+	    						last;
+	    					}
+	    				}
+	    			}
+	    			if (!defined($cpdobj)) {
+	    				$cpdobj = $bio->searchForCompound($cpd);
+	    			}
+	    		} else {
+	    			$cpdobj = $bio->searchForCompound($cpd);
+	    		}
+	    		my $cmp = $bio->searchForCompartment($compartment);
+	    		if (!defined($cmp)) {
+	    			Bio::KBase::ObjectAPI::utilities::error("Unrecognized compartment in equation:".$cmp."!");
+	    		}
+	    		my $mdlcmp = $self->getObject("modelcompartments",$compartment.$index);
+	    		if (!defined($mdlcmp)) {
+	    			$mdlcmp = $self->add("modelcompartments",{
+	    				id => $compartment.$index,
+						compartment_ref => $cmp->_reference(),
+						compartmentIndex => $index,
+						label => $compartment.$index,
+						pH => 7,
+						potential => 0,
+	    			});
+	    		}
+	    		my $mdlcpd;
+	    		if (defined($cpdobj)) {
+	    			$mdlcpd = $self->searchForCompound($cpdobj->id()."_".$compartment.$index);
+	    			if (!defined($mdlcpd)) {
+	    				$mdlcpd = $self->add("modelcompounds",{
+	    					id => $cpdobj->id()."_".$compartment.$index,
+							compound_ref => $cpdobj->_reference(),
+							name => $cpdobj->name()."_".$compartment.$index,
+							charge => $cpdobj->defaultCharge(),
+							formula => $cpdobj->formula(),
+							modelcompartment_ref => "~/modelcompartments/id/".$mdlcmp->id(),
+							aliases => ["mdlid:".$cpd]
+	    				});
+	    			} else {
+	    				my $aliases = $mdlcpd->aliases();
+	    				foreach my $alias (@{$aliases}) {
+	    					if ($alias =~ m/^mdlid:(.+)/) {
+	    						if ($1 ne $cpd) {
+	    							print STDERR "Possibly erroneously consolidating ".$cpd." with ".$1."\n";
+	    						}
+	    					}
+	    				}
+	    			}
+	    		} else {
+	    			print $cpd." not found!\n";
+	    			$mdlcpd = $self->searchForCompound($cpd."_".$compartment.$index);
+	    			if (!defined($mdlcpd)) {
+	    				if (!defined($args->{compounds}->{$cpd})) {
+	    					print "Ill defined compound:".$cpd."!\n";
+	    					$cpd =~ s/[^\w]/_/g;
+	    					$mdlcpd = $self->searchForCompound($cpd."_".$compartment.$index);
+	    					#Bio::KBase::ObjectAPI::utilities::error("Ill defined compound:".$cpd."!");
+	    				}
+	    				if (!defined($mdlcpd)) {
+		    				$mdlcpd = $self->add("modelcompounds",{
+		    					id => $cpd."_".$compartment.$index,
+								compound_ref => $bio->_reference()."/compounds/id/cpd00000",
+								name => $cpd."_".$compartment.$index,
+								charge => 0,
+								formula => "",
+								modelcompartment_ref => "~/modelcompartments/id/".$mdlcmp->id(),
+		    					aliases => ["mdlid:".$cpd]
+		    				});
+	    				} else {
+		    				my $aliases = $mdlcpd->aliases();
+		    				foreach my $alias (@{$aliases}) {
+		    					if ($alias =~ m/^mdlid:(.+)/) {
+		    						if ($1 ne $cpd) {
+		    							print STDERR "Possibly erroneously consolidating ".$cpd." with ".$1."\n";
+		    						}
+		    					}
+		    				}
+		    			}
+	    			}
+	    		}
+	    		if (!defined($compoundhash->{$mdlcpd->id()})) {
+	    			$compoundhash->{$mdlcpd->id()} = 0;
+	    		}
+	    		$compoundhash->{$mdlcpd->id()} += $coef;
+	    	}
+    	}
+    } 
+    if (defined($args->{biomass})) {
+    	$args->{biomass}->ImportExternalEquation({reagents => $compoundhash});
+    } elsif (defined($args->{reaction})) {
+    	$args->{reaction}->ImportExternalEquation({reagents => $compoundhash});
+    } else {
+    	Bio::KBase::ObjectAPI::utilities::error("Must call this function with either reaction or biomass selected!");
     }
 }
 
@@ -2307,6 +2468,320 @@ sub addPhenotypeTransporters {
 			reaction => $transhash->{$rxn}
 		});
 	}
+}
+
+=head3 compute_model_stats
+
+Definition:
+    $self->compute_model_stats();
+Description:
+    Computing model stats
+
+=cut
+
+sub compute_model_stats {
+	my $self = shift;
+	my $args = Bio::KBase::ObjectAPI::utilities::args([], {}, @_);
+	$self->genome()->{_mapping} = $self->template()->mapping();
+	my $output = $self->genome()->genome_stats();
+	my $genesshash = $self->genome()->gene_subsystem_hash();
+	my $rxnsshash = {};
+	my $sshash;
+	foreach my $ssdata (@{$output->{subsystems}}) {
+		$sshash->{$ssdata->{name}} = $ssdata;
+	}
+	my $reactions = $self->modelreactions();
+	my $compounds = $self->modelcompounds();
+	$output->{total_reactions} = @{$reactions};
+	$output->{total_compounds} = @{$compounds};
+	$output->{extracellular_compounds} = 0;
+	$output->{intracellular_compounds} = 0;
+	$output->{growth_complete_media} = 0;
+	$output->{intracellular_compounds} = 0;
+	$output->{growth_minimal_media} = 0;
+	$output->{reactions_with_genes} = 0;
+	$output->{spontaneous_reactions} = 0;
+	$output->{gapfilled_reactions} = 0;
+	$output->{minimal_essential_genes} = 0;
+	$output->{complete_essential_genes} = 0;
+	$output->{minimal_essential_reactions} = 0;
+	$output->{complete_essential_reactions} = 0;
+	$output->{minimal_blocked_reactions} = 0;
+	$output->{complete_blocked_reactions} = 0;
+	$output->{minimal_variable_reactions} = 0;
+	$output->{complete_variable_reactions} = 0;
+	$output->{subsystem_reactions} = 0;
+	for (my $i=0; $i < @{$compounds}; $i++) {
+    	if ($compounds->[$i]->modelcompartment()->compartment()->id() eq "e") {
+    		$output->{extracellular_compounds}++;
+    	} else {
+    		$output->{intracellular_compounds}++;
+    	}
+    }
+	my $gene_reactions;
+    my $reaction_genes;
+    for (my $i=0; $i < @{$reactions}; $i++) {
+    	if ($reactions->[$i]->isTransporter() == 1) {
+    		$output->{transport_reactions}++;
+    	}
+    	my $rxnprots = $reactions->[$i]->modelReactionProteins();
+    	my $spontaneous = 0;
+    	foreach my $protein (@{$rxnprots}) {
+    		if ($protein->note() eq "spontaneous") {
+    			$spontaneous = 1;
+    		}
+    		my $sunits = $protein->modelReactionProteinSubunits();
+    		foreach my $sunit (@{$sunits}) {
+    			my $rfeatures = $sunit->features();
+    			foreach my $rfeature (@{$rfeatures}) {
+    				foreach my $ss (keys(%{$genesshash->{$rfeature->id()}})) {
+    					$rxnsshash->{$reactions->[$i]->id()}->{$ss} = $genesshash->{$rfeature->id()}->{$ss};
+    				}
+    				$gene_reactions->{$rfeature->id()}->{$reactions->[$i]->id()} = 1;
+    				$reaction_genes->{$reactions->[$i]->id()}->{$rfeature->id()} = 1;
+    			}
+    		}
+    	}
+    	if (defined($rxnsshash->{$reactions->[$i]->id()})) {
+    		$output->{subsystem_reactions}++;
+    		foreach my $ss (keys(%{$rxnsshash->{$reactions->[$i]->id()}})) {
+    			if (!defined($sshash->{$ss})) {
+    				$sshash->{$ss} = {
+    					name => $ss,
+						class => $$rxnsshash->{$reactions->[$i]->id()}->{$ss}->class(),
+						subclass => $rxnsshash->{$reactions->[$i]->id()}->{$ss}->subclass(),
+						genes => 0,
+				    	reactions => 0,
+				    	model_genes => 0,
+				    	minimal_essential_genes => 0,
+				    	complete_essential_genes => 0,
+						minimal_essential_reactions => 0,
+				    	complete_essential_reactions => 0,
+				    	minimal_blocked_reactions => 0,
+				    	complete_blocked_reactions => 0,
+				    	minimal_variable_reactions => 0,
+				    	complete_variable_reactions => 0
+    				};
+    				push(@{$output->{subsystems}},$sshash->{$ss});
+    			}
+    			$sshash->{$ss}->{reactions}++;
+    		}
+    	}
+    	if (!defined($reaction_genes->{$reactions->[$i]->id()})) {
+    		if ($spontaneous == 1) {
+    			$output->{spontaneous_reactions}++;
+    		} else {
+    			$output->{gapfilled_reactions}++;
+    		}
+    	} else {
+    		$output->{reactions_with_genes}++;
+    	}
+    }
+    foreach my $gene (keys(%{$gene_reactions})) {
+    	foreach my $ss (keys(%{$genesshash->{$gene}})) {
+    		$sshash->{$ss}->{model_genes}++;
+    	}
+    }
+	$output->{model_genes} = keys(%{$gene_reactions});
+	#Run FBA in complete media
+	my $fba = $self->build_model_fba();
+	$fba->fva(1);
+	my $objective = $fba->runFBA();
+	if ($objective > 1e-9) {
+		my $rxnfbas = $fba->FBAReactionVariables();
+		for (my $i=0; $i < @{$rxnfbas}; $i++) {
+			if ($rxnfbas->[$i]->class() eq "Blocked" || $rxnfbas->[$i]->class() eq "Dead") {
+				$output->{complete_blocked_reactions}++;
+				if (defined($rxnsshash->{$rxnfbas->[$i]->modelreaction()->id()})) {
+		    		foreach my $ss (keys(%{$rxnsshash->{$rxnfbas->[$i]->modelreaction()->id()}})) {
+		    			$sshash->{$ss}->{complete_blocked_reactions}++;
+		    		}
+    			}
+			} elsif ($rxnfbas->[$i]->class() eq "Positive" || $rxnfbas->[$i]->class() eq "Negative") {
+				$output->{complete_essential_reactions}++;
+				if (defined($rxnsshash->{$rxnfbas->[$i]->modelreaction()->id()})) {
+		    		foreach my $ss (keys(%{$rxnsshash->{$rxnfbas->[$i]->modelreaction()->id()}})) {
+		    			$sshash->{$ss}->{complete_essential_reactions}++;
+		    		}
+    			}
+			} elsif ($rxnfbas->[$i]->class() eq "Variable" || $rxnfbas->[$i]->class() eq "Positive variable" || $rxnfbas->[$i]->class() eq "Negative variable") {
+				$output->{complete_variable_reactions}++;
+				if (defined($rxnsshash->{$rxnfbas->[$i]->modelreaction()->id()})) {
+		    		foreach my $ss (keys(%{$rxnsshash->{$rxnfbas->[$i]->modelreaction()->id()}})) {
+		    			$sshash->{$ss}->{complete_variable_reactions}++;
+		    		}
+    			}
+			}
+		}
+		$output->{growth_complete_media} = 1;
+		$fba = $self->build_model_fba();
+		$fba->fva(1);
+		$fba->media_ref("KBaseMedia/Carbon-D-Glucose");
+		$objective = $fba->runFBA();
+		if ($objective > 1e-9) {
+			$rxnfbas = $fba->FBAReactionVariables();
+			for (my $i=0; $i < @{$rxnfbas}; $i++) {
+				if ($rxnfbas->[$i]->class() eq "Blocked" || $rxnfbas->[$i]->class() eq "Dead") {
+					$output->{minimal_blocked_reactions}++;
+					if (defined($rxnsshash->{$rxnfbas->[$i]->modelreaction()->id()})) {
+			    		foreach my $ss (keys(%{$rxnsshash->{$rxnfbas->[$i]->modelreaction()->id()}})) {
+			    			$sshash->{$ss}->{minimal_blocked_reactions}++;
+			    		}
+	    			}
+				} elsif ($rxnfbas->[$i]->class() eq "Positive" || $rxnfbas->[$i]->class() eq "Negative") {
+					$output->{minimal_essential_reactions}++;
+					if (defined($rxnsshash->{$rxnfbas->[$i]->modelreaction()->id()})) {
+			    		foreach my $ss (keys(%{$rxnsshash->{$rxnfbas->[$i]->modelreaction()->id()}})) {
+			    			$sshash->{$ss}->{minimal_essential_reactions}++;
+			    		}
+	    			}
+				} elsif ($rxnfbas->[$i]->class() eq "Variable" || $rxnfbas->[$i]->class() eq "Positive variable" || $rxnfbas->[$i]->class() eq "Negative variable") {
+					$output->{minimal_variable_reactions}++;
+					if (defined($rxnsshash->{$rxnfbas->[$i]->modelreaction()->id()})) {
+			    		foreach my $ss (keys(%{$rxnsshash->{$rxnfbas->[$i]->modelreaction()->id()}})) {
+			    			$sshash->{$ss}->{minimal_variable_reactions}++;
+			    		}
+	    			}
+				}
+			}
+			$output->{growth_minimal_media} = 1;
+		} else {
+			$output->{minimal_blocked_reactions} = $output->{total_reactions};
+		}
+	} else {
+		$output->{minimal_blocked_reactions} = $output->{total_reactions};
+		$output->{complete_blocked_reactions} = $output->{total_reactions};
+	}
+    return $output;
+}
+
+=head3 translate_model
+
+Definition:
+    $self->translate_model(ProteomeComparison:comparison);
+Description:
+    Translates model to new genome based on proteome comparison
+
+=cut
+sub translate_model {
+	my $self = shift;
+	my $protcomp = shift;
+	my $genome = $self->genome();	
+	my $ref = $protcomp->genome2ws()."/".$protcomp->genome2id();
+	my $map = $protcomp->proteome1map();
+	my $list = $protcomp->proteome1names();
+	my $data = $protcomp->data1();
+	my $omap = $protcomp->proteome2map();
+	my $olist = $protcomp->proteome2names();
+	my $odata = $protcomp->data2();
+	if ($genome->_wsname() eq $protcomp->genome2id() && $genome->_wsworkspace() eq $protcomp->genome2ws()) {
+		$ref = $protcomp->genome1ws()."/".$protcomp->genome1id();
+		$map = $protcomp->proteome2map();
+		$list = $protcomp->proteome2names();
+		$data = $protcomp->data2();
+		$omap = $protcomp->proteome1map();
+		$olist = $protcomp->proteome1names();
+		$odata = $protcomp->data1();
+	}
+	my $newgenome = $self->store()->get_object($ref);
+	my $translate;
+	for(my $i=0; $i < @{$data}; $i++) {
+		for (my $j=0; $j < @{$data->[$i]}; $j++) {
+			if ($data->[$i]->[$j]->[2] == 100) {
+				$translate->{$list->[$i]} = $olist->[$data->[$i]->[$j]->[0]];
+			}
+		}
+	}
+	my $reactions = $self->modelreactions();
+	for (my $i=0; $i < @{$reactions}; $i++) {
+		my $rxn = $reactions->[$i];
+		my $prots = $rxn->modelReactionProteins();
+		for (my $j=0; $j < @{$prots}; $j++) {
+			my $sus = $prots->[$j]->modelReactionProteinSubunits();
+			my $keep = 0;
+			for (my $k=0; $k < @{$sus}; $k++) {
+				my $ftrs = $sus->[$k]->features();
+				my $newftrs = [];
+				for (my $m=0; $m < @{$ftrs}; $m++) {
+					if (defined($translate->{$ftrs->[$m]->id()})) {
+						my $newftr = $newgenome->getObject("features",$translate->{$ftrs->[$m]->id()});
+						push(@{$newftrs},$newftr->_reference());
+					}
+				}
+				if (@{$newftrs} > 0) {
+					$keep = 1;
+				}
+				$sus->[$k]->feature_refs($newftrs);
+			}
+			if ($keep == 0) {
+				$rxn->removeLinkArrayItem("modelReactionProteins",$prots->[$j]);
+			}
+		}
+		if (@{$rxn->modelReactionProteins()} == 0) {
+			$self->remove("reactions",$rxn);
+		}
+	}
+	$self->genome_ref($ref);
+	$self->genome($newgenome);
+}
+
+=head3 build_model_fba
+
+Definition:
+    $self->build_model_fba();
+Description:
+    Build model flux balance analysis
+
+=cut
+
+sub build_model_fba {
+	my $self = shift;
+	my $fba = Bio::KBase::ObjectAPI::KBaseFBA::FBA->new({
+		id => $self->id().".fba",
+		fva => 0,
+		fluxMinimization => 0,
+		findMinimalMedia => 0,
+		allReversible => 0,
+		simpleThermoConstraints => 0,
+		thermodynamicConstraints => 0,
+		noErrorThermodynamicConstraints => 0,
+		minimizeErrorThermodynamicConstraints => 0,
+		maximizeObjective => 1,
+		compoundflux_objterms => {},
+    	reactionflux_objterms => {},
+		biomassflux_objterms => {bio1 => 1},
+		comboDeletions => 0,
+		numberOfSolutions => 1,
+		objectiveConstraintFraction => 0.1,
+		defaultMaxFlux => 100,
+		defaultMaxDrainFlux => 0,
+		defaultMinDrainFlux => -100,
+		decomposeReversibleFlux => 0,
+		decomposeReversibleDrainFlux => 0,
+		fluxUseVariables => 0,
+		drainfluxUseVariables => 0,
+		fbamodel_ref => $self->_reference(),
+		media_ref => "KBaseMedia/Complete",
+		geneKO_refs => [],
+		reactionKO_refs => [],
+		additionalCpd_refs => [],
+		uptakeLimits => {},
+		parameters => {},
+		inputfiles => {},
+		FBAConstraints => [],
+		FBAReactionBounds => [],
+		FBACompoundBounds => [],
+		outputfiles => {},
+		FBACompoundVariables => [],
+		FBAReactionVariables => [],
+		FBABiomassVariables => [],
+		FBAPromResults => [],
+		FBADeletionResults => [],
+		FBAMinimalMediaResults => [],
+		FBAMetaboliteProductionResults => []
+	});
+	$fba->parent($self->parent());
+	return $fba;
 }
 
 sub __upgrade__ {
