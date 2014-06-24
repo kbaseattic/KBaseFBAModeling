@@ -3432,21 +3432,15 @@ module fbaModelServices {
 		series_id series -  ID of series (a required argument)
 		string source_id - ID of the source (an optional argument: default is '')
 		string source_date - Date of the source (an optional argument: default is '')
-		string processing_comments - comment (an optional argument: default is '')
-		string description - description (an optional argument: default is '')
 		workspace_id workspace - workspace to contain the data (an optional argument: default is value of workspace argument)		
-		string numerical_interpretation - Numerical interpretation
 	*/
     typedef structure {
 	    mapping<sample_id, ExpressionDataSample> expression_data_sample_series;
 	    series_id series;
 	    string source_id;
 	    string source_date;
-	    string description;
-	    string processing_comments;
 	    workspace_id workspace;
 	    genome_id genome_id;
-	    string numerical_interpretation;
     } import_expression_params;
 
     /*
@@ -3455,16 +3449,9 @@ module fbaModelServices {
     authentication required;
     funcdef import_expression(import_expression_params input) returns (object_metadata expression_meta);
 
-
     /*
      Import RegPrecise regulome.
     */
-
-
-    typedef structure {
-	    string name;
-	    string class;
-    } effector;
 
     typedef structure {
 	string name;
@@ -3476,8 +3463,6 @@ module fbaModelServices {
     typedef structure {
 	list<operon> operons;
 	locus transcription_factor;
-	list<effector> effectors;	
-	string sign;
     } regulon;
 
     typedef structure {

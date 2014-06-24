@@ -97,22 +97,22 @@ module KBaseRegulation {
        string effector_class - effector class
        string effector_name - effector name
        */
-       typedef structure {
+       typedef structure{
 	   effector_id effector_id;
 	   string effector_class;
 	   string effector_name;
-       } Effector;
+	   } Effector;
 
        /* Represents collection of effectors (curated vocabulary)
        string name - collection name
        string description - collection description
        list<Effector> effectors - list of effectors
        */
-       typedef structure {
+       typedef structure{
 	   string name;
 	   string description;
 	   list<Effector> effectors;
-       } EffectorCollection;
+	   } EffectorCollection;
 
        /* Represents a genome
        genome_id genome_id - genome identifier
