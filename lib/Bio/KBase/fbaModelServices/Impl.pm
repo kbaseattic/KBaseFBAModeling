@@ -410,6 +410,14 @@ sub _idServer {
 
 sub _gaserv {
 	my $self = shift;
+    if (!defined($self->{_gaserver})) {
+    	if ($self->{'_gaserver-url'} eq "impl") {
+			require "Bio/KBase/GenomeAnnotation/GenomeAnnotationImpl.pm";
+			$self->{_gaserver} = Bio::KBase::GenomeAnnotation::GenomeAnnotationImpl->new();
+		} else {
+			$self->{_gaserver} = Bio::KBase::GenomeAnnotation::Client->new($self->{'_gaserver-url'});
+		}
+    }
     return $self->{_gaserver};
 }
 
@@ -3050,13 +3058,6 @@ sub new
     if (defined($options->{verbose})) {
     	set_verbose(1);
     }
-    
-	if ($self->{'_gaserver-url'} eq "impl") {
-		require "Bio/KBase/GenomeAnnotation/GenomeAnnotationImpl.pm";
-		$self->{_gaserver} = Bio::KBase::GenomeAnnotation::GenomeAnnotationImpl->new();
-	} else {
-		$self->{_gaserver} = Bio::KBase::GenomeAnnotation::Client->new($self->{'_gaserver-url'});
-	}
 	$self->{_jobserver} = Bio::KBase::workspaceService::Client->new($self->{'_jobserver-url'});
     #END_CONSTRUCTOR
 
@@ -6530,6 +6531,209 @@ sub build_pangenome
 	my $msg = "Invalid returns passed to build_pangenome:\n" . join("", map { "\t$_\n" } @_bad_returns);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
 							       method_name => 'build_pangenome');
+    }
+    return($output);
+}
+
+
+
+
+=head2 genome_heatmap_from_pangenom
+
+  $output = $obj->genome_heatmap_from_pangenom($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a genome_compare_from_pangenom_params
+$output is a heat_map_matrix
+genome_compare_from_pangenom_params is a reference to a hash where the following keys are defined:
+	pangenome has a value which is a string
+	pangenome_workspace has a value which is a string
+	workspace has a value which is a string
+heat_map_matrix is a reference to a hash where the following keys are defined:
+	is_refs has a value which is a bool
+	labels has a value which is a reference to a list where each element is a string
+	matrix has a value which is a reference to a list where each element is a reference to a list where each element is a float
+bool is an int
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a genome_compare_from_pangenom_params
+$output is a heat_map_matrix
+genome_compare_from_pangenom_params is a reference to a hash where the following keys are defined:
+	pangenome has a value which is a string
+	pangenome_workspace has a value which is a string
+	workspace has a value which is a string
+heat_map_matrix is a reference to a hash where the following keys are defined:
+	is_refs has a value which is a bool
+	labels has a value which is a reference to a list where each element is a string
+	matrix has a value which is a reference to a list where each element is a reference to a list where each element is a float
+bool is an int
+
+
+=end text
+
+
+
+=item Description
+
+Builds a comparason matrix for genomes included in a pangenome object
+
+=back
+
+=cut
+
+sub genome_heatmap_from_pangenom
+{
+    my $self = shift;
+    my($input) = @_;
+
+    my @_bad_arguments;
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to genome_heatmap_from_pangenom:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'genome_heatmap_from_pangenom');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($output);
+    #BEGIN genome_heatmap_from_pangenom
+    $self->_setContext($ctx,$input);
+    $input = $self->_validateargs($input,["pangenome","workspace"],{
+    	pangenome_workspace => $input->{workspace}
+    });
+    my $pangenome = $self->_get_msobject("Pangenome",$input->{pangenome_workspace}->[$i],$input->{pangenome}->[$i]);
+    my $output = {
+    	references => [],
+    	labels => [],
+    	matrix => []
+    };
+    
+    #my $orthos = $pangenome->
+    
+    
+    $self->_clearContext();
+    #END genome_heatmap_from_pangenom
+    my @_bad_returns;
+    (ref($output) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to genome_heatmap_from_pangenom:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'genome_heatmap_from_pangenom');
+    }
+    return($output);
+}
+
+
+
+
+=head2 ortholog_family_from_pangenome
+
+  $output = $obj->ortholog_family_from_pangenome($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is an ortholog_family_from_pangenome_params
+$output is an ortholog_data
+ortholog_family_from_pangenome_params is a reference to a hash where the following keys are defined:
+	pangenome has a value which is a string
+	pangenome_workspace has a value which is a string
+	orthologid has a value which is a string
+	workspace has a value which is a string
+ortholog_data is a reference to a hash where the following keys are defined:
+	gene_data has a value which is a reference to a list where each element is a reference to a list containing 5 items:
+	0: a string
+	1: a string
+	2: a string
+	3: a string
+	4: a float
+
+	protein_heatmap has a value which is a heat_map_matrix
+heat_map_matrix is a reference to a hash where the following keys are defined:
+	is_refs has a value which is a bool
+	labels has a value which is a reference to a list where each element is a string
+	matrix has a value which is a reference to a list where each element is a reference to a list where each element is a float
+bool is an int
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is an ortholog_family_from_pangenome_params
+$output is an ortholog_data
+ortholog_family_from_pangenome_params is a reference to a hash where the following keys are defined:
+	pangenome has a value which is a string
+	pangenome_workspace has a value which is a string
+	orthologid has a value which is a string
+	workspace has a value which is a string
+ortholog_data is a reference to a hash where the following keys are defined:
+	gene_data has a value which is a reference to a list where each element is a reference to a list containing 5 items:
+	0: a string
+	1: a string
+	2: a string
+	3: a string
+	4: a float
+
+	protein_heatmap has a value which is a heat_map_matrix
+heat_map_matrix is a reference to a hash where the following keys are defined:
+	is_refs has a value which is a bool
+	labels has a value which is a reference to a list where each element is a string
+	matrix has a value which is a reference to a list where each element is a reference to a list where each element is a float
+bool is an int
+
+
+=end text
+
+
+
+=item Description
+
+Returns more detailed data from a single ortholog family from a pangenome object
+
+=back
+
+=cut
+
+sub ortholog_family_from_pangenome
+{
+    my $self = shift;
+    my($input) = @_;
+
+    my @_bad_arguments;
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to ortholog_family_from_pangenome:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'ortholog_family_from_pangenome');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($output);
+    #BEGIN ortholog_family_from_pangenome
+    #END ortholog_family_from_pangenome
+    my @_bad_returns;
+    (ref($output) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to ortholog_family_from_pangenome:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'ortholog_family_from_pangenome');
     }
     return($output);
 }
@@ -14984,7 +15188,7 @@ sub subsystem_of_roles
    				$output->{$input->{roles}->[$i]}->{$ss->name()} = [$ss->primclass(),$ss->subclass()];
    			}
    		}
-    }    
+    }
     #END subsystem_of_roles
     my @_bad_returns;
     (ref($output) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
@@ -23618,6 +23822,159 @@ a reference to a hash where the following keys are defined:
 genomes has a value which is a reference to a list where each element is a string
 genome_workspace has a value which is a reference to a list where each element is a string
 workspace has a value which is a workspace_id
+
+
+=end text
+
+=back
+
+
+
+=head2 heat_map_matrix
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+is_refs has a value which is a bool
+labels has a value which is a reference to a list where each element is a string
+matrix has a value which is a reference to a list where each element is a reference to a list where each element is a float
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+is_refs has a value which is a bool
+labels has a value which is a reference to a list where each element is a string
+matrix has a value which is a reference to a list where each element is a reference to a list where each element is a float
+
+
+=end text
+
+=back
+
+
+
+=head2 genome_compare_from_pangenom_params
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+pangenome has a value which is a string
+pangenome_workspace has a value which is a string
+workspace has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+pangenome has a value which is a string
+pangenome_workspace has a value which is a string
+workspace has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 ortholog_data
+
+=over 4
+
+
+
+=item Description
+
+gene ID,gene ref,protein sequence,function,score
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+gene_data has a value which is a reference to a list where each element is a reference to a list containing 5 items:
+0: a string
+1: a string
+2: a string
+3: a string
+4: a float
+
+protein_heatmap has a value which is a heat_map_matrix
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+gene_data has a value which is a reference to a list where each element is a reference to a list containing 5 items:
+0: a string
+1: a string
+2: a string
+3: a string
+4: a float
+
+protein_heatmap has a value which is a heat_map_matrix
+
+
+=end text
+
+=back
+
+
+
+=head2 ortholog_family_from_pangenome_params
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+pangenome has a value which is a string
+pangenome_workspace has a value which is a string
+orthologid has a value which is a string
+workspace has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+pangenome has a value which is a string
+pangenome_workspace has a value which is a string
+orthologid has a value which is a string
+workspace has a value which is a string
 
 
 =end text

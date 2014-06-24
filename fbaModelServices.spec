@@ -1602,6 +1602,41 @@ module fbaModelServices {
     */
     authentication required;
     funcdef build_pangenome(build_pangenome_params input) returns (object_metadata output);
+    
+    typedef structure {
+    	bool is_refs;
+		list<string> labels;
+		list<list<float>> matrix;
+    } heat_map_matrix;
+    
+    typedef structure {
+		string pangenome;
+		string pangenome_workspace;
+		string workspace;
+    } genome_compare_from_pangenom_params;
+    /*
+        Builds a comparason matrix for genomes included in a pangenome object
+    */
+    authentication required;
+    funcdef genome_heatmap_from_pangenom(genome_compare_from_pangenom_params input) returns (heat_map_matrix output);
+	
+	/*gene ID,gene ref,protein sequence,function,score*/
+	typedef structure {
+		list<tuple<string,string,string,string,float>> gene_data;
+		heat_map_matrix protein_heatmap;
+    } ortholog_data;
+    
+    typedef structure {
+		string pangenome;
+		string pangenome_workspace;
+		string orthologid;
+		string workspace;
+    } ortholog_family_from_pangenome_params;
+    /*
+        Returns more detailed data from a single ortholog family from a pangenome object
+    */
+    authentication required;
+    funcdef ortholog_family_from_pangenome(ortholog_family_from_pangenome_params input) returns (ortholog_data output);
 	
 	/* Input parameters for the "import_fbamodel" function.
 	
