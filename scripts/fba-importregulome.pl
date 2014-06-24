@@ -85,6 +85,9 @@ foreach my $line (@$data) {
 		push @effectors, {"name" => $effector_name, "class" => $class};
 	    }
 	    $regulon->{"effectors"} = \@effectors;
+	} else {
+	    $regulon->{"effectors"} = [];
+	    $regulon->{"sign"} = "";
 	}
     }
     elsif ($line =~ /^(\w+)\s+(\w+)\s+(\w+)/) {
