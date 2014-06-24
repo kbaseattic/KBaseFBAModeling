@@ -63,14 +63,29 @@ my $data = Bio::KBase::ObjectAPI::utilities::LOADFILE($opt->{"RegPrecise regulom
 my ($operon, $regulon, $regulons);
 
 foreach my $line (@$data) {
-    if ($line =~ /^# TF - (\w+): (\w+)/) {
+    if ($line =~ /^# TF - (.+)/) {
+	
 	# starting a new transcription factor, so save any data already accumulated
 	if (defined $regulon) {
 	    push @$regulons, $regulon;
 	    $regulon = {};
 	}
+	
+	my @parsed = split(/\s*:\s*/,$1);
 	# now process the new transcription factor
-	$regulon->{"transcription_factor"} = { "locus" => $2, "name" => $1 };
+	$regulon->{"transcription_factor"} = { "locus" => $parsed[1], "name" => $parsed[0] };
+
+	if (@parsed > 2) {
+	    $regulon->{"sign"} = $parsed[2];
+	    my @effectors;	
+	    chomp($parsed[3]);
+	    my @effectors_info = split(/\s*\|\s*/,$parsed[3]);
+	    foreach my $effector_info (@effectors_info) {
+		my ($effector_name, $class) = split(/\s*;\s*/, $effector_info);
+		push @effectors, {"name" => $effector_name, "class" => $class};
+	    }
+	    $regulon->{"effectors"} = \@effectors;
+	}
     }
     elsif ($line =~ /^(\w+)\s+(\w+)\s+(\w+)/) {
 	push @$operon, { "locus" => $2, "name" => $3 };
@@ -80,6 +95,9 @@ foreach my $line (@$data) {
 	    $operon = [];
     }
 }
+# Add them at the end.
+push @{$regulon->{"operons"}}, $operon;
+push @$regulons, $regulon;
 $params->{"regulons"} = $regulons;
 
 #Calling the server

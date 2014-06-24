@@ -18589,7 +18589,8 @@ sub import_expression
     #BEGIN import_expression
     $self->_setContext($ctx,$input);    
     $input = $self->_validateargs($input,["expression_data_sample_series","series","workspace","source_date"],
-				  {source_id => $input->{"series"},});
+				  {source_id => $input->{"series"},
+				   numerical_interpretation => "Log2 level intensities",});
 
     my $genome_id;
     if (exists $input->{"genome_id"}) {
@@ -18618,7 +18619,9 @@ sub import_expression
 	    source_id => $input->{"source_id"}, # What source?
 	    genome_id => $genome_id,
 	    external_source_date => $input->{"source_date"}, # Which data?
-	    numerical_interpretation => "Log2 level intensities", # Is this correct?
+	    numerical_interpretation => $input->{"numerical_interpretation"},
+	    processing_comments => $input->{"processing_comments"},
+	    description => $input->{"description"}
 	};
 	
 	my $workspace_save_obj_params = {
@@ -18812,8 +18815,18 @@ sub import_regulome
 		$geneObj->parent($self->_KBaseStore());
 		$regulatedOperonObj->add("genes",$geneObj);
 	    }
+
+	    # dummy site to hold mechanism
+	    my $regsiteObj = Bio::KBase::ObjectAPI::KBaseRegulation::RegulatorySite->new({"regulatory_site_id" => "", "sequence" => "",  parent => $self->_KBaseStore(), regulatory_mechanism => $regulon->{"sign"}});
+	    $regulatedOperonObj->add("sites",$regsiteObj);
+
 	    $regulonObj->add("operons",$regulatedOperonObj);
 	}
+	foreach my $effector (@{$regulon->{"effectors"}}) {
+	    my $effectorObj = Bio::KBase::ObjectAPI::KBaseRegulation::Effector->new({ "effector_id" => "", "effector_name" => $effector->{"name"}, "effector_class" => $effector->{"class"}, "parent" => $self->_KBaseStore() });
+	    $regulonObj->add("effectors", $effectorObj);	    
+	}
+
 	$regulome->add("regulons",$regulonObj);
     }
 
