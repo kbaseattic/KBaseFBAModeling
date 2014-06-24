@@ -95,8 +95,8 @@ module fbaModelServices {
     /* A string identifier for a genome in KBase. e.g. "kb|g.0" is the ID for E. coli */
     typedef string genome_id;
     
-    /* A string identifier for a prommodel in KBase. */
-    typedef string prommodel_id;
+    /* A string identifier for a promconstraint in KBase. */
+    typedef string promconstraint_id;
 
     /* A string identifier for a gene expression sample in KBase. */
     typedef string sample_id;
@@ -151,6 +151,9 @@ module fbaModelServices {
     
     /* A string identifier for a Mapping object in KBase. */
     typedef string mapping_id;
+    
+    /* A string identifier for a regulome in KBase. */
+    typedef string regulome_id;
     
     /* A string identifier for a regulatory model in KBase. */
     typedef string regmodel_id;
@@ -666,8 +669,8 @@ module fbaModelServices {
 		
 		media_id media - ID of media formulation to be used
 		list<compound_id> additionalcpds - list of additional compounds to allow update
-		prommodel_id prommodel - ID of prommodel
-		workspace_id prommodel_workspace - workspace containing prommodel
+		promconstraint_id promconstraint - ID of promconstraint
+		workspace_id promconstraint_workspace - workspace containing promconstraint
 		sample_id eflux_sample - ID of gene expression sample to run eflux
 		series_id eflux_series - ID of series that a sample belongs to.
 		workspace_id eflux_workspace - workspace containing gene expression sample series for eflux
@@ -693,8 +696,8 @@ module fbaModelServices {
 	typedef structure {
 		media_id media;
 		list<compound_id> additionalcpds;
-		prommodel_id prommodel;
-		workspace_id prommodel_workspace;
+		promconstraint_id promconstraint;
+		workspace_id promconstraint_workspace;
 		sample_id eflux_sample;
 		series_id eflux_series;
 		workspace_id eflux_workspace;
@@ -3470,4 +3473,28 @@ module fbaModelServices {
 
     authentication required;
     funcdef import_regulome(import_regulome_params input) returns (object_metadata regulome_meta);
+
+    /*
+    Named parameters for 'create_prom_constraints' method.  Currently all options are required.
+    
+        genome_ref genome_ref             - the workspace ID of the genome to link to the prom object
+        expression_series_ref expression_series_ref     - the workspace ID of the expression data collection needed to
+                                                       build the PROM constraints.
+        regulome_ref  regulome_ref        - the workspace ID of the regulatory network data to use
+    */
+    typedef structure {
+        genome_id genome_id;
+        series_id series_id;
+        regulome_id regulome_id;
+    } CreatePromConstraintParameters;
+    
+    /*
+    This method creates a set of Prom constraints for a given genome annotation based on a regulatory network
+    and a collection of gene expression data stored on a workspace.  Parameters are specified in the
+    create_prom_constraints_parameters object.  
+    The ID of the new Prom constraints object is returned. The Prom constraints can then be used in conjunction
+    with an FBA model using FBA Model Services.
+    */
+    authentication required;
+    funcdef create_prom_constraint(CreatePromConstraintParameters params) returns (object_metadata promconstraint_meta);
 };

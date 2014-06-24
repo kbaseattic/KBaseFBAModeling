@@ -89,6 +89,7 @@ our %return_counts = (
         'metagenome_to_fbamodels' => 1,
         'import_expression' => 1,
         'import_regulome' => 1,
+        'create_prom_constraint' => 1,
         'version' => 1,
 );
 
@@ -165,6 +166,7 @@ our %method_authentication = (
         'metagenome_to_fbamodels' => 'required',
         'import_expression' => 'required',
         'import_regulome' => 'required',
+        'create_prom_constraint' => 'required',
 );
 
 
@@ -244,6 +246,7 @@ sub _build_valid_methods
         'metagenome_to_fbamodels' => 1,
         'import_expression' => 1,
         'import_regulome' => 1,
+        'create_prom_constraint' => 1,
         'version' => 1,
     };
     return $methods;

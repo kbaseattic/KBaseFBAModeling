@@ -168,7 +168,20 @@ around BUILDARGS => sub {
         } else {
             die "Invalid Object\n";
         }
+    }   
+
+    my $sos = $class->_subobjects();
+    foreach my $subobj (@{$sos}) {
+        if (defined($subobj->{singleton}) && $subobj->{singleton} == 1) {
+	    if (defined $hash->{$subobj->{name}}) {
+		$hash->{$subobj->{name}} = [$hash->{$subobj->{name}}];
+	    }
+	    else {
+		$hash->{$subobj->{name}} = [];
+	    }
+        }
     }
+
     return $class->$orig($hash);
 };
 

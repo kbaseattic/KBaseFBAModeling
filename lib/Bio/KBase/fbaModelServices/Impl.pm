@@ -70,6 +70,8 @@ use Bio::KBase::probabilistic_annotation::Client;
 use Bio::KBase::GenomeAnnotation::Client;
 use Bio::KBase::ObjectAPI::KBaseStore;
 use Data::UUID;
+use Bio::KBase::ObjectAPI::KBaseExpression::ExpressionSample;
+use Bio::KBase::ObjectAPI::KBaseExpression::ExpressionSeries;
 use Bio::KBase::ObjectAPI::KBaseRegulation::Regulome;
 use Bio::KBase::ObjectAPI::KBaseRegulation::Regulon;
 use Bio::KBase::ObjectAPI::KBaseRegulation::Gene;
@@ -3260,8 +3262,8 @@ bool is an int
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
-	prommodel has a value which is a prommodel_id
-	prommodel_workspace has a value which is a workspace_id
+	promconstraint has a value which is a promconstraint_id
+	promconstraint_workspace has a value which is a workspace_id
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
@@ -3284,7 +3286,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	minthermoerror has a value which is a bool
 media_id is a string
 compound_id is a string
-prommodel_id is a string
+promconstraint_id is a string
 sample_id is a string
 series_id is a string
 term is a reference to a list containing 3 items:
@@ -3369,8 +3371,8 @@ bool is an int
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
-	prommodel has a value which is a prommodel_id
-	prommodel_workspace has a value which is a workspace_id
+	promconstraint has a value which is a promconstraint_id
+	promconstraint_workspace has a value which is a workspace_id
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
@@ -3393,7 +3395,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	minthermoerror has a value which is a bool
 media_id is a string
 compound_id is a string
-prommodel_id is a string
+promconstraint_id is a string
 sample_id is a string
 series_id is a string
 term is a reference to a list containing 3 items:
@@ -3557,8 +3559,8 @@ GapfillingFormulation is a reference to a hash where the following keys are defi
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
-	prommodel has a value which is a prommodel_id
-	prommodel_workspace has a value which is a workspace_id
+	promconstraint has a value which is a promconstraint_id
+	promconstraint_workspace has a value which is a workspace_id
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
@@ -3581,7 +3583,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	minthermoerror has a value which is a bool
 media_id is a string
 compound_id is a string
-prommodel_id is a string
+promconstraint_id is a string
 sample_id is a string
 series_id is a string
 term is a reference to a list containing 3 items:
@@ -3673,8 +3675,8 @@ GapfillingFormulation is a reference to a hash where the following keys are defi
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
-	prommodel has a value which is a prommodel_id
-	prommodel_workspace has a value which is a workspace_id
+	promconstraint has a value which is a promconstraint_id
+	promconstraint_workspace has a value which is a workspace_id
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
@@ -3697,7 +3699,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	minthermoerror has a value which is a bool
 media_id is a string
 compound_id is a string
-prommodel_id is a string
+promconstraint_id is a string
 sample_id is a string
 series_id is a string
 term is a reference to a list containing 3 items:
@@ -3836,8 +3838,8 @@ GapgenFormulation is a reference to a hash where the following keys are defined:
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
-	prommodel has a value which is a prommodel_id
-	prommodel_workspace has a value which is a workspace_id
+	promconstraint has a value which is a promconstraint_id
+	promconstraint_workspace has a value which is a workspace_id
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
@@ -3860,7 +3862,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	minthermoerror has a value which is a bool
 media_id is a string
 compound_id is a string
-prommodel_id is a string
+promconstraint_id is a string
 sample_id is a string
 series_id is a string
 term is a reference to a list containing 3 items:
@@ -3936,8 +3938,8 @@ GapgenFormulation is a reference to a hash where the following keys are defined:
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
-	prommodel has a value which is a prommodel_id
-	prommodel_workspace has a value which is a workspace_id
+	promconstraint has a value which is a promconstraint_id
+	promconstraint_workspace has a value which is a workspace_id
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
@@ -3960,7 +3962,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	minthermoerror has a value which is a bool
 media_id is a string
 compound_id is a string
-prommodel_id is a string
+promconstraint_id is a string
 sample_id is a string
 series_id is a string
 term is a reference to a list containing 3 items:
@@ -7064,8 +7066,8 @@ workspace_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
-	prommodel has a value which is a prommodel_id
-	prommodel_workspace has a value which is a workspace_id
+	promconstraint has a value which is a promconstraint_id
+	promconstraint_workspace has a value which is a workspace_id
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
@@ -7088,7 +7090,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	minthermoerror has a value which is a bool
 media_id is a string
 compound_id is a string
-prommodel_id is a string
+promconstraint_id is a string
 sample_id is a string
 series_id is a string
 bool is an int
@@ -7154,8 +7156,8 @@ workspace_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
-	prommodel has a value which is a prommodel_id
-	prommodel_workspace has a value which is a workspace_id
+	promconstraint has a value which is a promconstraint_id
+	promconstraint_workspace has a value which is a workspace_id
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
@@ -7178,7 +7180,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	minthermoerror has a value which is a bool
 media_id is a string
 compound_id is a string
-prommodel_id is a string
+promconstraint_id is a string
 sample_id is a string
 series_id is a string
 bool is an int
@@ -7340,8 +7342,8 @@ workspace_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
-	prommodel has a value which is a prommodel_id
-	prommodel_workspace has a value which is a workspace_id
+	promconstraint has a value which is a promconstraint_id
+	promconstraint_workspace has a value which is a workspace_id
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
@@ -7364,7 +7366,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	minthermoerror has a value which is a bool
 media_id is a string
 compound_id is a string
-prommodel_id is a string
+promconstraint_id is a string
 sample_id is a string
 series_id is a string
 bool is an int
@@ -7425,8 +7427,8 @@ workspace_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
-	prommodel has a value which is a prommodel_id
-	prommodel_workspace has a value which is a workspace_id
+	promconstraint has a value which is a promconstraint_id
+	promconstraint_workspace has a value which is a workspace_id
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
@@ -7449,7 +7451,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	minthermoerror has a value which is a bool
 media_id is a string
 compound_id is a string
-prommodel_id is a string
+promconstraint_id is a string
 sample_id is a string
 series_id is a string
 bool is an int
@@ -7919,8 +7921,8 @@ phenotype_set_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
-	prommodel has a value which is a prommodel_id
-	prommodel_workspace has a value which is a workspace_id
+	promconstraint has a value which is a promconstraint_id
+	promconstraint_workspace has a value which is a workspace_id
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
@@ -7943,7 +7945,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	minthermoerror has a value which is a bool
 media_id is a string
 compound_id is a string
-prommodel_id is a string
+promconstraint_id is a string
 sample_id is a string
 series_id is a string
 bool is an int
@@ -8009,8 +8011,8 @@ phenotype_set_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
-	prommodel has a value which is a prommodel_id
-	prommodel_workspace has a value which is a workspace_id
+	promconstraint has a value which is a promconstraint_id
+	promconstraint_workspace has a value which is a workspace_id
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
@@ -8033,7 +8035,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	minthermoerror has a value which is a bool
 media_id is a string
 compound_id is a string
-prommodel_id is a string
+promconstraint_id is a string
 sample_id is a string
 series_id is a string
 bool is an int
@@ -8621,8 +8623,8 @@ workspace_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
-	prommodel has a value which is a prommodel_id
-	prommodel_workspace has a value which is a workspace_id
+	promconstraint has a value which is a promconstraint_id
+	promconstraint_workspace has a value which is a workspace_id
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
@@ -8645,7 +8647,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	minthermoerror has a value which is a bool
 media_id is a string
 compound_id is a string
-prommodel_id is a string
+promconstraint_id is a string
 sample_id is a string
 series_id is a string
 bool is an int
@@ -8706,8 +8708,8 @@ workspace_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
-	prommodel has a value which is a prommodel_id
-	prommodel_workspace has a value which is a workspace_id
+	promconstraint has a value which is a promconstraint_id
+	promconstraint_workspace has a value which is a workspace_id
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
@@ -8730,7 +8732,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	minthermoerror has a value which is a bool
 media_id is a string
 compound_id is a string
-prommodel_id is a string
+promconstraint_id is a string
 sample_id is a string
 series_id is a string
 bool is an int
@@ -8882,8 +8884,8 @@ GapfillingFormulation is a reference to a hash where the following keys are defi
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
-	prommodel has a value which is a prommodel_id
-	prommodel_workspace has a value which is a workspace_id
+	promconstraint has a value which is a promconstraint_id
+	promconstraint_workspace has a value which is a workspace_id
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
@@ -8906,7 +8908,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	minthermoerror has a value which is a bool
 media_id is a string
 compound_id is a string
-prommodel_id is a string
+promconstraint_id is a string
 sample_id is a string
 series_id is a string
 bool is an int
@@ -8994,8 +8996,8 @@ GapfillingFormulation is a reference to a hash where the following keys are defi
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
-	prommodel has a value which is a prommodel_id
-	prommodel_workspace has a value which is a workspace_id
+	promconstraint has a value which is a promconstraint_id
+	promconstraint_workspace has a value which is a workspace_id
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
@@ -9018,7 +9020,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	minthermoerror has a value which is a bool
 media_id is a string
 compound_id is a string
-prommodel_id is a string
+promconstraint_id is a string
 sample_id is a string
 series_id is a string
 bool is an int
@@ -9179,8 +9181,8 @@ GapfillingFormulation is a reference to a hash where the following keys are defi
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
-	prommodel has a value which is a prommodel_id
-	prommodel_workspace has a value which is a workspace_id
+	promconstraint has a value which is a promconstraint_id
+	promconstraint_workspace has a value which is a workspace_id
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
@@ -9203,7 +9205,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	minthermoerror has a value which is a bool
 media_id is a string
 compound_id is a string
-prommodel_id is a string
+promconstraint_id is a string
 sample_id is a string
 series_id is a string
 bool is an int
@@ -9296,8 +9298,8 @@ GapfillingFormulation is a reference to a hash where the following keys are defi
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
-	prommodel has a value which is a prommodel_id
-	prommodel_workspace has a value which is a workspace_id
+	promconstraint has a value which is a promconstraint_id
+	promconstraint_workspace has a value which is a workspace_id
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
@@ -9320,7 +9322,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	minthermoerror has a value which is a bool
 media_id is a string
 compound_id is a string
-prommodel_id is a string
+promconstraint_id is a string
 sample_id is a string
 series_id is a string
 bool is an int
@@ -9537,8 +9539,8 @@ GapgenFormulation is a reference to a hash where the following keys are defined:
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
-	prommodel has a value which is a prommodel_id
-	prommodel_workspace has a value which is a workspace_id
+	promconstraint has a value which is a promconstraint_id
+	promconstraint_workspace has a value which is a workspace_id
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
@@ -9561,7 +9563,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	minthermoerror has a value which is a bool
 media_id is a string
 compound_id is a string
-prommodel_id is a string
+promconstraint_id is a string
 sample_id is a string
 series_id is a string
 bool is an int
@@ -9632,8 +9634,8 @@ GapgenFormulation is a reference to a hash where the following keys are defined:
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
-	prommodel has a value which is a prommodel_id
-	prommodel_workspace has a value which is a workspace_id
+	promconstraint has a value which is a promconstraint_id
+	promconstraint_workspace has a value which is a workspace_id
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
@@ -9656,7 +9658,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	minthermoerror has a value which is a bool
 media_id is a string
 compound_id is a string
-prommodel_id is a string
+promconstraint_id is a string
 sample_id is a string
 series_id is a string
 bool is an int
@@ -9795,8 +9797,8 @@ GapgenFormulation is a reference to a hash where the following keys are defined:
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
-	prommodel has a value which is a prommodel_id
-	prommodel_workspace has a value which is a workspace_id
+	promconstraint has a value which is a promconstraint_id
+	promconstraint_workspace has a value which is a workspace_id
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
@@ -9819,7 +9821,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	minthermoerror has a value which is a bool
 media_id is a string
 compound_id is a string
-prommodel_id is a string
+promconstraint_id is a string
 sample_id is a string
 series_id is a string
 bool is an int
@@ -9895,8 +9897,8 @@ GapgenFormulation is a reference to a hash where the following keys are defined:
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
-	prommodel has a value which is a prommodel_id
-	prommodel_workspace has a value which is a workspace_id
+	promconstraint has a value which is a promconstraint_id
+	promconstraint_workspace has a value which is a workspace_id
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
@@ -9919,7 +9921,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	minthermoerror has a value which is a bool
 media_id is a string
 compound_id is a string
-prommodel_id is a string
+promconstraint_id is a string
 sample_id is a string
 series_id is a string
 bool is an int
@@ -10099,8 +10101,8 @@ workspace_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
-	prommodel has a value which is a prommodel_id
-	prommodel_workspace has a value which is a workspace_id
+	promconstraint has a value which is a promconstraint_id
+	promconstraint_workspace has a value which is a workspace_id
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
@@ -10123,7 +10125,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	minthermoerror has a value which is a bool
 media_id is a string
 compound_id is a string
-prommodel_id is a string
+promconstraint_id is a string
 sample_id is a string
 series_id is a string
 bool is an int
@@ -10221,8 +10223,8 @@ workspace_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
-	prommodel has a value which is a prommodel_id
-	prommodel_workspace has a value which is a workspace_id
+	promconstraint has a value which is a promconstraint_id
+	promconstraint_workspace has a value which is a workspace_id
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
@@ -10245,7 +10247,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	minthermoerror has a value which is a bool
 media_id is a string
 compound_id is a string
-prommodel_id is a string
+promconstraint_id is a string
 sample_id is a string
 series_id is a string
 bool is an int
@@ -10545,8 +10547,8 @@ workspace_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
-	prommodel has a value which is a prommodel_id
-	prommodel_workspace has a value which is a workspace_id
+	promconstraint has a value which is a promconstraint_id
+	promconstraint_workspace has a value which is a workspace_id
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
@@ -10569,7 +10571,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	minthermoerror has a value which is a bool
 media_id is a string
 compound_id is a string
-prommodel_id is a string
+promconstraint_id is a string
 sample_id is a string
 series_id is a string
 bool is an int
@@ -10667,8 +10669,8 @@ workspace_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
-	prommodel has a value which is a prommodel_id
-	prommodel_workspace has a value which is a workspace_id
+	promconstraint has a value which is a promconstraint_id
+	promconstraint_workspace has a value which is a workspace_id
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
@@ -10691,7 +10693,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	minthermoerror has a value which is a bool
 media_id is a string
 compound_id is a string
-prommodel_id is a string
+promconstraint_id is a string
 sample_id is a string
 series_id is a string
 bool is an int
@@ -11031,8 +11033,8 @@ workspace_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
-	prommodel has a value which is a prommodel_id
-	prommodel_workspace has a value which is a workspace_id
+	promconstraint has a value which is a promconstraint_id
+	promconstraint_workspace has a value which is a workspace_id
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
@@ -11055,7 +11057,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	minthermoerror has a value which is a bool
 media_id is a string
 compound_id is a string
-prommodel_id is a string
+promconstraint_id is a string
 sample_id is a string
 series_id is a string
 bool is an int
@@ -11151,8 +11153,8 @@ workspace_id is a string
 FBAFormulation is a reference to a hash where the following keys are defined:
 	media has a value which is a media_id
 	additionalcpds has a value which is a reference to a list where each element is a compound_id
-	prommodel has a value which is a prommodel_id
-	prommodel_workspace has a value which is a workspace_id
+	promconstraint has a value which is a promconstraint_id
+	promconstraint_workspace has a value which is a workspace_id
 	eflux_sample has a value which is a sample_id
 	eflux_series has a value which is a series_id
 	eflux_workspace has a value which is a workspace_id
@@ -11175,7 +11177,7 @@ FBAFormulation is a reference to a hash where the following keys are defined:
 	minthermoerror has a value which is a bool
 media_id is a string
 compound_id is a string
-prommodel_id is a string
+promconstraint_id is a string
 sample_id is a string
 series_id is a string
 bool is an int
@@ -17414,6 +17416,283 @@ sub import_regulome
 
 
 
+=head2 create_prom_constraint
+
+  $promconstraint_meta = $obj->create_prom_constraint($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is a CreatePromConstraintParameters
+$promconstraint_meta is an object_metadata
+CreatePromConstraintParameters is a reference to a hash where the following keys are defined:
+	genome_id has a value which is a genome_id
+	series_id has a value which is a series_id
+	regulome_id has a value which is a regulome_id
+genome_id is a string
+series_id is a string
+regulome_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is a CreatePromConstraintParameters
+$promconstraint_meta is an object_metadata
+CreatePromConstraintParameters is a reference to a hash where the following keys are defined:
+	genome_id has a value which is a genome_id
+	series_id has a value which is a series_id
+	regulome_id has a value which is a regulome_id
+genome_id is a string
+series_id is a string
+regulome_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+
+=end text
+
+
+
+=item Description
+
+This method creates a set of Prom constraints for a given genome annotation based on a regulatory network
+and a collection of gene expression data stored on a workspace.  Parameters are specified in the
+create_prom_constraints_parameters object.  
+The ID of the new Prom constraints object is returned. The Prom constraints can then be used in conjunction
+with an FBA model using FBA Model Services.
+
+=back
+
+=cut
+
+sub create_prom_constraint
+{
+    my $self = shift;
+    my($params) = @_;
+
+    my @_bad_arguments;
+    (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"params\" (value was \"$params\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to create_prom_constraint:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'create_prom_constraint');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($promconstraint_meta);
+    #BEGIN create_prom_constraint
+    
+    # internal subroutine
+    sub computeInteractionProbabilities {
+	my ($reg_network, $expression_data) = @_;
+	
+	# should throw in some error checking at some point.
+	
+	my $status = '';
+	
+	# maps the numbers in the input to numbers in the output.  Here we assume that unknown expresson states
+	# is mapped to ON.  But is this actually the right thing to do???
+	# NOTE: empty values are mapped to 1, which means that we will NOT catch cases in which we do not find the TF or
+	# target in the data
+	my %isOn = (-1 => 0,0 => 1,1 => 1,''=>1); 
+
+	## calculate P(target = ON|TF = OFF) and P(target = ON|TF = ON)
+	my $tfTempMap = {};
+	foreach my $i (@$reg_network) {
+	    my $TF = $i->[0];
+	    my $TARGET = $i->[1];
+	    
+	    my $TF_off_count = 0;
+	    my $TF_off_TARGET_on_count = 0;
+	    my $TF_on_count = 0;
+	    my $TF_on_TARGET_on_count = 0;
+	    
+	    foreach my $experiment (@$expression_data) {
+		if(!exists $experiment->{geneCalls}->{$TF}) { next; }
+		if(!exists $experiment->{geneCalls}->{$TARGET}) { next; }
+		if( 1==$isOn{$experiment->{geneCalls}->{$TF}}  ) {
+		    $TF_on_count++;
+		    if( 1==$isOn{$experiment->{geneCalls}->{$TARGET}}  ) {
+			$TF_on_TARGET_on_count++;
+		    } elsif( -1==$isOn{$experiment->{geneCalls}->{$TARGET}} ) {
+			$status .= "  -> WARNING: could not find $TARGET in expression data ".$experiment->{label}."!\n";
+		    }
+		} elsif( 0==$isOn{$experiment->{geneCalls}->{$TF}} ) {
+		    $TF_off_count++;
+		    if( 1==$isOn{$experiment->{geneCalls}->{$TARGET}}  ) {
+			$TF_off_TARGET_on_count++;
+		    } elsif( -1==$isOn{$experiment->{geneCalls}->{$TARGET}} ) {
+			$status .= "  -> WARNING: could not find $TARGET in expression data ".$experiment->{label}."!\n";
+		    }
+		} else {
+		    # if we are here that we weren't able to find the TF in the experimental data list!!! What to do then!?!?!
+		    $status .= "  -> WARNING: could not find $TF in expression data ".$experiment->{label}."!";
+		}
+	    }
+	    # we need to perform a conversion once we have the genome annotation object
+	    my $tfMapTarget = {"target_gene_ref" => $TARGET }; # $geneid2featureid{$TARGET}};
+	    if ($TF_on_count != 0) { 
+		$tfMapTarget->{"probTGonGivenTFon"} = $TF_on_TARGET_on_count / $TF_on_count;
+		#print "p1:".$tfMapTarget->{"tfOnProbability"}."\n";
+	    } else { $tfMapTarget->{"probTGonGivenTFon"} = 1; }
+	    if ($TF_off_count != 0) {
+		$tfMapTarget->{"probTGonGivenTFoff"} = $TF_off_TARGET_on_count / $TF_off_count;
+		#print "p2:".$tfMapTarget->{"tfOffProbability"}."\n";
+	    } else { $tfMapTarget->{"probTGonGivenTFoff"} = 1; }
+	    if(exists $tfTempMap->{$TF}) {
+		push @{$tfTempMap->{$TF}}, $tfMapTarget;
+	    } else {
+		$tfTempMap->{$TF} = [$tfMapTarget];
+	    }
+	}
+	
+	# repackage into the object that runFBA is expecting, which is not a hash, but a list of hashes
+	my $tfMaps = [];
+	foreach my $TF (keys %$tfTempMap) {
+	    push @{$tfMaps}, {"transcriptionFactor_ref"=>$TF,"targetGeneProbs"=>$tfTempMap->{$TF}};
+	}
+	
+	return ($status,$tfMaps);
+    }
+
+
+    $self->_setContext($ctx,$params);    
+    $params = $self->_validateargs($params,["workspace"],{
+    	expression_workspace => $params->{workspace},
+    	genome_workspace => $params->{workspace},
+    	regulome_workspace => $params->{workspace}
+				   });
+
+	my $e_id = $params->{series_id};
+	my $r_id = $params->{regulome_id};
+	my $genome_id = $params->{genome_id};
+	my $promconstraint_id ="";
+
+        my $ws = $self->_KBaseStore()->workspace();	
+	# check if the gene expression data collection from a workspace exists
+        my $exp_collection = $self->_get_msobject("ExpressionSeries",$params->{"expression_workspace"},$e_id);
+	if(!defined $exp_collection) {
+	    print "FAILURE - no expression data collection with ID $e_id found!\n";
+	}
+	# check if the regulatory network data from a workspace exists
+        my $regnet = $self->_get_msobject("Regulome",$params->{"regulome_workspace"},$r_id);
+	if(!defined $regnet) {
+	    print "FAILURE - no regulatory network data with ID $r_id found!\n";
+	}
+	# check if the annotation data from a workspace exists
+	my $genome = $self->_get_msobject("Genome",$params->{"genome_workspace"},$genome_id);
+	# if both data sets exist, thecdn pull them down
+	if(defined $exp_collection && defined $regnet && defined $genome) {
+	    
+	    # a regulatory network is a list where each element is a list in the form [TF, target, p1, p2]
+	    my $regulatory_network = [];
+	    foreach my $regulon (@{$regnet->regulons()}) {
+		foreach my $tf (@{$regulon->tfs()}) {
+		    foreach my $regulon (@{$regulon->operons()}) {
+			foreach my $gene (@{$regulon->genes()}) {
+			    push @$regulatory_network, [$tf->locus_tag(),$gene->locus_tag(),-1,-1];
+			}
+		    }
+		}
+	    }
+	    
+	    # now grab the expression data and store it in a parsed object
+	    # Note that this does not do any sort of error checking for IDs or anything else!!!
+	    # this structure is a list, where each element cooresponds to an expermental condition, as in:
+	    # [
+	    #    {
+	    #       geneCalls => {g1 => 1, g2 => -1 ... },
+	    #       description => ,
+	    #       media => 'Complete',
+	    #       label => 'exp1'
+	    #    },
+	    #    { ... }
+	    #    ...
+	    # ]
+	    my $expression_data_on_off_calls = [];
+	    #loop through each experiment
+	    foreach my $sample_map (values %{$exp_collection->genome_expression_sample_ids_map()}) {
+		foreach my $sample_id (@$sample_map) {
+		    print "Getting sample $sample_id\n";
+		    my ($sws,$sid,$sv) = split "/", $sample_id;
+#		    my $sample = $self->_get_msobject("ExpressionSample",$params->{"expression_workspace"},$sample_id);
+		    my $sample = $self->_get_msobject("ExpressionSample",$sws,$sid);
+		    my $geneCalls = {};
+		    foreach my $feature_id (keys %{$sample->expression_levels()}) {
+			$geneCalls->{$feature_id} = $sample->expression_levels()->{$feature_id};
+		    }
+		    push @$expression_data_on_off_calls, {geneCalls => $geneCalls,,
+						      media=> 'unknown',
+						      description => $exp_collection->summary(),
+						      label => $exp_collection->id()};
+		}
+	    }
+	    
+	    
+	    # compute the interaction probability map; this is the central component of a prom model
+	    my ($computation_log, $tfMap) = computeInteractionProbabilities($regulatory_network, $expression_data_on_off_calls);
+	    $promconstraint_id = "kb|promconstraint.".$self->_idServer()->allocate_id_range("kb|promconstraint",1);
+		
+	    my $PCObj = Bio::KBase::ObjectAPI::KBaseFBA::PromConstraint->new({id=>$promconstraint_id,genome_ref=>$genome->_reference(),transcriptionFactorMaps=>$tfMap,expression_series_ref=>$exp_collection->_reference()});
+	    $promconstraint_meta  = $self->_save_msobject($PCObj,"PromConstraint",$params->{"workspace"},$promconstraint_id);
+	    $self->_clearContext();
+	}
+    
+    #END create_prom_constraint
+    my @_bad_returns;
+    (ref($promconstraint_meta) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"promconstraint_meta\" (value was \"$promconstraint_meta\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to create_prom_constraint:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'create_prom_constraint');
+    }
+    return($promconstraint_meta);
+}
+
+
+
+
 =head2 version 
 
   $return = $obj->version()
@@ -17919,7 +18198,7 @@ a string
 
 
 
-=head2 prommodel_id
+=head2 promconstraint_id
 
 =over 4
 
@@ -17927,7 +18206,7 @@ a string
 
 =item Description
 
-A string identifier for a prommodel in KBase.
+A string identifier for a promconstraint in KBase.
 
 
 =item Definition
@@ -18486,6 +18765,37 @@ a string
 =item Description
 
 A string identifier for a Mapping object in KBase.
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 regulome_id
+
+=over 4
+
+
+
+=item Description
+
+A string identifier for a regulome in KBase.
 
 
 =item Definition
@@ -20552,8 +20862,8 @@ Data structures for gapfilling solution
 
 media_id media - ID of media formulation to be used
 list<compound_id> additionalcpds - list of additional compounds to allow update
-prommodel_id prommodel - ID of prommodel
-workspace_id prommodel_workspace - workspace containing prommodel
+promconstraint_id promconstraint - ID of promconstraint
+workspace_id promconstraint_workspace - workspace containing promconstraint
 sample_id eflux_sample - ID of gene expression sample to run eflux
 series_id eflux_series - ID of series that a sample belongs to.
 workspace_id eflux_workspace - workspace containing gene expression sample series for eflux
@@ -20584,8 +20894,8 @@ bool minthermoerror - flag indicating if error should be minimized in thermodyna
 a reference to a hash where the following keys are defined:
 media has a value which is a media_id
 additionalcpds has a value which is a reference to a list where each element is a compound_id
-prommodel has a value which is a prommodel_id
-prommodel_workspace has a value which is a workspace_id
+promconstraint has a value which is a promconstraint_id
+promconstraint_workspace has a value which is a workspace_id
 eflux_sample has a value which is a sample_id
 eflux_series has a value which is a series_id
 eflux_workspace has a value which is a workspace_id
@@ -20616,8 +20926,8 @@ minthermoerror has a value which is a bool
 a reference to a hash where the following keys are defined:
 media has a value which is a media_id
 additionalcpds has a value which is a reference to a list where each element is a compound_id
-prommodel has a value which is a prommodel_id
-prommodel_workspace has a value which is a workspace_id
+promconstraint has a value which is a promconstraint_id
+promconstraint_workspace has a value which is a workspace_id
 eflux_sample has a value which is a sample_id
 eflux_series has a value which is a series_id
 eflux_workspace has a value which is a workspace_id
@@ -27803,6 +28113,50 @@ a reference to a hash where the following keys are defined:
 regulons has a value which is a reference to a list where each element is a regulon
 workspace has a value which is a workspace_id
 genome_id has a value which is a genome_id
+
+
+=end text
+
+=back
+
+
+
+=head2 CreatePromConstraintParameters
+
+=over 4
+
+
+
+=item Description
+
+Named parameters for 'create_prom_constraints' method.  Currently all options are required.
+
+    genome_ref genome_ref             - the workspace ID of the genome to link to the prom object
+    expression_series_ref expression_series_ref     - the workspace ID of the expression data collection needed to
+                                                   build the PROM constraints.
+    regulome_ref  regulome_ref        - the workspace ID of the regulatory network data to use
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+genome_id has a value which is a genome_id
+series_id has a value which is a series_id
+regulome_id has a value which is a regulome_id
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+genome_id has a value which is a genome_id
+series_id has a value which is a series_id
+regulome_id has a value which is a regulome_id
 
 
 =end text

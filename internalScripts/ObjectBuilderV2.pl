@@ -74,7 +74,6 @@ my $baseobjects = {
 	BiochemistryStructures => "KBaseBiochem",
 	Biochemistry => "KBaseBiochem",
 	RegulatoryModel => "KBaseRegulation",
-	PROMModel => "KBaseFBA",
 	Stimuli => "KBaseRegulation",
 	Mapping => "KBaseOntology",
 	ModelTemplate => "KBaseFBA",
@@ -94,12 +93,13 @@ my $baseobjects = {
 	regulatory_network =>  "KBaseFBA",
 	EfluxExpressionCollection => "KBaseRegulatoryFBA",
 	Regulome => "KBaseRegulation",
+	ExpressionSeries => "KBaseExpression",
+	ExpressionSample => "KBaseExpression",
 };
 my $objcorrespondence = {
 	BiochemistryStructures => "BiochemistryStructures",
 	Biochemistry => "Biochemistry",
 	RegulatoryModel => "RegulatoryModel",
-	PROMModel => "PROMModel",
 	Stimuli => "Stimuli",
 	Mapping => "Mapping",
 	ModelTemplate => "ModelTemplate",
@@ -115,12 +115,14 @@ foreach my $obj (keys(%{$objcorrespondence})) {
 my $subobj = {};
 my $specobjects = {};
 my $speclist = ["FBAModel.spec","Ontology.spec","Biochem.spec","Genome.spec","Phenotypes.spec","ProbabilisticAnnotation.spec","Regulation.spec","Expression.spec"];
+
 for (my $i=0; $i < @{$speclist}; $i++) {
 	my $module;
 	my $stringtypes = {};
+	my $othertypes = {};
 	my $currref = {};
 	my $inobject = 0;
-	my $currentobject = {_searchable => [],_optional => []};
+	my $currentobject = {_searchable => [],_optional => {}};
 	open (my $specfile, "<", $directory."/".$speclist->[$i]) || die "Couldn't open ".$directory."/".$speclist->[$i]." : $!";
 	while (my $line = <$specfile>) {
 		chomp($line);
@@ -154,16 +156,20 @@ for (my $i=0; $i < @{$speclist}; $i++) {
 		} elsif ($line =~ m/\@searchable\s+ws_subset\s+(.+)$/) {
 			push(@{$currentobject->{_searchable}},split(/\s/,$1));
 		} elsif ($line =~ m/\@optional\s+(.+)$/) {
-			push(@{$currentobject->{_optional}},split(/\s/,$1));
+			map { $currentobject->{_optional}->{$_} = 1 } split(/\s/,$1);
 		} elsif ($line =~ m/typedef\s+structure\s+\{/) {
 			$inobject = 1;
+		} elsif ($line =~ m/typedef\s+(.+)\s+(\w+);/) {
+		        my $def = $1;
+			my $type = $2;
+			$othertypes->{$type} = $def;
 		} elsif ($line =~ m/\}\s*(.+);/) {
 			my $objname = $1;
 			$specobjects->{$module}->{$objname} = $currentobject;
 			if (!defined($baseobjects->{$objname})) {
 				$subobj->{$objname} = $currentobject;
 			}
-			$currentobject = {_searchable => [],_optional => []};
+			$currentobject = {_searchable => [],_optional => {}};
 			$inobject = 0;
 		} elsif ($line =~ m/([^\s]+)\s+([^\s]+);/) {
 			if ($inobject == 1) {
@@ -175,6 +181,7 @@ for (my $i=0; $i < @{$speclist}; $i++) {
 	}
 	close($specfile);
 	$specobjects->{$module}->{stringtypes} = $stringtypes;
+	$specobjects->{$module}->{othertypes} = $othertypes;
 }
 #Building full spec
 my $typetrans = {
@@ -189,7 +196,7 @@ my $methods;
 my $modules;
 foreach my $module (keys(%{$specobjects})) {
 	foreach my $objname (keys(%{$specobjects->{$module}})) {
-		if ($objname ne "stringtypes") {
+		if ($objname ne "stringtypes" && $objname ne "othertypes") {
 			$modules->{$objname} = $module;
 			my $obj = $specobjects->{$module}->{$objname};
 			my $newobj = {
@@ -216,6 +223,9 @@ foreach my $module (keys(%{$specobjects})) {
 			}
 			foreach my $att (keys(%{$obj})) {
 				my $type = $obj->{$att};
+				if (exists $specobjects->{$module}->{"othertypes"}->{$type}) {
+				    $type = $specobjects->{$module}->{"othertypes"}->{$type};
+				}
 				if ($att ne "_searchable" && $att ne "_optional") {
 					if ($type =~ m/^list\<(.+)\>/) {
 						my $subtype = $1;
@@ -320,7 +330,7 @@ foreach my $module (keys(%{$specobjects})) {
 							printOrder => 0,
 							perm       => 'rw',
 							type       => 'Str',
-							req        => 1
+							req        => ($obj->{"_optional"}->{$att} == 1) ? 0 : 1
 						});
 					} elsif (exists $specobjects->{$module}->{stringtypes}->{$type}) {
 						push(@{$newobj->{attributes}},{
