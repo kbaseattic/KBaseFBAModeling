@@ -113,6 +113,12 @@ my $revcorrespondence = {};
 foreach my $obj (keys(%{$objcorrespondence})) {
 	$revcorrespondence->{$objcorrespondence->{$obj}} = $obj;
 }
+my $typetrans = {
+	string => "Str",
+	"int" => "Int",
+	bool => "Bool",
+	float => "Num",
+};
 my $subobj = {};
 my $specobjects = {};
 my $speclist = ["FBAModel.spec","Ontology.spec","Biochem.spec","Genome.spec","Phenotypes.spec","ProbabilisticAnnotation.spec","Regulation.spec","Expression.spec","GenomeComparison.spec"];
@@ -163,7 +169,9 @@ for (my $i=0; $i < @{$speclist}; $i++) {
 		} elsif ($line =~ m/typedef\s+(.+)\s+(\w+);/) {
 		        my $def = $1;
 			my $type = $2;
-			$othertypes->{$type} = $def;
+			if (! exists $typetrans->{$type}) {
+			    $othertypes->{$type} = $def;
+			}
 		} elsif ($line =~ m/\}\s*(.+);/) {
 			my $objname = $1;
 			$specobjects->{$module}->{$objname} = $currentobject;
@@ -185,12 +193,6 @@ for (my $i=0; $i < @{$speclist}; $i++) {
 	$specobjects->{$module}->{othertypes} = $othertypes;
 }
 #Building full spec
-my $typetrans = {
-	string => "Str",
-	"int" => "Int",
-	bool => "Bool",
-	float => "Num",
-};
 my $finalbase;
 my $finalsub;
 my $methods;
