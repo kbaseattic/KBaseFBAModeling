@@ -304,7 +304,7 @@ module KBaseGenomes {
 		list<coexpressed_fid> coexpressed_fids;
 		list<co_occurring_fid> co_occurring_fids;
 		Feature_quality_measure quality;
-		Analysis_event_id feature_creation_event;
+		Analysis_event feature_creation_event;
     } Feature;
 	
 	/*
@@ -551,7 +551,7 @@ module KBaseGenomes {
 	/*
     	OrthologFamily object: this object holds all data for a single ortholog family in a metagenome
 
-    	@searchable ws_subset id type function md5 protein_translation
+    	@optional type function md5 protein_translation
     */
 	typedef structure {
     	string id;

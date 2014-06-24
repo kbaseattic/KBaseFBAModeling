@@ -3006,7 +3006,7 @@ sub translate_fbamodel
 
 =head2 build_pangenome
 
-  $modelMeta = $obj->build_pangenome($input)
+  $output = $obj->build_pangenome($input)
 
 =over 4
 
@@ -3016,10 +3016,10 @@ sub translate_fbamodel
 
 <pre>
 $input is a build_pangenome_params
-$modelMeta is an object_metadata
+$output is an object_metadata
 build_pangenome_params is a reference to a hash where the following keys are defined:
 	genomes has a value which is a reference to a list where each element is a string
-	genome_workspaces has a value which is a reference to a list where each element is a string
+	genome_workspace has a value which is a reference to a list where each element is a string
 	workspace has a value which is a workspace_id
 workspace_id is a string
 object_metadata is a reference to a list containing 11 items:
@@ -3047,10 +3047,10 @@ workspace_ref is a string
 =begin text
 
 $input is a build_pangenome_params
-$modelMeta is an object_metadata
+$output is an object_metadata
 build_pangenome_params is a reference to a hash where the following keys are defined:
 	genomes has a value which is a reference to a list where each element is a string
-	genome_workspaces has a value which is a reference to a list where each element is a string
+	genome_workspace has a value which is a reference to a list where each element is a string
 	workspace has a value which is a workspace_id
 workspace_id is a string
 object_metadata is a reference to a list containing 11 items:
@@ -9942,6 +9942,103 @@ sub get_mapping
         Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method get_mapping",
 					    status_line => $self->{client}->status_line,
 					    method_name => 'get_mapping',
+				       );
+    }
+}
+
+
+
+=head2 subsystem_of_roles
+
+  $output = $obj->subsystem_of_roles($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is a subsystem_of_roles_params
+$output is a reference to a hash where the key is a string and the value is a subsysclasses
+subsystem_of_roles_params is a reference to a hash where the following keys are defined:
+	roles has a value which is a reference to a list where each element is a string
+	map has a value which is a string
+	map_workspace has a value which is a string
+subsysclasses is a reference to a hash where the key is a string and the value is a subsysclass
+subsysclass is a reference to a list containing 2 items:
+	0: a string
+	1: a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is a subsystem_of_roles_params
+$output is a reference to a hash where the key is a string and the value is a subsysclasses
+subsystem_of_roles_params is a reference to a hash where the following keys are defined:
+	roles has a value which is a reference to a list where each element is a string
+	map has a value which is a string
+	map_workspace has a value which is a string
+subsysclasses is a reference to a hash where the key is a string and the value is a subsysclass
+subsysclass is a reference to a list containing 2 items:
+	0: a string
+	1: a string
+
+
+=end text
+
+=item Description
+
+Returns subsystems for list roles
+
+=back
+
+=cut
+
+sub subsystem_of_roles
+{
+    my($self, @args) = @_;
+
+# Authentication: optional
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function subsystem_of_roles (received $n, expecting 1)");
+    }
+    {
+	my($params) = @args;
+
+	my @_bad_arguments;
+        (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to subsystem_of_roles:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'subsystem_of_roles');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.subsystem_of_roles",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{error}->{code},
+					       method_name => 'subsystem_of_roles',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method subsystem_of_roles",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'subsystem_of_roles',
 				       );
     }
 }
@@ -17757,7 +17854,7 @@ Input parameters for the "translate_fbamodel" function.
 <pre>
 a reference to a hash where the following keys are defined:
 genomes has a value which is a reference to a list where each element is a string
-genome_workspaces has a value which is a reference to a list where each element is a string
+genome_workspace has a value which is a reference to a list where each element is a string
 workspace has a value which is a workspace_id
 
 </pre>
@@ -17768,7 +17865,7 @@ workspace has a value which is a workspace_id
 
 a reference to a hash where the following keys are defined:
 genomes has a value which is a reference to a list where each element is a string
-genome_workspaces has a value which is a reference to a list where each element is a string
+genome_workspace has a value which is a reference to a list where each element is a string
 workspace has a value which is a workspace_id
 
 
@@ -20681,6 +20778,98 @@ a reference to a hash where the following keys are defined:
 map has a value which is a mapping_id
 workspace has a value which is a workspace_id
 auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 subsysclass
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a list containing 2 items:
+0: a string
+1: a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a list containing 2 items:
+0: a string
+1: a string
+
+
+=end text
+
+=back
+
+
+
+=head2 subsysclasses
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the key is a string and the value is a subsysclass
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the key is a string and the value is a subsysclass
+
+=end text
+
+=back
+
+
+
+=head2 subsystem_of_roles_params
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+roles has a value which is a reference to a list where each element is a string
+map has a value which is a string
+map_workspace has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+roles has a value which is a reference to a list where each element is a string
+map has a value which is a string
+map_workspace has a value which is a string
 
 
 =end text

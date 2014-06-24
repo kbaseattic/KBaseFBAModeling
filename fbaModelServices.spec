@@ -1601,7 +1601,7 @@ module fbaModelServices {
         Translate an existing model to a new genome based on the genome comparison object
     */
     authentication required;
-    funcdef build_pangenome(build_pangenome_params input) returns (object_metadata modelMeta);
+    funcdef build_pangenome(build_pangenome_params input) returns (object_metadata output);
 	
 	/* Input parameters for the "import_fbamodel" function.
 	
@@ -2889,6 +2889,19 @@ module fbaModelServices {
     */
     authentication optional;
     funcdef get_mapping(get_mapping_params params) returns (Mapping output);
+    
+    typedef tuple<string,string> subsysclass;
+    typedef mapping<string,subsysclass> subsysclasses;
+    typedef structure {
+		list<string> roles;
+		string map;
+		string map_workspace;
+    } subsystem_of_roles_params;
+    /*
+		Returns subsystems for list roles       
+    */
+    authentication optional;
+    funcdef subsystem_of_roles(subsystem_of_roles_params params) returns (mapping<string,subsysclasses> output);
     
 	/* Input parameters for the "adjust_mapping_role" function.
 	

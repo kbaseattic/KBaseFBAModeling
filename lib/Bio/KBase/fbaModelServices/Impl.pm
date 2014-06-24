@@ -79,6 +79,7 @@ use Bio::KBase::ObjectAPI::KBaseGenomes::Genome;
 use Bio::KBase::ObjectAPI::KBaseGenomes::GenomeDomainData;
 use Bio::KBase::ObjectAPI::KBaseGenomes::ContigSet;
 use Bio::KBase::ObjectAPI::KBaseGenomes::ProteinSet;
+use Bio::KBase::ObjectAPI::KBaseGenomes::Pangenome;
 use Bio::KBase::ObjectAPI::KBaseFBA::FBAModel;
 #use Bio::KBase::ObjectAPI::GlobalFunctions;
 use Bio::KBase::ObjectAPI::KBaseFBA::Gapfilling;
@@ -1149,20 +1150,20 @@ sub _buildFBAObject {
 			if (!defined($obj)) {
 				$self->_error("Reaction ".$term->[2]." not found!");
 			}
-			$fbaobj->reactionflux_objterms()->{$obj->id()} = $term->[0]+1;
+			$fbaobj->reactionflux_objterms()->{$obj->id()} = $term->[0];
 		} elsif ($term->[1] eq "compoundflux" || $term->[1] eq "drainflux") {
 			$term->[1] = "drainflux";
 			my $obj = $model->searchForCompound($term->[2]);
 			if (!defined($obj)) {
 				$self->_error("Compound ".$term->[2]." not found!");
 			}
-			$fbaobj->compoundflux_objterms()->{$obj->id()} = $term->[0]+1;
+			$fbaobj->compoundflux_objterms()->{$obj->id()} = $term->[0];
 		} elsif ($term->[1] eq "biomassflux") {
 			my $obj = $model->searchForBiomass($term->[2]);
 			if (!defined($obj)) {
 				$self->_error("Biomass ".$term->[2]." not found!");
 			}
-			$fbaobj->biomassflux_objterms()->{$obj->id()} = $term->[0]+1;
+			$fbaobj->biomassflux_objterms()->{$obj->id()} = $term->[0];
 		} else {
 			$self->_error("Objective variable type ".$term->[1]." not recognized!");
 		}
@@ -6276,7 +6277,7 @@ sub translate_fbamodel
 
 =head2 build_pangenome
 
-  $modelMeta = $obj->build_pangenome($input)
+  $output = $obj->build_pangenome($input)
 
 =over 4
 
@@ -6286,10 +6287,10 @@ sub translate_fbamodel
 
 <pre>
 $input is a build_pangenome_params
-$modelMeta is an object_metadata
+$output is an object_metadata
 build_pangenome_params is a reference to a hash where the following keys are defined:
 	genomes has a value which is a reference to a list where each element is a string
-	genome_workspaces has a value which is a reference to a list where each element is a string
+	genome_workspace has a value which is a reference to a list where each element is a string
 	workspace has a value which is a workspace_id
 workspace_id is a string
 object_metadata is a reference to a list containing 11 items:
@@ -6317,10 +6318,10 @@ workspace_ref is a string
 =begin text
 
 $input is a build_pangenome_params
-$modelMeta is an object_metadata
+$output is an object_metadata
 build_pangenome_params is a reference to a hash where the following keys are defined:
 	genomes has a value which is a reference to a list where each element is a string
-	genome_workspaces has a value which is a reference to a list where each element is a string
+	genome_workspace has a value which is a reference to a list where each element is a string
 	workspace has a value which is a workspace_id
 workspace_id is a string
 object_metadata is a reference to a list containing 11 items:
@@ -6368,7 +6369,7 @@ sub build_pangenome
     }
 
     my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
-    my($modelMeta);
+    my($output);
     #BEGIN build_pangenome
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["genomes","genome_workspaces","workspace"],{
@@ -6387,6 +6388,7 @@ sub build_pangenome
 		genome_refs => [],
 		orthologs => [],
     };
+    my $proteins = {};
     for (my $i=0; $i < @{$input->{genomes}}; $i++) {
     	print "Processing genome ".$i."\n";
     	my $gkdb = {};
@@ -6396,12 +6398,13 @@ sub build_pangenome
     	push(@{$pangenome->{genome_refs}},$currgenome->_reference());
     	if ($i==0) {
     		my $array = [split(/\s/,$currgenome->scientific_name())];
-    		$genome->{name} = $array->[0]." pangenome";
+    		$pangenome->{name} = $array->[0]." pangenome";
     	}
     	my $ftrs = $currgenome->features();
     	for (my $j=0; $j < @{$ftrs}; $j++) {
     		my $feature = $ftrs->[$j];
     		if (defined($feature->protein_translation())) {
+    			$proteins->{$feature->id()} = $feature->protein_translation();
     			my $matchortho;
     			my $bestortho;
     			my $bestscore = 0;
@@ -6451,7 +6454,7 @@ sub build_pangenome
     				$bestorthos->[$j] = -1;
     			} else {
     				$bestorthos->[$j] = $bestortho;
-    				push(@{$genome->{features}->[$bestortho]->{orthologs}},[$ftrs->[$j]->id(),$bestscore]);
+    				push(@{$pangenome->{orthologs}->[$bestortho]->{orthologs}},[$ftrs->[$j]->id(),0]);
     			}
     		}
     	};
@@ -6473,21 +6476,20 @@ sub build_pangenome
 	    		if ($keep == 1) {
 	    			foreach my $gene (keys(%{$gkdb->{$kmer}})) {
 	    				if ($bestorthos->[$gene] == -1) {
-	    					$bestorthos->[$gene] = @{$genome->{features}};
-	    					my $list = [];
+	    					$bestorthos->[$gene] = @{$pangenome->{orthologs}};
+	    					my $list = [[$ftrs->[$gene]->id(),0]];
 	    					foreach my $partner (keys(%{$genepairs->{$gene}})) {
 	    						if ($genepairs->{$gene}->{$partner} >= 10 && $bestorthos->[$partner] == -1) {
-	    							$bestorthos->[$partner] = @{$genome->{features}};
-	    							push(@{$list},[$ftrs->[$partner]->id(),$genepairs->{$gene}->{$partner}]);
+	    							$bestorthos->[$partner] = @{$pangenome->{orthologs}};
+	    							push(@{$list},[$ftrs->[$partner]->id(),0]);
 	    						}
 	    					}
 	    					my $seq = $ftrs->[$gene]->protein_translation();
-	    					my $index = @{$genome->{features}};
-	    					push(@{$genome->{features}},{
+	    					my $index = @{$pangenome->{orthologs}};
+	    					push(@{$pangenome->{orthologs}},{
 						    	id => $ftrs->[$gene]->id(),
 						    	type => $ftrs->[$gene]->type(),
 						    	function => $ftrs->[$gene]->function(),
-								md5 => $ftrs->[$gene]->md5(),
 								protein_translation => $ftrs->[$gene]->protein_translation(),
 								orthologs => $list
 						    });
@@ -6499,19 +6501,37 @@ sub build_pangenome
     	}
     	$self->_resetKBaseStore();
     }
+    print "Final score computing!\n";
+    foreach my $kmer (keys(%{$okdb})) {
+    	my $index = $okdb->{$kmer};
+    	my $list = $pangenome->{orthologs}->[$index]->{orthologs};
+    	my $hits = [];
+    	for (my $i=0; $i < @{$list}; $i++) {
+    		if (index($proteins->{$list->[$i]->[0]},$kmer) >= 0) {
+    			push(@{$hits},$i);
+    		}
+    	}
+    	my $numhits = @{$hits};
+    	my $numorthos = @{$list};
+    	if ((2*$numhits) >= $numorthos) {
+    		foreach my $item (@{$hits}) {
+    			$list->[$item]->[1]++;
+    		}
+    	}
+    }
     $pangenome = Bio::KBase::ObjectAPI::KBaseGenomes::Pangenome->new($pangenome);
 	$pangenome->orthologs();
-	$modelMeta = $self->_save_msobject($pangenome,"Pangenome",$input->{workspace},$input->{outputid});
+	$output = $self->_save_msobject($pangenome,"Pangenome",$input->{workspace},$input->{outputid});
 	$self->_clearContext();
     #END build_pangenome
     my @_bad_returns;
-    (ref($modelMeta) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"modelMeta\" (value was \"$modelMeta\")");
+    (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
     if (@_bad_returns) {
 	my $msg = "Invalid returns passed to build_pangenome:\n" . join("", map { "\t$_\n" } @_bad_returns);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
 							       method_name => 'build_pangenome');
     }
-    return($modelMeta);
+    return($output);
 }
 
 
@@ -14873,6 +14893,105 @@ sub get_mapping
 	my $msg = "Invalid returns passed to get_mapping:\n" . join("", map { "\t$_\n" } @_bad_returns);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
 							       method_name => 'get_mapping');
+    }
+    return($output);
+}
+
+
+
+
+=head2 subsystem_of_roles
+
+  $output = $obj->subsystem_of_roles($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is a subsystem_of_roles_params
+$output is a reference to a hash where the key is a string and the value is a subsysclasses
+subsystem_of_roles_params is a reference to a hash where the following keys are defined:
+	roles has a value which is a reference to a list where each element is a string
+	map has a value which is a string
+	map_workspace has a value which is a string
+subsysclasses is a reference to a hash where the key is a string and the value is a subsysclass
+subsysclass is a reference to a list containing 2 items:
+	0: a string
+	1: a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is a subsystem_of_roles_params
+$output is a reference to a hash where the key is a string and the value is a subsysclasses
+subsystem_of_roles_params is a reference to a hash where the following keys are defined:
+	roles has a value which is a reference to a list where each element is a string
+	map has a value which is a string
+	map_workspace has a value which is a string
+subsysclasses is a reference to a hash where the key is a string and the value is a subsysclass
+subsysclass is a reference to a list containing 2 items:
+	0: a string
+	1: a string
+
+
+=end text
+
+
+
+=item Description
+
+Returns subsystems for list roles
+
+=back
+
+=cut
+
+sub subsystem_of_roles
+{
+    my $self = shift;
+    my($params) = @_;
+
+    my @_bad_arguments;
+    (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"params\" (value was \"$params\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to subsystem_of_roles:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'subsystem_of_roles');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($output);
+    #BEGIN subsystem_of_roles
+    $self->_setContext($ctx,$params);
+    my $input = $self->_validateargs($params,["roles"],{
+		"map" => "default-mapping",
+		"map_workspace" => "kbase",
+	});
+    my $map = $self->_get_msobject("Mapping",$input->{workspace},$input->{"map"});
+    my $sshash = $map->roleSubsystemHash();
+    my $output = {};
+    for (my $i=0; $i < @{$input->{roles}}; $i++) {
+    	my $role = $map->queryObject("roles",{searchname => Bio::KBase::ObjectAPI::utilities::convertRoleToSearchRole($input->{roles}->[$i])});
+   		if (defined($role) && defined($sshash->{$role->id()})) {
+   			foreach my $key (keys(%{$sshash->{$role->id()}})) {
+   				my $ss = $sshash->{$role->id()}->{$key};
+   				$output->{$input->{roles}->[$i]}->{$ss->name()} = [$ss->primclass(),$ss->subclass()];
+   			}
+   		}
+    }    
+    #END subsystem_of_roles
+    my @_bad_returns;
+    (ref($output) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to subsystem_of_roles:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'subsystem_of_roles');
     }
     return($output);
 }
@@ -23486,7 +23605,7 @@ Input parameters for the "translate_fbamodel" function.
 <pre>
 a reference to a hash where the following keys are defined:
 genomes has a value which is a reference to a list where each element is a string
-genome_workspaces has a value which is a reference to a list where each element is a string
+genome_workspace has a value which is a reference to a list where each element is a string
 workspace has a value which is a workspace_id
 
 </pre>
@@ -23497,7 +23616,7 @@ workspace has a value which is a workspace_id
 
 a reference to a hash where the following keys are defined:
 genomes has a value which is a reference to a list where each element is a string
-genome_workspaces has a value which is a reference to a list where each element is a string
+genome_workspace has a value which is a reference to a list where each element is a string
 workspace has a value which is a workspace_id
 
 
@@ -26410,6 +26529,98 @@ a reference to a hash where the following keys are defined:
 map has a value which is a mapping_id
 workspace has a value which is a workspace_id
 auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 subsysclass
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a list containing 2 items:
+0: a string
+1: a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a list containing 2 items:
+0: a string
+1: a string
+
+
+=end text
+
+=back
+
+
+
+=head2 subsysclasses
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the key is a string and the value is a subsysclass
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the key is a string and the value is a subsysclass
+
+=end text
+
+=back
+
+
+
+=head2 subsystem_of_roles_params
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+roles has a value which is a reference to a list where each element is a string
+map has a value which is a string
+map_workspace has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+roles has a value which is a reference to a list where each element is a string
+map has a value which is a string
+map_workspace has a value which is a string
 
 
 =end text
