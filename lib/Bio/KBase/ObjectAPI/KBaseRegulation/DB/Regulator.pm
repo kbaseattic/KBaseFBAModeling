@@ -16,12 +16,20 @@ has parent => (is => 'rw', isa => 'Ref', weak_ref => 1, type => 'parent', metacl
 # ATTRIBUTES:
 has uuid => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_uuid');
 has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_reference');
+has rfam_id => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has tf_family => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has regulator_id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
+has taxonomy => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has regulator_name => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has regulation_type => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
 
 
 # BUILDERS:
+sub _build_reference { my ($self) = @_;return $self->parent()->_reference().'/regulator/id/'.$self->id(); }
+sub _build_uuid { my ($self) = @_;return $self->_reference(); }
 
 
 # CONSTANTS:
@@ -30,9 +38,52 @@ sub _module { return 'KBaseRegulation'; }
 sub _class { return 'Regulator'; }
 sub _top { return 0; }
 
-my $attributes = [];
+my $attributes = [
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'rfam_id',
+            'type' => 'Str',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'tf_family',
+            'type' => 'Str',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 1,
+            'printOrder' => 0,
+            'name' => 'regulator_id',
+            'type' => 'Str',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'taxonomy',
+            'type' => 'Str',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'regulator_name',
+            'type' => 'Str',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 1,
+            'printOrder' => 0,
+            'name' => 'regulation_type',
+            'type' => 'Str',
+            'perm' => 'rw'
+          }
+        ];
 
-my $attribute_map = {};
+my $attribute_map = {rfam_id => 0, tf_family => 1, regulator_id => 2, taxonomy => 3, regulator_name => 4, regulation_type => 5};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {

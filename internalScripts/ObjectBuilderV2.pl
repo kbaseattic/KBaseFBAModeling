@@ -157,7 +157,7 @@ for (my $i=0; $i < @{$speclist}; $i++) {
 			push(@{$currentobject->{_searchable}},split(/\s/,$1));
 		} elsif ($line =~ m/\@optional\s+(.+)$/) {
 			map { $currentobject->{_optional}->{$_} = 1 } split(/\s/,$1);
-		} elsif ($line =~ m/typedef\s+structure\s+\{/) {
+		} elsif ($line =~ m/typedef\s+structure\s*\{/) {
 			$inobject = 1;
 		} elsif ($line =~ m/typedef\s+(.+)\s+(\w+);/) {
 		        my $def = $1;
