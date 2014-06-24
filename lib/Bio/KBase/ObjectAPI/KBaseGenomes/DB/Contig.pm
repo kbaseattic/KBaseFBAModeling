@@ -24,6 +24,7 @@ has length => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute'
 has id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 has genetic_code => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has md5 => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has complete => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has replicon_geometry => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has cell_compartment => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 
@@ -102,6 +103,13 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
+            'name' => 'complete',
+            'type' => 'Int',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
             'name' => 'replicon_geometry',
             'type' => 'Str',
             'perm' => 'rw'
@@ -115,7 +123,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {sequence => 0, name => 1, description => 2, replicon_type => 3, length => 4, id => 5, genetic_code => 6, md5 => 7, replicon_geometry => 8, cell_compartment => 9};
+my $attribute_map = {sequence => 0, name => 1, description => 2, replicon_type => 3, length => 4, id => 5, genetic_code => 6, md5 => 7, complete => 8, replicon_geometry => 9, cell_compartment => 10};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {

@@ -27,7 +27,7 @@ has execution_time => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'at
 
 
 # BUILDERS:
-sub _build_reference { my ($self) = @_;return $self->parent()->_reference().'//id/'.$self->id(); }
+sub _build_reference { my ($self) = @_;return $self->parent()->_reference().'/feature_creation_event/id/'.$self->id(); }
 sub _build_uuid { my ($self) = @_;return $self->_reference(); }
 
 

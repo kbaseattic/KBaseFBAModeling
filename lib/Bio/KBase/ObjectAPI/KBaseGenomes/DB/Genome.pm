@@ -7,6 +7,7 @@
 package Bio::KBase::ObjectAPI::KBaseGenomes::DB::Genome;
 use Bio::KBase::ObjectAPI::IndexedObject;
 use Bio::KBase::ObjectAPI::KBaseGenomes::Close_genome;
+use Bio::KBase::ObjectAPI::KBaseGenomes::Genome_quality_measure;
 use Bio::KBase::ObjectAPI::KBaseGenomes::Feature;
 use Bio::KBase::ObjectAPI::KBaseGenomes::Contig;
 use Moose;
@@ -29,7 +30,7 @@ has contig_ids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default =>
 has publications => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
 has id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 has num_contigs => (is => 'rw', isa => 'Int', printOrder => '7', type => 'attribute', metaclass => 'Typed');
-has source_id => (is => 'rw', isa => 'Str', printOrder => '2', required => 1, type => 'attribute', metaclass => 'Typed');
+has source_id => (is => 'rw', isa => 'Str', printOrder => '2', type => 'attribute', metaclass => 'Typed');
 has gc_content => (is => 'rw', isa => 'Num', printOrder => '9', type => 'attribute', metaclass => 'Typed');
 has taxonomy => (is => 'rw', isa => 'Str', printOrder => '8', default => '', type => 'attribute', metaclass => 'Typed');
 has scientific_name => (is => 'rw', isa => 'Str', printOrder => '3', type => 'attribute', metaclass => 'Typed');
@@ -40,6 +41,7 @@ has complete => (is => 'rw', isa => 'Int', printOrder => '10', type => 'attribut
 
 # SUBOBJECTS:
 has close_genomes => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(Close_genome)', metaclass => 'Typed', reader => '_close_genomes', printOrder => '-1');
+has quality => (is => 'rw', singleton => 1, isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(Genome_quality_measure)', metaclass => 'Typed', reader => '_quality', printOrder => '-1');
 has features => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(Feature)', metaclass => 'Typed', reader => '_features', printOrder => '0');
 has contigs => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(Contig)', metaclass => 'Typed', reader => '_contigs', printOrder => '-1');
 
@@ -136,7 +138,7 @@ my $attributes = [
             'perm' => 'rw'
           },
           {
-            'req' => 1,
+            'req' => 0,
             'printOrder' => 2,
             'name' => 'source_id',
             'type' => 'Str',
@@ -239,6 +241,14 @@ my $subobjects = [
             'module' => 'KBaseGenomes'
           },
           {
+            'printOrder' => -1,
+            'name' => 'quality',
+            'type' => 'child',
+            'class' => 'Genome_quality_measure',
+            'singleton' => 1,
+            'module' => 'KBaseGenomes'
+          },
+          {
             'printOrder' => 0,
             'name' => 'features',
             'type' => 'child',
@@ -254,7 +264,7 @@ my $subobjects = [
           }
         ];
 
-my $subobject_map = {close_genomes => 0, features => 1, contigs => 2};
+my $subobject_map = {close_genomes => 0, quality => 1, features => 2, contigs => 3};
 sub _subobjects {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -272,6 +282,10 @@ sub _subobjects {
 around 'close_genomes' => sub {
 	 my ($orig, $self) = @_;
 	 return $self->_build_all_objects('close_genomes');
+};
+around 'quality' => sub {
+	 my ($orig, $self) = @_;
+	 return $self->_build_all_objects('quality');
 };
 around 'features' => sub {
 	 my ($orig, $self) = @_;
