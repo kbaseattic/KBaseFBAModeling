@@ -29,7 +29,7 @@ has transcriptionFactorMaps => (is => 'rw', isa => 'ArrayRef[HashRef]', default 
 
 # LINKS:
 has genome => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,Genome,genome_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_genome', clearer => 'clear_genome', isa => 'Bio::KBase::ObjectAPI::KBaseGenomes::Genome', weak_ref => 1);
-has expression_series => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,ExpressionSeries,expression_series_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_expression_series', clearer => 'clear_expression_series', isa => 'Ref', weak_ref => 1);
+has expression_series => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,ExpressionSeries,expression_series_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_expression_series', clearer => 'clear_expression_series', isa => 'Bio::KBase::ObjectAPI::KBaseExpression::ExpressionSeries', weak_ref => 1);
 
 
 # BUILDERS:
@@ -107,8 +107,8 @@ my $links = [
             'clearer' => 'clear_expression_series',
             'name' => 'expression_series',
             'method' => 'ExpressionSeries',
-            'class' => 'ExpressionSeries',
-            'module' => undef
+            'class' => 'Bio::KBase::ObjectAPI::KBaseExpression::ExpressionSeries',
+            'module' => 'KBaseExpression'
           }
         ];
 

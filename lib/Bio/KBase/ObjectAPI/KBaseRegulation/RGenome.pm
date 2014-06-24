@@ -1,16 +1,16 @@
 ########################################################################
-# Bio::KBase::ObjectAPI::KBaseFBA::regulatory_network - This is the moose object corresponding to the KBaseFBA.regulatory_network object
+# Bio::KBase::ObjectAPI::KBaseRegulation::RGenome - This is the moose object corresponding to the KBaseRegulation.RGenome object
 # Authors: Christopher Henry, Scott Devoid, Paul Frybarger
 # Contact email: chenry@mcs.anl.gov
 # Development location: Mathematics and Computer Science Division, Argonne National Lab
-# Date of module creation: 2014-05-13T20:12:44
+# Date of module creation: 2014-06-20T21:48:48
 ########################################################################
 use strict;
-use Bio::KBase::ObjectAPI::KBaseFBA::DB::regulatory_network;
-package Bio::KBase::ObjectAPI::KBaseFBA::regulatory_network;
+use Bio::KBase::ObjectAPI::KBaseRegulation::DB::RGenome;
+package Bio::KBase::ObjectAPI::KBaseRegulation::RGenome;
 use Moose;
 use namespace::autoclean;
-extends 'Bio::KBase::ObjectAPI::KBaseFBA::DB::regulatory_network';
+extends 'Bio::KBase::ObjectAPI::KBaseRegulation::DB::RGenome';
 #***********************************************************************************************************
 # ADDITIONAL ATTRIBUTES:
 #***********************************************************************************************************

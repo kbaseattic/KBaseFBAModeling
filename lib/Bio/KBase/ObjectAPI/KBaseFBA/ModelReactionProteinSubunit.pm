@@ -22,7 +22,9 @@ has exchangeGPRString => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 
 #***********************************************************************************************************
 sub _buildgprString {
 	my ($self) = @_;
-	
+	if (@{$self->features()} == 0) {
+		return "Unknown";
+	}
 	my $gpr = "";
 	my $ftrs = $self->features();
 	foreach my $gene (@{$ftrs}) {

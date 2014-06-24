@@ -26,6 +26,7 @@ has readableObjective => ( is => 'rw', isa => 'Str',printOrder => '30', type => 
 has mediaID => ( is => 'rw', isa => 'Str',printOrder => '0', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildmediaID' );
 has knockouts => ( is => 'rw', isa => 'Str',printOrder => '3', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildknockouts' );
 has promBounds => ( is => 'rw', isa => 'HashRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildpromBounds' );
+has tintlePenalty => ( is => 'rw', isa => 'HashRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildtintlePenalty' );
 has additionalCompoundString => ( is => 'rw', isa => 'Str',printOrder => '4', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildadditionalCompoundString' );
 has templates => ( is => 'rw', isa => 'HashRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, default => sub { return {}; } );
 
@@ -149,7 +150,7 @@ sub _buildpromBounds {
 	my $final_bounds = {};
 	my $clone = $self->cloneObject();
 	$clone->parent($self->parent());
-	$clone->prommodel_ref("");
+	$clone->promconstraint_ref("");
 	$clone->fva(1);
 	$clone->runFBA();
 	my $fluxes = $clone->FBAReactionVariables();
@@ -169,18 +170,17 @@ sub _buildpromBounds {
 			}				
 		} 
 	}
-	my $promModel = $self->prommodel();
+	my $promconstraint = $self->promconstraint();
 	my $genekos = $self->geneKOs();
-	my $tfmaps = $promModel->transcriptionFactorMaps();
+	my $tfmaps = $promconstraint->transcriptionFactorMaps();
 	foreach my $gene (@{$genekos}) {
 	    foreach my $tfmap (@$tfmaps) {
 		if ($tfmap->transcriptionFactor_ref() eq $gene->id()) {
-			my $targets = $tfmap->transcriptionFactorMapTargets();
+		    my $targets = $tfmap->targetGeneProbs();
 			foreach my $target (@{$targets}) {
-				my $offProb = $target->tfOffProbability();
-				my $onProb = $target->tfOnProbability();
-			        my $targetRxns = [keys(%{$geneReactions->{$target->target_ref()}})];
-				foreach my $rxn (@{$targetRxns}) {
+			    my $offProb = $target->probTGonGivenTFoff();
+			    my $onProb = $target->probTGonGivenTFon();
+			    foreach my $rxn (keys(%{$geneReactions->{$target->target_gene_ref()}})) {
 					my $bounds = $bounds->{$rxn};
 					$bounds->[0] *= $offProb;
 					$bounds->[1] *= $offProb;
@@ -195,6 +195,31 @@ sub _buildpromBounds {
 
 	return $final_bounds;
 }
+
+sub _buildtintlePenalty {
+    my ($self) = @_;
+
+    my $penalty = {};
+
+    my $sample = $self->tintleSamples()->[0];
+    my $kappa =  $self->tintleKappa();
+    foreach my $feature_id (keys %{$sample->{"tintle_probability"}}) {
+	my $p = $sample->{"tintle_probability"}->{$feature_id};
+	$penalty->{$feature_id}->{"penalty_score"} = abs($p - 0.5);
+	if ($p > 0.5 + $kappa) {
+	    # This feature is likely to be on
+	    $penalty->{$feature_id}->{"case"} = "3";
+	} elsif ($p < 0.5 -$kappa) {
+	    # This feature is likely to be off
+	    $penalty->{$feature_id}->{"case"} = "1";
+	} else {
+	    # This feature state is unknown
+	    $penalty->{$feature_id}->{"case"} = "2";
+	}
+    }
+    return $penalty;
+}
+
 sub _buildadditionalCompoundString {
 	my ($self) = @_;
 	my $output = "";
@@ -796,13 +821,29 @@ sub createJobDirectory {
 	if (@{$final_gauranteed} > 0) {
 		$parameters->{"Allowable unbalanced reactions"} = join(",",@{$final_gauranteed});
 	}
-	if (defined($self->prommodel_ref()) && length($self->prommodel_ref()) > 0) {
+	if (defined($self->promconstraint_ref()) && length($self->promconstraint_ref()) > 0) {
 		my $softConst = $self->PROMKappa();
 		my $bounds = $self->promBounds();
 		foreach my $key (keys(%{$bounds})) {
 			$softConst .= ";".$key.":".$bounds->{$key}->[0].":".$bounds->{$key}->[1];
 		}
 		$parameters->{"Soft Constraint"} = $softConst;
+	}
+	if (defined($self->tintleSamples()) && @{$self->tintleSamples()} > 0) {	    
+	    my @exchange_array = ($self->tintleW());	    
+	    my $penalty = $self->tintlePenalty();
+	    foreach my $feature_id (keys %$penalty) {
+		my $escaped_id = $feature_id;
+		$escaped_id =~ s/\|/___/g;
+		push(@exchange_array, join(":", ($escaped_id, $penalty->{$feature_id}->{"penalty_score"}, $penalty->{$feature_id}->{"case"})));
+	    }
+	    $parameters->{"Gene Activity State"} = join(";",@exchange_array);
+	    $parameters->{"Add positive use variable constraints"} = 1;
+	    $parameters->{"Minimum flux for use variable positive constraint"} = 0.000001;
+	    # Not required if the too long name problem is solved
+	    $parameters->{"use simple variable and constraint names"} = 1;	    
+	    # Might be too specific
+	    $parameters->{"MFASolver"} = "CPLEX";
 	}
 	if ($solver eq "SCIP") {
 		$parameters->{"use simple variable and constraint names"} = 1;
@@ -1527,6 +1568,7 @@ sub loadMFAToolkitResults {
 	$self->parseCombinatorialDeletionResults();
 	$self->parseFVAResults();
 	$self->parsePROMResult();
+	$self->parseTintleResult();
 	$self->parseOutputFiles();
 	$self->parseReactionMinimization();
 }
@@ -2109,6 +2151,42 @@ sub parsePROMResult {
 		    $promOutputHash->{$line[0]} = $line[1] if ($line[0] =~ /alpha|beta|objectFraction/);
 		}		
 		$self->add("FBAPromResults",$promOutputHash);			       
+		return 1;
+	}
+	return 0;
+}
+
+=head3 parseTintleResult
+
+Definition:
+	void parseTintleResult();
+Description:
+	Parses Tintle2014 result file.
+
+=cut
+
+sub parseTintleResult {
+	my ($self) = @_;
+	my $directory = $self->jobDirectory();
+	if (-e $directory."/GeneActivityStateFBAResult.txt") {
+		#Loading file results into a hash
+		my $table = Bio::KBase::ObjectAPI::utilities::LOADTABLE($directory."/GeneActivityStateFBAResult.txt", "\t", 0);
+		my $tintleOutputHash;
+		foreach my $row (@{$table->{"data"}}) {
+		    if ($row->[0] =~ /kb___g/) {
+			$row->[0] =~ s/___/|/;
+			if ($row->[0] =~ /Not_(.*)/) {
+			    $tintleOutputHash->{"conflicts"}->{$1} = "InactiveOn";
+			} else {
+			    $tintleOutputHash->{"conflicts"}->{$row->[0]} = "ActiveOff";			    
+			}
+		    } else {
+			$tintleOutputHash->{$row->[0]} = $row->[1];
+		    }
+		}
+		$self->add("FBATintleResults",$tintleOutputHash);		
+		use Data::Dumper; print(Dumper([{"W" => $self->tintleW, "K" => $self->tintleKappa},$tintleOutputHash, $self->tintleSamples()->[0]->{tintle_probability}]));
+
 		return 1;
 	}
 	return 0;

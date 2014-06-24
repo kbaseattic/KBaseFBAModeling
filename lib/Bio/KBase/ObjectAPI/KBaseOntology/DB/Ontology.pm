@@ -28,6 +28,8 @@ has ontology_domain => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'a
 
 
 # BUILDERS:
+sub _build_reference { my ($self) = @_;return $self->parent()->_reference().'//id/'.$self->id(); }
+sub _build_uuid { my ($self) = @_;return $self->_reference(); }
 
 
 # CONSTANTS:

@@ -16,6 +16,13 @@ has printOrder => (
       predicate => 'has_printOrder',
       default => '-1',
 );
+
+has singleton => (
+      is        => 'rw',
+      isa       => 'Int',
+      predicate => 'has_singleton',
+      default => '0',
+);
 1;
 
 package Moose::Meta::Attribute::Custom::Typed;

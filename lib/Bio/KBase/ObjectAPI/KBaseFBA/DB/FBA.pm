@@ -33,45 +33,45 @@ has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metacl
 has media_ref => (is => 'rw', isa => 'Str', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
 has compoundflux_objterms => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub {return {};}, type => 'attribute', metaclass => 'Typed');
 has phenotypesimulationset_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has maximizeObjective => (is => 'rw', isa => 'Bool', printOrder => '-1', required => 1, default => '1', type => 'attribute', metaclass => 'Typed');
+has maximizeObjective => (is => 'rw', isa => 'Int', printOrder => '-1', required => 1, default => '1', type => 'attribute', metaclass => 'Typed');
 has promconstraint_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 has phenotypeset_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has geneKO_refs => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has inputfiles => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
-has drainfluxUseVariables => (is => 'rw', isa => 'Bool', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
+has drainfluxUseVariables => (is => 'rw', isa => 'Int', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
 has additionalCpd_refs => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has outputfiles => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has parameters => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
-has noErrorThermodynamicConstraints => (is => 'rw', isa => 'Bool', printOrder => '17', default => '1', type => 'attribute', metaclass => 'Typed');
+has noErrorThermodynamicConstraints => (is => 'rw', isa => 'Int', printOrder => '17', default => '1', type => 'attribute', metaclass => 'Typed');
 has objectiveConstraintFraction => (is => 'rw', isa => 'Num', printOrder => '0', default => 'none', type => 'attribute', metaclass => 'Typed');
-has minimize_reactions => (is => 'rw', isa => 'Bool', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
-has minimizeErrorThermodynamicConstraints => (is => 'rw', isa => 'Bool', printOrder => '18', default => '1', type => 'attribute', metaclass => 'Typed');
+has minimize_reactions => (is => 'rw', isa => 'Int', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
+has minimizeErrorThermodynamicConstraints => (is => 'rw', isa => 'Int', printOrder => '18', default => '1', type => 'attribute', metaclass => 'Typed');
 has uptakeLimits => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
-has allReversible => (is => 'rw', isa => 'Bool', printOrder => '14', default => '0', type => 'attribute', metaclass => 'Typed');
+has allReversible => (is => 'rw', isa => 'Int', printOrder => '14', default => '0', type => 'attribute', metaclass => 'Typed');
 has tintleKappa => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has objectiveValue => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has minimize_reaction_costs => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub {return {};}, type => 'attribute', metaclass => 'Typed');
 has numberOfSolutions => (is => 'rw', isa => 'Int', printOrder => '23', default => '1', type => 'attribute', metaclass => 'Typed');
-has fluxMinimization => (is => 'rw', isa => 'Bool', printOrder => '12', default => '0', type => 'attribute', metaclass => 'Typed');
-has thermodynamicConstraints => (is => 'rw', isa => 'Bool', printOrder => '16', default => '1', type => 'attribute', metaclass => 'Typed');
+has fluxMinimization => (is => 'rw', isa => 'Int', printOrder => '12', default => '0', type => 'attribute', metaclass => 'Typed');
+has thermodynamicConstraints => (is => 'rw', isa => 'Int', printOrder => '16', default => '1', type => 'attribute', metaclass => 'Typed');
 has defaultMaxDrainFlux => (is => 'rw', isa => 'Num', printOrder => '22', required => 1, default => '1000', type => 'attribute', metaclass => 'Typed');
 has reactionflux_objterms => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub {return {};}, type => 'attribute', metaclass => 'Typed');
 has tintleW => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has fbamodel_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has regmodel_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has reactionKO_refs => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
-has fluxUseVariables => (is => 'rw', isa => 'Bool', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
-has findMinimalMedia => (is => 'rw', isa => 'Bool', printOrder => '13', default => '0', type => 'attribute', metaclass => 'Typed');
+has fluxUseVariables => (is => 'rw', isa => 'Int', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
+has findMinimalMedia => (is => 'rw', isa => 'Int', printOrder => '13', default => '0', type => 'attribute', metaclass => 'Typed');
 has PROMKappa => (is => 'rw', isa => 'Num', printOrder => '19', default => '1', type => 'attribute', metaclass => 'Typed');
-has simpleThermoConstraints => (is => 'rw', isa => 'Bool', printOrder => '15', default => '1', type => 'attribute', metaclass => 'Typed');
+has simpleThermoConstraints => (is => 'rw', isa => 'Int', printOrder => '15', default => '1', type => 'attribute', metaclass => 'Typed');
 has comboDeletions => (is => 'rw', isa => 'Int', printOrder => '11', default => '0', type => 'attribute', metaclass => 'Typed');
 has defaultMinDrainFlux => (is => 'rw', isa => 'Num', printOrder => '21', required => 1, default => '-1000', type => 'attribute', metaclass => 'Typed');
-has fva => (is => 'rw', isa => 'Bool', printOrder => '10', default => '0', type => 'attribute', metaclass => 'Typed');
-has decomposeReversibleDrainFlux => (is => 'rw', isa => 'Bool', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
+has fva => (is => 'rw', isa => 'Int', printOrder => '10', default => '0', type => 'attribute', metaclass => 'Typed');
+has decomposeReversibleDrainFlux => (is => 'rw', isa => 'Int', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
 has biomassflux_objterms => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub {return {};}, type => 'attribute', metaclass => 'Typed');
 has defaultMaxFlux => (is => 'rw', isa => 'Num', printOrder => '20', required => 1, default => '1000', type => 'attribute', metaclass => 'Typed');
-has decomposeReversibleFlux => (is => 'rw', isa => 'Bool', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
+has decomposeReversibleFlux => (is => 'rw', isa => 'Int', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
 
 
 # SUBOBJECTS:
@@ -180,7 +180,7 @@ my $attributes = [
             'printOrder' => -1,
             'name' => 'maximizeObjective',
             'default' => 1,
-            'type' => 'Bool',
+            'type' => 'Int',
             'description' => undef,
             'perm' => 'rw'
           },
@@ -228,7 +228,7 @@ my $attributes = [
             'printOrder' => -1,
             'name' => 'drainfluxUseVariables',
             'default' => 0,
-            'type' => 'Bool',
+            'type' => 'Int',
             'description' => undef,
             'perm' => 'rw'
           },
@@ -264,7 +264,7 @@ my $attributes = [
             'printOrder' => 17,
             'name' => 'noErrorThermodynamicConstraints',
             'default' => 1,
-            'type' => 'Bool',
+            'type' => 'Int',
             'description' => undef,
             'perm' => 'rw'
           },
@@ -282,7 +282,7 @@ my $attributes = [
             'printOrder' => -1,
             'name' => 'minimize_reactions',
             'default' => 0,
-            'type' => 'Bool',
+            'type' => 'Int',
             'perm' => 'rw'
           },
           {
@@ -290,7 +290,7 @@ my $attributes = [
             'printOrder' => 18,
             'name' => 'minimizeErrorThermodynamicConstraints',
             'default' => 1,
-            'type' => 'Bool',
+            'type' => 'Int',
             'description' => undef,
             'perm' => 'rw'
           },
@@ -308,7 +308,7 @@ my $attributes = [
             'printOrder' => 14,
             'name' => 'allReversible',
             'default' => '0',
-            'type' => 'Bool',
+            'type' => 'Int',
             'description' => undef,
             'perm' => 'rw'
           },
@@ -348,7 +348,7 @@ my $attributes = [
             'printOrder' => 12,
             'name' => 'fluxMinimization',
             'default' => 0,
-            'type' => 'Bool',
+            'type' => 'Int',
             'description' => undef,
             'perm' => 'rw'
           },
@@ -357,7 +357,7 @@ my $attributes = [
             'printOrder' => 16,
             'name' => 'thermodynamicConstraints',
             'default' => 1,
-            'type' => 'Bool',
+            'type' => 'Int',
             'description' => undef,
             'perm' => 'rw'
           },
@@ -413,7 +413,7 @@ my $attributes = [
             'printOrder' => -1,
             'name' => 'fluxUseVariables',
             'default' => 0,
-            'type' => 'Bool',
+            'type' => 'Int',
             'description' => undef,
             'perm' => 'rw'
           },
@@ -422,7 +422,7 @@ my $attributes = [
             'printOrder' => 13,
             'name' => 'findMinimalMedia',
             'default' => 0,
-            'type' => 'Bool',
+            'type' => 'Int',
             'description' => undef,
             'perm' => 'rw'
           },
@@ -440,7 +440,7 @@ my $attributes = [
             'printOrder' => 15,
             'name' => 'simpleThermoConstraints',
             'default' => 1,
-            'type' => 'Bool',
+            'type' => 'Int',
             'description' => undef,
             'perm' => 'rw'
           },
@@ -467,7 +467,7 @@ my $attributes = [
             'printOrder' => 10,
             'name' => 'fva',
             'default' => 0,
-            'type' => 'Bool',
+            'type' => 'Int',
             'description' => undef,
             'perm' => 'rw'
           },
@@ -476,7 +476,7 @@ my $attributes = [
             'printOrder' => -1,
             'name' => 'decomposeReversibleDrainFlux',
             'default' => 0,
-            'type' => 'Bool',
+            'type' => 'Int',
             'description' => undef,
             'perm' => 'rw'
           },
@@ -502,7 +502,7 @@ my $attributes = [
             'printOrder' => -1,
             'name' => 'decomposeReversibleFlux',
             'default' => 0,
-            'type' => 'Bool',
+            'type' => 'Int',
             'description' => undef,
             'perm' => 'rw'
           }
