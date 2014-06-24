@@ -817,9 +817,9 @@ class fbaModelServices(object):
         else:
             raise ServerError('Unknown', 0, 'An unknown server error occurred')
 
-    def genome_heatmap_from_pangenom(self, input):
+    def genome_heatmap_from_pangenome(self, input):
 
-        arg_hash = {'method': 'fbaModelServices.genome_heatmap_from_pangenom',
+        arg_hash = {'method': 'fbaModelServices.genome_heatmap_from_pangenome',
                     'params': [input],
                     'version': '1.1',
                     'id': str(random.random())[2:]

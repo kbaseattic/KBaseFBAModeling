@@ -6455,7 +6455,7 @@ sub build_pangenome
     				$bestorthos->[$j] = -1;
     			} else {
     				$bestorthos->[$j] = $bestortho;
-    				push(@{$pangenome->{orthologs}->[$bestortho]->{orthologs}},[$ftrs->[$j]->id(),0]);
+    				push(@{$pangenome->{orthologs}->[$bestortho]->{orthologs}},[$ftrs->[$j]->id(),0,$currgenome->_reference()]);
     			}
     		}
     	};
@@ -6478,11 +6478,11 @@ sub build_pangenome
 	    			foreach my $gene (keys(%{$gkdb->{$kmer}})) {
 	    				if ($bestorthos->[$gene] == -1) {
 	    					$bestorthos->[$gene] = @{$pangenome->{orthologs}};
-	    					my $list = [[$ftrs->[$gene]->id(),0]];
+	    					my $list = [[$ftrs->[$gene]->id(),0,$currgenome->_reference()]];
 	    					foreach my $partner (keys(%{$genepairs->{$gene}})) {
 	    						if ($genepairs->{$gene}->{$partner} >= 10 && $bestorthos->[$partner] == -1) {
 	    							$bestorthos->[$partner] = @{$pangenome->{orthologs}};
-	    							push(@{$list},[$ftrs->[$partner]->id(),0]);
+	    							push(@{$list},[$ftrs->[$partner]->id(),0,$currgenome->_reference()]);
 	    						}
 	    					}
 	    					my $seq = $ftrs->[$gene]->protein_translation();
@@ -6538,9 +6538,9 @@ sub build_pangenome
 
 
 
-=head2 genome_heatmap_from_pangenom
+=head2 genome_heatmap_from_pangenome
 
-  $output = $obj->genome_heatmap_from_pangenom($input)
+  $output = $obj->genome_heatmap_from_pangenome($input)
 
 =over 4
 
@@ -6549,9 +6549,9 @@ sub build_pangenome
 =begin html
 
 <pre>
-$input is a genome_compare_from_pangenom_params
+$input is a genome_compare_from_pangenome_params
 $output is a heat_map_matrix
-genome_compare_from_pangenom_params is a reference to a hash where the following keys are defined:
+genome_compare_from_pangenome_params is a reference to a hash where the following keys are defined:
 	pangenome has a value which is a string
 	pangenome_workspace has a value which is a string
 	workspace has a value which is a string
@@ -6567,9 +6567,9 @@ bool is an int
 
 =begin text
 
-$input is a genome_compare_from_pangenom_params
+$input is a genome_compare_from_pangenome_params
 $output is a heat_map_matrix
-genome_compare_from_pangenom_params is a reference to a hash where the following keys are defined:
+genome_compare_from_pangenome_params is a reference to a hash where the following keys are defined:
 	pangenome has a value which is a string
 	pangenome_workspace has a value which is a string
 	workspace has a value which is a string
@@ -6592,7 +6592,7 @@ Builds a comparason matrix for genomes included in a pangenome object
 
 =cut
 
-sub genome_heatmap_from_pangenom
+sub genome_heatmap_from_pangenome
 {
     my $self = shift;
     my($input) = @_;
@@ -6600,36 +6600,50 @@ sub genome_heatmap_from_pangenom
     my @_bad_arguments;
     (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
     if (@_bad_arguments) {
-	my $msg = "Invalid arguments passed to genome_heatmap_from_pangenom:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	my $msg = "Invalid arguments passed to genome_heatmap_from_pangenome:\n" . join("", map { "\t$_\n" } @_bad_arguments);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'genome_heatmap_from_pangenom');
+							       method_name => 'genome_heatmap_from_pangenome');
     }
 
     my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
     my($output);
-    #BEGIN genome_heatmap_from_pangenom
+    #BEGIN genome_heatmap_from_pangenome
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["pangenome","workspace"],{
     	pangenome_workspace => $input->{workspace}
     });
-    my $pangenome = $self->_get_msobject("Pangenome",$input->{pangenome_workspace}->[$i],$input->{pangenome}->[$i]);
+    my $pangenome = $self->_get_msobject("Pangenome",$input->{pangenome_workspace},$input->{pangenome});
+    my $indecies = {};
+    my $genomerefs = $pangenome->genome_refs();
     my $output = {
-    	references => [],
-    	labels => [],
+    	references => $genomerefs,
+    	labels => $genomerefs,
     	matrix => []
     };
-    
-    #my $orthos = $pangenome->
-    
-    
+    for (my $i=0; $i < @{$genomerefs}; $i++) {
+    	$indecies->{$genomerefs->[$i]} = $i;
+    }
+    my $orthos = $pangenome->orthologs();
+    foreach my $ortholog (@{$orthos}) {
+    	my $famorthos = $ortholog->orthologs();
+    	for (my $i=0; $i < (@{$famorthos}-1); $i++) {
+    		for (my $j=$i+1; $j < @{$famorthos}; $j++) {
+    			if (!defined($output->{matrix}->[$indecies->{$famorthos->[$i]->[2]}]->[$indecies->{$famorthos->[$i]->[2]}])) {
+    				$output->{matrix}->[$indecies->{$famorthos->[$i]->[2]}]->[$indecies->{$famorthos->[$i]->[2]}] = 0;
+    			}
+    			$output->{matrix}->[$indecies->{$famorthos->[$i]->[2]}]->[$indecies->{$famorthos->[$i]->[2]}]++;
+    		}
+    	}
+    }
+    return $output;
     $self->_clearContext();
-    #END genome_heatmap_from_pangenom
+    #END genome_heatmap_from_pangenome
     my @_bad_returns;
     (ref($output) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
     if (@_bad_returns) {
-	my $msg = "Invalid returns passed to genome_heatmap_from_pangenom:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	my $msg = "Invalid returns passed to genome_heatmap_from_pangenome:\n" . join("", map { "\t$_\n" } @_bad_returns);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'genome_heatmap_from_pangenom');
+							       method_name => 'genome_heatmap_from_pangenome');
     }
     return($output);
 }
@@ -23864,7 +23878,7 @@ matrix has a value which is a reference to a list where each element is a refere
 
 
 
-=head2 genome_compare_from_pangenom_params
+=head2 genome_compare_from_pangenome_params
 
 =over 4
 

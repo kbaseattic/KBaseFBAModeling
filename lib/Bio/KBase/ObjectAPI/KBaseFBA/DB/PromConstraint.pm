@@ -6,7 +6,7 @@
 ########################################################################
 package Bio::KBase::ObjectAPI::KBaseFBA::DB::PromConstraint;
 use Bio::KBase::ObjectAPI::IndexedObject;
-use Bio::KBase::ObjectAPI::KBaseFBA::TFMap;
+use Bio::KBase::ObjectAPI::KBaseFBA::TFtoTGmap;
 use Moose;
 use namespace::autoclean;
 extends 'Bio::KBase::ObjectAPI::IndexedObject';
@@ -18,17 +18,18 @@ has parent => (is => 'rw', isa => 'Ref', weak_ref => 1, type => 'parent', metacl
 # ATTRIBUTES:
 has uuid => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_uuid');
 has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_reference');
-has expression_data_collection_id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 has genome_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
+has expression_series_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has id => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 
 
 # SUBOBJECTS:
-has transcriptionFactorMaps => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(TFMap)', metaclass => 'Typed', reader => '_transcriptionFactorMaps', printOrder => '-1');
+has transcriptionFactorMaps => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(TFtoTGmap)', metaclass => 'Typed', reader => '_transcriptionFactorMaps', printOrder => '-1');
 
 
 # LINKS:
 has genome => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,Genome,genome_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_genome', clearer => 'clear_genome', isa => 'Bio::KBase::ObjectAPI::KBaseGenomes::Genome', weak_ref => 1);
+has expression_series => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,ExpressionSeries,expression_series_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_expression_series', clearer => 'clear_expression_series', isa => 'Ref', weak_ref => 1);
 
 
 # BUILDERS:
@@ -37,6 +38,10 @@ sub _build_uuid { return Data::UUID->new()->create_str(); }
 sub _build_genome {
 	 my ($self) = @_;
 	 return $self->getLinkedObject($self->genome_ref());
+}
+sub _build_expression_series {
+	 my ($self) = @_;
+	 return $self->getLinkedObject($self->expression_series_ref());
 }
 
 
@@ -49,13 +54,6 @@ sub _top { return 1; }
 
 my $attributes = [
           {
-            'req' => 1,
-            'printOrder' => 0,
-            'name' => 'expression_data_collection_id',
-            'type' => 'Str',
-            'perm' => 'rw'
-          },
-          {
             'req' => 0,
             'printOrder' => -1,
             'name' => 'genome_ref',
@@ -63,15 +61,22 @@ my $attributes = [
             'perm' => 'rw'
           },
           {
-            'req' => 1,
-            'printOrder' => 0,
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'expression_series_ref',
+            'type' => 'Str',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
             'name' => 'id',
             'type' => 'Str',
             'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {expression_data_collection_id => 0, genome_ref => 1, id => 2};
+my $attribute_map = {genome_ref => 0, expression_series_ref => 1, id => 2};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -95,10 +100,19 @@ my $links = [
             'method' => 'Genome',
             'class' => 'Bio::KBase::ObjectAPI::KBaseGenomes::Genome',
             'module' => 'KBaseGenomes'
+          },
+          {
+            'attribute' => 'expression_series_ref',
+            'parent' => 'Bio::KBase::ObjectAPI::KBaseStore',
+            'clearer' => 'clear_expression_series',
+            'name' => 'expression_series',
+            'method' => 'ExpressionSeries',
+            'class' => 'ExpressionSeries',
+            'module' => undef
           }
         ];
 
-my $link_map = {genome => 0};
+my $link_map = {genome => 0, expression_series => 1};
 sub _links {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -118,7 +132,7 @@ my $subobjects = [
             'printOrder' => -1,
             'name' => 'transcriptionFactorMaps',
             'type' => 'child',
-            'class' => 'TFMap',
+            'class' => 'TFtoTGmap',
             'module' => 'KBaseFBA'
           }
         ];

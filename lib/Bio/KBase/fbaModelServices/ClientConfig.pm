@@ -39,8 +39,12 @@ sub GetConfigs {
     if ($@) {
 		die $@;
     }
-    if (!defined($c->param("fbaModelServices.url"))) {
-    	SetDefaultConfig();
+    if (!defined($c->param("fbaModelServices.url")) || length($c->param("fbaModelServices.url")) == 0 || $c->param("fbaModelServices.url") =~ m/ARRAY/) {
+    	SetDefaultConfig("fbaModelServices");
+    	$c = GetConfigs();
+    }
+    if (!defined($c->param("oldworkspace.url")) || length($c->param("oldworkspace.url")) == 0 || $c->param("oldworkspace.url") =~ m/ARRAY/) {
+    	SetDefaultConfig("oldworkspace");
     	$c = GetConfigs();
     }
     return $c;
@@ -67,17 +71,23 @@ Description:
 
 =cut
 sub SetDefaultConfig {
-    my $filename = ConfigFilename();
+	my($class) = @_;
+	my $filename = ConfigFilename();
     my $c;
     if (-e $filename) {
     	$c = Config::Simple->new( filename => $filename);
     } else {
 	    $c = Config::Simple->new( syntax => 'ini');
     }
-    $c->set_block('fbaModelServices', {
-		url => $Bio::KBase::workspace::ScriptConfig::defaultFBAURL		
-	});
-	$c->set_block('oldworkspace', {url => $Bio::KBase::workspace::ScriptConfig::defaultOldWSURL});
+    if ($class eq "fbaModelServices") {
+		$c->set_block('fbaModelServices', {
+			url => $Bio::KBase::fbaModelServices::ScriptConfig::defaultFBAURL		
+		});
+	} elsif ($class eq "oldworkspace") {
+		$c->set_block('oldworkspace', {
+			url => $Bio::KBase::fbaModelServices::ScriptConfig::defaultOldWSURL
+		});
+	}
     $c->write($filename);
 }
 

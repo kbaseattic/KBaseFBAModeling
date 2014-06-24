@@ -1613,12 +1613,12 @@ module fbaModelServices {
 		string pangenome;
 		string pangenome_workspace;
 		string workspace;
-    } genome_compare_from_pangenom_params;
+    } genome_compare_from_pangenome_params;
     /*
         Builds a comparason matrix for genomes included in a pangenome object
     */
     authentication required;
-    funcdef genome_heatmap_from_pangenom(genome_compare_from_pangenom_params input) returns (heat_map_matrix output);
+    funcdef genome_heatmap_from_pangenome(genome_compare_from_pangenome_params input) returns (heat_map_matrix output);
 	
 	/*gene ID,gene ref,protein sequence,function,score*/
 	typedef structure {

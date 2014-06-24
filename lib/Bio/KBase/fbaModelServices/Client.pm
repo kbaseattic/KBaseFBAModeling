@@ -3129,9 +3129,9 @@ sub build_pangenome
 
 
 
-=head2 genome_heatmap_from_pangenom
+=head2 genome_heatmap_from_pangenome
 
-  $output = $obj->genome_heatmap_from_pangenom($input)
+  $output = $obj->genome_heatmap_from_pangenome($input)
 
 =over 4
 
@@ -3140,9 +3140,9 @@ sub build_pangenome
 =begin html
 
 <pre>
-$input is a genome_compare_from_pangenom_params
+$input is a genome_compare_from_pangenome_params
 $output is a heat_map_matrix
-genome_compare_from_pangenom_params is a reference to a hash where the following keys are defined:
+genome_compare_from_pangenome_params is a reference to a hash where the following keys are defined:
 	pangenome has a value which is a string
 	pangenome_workspace has a value which is a string
 	workspace has a value which is a string
@@ -3158,9 +3158,9 @@ bool is an int
 
 =begin text
 
-$input is a genome_compare_from_pangenom_params
+$input is a genome_compare_from_pangenome_params
 $output is a heat_map_matrix
-genome_compare_from_pangenom_params is a reference to a hash where the following keys are defined:
+genome_compare_from_pangenome_params is a reference to a hash where the following keys are defined:
 	pangenome has a value which is a string
 	pangenome_workspace has a value which is a string
 	workspace has a value which is a string
@@ -3181,7 +3181,7 @@ Builds a comparason matrix for genomes included in a pangenome object
 
 =cut
 
-sub genome_heatmap_from_pangenom
+sub genome_heatmap_from_pangenome
 {
     my($self, @args) = @_;
 
@@ -3190,7 +3190,7 @@ sub genome_heatmap_from_pangenom
     if ((my $n = @args) != 1)
     {
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
-							       "Invalid argument count for function genome_heatmap_from_pangenom (received $n, expecting 1)");
+							       "Invalid argument count for function genome_heatmap_from_pangenome (received $n, expecting 1)");
     }
     {
 	my($input) = @args;
@@ -3198,30 +3198,30 @@ sub genome_heatmap_from_pangenom
 	my @_bad_arguments;
         (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
         if (@_bad_arguments) {
-	    my $msg = "Invalid arguments passed to genome_heatmap_from_pangenom:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    my $msg = "Invalid arguments passed to genome_heatmap_from_pangenome:\n" . join("", map { "\t$_\n" } @_bad_arguments);
 	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-								   method_name => 'genome_heatmap_from_pangenom');
+								   method_name => 'genome_heatmap_from_pangenome');
 	}
     }
 
     my $result = $self->{client}->call($self->{url}, {
-	method => "fbaModelServices.genome_heatmap_from_pangenom",
+	method => "fbaModelServices.genome_heatmap_from_pangenome",
 	params => \@args,
     });
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
 					       code => $result->content->{error}->{code},
-					       method_name => 'genome_heatmap_from_pangenom',
+					       method_name => 'genome_heatmap_from_pangenome',
 					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
 	}
     } else {
-        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method genome_heatmap_from_pangenom",
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method genome_heatmap_from_pangenome",
 					    status_line => $self->{client}->status_line,
-					    method_name => 'genome_heatmap_from_pangenom',
+					    method_name => 'genome_heatmap_from_pangenome',
 				       );
     }
 }
@@ -18127,7 +18127,7 @@ matrix has a value which is a reference to a list where each element is a refere
 
 
 
-=head2 genome_compare_from_pangenom_params
+=head2 genome_compare_from_pangenome_params
 
 =over 4
 
