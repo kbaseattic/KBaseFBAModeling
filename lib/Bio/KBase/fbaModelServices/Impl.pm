@@ -1076,8 +1076,8 @@ sub _setDefaultFBAFormulation {
 		thermoconst => 0,
 		nothermoerror => 0,
 		minthermoerror => 0,
-		prommodel => undef,
-		prommodel_workspace => undef,
+		promconstraint => undef,
+		prommconstraint_workspace => undef,
 		eflux_sample => undef,
 		eflux_sample => undef,
 		eflux_workspace => undef,
@@ -1137,10 +1137,10 @@ sub _buildFBAObject {
 		FBAMetaboliteProductionResults => [],
 	});
 	$fbaobj->parent($self->_KBaseStore());
-	if (defined($fbaFormulation->{prommodel}) && defined($fbaFormulation->{prommodel_workspace})) {
-		my $promobj = $self->_get_msobject("PromConstraint",$fbaFormulation->{prommodel_workspace},$fbaFormulation->{prommodel});
+	if (defined($fbaFormulation->{promconstraint}) && defined($fbaFormulation->{promconstraint_workspace})) {
+		my $promobj = $self->_get_msobject("PromConstraint",$fbaFormulation->{promconstraint_workspace},$fbaFormulation->{promconstraint});
 		if (defined($promobj)) {
-			$fbaobj->prommodel_ref($promobj->_reference)
+			$fbaobj->promconstraint_ref($promobj->_reference)
 		}
 		$fbaobj->PROMKappa(1);
 	}
@@ -17416,9 +17416,9 @@ sub import_regulome
 
 
 
-=head2 create_prom_constraint
+=head2 create_promconstraint
 
-  $promconstraint_meta = $obj->create_prom_constraint($params)
+  $promconstraint_meta = $obj->create_promconstraint($params)
 
 =over 4
 
@@ -17498,7 +17498,7 @@ workspace_ref is a string
 
 This method creates a set of Prom constraints for a given genome annotation based on a regulatory network
 and a collection of gene expression data stored on a workspace.  Parameters are specified in the
-create_prom_constraints_parameters object.  
+CreatePromconstraintParameters object.  
 The ID of the new Prom constraints object is returned. The Prom constraints can then be used in conjunction
 with an FBA model using FBA Model Services.
 
@@ -17506,7 +17506,7 @@ with an FBA model using FBA Model Services.
 
 =cut
 
-sub create_prom_constraint
+sub create_promconstraint
 {
     my $self = shift;
     my($params) = @_;
@@ -17514,14 +17514,14 @@ sub create_prom_constraint
     my @_bad_arguments;
     (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"params\" (value was \"$params\")");
     if (@_bad_arguments) {
-	my $msg = "Invalid arguments passed to create_prom_constraint:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	my $msg = "Invalid arguments passed to create_promconstraint:\n" . join("", map { "\t$_\n" } @_bad_arguments);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'create_prom_constraint');
+							       method_name => 'create_promconstraint');
     }
 
     my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
     my($promconstraint_meta);
-    #BEGIN create_prom_constraint
+    #BEGIN create_promconstraint
     
     # internal subroutine
     sub computeInteractionProbabilities {
@@ -17672,20 +17672,21 @@ sub create_prom_constraint
 	    
 	    # compute the interaction probability map; this is the central component of a prom model
 	    my ($computation_log, $tfMap) = computeInteractionProbabilities($regulatory_network, $expression_data_on_off_calls);
-	    $promconstraint_id = "kb|promconstraint.".$self->_idServer()->allocate_id_range("kb|promconstraint",1);
+	    my $prefix = $genome_id."-PromConstraint.";
+	    $promconstraint_id = $prefix.$self->_idServer()->allocate_id_range($prefix,1);
 		
 	    my $PCObj = Bio::KBase::ObjectAPI::KBaseFBA::PromConstraint->new({id=>$promconstraint_id,genome_ref=>$genome->_reference(),transcriptionFactorMaps=>$tfMap,expression_series_ref=>$exp_collection->_reference()});
 	    $promconstraint_meta  = $self->_save_msobject($PCObj,"PromConstraint",$params->{"workspace"},$promconstraint_id);
 	    $self->_clearContext();
 	}
     
-    #END create_prom_constraint
+    #END create_promconstraint
     my @_bad_returns;
     (ref($promconstraint_meta) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"promconstraint_meta\" (value was \"$promconstraint_meta\")");
     if (@_bad_returns) {
-	my $msg = "Invalid returns passed to create_prom_constraint:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	my $msg = "Invalid returns passed to create_promconstraint:\n" . join("", map { "\t$_\n" } @_bad_returns);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-							       method_name => 'create_prom_constraint');
+							       method_name => 'create_promconstraint');
     }
     return($promconstraint_meta);
 }
@@ -28129,7 +28130,7 @@ genome_id has a value which is a genome_id
 
 =item Description
 
-Named parameters for 'create_prom_constraints' method.  Currently all options are required.
+Named parameters for 'create_promconstraint' method.  Currently all options are required.
 
     genome_ref genome_ref             - the workspace ID of the genome to link to the prom object
     expression_series_ref expression_series_ref     - the workspace ID of the expression data collection needed to

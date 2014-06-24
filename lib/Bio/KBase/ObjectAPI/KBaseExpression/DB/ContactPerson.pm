@@ -1,24 +1,24 @@
 ########################################################################
-# Bio::KBase::ObjectAPI::KBaseRegulatoryFBA::DB::EfluxExpressionCollection - This is the moose object corresponding to the KBaseRegulatoryFBA.EfluxExpressionCollection object
+# Bio::KBase::ObjectAPI::KBaseExpression::DB::ContactPerson - This is the moose object corresponding to the KBaseExpression.ContactPerson object
 # Authors: Christopher Henry, Scott Devoid, Paul Frybarger
 # Contact email: chenry@mcs.anl.gov
 # Development location: Mathematics and Computer Science Division, Argonne National Lab
 ########################################################################
-package Bio::KBase::ObjectAPI::KBaseRegulatoryFBA::DB::EfluxExpressionCollection;
-use Bio::KBase::ObjectAPI::IndexedObject;
+package Bio::KBase::ObjectAPI::KBaseExpression::DB::ContactPerson;
+use Bio::KBase::ObjectAPI::BaseObject;
 use Moose;
 use namespace::autoclean;
-extends 'Bio::KBase::ObjectAPI::IndexedObject';
+extends 'Bio::KBase::ObjectAPI::BaseObject';
 
 
-our $VERSION = 1.0;
 # PARENT:
 has parent => (is => 'rw', isa => 'Ref', weak_ref => 1, type => 'parent', metaclass => 'Typed');
 # ATTRIBUTES:
 has uuid => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_uuid');
 has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_reference');
-has eflux_collection_id => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has expression_sample_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has contact_last_name => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
+has contact_first_name => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
+has contact_institution => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
@@ -28,30 +28,36 @@ has expression_sample_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type
 
 
 # CONSTANTS:
-sub __version__ { return $VERSION; }
-sub _type { return 'KBaseRegulatoryFBA.EfluxExpressionCollection'; }
-sub _module { return 'KBaseRegulatoryFBA'; }
-sub _class { return 'EfluxExpressionCollection'; }
-sub _top { return 1; }
+sub _type { return 'KBaseExpression.ContactPerson'; }
+sub _module { return 'KBaseExpression'; }
+sub _class { return 'ContactPerson'; }
+sub _top { return 0; }
 
 my $attributes = [
           {
-            'req' => 0,
-            'printOrder' => -1,
-            'name' => 'eflux_collection_id',
+            'req' => 1,
+            'printOrder' => 0,
+            'name' => 'contact_last_name',
             'type' => 'Str',
             'perm' => 'rw'
           },
           {
-            'req' => 0,
-            'printOrder' => -1,
-            'name' => 'expression_sample_ref',
+            'req' => 1,
+            'printOrder' => 0,
+            'name' => 'contact_first_name',
+            'type' => 'Str',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 1,
+            'printOrder' => 0,
+            'name' => 'contact_institution',
             'type' => 'Str',
             'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {eflux_collection_id => 0, expression_sample_ref => 1};
+my $attribute_map = {contact_last_name => 0, contact_first_name => 1, contact_institution => 2};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {

@@ -1,10 +1,10 @@
 ########################################################################
-# Bio::KBase::ObjectAPI::KBaseFBA::DB::BooleanGeneExpressionDataCollection - This is the moose object corresponding to the KBaseFBA.BooleanGeneExpressionDataCollection object
+# Bio::KBase::ObjectAPI::KBaseExpression::DB::Protocol - This is the moose object corresponding to the KBaseExpression.Protocol object
 # Authors: Christopher Henry, Scott Devoid, Paul Frybarger
 # Contact email: chenry@mcs.anl.gov
 # Development location: Mathematics and Computer Science Division, Argonne National Lab
 ########################################################################
-package Bio::KBase::ObjectAPI::KBaseFBA::DB::BooleanGeneExpressionDataCollection;
+package Bio::KBase::ObjectAPI::KBaseExpression::DB::Protocol;
 use Bio::KBase::ObjectAPI::BaseObject;
 use Moose;
 use namespace::autoclean;
@@ -16,43 +16,40 @@ has parent => (is => 'rw', isa => 'Ref', weak_ref => 1, type => 'parent', metacl
 # ATTRIBUTES:
 has uuid => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_uuid');
 has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_reference');
-has expression_data_ids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
-has id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
+has name => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has description => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
 
 
 # BUILDERS:
-sub _build_reference { my ($self) = @_;return $self->parent()->_reference().'//id/'.$self->id(); }
-sub _build_uuid { my ($self) = @_;return $self->_reference(); }
 
 
 # CONSTANTS:
-sub _type { return 'KBaseFBA.BooleanGeneExpressionDataCollection'; }
-sub _module { return 'KBaseFBA'; }
-sub _class { return 'BooleanGeneExpressionDataCollection'; }
+sub _type { return 'KBaseExpression.Protocol'; }
+sub _module { return 'KBaseExpression'; }
+sub _class { return 'Protocol'; }
 sub _top { return 0; }
 
 my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'expression_data_ids',
-            'default' => 'sub {return [];}',
-            'type' => 'ArrayRef',
+            'name' => 'name',
+            'type' => 'Str',
             'perm' => 'rw'
           },
           {
-            'req' => 1,
-            'printOrder' => 0,
-            'name' => 'id',
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'description',
             'type' => 'Str',
             'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {expression_data_ids => 0, id => 1};
+my $attribute_map = {name => 0, description => 1};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {

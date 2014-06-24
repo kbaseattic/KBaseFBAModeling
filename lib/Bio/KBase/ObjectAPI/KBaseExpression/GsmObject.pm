@@ -1,16 +1,16 @@
 ########################################################################
-# Bio::KBase::ObjectAPI::KBaseRegulatoryFBA::EfluxExpressionCollection - This is the moose object corresponding to the KBaseRegulatoryFBA.EfluxExpressionCollection object
+# Bio::KBase::ObjectAPI::KBaseExpression::GsmObject - This is the moose object corresponding to the KBaseExpression.GsmObject object
 # Authors: Christopher Henry, Scott Devoid, Paul Frybarger
 # Contact email: chenry@mcs.anl.gov
 # Development location: Mathematics and Computer Science Division, Argonne National Lab
-# Date of module creation: 2014-06-06T18:46:51
+# Date of module creation: 2014-06-20T19:27:36
 ########################################################################
 use strict;
-use Bio::KBase::ObjectAPI::KBaseRegulatoryFBA::DB::EfluxExpressionCollection;
-package Bio::KBase::ObjectAPI::KBaseRegulatoryFBA::EfluxExpressionCollection;
+use Bio::KBase::ObjectAPI::KBaseExpression::DB::GsmObject;
+package Bio::KBase::ObjectAPI::KBaseExpression::GsmObject;
 use Moose;
 use namespace::autoclean;
-extends 'Bio::KBase::ObjectAPI::KBaseRegulatoryFBA::DB::EfluxExpressionCollection';
+extends 'Bio::KBase::ObjectAPI::KBaseExpression::DB::GsmObject';
 #***********************************************************************************************************
 # ADDITIONAL ATTRIBUTES:
 #***********************************************************************************************************

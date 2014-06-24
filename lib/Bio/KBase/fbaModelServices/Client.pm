@@ -11970,9 +11970,9 @@ sub import_regulome
 
 
 
-=head2 create_prom_constraint
+=head2 create_promconstraint
 
-  $promconstraint_meta = $obj->create_prom_constraint($params)
+  $promconstraint_meta = $obj->create_promconstraint($params)
 
 =over 4
 
@@ -12050,7 +12050,7 @@ workspace_ref is a string
 
 This method creates a set of Prom constraints for a given genome annotation based on a regulatory network
 and a collection of gene expression data stored on a workspace.  Parameters are specified in the
-create_prom_constraints_parameters object.  
+CreatePromconstraintParameters object.  
 The ID of the new Prom constraints object is returned. The Prom constraints can then be used in conjunction
 with an FBA model using FBA Model Services.
 
@@ -12058,7 +12058,7 @@ with an FBA model using FBA Model Services.
 
 =cut
 
-sub create_prom_constraint
+sub create_promconstraint
 {
     my($self, @args) = @_;
 
@@ -12067,7 +12067,7 @@ sub create_prom_constraint
     if ((my $n = @args) != 1)
     {
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
-							       "Invalid argument count for function create_prom_constraint (received $n, expecting 1)");
+							       "Invalid argument count for function create_promconstraint (received $n, expecting 1)");
     }
     {
 	my($params) = @args;
@@ -12075,30 +12075,30 @@ sub create_prom_constraint
 	my @_bad_arguments;
         (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
         if (@_bad_arguments) {
-	    my $msg = "Invalid arguments passed to create_prom_constraint:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    my $msg = "Invalid arguments passed to create_promconstraint:\n" . join("", map { "\t$_\n" } @_bad_arguments);
 	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-								   method_name => 'create_prom_constraint');
+								   method_name => 'create_promconstraint');
 	}
     }
 
     my $result = $self->{client}->call($self->{url}, {
-	method => "fbaModelServices.create_prom_constraint",
+	method => "fbaModelServices.create_promconstraint",
 	params => \@args,
     });
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
 					       code => $result->content->{error}->{code},
-					       method_name => 'create_prom_constraint',
+					       method_name => 'create_promconstraint',
 					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
 	}
     } else {
-        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method create_prom_constraint",
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method create_promconstraint",
 					    status_line => $self->{client}->status_line,
-					    method_name => 'create_prom_constraint',
+					    method_name => 'create_promconstraint',
 				       );
     }
 }
@@ -12116,16 +12116,16 @@ sub version {
             Bio::KBase::Exceptions::JSONRPC->throw(
                 error => $result->error_message,
                 code => $result->content->{code},
-                method_name => 'create_prom_constraint',
+                method_name => 'create_promconstraint',
             );
         } else {
             return wantarray ? @{$result->result} : $result->result->[0];
         }
     } else {
         Bio::KBase::Exceptions::HTTP->throw(
-            error => "Error invoking method create_prom_constraint",
+            error => "Error invoking method create_promconstraint",
             status_line => $self->{client}->status_line,
-            method_name => 'create_prom_constraint',
+            method_name => 'create_promconstraint',
         );
     }
 }
@@ -22560,7 +22560,7 @@ genome_id has a value which is a genome_id
 
 =item Description
 
-Named parameters for 'create_prom_constraints' method.  Currently all options are required.
+Named parameters for 'create_promconstraint' method.  Currently all options are required.
 
     genome_ref genome_ref             - the workspace ID of the genome to link to the prom object
     expression_series_ref expression_series_ref     - the workspace ID of the expression data collection needed to

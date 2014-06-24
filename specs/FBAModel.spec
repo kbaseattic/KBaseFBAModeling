@@ -577,7 +577,7 @@ module KBaseFBA {
     /* 
     	FBA object holds the formulation and results of a flux balance analysis study
     	
-    	@optional minimize_reactions minimize_reaction_costs FBAMinimalReactionsResults PROMKappa tintleW phenotypesimulationset_ref objectiveValue phenotypeset_ref promconstraint_ref regmodel_ref
+    	@optional minimize_reactions minimize_reaction_costs FBAMinimalReactionsResults PROMKappa tintleW phenotypesimulationset_ref objectiveValue phenotypeset_ref promconstraint_ref regmodel_ref tintleW tintleKappa
     	@searchable ws_subset comboDeletions id fva fluxMinimization findMinimalMedia allReversible simpleThermoConstraints thermodynamicConstraints noErrorThermodynamicConstraints minimizeErrorThermodynamicConstraints
     	@searchable ws_subset regmodel_ref fbamodel_ref promconstraint_ref media_ref phenotypeset_ref geneKO_refs reactionKO_refs additionalCpd_refs objectiveValue phenotypesimulationset_ref
     	@searchable ws_subset FBAConstraints.[*].(name,rhs,sign,compound_terms,reaction_terms) 
@@ -956,11 +956,11 @@ module KBaseFBA {
         list<ETCPathwayObj> pathways;
     } ETC;
 
-	/*
+    /*
     Object required by the prom_constraints object which defines the computed probabilities for a target gene.  The
-    TF regulating this target can be deduced based on the tfMap object.
+    TF regulating this target can be deduced based on the TFtoTGmap object.
     
-        string target_ref           - reference to the target gene
+        string target_gene_ref           - reference to the target gene
         float probTGonGivenTFoff    - PROB(target=ON|TF=OFF)
                                     the probability that the target gene is ON, given that the
                                     transcription factor is not expressed.  Set to null or empty if
@@ -1002,7 +1002,7 @@ module KBaseFBA {
                                                                         workspace
         genome_ref									
                                                                         which specfies how TFs and targets are named
-        list<TFtoTGmap> TFtoTGmaps                                     - the list of TFMaps which specifies both the
+        list<TFtoTGmap> transcriptionFactorMaps                                     - the list of TFMaps which specifies both the
                                                                         regulatory network and interaction probabilities
                                                                         between TF and target genes
         expression_series_ref expression_series_ref   - the id of the expresion_data_collection object in

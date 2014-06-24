@@ -3475,7 +3475,7 @@ module fbaModelServices {
     funcdef import_regulome(import_regulome_params input) returns (object_metadata regulome_meta);
 
     /*
-    Named parameters for 'create_prom_constraints' method.  Currently all options are required.
+    Named parameters for 'create_promconstraint' method.  Currently all options are required.
     
         genome_ref genome_ref             - the workspace ID of the genome to link to the prom object
         expression_series_ref expression_series_ref     - the workspace ID of the expression data collection needed to
@@ -3491,10 +3491,10 @@ module fbaModelServices {
     /*
     This method creates a set of Prom constraints for a given genome annotation based on a regulatory network
     and a collection of gene expression data stored on a workspace.  Parameters are specified in the
-    create_prom_constraints_parameters object.  
+    CreatePromconstraintParameters object.  
     The ID of the new Prom constraints object is returned. The Prom constraints can then be used in conjunction
     with an FBA model using FBA Model Services.
     */
     authentication required;
-    funcdef create_prom_constraint(CreatePromConstraintParameters params) returns (object_metadata promconstraint_meta);
+    funcdef create_promconstraint(CreatePromConstraintParameters params) returns (object_metadata promconstraint_meta);
 };

@@ -150,7 +150,7 @@ sub _buildpromBounds {
 	my $final_bounds = {};
 	my $clone = $self->cloneObject();
 	$clone->parent($self->parent());
-	$clone->prommodel_ref("");
+	$clone->promconstraint_ref("");
 	$clone->fva(1);
 	$clone->runFBA();
 	my $fluxes = $clone->FBAReactionVariables();
@@ -170,18 +170,17 @@ sub _buildpromBounds {
 			}				
 		} 
 	}
-	my $promModel = $self->prommodel();
+	my $promconstraint = $self->promconstraint();
 	my $genekos = $self->geneKOs();
-	my $tfmaps = $promModel->transcriptionFactorMaps();
+	my $tfmaps = $promconstraint->transcriptionFactorMaps();
 	foreach my $gene (@{$genekos}) {
 	    foreach my $tfmap (@$tfmaps) {
 		if ($tfmap->transcriptionFactor_ref() eq $gene->id()) {
-			my $targets = $tfmap->transcriptionFactorMapTargets();
+		    my $targets = $tfmap->targetGeneProbs();
 			foreach my $target (@{$targets}) {
-				my $offProb = $target->tfOffProbability();
-				my $onProb = $target->tfOnProbability();
-			        my $targetRxns = [keys(%{$geneReactions->{$target->target_ref()}})];
-				foreach my $rxn (@{$targetRxns}) {
+			    my $offProb = $target->probTGonGivenTFoff();
+			    my $onProb = $target->probTGonGivenTFon();
+			    foreach my $rxn (keys(%{$geneReactions->{$target->target_gene_ref()}})) {
 					my $bounds = $bounds->{$rxn};
 					$bounds->[0] *= $offProb;
 					$bounds->[1] *= $offProb;
@@ -822,7 +821,7 @@ sub createJobDirectory {
 	if (@{$final_gauranteed} > 0) {
 		$parameters->{"Allowable unbalanced reactions"} = join(",",@{$final_gauranteed});
 	}
-	if (defined($self->prommodel_ref()) && length($self->prommodel_ref()) > 0) {
+	if (defined($self->promconstraint_ref()) && length($self->promconstraint_ref()) > 0) {
 		my $softConst = $self->PROMKappa();
 		my $bounds = $self->promBounds();
 		foreach my $key (keys(%{$bounds})) {

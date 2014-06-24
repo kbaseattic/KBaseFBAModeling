@@ -1,45 +1,58 @@
 ########################################################################
-# Bio::KBase::ObjectAPI::KBaseFBA::DB::regulatory_network - This is the moose object corresponding to the KBaseFBA.regulatory_network object
+# Bio::KBase::ObjectAPI::KBaseExpression::DB::ExpressionReplicateGroup - This is the moose object corresponding to the KBaseExpression.ExpressionReplicateGroup object
 # Authors: Christopher Henry, Scott Devoid, Paul Frybarger
 # Contact email: chenry@mcs.anl.gov
 # Development location: Mathematics and Computer Science Division, Argonne National Lab
 ########################################################################
-package Bio::KBase::ObjectAPI::KBaseFBA::DB::regulatory_network;
-use Bio::KBase::ObjectAPI::IndexedObject;
-use Bio::KBase::ObjectAPI::KBaseFBA::RegulatoryInteraction;
+package Bio::KBase::ObjectAPI::KBaseExpression::DB::ExpressionReplicateGroup;
+use Bio::KBase::ObjectAPI::BaseObject;
 use Moose;
 use namespace::autoclean;
-extends 'Bio::KBase::ObjectAPI::IndexedObject';
+extends 'Bio::KBase::ObjectAPI::BaseObject';
 
 
-our $VERSION = 1.0;
 # PARENT:
 has parent => (is => 'rw', isa => 'Ref', weak_ref => 1, type => 'parent', metaclass => 'Typed');
 # ATTRIBUTES:
 has uuid => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_uuid');
 has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_reference');
-
-
-# SUBOBJECTS:
-has regulatory_network => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(RegulatoryInteraction)', metaclass => 'Typed', reader => '_regulatory_network', printOrder => '-1');
+has expression_sample_ids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
+has id => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
 
 
 # BUILDERS:
+sub _build_reference { my ($self) = @_;return $self->parent()->_reference().'//id/'.$self->id(); }
+sub _build_uuid { my ($self) = @_;return $self->_reference(); }
 
 
 # CONSTANTS:
-sub __version__ { return $VERSION; }
-sub _type { return 'KBaseFBA.regulatory_network'; }
-sub _module { return 'KBaseFBA'; }
-sub _class { return 'regulatory_network'; }
-sub _top { return 1; }
+sub _type { return 'KBaseExpression.ExpressionReplicateGroup'; }
+sub _module { return 'KBaseExpression'; }
+sub _class { return 'ExpressionReplicateGroup'; }
+sub _top { return 0; }
 
-my $attributes = [];
+my $attributes = [
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'expression_sample_ids',
+            'default' => 'sub {return [];}',
+            'type' => 'ArrayRef',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'id',
+            'type' => 'Str',
+            'perm' => 'rw'
+          }
+        ];
 
-my $attribute_map = {};
+my $attribute_map = {expression_sample_ids => 0, id => 1};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -71,17 +84,9 @@ sub _links {
 	 }
 }
 
-my $subobjects = [
-          {
-            'printOrder' => -1,
-            'name' => 'regulatory_network',
-            'type' => 'child',
-            'class' => 'RegulatoryInteraction',
-            'module' => 'KBaseFBA'
-          }
-        ];
+my $subobjects = [];
 
-my $subobject_map = {regulatory_network => 0};
+my $subobject_map = {};
 sub _subobjects {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -95,12 +100,5 @@ sub _subobjects {
 	 	 return $subobjects;
 	 }
 }
-# SUBOBJECT READERS:
-around 'regulatory_network' => sub {
-	 my ($orig, $self) = @_;
-	 return $self->_build_all_objects('regulatory_network');
-};
-
-
 __PACKAGE__->meta->make_immutable;
 1;

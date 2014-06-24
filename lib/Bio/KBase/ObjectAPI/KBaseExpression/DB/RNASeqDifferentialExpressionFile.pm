@@ -1,12 +1,11 @@
 ########################################################################
-# Bio::KBase::ObjectAPI::KBaseFBA::DB::TFMap - This is the moose object corresponding to the KBaseFBA.TFMap object
+# Bio::KBase::ObjectAPI::KBaseExpression::DB::RNASeqDifferentialExpressionFile - This is the moose object corresponding to the KBaseExpression.RNASeqDifferentialExpressionFile object
 # Authors: Christopher Henry, Scott Devoid, Paul Frybarger
 # Contact email: chenry@mcs.anl.gov
 # Development location: Mathematics and Computer Science Division, Argonne National Lab
 ########################################################################
-package Bio::KBase::ObjectAPI::KBaseFBA::DB::TFMap;
+package Bio::KBase::ObjectAPI::KBaseExpression::DB::RNASeqDifferentialExpressionFile;
 use Bio::KBase::ObjectAPI::BaseObject;
-use Bio::KBase::ObjectAPI::KBaseFBA::RegulatoryTarget;
 use Moose;
 use namespace::autoclean;
 extends 'Bio::KBase::ObjectAPI::BaseObject';
@@ -17,36 +16,45 @@ has parent => (is => 'rw', isa => 'Ref', weak_ref => 1, type => 'parent', metacl
 # ATTRIBUTES:
 has uuid => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_uuid');
 has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_reference');
-has transcriptionFactor_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-
-
-# SUBOBJECTS:
-has transcriptionFactorMapTargets => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(RegulatoryTarget)', metaclass => 'Typed', reader => '_transcriptionFactorMapTargets', printOrder => '-1');
+has shock_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has name => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
+has shock => (is => 'rw', type => 'link(,,shock_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_shock', clearer => 'clear_shock', isa => 'Ref', weak_ref => 1);
 
 
 # BUILDERS:
+sub _build_shock {
+	 my ($self) = @_;
+	 return $self->getLinkedObject($self->shock_ref());
+}
 
 
 # CONSTANTS:
-sub _type { return 'KBaseFBA.TFMap'; }
-sub _module { return 'KBaseFBA'; }
-sub _class { return 'TFMap'; }
+sub _type { return 'KBaseExpression.RNASeqDifferentialExpressionFile'; }
+sub _module { return 'KBaseExpression'; }
+sub _class { return 'RNASeqDifferentialExpressionFile'; }
 sub _top { return 0; }
 
 my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'transcriptionFactor_ref',
+            'name' => 'shock_ref',
+            'type' => 'Str',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'name',
             'type' => 'Str',
             'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {transcriptionFactor_ref => 0};
+my $attribute_map = {shock_ref => 0, name => 1};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -61,9 +69,20 @@ sub _attributes {
 	 }
 }
 
-my $links = [];
+my $links = [
+          {
+            'parent' => undef,
+            'name' => 'shock',
+            'attribute' => 'shock_ref',
+            'clearer' => 'clear_shock',
+            'class' => undef,
+            'method' => undef,
+            'module' => undef,
+            'field' => undef
+          }
+        ];
 
-my $link_map = {};
+my $link_map = {shock => 0};
 sub _links {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -78,17 +97,9 @@ sub _links {
 	 }
 }
 
-my $subobjects = [
-          {
-            'printOrder' => -1,
-            'name' => 'transcriptionFactorMapTargets',
-            'type' => 'child',
-            'class' => 'RegulatoryTarget',
-            'module' => 'KBaseFBA'
-          }
-        ];
+my $subobjects = [];
 
-my $subobject_map = {transcriptionFactorMapTargets => 0};
+my $subobject_map = {};
 sub _subobjects {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -102,12 +113,5 @@ sub _subobjects {
 	 	 return $subobjects;
 	 }
 }
-# SUBOBJECT READERS:
-around 'transcriptionFactorMapTargets' => sub {
-	 my ($orig, $self) = @_;
-	 return $self->_build_all_objects('transcriptionFactorMapTargets');
-};
-
-
 __PACKAGE__->meta->make_immutable;
 1;
