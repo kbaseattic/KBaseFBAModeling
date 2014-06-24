@@ -50,6 +50,7 @@ use Bio::KBase::ObjectAPI::utilities;
 
 use Class::Autouse qw(
     Bio::KBase::workspace::Client
+    Bio::KBase::ObjectAPI::KBaseRegulation::Regulome
     Bio::KBase::ObjectAPI::KBaseBiochem::Biochemistry
     Bio::KBase::ObjectAPI::KBaseGenomes::Genome
     Bio::KBase::ObjectAPI::KBaseGenomes::ContigSet

@@ -94,6 +94,9 @@ our %return_counts = (
         'import_metagenome_annotation' => 1,
         'models_to_community_model' => 1,
         'metagenome_to_fbamodels' => 1,
+        'import_expression' => 1,
+        'import_regulome' => 1,
+        'create_promconstraint' => 1,
         'version' => 1,
 );
 
@@ -175,6 +178,9 @@ our %method_authentication = (
         'import_metagenome_annotation' => 'required',
         'models_to_community_model' => 'required',
         'metagenome_to_fbamodels' => 'required',
+        'import_expression' => 'required',
+        'import_regulome' => 'required',
+        'create_promconstraint' => 'required',
 );
 
 
@@ -259,6 +265,9 @@ sub _build_valid_methods
         'import_metagenome_annotation' => 1,
         'models_to_community_model' => 1,
         'metagenome_to_fbamodels' => 1,
+        'import_expression' => 1,
+        'import_regulome' => 1,
+        'create_promconstraint' => 1,
         'version' => 1,
     };
     return $methods;

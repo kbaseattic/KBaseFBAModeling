@@ -1,27 +1,23 @@
 ########################################################################
-# Bio::KBase::ObjectAPI::KBaseFBA::DB::regulatory_network - This is the moose object corresponding to the KBaseFBA.regulatory_network object
+# Bio::KBase::ObjectAPI::KBaseFBA::DB::TintleProbabilitySample - This is the moose object corresponding to the KBaseFBA.TintleProbabilitySample object
 # Authors: Christopher Henry, Scott Devoid, Paul Frybarger
 # Contact email: chenry@mcs.anl.gov
 # Development location: Mathematics and Computer Science Division, Argonne National Lab
 ########################################################################
-package Bio::KBase::ObjectAPI::KBaseFBA::DB::regulatory_network;
-use Bio::KBase::ObjectAPI::IndexedObject;
-use Bio::KBase::ObjectAPI::KBaseFBA::RegulatoryInteraction;
+package Bio::KBase::ObjectAPI::KBaseFBA::DB::TintleProbabilitySample;
+use Bio::KBase::ObjectAPI::BaseObject;
 use Moose;
 use namespace::autoclean;
-extends 'Bio::KBase::ObjectAPI::IndexedObject';
+extends 'Bio::KBase::ObjectAPI::BaseObject';
 
 
-our $VERSION = 1.0;
 # PARENT:
 has parent => (is => 'rw', isa => 'Ref', weak_ref => 1, type => 'parent', metaclass => 'Typed');
 # ATTRIBUTES:
 has uuid => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_uuid');
 has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_reference');
-
-
-# SUBOBJECTS:
-has regulatory_network => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(RegulatoryInteraction)', metaclass => 'Typed', reader => '_regulatory_network', printOrder => '-1');
+has tintle_probability => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub {return {};}, type => 'attribute', metaclass => 'Typed');
+has expression_sample_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
@@ -31,15 +27,30 @@ has regulatory_network => (is => 'rw', isa => 'ArrayRef[HashRef]', default => su
 
 
 # CONSTANTS:
-sub __version__ { return $VERSION; }
-sub _type { return 'KBaseFBA.regulatory_network'; }
+sub _type { return 'KBaseFBA.TintleProbabilitySample'; }
 sub _module { return 'KBaseFBA'; }
-sub _class { return 'regulatory_network'; }
-sub _top { return 1; }
+sub _class { return 'TintleProbabilitySample'; }
+sub _top { return 0; }
 
-my $attributes = [];
+my $attributes = [
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'tintle_probability',
+            'default' => 'sub {return {};}',
+            'type' => 'HashRef',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'expression_sample_ref',
+            'type' => 'Str',
+            'perm' => 'rw'
+          }
+        ];
 
-my $attribute_map = {};
+my $attribute_map = {tintle_probability => 0, expression_sample_ref => 1};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -71,17 +82,9 @@ sub _links {
 	 }
 }
 
-my $subobjects = [
-          {
-            'printOrder' => -1,
-            'name' => 'regulatory_network',
-            'type' => 'child',
-            'class' => 'RegulatoryInteraction',
-            'module' => 'KBaseFBA'
-          }
-        ];
+my $subobjects = [];
 
-my $subobject_map = {regulatory_network => 0};
+my $subobject_map = {};
 sub _subobjects {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -95,12 +98,5 @@ sub _subobjects {
 	 	 return $subobjects;
 	 }
 }
-# SUBOBJECT READERS:
-around 'regulatory_network' => sub {
-	 my ($orig, $self) = @_;
-	 return $self->_build_all_objects('regulatory_network');
-};
-
-
 __PACKAGE__->meta->make_immutable;
 1;

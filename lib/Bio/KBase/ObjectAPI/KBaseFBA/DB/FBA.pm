@@ -13,8 +13,10 @@ use Bio::KBase::ObjectAPI::KBaseFBA::FBAMinimalMediaResult;
 use Bio::KBase::ObjectAPI::KBaseFBA::FBABiomassVariable;
 use Bio::KBase::ObjectAPI::KBaseFBA::FBACompoundBound;
 use Bio::KBase::ObjectAPI::KBaseFBA::FBAMinimalReactionsResult;
+use Bio::KBase::ObjectAPI::KBaseFBA::TintleProbabilitySample;
 use Bio::KBase::ObjectAPI::KBaseFBA::FBAConstraint;
 use Bio::KBase::ObjectAPI::KBaseFBA::FBACompoundVariable;
+use Bio::KBase::ObjectAPI::KBaseFBA::FBATintleResult;
 use Bio::KBase::ObjectAPI::KBaseFBA::FBADeletionResult;
 use Bio::KBase::ObjectAPI::KBaseFBA::FBAReactionVariable;
 use Moose;
@@ -31,43 +33,45 @@ has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metacl
 has media_ref => (is => 'rw', isa => 'Str', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
 has compoundflux_objterms => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub {return {};}, type => 'attribute', metaclass => 'Typed');
 has phenotypesimulationset_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has maximizeObjective => (is => 'rw', isa => 'Bool', printOrder => '-1', required => 1, default => '1', type => 'attribute', metaclass => 'Typed');
+has maximizeObjective => (is => 'rw', isa => 'Int', printOrder => '-1', required => 1, default => '1', type => 'attribute', metaclass => 'Typed');
+has promconstraint_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 has phenotypeset_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has geneKO_refs => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has inputfiles => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
-has drainfluxUseVariables => (is => 'rw', isa => 'Bool', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
+has drainfluxUseVariables => (is => 'rw', isa => 'Int', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
 has additionalCpd_refs => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has outputfiles => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has parameters => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
-has noErrorThermodynamicConstraints => (is => 'rw', isa => 'Bool', printOrder => '17', default => '1', type => 'attribute', metaclass => 'Typed');
+has noErrorThermodynamicConstraints => (is => 'rw', isa => 'Int', printOrder => '17', default => '1', type => 'attribute', metaclass => 'Typed');
 has objectiveConstraintFraction => (is => 'rw', isa => 'Num', printOrder => '0', default => 'none', type => 'attribute', metaclass => 'Typed');
-has prommodel_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has minimize_reactions => (is => 'rw', isa => 'Bool', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
-has minimizeErrorThermodynamicConstraints => (is => 'rw', isa => 'Bool', printOrder => '18', default => '1', type => 'attribute', metaclass => 'Typed');
+has minimize_reactions => (is => 'rw', isa => 'Int', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
+has minimizeErrorThermodynamicConstraints => (is => 'rw', isa => 'Int', printOrder => '18', default => '1', type => 'attribute', metaclass => 'Typed');
 has uptakeLimits => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
-has allReversible => (is => 'rw', isa => 'Bool', printOrder => '14', default => '0', type => 'attribute', metaclass => 'Typed');
+has allReversible => (is => 'rw', isa => 'Int', printOrder => '14', default => '0', type => 'attribute', metaclass => 'Typed');
+has tintleKappa => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has objectiveValue => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has minimize_reaction_costs => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub {return {};}, type => 'attribute', metaclass => 'Typed');
 has numberOfSolutions => (is => 'rw', isa => 'Int', printOrder => '23', default => '1', type => 'attribute', metaclass => 'Typed');
-has fluxMinimization => (is => 'rw', isa => 'Bool', printOrder => '12', default => '0', type => 'attribute', metaclass => 'Typed');
-has thermodynamicConstraints => (is => 'rw', isa => 'Bool', printOrder => '16', default => '1', type => 'attribute', metaclass => 'Typed');
+has fluxMinimization => (is => 'rw', isa => 'Int', printOrder => '12', default => '0', type => 'attribute', metaclass => 'Typed');
+has thermodynamicConstraints => (is => 'rw', isa => 'Int', printOrder => '16', default => '1', type => 'attribute', metaclass => 'Typed');
 has defaultMaxDrainFlux => (is => 'rw', isa => 'Num', printOrder => '22', required => 1, default => '1000', type => 'attribute', metaclass => 'Typed');
 has reactionflux_objterms => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub {return {};}, type => 'attribute', metaclass => 'Typed');
+has tintleW => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has fbamodel_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has regmodel_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has reactionKO_refs => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
-has fluxUseVariables => (is => 'rw', isa => 'Bool', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
-has findMinimalMedia => (is => 'rw', isa => 'Bool', printOrder => '13', default => '0', type => 'attribute', metaclass => 'Typed');
+has fluxUseVariables => (is => 'rw', isa => 'Int', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
+has findMinimalMedia => (is => 'rw', isa => 'Int', printOrder => '13', default => '0', type => 'attribute', metaclass => 'Typed');
 has PROMKappa => (is => 'rw', isa => 'Num', printOrder => '19', default => '1', type => 'attribute', metaclass => 'Typed');
-has simpleThermoConstraints => (is => 'rw', isa => 'Bool', printOrder => '15', default => '1', type => 'attribute', metaclass => 'Typed');
+has simpleThermoConstraints => (is => 'rw', isa => 'Int', printOrder => '15', default => '1', type => 'attribute', metaclass => 'Typed');
 has comboDeletions => (is => 'rw', isa => 'Int', printOrder => '11', default => '0', type => 'attribute', metaclass => 'Typed');
 has defaultMinDrainFlux => (is => 'rw', isa => 'Num', printOrder => '21', required => 1, default => '-1000', type => 'attribute', metaclass => 'Typed');
-has fva => (is => 'rw', isa => 'Bool', printOrder => '10', default => '0', type => 'attribute', metaclass => 'Typed');
-has decomposeReversibleDrainFlux => (is => 'rw', isa => 'Bool', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
+has fva => (is => 'rw', isa => 'Int', printOrder => '10', default => '0', type => 'attribute', metaclass => 'Typed');
+has decomposeReversibleDrainFlux => (is => 'rw', isa => 'Int', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
 has biomassflux_objterms => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub {return {};}, type => 'attribute', metaclass => 'Typed');
 has defaultMaxFlux => (is => 'rw', isa => 'Num', printOrder => '20', required => 1, default => '1000', type => 'attribute', metaclass => 'Typed');
-has decomposeReversibleFlux => (is => 'rw', isa => 'Bool', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
+has decomposeReversibleFlux => (is => 'rw', isa => 'Int', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
 
 
 # SUBOBJECTS:
@@ -78,8 +82,10 @@ has FBAMinimalMediaResults => (is => 'rw', isa => 'ArrayRef[HashRef]', default =
 has FBABiomassVariables => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(FBABiomassVariable)', metaclass => 'Typed', reader => '_FBABiomassVariables', printOrder => '-1');
 has FBACompoundBounds => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(FBACompoundBound)', metaclass => 'Typed', reader => '_FBACompoundBounds', printOrder => '-1');
 has FBAMinimalReactionsResults => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(FBAMinimalReactionsResult)', metaclass => 'Typed', reader => '_FBAMinimalReactionsResults', printOrder => '-1');
+has tintleSamples => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(TintleProbabilitySample)', metaclass => 'Typed', reader => '_tintleSamples', printOrder => '-1');
 has FBAConstraints => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(FBAConstraint)', metaclass => 'Typed', reader => '_FBAConstraints', printOrder => '-1');
 has FBACompoundVariables => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(FBACompoundVariable)', metaclass => 'Typed', reader => '_FBACompoundVariables', printOrder => '-1');
+has FBATintleResults => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(FBATintleResult)', metaclass => 'Typed', reader => '_FBATintleResults', printOrder => '-1');
 has FBADeletionResults => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(FBADeletionResult)', metaclass => 'Typed', reader => '_FBADeletionResults', printOrder => '-1');
 has FBAReactionVariables => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(FBAReactionVariable)', metaclass => 'Typed', reader => '_FBAReactionVariables', printOrder => '-1');
 
@@ -87,10 +93,10 @@ has FBAReactionVariables => (is => 'rw', isa => 'ArrayRef[HashRef]', default => 
 # LINKS:
 has media => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,Media,media_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_media', clearer => 'clear_media', isa => 'Bio::KBase::ObjectAPI::KBaseBiochem::Media', weak_ref => 1);
 has phenotypesimulationset => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,PhenotypeSimulationSet,phenotypesimulationset_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_phenotypesimulationset', clearer => 'clear_phenotypesimulationset', isa => 'Bio::KBase::ObjectAPI::KBasePhenotypes::PhenotypeSimulationSet', weak_ref => 1);
+has promconstraint => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,PromConstraint,promconstraint_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_promconstraint', clearer => 'clear_promconstraint', isa => 'Bio::KBase::ObjectAPI::KBaseFBA::PromConstraint', weak_ref => 1);
 has phenotypeset => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,PhenotypeSet,phenotypeset_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_phenotypeset', clearer => 'clear_phenotypeset', isa => 'Bio::KBase::ObjectAPI::KBasePhenotypes::PhenotypeSet', weak_ref => 1);
 has geneKOs => (is => 'rw', type => 'link(Genome,features,geneKO_refs)', metaclass => 'Typed', lazy => 1, builder => '_build_geneKOs', clearer => 'clear_geneKOs', isa => 'ArrayRef');
 has additionalCpds => (is => 'rw', type => 'link(FBAModel,modelcompounds,additionalCpd_refs)', metaclass => 'Typed', lazy => 1, builder => '_build_additionalCpds', clearer => 'clear_additionalCpds', isa => 'ArrayRef');
-has prommodel => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,PromConstraint,prommodel_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_prommodel', clearer => 'clear_prommodel', isa => 'Bio::KBase::ObjectAPI::KBaseFBA::PromConstraint', weak_ref => 1);
 has fbamodel => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,FBAModel,fbamodel_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_fbamodel', clearer => 'clear_fbamodel', isa => 'Bio::KBase::ObjectAPI::KBaseFBA::FBAModel', weak_ref => 1);
 has regmodel => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,RegModel,regmodel_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_regmodel', clearer => 'clear_regmodel', isa => 'Ref', weak_ref => 1);
 has reactionKOs => (is => 'rw', type => 'link(FBAModel,modelreactions,reactionKO_refs)', metaclass => 'Typed', lazy => 1, builder => '_build_reactionKOs', clearer => 'clear_reactionKOs', isa => 'ArrayRef');
@@ -107,6 +113,10 @@ sub _build_phenotypesimulationset {
 	 my ($self) = @_;
 	 return $self->getLinkedObject($self->phenotypesimulationset_ref());
 }
+sub _build_promconstraint {
+	 my ($self) = @_;
+	 return $self->getLinkedObject($self->promconstraint_ref());
+}
 sub _build_phenotypeset {
 	 my ($self) = @_;
 	 return $self->getLinkedObject($self->phenotypeset_ref());
@@ -118,10 +128,6 @@ sub _build_geneKOs {
 sub _build_additionalCpds {
 	 my ($self) = @_;
 	 return $self->getLinkedObjectArray($self->additionalCpd_refs());
-}
-sub _build_prommodel {
-	 my ($self) = @_;
-	 return $self->getLinkedObject($self->prommodel_ref());
 }
 sub _build_fbamodel {
 	 my ($self) = @_;
@@ -174,8 +180,15 @@ my $attributes = [
             'printOrder' => -1,
             'name' => 'maximizeObjective',
             'default' => 1,
-            'type' => 'Bool',
+            'type' => 'Int',
             'description' => undef,
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'promconstraint_ref',
+            'type' => 'Str',
             'perm' => 'rw'
           },
           {
@@ -215,7 +228,7 @@ my $attributes = [
             'printOrder' => -1,
             'name' => 'drainfluxUseVariables',
             'default' => 0,
-            'type' => 'Bool',
+            'type' => 'Int',
             'description' => undef,
             'perm' => 'rw'
           },
@@ -251,7 +264,7 @@ my $attributes = [
             'printOrder' => 17,
             'name' => 'noErrorThermodynamicConstraints',
             'default' => 1,
-            'type' => 'Bool',
+            'type' => 'Int',
             'description' => undef,
             'perm' => 'rw'
           },
@@ -267,16 +280,9 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'prommodel_ref',
-            'type' => 'Str',
-            'perm' => 'rw'
-          },
-          {
-            'req' => 0,
-            'printOrder' => -1,
             'name' => 'minimize_reactions',
             'default' => 0,
-            'type' => 'Bool',
+            'type' => 'Int',
             'perm' => 'rw'
           },
           {
@@ -284,7 +290,7 @@ my $attributes = [
             'printOrder' => 18,
             'name' => 'minimizeErrorThermodynamicConstraints',
             'default' => 1,
-            'type' => 'Bool',
+            'type' => 'Int',
             'description' => undef,
             'perm' => 'rw'
           },
@@ -302,8 +308,15 @@ my $attributes = [
             'printOrder' => 14,
             'name' => 'allReversible',
             'default' => '0',
-            'type' => 'Bool',
+            'type' => 'Int',
             'description' => undef,
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'tintleKappa',
+            'type' => 'Num',
             'perm' => 'rw'
           },
           {
@@ -335,7 +348,7 @@ my $attributes = [
             'printOrder' => 12,
             'name' => 'fluxMinimization',
             'default' => 0,
-            'type' => 'Bool',
+            'type' => 'Int',
             'description' => undef,
             'perm' => 'rw'
           },
@@ -344,7 +357,7 @@ my $attributes = [
             'printOrder' => 16,
             'name' => 'thermodynamicConstraints',
             'default' => 1,
-            'type' => 'Bool',
+            'type' => 'Int',
             'description' => undef,
             'perm' => 'rw'
           },
@@ -363,6 +376,13 @@ my $attributes = [
             'name' => 'reactionflux_objterms',
             'default' => 'sub {return {};}',
             'type' => 'HashRef',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'tintleW',
+            'type' => 'Num',
             'perm' => 'rw'
           },
           {
@@ -393,7 +413,7 @@ my $attributes = [
             'printOrder' => -1,
             'name' => 'fluxUseVariables',
             'default' => 0,
-            'type' => 'Bool',
+            'type' => 'Int',
             'description' => undef,
             'perm' => 'rw'
           },
@@ -402,7 +422,7 @@ my $attributes = [
             'printOrder' => 13,
             'name' => 'findMinimalMedia',
             'default' => 0,
-            'type' => 'Bool',
+            'type' => 'Int',
             'description' => undef,
             'perm' => 'rw'
           },
@@ -420,7 +440,7 @@ my $attributes = [
             'printOrder' => 15,
             'name' => 'simpleThermoConstraints',
             'default' => 1,
-            'type' => 'Bool',
+            'type' => 'Int',
             'description' => undef,
             'perm' => 'rw'
           },
@@ -447,7 +467,7 @@ my $attributes = [
             'printOrder' => 10,
             'name' => 'fva',
             'default' => 0,
-            'type' => 'Bool',
+            'type' => 'Int',
             'description' => undef,
             'perm' => 'rw'
           },
@@ -456,7 +476,7 @@ my $attributes = [
             'printOrder' => -1,
             'name' => 'decomposeReversibleDrainFlux',
             'default' => 0,
-            'type' => 'Bool',
+            'type' => 'Int',
             'description' => undef,
             'perm' => 'rw'
           },
@@ -482,13 +502,13 @@ my $attributes = [
             'printOrder' => -1,
             'name' => 'decomposeReversibleFlux',
             'default' => 0,
-            'type' => 'Bool',
+            'type' => 'Int',
             'description' => undef,
             'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {media_ref => 0, compoundflux_objterms => 1, phenotypesimulationset_ref => 2, maximizeObjective => 3, id => 4, phenotypeset_ref => 5, geneKO_refs => 6, inputfiles => 7, drainfluxUseVariables => 8, additionalCpd_refs => 9, outputfiles => 10, parameters => 11, noErrorThermodynamicConstraints => 12, objectiveConstraintFraction => 13, prommodel_ref => 14, minimize_reactions => 15, minimizeErrorThermodynamicConstraints => 16, uptakeLimits => 17, allReversible => 18, objectiveValue => 19, minimize_reaction_costs => 20, numberOfSolutions => 21, fluxMinimization => 22, thermodynamicConstraints => 23, defaultMaxDrainFlux => 24, reactionflux_objterms => 25, fbamodel_ref => 26, regmodel_ref => 27, reactionKO_refs => 28, fluxUseVariables => 29, findMinimalMedia => 30, PROMKappa => 31, simpleThermoConstraints => 32, comboDeletions => 33, defaultMinDrainFlux => 34, fva => 35, decomposeReversibleDrainFlux => 36, biomassflux_objterms => 37, defaultMaxFlux => 38, decomposeReversibleFlux => 39};
+my $attribute_map = {media_ref => 0, compoundflux_objterms => 1, phenotypesimulationset_ref => 2, maximizeObjective => 3, promconstraint_ref => 4, id => 5, phenotypeset_ref => 6, geneKO_refs => 7, inputfiles => 8, drainfluxUseVariables => 9, additionalCpd_refs => 10, outputfiles => 11, parameters => 12, noErrorThermodynamicConstraints => 13, objectiveConstraintFraction => 14, minimize_reactions => 15, minimizeErrorThermodynamicConstraints => 16, uptakeLimits => 17, allReversible => 18, tintleKappa => 19, objectiveValue => 20, minimize_reaction_costs => 21, numberOfSolutions => 22, fluxMinimization => 23, thermodynamicConstraints => 24, defaultMaxDrainFlux => 25, reactionflux_objterms => 26, tintleW => 27, fbamodel_ref => 28, regmodel_ref => 29, reactionKO_refs => 30, fluxUseVariables => 31, findMinimalMedia => 32, PROMKappa => 33, simpleThermoConstraints => 34, comboDeletions => 35, defaultMinDrainFlux => 36, fva => 37, decomposeReversibleDrainFlux => 38, biomassflux_objterms => 39, defaultMaxFlux => 40, decomposeReversibleFlux => 41};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -523,6 +543,15 @@ my $links = [
             'module' => 'KBasePhenotypes'
           },
           {
+            'attribute' => 'promconstraint_ref',
+            'parent' => 'Bio::KBase::ObjectAPI::KBaseStore',
+            'clearer' => 'clear_promconstraint',
+            'name' => 'promconstraint',
+            'method' => 'PromConstraint',
+            'class' => 'Bio::KBase::ObjectAPI::KBaseFBA::PromConstraint',
+            'module' => 'KBaseFBA'
+          },
+          {
             'attribute' => 'phenotypeset_ref',
             'parent' => 'Bio::KBase::ObjectAPI::KBaseStore',
             'clearer' => 'clear_phenotypeset',
@@ -552,15 +581,6 @@ my $links = [
             'method' => 'modelcompounds',
             'module' => 'KBaseFBA',
             'field' => 'id'
-          },
-          {
-            'attribute' => 'prommodel_ref',
-            'parent' => 'Bio::KBase::ObjectAPI::KBaseStore',
-            'clearer' => 'clear_prommodel',
-            'name' => 'prommodel',
-            'method' => 'PromConstraint',
-            'class' => 'Bio::KBase::ObjectAPI::KBaseFBA::PromConstraint',
-            'module' => 'KBaseFBA'
           },
           {
             'attribute' => 'fbamodel_ref',
@@ -593,7 +613,7 @@ my $links = [
           }
         ];
 
-my $link_map = {media => 0, phenotypesimulationset => 1, phenotypeset => 2, geneKOs => 3, additionalCpds => 4, prommodel => 5, fbamodel => 6, regmodel => 7, reactionKOs => 8};
+my $link_map = {media => 0, phenotypesimulationset => 1, promconstraint => 2, phenotypeset => 3, geneKOs => 4, additionalCpds => 5, fbamodel => 6, regmodel => 7, reactionKOs => 8};
 sub _links {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -660,6 +680,13 @@ my $subobjects = [
           },
           {
             'printOrder' => -1,
+            'name' => 'tintleSamples',
+            'type' => 'child',
+            'class' => 'TintleProbabilitySample',
+            'module' => 'KBaseFBA'
+          },
+          {
+            'printOrder' => -1,
             'name' => 'FBAConstraints',
             'type' => 'child',
             'class' => 'FBAConstraint',
@@ -670,6 +697,13 @@ my $subobjects = [
             'name' => 'FBACompoundVariables',
             'type' => 'child',
             'class' => 'FBACompoundVariable',
+            'module' => 'KBaseFBA'
+          },
+          {
+            'printOrder' => -1,
+            'name' => 'FBATintleResults',
+            'type' => 'child',
+            'class' => 'FBATintleResult',
             'module' => 'KBaseFBA'
           },
           {
@@ -688,7 +722,7 @@ my $subobjects = [
           }
         ];
 
-my $subobject_map = {FBAMetaboliteProductionResults => 0, FBAReactionBounds => 1, FBAPromResults => 2, FBAMinimalMediaResults => 3, FBABiomassVariables => 4, FBACompoundBounds => 5, FBAMinimalReactionsResults => 6, FBAConstraints => 7, FBACompoundVariables => 8, FBADeletionResults => 9, FBAReactionVariables => 10};
+my $subobject_map = {FBAMetaboliteProductionResults => 0, FBAReactionBounds => 1, FBAPromResults => 2, FBAMinimalMediaResults => 3, FBABiomassVariables => 4, FBACompoundBounds => 5, FBAMinimalReactionsResults => 6, tintleSamples => 7, FBAConstraints => 8, FBACompoundVariables => 9, FBATintleResults => 10, FBADeletionResults => 11, FBAReactionVariables => 12};
 sub _subobjects {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -731,6 +765,10 @@ around 'FBAMinimalReactionsResults' => sub {
 	 my ($orig, $self) = @_;
 	 return $self->_build_all_objects('FBAMinimalReactionsResults');
 };
+around 'tintleSamples' => sub {
+	 my ($orig, $self) = @_;
+	 return $self->_build_all_objects('tintleSamples');
+};
 around 'FBAConstraints' => sub {
 	 my ($orig, $self) = @_;
 	 return $self->_build_all_objects('FBAConstraints');
@@ -738,6 +776,10 @@ around 'FBAConstraints' => sub {
 around 'FBACompoundVariables' => sub {
 	 my ($orig, $self) = @_;
 	 return $self->_build_all_objects('FBACompoundVariables');
+};
+around 'FBATintleResults' => sub {
+	 my ($orig, $self) = @_;
+	 return $self->_build_all_objects('FBATintleResults');
 };
 around 'FBADeletionResults' => sub {
 	 my ($orig, $self) = @_;
