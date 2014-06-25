@@ -23,10 +23,12 @@ my $translation = {
 	addrxn => "addReaction",
 	auth => "auth",
 	overwrite => "overwrite",
-	outputid => "outputid"
+	outputid => "outputid",
+	equation => "equation"
 };
 #Defining usage and options
 my $specs = [
+    [ 'equation:s', 'Equation of reaction to add'],
     [ 'direction|d:s', 'Directionality for reaction (;-separated if multiple)', { "default" => "bio1" }  ],
     [ 'compartment|c:s', 'Compartment for reaction (;-separated if multiple)', { "default" => "c" } ],
     [ 'compindex|i:s', 'Index of compartment for reaction (;-separated if multiple)', { "default" => 0 } ],

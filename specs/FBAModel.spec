@@ -577,7 +577,7 @@ module KBaseFBA {
     /* 
     	FBA object holds the formulation and results of a flux balance analysis study
     	
-    	@optional minimize_reactions minimize_reaction_costs FBAMinimalReactionsResults PROMKappa tintleW phenotypesimulationset_ref objectiveValue phenotypeset_ref promconstraint_ref regmodel_ref tintleW tintleKappa
+    	@optional minimize_reactions minimize_reaction_costs tintleSamples FBATintleResults FBAMinimalReactionsResults PROMKappa phenotypesimulationset_ref objectiveValue phenotypeset_ref promconstraint_ref regmodel_ref tintleW tintleKappa
     	@searchable ws_subset comboDeletions id fva fluxMinimization findMinimalMedia allReversible simpleThermoConstraints thermodynamicConstraints noErrorThermodynamicConstraints minimizeErrorThermodynamicConstraints
     	@searchable ws_subset regmodel_ref fbamodel_ref promconstraint_ref media_ref phenotypeset_ref geneKO_refs reactionKO_refs additionalCpd_refs objectiveValue phenotypesimulationset_ref
     	@searchable ws_subset FBAConstraints.[*].(name,rhs,sign,compound_terms,reaction_terms) 

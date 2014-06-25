@@ -7680,10 +7680,12 @@ sub adjust_model_reaction
     	addReaction => 0,
     	compounds => [],
 		outputid => $input->{model},
+		equation => [undef]
     });
 
     # For reverse compatibility, if we are given scalar arguments for the reactions or other multi-component objects
     # we turn them into array refs.
+    if ( ref($input->{equation}) eq 'SCALAR' ) {  $input->{equation} = [ $input->{equation} ];   }
     if ( ref($input->{reaction}) eq 'SCALAR' ) {  $input->{reaction} = [ $input->{reaction} ];   }
     if ( ref($input->{direction}) eq 'SCALAR' ) { $input->{direction} = [ $input->{direction} ]; }
     if ( ref($input->{gpr}) eq 'SCALAR' ) {  $input->{gpr} = [ $input->{gpr} ];  }
@@ -7742,7 +7744,8 @@ sub adjust_model_reaction
 		    gpr => $gpr,
 		    removeReaction => $input->{removeReaction},
 		    addReaction => $input->{addReaction},
-		    compounds => $compoundhash
+		    compounds => $compoundhash,
+		    equation => $input->{equation}
 		});
 	}
     $modelMeta = $self->_save_msobject($model,"FBAModel",$input->{workspace},$input->{outputid});
