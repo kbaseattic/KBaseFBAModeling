@@ -117,6 +117,11 @@ module KBaseOntology {
 	typedef string gene_id;
 
 	/*
+		A ontology id is a string (usually GO:NNNN)
+	*/
+	typedef string ontology_id;
+
+	/*
 	A gene list is a list of gene_ids
 	*/
 	typedef list<gene_id> gene_list;
@@ -127,7 +132,7 @@ module KBaseOntology {
 		@optional evidence_codes
 	*/
 	typedef structure {
-		string ontology_id;
+		ontology_id id;
 		string ontology_type;
 		string ontology_domain;
 		string ontology_description;
@@ -137,22 +142,18 @@ module KBaseOntology {
 
 	/*
 		Structure for OntologyAnnotation object
-	@optional p_value
-
 	*/ 
 	typedef structure {
-		string ontology_id;
 		string ontology_type;
 		string ontology_description;
-		string p_value;
+                list<evidence_code> evidence_codes;
 	} OntologyAnnotation;
 
-	typedef list<OntologyAnnotation> ontology_annotation_list;
+	typedef mapping<ontology_id, OntologyAnnotation> ontology_annotation_map;
 
 	/*
 		Structure for GeneAnnotations
 	*/
-	typedef structure {
-		mapping<gene_id, ontology_annotation_list> gene_enrichment_annotations;
-	} GeneAnnotations;
+	typedef	mapping<gene_id, ontology_annotation_map> gene_enrichment_annotations;
 };
+
