@@ -69,7 +69,7 @@ my $specs = [
     [ 'promconstraint|p:s', 'ID of PromConstraint' ],
     [ 'promconstraintws:s', 'Workspace with PromConstraint', { "default" => fbaws() } ],
     [ 'efluxsm:s', 'ID of ExpressionSample for E-Flux analysis' ],
-    [ 'efluxsr:s', 'ID of ExpressionSeries for E-Flux analysis' ],
+    [ 'efluxsr:s', 'ID of ExpressionSeries for Improved E-Flux analysis (without this but with --efluxsm, the original E-Flux will be conducted.)' ],
     [ 'efluxws:s', 'Workspace with ExpressionSample/Series', { "default" => fbaws() } ],
     [ 'tintlesample:s', 'ID of ProbabilitySample for Tintle2014 analysis' ],
     [ 'tintlews:s', 'Workspace with ProbabilitySample/Series', { "default" => fbaws() } ],

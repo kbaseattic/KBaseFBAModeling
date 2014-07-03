@@ -2979,21 +2979,36 @@ Description:
 		
 =cut
 sub _compute_eflux_scores {
-    my($self,$model,$series_id,$picked_sample_id,$ws_name) = @_;    
+	my($self,$model,$series_id,$picked_sample_id,$ws_name) = @_;    
+	my $ws = $self->_KBaseStore()->workspace();
 
-    my $ws = $self->_KBaseStore()->workspace();
-    my $getparams = {
-	id => $series_id,
-	type => "KBaseExpression.ExpressionSeries",
-	workspace => $ws_name,
-    };
-    my $series = $ws->get_object($getparams);
-    if (!exists $series->{"data"}->{"genome_expression_sample_ids_map"}->{$model->genome()->id()}) {
-	$self->_error("Genome does not match between Model and Gene Expresion Data");
-    } 
-    my $sample_refs = $series->{"data"}->{"genome_expression_sample_ids_map"}->{$model->genome()->id()};    
-    my $samples = $ws->get_objects([map {{ref => $_}} @$sample_refs]);
-
+	my $samples;
+	if (defined($series_id)) {
+		# "Improved" E-FLux
+		my $getparams = {
+			id => $series_id,
+			type => "KBaseExpression.ExpressionSeries",
+			workspace => $ws_name,
+		};
+		my $series = $ws->get_object($getparams);
+		if (!exists $series->{"data"}->{"genome_expression_sample_ids_map"}->{$model->genome()->id()}) {
+			$self->_error("Genome does not match between Model and Gene Expresion Data");
+		} 
+		my $sample_refs = $series->{"data"}->{"genome_expression_sample_ids_map"}->{$model->genome()->id()};    
+		$samples = $ws->get_objects([map {{ref => $_}} @$sample_refs]);
+	} else {
+		# "Original" E-Flux
+		my $getparams = {
+			id => $picked_sample_id,
+			type => "KBaseExpression.ExpressionSample",
+			workspace => $ws_name
+		};
+		my $sample = $ws->get_object($getparams);
+		if ($sample->{"data"}->{"genome_id"} ne $model->genome()->id()) {
+			$self->_error("Genome does not match between Model and Gene Expresion Data");
+		} 
+		$samples = [$sample];
+	}
     # Re-index them by reactions rather than samples
     # And checks if specified sample exists within the series
     my $scores_collection = {}; # expression scores for each reaction.
@@ -3037,19 +3052,26 @@ sub _compute_eflux_scores {
     }
 
     if (!$matched) {
-	$self->_error("Sample $picked_sample_id does not exist in series $series_id in workspace $ws_name!");
+    	$self->_error("Sample $picked_sample_id does not exist in series $series_id in workspace $ws_name!");
     }
 
     # debug
     warn "Number of reactions with unavailable expression scores is " . (scalar keys %$unknown) ." out of ". (scalar keys %$scores_collection)."\n";
 
     my $scores_for_picked_sample = {};
+    my $max_score;
+    if (!defined $series_id) {
+    	# "original eflux"
+    	$max_score = (sort {$b <=> $a} map {$scores_collection->{$_}->{$picked_sample_id}} keys %$scores_collection)[0]
+    }
     foreach my $rxn_id (keys %$scores_collection) {
 	if (exists $unknown->{$rxn_id}) {
 	    $scores_for_picked_sample->{$rxn_id} = 1; # i.e., 100% flux bounds when expression score is not available
 	} else {
-	    # Take max expression score across all samples for this reaction
-	    my $max_score = (sort {$b <=> $a } map {$scores_collection->{$rxn_id}->{$_}} keys $scores_collection->{$rxn_id})[0];
+		if (defined $series_id) {
+			# Take max expression score across all samples for this reaction
+			$max_score = (sort {$b <=> $a } map {$scores_collection->{$rxn_id}->{$_}} keys $scores_collection->{$rxn_id})[0];
+		}
 	    # Then normalize the picked sample's expression score by the max
 	    $scores_for_picked_sample->{$rxn_id} = $scores_collection->{$rxn_id}->{$picked_sample_id} / $max_score;
 	}
@@ -3060,19 +3082,19 @@ sub _compute_eflux_scores {
 =head3 _add_eflux_bounds
 
 Definition:
-	(Void) = $self->_add_eflux_bounds(FBA, Model, Eflux-scores)
+	(Float ) = $self->_add_eflux_bounds(FBA, Model, Eflux-scores)
 Description:
 	Add reaction bounds computed by eflux.
-		
+	Return objective value for later comparison.	
 =cut
 sub _add_eflux_bounds {
-    my ($self, $fba, $model, $eflux_scores) = @_;
+    my ($self, $fba, $model, $eflux_scores, $samplename) = @_;
 
     my $clone = $fba->cloneObject();
     $clone->parent($fba->parent());
+    $clone->objectiveConstraintFraction(0.9); # According to the paper.
     $clone->fva(1);
-    $clone->runFBA();
-
+    my $objectiveValue = $clone->runFBA();
     my $fluxes = $clone->FBAReactionVariables();
     foreach my $flux (@{$fluxes}) {
 	# reset the upper flux bound to the e-flux percentage of the maximum computed by FVA
@@ -3083,6 +3105,29 @@ sub _add_eflux_bounds {
 		  });
     }
     return 1;
+    	# No constraint for transporters.
+    	next if ($flux->modelreaction()->isTransporter());
+
+    	# Reset the flux bound to the e-flux percentage of the maximum computed by FVA,
+    	# but make sure that 0 is within the bounds.
+    	my ($upper, $lower) = (0,0);
+    	if ($flux->max() > 0) {
+    		$upper = $flux->max() * $eflux_scores->{$flux->modelreaction()->id()};
+    	}
+    	if ($flux->min() < 0) {
+    		$lower = $flux->min() * $eflux_scores->{$flux->modelreaction()->id()};
+    	}
+
+
+    	$fba->add("FBAReactionBounds",{modelreaction_ref => $flux->modelreaction_ref(),
+    		variableType=> $flux->variableType,
+    		upperBound => $upper,
+    		lowerBound => $lower,
+    		});
+	}
+
+
+    return $objectiveValue;
 }
 
 #END_HEADER
@@ -8448,9 +8493,11 @@ sub runfba
 			$fba->biomassflux_objterms()->{$bio->id()} = 1;
 		}			
 	}
-	if (defined($input->{formulation}->{eflux_series}) && defined($input->{formulation}->{eflux_sample}) && defined($input->{formulation}->{eflux_workspace})) {
+	my $originalObjective;
+	if (defined($input->{formulation}->{eflux_sample}) && defined($input->{formulation}->{eflux_workspace})) {
 		my $scores = $self->_compute_eflux_scores($model,$input->{formulation}->{eflux_series}, $input->{formulation}->{eflux_sample}, $input->{formulation}->{eflux_workspace});
 		$self->_add_eflux_bounds($fba, $model, $scores);
+		$originalObjective = $self->_add_eflux_bounds($fba, $model, $scores, $input->{formulation}->{eflux_sample});
 	}
 
     #Running FBA
@@ -8470,6 +8517,9 @@ sub runfba
 	$fbaMeta = $self->_save_msobject($fba,"FBA",$input->{workspace},$input->{fba});
     $fbaMeta->[10]->{Media} = $input->{formulation}->{media_workspace}."/".$input->{formulation}->{media};
     $fbaMeta->[10]->{Objective} = $objective;
+    if (defined $originalObjective) {
+    	$fbaMeta->[10]->{RelativeBiomassProduction} = $objective / $originalObjective;
+    }
     $self->_clearContext();
     #END runfba
     my @_bad_returns;
