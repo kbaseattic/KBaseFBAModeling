@@ -29,7 +29,7 @@ module KBasePhenotypes {
     typedef string feature_ref;
     /*
 		Reference to a feature of a genome object
-		@id subws KBaseGenomes.Genome
+		@id ws KBaseGenomes.Genome
 	*/
     typedef string genome_ref;
     /*
