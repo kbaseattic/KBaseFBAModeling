@@ -64,8 +64,8 @@ AUTHORS
 my $specs = [
     [ 'workspace|w:s', 'Workspace to save imported gene expression in', { "default" => fbaws() } ],
     [ 'sourceid:s', 'ID of the source'],
-    [ 'description|d:s', 'Optional description'],
-    [ 'processing_comments|p:s', 'Optional comments'],
+    [ 'description|d:s', 'Optional description', { "default" => ""}],
+    [ 'processing_comments|p:s', 'Optional comments', { "default" => ""}],
     [ 'sourcedate:s', 'Date of the source', { "default", => strftime("%Y-%m-%d", localtime)}],
     [ 'genomeid|g:s', "ID of genome to which features belong"],
     [ 'numinterpret|n:s', "Numerical Interpretation:[ 'Log2 level intensities',  'Log2 level ratios','Log2 level ratios genomic DNA control','FPKM',]"  ],
