@@ -2126,8 +2126,8 @@ sub _GapFill_to_GapFillData {
 		for (my $i=0; $i < @{$solutions}; $i++) {
 			my $solution = $solutions->[$i];
 			my $solData = {
-				id => $array->[1].".solution.".$i,
-				objective => $solution->{solutionCost},
+				id => $solutions->[$i]->id(),
+				objective => $solution->solutionCost(),
 				biomassRemovals => [],
 				mediaAdditions => [],
 				reactionAdditions => [],
@@ -2161,13 +2161,11 @@ sub _GapFill_to_GapFillData {
 
 sub _GapGen_to_GapGenData {
 	my ($self,$obj) = @_;
-	my $array = [split(/\//,$obj->uuid())];
-	my $mdlarray = [split(/\//,$obj->model()->uuid())];
 	my $data = {
-    	id => $array->[1],
-    	workspace => $array->[0],
-    	model => $mdlarray->[1],
-    	model_workspace => $mdlarray->[0],
+    	id => $obj->_wsname(),
+    	workspace => $obj->_wsworkspace(),
+    	model => $obj->fbamodel()->_wsname(),
+    	model_workspace => $obj->fbamodel()->_wsworkspace(),
     	isComplete => 0,
     	formulation => {
     		formulation => $self->_FBA_to_FBAFormulation($obj->fbaFormulation()),
@@ -2184,8 +2182,8 @@ sub _GapGen_to_GapGenData {
 		for (my $i=0; $i < @{$solutions}; $i++) {
 			my $solution = $solutions->[$i];
 			my $solData = {
-				id => $array->[1].".solution.".$i,
-				objective => $solution->{solutionCost},
+				id => $solution->id(),
+				objective => $solution->solutionCost(),
 				biomassAdditions => [],
 				mediaRemovals => [],
 				reactionRemovals => []
