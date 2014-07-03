@@ -3097,14 +3097,6 @@ sub _add_eflux_bounds {
     my $objectiveValue = $clone->runFBA();
     my $fluxes = $clone->FBAReactionVariables();
     foreach my $flux (@{$fluxes}) {
-	# reset the upper flux bound to the e-flux percentage of the maximum computed by FVA
-	$fba->add("FBAReactionBounds",{modelreaction_ref => $flux->modelreaction_ref(),
-				       variableType=> $flux->variableType,
-				       upperBound => $flux->max() * $eflux_scores->{$flux->modelreaction()->id()},
-				       lowerBound => $flux->min()
-		  });
-    }
-    return 1;
     	# No constraint for transporters.
     	next if ($flux->modelreaction()->isTransporter());
 
