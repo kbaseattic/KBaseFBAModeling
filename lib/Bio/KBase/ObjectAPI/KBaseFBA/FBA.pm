@@ -1601,6 +1601,14 @@ sub parseFluxFiles {
 			$mediaCpdHash->{$mediaCpds->[$i]->compound()->id()} = $mediaCpds->[$i];
 		}
 		if ($compoundColumn != -1) {
+			# Create a map from rxn id to bounds.
+			my $cpdid2bound = {};
+			foreach my $bound (@{$self->FBACompoundBounds()}) {
+				$cpdid2bound->{$bound->modelcompound()->id()} = {
+					lower => $bound->lowerBound(),
+					upper => $bound->upperBound()
+				}
+			}
 			foreach my $row (@{$tbl->{data}}) {
 				foreach my $comp (keys(%{$drainCompartmentColumns})) {
 					if ($row->[$drainCompartmentColumns->{$comp}] ne "none") {
@@ -1615,6 +1623,9 @@ sub parseFluxFiles {
 							if ($comp eq "e" && defined($mediaCpdHash->{$mdlcpd->compound()->id()})) {
 								$upper = $mediaCpdHash->{$mdlcpd->compound()->id()}->maxFlux();
 								$lower = $mediaCpdHash->{$mdlcpd->compound()->id()}->minFlux();
+							} elsif (exists $cpdid2bound->{$mdlcpd->id()}) {
+								$lower = $cpdid2bound->{$mdlcpd->id()}->{lower};
+								$upper = $cpdid2bound->{$mdlcpd->id()}->{upper};
 							}
 							$self->add("FBACompoundVariables",{
 								modelcompound_ref => $mdlcpd->_reference(),
@@ -1644,6 +1655,15 @@ sub parseFluxFiles {
 			}
 		}
 		if ($reactionColumn != -1) {
+			# Create a map from rxn id to bounds.
+			my $rxnid2bound = {};
+			foreach my $bound (@{$self->FBAReactionBounds()}) {
+				$rxnid2bound->{$bound->modelreaction()->id()} = {
+					lower => $bound->lowerBound(),
+					upper => $bound->upperBound()
+				}
+			}
+
 			foreach my $row (@{$tbl->{data}}) {
 				foreach my $comp (keys(%{$fluxCompartmentColumns})) {
 					if ($row->[$fluxCompartmentColumns->{$comp}] ne "none") {
@@ -1659,6 +1679,10 @@ sub parseFluxFiles {
 								$upper = 0;
 							} elsif ($mdlrxn->direction() eq ">") {
 								$lower = 0;
+							}
+							if (exists $rxnid2bound->{$mdlrxn->id()}) {
+								$lower = $rxnid2bound->{$mdlrxn->id()}->{lower};
+								$upper = $rxnid2bound->{$mdlrxn->id()}->{upper};
 							}
 							$self->add("FBAReactionVariables",{
 								modelreaction_ref => $mdlrxn->_reference(),
