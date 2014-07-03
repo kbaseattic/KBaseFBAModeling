@@ -15,14 +15,21 @@ my $script = "fba-exportfbamodel";
 my $translation = {
 	"Format (html,sbml,json,cytoseed,readable)" => "format",
 	"FBAModel ID" => "model",
+	"fba" => "fbas",
 	workspace => "workspace",
 	auth => "auth",
 };
 #Defining usage and options
 my $specs = [
-    [ 'workspace|w:s', 'Workspace with model', { "default" => fbaws() } ]
+    [ 'workspace|w:s', 'Workspace with model', { "default" => fbaws() } ],
+    [ 'fba|f:s@', 'FBA associated with model (; delimiter)', { "default" => []} ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
+if (defined($opt->{fbas})) {
+	foreach my $fba (@{$opt->{fbas}}) {
+		push(@{$params->{fbas}},split(/;/,$fba));
+	}
+}
 #Calling the server
 my $output = runFBACommand($params,$servercommand,$opt);
 #Checking output and report results

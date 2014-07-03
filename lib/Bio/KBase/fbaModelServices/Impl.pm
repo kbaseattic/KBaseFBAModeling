@@ -7302,10 +7302,12 @@ $output is a string
 export_fbamodel_params is a reference to a hash where the following keys are defined:
 	model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
+	fbas has a value which is a reference to a list where each element is a fba_id
 	format has a value which is a string
 	auth has a value which is a string
 fbamodel_id is a string
 workspace_id is a string
+fba_id is a string
 
 </pre>
 
@@ -7318,10 +7320,12 @@ $output is a string
 export_fbamodel_params is a reference to a hash where the following keys are defined:
 	model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
+	fbas has a value which is a reference to a list where each element is a fba_id
 	format has a value which is a string
 	auth has a value which is a string
 fbamodel_id is a string
 workspace_id is a string
+fba_id is a string
 
 
 =end text
@@ -7355,7 +7359,11 @@ sub export_fbamodel
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["model","workspace","format"],{});
     my $model = $self->_get_msobject("FBAModel",$input->{workspace},$input->{model});
-    $output = $model->export({format => $input->{format}});
+    my $fbas;
+    foreach my $fba_id (@{$input->{fbas}}) {
+    	push @$fbas, $self->_get_msobject("FBA",$input->{workspace},$fba_id);
+    }
+    $output = $model->export({format => $input->{format}, fbas => $fbas});
     $self->_clearContext();
     #END export_fbamodel
     my @_bad_returns;
@@ -25142,6 +25150,7 @@ Input parameters for the "export_fbamodel" function.
 
         fbamodel_id model - ID of the model to be exported (a required argument)
         workspace_id workspace - workspace containing the model to be exported (a required argument)
+        fba_id fba - A FBA object related to the model. (an optional argument)
         string format - format to which the model should be exported (sbml, html, json, readable, cytoseed) (a required argument)
         string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
@@ -25154,6 +25163,7 @@ Input parameters for the "export_fbamodel" function.
 a reference to a hash where the following keys are defined:
 model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
+fbas has a value which is a reference to a list where each element is a fba_id
 format has a value which is a string
 auth has a value which is a string
 
@@ -25166,6 +25176,7 @@ auth has a value which is a string
 a reference to a hash where the following keys are defined:
 model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
+fbas has a value which is a reference to a list where each element is a fba_id
 format has a value which is a string
 auth has a value which is a string
 
