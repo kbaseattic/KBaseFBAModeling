@@ -75,10 +75,10 @@ sub _equation_builder {
         } elsif ($args->{format} ne "uuid") {
             $id = $cpds->[$i]->modelcompound()->compound()->getAlias($args->{format});
         }
-        if (!defined($rgtHash->{$id}->{$cpds->[$i]->modelcompound()->modelcompartment()->label()})) {
-            $rgtHash->{$id}->{$cpds->[$i]->modelcompound()->modelcompartment()->label()} = 0;
+        if (!defined($rgtHash->{$id}->{$cpds->[$i]->modelcompound()->modelcompartment()->id()})) {
+            $rgtHash->{$id}->{$cpds->[$i]->modelcompound()->modelcompartment()->id()} = 0;
         }
-        $rgtHash->{$id}->{$cpds->[$i]->modelcompound()->modelcompartment()->label()} += $coef;
+        $rgtHash->{$id}->{$cpds->[$i]->modelcompound()->modelcompartment()->id()} += $coef;
     }
     my $reactcode = "";
     my $productcode = "";

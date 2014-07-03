@@ -258,7 +258,7 @@ sub addCompartmentToModel {
 		$mdlcmp = $self->add("modelcompartments",{
 			id => $args->{compartment}->id().$args->{compartmentIndex},
 			compartment_ref => $args->{compartment}->_reference(),
-			label => $args->{compartment}->id().$args->{compartmentIndex},
+			label => $args->{compartment}->name()."_".$args->{compartmentIndex},
 			pH => $args->{pH},
 			compartmentIndex => $args->{compartmentIndex},
 		});
@@ -824,7 +824,7 @@ sub printSBML {
 	push(@{$output},'<listOfCompartments>');
 	for (my $i=0; $i < @{$self->modelcompartments()}; $i++) {
 		my $cmp = $self->modelcompartments()->[$i];
-    	push(@{$output},'<compartment '.$stringToString->("id",$cmp->label()).' '.$stringToString->("name",$cmp->label()).' />');
+    	push(@{$output},'<compartment '.$stringToString->("id",$cmp->id()).' '.$stringToString->("name",$cmp->label()).' />');
     }
 	push(@{$output},'</listOfCompartments>');
 	#Printing the list of metabolites involved in the model
@@ -1004,6 +1004,21 @@ sub printSBML {
 	push(@{$output},'</model>');
 	push(@{$output},'</sbml>');
 	return join("\n",@{$output});
+}
+
+=head3 printGenes
+
+Definition:
+	string = Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->printGenes();
+Description:
+	Return list of genes in model
+
+=cut
+
+sub printGenes {
+    my $self = shift;
+	my $output = join("\n",@{$self->features()});
+	return $output;
 }
 
 =head3 printExchange
@@ -1261,6 +1276,8 @@ sub export {
 		return $self->printSBML();
 	} elsif (lc($args->{format}) eq "exchange") {
 		return $self->printExchange();
+	} elsif (lc($args->{format}) eq "genes") {
+		return $self->printGenes();
 	} elsif (lc($args->{format}) eq "readable") {
 		return $self->toReadableString();
 	} elsif (lc($args->{format}) eq "html") {
@@ -1298,14 +1315,14 @@ sub printExcel {
 	my $cpds = $self->modelcompounds();
 	for (my $i=0; $i < @{$cpds}; $i++) {
 		my $cpd = $cpds->[$i];
-		$sheet->write_row($i+1,0,[$cpd->compound()->id(),$cpd->compound()->name(),$cpd->compound()->abbreviation(),$cpd->compound()->formula(),$cpd->compound()->defaultCharge(),$cpd->compound()->deltaG(),$cpd->modelcompartment()->label()]);
+		$sheet->write_row($i+1,0,[$cpd->compound()->id(),$cpd->compound()->name(),$cpd->compound()->abbreviation(),$cpd->compound()->formula(),$cpd->compound()->defaultCharge(),$cpd->compound()->deltaG(),$cpd->modelcompartment()->id()]);
 	}	
 	$sheet = $wkbk->add_worksheet("Reactions");
 	$sheet->write_row(0,0,["ID","Name","Equation","Definition","EC","Compartment","DeltaG"]);
 	my $rxns = $self->modelreactions();
 	for (my $i=0; $i < @{$rxns}; $i++) {
 		my $rxn = $rxns->[$i];
-		$sheet->write_row($i+1,0,[$rxn->reaction()->id(),$rxn->reaction()->name(),$rxn->reaction()->equation(),$rxn->reaction()->definition(),join("|",@{$rxn->reaction()->getAliases("Enzyme Class")}),$rxn->modelcompartment()->label(),$rxn->reaction()->deltaG()]);
+		$sheet->write_row($i+1,0,[$rxn->reaction()->id(),$rxn->reaction()->name(),$rxn->reaction()->equation(),$rxn->reaction()->definition(),join("|",@{$rxn->reaction()->getAliases("Enzyme Class")}),$rxn->modelcompartment()->id(),$rxn->reaction()->deltaG()]);
 	}
 	$sheet = $wkbk->add_worksheet("Genes");
 	$sheet->write_row(0,0,["ID","Type","Functions","Contig","Start","Stop","Direction","Reactions"]);
@@ -2432,7 +2449,7 @@ sub addPhenotypeTransporters {
 	my $NeedTrans = [];
 	my $mdlcpds = $self->modelcompounds();
 	foreach my $cpd (@{$mdlcpds}) {
-		if (defined($cpdhash->{$cpd->compound()->id()}) && $cpd->modelcompartment()->label() =~ m/^e/) {
+		if (defined($cpdhash->{$cpd->compound()->id()}) && $cpd->modelcompartment()->id() =~ m/^e/) {
 			delete $cpdhash->{$cpd->compound()->id()};
 		}
 	}
