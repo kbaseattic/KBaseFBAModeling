@@ -197,26 +197,26 @@ sub _buildpromBounds {
 }
 
 sub _buildtintlePenalty {
-    my ($self) = @_;
+	my ($self) = @_;
 
-    my $penalty = {};
+	my $penalty = {};
 
-    my $sample = $self->tintleSamples()->[0];
-    my $kappa =  $self->tintleKappa();
-    foreach my $feature_id (keys %{$sample->{"tintle_probability"}}) {
-	my $p = $sample->{"tintle_probability"}->{$feature_id};
-	$penalty->{$feature_id}->{"penalty_score"} = abs($p - 0.5);
-	if ($p > 0.5 + $kappa) {
-	    # This feature is likely to be on
-	    $penalty->{$feature_id}->{"case"} = "3";
-	} elsif ($p < 0.5 -$kappa) {
-	    # This feature is likely to be off
-	    $penalty->{$feature_id}->{"case"} = "1";
-	} else {
-	    # This feature state is unknown
-	    $penalty->{$feature_id}->{"case"} = "2";
+	my $sample = $self->tintlesample();
+	my $kappa =  $self->tintleKappa();
+	foreach my $feature_id (keys %{$sample->expression_levels()}) {
+		my $p = $sample->expression_levels()->{$feature_id};
+		$penalty->{$feature_id}->{"penalty_score"} = abs($p - 0.5);
+		if ($p > 0.5 + $kappa) {
+			# This feature is likely to be on
+			$penalty->{$feature_id}->{"case"} = "3";
+		} elsif ($p < 0.5 -$kappa) {
+			# This feature is likely to be off
+			$penalty->{$feature_id}->{"case"} = "1";
+	    } else {
+			# This feature state is unknown
+			$penalty->{$feature_id}->{"case"} = "2";
+		}
 	}
-    }
     return $penalty;
 }
 
@@ -829,7 +829,7 @@ sub createJobDirectory {
 		}
 		$parameters->{"Soft Constraint"} = $softConst;
 	}
-	if (defined($self->tintleSamples()) && @{$self->tintleSamples()} > 0) {	    
+	if (defined($self->tintlesample_ref()) && length($self->tintlesample_ref()) > 0) {	    
 	    my @exchange_array = ($self->tintleW());	    
 	    my $penalty = $self->tintlePenalty();
 	    foreach my $feature_id (keys %$penalty) {
@@ -2196,21 +2196,26 @@ sub parseTintleResult {
 		#Loading file results into a hash
 		my $table = Bio::KBase::ObjectAPI::utilities::LOADTABLE($directory."/GeneActivityStateFBAResult.txt", "\t", 0);
 		my $tintleOutputHash;
-		foreach my $row (@{$table->{"data"}}) {
-		    if ($row->[0] =~ /kb___g/) {
-			$row->[0] =~ s/___/|/;
-			if ($row->[0] =~ /Not_(.*)/) {
-			    $tintleOutputHash->{"conflicts"}->{$1} = "InactiveOn";
-			} else {
-			    $tintleOutputHash->{"conflicts"}->{$row->[0]} = "ActiveOff";			    
-			}
-		    } else {
-			$tintleOutputHash->{$row->[0]} = $row->[1];
-		    }
-		}
-		$self->add("FBATintleResults",$tintleOutputHash);		
-		use Data::Dumper; print(Dumper([{"W" => $self->tintleW, "K" => $self->tintleKappa},$tintleOutputHash, $self->tintleSamples()->[0]->{tintle_probability}]));
 
+		foreach my $row (@{$table->{"data"}}) {
+			if ($row->[0] =~ /\d+/) {
+				# Assume gene variables has number, but not other labels.
+				next if ($row->[1] eq "0");
+				$row->[0] =~ s/___/|/ if ($row->[0] =~ /kb___g/);
+				if ($row->[0] =~ /Not_(.*)/) {
+					# Case 3: the gene was likely to be on, but actually inactive.
+					$tintleOutputHash->{"conflicts"}->{$1} = "InactiveOn";
+				} else {
+					# Case1: the gene was likely to be off, but actually active.
+					$tintleOutputHash->{"conflicts"}->{$row->[0]} = "ActiveOff";			    
+				}
+			} else {
+				$tintleOutputHash->{$row->[0]} = $row->[1];
+			}
+		}
+		$self->add("FBATintleResults",$tintleOutputHash);
+		# debug	
+		use Data::Dumper; print(Dumper([{"W" => $self->tintleW, "K" => $self->tintleKappa},$tintleOutputHash, $self->tintlesample()->expression_levels()]));
 		return 1;
 	}
 	return 0;

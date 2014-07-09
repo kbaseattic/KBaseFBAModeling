@@ -1162,15 +1162,8 @@ sub _buildFBAObject {
 		}
 	}
 	if (defined($fbaFormulation->{tintle_sample}) && defined($fbaFormulation->{tintle_workspace})) {
-	    my $ws = $self->_KBaseStore()->workspace();
-	    my $getparams = {
-		id => $fbaFormulation->{tintle_sample},
-		type => "KBaseExpression.ExpressionSample",
-		workspace => $fbaFormulation->{tintle_workspace}
-	    };
-	    my $sample = $ws->get_object($getparams);
-	    $fbaobj->add("tintleSamples",{tintle_probability => $sample->{"data"}->{"expression_levels"},
-					 expression_sample_ref => $sample->{"metadata"}->[8]});
+	    my $sample = $self->_get_msobject("ExpressionSample", $fbaFormulation->{tintle_workspace}, $fbaFormulation->{tintle_sample});
+	    $fbaobj->tintlesample_ref($sample->_reference);
 	    $fbaobj->tintleW($fbaFormulation->{tintle_w});
 	    $fbaobj->tintleKappa($fbaFormulation->{tintle_kappa});
 	}
@@ -2992,7 +2985,7 @@ sub _compute_eflux_scores {
 		};
 		my $series = $ws->get_object($getparams);
 		if (!exists $series->{"data"}->{"genome_expression_sample_ids_map"}->{$model->genome()->id()}) {
-			$self->_error("Genome does not match between Model and Gene Expresion Data");
+			warn("Genome does not match between Model and Gene Expresion Data.\n");
 		} 
 		my $sample_refs = $series->{"data"}->{"genome_expression_sample_ids_map"}->{$model->genome()->id()};    
 		$samples = $ws->get_objects([map {{ref => $_}} @$sample_refs]);
@@ -8488,7 +8481,6 @@ sub runfba
 	my $originalObjective;
 	if (defined($input->{formulation}->{eflux_sample}) && defined($input->{formulation}->{eflux_workspace})) {
 		my $scores = $self->_compute_eflux_scores($model,$input->{formulation}->{eflux_series}, $input->{formulation}->{eflux_sample}, $input->{formulation}->{eflux_workspace});
-		$self->_add_eflux_bounds($fba, $model, $scores);
 		$originalObjective = $self->_add_eflux_bounds($fba, $model, $scores, $input->{formulation}->{eflux_sample});
 	}
 

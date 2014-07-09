@@ -73,7 +73,7 @@ my $specs = [
     [ 'efluxws:s', 'Workspace with ExpressionSample/Series', { "default" => fbaws() } ],
     [ 'tintlesample:s', 'ID of ProbabilitySample for Tintle2014 analysis' ],
     [ 'tintlews:s', 'Workspace with ProbabilitySample/Series', { "default" => fbaws() } ],
-    [ 'tintlew:s', 'Weights of biomass against gene penalty. In [0,1]', { "default" => 0.5}],
+    [ 'tintlew:s', 'Weights of biomass against gene penalty. In (0,1]', { "default" => 0.5}],
     [ 'tintlek:s', 'Tolerance to classify genes as unknown, not on or off. In [0,0.5]', {"default" => 0.1}],
     [ 'defaultmaxflux:s', 'Default maximum reaction flux' ],
     [ 'defaultminuptake:s', 'Default minimum nutrient uptake' ],
