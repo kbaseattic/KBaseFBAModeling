@@ -18857,9 +18857,6 @@ sub import_regulome
 
     $regulome->add("genome",$genomeObj);
 
-    use Data::Dumper;
-    print &Dumper($regulome);
-
     foreach my $regulon (@{$input->{"regulons"}}) {
 	my $regulonObj = Bio::KBase::ObjectAPI::KBaseRegulation::Regulon->new({"regulon_id"=>""});
 	$regulonObj->parent($self->_KBaseStore());
