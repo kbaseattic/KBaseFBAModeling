@@ -16,12 +16,12 @@ has parent => (is => 'rw', isa => 'Ref', weak_ref => 1, type => 'parent', metacl
 # ATTRIBUTES:
 has uuid => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_uuid');
 has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_reference');
-has name => (is => 'rw', isa => 'Str', printOrder => '3', default => '', type => 'attribute', metaclass => 'Typed');
 has role_refs => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has subclass => (is => 'rw', isa => 'Str', printOrder => '2', default => 'unclassified', type => 'attribute', metaclass => 'Typed');
-has id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
-has class => (is => 'rw', isa => 'Str', printOrder => '1', default => 'unclassified', type => 'attribute', metaclass => 'Typed');
+has name => (is => 'rw', isa => 'Str', printOrder => '3', default => '', type => 'attribute', metaclass => 'Typed');
 has type => (is => 'rw', isa => 'Str', printOrder => '4', required => 1, type => 'attribute', metaclass => 'Typed');
+has class => (is => 'rw', isa => 'Str', printOrder => '1', default => 'unclassified', type => 'attribute', metaclass => 'Typed');
+has id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
@@ -46,15 +46,6 @@ sub _top { return 0; }
 my $attributes = [
           {
             'req' => 0,
-            'printOrder' => 3,
-            'name' => 'name',
-            'default' => '',
-            'type' => 'Str',
-            'description' => undef,
-            'perm' => 'rw'
-          },
-          {
-            'req' => 0,
             'printOrder' => -1,
             'name' => 'role_refs',
             'default' => 'sub{return [];}',
@@ -72,10 +63,21 @@ my $attributes = [
             'perm' => 'rw'
           },
           {
-            'req' => 1,
-            'printOrder' => 0,
-            'name' => 'id',
+            'req' => 0,
+            'printOrder' => 3,
+            'name' => 'name',
+            'default' => '',
             'type' => 'Str',
+            'description' => undef,
+            'perm' => 'rw'
+          },
+          {
+            'req' => 1,
+            'printOrder' => 4,
+            'name' => 'type',
+            'default' => undef,
+            'type' => 'Str',
+            'description' => undef,
             'perm' => 'rw'
           },
           {
@@ -89,16 +91,14 @@ my $attributes = [
           },
           {
             'req' => 1,
-            'printOrder' => 4,
-            'name' => 'type',
-            'default' => undef,
+            'printOrder' => 0,
+            'name' => 'id',
             'type' => 'Str',
-            'description' => undef,
             'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {name => 0, role_refs => 1, subclass => 2, id => 3, class => 4, type => 5};
+my $attribute_map = {role_refs => 0, subclass => 1, name => 2, type => 3, class => 4, id => 5};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {

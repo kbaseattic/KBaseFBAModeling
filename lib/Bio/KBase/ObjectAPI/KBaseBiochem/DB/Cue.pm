@@ -19,17 +19,17 @@ has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metacl
 has priority => (is => 'rw', isa => 'Int', printOrder => '9', type => 'attribute', metaclass => 'Typed');
 has defaultCharge => (is => 'rw', isa => 'Num', printOrder => '5', type => 'attribute', metaclass => 'Typed');
 has deltaG => (is => 'rw', isa => 'Num', printOrder => '6', type => 'attribute', metaclass => 'Typed');
+has name => (is => 'rw', isa => 'Str', printOrder => '1', default => '', type => 'attribute', metaclass => 'Typed');
 has structure_type => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has structure_key => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has smallMolecule => (is => 'rw', isa => 'Bool', printOrder => '8', type => 'attribute', metaclass => 'Typed');
 has formula => (is => 'rw', isa => 'Str', printOrder => '3', default => '', type => 'attribute', metaclass => 'Typed');
 has mass => (is => 'rw', isa => 'Num', printOrder => '4', type => 'attribute', metaclass => 'Typed');
 has id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
+has abbreviation => (is => 'rw', isa => 'Str', printOrder => '2', default => '', type => 'attribute', metaclass => 'Typed');
 has unchargedFormula => (is => 'rw', isa => 'Str', printOrder => '-1', default => '', type => 'attribute', metaclass => 'Typed');
 has structure_data => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has deltaGErr => (is => 'rw', isa => 'Num', printOrder => '7', type => 'attribute', metaclass => 'Typed');
-has name => (is => 'rw', isa => 'Str', printOrder => '1', default => '', type => 'attribute', metaclass => 'Typed');
-has abbreviation => (is => 'rw', isa => 'Str', printOrder => '2', default => '', type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
@@ -71,6 +71,15 @@ my $attributes = [
             'name' => 'deltaG',
             'default' => undef,
             'type' => 'Num',
+            'description' => undef,
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => 1,
+            'name' => 'name',
+            'default' => '',
+            'type' => 'Str',
             'description' => undef,
             'perm' => 'rw'
           },
@@ -124,6 +133,15 @@ my $attributes = [
           },
           {
             'req' => 0,
+            'printOrder' => 2,
+            'name' => 'abbreviation',
+            'default' => '',
+            'type' => 'Str',
+            'description' => undef,
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
             'printOrder' => -1,
             'name' => 'unchargedFormula',
             'default' => '',
@@ -146,28 +164,10 @@ my $attributes = [
             'type' => 'Num',
             'description' => undef,
             'perm' => 'rw'
-          },
-          {
-            'req' => 0,
-            'printOrder' => 1,
-            'name' => 'name',
-            'default' => '',
-            'type' => 'Str',
-            'description' => undef,
-            'perm' => 'rw'
-          },
-          {
-            'req' => 0,
-            'printOrder' => 2,
-            'name' => 'abbreviation',
-            'default' => '',
-            'type' => 'Str',
-            'description' => undef,
-            'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {priority => 0, defaultCharge => 1, deltaG => 2, structure_type => 3, structure_key => 4, smallMolecule => 5, formula => 6, mass => 7, id => 8, unchargedFormula => 9, structure_data => 10, deltaGErr => 11, name => 12, abbreviation => 13};
+my $attribute_map = {priority => 0, defaultCharge => 1, deltaG => 2, name => 3, structure_type => 4, structure_key => 5, smallMolecule => 6, formula => 7, mass => 8, id => 9, abbreviation => 10, unchargedFormula => 11, structure_data => 12, deltaGErr => 13};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
