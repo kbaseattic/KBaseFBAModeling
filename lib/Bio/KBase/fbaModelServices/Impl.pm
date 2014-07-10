@@ -2985,7 +2985,7 @@ sub _compute_eflux_scores {
 		};
 		my $series = $ws->get_object($getparams);
 		if (!exists $series->{"data"}->{"genome_expression_sample_ids_map"}->{$model->genome()->id()}) {
-			warn("Genome does not match between Model and Gene Expresion Data.\n");
+			warn("Genome does not match between Model and Gene Expression Data.\n");
 		} 
 		my $sample_refs = $series->{"data"}->{"genome_expression_sample_ids_map"}->{$model->genome()->id()};    
 		$samples = $ws->get_objects([map {{ref => $_}} @$sample_refs]);
@@ -2997,9 +2997,6 @@ sub _compute_eflux_scores {
 			workspace => $ws_name
 		};
 		my $sample = $ws->get_object($getparams);
-		if ($sample->{"data"}->{"genome_id"} ne $model->genome()->id()) {
-			$self->_error("Genome does not match between Model and Gene Expresion Data");
-		} 
 		$samples = [$sample];
 	}
     # Re-index them by reactions rather than samples
@@ -8491,17 +8488,9 @@ sub runfba
 			$fba->biomassflux_objterms()->{$bio->id()} = 1;
 		}			
 	}
-	my $originalObjective;
 	if (defined($input->{formulation}->{eflux_sample}) && defined($input->{formulation}->{eflux_workspace})) {
 		my $scores = $self->_compute_eflux_scores($model,$input->{formulation}->{eflux_series}, $input->{formulation}->{eflux_sample}, $input->{formulation}->{eflux_workspace});
-		# debug
-		my $score_table = {headings => ["rxn_id", "score"], data => []};
-		foreach my $rxn_id (sort {$scores->{$a} <=> $scores->{$b}} keys %{$scores}) {
-			push @{$score_table->{data}}, [$rxn_id, $scores->{$rxn_id}];
-		}
-
-    	Bio::KBase::ObjectAPI::utilities::PRINTTABLE("efluxscore_".$fba->media()->name()."_". $input->{formulation}->{eflux_sample}.".tbl", $score_table, "\t");
-		$originalObjective = $self->_add_eflux_bounds($fba, $model, $scores, $input->{formulation}->{eflux_sample});
+		$self->_add_eflux_bounds($fba, $model, $scores, $input->{formulation}->{eflux_sample});
 	}
 
     #Running FBA
@@ -8521,42 +8510,7 @@ sub runfba
 	$fbaMeta = $self->_save_msobject($fba,"FBA",$input->{workspace},$input->{fba});
     $fbaMeta->[10]->{Media} = $input->{formulation}->{media_workspace}."/".$input->{formulation}->{media};
     $fbaMeta->[10]->{Objective} = $objective;
-    if (defined $originalObjective) {
-    	$fbaMeta->[10]->{RelativeBiomassProduction} = $objective / $originalObjective;
-        # debug Scale reaction flux by glucose transporter.
-    	my $scale;
-    	foreach my $rxn ( @{$fba->FBAReactionVariables()} ) {
-    		if ($rxn->modelreaction->id() =~ "08617") {
-    			$scale = abs(-13.34/$rxn->value());
-    		}
-    	}
-    	if (defined $scale) {
-    		foreach my $rxn ( @{$fba->FBAReactionVariables()} ) {
-    			if ($rxn->modelreaction->id() =~ /(08063)|(08351)|(08237)|(09218)|(08428)|(09271)|(08525)/) {
-    				$fbaMeta->[10]->{$rxn->modelreaction()->definition()} = $rxn->value() * $scale;
-    			}
-    		}   	
-    		$fbaMeta->[10]->{scaledObjective} = $objective * $scale;
-    	} else {
-    		warn "Could not find glucose transport.\n";
-    	} 
 
-    	my $bottleneck = {headings => ["rxn_id", "definition", "flux", "lower_bound", "upper_bound"], data => []};
-    	my $thres = 0.0002;
-
-    	foreach my $rxn ( @{$fba->FBAReactionVariables()} ) {
-    		my $flux = $rxn->value();
-    		if (($flux  != 0) && ($flux != $fba->defaultMaxFlux()) && ($flux!= (-1 * $fba->defaultMaxFlux()))) {
-    			my $rxn_id = $rxn->modelreaction()->id();
-    				my $lower = $rxn->lowerBound();
-    				my $upper = $rxn->upperBound();
-    				if ((abs($flux - $lower)< $thres) || (abs($rxn->value() - $upper) < $thres) ) {
-    					push @{$bottleneck->{data}}, [$rxn_id, $rxn->modelreaction()->definition(), $flux, $lower, $upper];
-    				}	
-    		}
-    	}
-    	Bio::KBase::ObjectAPI::utilities::PRINTTABLE("bottleneck_".$fba->media()->name()."_". $input->{formulation}->{eflux_sample}.".tbl", $bottleneck, "\t");
-    }
     $self->_clearContext();
     #END runfba
     my @_bad_returns;
