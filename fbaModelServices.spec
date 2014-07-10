@@ -3654,6 +3654,7 @@ module fbaModelServices {
     typedef structure {
 	list<regulon> regulons;
 	workspace_id workspace;
+	workspace_id genome_workspace;
 	genome_id genome_id;
     } import_regulome_params;
 

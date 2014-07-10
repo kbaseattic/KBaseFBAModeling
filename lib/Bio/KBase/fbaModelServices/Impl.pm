@@ -3089,7 +3089,18 @@ sub _add_eflux_bounds {
     $clone->fva(1);
     my $objectiveValue = $clone->runFBA();
     my $fluxes = $clone->FBAReactionVariables();
+    my $essentialreactions = {headings => ["", "rxn_id", "definition"," eflux_score","lower_bound","upper_bound"]}; # debug
     foreach my $flux (@{$fluxes}) {
+    	#debug for essential reactions.
+	if ($flux->max ()< 0 || $flux->min() > 0) {
+		push @{$essentialreactions->{data}}, [
+		$flux->modelreaction()->id(), 
+		$flux->modelreaction()->definition(),
+		$eflux_scores->{$flux->modelreaction()->id()},
+		$flux->min() * $eflux_scores->{$flux->modelreaction()->id()},
+		$flux->max() * $eflux_scores->{$flux->modelreaction()->id()},
+		];
+	}
     	# No constraint for transporters.
     	next if ($flux->modelreaction()->isTransporter());
 
@@ -3111,6 +3122,8 @@ sub _add_eflux_bounds {
     		});
 	}
 
+    # debug
+    Bio::KBase::ObjectAPI::utilities::PRINTTABLE("essentialreactions.".$fba->media()->name().".$samplename.tbl", $essentialreactions, "\t");
 
     return $objectiveValue;
 }
@@ -8481,6 +8494,13 @@ sub runfba
 	my $originalObjective;
 	if (defined($input->{formulation}->{eflux_sample}) && defined($input->{formulation}->{eflux_workspace})) {
 		my $scores = $self->_compute_eflux_scores($model,$input->{formulation}->{eflux_series}, $input->{formulation}->{eflux_sample}, $input->{formulation}->{eflux_workspace});
+		# debug
+		my $score_table = {headings => ["rxn_id", "score"], data => []};
+		foreach my $rxn_id (sort {$scores->{$a} <=> $scores->{$b}} keys %{$scores}) {
+			push @{$score_table->{data}}, [$rxn_id, $scores->{$rxn_id}];
+		}
+
+    	Bio::KBase::ObjectAPI::utilities::PRINTTABLE("efluxscore_".$fba->media()->name()."_". $input->{formulation}->{eflux_sample}.".tbl", $score_table, "\t");
 		$originalObjective = $self->_add_eflux_bounds($fba, $model, $scores, $input->{formulation}->{eflux_sample});
 	}
 
@@ -8503,6 +8523,39 @@ sub runfba
     $fbaMeta->[10]->{Objective} = $objective;
     if (defined $originalObjective) {
     	$fbaMeta->[10]->{RelativeBiomassProduction} = $objective / $originalObjective;
+        # debug Scale reaction flux by glucose transporter.
+    	my $scale;
+    	foreach my $rxn ( @{$fba->FBAReactionVariables()} ) {
+    		if ($rxn->modelreaction->id() =~ "08617") {
+    			$scale = abs(-13.34/$rxn->value());
+    		}
+    	}
+    	if (defined $scale) {
+    		foreach my $rxn ( @{$fba->FBAReactionVariables()} ) {
+    			if ($rxn->modelreaction->id() =~ /(08063)|(08351)|(08237)|(09218)|(08428)|(09271)|(08525)/) {
+    				$fbaMeta->[10]->{$rxn->modelreaction()->definition()} = $rxn->value() * $scale;
+    			}
+    		}   	
+    		$fbaMeta->[10]->{scaledObjective} = $objective * $scale;
+    	} else {
+    		warn "Could not find glucose transport.\n";
+    	} 
+
+    	my $bottleneck = {headings => ["rxn_id", "definition", "flux", "lower_bound", "upper_bound"], data => []};
+    	my $thres = 0.0002;
+
+    	foreach my $rxn ( @{$fba->FBAReactionVariables()} ) {
+    		my $flux = $rxn->value();
+    		if (($flux  != 0) && ($flux != $fba->defaultMaxFlux()) && ($flux!= (-1 * $fba->defaultMaxFlux()))) {
+    			my $rxn_id = $rxn->modelreaction()->id();
+    				my $lower = $rxn->lowerBound();
+    				my $upper = $rxn->upperBound();
+    				if ((abs($flux - $lower)< $thres) || (abs($rxn->value() - $upper) < $thres) ) {
+    					push @{$bottleneck->{data}}, [$rxn_id, $rxn->modelreaction()->definition(), $flux, $lower, $upper];
+    				}	
+    		}
+    	}
+    	Bio::KBase::ObjectAPI::utilities::PRINTTABLE("bottleneck_".$fba->media()->name()."_". $input->{formulation}->{eflux_sample}.".tbl", $bottleneck, "\t");
     }
     $self->_clearContext();
     #END runfba
@@ -18734,6 +18787,7 @@ $regulome_meta is an object_metadata
 import_regulome_params is a reference to a hash where the following keys are defined:
 	regulons has a value which is a reference to a list where each element is a regulon
 	workspace has a value which is a workspace_id
+	genome_workspace has a value which is a workspace_id
 	genome_id has a value which is a genome_id
 regulon is a reference to a hash where the following keys are defined:
 	operons has a value which is a reference to a list where each element is an operon
@@ -18778,6 +18832,7 @@ $regulome_meta is an object_metadata
 import_regulome_params is a reference to a hash where the following keys are defined:
 	regulons has a value which is a reference to a list where each element is a regulon
 	workspace has a value which is a workspace_id
+	genome_workspace has a value which is a workspace_id
 	genome_id has a value which is a genome_id
 regulon is a reference to a hash where the following keys are defined:
 	operons has a value which is a reference to a list where each element is an operon
@@ -18841,9 +18896,9 @@ sub import_regulome
     my($regulome_meta);
     #BEGIN import_regulome
     $self->_setContext($ctx,$input);    
-    $input = $self->_validateargs($input,["regulons","workspace"],{});
+    $input = $self->_validateargs($input,["regulons","workspace"],{genome_workspace => $input->{workspace}});
     my $genome_id = $input->{"genome_id"};
-    my $genome = $self->_get_msobject("Genome",$input->{"workspace"},$genome_id);
+    my $genome = $self->_get_msobject("Genome",$input->{"genome_workspace"},$genome_id);
     my $ws = $self->_KBaseStore()->workspace();
 
     my $genomeObj = Bio::KBase::ObjectAPI::KBaseRegulation::RGenome->new({ "genome_name" => "", "genome_id" => $genome_id, "genome_ref" => $genome->_reference() });
@@ -30199,6 +30254,7 @@ sign has a value which is a string
 a reference to a hash where the following keys are defined:
 regulons has a value which is a reference to a list where each element is a regulon
 workspace has a value which is a workspace_id
+genome_workspace has a value which is a workspace_id
 genome_id has a value which is a genome_id
 
 </pre>
@@ -30210,6 +30266,7 @@ genome_id has a value which is a genome_id
 a reference to a hash where the following keys are defined:
 regulons has a value which is a reference to a list where each element is a regulon
 workspace has a value which is a workspace_id
+genome_workspace has a value which is a workspace_id
 genome_id has a value which is a genome_id
 
 

@@ -15,6 +15,7 @@ my $script = "fba-importregulome";
 my $translation = {
         "Genome ID" => "genome_id",
 	workspace => "workspace",
+	genomews => "genome_workspace",
 	sourceid => "source_id",
 	sourcedate => "source_date",
 	ignoreerrors => "ignore_errors",
@@ -47,7 +48,8 @@ AUTHORS
 
 #Defining usage and options
 my $specs = [
-    [ 'workspace|w:s', 'Workspace to save imported regulome in', { "default" => fbaws() } ],
+    [ 'workspace|w:s', 'Workspace to save imported regulome in', { "default" => fbaws() } ],    
+    [ 'genomews|g:s', 'Workspace with genome' ],
     [ 'sourceid:s', 'ID of the source'],
     [ 'sourcedate|d:s', 'Date of the source', { "default", => strftime("%Y-%m-%d", localtime)}],
 ];
