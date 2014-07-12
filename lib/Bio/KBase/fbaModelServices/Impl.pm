@@ -434,6 +434,11 @@ sub _jobserv {
     return $self->{_jobserver};
 }
 
+sub _jobqueue {
+	my $self = shift;
+    return $self->{_jobqueue};
+}
+
 sub _workspaceServices {
 	my $self = shift;
 	if (defined($self->{_workspaceServiceOveride})) {
@@ -463,6 +468,22 @@ sub _workspaceURL {
 		return $self->_getContext()->{_override}->{_wsurl};
 	}
 	return $self->{"_workspace-url"};
+}
+
+sub _shockurl {
+	my $self = shift;
+	if (defined($self->_getContext()->{_override}->{_shockurl})) {
+		return $self->_getContext()->{_override}->{_shockurl};
+	}
+	return $self->{_shockurl};
+}
+
+sub _aweurl {
+	my $self = shift;
+	if (defined($self->_getContext()->{_override}->{_aweurl})) {
+		return $self->_getContext()->{_override}->{_aweurl};
+	}
+	return $self->{_aweurl};
 }
 
 sub _probanno {
@@ -2233,17 +2254,78 @@ Description:
 
 sub _queueJob {
 	my($self,$args) = @_;
-	my $input = {
-		type => $args->{type},
-		jobdata => $args->{jobdata},
-		queuecommand => $args->{queuecommand},
-		"state" => $args->{"state"},
-		auth => $self->_authentication(),
-	};
-	if (!defined($args->{jobdata}->{wsurl})) {
-		$args->{jobdata}->{wsurl} = $self->_workspaceURL();
+	if ($self->_jobqueue() eq "AWE") {
+		#Loading job parameters to shock
+		my $json = Bio::KBase::ObjectAPI::utilities::TOJSON($args->{jobdata});
+		my $output = Bio::KBase::ObjectAPI::utilities::runexecutable("curl -H \"Authorization: OAuth ".$self->_authentication()."\" -X POST -F 'attributes_str=".$json."' ".$self->_shockurl()."/node");
+		my $output = Bio::KBase::ObjectAPI::utilities::FROMJSON($output);
+		my $nodeid = $output->{id};
+		my $filename = Bio::KBase::ObjectAPI::utilities::MFATOOLKIT_JOB_DIRECTORY().$nodeid;
+		my $job ={
+			info => {
+				pipeline => "KBaseFBAModeling",
+				name => "KBaseFBAModeling_job",
+				project => "KBase",
+				user => $self->_getUsername(),
+				clientgroups => "",
+			},
+			tasks => [
+				{
+					taskid => 0,
+					partinfo => {
+						input => "JobParameters",
+						output => "JobOutput"
+					}
+					cmd => {
+	                    args => $args->{queuecommand}." JobParameters JobOutput", 
+	                    description => "Running a specific job submitted to the awe cluster", 
+	                    name => "fba-run-awe-job",
+	                    environ => {
+	                        private => {
+	                        	KB_AUTH_TOKEN => $self->_authentication()
+	                        }
+	                    }
+	                },
+	                inputs => {
+	                	JobParameters => {
+	                		host => $self->_shockurl(),
+	                		node => $nodeid
+	                	}
+	                },
+	                outputs => {
+	                	JobOutput => {
+	                		host => $self->_shockurl()
+	                	}
+	                }
+				}
+			]
+		};
+		$json = Bio::KBase::ObjectAPI::utilities::TOJSON($job);
+		File::Path::mkpath Bio::KBase::ObjectAPI::utilities::MFATOOLKIT_JOB_DIRECTORY();
+		Bio::KBase::ObjectAPI::utilities::PRINTFILE($filename,[$json]);
+		my $data = Bio::KBase::ObjectAPI::utilities::runexecutable("curl [-H \"Datatoken: ".$self->_authentication()."\"] -X POST -F upload=\@".$filename." ".$self->_aweurl()."/job");
+		return {
+			id => $data->{id},
+			type => "KBaseFBAModeling",
+			status => $data->{"state"},
+			jobdata => $args->{jobdata},
+			queuetime => $data->{createddate},
+			owner => $self->_getUsername(),
+			queuecommand => $args->{queuecommand}
+		};
+	} else {
+		my $input = {
+			type => $args->{type},
+			jobdata => $args->{jobdata},
+			queuecommand => $args->{queuecommand},
+			"state" => $args->{"state"},
+			auth => $self->_authentication(),
+		};
+		if (!defined($args->{jobdata}->{wsurl})) {
+			$args->{jobdata}->{wsurl} = $self->_workspaceURL();
+		}
+		return $self->_jobserv()->queue_job($input);
 	}
-	return $self->_jobserv()->queue_job($input);
 }
 
 =head3 _defaultJobState
@@ -3098,6 +3180,9 @@ sub new
     my $params;
     $self->{_defaultJobState} = "queued";
     $self->{_accounttype} = "kbase";
+    $self->{'_awe-url'} = "http://140.221.85.54:7080";
+    $self->{'_shock-url'} = "http://140.221.85.54:7445";
+    $self->{_jobqueue} = "workspace";
     $self->{'_fba-url'} = "";
     Bio::KBase::ObjectAPI::utilities::ID_SERVER_URL("http://kbase.us/services/idserver");
     $self->{'_jobserver-url'} = "http://kbase.us/services/workspace";
@@ -3105,7 +3190,7 @@ sub new
     $self->{'_mssserver-url'} = "http://bio-data-1.mcs.anl.gov/services/ms_fba";
     $self->{"_probanno-url"} = "http://localhost:7073";
     $self->{"_workspace-url"} = "http://kbase.us/services/ws";
-    my $paramlist = [qw(fbajobcache gaserver-url jobserver-url fbajobdir mfatoolkitbin fba-url probanno-url mssserver-url accounttype workspace-url defaultJobState idserver-url)];
+    my $paramlist = [qw(fbajobcache awe-url shock-url jobqueue gaserver-url jobserver-url fbajobdir mfatoolkitbin fba-url probanno-url mssserver-url accounttype workspace-url defaultJobState idserver-url)];
 
     # so it looks like params is created by looping over the config object
     # if deployment.cfg exists
@@ -3186,6 +3271,15 @@ sub new
     }
     if (defined $params->{'probanno-url'}) {
     		$self->{'_probanno-url'} = $params->{'probanno-url'};
+    }
+    if (defined $params->{'jobqueue'}) {
+    		$self->{'_jobqueue'} = $params->{'jobqueue'};
+    }
+    if (defined $params->{'shock-url'}) {
+    		$self->{'_shock-url'} = $params->{'shock-url'};
+    }
+    if (defined $params->{'awe-url'}) {
+    		$self->{'_awe-url'} = $params->{'awe-url'};
     }
     #This final condition allows one to specify a fully implemented workspace IMPL or CLIENT for use
 

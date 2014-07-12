@@ -354,6 +354,19 @@ sub TOJSON {
     return $JSON->encode($ref);
 }
 
+=head3 FROMJSON
+
+Definition:
+	REF Bio::KBase::ObjectAPI::utilities::FROMJSON(string);
+Description:	
+
+=cut
+
+sub FROMJSON {
+    my ($data) = @_;
+    return decode_json $data;
+}
+
 =head3 LOADFILE
 Definition:
 	void Bio::KBase::ObjectAPI::utilities::LOADFILE();
@@ -934,6 +947,13 @@ sub KEGGMapHash {
 		}
 	}
 	return $keggmaphash;
+}
+
+sub runexecutable {
+	my ($Command) = @_;
+	my $OutputArray;
+	push(@{$OutputArray},`$Command`);
+	return $OutputArray;
 }
 
 1;
