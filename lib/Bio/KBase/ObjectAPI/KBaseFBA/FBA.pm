@@ -197,26 +197,26 @@ sub _buildpromBounds {
 }
 
 sub _buildtintlePenalty {
-    my ($self) = @_;
+	my ($self) = @_;
 
-    my $penalty = {};
+	my $penalty = {};
 
-    my $sample = $self->tintleSamples()->[0];
-    my $kappa =  $self->tintleKappa();
-    foreach my $feature_id (keys %{$sample->{"tintle_probability"}}) {
-	my $p = $sample->{"tintle_probability"}->{$feature_id};
-	$penalty->{$feature_id}->{"penalty_score"} = abs($p - 0.5);
-	if ($p > 0.5 + $kappa) {
-	    # This feature is likely to be on
-	    $penalty->{$feature_id}->{"case"} = "3";
-	} elsif ($p < 0.5 -$kappa) {
-	    # This feature is likely to be off
-	    $penalty->{$feature_id}->{"case"} = "1";
-	} else {
-	    # This feature state is unknown
-	    $penalty->{$feature_id}->{"case"} = "2";
+	my $sample = $self->tintlesample();
+	my $kappa =  $self->tintleKappa();
+	foreach my $feature_id (keys %{$sample->expression_levels()}) {
+		my $p = $sample->expression_levels()->{$feature_id};
+		$penalty->{$feature_id}->{"penalty_score"} = abs($p - 0.5);
+		if ($p > 0.5 + $kappa) {
+			# This feature is likely to be on
+			$penalty->{$feature_id}->{"case"} = "3";
+		} elsif ($p < 0.5 -$kappa) {
+			# This feature is likely to be off
+			$penalty->{$feature_id}->{"case"} = "1";
+	    } else {
+			# This feature state is unknown
+			$penalty->{$feature_id}->{"case"} = "2";
+		}
 	}
-    }
     return $penalty;
 }
 
@@ -829,7 +829,7 @@ sub createJobDirectory {
 		}
 		$parameters->{"Soft Constraint"} = $softConst;
 	}
-	if (defined($self->tintleSamples()) && @{$self->tintleSamples()} > 0) {	    
+	if (defined($self->tintlesample_ref()) && length($self->tintlesample_ref()) > 0) {	    
 	    my @exchange_array = ($self->tintleW());	    
 	    my $penalty = $self->tintlePenalty();
 	    foreach my $feature_id (keys %$penalty) {
@@ -1601,6 +1601,14 @@ sub parseFluxFiles {
 			$mediaCpdHash->{$mediaCpds->[$i]->compound()->id()} = $mediaCpds->[$i];
 		}
 		if ($compoundColumn != -1) {
+			# Create a map from rxn id to bounds.
+			my $cpdid2bound = {};
+			foreach my $bound (@{$self->FBACompoundBounds()}) {
+				$cpdid2bound->{$bound->modelcompound()->id()} = {
+					lower => $bound->lowerBound(),
+					upper => $bound->upperBound()
+				}
+			}
 			foreach my $row (@{$tbl->{data}}) {
 				foreach my $comp (keys(%{$drainCompartmentColumns})) {
 					if ($row->[$drainCompartmentColumns->{$comp}] ne "none") {
@@ -1615,6 +1623,9 @@ sub parseFluxFiles {
 							if ($comp eq "e" && defined($mediaCpdHash->{$mdlcpd->compound()->id()})) {
 								$upper = $mediaCpdHash->{$mdlcpd->compound()->id()}->maxFlux();
 								$lower = $mediaCpdHash->{$mdlcpd->compound()->id()}->minFlux();
+							} elsif (exists $cpdid2bound->{$mdlcpd->id()}) {
+								$lower = $cpdid2bound->{$mdlcpd->id()}->{lower};
+								$upper = $cpdid2bound->{$mdlcpd->id()}->{upper};
 							}
 							$self->add("FBACompoundVariables",{
 								modelcompound_ref => $mdlcpd->_reference(),
@@ -1644,6 +1655,15 @@ sub parseFluxFiles {
 			}
 		}
 		if ($reactionColumn != -1) {
+			# Create a map from rxn id to bounds.
+			my $rxnid2bound = {};
+			foreach my $bound (@{$self->FBAReactionBounds()}) {
+				$rxnid2bound->{$bound->modelreaction()->id()} = {
+					lower => $bound->lowerBound(),
+					upper => $bound->upperBound()
+				}
+			}
+
 			foreach my $row (@{$tbl->{data}}) {
 				foreach my $comp (keys(%{$fluxCompartmentColumns})) {
 					if ($row->[$fluxCompartmentColumns->{$comp}] ne "none") {
@@ -1659,6 +1679,10 @@ sub parseFluxFiles {
 								$upper = 0;
 							} elsif ($mdlrxn->direction() eq ">") {
 								$lower = 0;
+							}
+							if (exists $rxnid2bound->{$mdlrxn->id()}) {
+								$lower = $rxnid2bound->{$mdlrxn->id()}->{lower};
+								$upper = $rxnid2bound->{$mdlrxn->id()}->{upper};
 							}
 							$self->add("FBAReactionVariables",{
 								modelreaction_ref => $mdlrxn->_reference(),
@@ -2172,21 +2196,26 @@ sub parseTintleResult {
 		#Loading file results into a hash
 		my $table = Bio::KBase::ObjectAPI::utilities::LOADTABLE($directory."/GeneActivityStateFBAResult.txt", "\t", 0);
 		my $tintleOutputHash;
-		foreach my $row (@{$table->{"data"}}) {
-		    if ($row->[0] =~ /kb___g/) {
-			$row->[0] =~ s/___/|/;
-			if ($row->[0] =~ /Not_(.*)/) {
-			    $tintleOutputHash->{"conflicts"}->{$1} = "InactiveOn";
-			} else {
-			    $tintleOutputHash->{"conflicts"}->{$row->[0]} = "ActiveOff";			    
-			}
-		    } else {
-			$tintleOutputHash->{$row->[0]} = $row->[1];
-		    }
-		}
-		$self->add("FBATintleResults",$tintleOutputHash);		
-		use Data::Dumper; print(Dumper([{"W" => $self->tintleW, "K" => $self->tintleKappa},$tintleOutputHash, $self->tintleSamples()->[0]->{tintle_probability}]));
 
+		foreach my $row (@{$table->{"data"}}) {
+			if ($row->[0] =~ /\d+/) {
+				# Assume gene variables has number, but not other labels.
+				next if ($row->[1] eq "0");
+				$row->[0] =~ s/___/|/ if ($row->[0] =~ /kb___g/);
+				if ($row->[0] =~ /Not_(.*)/) {
+					# Case 3: the gene was likely to be on, but actually inactive.
+					$tintleOutputHash->{"conflicts"}->{$1} = "InactiveOn";
+				} else {
+					# Case1: the gene was likely to be off, but actually active.
+					$tintleOutputHash->{"conflicts"}->{$row->[0]} = "ActiveOff";			    
+				}
+			} else {
+				$tintleOutputHash->{$row->[0]} = $row->[1];
+			}
+		}
+		$self->add("FBATintleResults",$tintleOutputHash);
+		# debug	
+		use Data::Dumper; print(Dumper([{"W" => $self->tintleW, "K" => $self->tintleKappa},$tintleOutputHash, $self->tintlesample()->expression_levels()]));
 		return 1;
 	}
 	return 0;

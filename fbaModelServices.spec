@@ -1686,6 +1686,7 @@ module fbaModelServices {
 	
 		fbamodel_id model - ID of the model to be exported (a required argument)
 		workspace_id workspace - workspace containing the model to be exported (a required argument)
+		fba_id fba - A FBA object related to the model. (an optional argument)
 		string format - format to which the model should be exported (sbml, html, json, readable, cytoseed) (a required argument)
 		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 		
@@ -1693,6 +1694,7 @@ module fbaModelServices {
     typedef structure {
 		fbamodel_id model;
 		workspace_id workspace;
+		list<fba_id> fbas;
 		string format;
 		string auth;
     } export_fbamodel_params;
@@ -3652,6 +3654,7 @@ module fbaModelServices {
     typedef structure {
 	list<regulon> regulons;
 	workspace_id workspace;
+	workspace_id genome_workspace;
 	genome_id genome_id;
     } import_regulome_params;
 

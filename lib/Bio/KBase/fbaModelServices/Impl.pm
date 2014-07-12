@@ -1183,15 +1183,8 @@ sub _buildFBAObject {
 		}
 	}
 	if (defined($fbaFormulation->{tintle_sample}) && defined($fbaFormulation->{tintle_workspace})) {
-	    my $ws = $self->_KBaseStore()->workspace();
-	    my $getparams = {
-		id => $fbaFormulation->{tintle_sample},
-		type => "KBaseExpression.ExpressionSample",
-		workspace => $fbaFormulation->{tintle_workspace}
-	    };
-	    my $sample = $ws->get_object($getparams);
-	    $fbaobj->add("tintleSamples",{tintle_probability => $sample->{"data"}->{"expression_levels"},
-					 expression_sample_ref => $sample->{"metadata"}->[8]});
+	    my $sample = $self->_get_msobject("ExpressionSample", $fbaFormulation->{tintle_workspace}, $fbaFormulation->{tintle_sample});
+	    $fbaobj->tintlesample_ref($sample->_reference);
 	    $fbaobj->tintleW($fbaFormulation->{tintle_w});
 	    $fbaobj->tintleKappa($fbaFormulation->{tintle_kappa});
 	}
@@ -2275,7 +2268,7 @@ sub _queueJob {
 					partinfo => {
 						input => "JobParameters",
 						output => "JobOutput"
-					}
+					},
 					cmd => {
 	                    args => $args->{queuecommand}." JobParameters JobOutput", 
 	                    description => "Running a specific job submitted to the awe cluster", 
@@ -3059,21 +3052,33 @@ Description:
 		
 =cut
 sub _compute_eflux_scores {
-    my($self,$model,$series_id,$picked_sample_id,$ws_name) = @_;    
+	my($self,$model,$series_id,$picked_sample_id,$ws_name) = @_;    
+	my $ws = $self->_KBaseStore()->workspace();
 
-    my $ws = $self->_KBaseStore()->workspace();
-    my $getparams = {
-	id => $series_id,
-	type => "KBaseExpression.ExpressionSeries",
-	workspace => $ws_name,
-    };
-    my $series = $ws->get_object($getparams);
-    if (!exists $series->{"data"}->{"genome_expression_sample_ids_map"}->{$model->genome()->id()}) {
-	$self->_error("Genome does not match between Model and Gene Expresion Data");
-    } 
-    my $sample_refs = $series->{"data"}->{"genome_expression_sample_ids_map"}->{$model->genome()->id()};    
-    my $samples = $ws->get_objects([map {{ref => $_}} @$sample_refs]);
-
+	my $samples;
+	if (defined($series_id)) {
+		# "Improved" E-FLux
+		my $getparams = {
+			id => $series_id,
+			type => "KBaseExpression.ExpressionSeries",
+			workspace => $ws_name,
+		};
+		my $series = $ws->get_object($getparams);
+		if (!exists $series->{"data"}->{"genome_expression_sample_ids_map"}->{$model->genome()->id()}) {
+			warn("Genome does not match between Model and Gene Expression Data.\n");
+		} 
+		my $sample_refs = $series->{"data"}->{"genome_expression_sample_ids_map"}->{$model->genome()->id()};    
+		$samples = $ws->get_objects([map {{ref => $_}} @$sample_refs]);
+	} else {
+		# "Original" E-Flux
+		my $getparams = {
+			id => $picked_sample_id,
+			type => "KBaseExpression.ExpressionSample",
+			workspace => $ws_name
+		};
+		my $sample = $ws->get_object($getparams);
+		$samples = [$sample];
+	}
     # Re-index them by reactions rather than samples
     # And checks if specified sample exists within the series
     my $scores_collection = {}; # expression scores for each reaction.
@@ -3117,19 +3122,26 @@ sub _compute_eflux_scores {
     }
 
     if (!$matched) {
-	$self->_error("Sample $picked_sample_id does not exist in series $series_id in workspace $ws_name!");
+    	$self->_error("Sample $picked_sample_id does not exist in series $series_id in workspace $ws_name!");
     }
 
     # debug
     warn "Number of reactions with unavailable expression scores is " . (scalar keys %$unknown) ." out of ". (scalar keys %$scores_collection)."\n";
 
     my $scores_for_picked_sample = {};
+    my $max_score;
+    if (!defined $series_id) {
+    	# "original eflux"
+    	$max_score = (sort {$b <=> $a} map {$scores_collection->{$_}->{$picked_sample_id}} keys %$scores_collection)[0]
+    }
     foreach my $rxn_id (keys %$scores_collection) {
 	if (exists $unknown->{$rxn_id}) {
 	    $scores_for_picked_sample->{$rxn_id} = 1; # i.e., 100% flux bounds when expression score is not available
 	} else {
-	    # Take max expression score across all samples for this reaction
-	    my $max_score = (sort {$b <=> $a } map {$scores_collection->{$rxn_id}->{$_}} keys $scores_collection->{$rxn_id})[0];
+		if (defined $series_id) {
+			# Take max expression score across all samples for this reaction
+			$max_score = (sort {$b <=> $a } map {$scores_collection->{$rxn_id}->{$_}} keys $scores_collection->{$rxn_id})[0];
+		}
 	    # Then normalize the picked sample's expression score by the max
 	    $scores_for_picked_sample->{$rxn_id} = $scores_collection->{$rxn_id}->{$picked_sample_id} / $max_score;
 	}
@@ -3140,29 +3152,57 @@ sub _compute_eflux_scores {
 =head3 _add_eflux_bounds
 
 Definition:
-	(Void) = $self->_add_eflux_bounds(FBA, Model, Eflux-scores)
+	(Float ) = $self->_add_eflux_bounds(FBA, Model, Eflux-scores)
 Description:
 	Add reaction bounds computed by eflux.
-		
+	Return objective value for later comparison.	
 =cut
 sub _add_eflux_bounds {
-    my ($self, $fba, $model, $eflux_scores) = @_;
+    my ($self, $fba, $model, $eflux_scores, $samplename) = @_;
 
     my $clone = $fba->cloneObject();
     $clone->parent($fba->parent());
+    $clone->objectiveConstraintFraction(0.9); # According to the paper.
     $clone->fva(1);
-    $clone->runFBA();
-
+    my $objectiveValue = $clone->runFBA();
     my $fluxes = $clone->FBAReactionVariables();
+    my $essentialreactions = {headings => ["", "rxn_id", "definition"," eflux_score","lower_bound","upper_bound"]}; # debug
     foreach my $flux (@{$fluxes}) {
-	# reset the upper flux bound to the e-flux percentage of the maximum computed by FVA
-	$fba->add("FBAReactionBounds",{modelreaction_ref => $flux->modelreaction_ref(),
-				       variableType=> $flux->variableType,
-				       upperBound => $flux->max() * $eflux_scores->{$flux->modelreaction()->id()},
-				       lowerBound => $flux->min()
-		  });
-    }
-    return 1;
+    	#debug for essential reactions.
+	if ($flux->max ()< 0 || $flux->min() > 0) {
+		push @{$essentialreactions->{data}}, [
+		$flux->modelreaction()->id(), 
+		$flux->modelreaction()->definition(),
+		$eflux_scores->{$flux->modelreaction()->id()},
+		$flux->min() * $eflux_scores->{$flux->modelreaction()->id()},
+		$flux->max() * $eflux_scores->{$flux->modelreaction()->id()},
+		];
+	}
+    	# No constraint for transporters.
+    	next if ($flux->modelreaction()->isTransporter());
+
+    	# Reset the flux bound to the e-flux percentage of the maximum computed by FVA,
+    	# but make sure that 0 is within the bounds.
+    	my ($upper, $lower) = (0,0);
+    	if ($flux->max() > 0) {
+    		$upper = $flux->max() * $eflux_scores->{$flux->modelreaction()->id()};
+    	}
+    	if ($flux->min() < 0) {
+    		$lower = $flux->min() * $eflux_scores->{$flux->modelreaction()->id()};
+    	}
+
+
+    	$fba->add("FBAReactionBounds",{modelreaction_ref => $flux->modelreaction_ref(),
+    		variableType=> $flux->variableType,
+    		upperBound => $upper,
+    		lowerBound => $lower,
+    		});
+	}
+
+    # debug
+    Bio::KBase::ObjectAPI::utilities::PRINTTABLE("essentialreactions.".$fba->media()->name().".$samplename.tbl", $essentialreactions, "\t");
+
+    return $objectiveValue;
 }
 
 #END_HEADER
@@ -7394,10 +7434,12 @@ $output is a string
 export_fbamodel_params is a reference to a hash where the following keys are defined:
 	model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
+	fbas has a value which is a reference to a list where each element is a fba_id
 	format has a value which is a string
 	auth has a value which is a string
 fbamodel_id is a string
 workspace_id is a string
+fba_id is a string
 
 </pre>
 
@@ -7410,10 +7452,12 @@ $output is a string
 export_fbamodel_params is a reference to a hash where the following keys are defined:
 	model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
+	fbas has a value which is a reference to a list where each element is a fba_id
 	format has a value which is a string
 	auth has a value which is a string
 fbamodel_id is a string
 workspace_id is a string
+fba_id is a string
 
 
 =end text
@@ -7447,7 +7491,11 @@ sub export_fbamodel
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["model","workspace","format"],{});
     my $model = $self->_get_msobject("FBAModel",$input->{workspace},$input->{model});
-    $output = $model->export({format => $input->{format}});
+    my $fbas;
+    foreach my $fba_id (@{$input->{fbas}}) {
+    	push @$fbas, $self->_get_msobject("FBA",$input->{workspace},$fba_id);
+    }
+    $output = $model->export({format => $input->{format}, fbas => $fbas});
     $self->_clearContext();
     #END export_fbamodel
     my @_bad_returns;
@@ -8532,9 +8580,9 @@ sub runfba
 			$fba->biomassflux_objterms()->{$bio->id()} = 1;
 		}			
 	}
-	if (defined($input->{formulation}->{eflux_series}) && defined($input->{formulation}->{eflux_sample}) && defined($input->{formulation}->{eflux_workspace})) {
+	if (defined($input->{formulation}->{eflux_sample}) && defined($input->{formulation}->{eflux_workspace})) {
 		my $scores = $self->_compute_eflux_scores($model,$input->{formulation}->{eflux_series}, $input->{formulation}->{eflux_sample}, $input->{formulation}->{eflux_workspace});
-		$self->_add_eflux_bounds($fba, $model, $scores);
+		$self->_add_eflux_bounds($fba, $model, $scores, $input->{formulation}->{eflux_sample});
 	}
 
     #Running FBA
@@ -8554,6 +8602,7 @@ sub runfba
 	$fbaMeta = $self->_save_msobject($fba,"FBA",$input->{workspace},$input->{fba});
     $fbaMeta->[10]->{Media} = $input->{formulation}->{media_workspace}."/".$input->{formulation}->{media};
     $fbaMeta->[10]->{Objective} = $objective;
+
     $self->_clearContext();
     #END runfba
     my @_bad_returns;
@@ -18784,6 +18833,7 @@ $regulome_meta is an object_metadata
 import_regulome_params is a reference to a hash where the following keys are defined:
 	regulons has a value which is a reference to a list where each element is a regulon
 	workspace has a value which is a workspace_id
+	genome_workspace has a value which is a workspace_id
 	genome_id has a value which is a genome_id
 regulon is a reference to a hash where the following keys are defined:
 	operons has a value which is a reference to a list where each element is an operon
@@ -18828,6 +18878,7 @@ $regulome_meta is an object_metadata
 import_regulome_params is a reference to a hash where the following keys are defined:
 	regulons has a value which is a reference to a list where each element is a regulon
 	workspace has a value which is a workspace_id
+	genome_workspace has a value which is a workspace_id
 	genome_id has a value which is a genome_id
 regulon is a reference to a hash where the following keys are defined:
 	operons has a value which is a reference to a list where each element is an operon
@@ -18891,9 +18942,9 @@ sub import_regulome
     my($regulome_meta);
     #BEGIN import_regulome
     $self->_setContext($ctx,$input);    
-    $input = $self->_validateargs($input,["regulons","workspace"],{});
+    $input = $self->_validateargs($input,["regulons","workspace"],{genome_workspace => $input->{workspace}});
     my $genome_id = $input->{"genome_id"};
-    my $genome = $self->_get_msobject("Genome",$input->{"workspace"},$genome_id);
+    my $genome = $self->_get_msobject("Genome",$input->{"genome_workspace"},$genome_id);
     my $ws = $self->_KBaseStore()->workspace();
 
     my $genomeObj = Bio::KBase::ObjectAPI::KBaseRegulation::RGenome->new({ "genome_name" => "", "genome_id" => $genome_id, "genome_ref" => $genome->_reference() });
@@ -18906,9 +18957,6 @@ sub import_regulome
     });
 
     $regulome->add("genome",$genomeObj);
-
-    use Data::Dumper;
-    print &Dumper($regulome);
 
     foreach my $regulon (@{$input->{"regulons"}}) {
 	my $regulonObj = Bio::KBase::ObjectAPI::KBaseRegulation::Regulon->new({"regulon_id"=>""});
@@ -25234,6 +25282,7 @@ Input parameters for the "export_fbamodel" function.
 
         fbamodel_id model - ID of the model to be exported (a required argument)
         workspace_id workspace - workspace containing the model to be exported (a required argument)
+        fba_id fba - A FBA object related to the model. (an optional argument)
         string format - format to which the model should be exported (sbml, html, json, readable, cytoseed) (a required argument)
         string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
@@ -25246,6 +25295,7 @@ Input parameters for the "export_fbamodel" function.
 a reference to a hash where the following keys are defined:
 model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
+fbas has a value which is a reference to a list where each element is a fba_id
 format has a value which is a string
 auth has a value which is a string
 
@@ -25258,6 +25308,7 @@ auth has a value which is a string
 a reference to a hash where the following keys are defined:
 model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
+fbas has a value which is a reference to a list where each element is a fba_id
 format has a value which is a string
 auth has a value which is a string
 
@@ -30249,6 +30300,7 @@ sign has a value which is a string
 a reference to a hash where the following keys are defined:
 regulons has a value which is a reference to a list where each element is a regulon
 workspace has a value which is a workspace_id
+genome_workspace has a value which is a workspace_id
 genome_id has a value which is a genome_id
 
 </pre>
@@ -30260,6 +30312,7 @@ genome_id has a value which is a genome_id
 a reference to a hash where the following keys are defined:
 regulons has a value which is a reference to a list where each element is a regulon
 workspace has a value which is a workspace_id
+genome_workspace has a value which is a workspace_id
 genome_id has a value which is a genome_id
 
 

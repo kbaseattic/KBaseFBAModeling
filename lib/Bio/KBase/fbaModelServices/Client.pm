@@ -3159,9 +3159,9 @@ sub build_pangenome
 
 
 
-=head2 genome_heatmap_from_pangenom
+=head2 genome_heatmap_from_pangenome
 
-  $output = $obj->genome_heatmap_from_pangenom($input)
+  $output = $obj->genome_heatmap_from_pangenome($input)
 
 =over 4
 
@@ -3170,9 +3170,9 @@ sub build_pangenome
 =begin html
 
 <pre>
-$input is a genome_compare_from_pangenom_params
+$input is a genome_compare_from_pangenome_params
 $output is a heat_map_matrix
-genome_compare_from_pangenom_params is a reference to a hash where the following keys are defined:
+genome_compare_from_pangenome_params is a reference to a hash where the following keys are defined:
 	pangenome has a value which is a string
 	pangenome_workspace has a value which is a string
 	workspace has a value which is a string
@@ -3188,9 +3188,9 @@ bool is an int
 
 =begin text
 
-$input is a genome_compare_from_pangenom_params
+$input is a genome_compare_from_pangenome_params
 $output is a heat_map_matrix
-genome_compare_from_pangenom_params is a reference to a hash where the following keys are defined:
+genome_compare_from_pangenome_params is a reference to a hash where the following keys are defined:
 	pangenome has a value which is a string
 	pangenome_workspace has a value which is a string
 	workspace has a value which is a string
@@ -3211,7 +3211,7 @@ Builds a comparason matrix for genomes included in a pangenome object
 
 =cut
 
-sub genome_heatmap_from_pangenom
+sub genome_heatmap_from_pangenome
 {
     my($self, @args) = @_;
 
@@ -3220,7 +3220,7 @@ sub genome_heatmap_from_pangenom
     if ((my $n = @args) != 1)
     {
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
-							       "Invalid argument count for function genome_heatmap_from_pangenom (received $n, expecting 1)");
+							       "Invalid argument count for function genome_heatmap_from_pangenome (received $n, expecting 1)");
     }
     {
 	my($input) = @args;
@@ -3228,30 +3228,30 @@ sub genome_heatmap_from_pangenom
 	my @_bad_arguments;
         (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
         if (@_bad_arguments) {
-	    my $msg = "Invalid arguments passed to genome_heatmap_from_pangenom:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    my $msg = "Invalid arguments passed to genome_heatmap_from_pangenome:\n" . join("", map { "\t$_\n" } @_bad_arguments);
 	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-								   method_name => 'genome_heatmap_from_pangenom');
+								   method_name => 'genome_heatmap_from_pangenome');
 	}
     }
 
     my $result = $self->{client}->call($self->{url}, {
-	method => "fbaModelServices.genome_heatmap_from_pangenom",
+	method => "fbaModelServices.genome_heatmap_from_pangenome",
 	params => \@args,
     });
     if ($result) {
 	if ($result->is_error) {
 	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
 					       code => $result->content->{error}->{code},
-					       method_name => 'genome_heatmap_from_pangenom',
+					       method_name => 'genome_heatmap_from_pangenome',
 					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
 					      );
 	} else {
 	    return wantarray ? @{$result->result} : $result->result->[0];
 	}
     } else {
-        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method genome_heatmap_from_pangenom",
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method genome_heatmap_from_pangenome",
 					    status_line => $self->{client}->status_line,
-					    method_name => 'genome_heatmap_from_pangenom',
+					    method_name => 'genome_heatmap_from_pangenome',
 				       );
     }
 }
@@ -3546,10 +3546,12 @@ $output is a string
 export_fbamodel_params is a reference to a hash where the following keys are defined:
 	model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
+	fbas has a value which is a reference to a list where each element is a fba_id
 	format has a value which is a string
 	auth has a value which is a string
 fbamodel_id is a string
 workspace_id is a string
+fba_id is a string
 
 </pre>
 
@@ -3562,10 +3564,12 @@ $output is a string
 export_fbamodel_params is a reference to a hash where the following keys are defined:
 	model has a value which is a fbamodel_id
 	workspace has a value which is a workspace_id
+	fbas has a value which is a reference to a list where each element is a fba_id
 	format has a value which is a string
 	auth has a value which is a string
 fbamodel_id is a string
 workspace_id is a string
+fba_id is a string
 
 
 =end text
@@ -12573,8 +12577,11 @@ import_expression_params is a reference to a hash where the following keys are d
 	series has a value which is a series_id
 	source_id has a value which is a string
 	source_date has a value which is a string
+	description has a value which is a string
+	processing_comments has a value which is a string
 	workspace has a value which is a workspace_id
 	genome_id has a value which is a genome_id
+	numerical_interpretation has a value which is a string
 sample_id is a string
 ExpressionDataSample is a reference to a hash where the following keys are defined:
 	sample_id has a value which is a string
@@ -12615,8 +12622,11 @@ import_expression_params is a reference to a hash where the following keys are d
 	series has a value which is a series_id
 	source_id has a value which is a string
 	source_date has a value which is a string
+	description has a value which is a string
+	processing_comments has a value which is a string
 	workspace has a value which is a workspace_id
 	genome_id has a value which is a genome_id
+	numerical_interpretation has a value which is a string
 sample_id is a string
 ExpressionDataSample is a reference to a hash where the following keys are defined:
 	sample_id has a value which is a string
@@ -12722,10 +12732,15 @@ import_regulome_params is a reference to a hash where the following keys are def
 regulon is a reference to a hash where the following keys are defined:
 	operons has a value which is a reference to a list where each element is an operon
 	transcription_factor has a value which is a locus
+	effectors has a value which is a reference to a list where each element is an effector
+	sign has a value which is a string
 operon is a reference to a list where each element is a locus
 locus is a reference to a hash where the following keys are defined:
 	name has a value which is a string
 	locus has a value which is a string
+effector is a reference to a hash where the following keys are defined:
+	name has a value which is a string
+	class has a value which is a string
 workspace_id is a string
 genome_id is a string
 object_metadata is a reference to a list containing 11 items:
@@ -12761,10 +12776,15 @@ import_regulome_params is a reference to a hash where the following keys are def
 regulon is a reference to a hash where the following keys are defined:
 	operons has a value which is a reference to a list where each element is an operon
 	transcription_factor has a value which is a locus
+	effectors has a value which is a reference to a list where each element is an effector
+	sign has a value which is a string
 operon is a reference to a list where each element is a locus
 locus is a reference to a hash where the following keys are defined:
 	name has a value which is a string
 	locus has a value which is a string
+effector is a reference to a hash where the following keys are defined:
+	name has a value which is a string
+	class has a value which is a string
 workspace_id is a string
 genome_id is a string
 object_metadata is a reference to a list containing 11 items:
@@ -18792,7 +18812,7 @@ matrix has a value which is a reference to a list where each element is a refere
 
 
 
-=head2 genome_compare_from_pangenom_params
+=head2 genome_compare_from_pangenome_params
 
 =over 4
 
@@ -18993,6 +19013,7 @@ Input parameters for the "export_fbamodel" function.
 
         fbamodel_id model - ID of the model to be exported (a required argument)
         workspace_id workspace - workspace containing the model to be exported (a required argument)
+        fba_id fba - A FBA object related to the model. (an optional argument)
         string format - format to which the model should be exported (sbml, html, json, readable, cytoseed) (a required argument)
         string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 
@@ -19005,6 +19026,7 @@ Input parameters for the "export_fbamodel" function.
 a reference to a hash where the following keys are defined:
 model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
+fbas has a value which is a reference to a list where each element is a fba_id
 format has a value which is a string
 auth has a value which is a string
 
@@ -19017,6 +19039,7 @@ auth has a value which is a string
 a reference to a hash where the following keys are defined:
 model has a value which is a fbamodel_id
 workspace has a value which is a workspace_id
+fbas has a value which is a reference to a list where each element is a fba_id
 format has a value which is a string
 auth has a value which is a string
 
@@ -23817,7 +23840,10 @@ Input parameters for the "simulate_expression" function.
         series_id series -  ID of series (a required argument)
         string source_id - ID of the source (an optional argument: default is '')
         string source_date - Date of the source (an optional argument: default is '')
-        workspace_id workspace - workspace to contain the data (an optional argument: default is value of workspace argument)
+        string processing_comments - comment (an optional argument: default is '')
+        string description - description (an optional argument: default is '')
+        workspace_id workspace - workspace to contain the data (an optional argument: default is value of workspace argument)                
+        string numerical_interpretation - Numerical interpretation
 
 
 =item Definition
@@ -23830,8 +23856,11 @@ expression_data_sample_series has a value which is a reference to a hash where t
 series has a value which is a series_id
 source_id has a value which is a string
 source_date has a value which is a string
+description has a value which is a string
+processing_comments has a value which is a string
 workspace has a value which is a workspace_id
 genome_id has a value which is a genome_id
+numerical_interpretation has a value which is a string
 
 </pre>
 
@@ -23844,8 +23873,48 @@ expression_data_sample_series has a value which is a reference to a hash where t
 series has a value which is a series_id
 source_id has a value which is a string
 source_date has a value which is a string
+description has a value which is a string
+processing_comments has a value which is a string
 workspace has a value which is a workspace_id
 genome_id has a value which is a genome_id
+numerical_interpretation has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 effector
+
+=over 4
+
+
+
+=item Description
+
+Import RegPrecise regulome.
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+name has a value which is a string
+class has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+name has a value which is a string
+class has a value which is a string
 
 
 =end text
@@ -23858,11 +23927,6 @@ genome_id has a value which is a genome_id
 
 =over 4
 
-
-
-=item Description
-
-Import RegPrecise regulome.
 
 
 =item Definition
@@ -23931,6 +23995,8 @@ a reference to a list where each element is a locus
 a reference to a hash where the following keys are defined:
 operons has a value which is a reference to a list where each element is an operon
 transcription_factor has a value which is a locus
+effectors has a value which is a reference to a list where each element is an effector
+sign has a value which is a string
 
 </pre>
 
@@ -23941,6 +24007,8 @@ transcription_factor has a value which is a locus
 a reference to a hash where the following keys are defined:
 operons has a value which is a reference to a list where each element is an operon
 transcription_factor has a value which is a locus
+effectors has a value which is a reference to a list where each element is an effector
+sign has a value which is a string
 
 
 =end text

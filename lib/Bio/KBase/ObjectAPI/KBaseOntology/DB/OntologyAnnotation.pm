@@ -16,10 +16,9 @@ has parent => (is => 'rw', isa => 'Ref', weak_ref => 1, type => 'parent', metacl
 # ATTRIBUTES:
 has uuid => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_uuid');
 has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_reference');
-has p_value => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has ontology_description => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has evidence_codes => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
 has ontology_type => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has ontology_id => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
@@ -38,15 +37,16 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'p_value',
+            'name' => 'ontology_description',
             'type' => 'Str',
             'perm' => 'rw'
           },
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'ontology_description',
-            'type' => 'Str',
+            'name' => 'evidence_codes',
+            'default' => 'sub {return [];}',
+            'type' => 'ArrayRef',
             'perm' => 'rw'
           },
           {
@@ -55,17 +55,10 @@ my $attributes = [
             'name' => 'ontology_type',
             'type' => 'Str',
             'perm' => 'rw'
-          },
-          {
-            'req' => 0,
-            'printOrder' => -1,
-            'name' => 'ontology_id',
-            'type' => 'Str',
-            'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {p_value => 0, ontology_description => 1, ontology_type => 2, ontology_id => 3};
+my $attribute_map = {ontology_description => 0, evidence_codes => 1, ontology_type => 2};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {

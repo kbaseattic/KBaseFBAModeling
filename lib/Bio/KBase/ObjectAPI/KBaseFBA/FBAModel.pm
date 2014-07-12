@@ -1285,7 +1285,7 @@ sub export {
 	} elsif (lc($args->{format}) eq "json") {
 		return $self->toJSON({pp => 1});
 	} elsif (lc($args->{format}) eq "cytoseed") {
-		return $self->printCytoSEED();
+		return $self->printCytoSEED($args->{fbas});
 	} elsif (lc($args->{format}) eq "modelseed") {
 		return $self->printModelSEED();
 	} elsif (lc($args->{format}) eq "excel") {
@@ -1353,10 +1353,11 @@ Description:
 =cut
 
 sub printCytoSEED {
-	my ($self,$args) = @_;
+	my ($self,$fbas) = @_;
 
 	sub compound_to_results {
 	    my ($compound, $abstract_compounds, $modelid) = @_;
+	    $DB::single = 1 if (defined($compound->abstractCompound_ref));
 	   	my $abstractCpd;
 	    if (defined($compound->abstractCompound_ref) && $compound->abstractCompound_ref =~ m/[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}/) {
 	    	$abstractCpd = $compound->abstractCompound();
@@ -1387,42 +1388,52 @@ sub printCytoSEED {
 	    my @keggids = $keggids ? @$keggids : ();
 	    my $ecs = $reaction->getAliases("Enzyme Class");
 	    my $msid = $reaction->id();
-	    my (@substrates, @products);
-	    foreach my $reagent (@{$reaction->reagents()}) {
-		my $compound = $reagent->compound();
-		my $coeff = $reagent->coefficient();
-		my $compartment = $reagent->compartment;
-		my $cmsid = $compound->id();
-		$cmsid = $cmsid."[".$compartment->id()."]" if $compartment->id() ne "c";
-		if ($coeff < 0) {
-		    if ($coeff == -1) {
-			push @substrates, $cmsid;
-		    }
-		    else {
-			push @substrates, "(".(abs $coeff).") ".$cmsid;
-		    }
-		}
-		else {
-		    if ($coeff == 1) {
-			push @products, $cmsid;
-		    }
-		    else {
-			push @products, "(".(abs $coeff).") ".$cmsid;
-		    }
-		}
+	    my ($equation, $reversibility, $name);
+	    if ($msid ne "rxn00000") {
+
+# 	    	my (@substrates, @products);
+# 	    	foreach my $reagent (@{$reaction->reagents()}) {
+# 	    		my $compound = $reagent->compound();
+# 	    		my $coeff = $reagent->coefficient();
+# 	    		my $compartment = $reagent->compartment;
+# 	    		my $cmsid = $compound->id();
+# 	    		$cmsid = $cmsid."[".$compartment->id()."]" if $compartment->id() ne "c";
+# 	    		if ($coeff < 0) {
+# 	    			if ($coeff == -1) {
+# 	    				push @substrates, $cmsid;
+# 	    			}
+# 	    			else {
+# 	    				push @substrates, "(".(abs $coeff).") ".$cmsid;
+# 	    			}
+# 	    		}
+# 	    		else {
+# 	    			if ($coeff == 1) {
+# 	    				push @products, $cmsid;
+# 	    			}
+# 	    			else {
+# 	    				push @products, "(".(abs $coeff).") ".$cmsid;
+# 	    			}
+# 	    		}
+# 	    	}
+# 	    	$equation = (join " + ", @substrates)." <=> ".(join " + ",  @products);
+		$equation = $reaction->equation();
+
+	    	$reversibility = $reaction->thermoReversibility();
+		
+	    	if (! defined $reversibility) {
+	    		print STDERR "No reversibility for $msid\n";
+	    		$reversibility = "=";
+	    	}
+	    	$name = $reaction->name();
+	    } else {
+	    	# custom reaction
+	    	$equation = $modelreaction->equation();
+	    	$reversibility = $modelreaction->direction();
+	    	$name = $modelreaction->name();
 	    }
-	    my $equation = (join " + ", @substrates)." <=> ".(join " + ",  @products);
-
-	    my $reversibility = $reaction->thermoReversibility();
-
-	    if (! defined $reversibility) {
-		print STDERR "No reversibility for $msid\n";
-		$reversibility = "=";
-	    }
-
 	    $reversibility = "<=>" if $reversibility eq "=";
 	    my $rdref = { "DATABASE" => [$msid],
-			  "NAME" => [$reaction->name()],
+			  "NAME" => [$name],
 			  "EQUATION" => [$equation],
 			  "REVERSIBILITY" => [$reversibility],
 			  "ENZYME" => $ecs,
@@ -1436,8 +1447,7 @@ sub printCytoSEED {
 		    $notes{$protein->note()} = 1 if defined $protein->note();
 		    foreach my $subunit (@{$protein->modelReactionProteinSubunits()}) {
 			$notes{$subunit->note()} = 1 if defined $protein->note();
-			foreach my $gene (@{$subunit->modelReactionProteinSubunitGenes()}) {
-			    my $feature = $gene->feature();
+			foreach my $feature (@{$subunit->features()}) {
 			    $pegs{$feature->id()} = 1 if defined $feature->id();
 			}
 		    }
@@ -1458,12 +1468,11 @@ sub printCytoSEED {
 	my (%abstract_compounds, %abstract_reactions);
 	my $result = {};
 	my $bc = $model->biochemistry();
-	my $annotation = $model->annotation();
-	my $genome = $annotation->genomes()->[0];
+	my $genome = $model->genome();
 
 	$result->{"model_data"} = {"Genome" => "ID:".$genome->id(), 
 				   "Id" => $modelid, 
-				   "Name" => $genome->name(), 
+				   "Name" => $genome->scientific_name(), 
 				   "Media" => "Complete", # FIX
 				   "Source" => $genome->source()};
 
@@ -1490,7 +1499,7 @@ sub printCytoSEED {
 	    my $reaction = $modelreaction->reaction();
 	    my ($msid, $rdref, $extra) = reaction_to_results($reaction, $modelreaction, \%abstract_reactions, $modelid);
 	    $rdref->{"ABSTRACT REACTION"} = $extra;
-	    $result->{"reaction_details"}->{$msid} = $rdref;
+	    $result->{"reaction_details"}->{$modelreaction->id()} = $rdref;
 	}
 
 	$result->{"abstract_reaction_details"} = {};
@@ -1549,39 +1558,53 @@ sub printCytoSEED {
 
 	my $fba_results = [];
 	my $reaction_classifications = {};
-
-	foreach my $fbaFormulation (@{$model->fbaFormulations()}) {
+	foreach my $fbaFormulation (@{$fbas}) {
 	    if (! defined $fbaFormulation) {
 		print STDERR "FBA formulation is not defined\n";
 		next;
 	    }
 	    if ($fbaFormulation->maximizeObjective()) {
-		my @fbaFormulationResults = @{$fbaFormulation->fbaResults()};
-		if (@fbaFormulationResults != 1) {
-		    print STDERR "Expected 1 fbaResult, got: ", scalar @fbaFormulationResults, "\n";
-		    next;
-		}
-		my $fbaResult = $fbaFormulationResults[0];
+		my $fbaResult = $fbaFormulation; # Now formulation and result are the same object.
 		my $fba = {};
 		my $fluxes = [];
 		$fba->{"fluxes"} = $fluxes;
 		$fba->{"media"} = $fbaFormulation->media()->name();
-		$fba->{"time"} = $fbaFormulation->modDate();
+		$fba->{"time"} = "";#$fbaFormulation->modDate(); # Could not find corresponding one.
+		$fba->{"fba_id"} = $fbaFormulation->id(); # May not the same as workspace id.
 		$fba->{"growth"} = $fbaResult->objectiveValue();
-		my @reactionVariables = @{$fbaResult->fbaReactionVariables()};
+		# Hack
+		$fba->{"fba"} = $fbaFormulation->fva();
+		$fbaFormulation->fva(1);
+
+		my @reactionVariables = @{$fbaResult->FBAReactionVariables()};
 		next if @reactionVariables == 0; # FBA failed
 
 		if ($fbaFormulation->fva()) {
 		    my @classifications;
 
 		    foreach my $rVar (@reactionVariables) {
-			my $modelreaction = $rVar->modelreaction();
-			my $reaction = $modelreaction->reaction();
-			push @classifications, [$reaction->id(), $rVar->{"class"}, $rVar->{"min"}, $rVar->{"max"}, $rVar->{"value"}];
+		    	my $modelreaction = $rVar->modelreaction();
+		    	# Hack FVA results to show bounds.
+		    	$rVar->class("Dead");		
+		    	if ($rVar->min() > 0) {
+		    		$rVar->class("Positive");
+		    	} elsif ($rVar->max() < 0) {
+		    		$rVar->class("Negative");
+		    	} elsif ($rVar->min() == 0 && $rVar->max() > 0) {
+		    		$rVar->class("Positive variable");
+	    		} elsif ($rVar->max() == 0 && $rVar->min() < 0) {
+	    			$rVar->class("Negative variable");
+    			} elsif ($rVar->max() == 0 && $rVar->min() == 0) {
+    				$rVar->class("Blocked");
+   				} else {
+   					$rVar->class("Variable");
+   				}
+   				#
+   				push @classifications, [$modelreaction->id(), $rVar->{"class"}, $rVar->{"min"}, $rVar->{"max"}, $rVar->{"value"}];
 		    }
 
 		    # roundabout way to get biomass result since the biomass reaction variable isn't being saved
-		    foreach my $cVar (@{$fbaResult->fbaCompoundVariables()}) {
+		    foreach my $cVar (@{$fbaResult->FBACompoundVariables()}) {
 			my $modelcpd = $cVar->modelcompound();
 			my $cpd = $modelcpd->compound();
 			next unless $cpd->id() eq 'cpd11416';
@@ -1632,8 +1655,13 @@ sub printCytoSEED {
 			push @{$reaction_classifications->{$rid}->{"media"}}, $fbaFormulation->media()->name();
 			push @{$reaction_classifications->{$rid}->{"reaction"}}, $rid;
 		    }
+		    push @{$fba_results}, $fba;
 		}
 		else {
+			foreach my $rVar (@reactionVariables) {
+				my $flux = {"reaction" => $rVar->modelreaction->reaction()->id(), "flux" => $rVar->value()};
+				push @$fluxes, $flux;
+			}
 		    push @{$fba_results}, $fba;
 		}
 	    }    

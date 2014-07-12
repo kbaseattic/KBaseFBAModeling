@@ -24,8 +24,8 @@ has name => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', 
 has rxns => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
 has x => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has y => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has h => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has reversible => (is => 'rw', isa => 'Bool', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has h => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has ec => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has id => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has shape => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
@@ -97,15 +97,15 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'h',
-            'type' => 'Int',
+            'name' => 'reversible',
+            'type' => 'Bool',
             'perm' => 'rw'
           },
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'reversible',
-            'type' => 'Bool',
+            'name' => 'h',
+            'type' => 'Int',
             'perm' => 'rw'
           },
           {
@@ -131,7 +131,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {w => 0, link => 1, name => 2, rxns => 3, x => 4, y => 5, h => 6, reversible => 7, ec => 8, id => 9, shape => 10};
+my $attribute_map = {w => 0, link => 1, name => 2, rxns => 3, x => 4, y => 5, reversible => 6, h => 7, ec => 8, id => 9, shape => 10};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
