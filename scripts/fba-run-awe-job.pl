@@ -35,7 +35,7 @@ if (!defined($output)) {
 	die("Job run failed!");
 } else {
 	print "Successfully ran job:\n";
-	$output = $JSON->encode($output);
+	$output = to_json( $output, { utf8 => 1} );
 	open(OUTPUT, "> ".$opt->{"Output file"}) || die "could not open output file!"; 
 	print OUTPUT $output; 
 	close(OUTPUT);
