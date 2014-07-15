@@ -261,18 +261,18 @@ sub prepareFBAFormulation {
 		} else {
 			my $rxnhash = {};
 			for (my $i=0; $i < @{$rxns}; $i++) {
-				$rxnhash->{$rxns->[$i]->reaction()->id()} = 0;	
+				$rxnhash->{$rxns->[$i]->id()} = 0;	
 			}
 			my $priorities = $self->reactionPriorities();
 			for (my $i=0; $i < @{$priorities}; $i++) {
-				if (defined($rxnhash->{$priorities->[$i]})) {
-					push(@{$inactiveList},$priorities->[$i]);
-					$rxnhash->{$priorities->[$i]} = 1;
+				if (defined($rxnhash->{$priorities->[$i]."_c0"})) {
+					push(@{$inactiveList},$priorities->[$i]."_c0");
+					$rxnhash->{$priorities->[$i]."_c0"} = 1;
 				}
 			}
 			for (my $i=0; $i < @{$rxns}; $i++) {
-				if ($rxnhash->{$rxns->[$i]->reaction()->id()} == 0) {
-					push(@{$inactiveList},$rxns->[$i]->reaction()->id());
+				if ($rxnhash->{$rxns->[$i]->id()} == 0) {
+					push(@{$inactiveList},$rxns->[$i]->id());
 				}	
 			}
 		}
