@@ -1475,12 +1475,29 @@ sub _buildGapfillObject {
 		#Get coefficients of probmodel
 		$gapform->fba()->parameters()->{"Objective coefficient file"} = "ProbModelReactionCoefficients.txt";
 		$gapform->fba()->inputfiles()->{"ProbModelReactionCoefficients.txt"} = [];
-		my $rxns = $rxnprobs->reaction_probabilities();
-		for (my $i=0; $i < @{$rxns}; $i++) {
-			my $rxn = $rxns->[$i];
-			my $cost = (1-$rxn->[1]);
-			push(@{$gapform->fba()->inputfiles()->{"ProbModelReactionCoefficients.txt"}},"forward\t".$rxn->[0]."\t".$cost);
-			push(@{$gapform->fba()->inputfiles()->{"ProbModelReactionCoefficients.txt"}},"reverse\t".$rxn->[0]."\t".$cost);
+		my $probrxns = $rxnprobs->reaction_probabilities();
+		my $rxncosts = {};
+		for (my $i=0; $i < @{$probrxns}; $i++) {
+			my $rxn = $probrxns->[$i];
+			$rxncosts->{$rxn->[0]} = (1-$rxn->[1]);
+		}
+		my $compindecies = {};
+		my $comps = $model->modelcompartments();
+		for (my $i=0; $i < @{$comps}; $i++) {
+			$compindecies->{$comps->[$i]->compartmentIndex()}->{$comps->[$i]->compartment()->id()} = 1;
+		}
+		my $gfcpdhash;
+		foreach my $compindex (keys(%{$compindecies})) {
+			my $tmp = $model->template();
+			my $tmprxns = $tmp->templateReactions();
+			for (my $i=0; $i < @{$tmprxns}; $i++) {
+				my $tmprxn = $tmprxns->[$i];
+				my $tmpid = $tmprxn->reaction()->id()."_".$tmprxn->compartment()->id().$compindex;
+				if (defined($rxncosts->{$tmprxn->reaction()->id()})) {
+					push(@{$gapform->fba()->inputfiles()->{"ProbModelReactionCoefficients.txt"}},"forward\t".$tmpid."\t".$rxncosts->{$tmprxn->reaction()->id()});
+					push(@{$gapform->fba()->inputfiles()->{"ProbModelReactionCoefficients.txt"}},"reverse\t".$tmpid."\t".$rxncosts->{$tmprxn->reaction()->id()});
+				}
+			}
 		}	
 	}
 	return ($gapform,$fba);
@@ -2247,10 +2264,13 @@ Description:
 
 sub _queueJob {
 	my($self,$args) = @_;
-	if ($self->_jobqueue() eq "AWE") {
+	if ($self->_jobqueue() eq "awe") {
 		#Loading job parameters to shock
 		my $json = Bio::KBase::ObjectAPI::utilities::TOJSON($args->{jobdata});
-		my $output = Bio::KBase::ObjectAPI::utilities::runexecutable("curl -H \"Authorization: OAuth ".$self->_authentication()."\" -X POST -F 'attributes_str=".$json."' ".$self->_shockurl()."/node");
+		my $uuid = Data::UUID->new()->create_str();
+		File::Path::mkpath Bio::KBase::ObjectAPI::utilities::MFATOOLKIT_JOB_DIRECTORY();
+		Bio::KBase::ObjectAPI::utilities::PRINTFILE(Bio::KBase::ObjectAPI::utilities::MFATOOLKIT_JOB_DIRECTORY().$uuid,[$json]);
+		my $output = Bio::KBase::ObjectAPI::utilities::runexecutable("curl -H \"Authorization: OAuth ".$self->_authentication()."\" -X POST -F upload=\@".Bio::KBase::ObjectAPI::utilities::MFATOOLKIT_JOB_DIRECTORY().$uuid."' ".$self->_shockurl()."/node");
 		my $output = Bio::KBase::ObjectAPI::utilities::FROMJSON($output);
 		my $nodeid = $output->{id};
 		my $filename = Bio::KBase::ObjectAPI::utilities::MFATOOLKIT_JOB_DIRECTORY().$nodeid;
@@ -2294,7 +2314,6 @@ sub _queueJob {
 			]
 		};
 		$json = Bio::KBase::ObjectAPI::utilities::TOJSON($job);
-		File::Path::mkpath Bio::KBase::ObjectAPI::utilities::MFATOOLKIT_JOB_DIRECTORY();
 		Bio::KBase::ObjectAPI::utilities::PRINTFILE($filename,[$json]);
 		my $data = Bio::KBase::ObjectAPI::utilities::runexecutable("curl [-H \"Datatoken: ".$self->_authentication()."\"] -X POST -F upload=\@".$filename." ".$self->_aweurl()."/job");
 		return {
