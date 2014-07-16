@@ -2763,7 +2763,7 @@ sub translate_model {
 			}
 		}
 		if (@{$rxn->modelReactionProteins()} == 0) {
-			$self->remove("reactions",$rxn);
+			$self->remove("modelreactions",$rxn);
 		}
 	}
 	$self->genome_ref($ref);
