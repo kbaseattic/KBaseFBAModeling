@@ -6577,12 +6577,12 @@ sub translate_fbamodel
     $input = $self->_validateargs($input,["protcomp","model","workspace"],{
     	protcomp_workspace => $input->{workspace},
     	model_workspace => $input->{workspace},
-    	modelout => $input->{model}
+    	output_id => "Translated_".$input->{model}
     });
     my $model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model});
     my $protcomp = $self->_get_msobject("ProteomeComparison",$input->{protcomp_workspace},$input->{protcomp});
 	my $report = $model->translate_model($protcomp);
-	$modelMeta = $self->_save_msobject($model,"",$input->{workspace},$input->{modelout},{meta => $report});
+	$modelMeta = $self->_save_msobject($model,"",$input->{workspace},$input->{output_id},{meta => $report});
     #END translate_fbamodel
     my @_bad_returns;
     (ref($modelMeta) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"modelMeta\" (value was \"$modelMeta\")");
