@@ -2768,6 +2768,7 @@ sub translate_model {
 	}
 	$self->genome_ref($ref);
 	$self->genome($newgenome);
+	return {};
 }
 
 =head3 build_model_fba
