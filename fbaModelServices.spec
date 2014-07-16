@@ -1653,6 +1653,18 @@ module fbaModelServices {
     authentication required;
     funcdef ortholog_family_from_pangenome(ortholog_family_from_pangenome_params input) returns (ortholog_data output);
 	
+	typedef structure {
+		string pangenome;
+		string pangenome_workspace;
+		string outputid;
+		string workspace;
+    } pangenome_to_proteome_comparison_params;
+    /*
+        Builds a proteome comparison object from a pangenome object
+    */
+    authentication required;
+    funcdef pangenome_to_proteome_comparison(pangenome_to_proteome_comparison_params input) returns (object_metadata output);
+	
 	/* Input parameters for the "import_fbamodel" function.
 	
 		genome_id genome - ID of the genome for which a model is to be built (a required argument)

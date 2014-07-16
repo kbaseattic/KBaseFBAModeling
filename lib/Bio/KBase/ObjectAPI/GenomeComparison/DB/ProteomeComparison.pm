@@ -35,7 +35,8 @@ has genome2ws => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribu
 
 
 # BUILDERS:
-
+sub _build_reference { my ($self) = @_;return $self->uuid(); }
+sub _build_uuid { return Data::UUID->new()->create_str(); }
 
 # CONSTANTS:
 sub __version__ { return $VERSION; }

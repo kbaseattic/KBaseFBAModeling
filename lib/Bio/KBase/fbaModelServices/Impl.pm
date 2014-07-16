@@ -100,6 +100,7 @@ use Bio::KBase::workspace::Client;
 use Bio::KBase::ObjectAPI::KBaseGenomes::MetagenomeAnnotation;
 use Bio::KBase::ObjectAPI::GenomeComparison::ProteomeComparison;
 use Bio::KBase::ObjectAPI::utilities qw( args verbose set_verbose translateArrayOptions);
+use POSIX;
 use File::Basename;
 use Try::Tiny;
 use Data::Dumper;
@@ -6580,8 +6581,8 @@ sub translate_fbamodel
     });
     my $model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model});
     my $protcomp = $self->_get_msobject("ProteomeComparison",$input->{protcomp_workspace},$input->{protcomp});
-	$model->translate_model($protcomp);
-	$modelMeta = $self->_save_msobject($model,"",$input->{workspace},$input->{modelout});
+	my $report = $model->translate_model($protcomp);
+	$modelMeta = $self->_save_msobject($model,"",$input->{workspace},$input->{modelout},{meta => $report});
     #END translate_fbamodel
     my @_bad_returns;
     (ref($modelMeta) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"modelMeta\" (value was \"$modelMeta\")");
@@ -7075,6 +7076,196 @@ sub ortholog_family_from_pangenome
 
 
 
+=head2 pangenome_to_proteome_comparison
+
+  $output = $obj->pangenome_to_proteome_comparison($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a pangenome_to_proteome_comparison_params
+$output is an object_metadata
+pangenome_to_proteome_comparison_params is a reference to a hash where the following keys are defined:
+	pangenome has a value which is a string
+	pangenome_workspace has a value which is a string
+	outputid has a value which is a string
+	workspace has a value which is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a pangenome_to_proteome_comparison_params
+$output is an object_metadata
+pangenome_to_proteome_comparison_params is a reference to a hash where the following keys are defined:
+	pangenome has a value which is a string
+	pangenome_workspace has a value which is a string
+	outputid has a value which is a string
+	workspace has a value which is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+
+=end text
+
+
+
+=item Description
+
+Builds a proteome comparison object from a pangenome object
+
+=back
+
+=cut
+
+sub pangenome_to_proteome_comparison
+{
+    my $self = shift;
+    my($input) = @_;
+
+    my @_bad_arguments;
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to pangenome_to_proteome_comparison:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'pangenome_to_proteome_comparison');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($output);
+    #BEGIN pangenome_to_proteome_comparison
+    $self->_setContext($ctx,$input);
+    $input = $self->_validateargs($input,["pangenome","workspace","genomeone","genometwo"],{
+    	pangenome_workspace => $input->{workspace},
+    	outputid => $input->{genomeone}."_".$input->{genometwo}."_comp"
+    });
+    my $pangenome = $self->_get_msobject("Pangenome",$input->{pangenome_workspace},$input->{pangenome});
+    my $genomes = $pangenome->genomes();
+    my $genomeone;
+    my $genometwo;
+    for (my $i=0; $i < @{$genomes}; $i++) {
+    	if ($genomes->[$i]->_wsname() eq $input->{genomeone} || $genomes->[$i]->id() eq $input->{genomeone}) {
+    		$genomeone = $genomes->[$i];
+    	}
+    	if ($genomes->[$i]->_wsname() eq $input->{genometwo} || $genomes->[$i]->id() eq $input->{genometwo}) {
+    		$genometwo = $genomes->[$i];
+    	}
+    }
+    if (!defined($genomeone)) {
+    	$self->_error("Could not find ".$input->{genomeone}." in pangenome.");
+    }
+    if (!defined($genometwo)) {
+    	$self->_error("Could not find ".$input->{genometwo}." in pangenome.");
+    }
+    my $protcomp = {
+    	genome1ws => $genomeone->_wsworkspace(),
+		genome1id => $genomeone->_wsname(),
+		genome2ws => $genometwo->_wsworkspace(),
+		genome2id => $genometwo->_wsname(),
+		sub_bbh_percent => 0,
+		max_evalue => "0",
+		proteome1names => [],
+		proteome1map => {},
+		proteome2names => [],
+		proteome2map => {},
+		data1 => [],
+		data2 => []
+    };
+    my $ftrs = $genomeone->features();
+    my $protonelen = {};
+    for(my $i=0; $i < @{$ftrs}; $i++) {
+    	push(@{$protcomp->{proteome1names}},$ftrs->[$i]->id());
+    	$protcomp->{data1}->[$i] = [];
+    	$protcomp->{proteome1map}->{$ftrs->[$i]->id()} = $i;
+    	$protonelen->{$ftrs->[$i]->id()} = $ftrs->[$i]->protein_translation_length();
+    }
+    $ftrs = $genometwo->features();
+    my $prottwolen = {};
+    for(my $i=0; $i < @{$ftrs}; $i++) {
+    	$protcomp->{data2}->[$i] = [];
+    	push(@{$protcomp->{proteome2names}},$ftrs->[$i]->id());
+    	$protcomp->{proteome2map}->{$ftrs->[$i]->id()} = $i;
+    	$prottwolen->{$ftrs->[$i]->id()} = $ftrs->[$i]->protein_translation_length();
+    }
+    my $orthos = $pangenome->orthologs();
+    foreach my $ortholog (@{$orthos}) {
+    	my $famorthos = $ortholog->orthologs();
+    	my $one;
+    	my $two;
+    	my $onescore;
+    	my $twoscore;
+    	for (my $i=0; $i < (@{$famorthos}); $i++) {
+    		if (defined($protcomp->{proteome1map}->{$famorthos->[$i]->[0]})) {
+    			$one = $famorthos->[$i]->[0];
+    			$onescore = $famorthos->[$i]->[1];
+    		} elsif (defined($protcomp->{proteome2map}->{$famorthos->[$i]->[0]})) {
+    			$two = $famorthos->[$i]->[0];
+    			$twoscore = $famorthos->[$i]->[1];
+    		}
+    	}
+    	if (defined($one) && defined($two)) {
+    		$protcomp->{data2}->[$protcomp->{proteome2map}->{$two}] = [[$protcomp->{proteome1map}->{$one},floor(100*(($onescore+$twoscore)/2+8)/$prottwolen->{$two}),100]];
+    		$protcomp->{data1}->[$protcomp->{proteome1map}->{$one}] = [[$protcomp->{proteome2map}->{$two},floor(100*(($onescore+$twoscore)/2+8)/$protonelen->{$one}),100]];
+    	}
+    }
+    $protcomp = Bio::KBase::ObjectAPI::GenomeComparison::ProteomeComparison->new($protcomp);
+    $protcomp->parent($self->_KBaseStore());
+    $output = $self->_save_msobject($protcomp,"ProteomeComparison",$input->{workspace},$input->{outputid});
+    $self->_clearContext();
+    #END pangenome_to_proteome_comparison
+    my @_bad_returns;
+    (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to pangenome_to_proteome_comparison:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'pangenome_to_proteome_comparison');
+    }
+    return($output);
+}
+
+
+
+
 =head2 import_fbamodel
 
   $modelMeta = $obj->import_fbamodel($input)
@@ -7257,8 +7448,11 @@ sub import_fbamodel
     for (my $i=0; $i < @{$input->{compounds}}; $i++) {
     	my $cpd = $input->{compounds}->[$i];
     	my $id = $cpd->[0];
-    	if ($id =~ m/[^\w^-]/) {
-    		$cpd->[0] =~ s/[^\w^-]/_/g;
+    	if ($id =~ m/[^\w]/) {
+    		$cpd->[0] =~ s/[^\w]/_/g;
+    	}
+    	if ($id =~ m/-/) {
+    		$cpd->[0] =~ s/-/_/g;
     	}
     	$translation->{$id} = $cpd->[0];
     }
@@ -7317,7 +7511,6 @@ sub import_fbamodel
     		$cpd =~ s/\+/\\+/g;
     		$cpd =~ s/\(/\\(/g;
     		$cpd =~ s/\)/\\)/g;
-    		print "Compound:".$cpd."\n";
     		my $array = [split(/\s$cpd\s/,$eqn)];
     		$eqn = join(" ".$translation->{$origcpd}." ",@{$array});
     		$array = [split(/\s$cpd\[/,$eqn)];
@@ -25210,6 +25403,42 @@ a reference to a hash where the following keys are defined:
 pangenome has a value which is a string
 pangenome_workspace has a value which is a string
 orthologid has a value which is a string
+workspace has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 pangenome_to_proteome_comparison_params
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+pangenome has a value which is a string
+pangenome_workspace has a value which is a string
+outputid has a value which is a string
+workspace has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+pangenome has a value which is a string
+pangenome_workspace has a value which is a string
+outputid has a value which is a string
 workspace has a value which is a string
 
 

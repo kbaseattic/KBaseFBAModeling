@@ -2339,5 +2339,46 @@ sub parseOutputFiles {
 	}
 }
 
+=head3 buildLPProblem
+
+Definition:
+	void buildLPProblem();
+Description:
+	
+
+=cut
+
+sub buildLPProblem {
+	my ($self) = @_;
+#	my $model = $self->fbamodel();
+#	my $variables;
+#	my $constraints;
+#	
+#	for (my $i=0; $i < @{$variables}; $i++) {
+#		
+#	}
+#	
+#	#Creating mass balance constraints
+#	my $mdlrxns = $model->modelreactions();
+#	my $mbconsts = {};
+#	my $fluxvar = {};
+#	for (my $i=0; $i < @{$mdlrxns}; $i++) {
+#		my $rxn = $mdlrxns->[$i];
+#		$fluxvar->{$rxn->id()} = {
+#			type => "for_flux",
+#			objectid => 
+#			
+#		}
+#		my $rgts = $rxn->modelReactionReagents();
+#		for (my $j=0; $j < @{$rgts}; $j++) {
+#			my $cpd = $rgts->[$j]->modelcompound();
+#			$mbconsts->{$cpd->id()}
+#		}
+#	}
+	
+}
+
+
+
 __PACKAGE__->meta->make_immutable;
 1;

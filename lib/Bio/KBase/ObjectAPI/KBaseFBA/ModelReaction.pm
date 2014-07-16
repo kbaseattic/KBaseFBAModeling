@@ -313,6 +313,9 @@ sub createEquation {
 	for (my $i=0; $i < @{$rgts}; $i++) {
 		my $rgt = $rgts->[$i];
 		my $id = $rgt->modelcompound()->compound()->id();
+		if ($id eq "cpd00000") {
+			$id = $rgt->modelcompound()->id();
+		}
 		next if $args->{protons} == 0 && $id eq $hcpd->id() && $rxnCompID eq $rgt->modelcompound()->modelcompartment()->compartment()->id();
 		next if $args->{water} == 0 && $id eq $wcpd->id();
 		if ($args->{format} eq "name") {

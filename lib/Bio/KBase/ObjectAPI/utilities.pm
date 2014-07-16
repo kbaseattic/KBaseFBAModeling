@@ -364,6 +364,7 @@ Description:
 
 sub FROMJSON {
     my ($data) = @_;
+    print $data."\n";
     return decode_json $data;
 }
 
