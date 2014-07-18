@@ -523,7 +523,6 @@ sub ImportExternalEquation {
     }		
     my $output = $bio->searchForReactionByCode($self->equationCode());
     if (defined($output)) {
-    	$self->id($output->{rxnobj}->id()."_".$self->modelcompartment()->id());
     	$self->reaction_ref($bio->_reference()."/reactions/id/".$output->{rxnobj}->id());
     	if ($output->{dir} eq "r") {
     		if ($self->direction() eq ">") {

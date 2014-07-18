@@ -7560,7 +7560,7 @@ sub import_fbamodel
 			$input->{equation} = $rxnrow->[8];
 		}
 		print $input->{equation}."\n";
-		$model->manualReactionAdjustment($input);
+		$model->addModelReaction($input);
 		#if (defined($report->{missing_genes})) {
 		#	for (my $i=0; $i < @{$report->{missing_genes}}; $i++) {
 		#		$missingGenes->{$report->{missing_genes}->[$i]} = 1;
@@ -7587,16 +7587,11 @@ sub import_fbamodel
 		}	
 	}
 	print "Biomass:".$input->{biomass}."\n";
-	my $report = $model->manualReactionAdjustment({
-		biomass => 1,
-		reaction => "bio1",
+	my $report = $model->adjustBiomassReaction({
+		biomass => "bio1",
 		equation => $input->{biomass},
-		direction => ">",
 		compartment => "c",
 		compartmentIndex => 0,
-		gpr => "",
-		removeReaction => 0,
-	    addReaction => 0,
 	    compounds => $compoundhash
 	});
 	my $msg = "";
@@ -8064,6 +8059,7 @@ sub adjust_model_reaction
 		$compoundhash->{$input->{compounds}->[$i]->[0]} = $input->{compounds}->[$i];
 	}
     for (my $i=0; $i < @{$input->{reaction}}; $i++)  {
+		my $equation;
 		my $gpr;
 		my $dir;
 		my $comp;
@@ -8078,6 +8074,11 @@ sub adjust_model_reaction
 		} else {
 		    $dir = $input->{direction}->[$i];
 		}
+		if ( scalar @{$input->{equation}} eq 1 ) {
+		    $equation = $input->{equation}->[0];
+		} else {
+		    $equation = $input->{equation}->[$i];
+		}
 		if ( scalar @{$input->{compartment}} eq 1 ) {  
 		    $comp = $input->{compartment}->[0]; 
 		} else {  
@@ -8088,17 +8089,27 @@ sub adjust_model_reaction
 		} else {
 		    $compidx = $input->{compartmentIndex}->[$i];
 		}
-		$model->manualReactionAdjustment({
-		    reaction => $input->{reaction}->[$i],
-		    direction => $dir,
-		    compartment => $comp,
-		    compartmentIndex => $compidx,
-		    gpr => $gpr,
-		    removeReaction => $input->{removeReaction},
-		    addReaction => $input->{addReaction},
-		    compounds => $compoundhash,
-		    equation => $input->{equation}
-		});
+		if (defined($input->{removeReaction}) && $input->{removeReaction} == 1) {
+			$model->removeModelReaction({
+			    reaction => $input->{reaction}->[$i]
+			});
+		} elsif (defined($input->{addReaction}) && $input->{addReaction} == 1) {
+			$model->addModelReaction({
+			    reaction => $input->{reaction}->[$i],
+			    direction => $dir,
+			    compartment => $comp,
+			    compartmentIndex => $compidx,
+			    gpr => $gpr,
+			    compounds => $compoundhash,
+			    equation => $equation
+			});
+		} else {
+			$model->adjustModelReaction({
+			    reaction => $input->{reaction}->[$i],
+			    direction => $dir,
+			    gpr => $gpr
+			});
+		}
 	}
     $modelMeta = $self->_save_msobject($model,"FBAModel",$input->{workspace},$input->{outputid});
     $self->_clearContext();
@@ -14235,29 +14246,29 @@ sub filter_iterative_solutions
 	}
 	if ( $deleteDirections->{$key} eq "=" ) {
 	    # Both directions were flagged for deletion, so we just delete the reaction.
-	    $model->manualReactionAdjustment( { reaction => $key,
-						removeReaction => 1
-					      } );
+	    $model->removeModelReaction({reaction => $key});
 	} else {
 	    # What is the direction in the model?
 	    my $modelrxndir = $modelrxn->direction();
 	    # Is the direction the same as deleteDirections?
 	    if ( $modelrxndir eq $deleteDirections->{$key} ) {
 		# If YES, delete the reaction.
-		$model->manualReactionAdjustment( { reaction => $key,
-						    removeReaction => 1 } );
+		$model->removeModelReaction({reaction => $key});
 	    } elsif ( $modelrxndir eq "=" ) {
-		# If the model reaction is reversible we assume this means
-		# that gapfilling changed the reversibility of that reaction.
-		my($newdir);
-		if ( $deleteDirections->{$key} eq ">" ) { $newdir = "<"; }
-		else { $newdir = ">"; }
-		$model->manualReactionAdjustment( { reaction => $key,
-						    direction => $newdir } );
-	    }
-	}
+			# If the model reaction is reversible we assume this means
+			# that gapfilling changed the reversibility of that reaction.
+			my($newdir);
+			if ( $deleteDirections->{$key} eq ">" ) {
+				$newdir = "<";
+		    } else { $newdir = ">"; }
+				$model->adjustModelReaction({
+					reaction => $key,
+					direction => $newdir 
+				});
+		    }
+		}
     }
-
+    
     $output = $self->_save_msobject($model,"FBAModel",$input->{workspace},$input->{outmodel});
 
     #END filter_iterative_solutions
@@ -14395,9 +14406,9 @@ sub delete_noncontributing_reactions
 			    my $rxnid = $rxn->reaction()->id();
 			    if ( ! defined($rxnsens->reactions()->[$i]->direction() ) ) {
 				# For reverse compatibility with old RxnSensitivity objects
-				$model->remove("modelreactions", $rxn);
+					$model->remove("modelreactions", $rxn);
 			    } elsif ($rxn->direction() eq $rxnsens->reactions()->[$i]->direction()) {
-				$model->remove("modelreactions",$rxn);
+					$model->remove("modelreactions",$rxn);
 			    } else {
 				my $dir = $rxnsens->reactions()->[$i]->direction();
 				# Change from a reversible reaction to an irreversible one
@@ -14405,13 +14416,17 @@ sub delete_noncontributing_reactions
 				if ( $rxn->direction() eq "=" ) {
 				    # This should never happen but just in case
 				    if ( $dir eq "=" ) {
-					$model->remove("modelreactions", $rxn);
+						$model->remove("modelreactions", $rxn);
 				    } elsif ( $dir eq ">" ) {
-					$model->manualReactionAdjustment( { reaction => $rxnid,
-									    direction => "<" } );
+						$model->adjustModelReaction({
+							reaction => $rxnid,
+							direction => "<" 
+						});
 				    } elsif ( $dir eq "<" ) {
-					$model->manualReactionAdjustment( { reaction => $rxnid,
-									    direction => ">" } );
+				    	$model->adjustModelReaction({
+							reaction => $rxnid,
+							direction => ">" 
+						});
 				    }
 				}
 			    }
@@ -18471,7 +18486,7 @@ sub models_to_community_model
 		coefficient => 1
 	});
 	for (my $i=0; $i < @{$params->{models}}; $i++) {
-		print "Loading model ".$params->{models}->[$i]->[1]."\n";
+		print "Loading model ".$params->{models}->[$i]->[0]."\n";
 		if ($i > 0) {
 			$model = $self->_get_msobject("FBAModel",$params->{models}->[$i]->[1],$params->{models}->[$i]->[0]);
 		}
@@ -18506,13 +18521,14 @@ sub models_to_community_model
 		my $cpds = $model->modelcompounds();
 		for (my $j=0; $j < @{$cpds}; $j++) {
 			my $cpd = $cpds->[$j];
-			my $comcpd = $commdl->queryObject("modelcompounds",{
-				compound_ref => $cpd->compound_ref(),
-				modelcompartment_ref => "~/modelcompartments/id/".$cmpsHash->{$cpd->modelcompartment()->compartment()->id()}->id()
-			});
+			my $rootid = $cpd->compound()->id();
+			if ($cpd->id() =~ m/(.+)_([a-zA-Z]\d+)/) {
+				$rootid = $1;
+			}
+			my $comcpd = $commdl->getObject("modelcompounds",$rootid."_".$cmpsHash->{$cpd->modelcompartment()->compartment()->id()}->id());
 			if (!defined($comcpd)) {
 				$comcpd = $commdl->add("modelcompounds",{
-					id => $cpd->compound()->id()."_".$cmpsHash->{$cpd->modelcompartment()->compartment()->id()}->id(),
+					id => $rootid."_".$cmpsHash->{$cpd->modelcompartment()->compartment()->id()}->id(),
 					compound_ref => $cpd->compound_ref(),
 					charge => $cpd->charge(),
 					formula => $cpd->formula(),
@@ -18526,12 +18542,13 @@ sub models_to_community_model
 		my $rxns = $model->modelreactions();
 		for (my $j=0; $j < @{$rxns}; $j++) {
 			my $rxn = $rxns->[$j];
-			if (!defined($commdl->queryObject("modelreactions",{
-				reaction_ref => $rxn->reaction_ref(),
-				modelcompartment_ref => "~/modelcompartments/id/".$cmpsHash->{$rxn->modelcompartment()->compartment()->id()}->id()
-			}))) {
+			my $rootid = $rxn->reaction()->id();
+			if ($rxn->id() =~ m/(.+)_([a-zA-Z]\d+)/) {
+				$rootid = $1;
+			}
+			if (!defined($commdl->getObject("modelreactions",$rootid."_".$cmpsHash->{$rxn->modelcompartment()->compartment()->id()}->id()))) {
 				my $comrxn = $commdl->add("modelreactions",{
-					id => $rxn->reaction()->id()."_".$cmpsHash->{$rxn->modelcompartment()->compartment()->id()}->id(),
+					id => $rootid."_".$cmpsHash->{$rxn->modelcompartment()->compartment()->id()}->id(),
 					reaction_ref => $rxn->reaction_ref(),
 					direction => $rxn->direction(),
 					protons => $rxn->protons(),

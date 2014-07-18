@@ -19,7 +19,7 @@ my $translation = {
 };
 #Defining usage and options
 my $specs = [
-    [ 'newuid|u:s', 'ID for merged model in workspace' ],
+    [ 'newuid|u=s', 'ID for merged model in workspace' ],
     [ 'name|n:s', 'Name for merged model' ],
     [ 'fromfile|f', 'Load model list from file. Input file should have three columns with headers: Model, Workspace, and Abundance.' ],
     [ 'workspace|w=s', 'Workspace to save merged model', { "default" => fbaws() } ],

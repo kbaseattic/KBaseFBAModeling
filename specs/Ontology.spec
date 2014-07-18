@@ -27,7 +27,7 @@ module KBaseOntology {
 		@id subws KBaseOntology.Mapping.roles.[*].id
 	*/
     typedef string role_ref;
-	
+
     /* 
     	Role object containing data relating to functional role
     	    	
@@ -119,7 +119,7 @@ module KBaseOntology {
 	/*
 		A ontology id is a string (usually GO:NNNN)
 	*/
-	typedef string ontology_id;
+	typedef string ontology_acc;
 
 	/*
 	A gene list is a list of gene_ids
@@ -129,31 +129,62 @@ module KBaseOntology {
 	/*
 		Structure for Ontology object
 
-		@optional evidence_codes
+		@optional evidence_codes gene_list
 	*/
 	typedef structure {
-		ontology_id id;
-		string ontology_type;
-		string ontology_domain;
-		string ontology_description;
+		ontology_acc acc;
+		string type;
+		string name;
 		list<evidence_code> evidence_codes;
 		mapping<genome_id,gene_list> gene_list;
 	} Ontology;
 
 	/*
-		Structure for OntologyAnnotation object
+		Structure for OntologyTermAnnotation object
+		@optional ontology_type ontology_description
 	*/ 
 	typedef structure {
 		string ontology_type;
 		string ontology_description;
                 list<evidence_code> evidence_codes;
-	} OntologyAnnotation;
+	} OntologyTermAnnotation;
 
-	typedef mapping<ontology_id, OntologyAnnotation> ontology_annotation_map;
+	typedef mapping<ontology_acc, OntologyTermAnnotation> ontology_term_annotation_map;
+
+	typedef	mapping<gene_id, ontology_term_annotation_map> gene_annotation_map;
 
 	/*
-		Structure for GeneAnnotations
+		Structure for GeneOntologyAnnotations
+		@optional source
 	*/
-	typedef	mapping<gene_id, ontology_annotation_map> gene_enrichment_annotations;
-};
+	typedef structure {
+		gene_annotation_map ga;
+		string source;
+	} GeneOntologyAnnotation;
 
+
+	typedef structure{
+		int rel_type_id;
+		int id;
+	} ParentTerm;
+
+	/*
+		Structure for OntologyTerm
+		type is ontology type and it can be a domain_name for GO or it could be a relation type 
+		name is short description of a term
+		id is an internal unique id for efficient processing
+		To compress more, it might be changed to list later
+		@optional parent_list
+	*/
+	typedef structure{
+		string type;
+		string name;
+		int    id;
+		list<ParentTerm> parent_list;
+	} OntologyTerm;
+
+	typedef structure{
+		mapping<ontology_acc, OntologyTerm> ontology_acc_term_map;
+	} OntologyAccMap;
+
+};
