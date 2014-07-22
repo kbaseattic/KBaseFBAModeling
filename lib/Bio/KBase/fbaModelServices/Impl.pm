@@ -1225,7 +1225,7 @@ sub _buildFBAObject {
 			reaction_terms => {},
 			biomass_terms => {}
 		});
-		foreach my $term (@{$const->[2]}) {
+		foreach my $term (@{$constraint->[2]}) {
 			if ($term->[1] eq "flux" || $term->[1] eq "reactionflux") {
 				$term->[1] = "flux";
 				my $obj = $model->searchForReaction($term->[2]);
@@ -19515,6 +19515,296 @@ sub create_promconstraint
 
 
 
+=head2 add_biochemistry_compounds
+
+  $output = $obj->add_biochemistry_compounds($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is an add_biochemistry_compounds_params
+$output is an object_metadata
+add_biochemistry_compounds_params is a reference to a hash where the following keys are defined:
+	compounds has a value which is a reference to a list where each element is a reference to a list containing 8 items:
+	0: (abbreviation) a string
+	1: (name) a string
+	2: (aliases) a reference to a list where each element is a string
+	3: (formula) a string
+	4: (charge) a float
+	5: (isCofactor) a bool
+	6: (structureString) a string
+	7: (structureType) a string
+
+	workspace has a value which is a string
+	biochemistry has a value which is a string
+	biochemistry_ws has a value which is a string
+	output_id has a value which is a string
+bool is an int
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is an add_biochemistry_compounds_params
+$output is an object_metadata
+add_biochemistry_compounds_params is a reference to a hash where the following keys are defined:
+	compounds has a value which is a reference to a list where each element is a reference to a list containing 8 items:
+	0: (abbreviation) a string
+	1: (name) a string
+	2: (aliases) a reference to a list where each element is a string
+	3: (formula) a string
+	4: (charge) a float
+	5: (isCofactor) a bool
+	6: (structureString) a string
+	7: (structureType) a string
+
+	workspace has a value which is a string
+	biochemistry has a value which is a string
+	biochemistry_ws has a value which is a string
+	output_id has a value which is a string
+bool is an int
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+
+=end text
+
+
+
+=item Description
+
+
+
+=back
+
+=cut
+
+sub add_biochemistry_compounds
+{
+    my $self = shift;
+    my($params) = @_;
+
+    my @_bad_arguments;
+    (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"params\" (value was \"$params\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to add_biochemistry_compounds:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'add_biochemistry_compounds');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($output);
+    #BEGIN add_biochemistry_compounds
+    $self->_setContext($ctx,$params);
+	$params = $self->_validateargs($params,["workspace","compounds"],{
+		biochemistry => "default",
+		biochemistry_ws => $params->{workspace},
+		output_id => $params->{biochemistry}
+	});
+	my $bio = $self->_get_msobject("Biochemistry",$params->{biochemistry_ws},$params->{biochemistry});
+	for (my $i=0; $i < @{$params->{compounds}}; $i++) {
+		my $cpd = $params->{compounds}->[$i];
+		print $cpd->[1]."\n";
+		$bio->add_compound({
+			id => $cpd->[7],
+			name => $cpd->[1],
+			abbreviation => $cpd->[0],
+			aliases => $cpd->[2],
+			formula => $cpd->[3],
+			charge => $cpd->[3],
+			isCofactor => $cpd->[4],
+			structureString => $cpd->[5],
+			structureType => $cpd->[6],
+		});
+	}
+	$output = $self->_save_msobject($bio,"Biochemistry",$params->{workspace},$params->{output_id});
+    $self->_clearContext();
+    #END add_biochemistry_compounds
+    my @_bad_returns;
+    (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to add_biochemistry_compounds:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'add_biochemistry_compounds');
+    }
+    return($output);
+}
+
+
+
+
+=head2 update_object_references
+
+  $output = $obj->update_object_references($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is an update_object_references_params
+$output is an object_metadata
+update_object_references_params is a reference to a hash where the following keys are defined:
+	object has a value which is a string
+	object_workspace has a value which is a string
+	original_object has a value which is a string
+	original_workspace has a value which is a string
+	original_instance has a value which is a string
+	reference_field has a value which is a string
+	newobject has a value which is a string
+	newobject_workspace has a value which is a string
+	newobject_instance has a value which is a string
+	create_newobject has a value which is a bool
+	update_subrefs has a value which is a bool
+	output_id has a value which is a string
+	workspace has a value which is a string
+bool is an int
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is an update_object_references_params
+$output is an object_metadata
+update_object_references_params is a reference to a hash where the following keys are defined:
+	object has a value which is a string
+	object_workspace has a value which is a string
+	original_object has a value which is a string
+	original_workspace has a value which is a string
+	original_instance has a value which is a string
+	reference_field has a value which is a string
+	newobject has a value which is a string
+	newobject_workspace has a value which is a string
+	newobject_instance has a value which is a string
+	create_newobject has a value which is a bool
+	update_subrefs has a value which is a bool
+	output_id has a value which is a string
+	workspace has a value which is a string
+bool is an int
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+
+=end text
+
+
+
+=item Description
+
+
+
+=back
+
+=cut
+
+sub update_object_references
+{
+    my $self = shift;
+    my($params) = @_;
+
+    my @_bad_arguments;
+    (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"params\" (value was \"$params\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to update_object_references:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'update_object_references');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($output);
+    #BEGIN update_object_references
+    #END update_object_references
+    my @_bad_returns;
+    (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to update_object_references:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'update_object_references');
+    }
+    return($output);
+}
+
+
+
+
 =head2 version 
 
   $return = $obj->version()
@@ -30623,6 +30913,126 @@ a reference to a hash where the following keys are defined:
 genome_id has a value which is a genome_id
 series_id has a value which is a series_id
 regulome_id has a value which is a regulome_id
+
+
+=end text
+
+=back
+
+
+
+=head2 add_biochemistry_compounds_params
+
+=over 4
+
+
+
+=item Description
+
+Add specified compounds to specified biochemistry
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+compounds has a value which is a reference to a list where each element is a reference to a list containing 8 items:
+0: (abbreviation) a string
+1: (name) a string
+2: (aliases) a reference to a list where each element is a string
+3: (formula) a string
+4: (charge) a float
+5: (isCofactor) a bool
+6: (structureString) a string
+7: (structureType) a string
+
+workspace has a value which is a string
+biochemistry has a value which is a string
+biochemistry_ws has a value which is a string
+output_id has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+compounds has a value which is a reference to a list where each element is a reference to a list containing 8 items:
+0: (abbreviation) a string
+1: (name) a string
+2: (aliases) a reference to a list where each element is a string
+3: (formula) a string
+4: (charge) a float
+5: (isCofactor) a bool
+6: (structureString) a string
+7: (structureType) a string
+
+workspace has a value which is a string
+biochemistry has a value which is a string
+biochemistry_ws has a value which is a string
+output_id has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 update_object_references_params
+
+=over 4
+
+
+
+=item Description
+
+Update object references
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+object has a value which is a string
+object_workspace has a value which is a string
+original_object has a value which is a string
+original_workspace has a value which is a string
+original_instance has a value which is a string
+reference_field has a value which is a string
+newobject has a value which is a string
+newobject_workspace has a value which is a string
+newobject_instance has a value which is a string
+create_newobject has a value which is a bool
+update_subrefs has a value which is a bool
+output_id has a value which is a string
+workspace has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+object has a value which is a string
+object_workspace has a value which is a string
+original_object has a value which is a string
+original_workspace has a value which is a string
+original_instance has a value which is a string
+reference_field has a value which is a string
+newobject has a value which is a string
+newobject_workspace has a value which is a string
+newobject_instance has a value which is a string
+create_newobject has a value which is a bool
+update_subrefs has a value which is a bool
+output_id has a value which is a string
+workspace has a value which is a string
 
 
 =end text

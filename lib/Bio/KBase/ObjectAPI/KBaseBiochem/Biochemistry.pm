@@ -84,7 +84,7 @@ sub _buildreactionRoleHash {
 
 sub addAlias {
     my $self = shift;
-    my $args = Bio::KBase::ObjectAPI::Util::utilities::args(["attribute","aliasName","alias","uuid"], {}, @_);
+    my $args = Bio::KBase::ObjectAPI::utilities::args(["attribute","aliasName","alias","uuid"], {}, @_);
 	my $idhash;
 	my $aliasHash;
 	if ($args->{attribute} eq "compounds") {
@@ -567,6 +567,93 @@ sub addCueFromHash {
     }
 }
 
+=head3 add_compound
+Definition:
+	Bio::KBase::ObjectAPI::KBaseBiochem::Compound = Bio::KBase::ObjectAPI::KBaseBiochem::Compound->add_compound({
+		name => string,
+		abbreviation => string,
+		aliases => [string],
+		formula => string,
+		charge => float,
+		isCofactor => bool,
+		structureString => string,
+		structureType => string,
+	});
+Description:
+	This command adds a single compound from an input hash
+
+=cut
+sub add_compound {
+	my ($self,$args) = @_;
+    $args = Bio::KBase::ObjectAPI::utilities::args(["name"],{
+		id => undef,
+		abbreviation => $args->{name},
+		aliases => [],
+		formula => "unknown",
+		charge => 0,
+		isCofactor => 0,
+		structureString => undef,
+		structureType => undef
+    },$args);
+	my $cpd = $self->searchForCompound($args->{name});
+	if (defined($cpd)) {
+		Bio::KBase::ObjectAPI::utilities::error("Compound found with same name:".$args->{name}."!");
+	}
+	$cpd = $self->searchForCompound($args->{abbreviation});
+	if (defined($cpd)) {
+		Bio::KBase::ObjectAPI::utilities::error("Compound found with same abbreviation:".$args->{abbreviation}."!");
+	}
+	foreach my $alias (@{$args->{aliases}}) {
+		if (length($alias) > 0 && $alias =~ m/[a-zA-Z]/) {
+			if ($alias =~ m/(.+):([^:]+)/) {
+				$alias = $2;
+				$cpd = $self->searchForCompound($alias);
+			} else {
+				$cpd = $self->searchForCompound($alias);
+			}
+			if (defined($cpd)) {
+				Bio::KBase::ObjectAPI::utilities::error("Compound found with same alias:".$alias."!");
+			}
+		}
+	}
+	if (!defined($args->{id})) {
+		$args->{id} = "cpd31000";
+		while (defined($self->getObject("compounds",$args->{id}))) {
+			$args->{id}++;
+		}
+	} elsif (defined($self->getObject("compounds",$args->{id}))) {
+		Bio::KBase::ObjectAPI::utilities::error("Compound found with specified ID already exists:".$args->{id}."!");
+	}
+	my $cpdobj = $self->add("compounds",{
+		id => $args->{id},
+		name => $args->{name},
+		abbreviation => $args->{abbreviation},
+		formula => $args->{formula},
+		unchargedFormula => $args->{formula},
+		mass => 0,
+		defaultCharge => $args->{charge},
+		deltaG => 0,
+		deltaGErr => 0
+	});
+	foreach my $alias (@{$args->{aliases}}) {
+		if ($alias =~ m/(.+):([^:]+)/) {
+			$self->addAlias({
+				attribute => "compounds",
+				aliasName => $1,
+				alias => $2,
+				uuid => $args->{id}
+			});
+		} else {
+			$self->addAlias({
+				attribute => "compounds",
+				aliasName => "name",
+				alias => $alias,
+				uuid => $args->{id}
+			});
+		}
+	}
+	return $cpdobj;
+}
 =head3 addCompoundFromHash
 Definition:
 	Bio::KBase::ObjectAPI::KBaseBiochem::Compound = Bio::KBase::ObjectAPI::KBaseBiochem::Compound->addCompoundFromHash({[]});

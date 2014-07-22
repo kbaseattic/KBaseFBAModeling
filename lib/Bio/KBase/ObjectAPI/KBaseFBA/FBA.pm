@@ -515,6 +515,11 @@ sub createJobDirectory {
 				} elsif ($tmprxn->direction() eq "<") {
 					$rxndir = "<=";
 				}
+				if ($tmprxn->reaction()->thermoReversibility() eq ">") {
+					$rxndir = "=>";
+				} elsif ($tmprxn->reaction()->thermoReversibility() eq "<") {
+					$rxndir = "<=";
+				}
 				if (!defined($rxnhash->{$tmpid})) {
 					if (defined($gauranteed->{$tmprxn->reaction()->id()})) {
 						push(@{$final_gauranteed},$tmpid);

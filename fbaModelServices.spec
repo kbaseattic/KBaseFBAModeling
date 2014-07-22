@@ -3696,4 +3696,46 @@ module fbaModelServices {
     */
     authentication required;
     funcdef create_promconstraint(CreatePromConstraintParameters params) returns (object_metadata promconstraint_meta);
+	
+	/*
+    	Add specified compounds to specified biochemistry
+    */
+    typedef structure {
+        list<tuple<string abbreviation,string name,list<string> aliases,string formula,float charge,bool isCofactor,string structureString,string structureType,string id>> compounds;
+    	string workspace;
+    	string biochemistry;
+    	string biochemistry_ws;
+    	string output_id;
+    } add_biochemistry_compounds_params;
+    authentication required;
+    funcdef add_biochemistry_compounds(add_biochemistry_compounds_params params) returns (object_metadata output);
+    
+    /*
+    	Update object references
+    */
+    typedef structure {
+    	string object;
+    	string object_workspace;
+    	
+    	string original_object;
+    	string original_workspace;
+    	string original_instance;
+    	
+    	string reference_field;
+    	
+    	string newobject;
+    	string newobject_workspace;
+    	string newobject_instance;
+    	
+    	bool create_newobject;
+    	bool update_subrefs;
+    	string output_id;
+    	string workspace;
+    } update_object_references_params;
+    authentication required;
+    funcdef update_object_references(update_object_references_params params) returns (object_metadata output);
 };
+
+
+    	
+
