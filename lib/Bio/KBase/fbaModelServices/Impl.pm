@@ -19181,7 +19181,7 @@ sub import_regulome
 
     my $regulome = Bio::KBase::ObjectAPI::KBaseRegulation::Regulome->new({
 	regulome_id => "kb|regulome.".$self->_idServer()->allocate_id_range("kb|regulome",1),
-	regulome_source => "REGPRECISE_PROPAGATED",
+	regulome_source => "",
 	regulome_name => ""
     });
 
@@ -19220,7 +19220,7 @@ sub import_regulome
 
     #Saving regulome in database
     $regulome->parent($self->_KBaseStore());
-    $regulome_meta = $self->_save_msobject($regulome,"Regulome",$input->{workspace},$genome_id."-regprecise-regulome");
+    $regulome_meta = $self->_save_msobject($regulome,"Regulome",$input->{workspace},$genome_id."-regulome");
     $self->_clearContext();
 
     #END import_regulome
