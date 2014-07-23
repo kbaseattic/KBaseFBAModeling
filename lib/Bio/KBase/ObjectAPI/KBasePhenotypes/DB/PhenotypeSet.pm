@@ -23,8 +23,8 @@ has source => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute'
 has source_id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 has importErrors => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has name => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 has type => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 
 
 # SUBOBJECTS:
@@ -32,7 +32,7 @@ has phenotypes => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { retu
 
 
 # LINKS:
-has genome => (is => 'rw', type => 'link(,,genome_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_genome', clearer => 'clear_genome', isa => 'Ref', weak_ref => 1);
+has genome => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,Genome,genome_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_genome', clearer => 'clear_genome', isa => 'Bio::KBase::ObjectAPI::KBaseGenomes::Genome', weak_ref => 1);
 
 
 # BUILDERS:
@@ -88,22 +88,22 @@ my $attributes = [
             'perm' => 'rw'
           },
           {
-            'req' => 1,
-            'printOrder' => 0,
-            'name' => 'id',
-            'type' => 'Str',
-            'perm' => 'rw'
-          },
-          {
             'req' => 0,
             'printOrder' => -1,
             'name' => 'type',
             'type' => 'Str',
             'perm' => 'rw'
+          },
+          {
+            'req' => 1,
+            'printOrder' => 0,
+            'name' => 'id',
+            'type' => 'Str',
+            'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {genome_ref => 0, source => 1, source_id => 2, importErrors => 3, name => 4, id => 5, type => 6};
+my $attribute_map = {genome_ref => 0, source => 1, source_id => 2, importErrors => 3, name => 4, type => 5, id => 6};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -120,14 +120,13 @@ sub _attributes {
 
 my $links = [
           {
-            'parent' => undef,
-            'name' => 'genome',
             'attribute' => 'genome_ref',
+            'parent' => 'Bio::KBase::ObjectAPI::KBaseStore',
             'clearer' => 'clear_genome',
-            'class' => undef,
-            'method' => undef,
-            'module' => undef,
-            'field' => undef
+            'name' => 'genome',
+            'method' => 'Genome',
+            'class' => 'Bio::KBase::ObjectAPI::KBaseGenomes::Genome',
+            'module' => 'KBaseGenomes'
           }
         ];
 

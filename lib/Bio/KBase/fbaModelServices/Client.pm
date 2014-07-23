@@ -3170,9 +3170,9 @@ sub build_pangenome
 =begin html
 
 <pre>
-$input is a genome_compare_from_pangenome_params
+$input is a genome_heatmap_from_pangenome_params
 $output is a heat_map_matrix
-genome_compare_from_pangenome_params is a reference to a hash where the following keys are defined:
+genome_heatmap_from_pangenome_params is a reference to a hash where the following keys are defined:
 	pangenome has a value which is a string
 	pangenome_workspace has a value which is a string
 	workspace has a value which is a string
@@ -3188,9 +3188,9 @@ bool is an int
 
 =begin text
 
-$input is a genome_compare_from_pangenome_params
+$input is a genome_heatmap_from_pangenome_params
 $output is a heat_map_matrix
-genome_compare_from_pangenome_params is a reference to a hash where the following keys are defined:
+genome_heatmap_from_pangenome_params is a reference to a hash where the following keys are defined:
 	pangenome has a value which is a string
 	pangenome_workspace has a value which is a string
 	workspace has a value which is a string
@@ -12114,36 +12114,35 @@ sub compare_models
 
 <pre>
 $params is a compare_genomes_params
-$output is a GenomeComparisonData
+$output is an object_metadata
 compare_genomes_params is a reference to a hash where the following keys are defined:
 	genomes has a value which is a reference to a list where each element is a genome_id
 	workspaces has a value which is a reference to a list where each element is a workspace_id
-	auth has a value which is a string
+	pangenome_id has a value which is a string
+	pangenome_ws has a value which is a string
+	protcomp_id has a value which is a string
+	protcomp_ws has a value which is a string
+	output_id has a value which is a string
+	workspace has a value which is a string
 genome_id is a string
 workspace_id is a string
-GenomeComparisonData is a reference to a hash where the following keys are defined:
-	genome_comparisons has a value which is a reference to a list where each element is a GenomeComparisonGenome
-	function_comparisons has a value which is a reference to a list where each element is a GenomeCompareFunction
-	auth has a value which is a string
-GenomeComparisonGenome is a reference to a hash where the following keys are defined:
-	genome has a value which is a genome_id
-	workspace has a value which is a workspace_id
-	genome_name has a value which is a string
-	taxonomy has a value which is a string
-	features has a value which is an int
-	core_functions has a value which is an int
-	noncore_functions has a value which is an int
-GenomeCompareFunction is a reference to a hash where the following keys are defined:
-	core has a value which is a bool
-	genome_features has a value which is a reference to a hash where the key is a genome_id and the value is a reference to a list where each element is a feature_id
-	role has a value which is a string
-	subsystem has a value which is a string
-	primclass has a value which is a string
-	subclass has a value which is a string
-	number_genomes has a value which is an int
-	fraction_genomes has a value which is a float
-bool is an int
-feature_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
 
 </pre>
 
@@ -12152,36 +12151,35 @@ feature_id is a string
 =begin text
 
 $params is a compare_genomes_params
-$output is a GenomeComparisonData
+$output is an object_metadata
 compare_genomes_params is a reference to a hash where the following keys are defined:
 	genomes has a value which is a reference to a list where each element is a genome_id
 	workspaces has a value which is a reference to a list where each element is a workspace_id
-	auth has a value which is a string
+	pangenome_id has a value which is a string
+	pangenome_ws has a value which is a string
+	protcomp_id has a value which is a string
+	protcomp_ws has a value which is a string
+	output_id has a value which is a string
+	workspace has a value which is a string
 genome_id is a string
 workspace_id is a string
-GenomeComparisonData is a reference to a hash where the following keys are defined:
-	genome_comparisons has a value which is a reference to a list where each element is a GenomeComparisonGenome
-	function_comparisons has a value which is a reference to a list where each element is a GenomeCompareFunction
-	auth has a value which is a string
-GenomeComparisonGenome is a reference to a hash where the following keys are defined:
-	genome has a value which is a genome_id
-	workspace has a value which is a workspace_id
-	genome_name has a value which is a string
-	taxonomy has a value which is a string
-	features has a value which is an int
-	core_functions has a value which is an int
-	noncore_functions has a value which is an int
-GenomeCompareFunction is a reference to a hash where the following keys are defined:
-	core has a value which is a bool
-	genome_features has a value which is a reference to a hash where the key is a genome_id and the value is a reference to a list where each element is a feature_id
-	role has a value which is a string
-	subsystem has a value which is a string
-	primclass has a value which is a string
-	subclass has a value which is a string
-	number_genomes has a value which is an int
-	fraction_genomes has a value which is a float
-bool is an int
-feature_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
 
 
 =end text
@@ -13141,7 +13139,7 @@ sub create_promconstraint
 $params is an add_biochemistry_compounds_params
 $output is an object_metadata
 add_biochemistry_compounds_params is a reference to a hash where the following keys are defined:
-	compounds has a value which is a reference to a list where each element is a reference to a list containing 8 items:
+	compounds has a value which is a reference to a list where each element is a reference to a list containing 9 items:
 	0: (abbreviation) a string
 	1: (name) a string
 	2: (aliases) a reference to a list where each element is a string
@@ -13150,6 +13148,7 @@ add_biochemistry_compounds_params is a reference to a hash where the following k
 	5: (isCofactor) a bool
 	6: (structureString) a string
 	7: (structureType) a string
+	8: (id) a string
 
 	workspace has a value which is a string
 	biochemistry has a value which is a string
@@ -13184,7 +13183,7 @@ workspace_ref is a string
 $params is an add_biochemistry_compounds_params
 $output is an object_metadata
 add_biochemistry_compounds_params is a reference to a hash where the following keys are defined:
-	compounds has a value which is a reference to a list where each element is a reference to a list containing 8 items:
+	compounds has a value which is a reference to a list where each element is a reference to a list containing 9 items:
 	0: (abbreviation) a string
 	1: (name) a string
 	2: (aliases) a reference to a list where each element is a string
@@ -13193,6 +13192,7 @@ add_biochemistry_compounds_params is a reference to a hash where the following k
 	5: (isCofactor) a bool
 	6: (structureString) a string
 	7: (structureType) a string
+	8: (id) a string
 
 	workspace has a value which is a string
 	biochemistry has a value which is a string
@@ -19237,7 +19237,7 @@ matrix has a value which is a reference to a list where each element is a refere
 
 
 
-=head2 genome_compare_from_pangenome_params
+=head2 genome_heatmap_from_pangenome_params
 
 =over 4
 
@@ -23639,7 +23639,12 @@ auth has a value which is a string
 a reference to a hash where the following keys are defined:
 genomes has a value which is a reference to a list where each element is a genome_id
 workspaces has a value which is a reference to a list where each element is a workspace_id
-auth has a value which is a string
+pangenome_id has a value which is a string
+pangenome_ws has a value which is a string
+protcomp_id has a value which is a string
+protcomp_ws has a value which is a string
+output_id has a value which is a string
+workspace has a value which is a string
 
 </pre>
 
@@ -23650,162 +23655,12 @@ auth has a value which is a string
 a reference to a hash where the following keys are defined:
 genomes has a value which is a reference to a list where each element is a genome_id
 workspaces has a value which is a reference to a list where each element is a workspace_id
-auth has a value which is a string
-
-
-=end text
-
-=back
-
-
-
-=head2 GenomeComparisonGenome
-
-=over 4
-
-
-
-=item Description
-
-Data structure to hold genome comparison data
-
-        genome_id genome;
-        workspace_id workspace;
-        string genome_name;
-        string taxonomy;
-        int features;
-        int core_functions;
-        int noncore_functions;
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-genome has a value which is a genome_id
-workspace has a value which is a workspace_id
-genome_name has a value which is a string
-taxonomy has a value which is a string
-features has a value which is an int
-core_functions has a value which is an int
-noncore_functions has a value which is an int
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-genome has a value which is a genome_id
-workspace has a value which is a workspace_id
-genome_name has a value which is a string
-taxonomy has a value which is a string
-features has a value which is an int
-core_functions has a value which is an int
-noncore_functions has a value which is an int
-
-
-=end text
-
-=back
-
-
-
-=head2 GenomeCompareFunction
-
-=over 4
-
-
-
-=item Description
-
-Data structure to hold model reaction comparison data
-
-        string role
-        bool core - boolean indicating if the function is core
-        mapping<genome_id,list<feature_id> > genome_features
-        string subsytem - subsystem associated with role
-        string primclass - class one of the subsystem
-        string subclass - class two of the subsystem
-        int number_genomes - number of genomes with function
-        float fraction_genomes - fraction of genomes with function
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-core has a value which is a bool
-genome_features has a value which is a reference to a hash where the key is a genome_id and the value is a reference to a list where each element is a feature_id
-role has a value which is a string
-subsystem has a value which is a string
-primclass has a value which is a string
-subclass has a value which is a string
-number_genomes has a value which is an int
-fraction_genomes has a value which is a float
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-core has a value which is a bool
-genome_features has a value which is a reference to a hash where the key is a genome_id and the value is a reference to a list where each element is a feature_id
-role has a value which is a string
-subsystem has a value which is a string
-primclass has a value which is a string
-subclass has a value which is a string
-number_genomes has a value which is an int
-fraction_genomes has a value which is a float
-
-
-=end text
-
-=back
-
-
-
-=head2 GenomeComparisonData
-
-=over 4
-
-
-
-=item Description
-
-Output structure for the "compare_genomes" function.
-
-        list<GenomeComparisonGenome> genome_comparisons;
-        list<GenomeCompareFunction> function_comparisons;
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-genome_comparisons has a value which is a reference to a list where each element is a GenomeComparisonGenome
-function_comparisons has a value which is a reference to a list where each element is a GenomeCompareFunction
-auth has a value which is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-genome_comparisons has a value which is a reference to a list where each element is a GenomeComparisonGenome
-function_comparisons has a value which is a reference to a list where each element is a GenomeCompareFunction
-auth has a value which is a string
+pangenome_id has a value which is a string
+pangenome_ws has a value which is a string
+protcomp_id has a value which is a string
+protcomp_ws has a value which is a string
+output_id has a value which is a string
+workspace has a value which is a string
 
 
 =end text
@@ -24575,7 +24430,7 @@ Add specified compounds to specified biochemistry
 
 <pre>
 a reference to a hash where the following keys are defined:
-compounds has a value which is a reference to a list where each element is a reference to a list containing 8 items:
+compounds has a value which is a reference to a list where each element is a reference to a list containing 9 items:
 0: (abbreviation) a string
 1: (name) a string
 2: (aliases) a reference to a list where each element is a string
@@ -24584,6 +24439,7 @@ compounds has a value which is a reference to a list where each element is a ref
 5: (isCofactor) a bool
 6: (structureString) a string
 7: (structureType) a string
+8: (id) a string
 
 workspace has a value which is a string
 biochemistry has a value which is a string
@@ -24597,7 +24453,7 @@ output_id has a value which is a string
 =begin text
 
 a reference to a hash where the following keys are defined:
-compounds has a value which is a reference to a list where each element is a reference to a list containing 8 items:
+compounds has a value which is a reference to a list where each element is a reference to a list containing 9 items:
 0: (abbreviation) a string
 1: (name) a string
 2: (aliases) a reference to a list where each element is a string
@@ -24606,6 +24462,7 @@ compounds has a value which is a reference to a list where each element is a ref
 5: (isCofactor) a bool
 6: (structureString) a string
 7: (structureType) a string
+8: (id) a string
 
 workspace has a value which is a string
 biochemistry has a value which is a string

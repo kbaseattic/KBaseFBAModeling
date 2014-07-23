@@ -1628,12 +1628,12 @@ module fbaModelServices {
 		string pangenome;
 		string pangenome_workspace;
 		string workspace;
-    } genome_compare_from_pangenome_params;
+    } genome_heatmap_from_pangenome_params;
     /*
         Builds a comparason matrix for genomes included in a pangenome object
     */
     authentication required;
-    funcdef genome_heatmap_from_pangenome(genome_compare_from_pangenome_params input) returns (heat_map_matrix output);
+    funcdef genome_heatmap_from_pangenome(genome_heatmap_from_pangenome_params input) returns (heat_map_matrix output);
 	
 	/*gene ID,gene ref,protein sequence,function,score*/
 	typedef structure {
@@ -3380,72 +3380,18 @@ module fbaModelServices {
 		
 	*/
 	typedef structure {
-		list<genome_id> genomes;
-		list<workspace_id> workspaces;
-		string auth;
+		string pangenome_id;
+		string pangenome_ws;
+		string protcomp_id;
+		string protcomp_ws;
+		string output_id;
+		string workspace;
     } compare_genomes_params;
-    
-    /* Data structure to hold genome comparison data
-	
-		genome_id genome;
-		workspace_id workspace;
-		string genome_name;
-		string taxonomy;
-		int features;
-		int core_functions;
-		int noncore_functions;
-		
-	*/
-    typedef structure {
-		genome_id genome;
-		workspace_id workspace;
-		string genome_name;
-		string taxonomy;
-		int features;
-		int core_functions;
-		int noncore_functions;
-    } GenomeComparisonGenome;
-    
-    /* Data structure to hold model reaction comparison data
-	
-		string role
-		bool core - boolean indicating if the function is core
-		mapping<genome_id,list<feature_id> > genome_features
-		string subsytem - subsystem associated with role
-		string primclass - class one of the subsystem
-		string subclass - class two of the subsystem
-		int number_genomes - number of genomes with function
-		float fraction_genomes - fraction of genomes with function
-		
-	*/
-    typedef structure {
-		bool core;
-		mapping<genome_id,list<feature_id> > genome_features;
-		string role;
-		string subsystem;
-		string primclass;
-		string subclass;
-		int number_genomes;
-		float fraction_genomes;
-    } GenomeCompareFunction;
-    
-    /* Output structure for the "compare_genomes" function.
-	
-		list<GenomeComparisonGenome> genome_comparisons;
-		list<GenomeCompareFunction> function_comparisons;
-				
-	*/
-    typedef structure {
-		list<GenomeComparisonGenome> genome_comparisons;
-		list<GenomeCompareFunction> function_comparisons;
-		string auth;
-    } GenomeComparisonData;
-    
     /*
 		Compares the specified genomes and computes unique features and core features
     */
     authentication optional;
-    funcdef compare_genomes(compare_genomes_params params) returns (GenomeComparisonData output);
+    funcdef compare_genomes(compare_genomes_params params) returns (object_metadata output);
    	
    	/*********************************************************************************
     Functions relating to construction of community models

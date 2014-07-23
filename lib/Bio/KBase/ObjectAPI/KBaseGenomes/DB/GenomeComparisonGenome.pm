@@ -1,10 +1,10 @@
 ########################################################################
-# Bio::KBase::ObjectAPI::KBaseRegulation::DB::Regulator - This is the moose object corresponding to the KBaseRegulation.Regulator object
+# Bio::KBase::ObjectAPI::KBaseGenomes::DB::GenomeComparisonGenome - This is the moose object corresponding to the KBaseGenomes.GenomeComparisonGenome object
 # Authors: Christopher Henry, Scott Devoid, Paul Frybarger
 # Contact email: chenry@mcs.anl.gov
 # Development location: Mathematics and Computer Science Division, Argonne National Lab
 ########################################################################
-package Bio::KBase::ObjectAPI::KBaseRegulation::DB::Regulator;
+package Bio::KBase::ObjectAPI::KBaseGenomes::DB::GenomeComparisonGenome;
 use Bio::KBase::ObjectAPI::BaseObject;
 use Moose;
 use namespace::autoclean;
@@ -16,29 +16,56 @@ has parent => (is => 'rw', isa => 'Ref', weak_ref => 1, type => 'parent', metacl
 # ATTRIBUTES:
 has uuid => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_uuid');
 has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_reference');
+has genome_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has features => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has name => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has taxonomy => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has regulation_type => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
-has rfam_id => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has regulator_id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
-has tf_family => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has regulator_name => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has functions => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has families => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has id => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
+has genome => (is => 'rw', type => 'link(,,genome_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_genome', clearer => 'clear_genome', isa => 'Ref', weak_ref => 1);
 
 
 # BUILDERS:
-sub _build_reference { my ($self) = @_;return $self->parent()->_reference().'/regulator/id/'.$self->id(); }
+sub _build_reference { my ($self) = @_;return $self->parent()->_reference().'//id/'.$self->id(); }
 sub _build_uuid { my ($self) = @_;return $self->_reference(); }
+sub _build_genome {
+	 my ($self) = @_;
+	 return $self->getLinkedObject($self->genome_ref());
+}
 
 
 # CONSTANTS:
-sub _type { return 'KBaseRegulation.Regulator'; }
-sub _module { return 'KBaseRegulation'; }
-sub _class { return 'Regulator'; }
+sub _type { return 'KBaseGenomes.GenomeComparisonGenome'; }
+sub _module { return 'KBaseGenomes'; }
+sub _class { return 'GenomeComparisonGenome'; }
 sub _top { return 0; }
 
 my $attributes = [
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'genome_ref',
+            'type' => 'Str',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'features',
+            'type' => 'Int',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'name',
+            'type' => 'Str',
+            'perm' => 'rw'
+          },
           {
             'req' => 0,
             'printOrder' => -1,
@@ -47,43 +74,29 @@ my $attributes = [
             'perm' => 'rw'
           },
           {
-            'req' => 1,
-            'printOrder' => 0,
-            'name' => 'regulation_type',
-            'type' => 'Str',
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'functions',
+            'type' => 'Int',
             'perm' => 'rw'
           },
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'rfam_id',
-            'type' => 'Str',
-            'perm' => 'rw'
-          },
-          {
-            'req' => 1,
-            'printOrder' => 0,
-            'name' => 'regulator_id',
-            'type' => 'Str',
+            'name' => 'families',
+            'type' => 'Int',
             'perm' => 'rw'
           },
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'tf_family',
-            'type' => 'Str',
-            'perm' => 'rw'
-          },
-          {
-            'req' => 0,
-            'printOrder' => -1,
-            'name' => 'regulator_name',
+            'name' => 'id',
             'type' => 'Str',
             'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {taxonomy => 0, regulation_type => 1, rfam_id => 2, regulator_id => 3, tf_family => 4, regulator_name => 5};
+my $attribute_map = {genome_ref => 0, features => 1, name => 2, taxonomy => 3, functions => 4, families => 5, id => 6};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -98,9 +111,20 @@ sub _attributes {
 	 }
 }
 
-my $links = [];
+my $links = [
+          {
+            'parent' => undef,
+            'name' => 'genome',
+            'attribute' => 'genome_ref',
+            'clearer' => 'clear_genome',
+            'class' => undef,
+            'method' => undef,
+            'module' => undef,
+            'field' => undef
+          }
+        ];
 
-my $link_map = {};
+my $link_map = {genome => 0};
 sub _links {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {

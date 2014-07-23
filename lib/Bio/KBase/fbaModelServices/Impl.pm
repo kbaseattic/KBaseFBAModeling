@@ -6870,9 +6870,9 @@ sub build_pangenome
 =begin html
 
 <pre>
-$input is a genome_compare_from_pangenome_params
+$input is a genome_heatmap_from_pangenome_params
 $output is a heat_map_matrix
-genome_compare_from_pangenome_params is a reference to a hash where the following keys are defined:
+genome_heatmap_from_pangenome_params is a reference to a hash where the following keys are defined:
 	pangenome has a value which is a string
 	pangenome_workspace has a value which is a string
 	workspace has a value which is a string
@@ -6888,9 +6888,9 @@ bool is an int
 
 =begin text
 
-$input is a genome_compare_from_pangenome_params
+$input is a genome_heatmap_from_pangenome_params
 $output is a heat_map_matrix
-genome_compare_from_pangenome_params is a reference to a hash where the following keys are defined:
+genome_heatmap_from_pangenome_params is a reference to a hash where the following keys are defined:
 	pangenome has a value which is a string
 	pangenome_workspace has a value which is a string
 	workspace has a value which is a string
@@ -17865,36 +17865,35 @@ sub compare_models
 
 <pre>
 $params is a compare_genomes_params
-$output is a GenomeComparisonData
+$output is an object_metadata
 compare_genomes_params is a reference to a hash where the following keys are defined:
 	genomes has a value which is a reference to a list where each element is a genome_id
 	workspaces has a value which is a reference to a list where each element is a workspace_id
-	auth has a value which is a string
+	pangenome_id has a value which is a string
+	pangenome_ws has a value which is a string
+	protcomp_id has a value which is a string
+	protcomp_ws has a value which is a string
+	output_id has a value which is a string
+	workspace has a value which is a string
 genome_id is a string
 workspace_id is a string
-GenomeComparisonData is a reference to a hash where the following keys are defined:
-	genome_comparisons has a value which is a reference to a list where each element is a GenomeComparisonGenome
-	function_comparisons has a value which is a reference to a list where each element is a GenomeCompareFunction
-	auth has a value which is a string
-GenomeComparisonGenome is a reference to a hash where the following keys are defined:
-	genome has a value which is a genome_id
-	workspace has a value which is a workspace_id
-	genome_name has a value which is a string
-	taxonomy has a value which is a string
-	features has a value which is an int
-	core_functions has a value which is an int
-	noncore_functions has a value which is an int
-GenomeCompareFunction is a reference to a hash where the following keys are defined:
-	core has a value which is a bool
-	genome_features has a value which is a reference to a hash where the key is a genome_id and the value is a reference to a list where each element is a feature_id
-	role has a value which is a string
-	subsystem has a value which is a string
-	primclass has a value which is a string
-	subclass has a value which is a string
-	number_genomes has a value which is an int
-	fraction_genomes has a value which is a float
-bool is an int
-feature_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
 
 </pre>
 
@@ -17903,36 +17902,35 @@ feature_id is a string
 =begin text
 
 $params is a compare_genomes_params
-$output is a GenomeComparisonData
+$output is an object_metadata
 compare_genomes_params is a reference to a hash where the following keys are defined:
 	genomes has a value which is a reference to a list where each element is a genome_id
 	workspaces has a value which is a reference to a list where each element is a workspace_id
-	auth has a value which is a string
+	pangenome_id has a value which is a string
+	pangenome_ws has a value which is a string
+	protcomp_id has a value which is a string
+	protcomp_ws has a value which is a string
+	output_id has a value which is a string
+	workspace has a value which is a string
 genome_id is a string
 workspace_id is a string
-GenomeComparisonData is a reference to a hash where the following keys are defined:
-	genome_comparisons has a value which is a reference to a list where each element is a GenomeComparisonGenome
-	function_comparisons has a value which is a reference to a list where each element is a GenomeCompareFunction
-	auth has a value which is a string
-GenomeComparisonGenome is a reference to a hash where the following keys are defined:
-	genome has a value which is a genome_id
-	workspace has a value which is a workspace_id
-	genome_name has a value which is a string
-	taxonomy has a value which is a string
-	features has a value which is an int
-	core_functions has a value which is an int
-	noncore_functions has a value which is an int
-GenomeCompareFunction is a reference to a hash where the following keys are defined:
-	core has a value which is a bool
-	genome_features has a value which is a reference to a hash where the key is a genome_id and the value is a reference to a list where each element is a feature_id
-	role has a value which is a string
-	subsystem has a value which is a string
-	primclass has a value which is a string
-	subclass has a value which is a string
-	number_genomes has a value which is an int
-	fraction_genomes has a value which is a float
-bool is an int
-feature_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
 
 
 =end text
@@ -17964,18 +17962,114 @@ sub compare_genomes
     my($output);
     #BEGIN compare_genomes
     $self->_setContext($ctx,$params);
-	$params = $self->_validateargs($params,["genomes","workspaces"],{
+	$params = $self->_validateargs($params,["workspace"],{
+		pangenome_id => undef,
+		pangenome_ws => $params->{workspace},
+		protcomp_id => undef,
+		protcomp_ws => $params->{workspace},
 		mapping => "default-mapping",
-		mapping_workspace => "kbase"
+		mapping_workspace => "kbase",
+		output_id => undef,
 	});
-	$output = {
-		genome_comparisons => [],
-		function_comparisons => [],
+	my $orthos;
+	my $members = {};
+	my $genome_ids;
+	my $genome_wwss;
+	my $genome_refs;
+	my $gc = {
+		genomes => [],
+		families => [],
+		functions => [],
+		core_functions => 0,
+		core_families => 0
 	};
+	if (defined($params->{pangenome_id})) {
+		if (!defined($params->{output_id})) {
+			$params->{output_id} = $params->{pangenome_id}."_comparison";
+		}
+		my $pg = $self->_get_msobject("Pangenome",$params->{pangenome_ws},$params->{pangenome_id});
+		$gc->{pangenome_ref} = $pg->_reference();
+		$genome_refs = $pg->genome_refs();
+		for (my $i=0; $i < @{$genome_refs}; $i++) {
+			my $array = [split(/\//,$genome_refs->[$i])];
+			push(@{$genome_ids},$array->[0]);
+			push(@{$genome_wwss},$array->[1]);
+		}
+		my $orthofam = $pg->orthologs();
+		for (my $i=0; $i < @{$orthofam}; $i++) {
+			for (my $j=0; $j < @{$orthofam->[$i]->orthologs()}; $j++) {
+				$orthos->{$orthofam->[$i]}->{$orthofam->[$i]->orthologs()->[$j]->[2]}->{$orthofam->[$i]->orthologs()->[$j]->[0]} = $orthofam->[$i]->orthologs()->[$j]->[1];
+			}
+		}
+	} elsif (defined($params->{protcomp_id})) {
+		if (!defined($params->{output_id})) {
+			$params->{output_id} = $params->{protcomp_id}."_comparison";
+		}
+		my $pc = $self->_get_msobject("ProteomeComparison",$params->{protcomp_ws},$params->{protcomp_id});
+		$gc->{protcomp_ref} = $pc->_reference();
+		$genome_refs = [$pc->genome1ws()."/".$pc->genome1id(),$pc->genome2ws()."/".$pc->genome2id()];
+		$genome_ids = [$pc->genome1id(),$pc->genome2id()];
+		$genome_wwss = [$pc->genome1ws(),$pc->genome2ws()];
+		my $plist = $pc->proteome1names();
+		my $oplist = $pc->proteome2names();
+		my $d = $pc->data1();
+		for (my $i=0; $i < @{$plist}; $i++) {
+			my $family;
+			my $sorthos;
+			for (my $j=0; $j < @{$d->[$i]}; $j++) {
+				if ($d->[$i]->[$j]->[2] >= 90) {
+					my $gene = $oplist->[$d->[$i]->[$j]->[0]];
+					$sorthos->{$gene} = $d->[$i]->[$j]->[1];
+					if (defined($members->{$genome_refs->[1]}->{$gene})) {
+						$family = $members->{$genome_refs->[1]}->{$gene};
+					}
+				}
+			}
+			if (!defined($family)) {
+				$family = $plist->[$i];	
+			}
+			$orthos->{$family}->{$genome_refs->[0]}->{$plist->[$i]} = 100;
+			$members->{$genome_refs->[0]}->{$plist->[$i]} = $family;
+			foreach my $gene (keys(%{$sorthos})) {
+				$members->{$genome_refs->[1]}->{$gene} = $family;
+				$orthos->{$family}->{$genome_refs->[1]}->{$gene} = $sorthos->{$gene};
+			}
+		}
+		$d = $pc->data2();
+		for (my $i=0; $i < @{$oplist}; $i++) {
+			if (!defined($members->{$genome_refs->[1]}->{$oplist->[$i]})) {
+				my $family;
+				my $sorthos;
+				for (my $j=0; $j < @{$d->[$i]}; $j++) {
+					if ($d->[$i]->[$j]->[2] >= 90) {
+						my $gene = $plist->[$d->[$i]->[$j]->[0]];
+						$sorthos->{$gene} = $d->[$i]->[$j]->[1];
+						if (defined($members->{$genome_refs->[0]}->{$gene})) {
+							$family = $members->{$genome_refs->[0]}->{$gene};
+						}
+					}
+				}
+				if (!defined($family)) {
+					$family = $oplist->[$i];	
+				}
+				$orthos->{$family}->{$genome_refs->[1]}->{$oplist->[$i]} = 100;
+				$members->{$genome_refs->[1]}->{$oplist->[$i]} = $family;
+				foreach my $gene (keys(%{$sorthos})) {
+					$members->{$genome_refs->[0]}->{$gene} = $family;
+					$orthos->{$family}->{$genome_refs->[0]}->{$gene} = $sorthos->{$gene};
+				}
+			}
+		}
+	} else {
+		$self->_error("Must provide either a pangenome or proteome comparison as input!");
+	}
+	$gc->{id} = $input->{workspace}."/".$params->{output_id};
+	$gc->{name} = $params->{output_id};
+	#Retrieving subsystem data from mapping
+	my $map = $self->_get_msobject("Mapping",$params->{mapping_workspace},$params->{mapping});
 	my $SubsysRoles = {};
 	my $GenomeHash = {};
 	my $FunctionHash = {};
-	my $map = $self->_get_msobject("Mapping",$params->{mapping_workspace},$params->{mapping});
 	my $rolesets = $map->subsystems();
 	for (my $i=0; $i < @{$rolesets}; $i++) {
 		my $roleset = $rolesets->[$i];
@@ -17984,79 +18078,132 @@ sub compare_genomes
 			$SubsysRoles->{$roles->[$j]->name()} = $roleset;
 		}
 	}
-	for (my $i=0; $i < @{$params->{genomes}}; $i++) {
-		my $gen = $params->{genomes}->[$i];
-		my $ws = $params->{workspaces}->[$i];
-		my $genome = $self->_get_msobject("Genome",$ws,$gen);
-		if (defined($genome)) {
-			$GenomeHash->{$ws."/".$gen} = @{$output->{genome_comparisons}};
-			my $taxonomy = "Unknown";
-			if (defined($genome->taxonomy())) {
-				$taxonomy = $genome->taxonomy();
-			}
-			my $numfeature = @{$genome->features()};
-			my $genomecomp = {
-				genome => $gen,
-				workspace => $ws,
-				genome_name => $genome->scientific_name(),
-				taxonomy => $taxonomy,
-				features => $numfeature,
-				core_functions => 0,
-				noncore_functions => 0
-			};
-			my $features = $genome->features();
-			for (my $j=0; $j < @{$features}; $j++) {
-				my $feature = $features->[$j];
-				my $roles = $feature->roles();
-				for (my $k=0; $k < @{$roles}; $k++) {
-					if (!defined($FunctionHash->{$roles->[$k]})) {
-						my $ss = "None";
-						my $class = "None";
-						my $subclass = "None";
-						if (defined($SubsysRoles->{$roles->[$k]})) {
-							$ss = $SubsysRoles->{$roles->[$k]}->name();
-							$class = $SubsysRoles->{$roles->[$k]}->class();
-							$subclass = $SubsysRoles->{$roles->[$k]}->subclass();
-						}
-						$FunctionHash->{$roles->[$k]} = @{$output->{function_comparisons}};
-						push(@{$output->{function_comparisons}},{
-							core => 1,
-							genome_features => {},
-							role => $roles->[$k],
-							subsytem => $ss,
-							primclass => $class,
-							subclass => $subclass,
-							number_genomes => 0,
-							fraction_genomes => 0
-						});
+	#Associating roles and reactions
+	my $template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","GramNegModelTemplate");
+	my $rolerxns = $template->roleToReactions();
+	#Building genome comparison object
+	my $famkeys = [keys(%{$orthos})];
+	my $famind = {};
+	for (my $i=0; $i < @{$famkeys}; $i++) {
+		$famind->{$famkeys->[$i]} = $i;
+	}
+	my $funcind = {};
+	my $funccount = 0;
+	my $functions;
+	my $totgenomes = @{$genome_ids};
+	my $genomehash;
+	my $families = {};
+	for (my $i=0; $i < @{$genome_ids}; $i++) {
+		my $g = $self->_get_msobject("Genome",$genome_wwss->[$i],$genome_ids->[$i]);
+		my $ftrs = $g->features();
+		for (my $j=0; $j < @{$ftrs}; $j++) {
+			my $ftr = $ftrs->[$j];
+			my $fam = $members->{$genome_refs->[$i]}->{$ftr->id()};
+			my $score = $orthos->{$fam}->{$genome_refs->[$i]}->{$ftr->id()};
+			my $roles = $ftr->roles();
+			my $funind = [];
+			my $genfam = {};
+			my $genfun = {};
+			for (my $k=0; $k < @{$roles}; $k++) {
+				if (!defined($functions->{$roles->[$k]})) {
+					$functions->{$roles->[$k]} = {
+						core => 0,
+						genome_features => {},
+						id => $roles->[$k],
+						reactions => [],
+						subsystem => "none",
+						primclass => "none",
+						subclass => "none",
+						number_genomes => 0,
+						fraction_genomes => 0,
+						fraction_consistent_families => 0,
+						most_consistent_family => "none",
+					};
+					$funcind->{$roles->[$k]} = $funccount;
+					$funccount++;
+					if (defined($SubsysRoles->{$roles->[$k]})) {
+						$functions->{$roles->[$k]}->{subsystem} = $SubsysRoles->{$roles->[$k]}->name();
+						$functions->{$roles->[$k]}->{primclass} = $SubsysRoles->{$roles->[$k]}->class();
+						$functions->{$roles->[$k]}->{subclass} = $SubsysRoles->{$roles->[$k]}->subclass();
 					}
-					my $index = $FunctionHash->{$roles->[$k]};
-					push(@{$output->{function_comparisons}->[$index]->{genome_features}->{$ws."/".$gen}},$feature->{id});	
+					if (defined($rolerxns->{$roles->[$k]})) {
+						$functions->{$roles->[$k]}->{reactions} = $rolerxns->{$roles->[$k]};
+					}
+				}
+				push(@{$funind},$funcind->{$roles->[$k]});
+				push(@{$functions->{$roles->[$k]}->{genome_features}->{$g->_reference()}},[$ftr->id(),$famind->{$fam},$score]);
+				$genfun->{$roles->[$k]} = 1;
+			}
+			if (!defined($families->{$fam})) {
+				$families->{$fam} = {
+					core => 0,
+					genome_features => {},
+					id => $fam,
+					type => $ftr->type(),
+					protein_translation => $ftr->protein_translation(),
+					number_genomes => 0,
+					fraction_genomes => 0,
+					fraction_consistent_annotations => 0,
+					most_consistent_role => "none",
+				};
+			}
+			$genfam->{$fam} = 1;
+			push(@{$families->{$fam}->{genome_features}->{$g->_reference()}},[$ftr->id(),$funind,$score]);
+		}
+		my $taxonomy = "Unknown";
+		if (defined($g->taxonomy())) {
+			$taxonomy = $g->taxonomy();
+		}
+		$genomehash->{$g->_reference()} = {
+			id => $g->_wsworkspace()."/".$g->_wsname(),
+			name => $g->scientific_name(),
+			taxonomy => $taxonomy,
+			genome_ref => $g->_reference(),
+			genome_similarity = {},
+			features => @{$ftrs},
+			families => keys(%{$genfam}),
+			functions => keys(%{$genfun}),
+		};
+		$gc->{genomes}->[$i] = $genomehash->{$g->_reference()};
+	}
+	foreach my $function (keys(%{$funcind})) {
+		foreach my $genone (keys(%{$functions->{$function}->{genome_features}})) {
+			foreach my $gentwo (keys(%{$functions->{$function}->{genome_features}})) {
+				if ($genone ne $gentwo) {
+					$genomehash->{$genone}->{genome_similarity}->{$gentwo}->[1]++;
 				}
 			}
-			push(@{$output->{genome_comparisons}},$genomecomp);
 		}
-	}
-	my $numgenomes = @{$output->{genome_comparisons}};
-	for (my $j=0; $j < @{$output->{function_comparisons}}; $j++) {
-		my $func = $output->{function_comparisons}->[$j];
-		$func->{number_genomes} = keys(%{$func->{genome_features}});
-		$func->{fraction_genomes} = $func->{number_genomes}/$numgenomes;
-		if ($numgenomes == $func->{number_genomes}) {
-			foreach my $key (keys(%{$func->{genome_features}})) {
-				$output->{genome_comparisons}->[$GenomeHash->{$key}]->{core_functions}++;
-			}
-		} else {
-			foreach my $key (keys(%{$func->{genome_features}})) {
-				$output->{genome_comparisons}->[$GenomeHash->{$key}]->{noncore_functions}++;
-			}
-			$func->{core} = 0;
+		$functions->{$function}->{number_genomes} = keys(%{$functions->{$function}->{genome_features}});
+		$functions->{$function}->{fraction_genomes} = $functions->{$function}->{number_genomes}/$totgenomes;
+		if ($functions->{$function}->{fraction_genomes} == 1) {
+			$functions->{$function}->{core} = 1;
+			$gc->{core_functions}++;
 		}
+		$gc->{functions}->[$funcind->{$function}] = $functions->{$function};
 	}
-	$self->_clearContext();
+	foreach my $fam (keys(%{$famind})) {
+		foreach my $genone (keys(%{$families->{$fam}->{genome_features}})) {
+			foreach my $gentwo (keys(%{$families->{$fam}->{genome_features}})) {
+				if ($genone ne $gentwo) {
+					$genomehash->{$genone}->{genome_similarity}->{$gentwo}->[0]++;
+				}
+			}
+		}
+		$families->{$fam}->{number_genomes} = keys(%{$families->{$fam}->{genome_features}});
+		$families->{$fam}->{fraction_genomes} = $families->{$fam}->{number_genomes}/$totgenomes;
+		if ($families->{$fam}->{fraction_genomes} == 1) {
+			$families->{$fam}->{core} = 1;
+			$gc->{core_families}++;
+		}
+		$gc->{functions}->[$famind->{$fam}] = $families->{$fam};
+	}
+	$gc = Bio::KBase::ObjectAPI::KBaseGenomes::GenomeComparison->new($gc);
+	$output = $self->_save_msobject($gc,"GenomeComparison",$input->{workspace},$input->{output_id});
+    $self->_clearContext();
     #END compare_genomes
     my @_bad_returns;
-    (ref($output) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
     if (@_bad_returns) {
 	my $msg = "Invalid returns passed to compare_genomes:\n" . join("", map { "\t$_\n" } @_bad_returns);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
@@ -19529,7 +19676,7 @@ sub create_promconstraint
 $params is an add_biochemistry_compounds_params
 $output is an object_metadata
 add_biochemistry_compounds_params is a reference to a hash where the following keys are defined:
-	compounds has a value which is a reference to a list where each element is a reference to a list containing 8 items:
+	compounds has a value which is a reference to a list where each element is a reference to a list containing 9 items:
 	0: (abbreviation) a string
 	1: (name) a string
 	2: (aliases) a reference to a list where each element is a string
@@ -19538,6 +19685,7 @@ add_biochemistry_compounds_params is a reference to a hash where the following k
 	5: (isCofactor) a bool
 	6: (structureString) a string
 	7: (structureType) a string
+	8: (id) a string
 
 	workspace has a value which is a string
 	biochemistry has a value which is a string
@@ -19572,7 +19720,7 @@ workspace_ref is a string
 $params is an add_biochemistry_compounds_params
 $output is an object_metadata
 add_biochemistry_compounds_params is a reference to a hash where the following keys are defined:
-	compounds has a value which is a reference to a list where each element is a reference to a list containing 8 items:
+	compounds has a value which is a reference to a list where each element is a reference to a list containing 9 items:
 	0: (abbreviation) a string
 	1: (name) a string
 	2: (aliases) a reference to a list where each element is a string
@@ -19581,6 +19729,7 @@ add_biochemistry_compounds_params is a reference to a hash where the following k
 	5: (isCofactor) a bool
 	6: (structureString) a string
 	7: (structureType) a string
+	8: (id) a string
 
 	workspace has a value which is a string
 	biochemistry has a value which is a string
@@ -25600,7 +25749,7 @@ matrix has a value which is a reference to a list where each element is a refere
 
 
 
-=head2 genome_compare_from_pangenome_params
+=head2 genome_heatmap_from_pangenome_params
 
 =over 4
 
@@ -30002,7 +30151,12 @@ auth has a value which is a string
 a reference to a hash where the following keys are defined:
 genomes has a value which is a reference to a list where each element is a genome_id
 workspaces has a value which is a reference to a list where each element is a workspace_id
-auth has a value which is a string
+pangenome_id has a value which is a string
+pangenome_ws has a value which is a string
+protcomp_id has a value which is a string
+protcomp_ws has a value which is a string
+output_id has a value which is a string
+workspace has a value which is a string
 
 </pre>
 
@@ -30013,162 +30167,12 @@ auth has a value which is a string
 a reference to a hash where the following keys are defined:
 genomes has a value which is a reference to a list where each element is a genome_id
 workspaces has a value which is a reference to a list where each element is a workspace_id
-auth has a value which is a string
-
-
-=end text
-
-=back
-
-
-
-=head2 GenomeComparisonGenome
-
-=over 4
-
-
-
-=item Description
-
-Data structure to hold genome comparison data
-
-        genome_id genome;
-        workspace_id workspace;
-        string genome_name;
-        string taxonomy;
-        int features;
-        int core_functions;
-        int noncore_functions;
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-genome has a value which is a genome_id
-workspace has a value which is a workspace_id
-genome_name has a value which is a string
-taxonomy has a value which is a string
-features has a value which is an int
-core_functions has a value which is an int
-noncore_functions has a value which is an int
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-genome has a value which is a genome_id
-workspace has a value which is a workspace_id
-genome_name has a value which is a string
-taxonomy has a value which is a string
-features has a value which is an int
-core_functions has a value which is an int
-noncore_functions has a value which is an int
-
-
-=end text
-
-=back
-
-
-
-=head2 GenomeCompareFunction
-
-=over 4
-
-
-
-=item Description
-
-Data structure to hold model reaction comparison data
-
-        string role
-        bool core - boolean indicating if the function is core
-        mapping<genome_id,list<feature_id> > genome_features
-        string subsytem - subsystem associated with role
-        string primclass - class one of the subsystem
-        string subclass - class two of the subsystem
-        int number_genomes - number of genomes with function
-        float fraction_genomes - fraction of genomes with function
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-core has a value which is a bool
-genome_features has a value which is a reference to a hash where the key is a genome_id and the value is a reference to a list where each element is a feature_id
-role has a value which is a string
-subsystem has a value which is a string
-primclass has a value which is a string
-subclass has a value which is a string
-number_genomes has a value which is an int
-fraction_genomes has a value which is a float
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-core has a value which is a bool
-genome_features has a value which is a reference to a hash where the key is a genome_id and the value is a reference to a list where each element is a feature_id
-role has a value which is a string
-subsystem has a value which is a string
-primclass has a value which is a string
-subclass has a value which is a string
-number_genomes has a value which is an int
-fraction_genomes has a value which is a float
-
-
-=end text
-
-=back
-
-
-
-=head2 GenomeComparisonData
-
-=over 4
-
-
-
-=item Description
-
-Output structure for the "compare_genomes" function.
-
-        list<GenomeComparisonGenome> genome_comparisons;
-        list<GenomeCompareFunction> function_comparisons;
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-genome_comparisons has a value which is a reference to a list where each element is a GenomeComparisonGenome
-function_comparisons has a value which is a reference to a list where each element is a GenomeCompareFunction
-auth has a value which is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-genome_comparisons has a value which is a reference to a list where each element is a GenomeComparisonGenome
-function_comparisons has a value which is a reference to a list where each element is a GenomeCompareFunction
-auth has a value which is a string
+pangenome_id has a value which is a string
+pangenome_ws has a value which is a string
+protcomp_id has a value which is a string
+protcomp_ws has a value which is a string
+output_id has a value which is a string
+workspace has a value which is a string
 
 
 =end text
@@ -30938,7 +30942,7 @@ Add specified compounds to specified biochemistry
 
 <pre>
 a reference to a hash where the following keys are defined:
-compounds has a value which is a reference to a list where each element is a reference to a list containing 8 items:
+compounds has a value which is a reference to a list where each element is a reference to a list containing 9 items:
 0: (abbreviation) a string
 1: (name) a string
 2: (aliases) a reference to a list where each element is a string
@@ -30947,6 +30951,7 @@ compounds has a value which is a reference to a list where each element is a ref
 5: (isCofactor) a bool
 6: (structureString) a string
 7: (structureType) a string
+8: (id) a string
 
 workspace has a value which is a string
 biochemistry has a value which is a string
@@ -30960,7 +30965,7 @@ output_id has a value which is a string
 =begin text
 
 a reference to a hash where the following keys are defined:
-compounds has a value which is a reference to a list where each element is a reference to a list containing 8 items:
+compounds has a value which is a reference to a list where each element is a reference to a list containing 9 items:
 0: (abbreviation) a string
 1: (name) a string
 2: (aliases) a reference to a list where each element is a string
@@ -30969,6 +30974,7 @@ compounds has a value which is a reference to a list where each element is a ref
 5: (isCofactor) a bool
 6: (structureString) a string
 7: (structureType) a string
+8: (id) a string
 
 workspace has a value which is a string
 biochemistry has a value which is a string

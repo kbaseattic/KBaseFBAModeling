@@ -574,4 +574,67 @@ module KBaseGenomes {
     	list<Genome_ref> genome_refs;
     	list<OrthologFamily> orthologs;
 	} Pangenome;
+	
+	/*
+    	GenomeComparisonGenome object: this object holds information about a genome in a genome comparison
+    */
+    typedef structure {
+		string id;
+		genome_ref genome_ref;
+		mapping<genome_id,tuple<int commonfamilies,int commonfunctions> > genome_similarity; 
+		string name;
+		string taxonomy;
+		int features;
+		int families;
+		int functions;
+    } GenomeComparisonGenome;
+ 
+    /*
+    	GenomeCompareFunction object: this object holds information about a genome in a function across all genomes
+    */
+    typedef structure {
+		bool core;
+		mapping<genome_id,list<tuple<feature_id,int famindex,float score> > > genome_features;
+		string id;
+		list<tuple<reaction_id, string equation>> reactions;
+		string subsystem;
+		string primclass;
+		string subclass;
+		int number_genomes;
+		float fraction_genomes;
+		float fraction_consistent_families;
+		string most_consistent_family;
+    } GenomeCompareFunction;
+    
+    /*
+    	GenomeCompareFamily object: this object holds information about a protein family across a set of genomes
+    */
+    typedef structure {
+		bool core;
+		mapping<genome_id,list< tuple<feature_id,list<int> funcindecies>,float score > > genome_features;
+		string id;
+		string type;
+		string protein_translation;
+		int number_genomes;
+		float fraction_genomes;
+		float fraction_consistent_annotations;
+		string most_consistent_role;
+    } GenomeCompareFamily;
+    
+    /*
+    	GenomeComparisonData object: this object holds information about a multigenome comparison
+    	
+    	@optional protcomp_ref pangenome_ref
+    */
+    typedef structure {
+		string id;
+		string name;
+		int core_functions;
+		int core_families;
+		protcomp_ref protcomp_ref;
+		pangenome_ref pangenome_ref;
+		list<GenomeCompareGenome> genomes;
+		list<GenomeCompareFamily> families;
+		list<GenomeCompareFunction> functions;
+    } GenomeComparison;
 };
