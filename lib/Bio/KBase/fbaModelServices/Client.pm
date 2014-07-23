@@ -12116,16 +12116,12 @@ sub compare_models
 $params is a compare_genomes_params
 $output is an object_metadata
 compare_genomes_params is a reference to a hash where the following keys are defined:
-	genomes has a value which is a reference to a list where each element is a genome_id
-	workspaces has a value which is a reference to a list where each element is a workspace_id
 	pangenome_id has a value which is a string
 	pangenome_ws has a value which is a string
 	protcomp_id has a value which is a string
 	protcomp_ws has a value which is a string
 	output_id has a value which is a string
 	workspace has a value which is a string
-genome_id is a string
-workspace_id is a string
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -12142,6 +12138,7 @@ object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_id is a string
 workspace_ref is a string
 
 </pre>
@@ -12153,16 +12150,12 @@ workspace_ref is a string
 $params is a compare_genomes_params
 $output is an object_metadata
 compare_genomes_params is a reference to a hash where the following keys are defined:
-	genomes has a value which is a reference to a list where each element is a genome_id
-	workspaces has a value which is a reference to a list where each element is a workspace_id
 	pangenome_id has a value which is a string
 	pangenome_ws has a value which is a string
 	protcomp_id has a value which is a string
 	protcomp_ws has a value which is a string
 	output_id has a value which is a string
 	workspace has a value which is a string
-genome_id is a string
-workspace_id is a string
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -12179,6 +12172,7 @@ object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_id is a string
 workspace_ref is a string
 
 
@@ -13423,6 +13417,880 @@ sub update_object_references
 
 
 
+=head2 add_reactions
+
+  $output = $obj->add_reactions($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is an add_reactions_params
+$output is an object_metadata
+add_reactions_params is a reference to a hash where the following keys are defined:
+	model has a value which is a string
+	model_workspace has a value which is a string
+	output_id has a value which is a string
+	workspace has a value which is a string
+	reactions has a value which is a reference to a list where each element is a reference to a list containing 9 items:
+	0: (reaction_id) a string
+	1: (compartment) a string
+	2: (direction) a string
+	3: (gpr) a string
+	4: (pathway) a string
+	5: (name) a string
+	6: (reference) a string
+	7: (enzyme) a string
+	8: (equation) a string
+
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is an add_reactions_params
+$output is an object_metadata
+add_reactions_params is a reference to a hash where the following keys are defined:
+	model has a value which is a string
+	model_workspace has a value which is a string
+	output_id has a value which is a string
+	workspace has a value which is a string
+	reactions has a value which is a reference to a list where each element is a reference to a list containing 9 items:
+	0: (reaction_id) a string
+	1: (compartment) a string
+	2: (direction) a string
+	3: (gpr) a string
+	4: (pathway) a string
+	5: (name) a string
+	6: (reference) a string
+	7: (enzyme) a string
+	8: (equation) a string
+
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+
+=end text
+
+=item Description
+
+Add new reactions to the model from the biochemistry or custom reactions
+
+=back
+
+=cut
+
+sub add_reactions
+{
+    my($self, @args) = @_;
+
+# Authentication: required
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function add_reactions (received $n, expecting 1)");
+    }
+    {
+	my($params) = @args;
+
+	my @_bad_arguments;
+        (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to add_reactions:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'add_reactions');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.add_reactions",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{error}->{code},
+					       method_name => 'add_reactions',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method add_reactions",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'add_reactions',
+				       );
+    }
+}
+
+
+
+=head2 remove_reactions
+
+  $output = $obj->remove_reactions($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is a remove_reactions_params
+$output is an object_metadata
+remove_reactions_params is a reference to a hash where the following keys are defined:
+	model has a value which is a string
+	model_workspace has a value which is a string
+	output_id has a value which is a string
+	workspace has a value which is a string
+	reactions has a value which is a reference to a list where each element is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is a remove_reactions_params
+$output is an object_metadata
+remove_reactions_params is a reference to a hash where the following keys are defined:
+	model has a value which is a string
+	model_workspace has a value which is a string
+	output_id has a value which is a string
+	workspace has a value which is a string
+	reactions has a value which is a reference to a list where each element is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+
+=end text
+
+=item Description
+
+Remove reactions from the model
+
+=back
+
+=cut
+
+sub remove_reactions
+{
+    my($self, @args) = @_;
+
+# Authentication: required
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function remove_reactions (received $n, expecting 1)");
+    }
+    {
+	my($params) = @args;
+
+	my @_bad_arguments;
+        (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to remove_reactions:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'remove_reactions');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.remove_reactions",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{error}->{code},
+					       method_name => 'remove_reactions',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method remove_reactions",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'remove_reactions',
+				       );
+    }
+}
+
+
+
+=head2 modify_reactions
+
+  $output = $obj->modify_reactions($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is a modify_reactions_params
+$output is an object_metadata
+modify_reactions_params is a reference to a hash where the following keys are defined:
+	model has a value which is a string
+	model_workspace has a value which is a string
+	output_id has a value which is a string
+	workspace has a value which is a string
+	reactions has a value which is a reference to a list where each element is a reference to a list containing 7 items:
+	0: (reaction_id) a string
+	1: (direction) a string
+	2: (gpr) a string
+	3: (pathway) a string
+	4: (name) a string
+	5: (reference) a string
+	6: (enzyme) a string
+
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is a modify_reactions_params
+$output is an object_metadata
+modify_reactions_params is a reference to a hash where the following keys are defined:
+	model has a value which is a string
+	model_workspace has a value which is a string
+	output_id has a value which is a string
+	workspace has a value which is a string
+	reactions has a value which is a reference to a list where each element is a reference to a list containing 7 items:
+	0: (reaction_id) a string
+	1: (direction) a string
+	2: (gpr) a string
+	3: (pathway) a string
+	4: (name) a string
+	5: (reference) a string
+	6: (enzyme) a string
+
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+
+=end text
+
+=item Description
+
+Modify reactions in the model
+
+=back
+
+=cut
+
+sub modify_reactions
+{
+    my($self, @args) = @_;
+
+# Authentication: required
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function modify_reactions (received $n, expecting 1)");
+    }
+    {
+	my($params) = @args;
+
+	my @_bad_arguments;
+        (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to modify_reactions:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'modify_reactions');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.modify_reactions",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{error}->{code},
+					       method_name => 'modify_reactions',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method modify_reactions",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'modify_reactions',
+				       );
+    }
+}
+
+
+
+=head2 add_features
+
+  $output = $obj->add_features($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is an add_features_params
+$output is an object_metadata
+add_features_params is a reference to a hash where the following keys are defined:
+	genome has a value which is a string
+	genome_workspace has a value which is a string
+	output_id has a value which is a string
+	workspace has a value which is a string
+	genes has a value which is a reference to a list where each element is a reference to a list containing 9 items:
+	0: (feature) a feature_id
+	1: (function) a string
+	2: (type) a string
+	3: (aliases) a reference to a list where each element is a string
+	4: (publications) a reference to a list where each element is a string
+	5: (annotations) a reference to a list where each element is a string
+	6: (protein_translation) a string
+	7: (dna_sequence) a string
+	8: (locations) a reference to a list where each element is a reference to a list containing 4 items:
+		0: a string
+		1: an int
+		2: a string
+		3: an int
+
+
+feature_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is an add_features_params
+$output is an object_metadata
+add_features_params is a reference to a hash where the following keys are defined:
+	genome has a value which is a string
+	genome_workspace has a value which is a string
+	output_id has a value which is a string
+	workspace has a value which is a string
+	genes has a value which is a reference to a list where each element is a reference to a list containing 9 items:
+	0: (feature) a feature_id
+	1: (function) a string
+	2: (type) a string
+	3: (aliases) a reference to a list where each element is a string
+	4: (publications) a reference to a list where each element is a string
+	5: (annotations) a reference to a list where each element is a string
+	6: (protein_translation) a string
+	7: (dna_sequence) a string
+	8: (locations) a reference to a list where each element is a reference to a list containing 4 items:
+		0: a string
+		1: an int
+		2: a string
+		3: an int
+
+
+feature_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+
+=end text
+
+=item Description
+
+Add new features to the genome
+
+=back
+
+=cut
+
+sub add_features
+{
+    my($self, @args) = @_;
+
+# Authentication: required
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function add_features (received $n, expecting 1)");
+    }
+    {
+	my($params) = @args;
+
+	my @_bad_arguments;
+        (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to add_features:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'add_features');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.add_features",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{error}->{code},
+					       method_name => 'add_features',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method add_features",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'add_features',
+				       );
+    }
+}
+
+
+
+=head2 remove_features
+
+  $output = $obj->remove_features($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is a remove_features_params
+$output is an object_metadata
+remove_features_params is a reference to a hash where the following keys are defined:
+	genome has a value which is a string
+	genome_workspace has a value which is a string
+	output_id has a value which is a string
+	workspace has a value which is a string
+	features has a value which is a reference to a list where each element is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is a remove_features_params
+$output is an object_metadata
+remove_features_params is a reference to a hash where the following keys are defined:
+	genome has a value which is a string
+	genome_workspace has a value which is a string
+	output_id has a value which is a string
+	workspace has a value which is a string
+	features has a value which is a reference to a list where each element is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+
+=end text
+
+=item Description
+
+Remove features from the genome
+
+=back
+
+=cut
+
+sub remove_features
+{
+    my($self, @args) = @_;
+
+# Authentication: required
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function remove_features (received $n, expecting 1)");
+    }
+    {
+	my($params) = @args;
+
+	my @_bad_arguments;
+        (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to remove_features:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'remove_features');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.remove_features",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{error}->{code},
+					       method_name => 'remove_features',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method remove_features",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'remove_features',
+				       );
+    }
+}
+
+
+
+=head2 modify_features
+
+  $output = $obj->modify_features($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is a modify_features_params
+$output is an object_metadata
+modify_features_params is a reference to a hash where the following keys are defined:
+	genome has a value which is a string
+	genome_workspace has a value which is a string
+	output_id has a value which is a string
+	workspace has a value which is a string
+	genes has a value which is a reference to a list where each element is a reference to a list containing 9 items:
+	0: (feature) a feature_id
+	1: (function) a string
+	2: (type) a string
+	3: (aliases) a reference to a list where each element is a string
+	4: (publications) a reference to a list where each element is a string
+	5: (annotations) a reference to a list where each element is a string
+	6: (protein_translation) a string
+	7: (dna_sequence) a string
+	8: (locations) a reference to a list where each element is a reference to a list containing 4 items:
+		0: a string
+		1: an int
+		2: a string
+		3: an int
+
+
+feature_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is a modify_features_params
+$output is an object_metadata
+modify_features_params is a reference to a hash where the following keys are defined:
+	genome has a value which is a string
+	genome_workspace has a value which is a string
+	output_id has a value which is a string
+	workspace has a value which is a string
+	genes has a value which is a reference to a list where each element is a reference to a list containing 9 items:
+	0: (feature) a feature_id
+	1: (function) a string
+	2: (type) a string
+	3: (aliases) a reference to a list where each element is a string
+	4: (publications) a reference to a list where each element is a string
+	5: (annotations) a reference to a list where each element is a string
+	6: (protein_translation) a string
+	7: (dna_sequence) a string
+	8: (locations) a reference to a list where each element is a reference to a list containing 4 items:
+		0: a string
+		1: an int
+		2: a string
+		3: an int
+
+
+feature_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+
+=end text
+
+=item Description
+
+Modify features in the genome
+
+=back
+
+=cut
+
+sub modify_features
+{
+    my($self, @args) = @_;
+
+# Authentication: required
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function modify_features (received $n, expecting 1)");
+    }
+    {
+	my($params) = @args;
+
+	my @_bad_arguments;
+        (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to modify_features:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'modify_features');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.modify_features",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{error}->{code},
+					       method_name => 'modify_features',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method modify_features",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'modify_features',
+				       );
+    }
+}
+
+
+
 sub version {
     my ($self) = @_;
     my $result = $self->{client}->call($self->{url}, {
@@ -13434,16 +14302,16 @@ sub version {
             Bio::KBase::Exceptions::JSONRPC->throw(
                 error => $result->error_message,
                 code => $result->content->{code},
-                method_name => 'update_object_references',
+                method_name => 'modify_features',
             );
         } else {
             return wantarray ? @{$result->result} : $result->result->[0];
         }
     } else {
         Bio::KBase::Exceptions::HTTP->throw(
-            error => "Error invoking method update_object_references",
+            error => "Error invoking method modify_features",
             status_line => $self->{client}->status_line,
-            method_name => 'update_object_references',
+            method_name => 'modify_features',
         );
     }
 }
@@ -23637,8 +24505,6 @@ auth has a value which is a string
 
 <pre>
 a reference to a hash where the following keys are defined:
-genomes has a value which is a reference to a list where each element is a genome_id
-workspaces has a value which is a reference to a list where each element is a workspace_id
 pangenome_id has a value which is a string
 pangenome_ws has a value which is a string
 protcomp_id has a value which is a string
@@ -23653,8 +24519,6 @@ workspace has a value which is a string
 =begin text
 
 a reference to a hash where the following keys are defined:
-genomes has a value which is a reference to a list where each element is a genome_id
-workspaces has a value which is a reference to a list where each element is a workspace_id
 pangenome_id has a value which is a string
 pangenome_ws has a value which is a string
 protcomp_id has a value which is a string
@@ -24527,6 +25391,362 @@ create_newobject has a value which is a bool
 update_subrefs has a value which is a bool
 output_id has a value which is a string
 workspace has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 add_reactions_params
+
+=over 4
+
+
+
+=item Description
+
+********************************************************************************
+    Functions relating to editing of genomes and models
+   	********************************************************************************
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+model has a value which is a string
+model_workspace has a value which is a string
+output_id has a value which is a string
+workspace has a value which is a string
+reactions has a value which is a reference to a list where each element is a reference to a list containing 9 items:
+0: (reaction_id) a string
+1: (compartment) a string
+2: (direction) a string
+3: (gpr) a string
+4: (pathway) a string
+5: (name) a string
+6: (reference) a string
+7: (enzyme) a string
+8: (equation) a string
+
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+model has a value which is a string
+model_workspace has a value which is a string
+output_id has a value which is a string
+workspace has a value which is a string
+reactions has a value which is a reference to a list where each element is a reference to a list containing 9 items:
+0: (reaction_id) a string
+1: (compartment) a string
+2: (direction) a string
+3: (gpr) a string
+4: (pathway) a string
+5: (name) a string
+6: (reference) a string
+7: (enzyme) a string
+8: (equation) a string
+
+
+
+=end text
+
+=back
+
+
+
+=head2 remove_reactions_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "remove_reactions" function.
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+model has a value which is a string
+model_workspace has a value which is a string
+output_id has a value which is a string
+workspace has a value which is a string
+reactions has a value which is a reference to a list where each element is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+model has a value which is a string
+model_workspace has a value which is a string
+output_id has a value which is a string
+workspace has a value which is a string
+reactions has a value which is a reference to a list where each element is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 modify_reactions_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "modify_reactions" function.
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+model has a value which is a string
+model_workspace has a value which is a string
+output_id has a value which is a string
+workspace has a value which is a string
+reactions has a value which is a reference to a list where each element is a reference to a list containing 7 items:
+0: (reaction_id) a string
+1: (direction) a string
+2: (gpr) a string
+3: (pathway) a string
+4: (name) a string
+5: (reference) a string
+6: (enzyme) a string
+
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+model has a value which is a string
+model_workspace has a value which is a string
+output_id has a value which is a string
+workspace has a value which is a string
+reactions has a value which is a reference to a list where each element is a reference to a list containing 7 items:
+0: (reaction_id) a string
+1: (direction) a string
+2: (gpr) a string
+3: (pathway) a string
+4: (name) a string
+5: (reference) a string
+6: (enzyme) a string
+
+
+
+=end text
+
+=back
+
+
+
+=head2 add_features_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "add_features" function.
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+genome has a value which is a string
+genome_workspace has a value which is a string
+output_id has a value which is a string
+workspace has a value which is a string
+genes has a value which is a reference to a list where each element is a reference to a list containing 9 items:
+0: (feature) a feature_id
+1: (function) a string
+2: (type) a string
+3: (aliases) a reference to a list where each element is a string
+4: (publications) a reference to a list where each element is a string
+5: (annotations) a reference to a list where each element is a string
+6: (protein_translation) a string
+7: (dna_sequence) a string
+8: (locations) a reference to a list where each element is a reference to a list containing 4 items:
+	0: a string
+	1: an int
+	2: a string
+	3: an int
+
+
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+genome has a value which is a string
+genome_workspace has a value which is a string
+output_id has a value which is a string
+workspace has a value which is a string
+genes has a value which is a reference to a list where each element is a reference to a list containing 9 items:
+0: (feature) a feature_id
+1: (function) a string
+2: (type) a string
+3: (aliases) a reference to a list where each element is a string
+4: (publications) a reference to a list where each element is a string
+5: (annotations) a reference to a list where each element is a string
+6: (protein_translation) a string
+7: (dna_sequence) a string
+8: (locations) a reference to a list where each element is a reference to a list containing 4 items:
+	0: a string
+	1: an int
+	2: a string
+	3: an int
+
+
+
+
+=end text
+
+=back
+
+
+
+=head2 remove_features_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "remove_features" function.
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+genome has a value which is a string
+genome_workspace has a value which is a string
+output_id has a value which is a string
+workspace has a value which is a string
+features has a value which is a reference to a list where each element is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+genome has a value which is a string
+genome_workspace has a value which is a string
+output_id has a value which is a string
+workspace has a value which is a string
+features has a value which is a reference to a list where each element is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 modify_features_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "modify_genes" function.
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+genome has a value which is a string
+genome_workspace has a value which is a string
+output_id has a value which is a string
+workspace has a value which is a string
+genes has a value which is a reference to a list where each element is a reference to a list containing 9 items:
+0: (feature) a feature_id
+1: (function) a string
+2: (type) a string
+3: (aliases) a reference to a list where each element is a string
+4: (publications) a reference to a list where each element is a string
+5: (annotations) a reference to a list where each element is a string
+6: (protein_translation) a string
+7: (dna_sequence) a string
+8: (locations) a reference to a list where each element is a reference to a list containing 4 items:
+	0: a string
+	1: an int
+	2: a string
+	3: an int
+
+
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+genome has a value which is a string
+genome_workspace has a value which is a string
+output_id has a value which is a string
+workspace has a value which is a string
+genes has a value which is a reference to a list where each element is a reference to a list containing 9 items:
+0: (feature) a feature_id
+1: (function) a string
+2: (type) a string
+3: (aliases) a reference to a list where each element is a string
+4: (publications) a reference to a list where each element is a string
+5: (annotations) a reference to a list where each element is a string
+6: (protein_translation) a string
+7: (dna_sequence) a string
+8: (locations) a reference to a list where each element is a reference to a list containing 4 items:
+	0: a string
+	1: an int
+	2: a string
+	3: an int
+
+
 
 
 =end text

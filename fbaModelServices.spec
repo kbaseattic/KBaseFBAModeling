@@ -3680,6 +3680,98 @@ module fbaModelServices {
     } update_object_references_params;
     authentication required;
     funcdef update_object_references(update_object_references_params params) returns (object_metadata output);
+	/*********************************************************************************
+    Functions relating to editing of genomes and models
+   	*********************************************************************************/
+   	/* Input parameters for the "add_reactions" function.
+	*/
+	typedef structure {
+		string model;
+		string model_workspace;
+		string output_id;
+		string workspace;
+		list<tuple<string reaction_id,string compartment,string direction,string gpr,string pathway,string name,string reference,string enzyme,string equation>> reactions;
+    } add_reactions_params;
+    /*
+		Add new reactions to the model from the biochemistry or custom reactions
+    */
+    authentication required;
+    funcdef add_reactions(add_reactions_params params) returns (object_metadata output);
+   	
+	/* Input parameters for the "remove_reactions" function.
+	*/
+	typedef structure {
+		string model;
+		string model_workspace;
+		string output_id;
+		string workspace;
+		list<string> reactions;
+    } remove_reactions_params;
+    /*
+		Remove reactions from the model
+    */
+    authentication required;
+    funcdef remove_reactions(remove_reactions_params params) returns (object_metadata output);
+	
+	/* Input parameters for the "modify_reactions" function.
+	*/
+	typedef structure {
+		string model;
+		string model_workspace;
+		string output_id;
+		string workspace;
+		list<tuple<string reaction_id,string direction,string gpr,string pathway,string name,string reference,string enzyme>> reactions;
+    } modify_reactions_params;
+    /*
+		Modify reactions in the model
+    */
+    authentication required;
+    funcdef modify_reactions(modify_reactions_params params) returns (object_metadata output);
+	
+	/* Input parameters for the "add_features" function.
+	*/
+	typedef structure {
+		string genome;
+		string genome_workspace;
+		string output_id;
+		string workspace;
+		list<tuple<feature_id feature,string function,string type,list<string> aliases,list<string> publications,list<string> annotations,string protein_translation,string dna_sequence,list<tuple<string,int,string,int>> locations>> genes;
+    } add_features_params;
+    /*
+		Add new features to the genome
+    */
+    authentication required;
+    funcdef add_features(add_features_params params) returns (object_metadata output);
+   	
+	/* Input parameters for the "remove_features" function.
+	*/
+	typedef structure {
+		string genome;
+		string genome_workspace;
+		string output_id;
+		string workspace;
+		list<string> features;
+    } remove_features_params;
+    /*
+		Remove features from the genome
+    */
+    authentication required;
+    funcdef remove_features(remove_features_params params) returns (object_metadata output);
+	
+	/* Input parameters for the "modify_genes" function.
+	*/
+	typedef structure {
+		string genome;
+		string genome_workspace;
+		string output_id;
+		string workspace;
+		list<tuple<feature_id feature,string function,string type,list<string> aliases,list<string> publications,list<string> annotations,string protein_translation,string dna_sequence,list<tuple<string,int,string,int>> locations>> genes;
+    } modify_features_params;
+    /*
+		Modify features in the genome
+    */
+    authentication required;
+    funcdef modify_features(modify_features_params params) returns (object_metadata output);   	
 };
 
 

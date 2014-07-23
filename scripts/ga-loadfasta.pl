@@ -9,7 +9,7 @@ use warnings;
 use Bio::KBase::workspace::ScriptHelpers qw(printObjectInfo printJobData get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
 use Bio::KBase::fbaModelServices::ScriptHelpers qw(fbaws get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
-my $primaryArgs = ["Filename"];
+my $primaryArgs = ["Filename/Shock node ID"];
 my $servercommand = "fasta_to_ContigSet";
 my $script = "ga-loadfasta";
 my $translation = {
@@ -17,6 +17,7 @@ my $translation = {
 	name => "name",
 	sourceid => "sourceid",
 	source => "source",
+	shockurl => "shockurl",
 	type => "type"
 };
 
@@ -29,6 +30,7 @@ my $specs = [
     [ 'sourceid|i=s', 'Source ID of FASTA data' ],
     [ 'source|s=s', 'Source of FASTA data' ],
     [ 'type|y=s', 'Type of sequence data' ],
+    [ 'shockurl=s', 'URL with shock server with node ID' ],
     [ 'workspace|w=s', 'Workspace to save FBA results', { "default" => fbaws() } ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
@@ -39,15 +41,18 @@ if (defined($opt->{transcripts}) && $opt->{transcripts} == 1) {
 }
 print $servercommand."\n";
 $params->{fasta} = "";
-if (!-e $opt->{"Filename"}) {
+if ($opt->{"Filename/Shock node ID"} =~ m/[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}/) {
+	$params->{fasta} = $opt->{"Filename/Shock node ID"};
+} elsif (!-e $opt->{"Filename/Shock node ID"}) {
 	print "Could not find input fasta file!\n";
 	exit();
+} else {
+	open(my $fh, "<", $opt->{"Filename/Shock node ID"}) || return;
+	while (my $line = <$fh>) {
+		$params->{fasta} .= $line;
+	}
+	close($fh);
 }
-open(my $fh, "<", $opt->{"Filename"}) || return;
-while (my $line = <$fh>) {
-	$params->{fasta} .= $line;
-}
-close($fh);
 #Calling the server
 my $output = runFBACommand($params,$servercommand,$opt);
 #Checking output and report results

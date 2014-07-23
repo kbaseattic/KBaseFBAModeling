@@ -2414,6 +2414,14 @@ sub _build_sequence_object {
 		type => $params->{type},
 		$fieldname => []
 	};
+	if ($params->{fasta} =~ m/[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}/) {
+		my $shockurl = $self->_shockurl();
+		if (defined($params->{shockurl})) {
+			$shockurl = $params->{shockurl};
+		}
+		my $output = Bio::KBase::ObjectAPI::utilities::runexecutable("curl -X GET ".$shockurl."/node/".$params->{fasta}."?download");
+		$params->{fasta} = join("\n",@{$output});
+	}
 	$params->{fasta} =~ s/\>(.+)\n/>$1\|\|\|/g;
 	$params->{fasta} =~ s/\n//g;
 	my $array = [split(/\>/,$params->{fasta})];
@@ -3223,6 +3231,70 @@ sub _add_eflux_bounds {
     Bio::KBase::ObjectAPI::utilities::PRINTTABLE("essentialreactions.".$fba->media()->name().".$samplename.tbl", $essentialreactions, "\t");
 
     return $objectiveValue;
+}
+
+sub _process_reactions_list {
+	my ($self, $reactions,$compounds) = @_;
+	my $translation = {};
+    for (my $i=0; $i < @{$compounds}; $i++) {
+    	my $cpd = $compounds->[$i];
+    	my $id = $cpd->[0];
+    	if ($id =~ m/[^\w]/) {
+    		$cpd->[0] =~ s/[^\w]/_/g;
+    	}
+    	if ($id =~ m/-/) {
+    		$cpd->[0] =~ s/-/_/g;
+    	}
+    	$translation->{$id} = $cpd->[0];
+    }
+    for (my $i=0; $i < @{$reactions}; $i++) {
+    	my $rxn = $reactions->[$i];
+    	$rxn->[0] =~ s/[^\w]/_/g;
+    	if (defined($rxn->[8])) {
+    		if ($rxn->[8] =~ m/^\[([A-Za-z])\]\s*:\s*(.+)/) {
+    			$rxn->[2] = lc($1);
+    			$rxn->[8] = $2;
+    		}
+    		my $eqn = "| ".$rxn->[8]." |";
+    		foreach my $cpd (keys(%{$translation})) {
+    			if (index($eqn,$cpd) >= 0 && $cpd ne $translation->{$cpd}) {
+    				my $origcpd = $cpd;
+    				$cpd =~ s/\+/\\+/g;
+    				$cpd =~ s/\(/\\(/g;
+    				$cpd =~ s/\)/\\)/g;
+    				my $array = [split(/\s$cpd\s/,$eqn)];
+    				$eqn = join(" ".$translation->{$origcpd}." ",@{$array});
+    				$array = [split(/\s$cpd\[/,$eqn)];
+    				$eqn = join(" ".$translation->{$origcpd}."[",@{$array});
+    			}
+    		}
+    		$eqn =~ s/^\|\s//;
+    		$eqn =~ s/\s\|$//;
+    		while ($eqn =~ m/\[([A-Z])\]/) {
+    			my $reqplace = "[".lc($1)."]";
+    			$eqn =~ s/\[[A-Z]\]/$reqplace/;
+    		}
+    		if ($eqn =~ m/<[-=]+>/) {
+    			if (!defined($rxn->[1])) {
+    				$rxn->[1] = "=";
+    			}
+    		} elsif ($eqn =~ m/[-=]+>/) {
+    			if (!defined($rxn->[1])) {
+    				$rxn->[1] = ">";
+    			}
+    		} elsif ($eqn =~ m/<[-=]+/) {
+    			if (!defined($rxn->[1])) {
+    				$rxn->[1] = "<";
+    			}
+    		}
+    		$rxn->[8] = $eqn;
+    	}
+    }
+	my $compoundhash = {};
+	for (my $i=0; $i < @{$compounds}; $i++) {
+		$compoundhash->{$compounds->[$i]->[0]} = $compounds->[$i];
+	}
+	return ($reactions,$compoundhash);
 }
 
 #END_HEADER
@@ -15216,7 +15288,8 @@ sub fasta_to_ContigSet
 		name => undef,
 		sourceid => undef,
 		source => undef,
-		type => "Organism"
+		type => "Organism",
+		shockurl => undef
 	});
 	$output = $self->_build_sequence_object("ContigSet",$params);
     $self->_clearContext();
@@ -17867,16 +17940,12 @@ sub compare_models
 $params is a compare_genomes_params
 $output is an object_metadata
 compare_genomes_params is a reference to a hash where the following keys are defined:
-	genomes has a value which is a reference to a list where each element is a genome_id
-	workspaces has a value which is a reference to a list where each element is a workspace_id
 	pangenome_id has a value which is a string
 	pangenome_ws has a value which is a string
 	protcomp_id has a value which is a string
 	protcomp_ws has a value which is a string
 	output_id has a value which is a string
 	workspace has a value which is a string
-genome_id is a string
-workspace_id is a string
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -17893,6 +17962,7 @@ object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_id is a string
 workspace_ref is a string
 
 </pre>
@@ -17904,16 +17974,12 @@ workspace_ref is a string
 $params is a compare_genomes_params
 $output is an object_metadata
 compare_genomes_params is a reference to a hash where the following keys are defined:
-	genomes has a value which is a reference to a list where each element is a genome_id
-	workspaces has a value which is a reference to a list where each element is a workspace_id
 	pangenome_id has a value which is a string
 	pangenome_ws has a value which is a string
 	protcomp_id has a value which is a string
 	protcomp_ws has a value which is a string
 	output_id has a value which is a string
 	workspace has a value which is a string
-genome_id is a string
-workspace_id is a string
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -17930,6 +17996,7 @@ object_id is a string
 object_type is a string
 timestamp is a string
 username is a string
+workspace_id is a string
 workspace_ref is a string
 
 
@@ -18063,7 +18130,7 @@ sub compare_genomes
 	} else {
 		$self->_error("Must provide either a pangenome or proteome comparison as input!");
 	}
-	$gc->{id} = $input->{workspace}."/".$params->{output_id};
+	$gc->{id} = $params->{workspace}."/".$params->{output_id};
 	$gc->{name} = $params->{output_id};
 	#Retrieving subsystem data from mapping
 	my $map = $self->_get_msobject("Mapping",$params->{mapping_workspace},$params->{mapping});
@@ -18096,14 +18163,14 @@ sub compare_genomes
 	for (my $i=0; $i < @{$genome_ids}; $i++) {
 		my $g = $self->_get_msobject("Genome",$genome_wwss->[$i],$genome_ids->[$i]);
 		my $ftrs = $g->features();
+		my $genfam = {};
+		my $genfun = {};
 		for (my $j=0; $j < @{$ftrs}; $j++) {
 			my $ftr = $ftrs->[$j];
 			my $fam = $members->{$genome_refs->[$i]}->{$ftr->id()};
 			my $score = $orthos->{$fam}->{$genome_refs->[$i]}->{$ftr->id()};
 			my $roles = $ftr->roles();
 			my $funind = [];
-			my $genfam = {};
-			my $genfun = {};
 			for (my $k=0; $k < @{$roles}; $k++) {
 				if (!defined($functions->{$roles->[$k]})) {
 					$functions->{$roles->[$k]} = {
@@ -18159,7 +18226,7 @@ sub compare_genomes
 			name => $g->scientific_name(),
 			taxonomy => $taxonomy,
 			genome_ref => $g->_reference(),
-			genome_similarity = {},
+			genome_similarity => {},
 			features => @{$ftrs},
 			families => keys(%{$genfam}),
 			functions => keys(%{$genfun}),
@@ -18199,7 +18266,7 @@ sub compare_genomes
 		$gc->{functions}->[$famind->{$fam}] = $families->{$fam};
 	}
 	$gc = Bio::KBase::ObjectAPI::KBaseGenomes::GenomeComparison->new($gc);
-	$output = $self->_save_msobject($gc,"GenomeComparison",$input->{workspace},$input->{output_id});
+	$output = $self->_save_msobject($gc,"GenomeComparison",$params->{workspace},$params->{output_id});
     $self->_clearContext();
     #END compare_genomes
     my @_bad_returns;
@@ -19947,6 +20014,908 @@ sub update_object_references
 	my $msg = "Invalid returns passed to update_object_references:\n" . join("", map { "\t$_\n" } @_bad_returns);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
 							       method_name => 'update_object_references');
+    }
+    return($output);
+}
+
+
+
+
+=head2 add_reactions
+
+  $output = $obj->add_reactions($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is an add_reactions_params
+$output is an object_metadata
+add_reactions_params is a reference to a hash where the following keys are defined:
+	model has a value which is a string
+	model_workspace has a value which is a string
+	output_id has a value which is a string
+	workspace has a value which is a string
+	reactions has a value which is a reference to a list where each element is a reference to a list containing 9 items:
+	0: (reaction_id) a string
+	1: (compartment) a string
+	2: (direction) a string
+	3: (gpr) a string
+	4: (pathway) a string
+	5: (name) a string
+	6: (reference) a string
+	7: (enzyme) a string
+	8: (equation) a string
+
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is an add_reactions_params
+$output is an object_metadata
+add_reactions_params is a reference to a hash where the following keys are defined:
+	model has a value which is a string
+	model_workspace has a value which is a string
+	output_id has a value which is a string
+	workspace has a value which is a string
+	reactions has a value which is a reference to a list where each element is a reference to a list containing 9 items:
+	0: (reaction_id) a string
+	1: (compartment) a string
+	2: (direction) a string
+	3: (gpr) a string
+	4: (pathway) a string
+	5: (name) a string
+	6: (reference) a string
+	7: (enzyme) a string
+	8: (equation) a string
+
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+
+=end text
+
+
+
+=item Description
+
+Add new reactions to the model from the biochemistry or custom reactions
+
+=back
+
+=cut
+
+sub add_reactions
+{
+    my $self = shift;
+    my($params) = @_;
+
+    my @_bad_arguments;
+    (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"params\" (value was \"$params\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to add_reactions:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'add_reactions');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($output);
+    #BEGIN add_reactions
+    $self->_setContext($ctx,$params);
+    $params = $self->_validateargs($params,["model","workspace","reactions"],{
+    	model_workspace => $params->{workspace},
+    	output_id => $params->{model},
+    	compounds => []
+    });
+	($params->{reactions},my $compoundhash) = $self->process_reactions_list($params->{reactions},$params->{compounds});
+    my $model = $self->_get_msobject("FBAModel",$params->{model_workspace},$params->{model});
+    for (my $i=0; $i < @{$params->{reactions}}; $i++) {
+    	$model->addModelReaction({
+		    reaction => $params->{reaction}->[$i]->[0],
+		    direction => $params->{reaction}->[$i]->[2],
+		    compartment => $params->{reaction}->[$i]->[1],
+		    gpr => $params->{reaction}->[$i]->[3],
+		    compounds => $compoundhash,
+		    equation => $params->{reaction}->[$i]->[8],
+		    pathway => $params->{reaction}->[$i]->[4],
+		    name => $params->{reaction}->[$i]->[5],
+		    reference => $params->{reaction}->[$i]->[6],
+		    enzyme => $params->{reaction}->[$i]->[7]
+		});
+    }
+    $output = $self->_save_msobject($model,"FBAModel",$params->{workspace},$params->{output_id});
+    $self->_clearContext();
+    #END add_reactions
+    my @_bad_returns;
+    (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to add_reactions:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'add_reactions');
+    }
+    return($output);
+}
+
+
+
+
+=head2 remove_reactions
+
+  $output = $obj->remove_reactions($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is a remove_reactions_params
+$output is an object_metadata
+remove_reactions_params is a reference to a hash where the following keys are defined:
+	model has a value which is a string
+	model_workspace has a value which is a string
+	output_id has a value which is a string
+	workspace has a value which is a string
+	reactions has a value which is a reference to a list where each element is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is a remove_reactions_params
+$output is an object_metadata
+remove_reactions_params is a reference to a hash where the following keys are defined:
+	model has a value which is a string
+	model_workspace has a value which is a string
+	output_id has a value which is a string
+	workspace has a value which is a string
+	reactions has a value which is a reference to a list where each element is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+
+=end text
+
+
+
+=item Description
+
+Remove reactions from the model
+
+=back
+
+=cut
+
+sub remove_reactions
+{
+    my $self = shift;
+    my($params) = @_;
+
+    my @_bad_arguments;
+    (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"params\" (value was \"$params\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to remove_reactions:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'remove_reactions');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($output);
+    #BEGIN remove_reactions
+    $self->_setContext($ctx,$params);
+    $params = $self->_validateargs($params,["model","workspace","reactions"],{
+    	model_workspace => $params->{workspace},
+    	output_id => $params->{model},
+    });
+    my $model = $self->_get_msobject("FBAModel",$params->{model_workspace},$params->{model});
+    for (my $i=0; $i < @{$params->{reactions}}; $i++) {
+    	my $rxn = $model->getObject("models",$params->{reactions}->[$i]);
+    	if (defined($rxn)) {
+    		$model->remove("modelreactions",$rxn);
+    	}
+    }
+    $output = $self->_save_msobject($model,"FBAModel",$params->{workspace},$params->{output_id});
+    $self->_clearContext();
+    #END remove_reactions
+    my @_bad_returns;
+    (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to remove_reactions:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'remove_reactions');
+    }
+    return($output);
+}
+
+
+
+
+=head2 modify_reactions
+
+  $output = $obj->modify_reactions($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is a modify_reactions_params
+$output is an object_metadata
+modify_reactions_params is a reference to a hash where the following keys are defined:
+	model has a value which is a string
+	model_workspace has a value which is a string
+	output_id has a value which is a string
+	workspace has a value which is a string
+	reactions has a value which is a reference to a list where each element is a reference to a list containing 7 items:
+	0: (reaction_id) a string
+	1: (direction) a string
+	2: (gpr) a string
+	3: (pathway) a string
+	4: (name) a string
+	5: (reference) a string
+	6: (enzyme) a string
+
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is a modify_reactions_params
+$output is an object_metadata
+modify_reactions_params is a reference to a hash where the following keys are defined:
+	model has a value which is a string
+	model_workspace has a value which is a string
+	output_id has a value which is a string
+	workspace has a value which is a string
+	reactions has a value which is a reference to a list where each element is a reference to a list containing 7 items:
+	0: (reaction_id) a string
+	1: (direction) a string
+	2: (gpr) a string
+	3: (pathway) a string
+	4: (name) a string
+	5: (reference) a string
+	6: (enzyme) a string
+
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+
+=end text
+
+
+
+=item Description
+
+Modify reactions in the model
+
+=back
+
+=cut
+
+sub modify_reactions
+{
+    my $self = shift;
+    my($params) = @_;
+
+    my @_bad_arguments;
+    (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"params\" (value was \"$params\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to modify_reactions:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'modify_reactions');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($output);
+    #BEGIN modify_reactions
+    $self->_setContext($ctx,$params);
+    $params = $self->_validateargs($params,["model","workspace","reactions"],{
+    	model_workspace => $params->{workspace},
+    	output_id => $params->{model},
+    });
+    my $model = $self->_get_msobject("FBAModel",$params->{model_workspace},$params->{model});
+    for (my $i=0; $i < @{$params->{reactions}}; $i++) {
+    	$model->addModelReaction({
+		    reaction => $params->{reaction}->[$i]->[0],
+		    direction => $params->{reaction}->[$i]->[1],
+		    gpr => $params->{reaction}->[$i]->[2],
+		    pathway => $params->{reaction}->[$i]->[3],
+		    name => $params->{reaction}->[$i]->[4],
+		    reference => $params->{reaction}->[$i]->[5],
+		    enzyme => $params->{reaction}->[$i]->[6]
+		});
+    }
+    $output = $self->_save_msobject($model,"FBAModel",$params->{workspace},$params->{output_id});
+    $self->_clearContext();
+    #END modify_reactions
+    my @_bad_returns;
+    (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to modify_reactions:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'modify_reactions');
+    }
+    return($output);
+}
+
+
+
+
+=head2 add_features
+
+  $output = $obj->add_features($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is an add_features_params
+$output is an object_metadata
+add_features_params is a reference to a hash where the following keys are defined:
+	genome has a value which is a string
+	genome_workspace has a value which is a string
+	output_id has a value which is a string
+	workspace has a value which is a string
+	genes has a value which is a reference to a list where each element is a reference to a list containing 9 items:
+	0: (feature) a feature_id
+	1: (function) a string
+	2: (type) a string
+	3: (aliases) a reference to a list where each element is a string
+	4: (publications) a reference to a list where each element is a string
+	5: (annotations) a reference to a list where each element is a string
+	6: (protein_translation) a string
+	7: (dna_sequence) a string
+	8: (locations) a reference to a list where each element is a reference to a list containing 4 items:
+		0: a string
+		1: an int
+		2: a string
+		3: an int
+
+
+feature_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is an add_features_params
+$output is an object_metadata
+add_features_params is a reference to a hash where the following keys are defined:
+	genome has a value which is a string
+	genome_workspace has a value which is a string
+	output_id has a value which is a string
+	workspace has a value which is a string
+	genes has a value which is a reference to a list where each element is a reference to a list containing 9 items:
+	0: (feature) a feature_id
+	1: (function) a string
+	2: (type) a string
+	3: (aliases) a reference to a list where each element is a string
+	4: (publications) a reference to a list where each element is a string
+	5: (annotations) a reference to a list where each element is a string
+	6: (protein_translation) a string
+	7: (dna_sequence) a string
+	8: (locations) a reference to a list where each element is a reference to a list containing 4 items:
+		0: a string
+		1: an int
+		2: a string
+		3: an int
+
+
+feature_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+
+=end text
+
+
+
+=item Description
+
+Add new features to the genome
+
+=back
+
+=cut
+
+sub add_features
+{
+    my $self = shift;
+    my($params) = @_;
+
+    my @_bad_arguments;
+    (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"params\" (value was \"$params\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to add_features:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'add_features');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($output);
+    #BEGIN add_features
+    $self->_setContext($ctx,$params);
+    $params = $self->_validateargs($params,["genome","workspace","features"],{
+    	genome_workspace => $params->{workspace},
+    	output_id => $params->{genome},
+    });
+    my $genome = $self->_get_msobject("Genome",$params->{genome_workspace},$params->{genome});
+    for (my $i=0; $i < @{$params->{features}}; $i++) {
+    	my $ftr = $genome->getObject("features",$params->{features}->[$i]->[0]);
+    	if (!defined($ftr)) {
+    		$genome->add_gene({
+    			id => $params->{features}->[$i]->[0],
+    			function => $params->{features}->[$i]->[1],
+    			type => $params->{features}->[$i]->[2],
+    			aliases => $params->{features}->[$i]->[3],
+    			publications => $params->{features}->[$i]->[4],
+    			annotations => $params->{features}->[$i]->[5],
+    			protein_translation => $params->{features}->[$i]->[6],
+    			dna_sequence => $params->{features}->[$i]->[7],
+    			locations => $params->{features}->[$i]->[8]
+    		});
+    	}
+    }
+    $output = $self->_save_msobject($genome,"Genome",$params->{workspace},$params->{output_id});
+    $self->_clearContext();
+    #END add_features
+    my @_bad_returns;
+    (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to add_features:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'add_features');
+    }
+    return($output);
+}
+
+
+
+
+=head2 remove_features
+
+  $output = $obj->remove_features($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is a remove_features_params
+$output is an object_metadata
+remove_features_params is a reference to a hash where the following keys are defined:
+	genome has a value which is a string
+	genome_workspace has a value which is a string
+	output_id has a value which is a string
+	workspace has a value which is a string
+	features has a value which is a reference to a list where each element is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is a remove_features_params
+$output is an object_metadata
+remove_features_params is a reference to a hash where the following keys are defined:
+	genome has a value which is a string
+	genome_workspace has a value which is a string
+	output_id has a value which is a string
+	workspace has a value which is a string
+	features has a value which is a reference to a list where each element is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+
+=end text
+
+
+
+=item Description
+
+Remove features from the genome
+
+=back
+
+=cut
+
+sub remove_features
+{
+    my $self = shift;
+    my($params) = @_;
+
+    my @_bad_arguments;
+    (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"params\" (value was \"$params\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to remove_features:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'remove_features');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($output);
+    #BEGIN remove_features
+    $self->_setContext($ctx,$params);
+    $params = $self->_validateargs($params,["genome","workspace","features"],{
+    	genome_workspace => $params->{workspace},
+    	output_id => $params->{genome},
+    });
+    my $genome = $self->_get_msobject("Genome",$params->{genome_workspace},$params->{genome});
+    for (my $i=0; $i < @{$params->{features}}; $i++) {
+    	my $ftr = $genome->getObject("features",$params->{features}->[$i]);
+    	if (defined($ftr)) {
+    		$genome->remove("features",$ftr);
+    	}
+    }
+    $output = $self->_save_msobject($genome,"Genome",$params->{workspace},$params->{output_id});
+    $self->_clearContext();
+    #END remove_features
+    my @_bad_returns;
+    (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to remove_features:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'remove_features');
+    }
+    return($output);
+}
+
+
+
+
+=head2 modify_features
+
+  $output = $obj->modify_features($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is a modify_features_params
+$output is an object_metadata
+modify_features_params is a reference to a hash where the following keys are defined:
+	genome has a value which is a string
+	genome_workspace has a value which is a string
+	output_id has a value which is a string
+	workspace has a value which is a string
+	genes has a value which is a reference to a list where each element is a reference to a list containing 9 items:
+	0: (feature) a feature_id
+	1: (function) a string
+	2: (type) a string
+	3: (aliases) a reference to a list where each element is a string
+	4: (publications) a reference to a list where each element is a string
+	5: (annotations) a reference to a list where each element is a string
+	6: (protein_translation) a string
+	7: (dna_sequence) a string
+	8: (locations) a reference to a list where each element is a reference to a list containing 4 items:
+		0: a string
+		1: an int
+		2: a string
+		3: an int
+
+
+feature_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is a modify_features_params
+$output is an object_metadata
+modify_features_params is a reference to a hash where the following keys are defined:
+	genome has a value which is a string
+	genome_workspace has a value which is a string
+	output_id has a value which is a string
+	workspace has a value which is a string
+	genes has a value which is a reference to a list where each element is a reference to a list containing 9 items:
+	0: (feature) a feature_id
+	1: (function) a string
+	2: (type) a string
+	3: (aliases) a reference to a list where each element is a string
+	4: (publications) a reference to a list where each element is a string
+	5: (annotations) a reference to a list where each element is a string
+	6: (protein_translation) a string
+	7: (dna_sequence) a string
+	8: (locations) a reference to a list where each element is a reference to a list containing 4 items:
+		0: a string
+		1: an int
+		2: a string
+		3: an int
+
+
+feature_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+
+=end text
+
+
+
+=item Description
+
+Modify features in the genome
+
+=back
+
+=cut
+
+sub modify_features
+{
+    my $self = shift;
+    my($params) = @_;
+
+    my @_bad_arguments;
+    (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"params\" (value was \"$params\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to modify_features:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'modify_features');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($output);
+    #BEGIN modify_features
+    $self->_setContext($ctx,$params);
+    $params = $self->_validateargs($params,["genome","workspace","features"],{
+    	genome_workspace => $params->{workspace},
+    	output_id => $params->{genome},
+    });
+    my $genome = $self->_get_msobject("Genome",$params->{genome_workspace},$params->{genome});
+    for (my $i=0; $i < @{$params->{features}}; $i++) {
+    	my $ftr = $genome->getObject("features",$params->{features}->[$i]);
+    	if (defined($ftr)) {
+    		$ftr->modify({
+    			function => $params->{features}->[$i]->[1],
+    			type => $params->{features}->[$i]->[2],
+    			aliases => $params->{features}->[$i]->[3],
+    			publications => $params->{features}->[$i]->[4],
+    			annotations => $params->{features}->[$i]->[5],
+    			protein_translation => $params->{features}->[$i]->[6],
+    			dna_sequence => $params->{features}->[$i]->[7],
+    			locations => $params->{features}->[$i]->[8]
+    		});
+    	}
+    }
+    $output = $self->_save_msobject($genome,"Genome",$params->{workspace},$params->{output_id});
+    $self->_clearContext();
+    #END modify_features
+    my @_bad_returns;
+    (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to modify_features:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'modify_features');
     }
     return($output);
 }
@@ -30149,8 +31118,6 @@ auth has a value which is a string
 
 <pre>
 a reference to a hash where the following keys are defined:
-genomes has a value which is a reference to a list where each element is a genome_id
-workspaces has a value which is a reference to a list where each element is a workspace_id
 pangenome_id has a value which is a string
 pangenome_ws has a value which is a string
 protcomp_id has a value which is a string
@@ -30165,8 +31132,6 @@ workspace has a value which is a string
 =begin text
 
 a reference to a hash where the following keys are defined:
-genomes has a value which is a reference to a list where each element is a genome_id
-workspaces has a value which is a reference to a list where each element is a workspace_id
 pangenome_id has a value which is a string
 pangenome_ws has a value which is a string
 protcomp_id has a value which is a string
@@ -31039,6 +32004,362 @@ create_newobject has a value which is a bool
 update_subrefs has a value which is a bool
 output_id has a value which is a string
 workspace has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 add_reactions_params
+
+=over 4
+
+
+
+=item Description
+
+********************************************************************************
+    Functions relating to editing of genomes and models
+   	********************************************************************************
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+model has a value which is a string
+model_workspace has a value which is a string
+output_id has a value which is a string
+workspace has a value which is a string
+reactions has a value which is a reference to a list where each element is a reference to a list containing 9 items:
+0: (reaction_id) a string
+1: (compartment) a string
+2: (direction) a string
+3: (gpr) a string
+4: (pathway) a string
+5: (name) a string
+6: (reference) a string
+7: (enzyme) a string
+8: (equation) a string
+
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+model has a value which is a string
+model_workspace has a value which is a string
+output_id has a value which is a string
+workspace has a value which is a string
+reactions has a value which is a reference to a list where each element is a reference to a list containing 9 items:
+0: (reaction_id) a string
+1: (compartment) a string
+2: (direction) a string
+3: (gpr) a string
+4: (pathway) a string
+5: (name) a string
+6: (reference) a string
+7: (enzyme) a string
+8: (equation) a string
+
+
+
+=end text
+
+=back
+
+
+
+=head2 remove_reactions_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "remove_reactions" function.
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+model has a value which is a string
+model_workspace has a value which is a string
+output_id has a value which is a string
+workspace has a value which is a string
+reactions has a value which is a reference to a list where each element is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+model has a value which is a string
+model_workspace has a value which is a string
+output_id has a value which is a string
+workspace has a value which is a string
+reactions has a value which is a reference to a list where each element is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 modify_reactions_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "modify_reactions" function.
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+model has a value which is a string
+model_workspace has a value which is a string
+output_id has a value which is a string
+workspace has a value which is a string
+reactions has a value which is a reference to a list where each element is a reference to a list containing 7 items:
+0: (reaction_id) a string
+1: (direction) a string
+2: (gpr) a string
+3: (pathway) a string
+4: (name) a string
+5: (reference) a string
+6: (enzyme) a string
+
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+model has a value which is a string
+model_workspace has a value which is a string
+output_id has a value which is a string
+workspace has a value which is a string
+reactions has a value which is a reference to a list where each element is a reference to a list containing 7 items:
+0: (reaction_id) a string
+1: (direction) a string
+2: (gpr) a string
+3: (pathway) a string
+4: (name) a string
+5: (reference) a string
+6: (enzyme) a string
+
+
+
+=end text
+
+=back
+
+
+
+=head2 add_features_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "add_features" function.
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+genome has a value which is a string
+genome_workspace has a value which is a string
+output_id has a value which is a string
+workspace has a value which is a string
+genes has a value which is a reference to a list where each element is a reference to a list containing 9 items:
+0: (feature) a feature_id
+1: (function) a string
+2: (type) a string
+3: (aliases) a reference to a list where each element is a string
+4: (publications) a reference to a list where each element is a string
+5: (annotations) a reference to a list where each element is a string
+6: (protein_translation) a string
+7: (dna_sequence) a string
+8: (locations) a reference to a list where each element is a reference to a list containing 4 items:
+	0: a string
+	1: an int
+	2: a string
+	3: an int
+
+
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+genome has a value which is a string
+genome_workspace has a value which is a string
+output_id has a value which is a string
+workspace has a value which is a string
+genes has a value which is a reference to a list where each element is a reference to a list containing 9 items:
+0: (feature) a feature_id
+1: (function) a string
+2: (type) a string
+3: (aliases) a reference to a list where each element is a string
+4: (publications) a reference to a list where each element is a string
+5: (annotations) a reference to a list where each element is a string
+6: (protein_translation) a string
+7: (dna_sequence) a string
+8: (locations) a reference to a list where each element is a reference to a list containing 4 items:
+	0: a string
+	1: an int
+	2: a string
+	3: an int
+
+
+
+
+=end text
+
+=back
+
+
+
+=head2 remove_features_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "remove_features" function.
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+genome has a value which is a string
+genome_workspace has a value which is a string
+output_id has a value which is a string
+workspace has a value which is a string
+features has a value which is a reference to a list where each element is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+genome has a value which is a string
+genome_workspace has a value which is a string
+output_id has a value which is a string
+workspace has a value which is a string
+features has a value which is a reference to a list where each element is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 modify_features_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "modify_genes" function.
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+genome has a value which is a string
+genome_workspace has a value which is a string
+output_id has a value which is a string
+workspace has a value which is a string
+genes has a value which is a reference to a list where each element is a reference to a list containing 9 items:
+0: (feature) a feature_id
+1: (function) a string
+2: (type) a string
+3: (aliases) a reference to a list where each element is a string
+4: (publications) a reference to a list where each element is a string
+5: (annotations) a reference to a list where each element is a string
+6: (protein_translation) a string
+7: (dna_sequence) a string
+8: (locations) a reference to a list where each element is a reference to a list containing 4 items:
+	0: a string
+	1: an int
+	2: a string
+	3: an int
+
+
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+genome has a value which is a string
+genome_workspace has a value which is a string
+output_id has a value which is a string
+workspace has a value which is a string
+genes has a value which is a reference to a list where each element is a reference to a list containing 9 items:
+0: (feature) a feature_id
+1: (function) a string
+2: (type) a string
+3: (aliases) a reference to a list where each element is a string
+4: (publications) a reference to a list where each element is a string
+5: (annotations) a reference to a list where each element is a string
+6: (protein_translation) a string
+7: (dna_sequence) a string
+8: (locations) a reference to a list where each element is a reference to a list containing 4 items:
+	0: a string
+	1: an int
+	2: a string
+	3: an int
+
+
 
 
 =end text

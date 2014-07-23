@@ -598,5 +598,31 @@ sub translate_codon {
     return $aa;
 }
 
+sub modify_gene {
+	my($self,$parameters) = @_;
+	$parameters = Bio::KBase::ObjectAPI::utilities::args([], {
+		function => undef,
+    	type => undef,
+    	aliases => [],
+    	publications => [],
+    	annotations => [],
+    	protein_translation => undef,
+    	dna_sequence => undef,
+    	locations => undef
+	}, $parameters );
+	my $list = ["function","type","protein_translation","dna_sequence","locations"];
+	foreach my $item (@{$list}) {
+		if (defined($parameters->{$item})) {
+			$self->$item($parameters->{$item});
+		}
+	}
+	$list = ["aliases","publications","annotations"];
+	foreach my $item (@{$list}) {
+		if (defined($parameters->{$item}->[0])) {
+			push(@{$self->$item()},@{$parameters->{$item}});
+		}
+	}
+}
+
 __PACKAGE__->meta->make_immutable;
 1;

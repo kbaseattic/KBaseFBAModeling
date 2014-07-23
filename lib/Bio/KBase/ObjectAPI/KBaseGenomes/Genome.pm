@@ -244,5 +244,29 @@ sub genome_stats {
 	return $output;
 }
 
+sub add_gene {
+	my($self,$parameters) = @_;
+	$parameters = Bio::KBase::ObjectAPI::utilities::args(["id"], {
+		function => "unknown",
+    	type => "peg",
+    	aliases => [],
+    	publications => [],
+    	annotations => [],
+    	protein_translation => undef,
+    	dna_sequence => undef,
+    	locations => []
+	}, $parameters );
+	$self->add("features",{
+		id => $parameters->{id},
+		function => $parameters->{function},
+		type => $parameters->{type},
+		aliases => $parameters->{aliases},
+		publications => $parameters->{publications},
+		annotations => $parameters->{annotations},
+		protein_translation => $parameters->{protein_translation},
+		dna_sequence => $parameters->{dna_sequence},
+		locations => $parameters->{locations},
+	})
+}
 __PACKAGE__->meta->make_immutable;
 1;
