@@ -2064,7 +2064,7 @@ module fbaModelServices {
 		workspace_id phenotypeSet_workspace - workspace containing the phenotype set to be simulated (an optional argument: default is value of workspace argument)
 		FBAFormulation formulation - parameters for the simulation flux balance analysis (an optional argument: default is 'undef')
 		string notes - string of notes to associate with the phenotype simulation (an optional argument: default is '')
-		phenotypeSimulationSet_id phenotypeSimultationSet - ID of the phenotype simulation set to be generated (an optional argument: default is 'undef')
+		phenotypeSimulationSet_id phenotypeSimulationSet - ID of the phenotype simulation set to be generated (an optional argument: default is 'undef')
 		workspace_id workspace - workspace where the phenotype simulation set should be saved (a required argument)
 		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 		bool all_transporters - Set to TRUE if you want to add transporters for ALL media in the phenotypeset before simulating
@@ -2077,7 +2077,7 @@ module fbaModelServices {
 		workspace_id phenotypeSet_workspace;
 		FBAFormulation formulation;
 		string notes;
-		phenotypeSimulationSet_id phenotypeSimultationSet;
+		phenotypeSimulationSet_id phenotypeSimulationSet;
 		workspace_id workspace;
 		bool overwrite;
 		string auth;
@@ -2126,7 +2126,7 @@ module fbaModelServices {
 	
     /* Input parameters for the "export_phenotypeSimulationSet" function.
 	
-		phenotypeSimulationSet_id phenotypeSimultationSet - ID of the phenotype simulation set to be exported (a required argument)
+		phenotypeSimulationSet_id phenotypeSimulationSet - ID of the phenotype simulation set to be exported (a required argument)
 		workspace_id workspace - workspace where the phenotype simulation set is stored (a required argument)
 		string format - format to which phenotype simulation set should be exported (html, json)
 		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
@@ -3622,15 +3622,17 @@ module fbaModelServices {
     /*
     Named parameters for 'create_promconstraint' method.  Currently all options are required.
     
-        genome_ref genome_ref             - the workspace ID of the genome to link to the prom object
-        expression_series_ref expression_series_ref     - the workspace ID of the expression data collection needed to
+        genome_id genome_id             - the workspace ID of the genome to link to the prom object
+        series_id series_id     - the workspace ID of the expression data collection needed to
                                                        build the PROM constraints.
-        regulome_ref  regulome_ref        - the workspace ID of the regulatory network data to use
+        regulome_id  regulome_id        - the workspace ID of the regulatory network data to use
+	promconstraint_id promconstraint_id - the the workspace ID for the new PROM constraint
     */
     typedef structure {
         genome_id genome_id;
         series_id series_id;
         regulome_id regulome_id;
+	promconstraint_id promconstraint_id;
     } CreatePromConstraintParameters;
     
     /*
