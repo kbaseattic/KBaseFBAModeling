@@ -71,7 +71,7 @@ sub simple_role_reaction_hash {
 		    for (my $k=0; $k < @{$roles}; $k++) {
 		    	my $role = $roles->[$k]->role();
 		    	$rolehash->{$role->name()}->{$rxn->reaction()->id()}->{$rxn->compartment()->id()} = [$rxn->direction(),$rxn->reaction()->definition()];
-			});
+			}
 		}
 	}
 	return $rolehash;
