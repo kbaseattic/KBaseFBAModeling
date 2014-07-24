@@ -13,12 +13,12 @@ my $primaryArgs = ["Genomes (workspace/ID;workspace/ID) or Filename"];
 my $servercommand = "build_pangenome";
 my $script = "ga-build-pangenome";
 my $translation = {
-	outid => "model_uid",
+	outputid => "output_id",
 	workspace => "workspace",
 };
 #Defining usage and options
 my $specs = [
-    [ 'outid|o:s', 'ID for pangenome in workspace' ],
+    [ 'outputid|o:s', 'ID for pangenome in workspace' ],
     [ 'fromfile|f', 'Load model list from file. Input file should have two columns with headers: Genome, Workspace.' ],
     [ 'workspace|w=s', 'Workspace to save merged model', { "default" => fbaws() } ],
 ];

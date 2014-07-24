@@ -6,8 +6,9 @@
 ########################################################################
 package Bio::KBase::ObjectAPI::KBaseGenomes::DB::GenomeComparison;
 use Bio::KBase::ObjectAPI::IndexedObject;
-use Bio::KBase::ObjectAPI::KBaseGenomes::GenomeCompareFunction;
-use Bio::KBase::ObjectAPI::KBaseGenomes::GenomeCompareFamily;
+use Bio::KBase::ObjectAPI::KBaseGenomes::GenomeComparisonGenome;
+use Bio::KBase::ObjectAPI::KBaseGenomes::GenomeComparisonFunction;
+use Bio::KBase::ObjectAPI::KBaseGenomes::GenomeComparisonFamily;
 use Moose;
 use namespace::autoclean;
 extends 'Bio::KBase::ObjectAPI::IndexedObject';
@@ -20,7 +21,6 @@ has parent => (is => 'rw', isa => 'Ref', weak_ref => 1, type => 'parent', metacl
 has uuid => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_uuid');
 has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_reference');
 has core_functions => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has genomes => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
 has name => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has core_families => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has pangenome_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
@@ -29,13 +29,14 @@ has protcomp_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attr
 
 
 # SUBOBJECTS:
-has functions => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(GenomeCompareFunction)', metaclass => 'Typed', reader => '_functions', printOrder => '-1');
-has families => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(GenomeCompareFamily)', metaclass => 'Typed', reader => '_families', printOrder => '-1');
+has genomes => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(GenomeComparisonGenome)', metaclass => 'Typed', reader => '_genomes', printOrder => '-1');
+has functions => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(GenomeComparisonFunction)', metaclass => 'Typed', reader => '_functions', printOrder => '-1');
+has families => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(GenomeComparisonFamily)', metaclass => 'Typed', reader => '_families', printOrder => '-1');
 
 
 # LINKS:
-has pangenome => (is => 'rw', type => 'link(,,pangenome_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_pangenome', clearer => 'clear_pangenome', isa => 'Ref', weak_ref => 1);
-has protcomp => (is => 'rw', type => 'link(,,protcomp_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_protcomp', clearer => 'clear_protcomp', isa => 'Ref', weak_ref => 1);
+has pangenome => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,Pangenome,pangenome_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_pangenome', clearer => 'clear_pangenome', isa => 'Bio::KBase::ObjectAPI::KBaseGenomes::Pangenome', weak_ref => 1);
+has protcomp => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,ProteomeComparison,protcomp_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_protcomp', clearer => 'clear_protcomp', isa => 'Bio::KBase::ObjectAPI::GenomeComparison::ProteomeComparison', weak_ref => 1);
 
 
 # BUILDERS:
@@ -64,14 +65,6 @@ my $attributes = [
             'printOrder' => -1,
             'name' => 'core_functions',
             'type' => 'Int',
-            'perm' => 'rw'
-          },
-          {
-            'req' => 0,
-            'printOrder' => -1,
-            'name' => 'genomes',
-            'default' => 'sub {return [];}',
-            'type' => 'ArrayRef',
             'perm' => 'rw'
           },
           {
@@ -111,7 +104,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {core_functions => 0, genomes => 1, name => 2, core_families => 3, pangenome_ref => 4, id => 5, protcomp_ref => 6};
+my $attribute_map = {core_functions => 0, name => 1, core_families => 2, pangenome_ref => 3, id => 4, protcomp_ref => 5};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -128,24 +121,22 @@ sub _attributes {
 
 my $links = [
           {
-            'parent' => undef,
-            'name' => 'pangenome',
             'attribute' => 'pangenome_ref',
+            'parent' => 'Bio::KBase::ObjectAPI::KBaseStore',
             'clearer' => 'clear_pangenome',
-            'class' => undef,
-            'method' => undef,
-            'module' => undef,
-            'field' => undef
+            'name' => 'pangenome',
+            'method' => 'Pangenome',
+            'class' => 'Bio::KBase::ObjectAPI::KBaseGenomes::Pangenome',
+            'module' => 'KBaseGenomes'
           },
           {
-            'parent' => undef,
-            'name' => 'protcomp',
             'attribute' => 'protcomp_ref',
+            'parent' => 'Bio::KBase::ObjectAPI::KBaseStore',
             'clearer' => 'clear_protcomp',
-            'class' => undef,
-            'method' => undef,
-            'module' => undef,
-            'field' => undef
+            'name' => 'protcomp',
+            'method' => 'ProteomeComparison',
+            'class' => 'Bio::KBase::ObjectAPI::GenomeComparison::ProteomeComparison',
+            'module' => 'GenomeComparison'
           }
         ];
 
@@ -167,21 +158,28 @@ sub _links {
 my $subobjects = [
           {
             'printOrder' => -1,
+            'name' => 'genomes',
+            'type' => 'child',
+            'class' => 'GenomeComparisonGenome',
+            'module' => 'KBaseGenomes'
+          },
+          {
+            'printOrder' => -1,
             'name' => 'functions',
             'type' => 'child',
-            'class' => 'GenomeCompareFunction',
+            'class' => 'GenomeComparisonFunction',
             'module' => 'KBaseGenomes'
           },
           {
             'printOrder' => -1,
             'name' => 'families',
             'type' => 'child',
-            'class' => 'GenomeCompareFamily',
+            'class' => 'GenomeComparisonFamily',
             'module' => 'KBaseGenomes'
           }
         ];
 
-my $subobject_map = {functions => 0, families => 1};
+my $subobject_map = {genomes => 0, functions => 1, families => 2};
 sub _subobjects {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -196,6 +194,10 @@ sub _subobjects {
 	 }
 }
 # SUBOBJECT READERS:
+around 'genomes' => sub {
+	 my ($orig, $self) = @_;
+	 return $self->_build_all_objects('genomes');
+};
 around 'functions' => sub {
 	 my ($orig, $self) = @_;
 	 return $self->_build_all_objects('functions');

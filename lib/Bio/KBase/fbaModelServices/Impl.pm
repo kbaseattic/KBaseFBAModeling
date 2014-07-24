@@ -71,6 +71,7 @@ use Bio::KBase::GenomeAnnotation::Client;
 use Bio::KBase::ObjectAPI::KBaseStore;
 use Data::UUID;
 use Bio::KBase::ObjectAPI::KBaseExpression::ExpressionSample;
+use Bio::KBase::ObjectAPI::KBaseGenomes::GenomeComparison;
 use Bio::KBase::ObjectAPI::KBaseExpression::ExpressionSeries;
 use Bio::KBase::ObjectAPI::KBaseRegulation::Regulome;
 use Bio::KBase::ObjectAPI::KBaseRegulation::Regulon;
@@ -89,7 +90,6 @@ use Bio::KBase::ObjectAPI::KBaseGenomes::ContigSet;
 use Bio::KBase::ObjectAPI::KBaseGenomes::ProteinSet;
 use Bio::KBase::ObjectAPI::KBaseGenomes::Pangenome;
 use Bio::KBase::ObjectAPI::KBaseFBA::FBAModel;
-#use Bio::KBase::ObjectAPI::GlobalFunctions;
 use Bio::KBase::ObjectAPI::KBaseFBA::Gapfilling;
 use Bio::KBase::ObjectAPI::KBaseFBA::PromConstraint;
 use Bio::KBase::ObjectAPI::KBaseFBA::Gapgeneration;
@@ -6767,14 +6767,14 @@ sub build_pangenome
     #BEGIN build_pangenome
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["genomes","genome_workspaces","workspace"],{
-    	outputid => undef,
+    	output_id => undef,
     	name => undef,
     });
     my $orthlist = [];
     my $okdb;
     my $id = $self->_get_new_id("kb|pangen");
-    if (!defined($input->{outputid})) {
-    	$input->{outputid} = $id;
+    if (!defined($input->{output_id})) {
+    	$input->{output_id} = $id;
     }
     my $pangenome = {
     	id => $id,
@@ -6915,7 +6915,7 @@ sub build_pangenome
     }
     $pangenome = Bio::KBase::ObjectAPI::KBaseGenomes::Pangenome->new($pangenome);
 	$pangenome->orthologs();
-	$output = $self->_save_msobject($pangenome,"Pangenome",$input->{workspace},$input->{outputid});
+	$output = $self->_save_msobject($pangenome,"Pangenome",$input->{workspace},$input->{output_id});
 	$self->_clearContext();
     #END build_pangenome
     my @_bad_returns;
@@ -18059,8 +18059,8 @@ sub compare_genomes
 		$genome_refs = $pg->genome_refs();
 		for (my $i=0; $i < @{$genome_refs}; $i++) {
 			my $array = [split(/\//,$genome_refs->[$i])];
-			push(@{$genome_ids},$array->[0]);
-			push(@{$genome_wwss},$array->[1]);
+			push(@{$genome_ids},$array->[1]);
+			push(@{$genome_wwss},$array->[0]);
 		}
 		my $orthofam = $pg->orthologs();
 		for (my $i=0; $i < @{$orthofam}; $i++) {
@@ -18193,9 +18193,9 @@ sub compare_genomes
 						$functions->{$roles->[$k]}->{primclass} = $SubsysRoles->{$roles->[$k]}->class();
 						$functions->{$roles->[$k]}->{subclass} = $SubsysRoles->{$roles->[$k]}->subclass();
 					}
-					if (defined($rolerxns->{$roles->[$k]})) {
-						$functions->{$roles->[$k]}->{reactions} = $rolerxns->{$roles->[$k]};
-					}
+					#if (defined($rolerxns->{$roles->[$k]})) {
+					#	$functions->{$roles->[$k]}->{reactions} = $rolerxns->{$roles->[$k]};
+					#}
 				}
 				push(@{$funind},$funcind->{$roles->[$k]});
 				push(@{$functions->{$roles->[$k]}->{genome_features}->{$g->_reference()}},[$ftr->id(),$famind->{$fam},$score]);
@@ -18221,15 +18221,18 @@ sub compare_genomes
 		if (defined($g->taxonomy())) {
 			$taxonomy = $g->taxonomy();
 		}
+		my $numftrs = @{$ftrs};
+		my $numfams = keys(%{$genfam});
+		my $numfuns = keys(%{$genfun});
 		$genomehash->{$g->_reference()} = {
 			id => $g->_wsworkspace()."/".$g->_wsname(),
 			name => $g->scientific_name(),
 			taxonomy => $taxonomy,
 			genome_ref => $g->_reference(),
 			genome_similarity => {},
-			features => @{$ftrs},
-			families => keys(%{$genfam}),
-			functions => keys(%{$genfun}),
+			features => $numftrs,
+			families => $numfams+0,
+			functions => $numfuns+0,
 		};
 		$gc->{genomes}->[$i] = $genomehash->{$g->_reference()};
 	}
@@ -18263,7 +18266,7 @@ sub compare_genomes
 			$families->{$fam}->{core} = 1;
 			$gc->{core_families}++;
 		}
-		$gc->{functions}->[$famind->{$fam}] = $families->{$fam};
+		$gc->{families}->[$famind->{$fam}] = $families->{$fam};
 	}
 	$gc = Bio::KBase::ObjectAPI::KBaseGenomes::GenomeComparison->new($gc);
 	$output = $self->_save_msobject($gc,"GenomeComparison",$params->{workspace},$params->{output_id});

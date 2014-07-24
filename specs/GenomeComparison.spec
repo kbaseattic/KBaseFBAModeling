@@ -22,6 +22,7 @@ module GenomeComparison {
 		list<list<hit>> data2 - outer list iterates over positions of genome2 gene names, inner list iterates over hits from given gene2 to genome1
 	*/
 	typedef structure {
+		string id;
 		string genome1ws;
 		string genome1id;
 		string genome2ws;
