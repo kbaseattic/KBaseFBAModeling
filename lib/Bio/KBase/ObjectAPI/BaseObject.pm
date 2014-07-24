@@ -367,6 +367,7 @@ sub toJSON {
     my $args = Bio::KBase::ObjectAPI::utilities::args([],{pp => 0}, @_);
     my $data = $self->serializeToDB();
     my $JSON = JSON::XS->new->utf8(1);
+    $JSON->allow_blessed(1);
     $JSON->pretty(1) if($args->{pp} == 1);
     return $JSON->encode($data);
 }

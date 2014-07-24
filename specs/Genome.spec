@@ -28,6 +28,16 @@ module KBaseGenomes {
 	*/
     typedef string Genome_ref;
     /*
+		Reference to a Pangenome object in the workspace
+		@id ws KBaseGenomes.Pangenome
+	*/
+    typedef string Pangenome_ref;
+    /*
+		Reference to a Proteome Comparison object in the workspace
+		@id ws GenomeComparison.ProteomeComparison
+	*/
+    typedef string Protcomp_ref;
+    /*
 		Reference to a source_id
 		@id external
 	*/
@@ -37,6 +47,16 @@ module KBaseGenomes {
 		@id kb
 	*/
     typedef string Genome_id;
+    /*
+		KBase Reaction ID
+		@id external
+	*/
+	typedef string Reaction_id;
+    /*
+		KBase Feature ID
+		@id external
+	*/
+	typedef string Feature_id;
     /*
 		KBase ProteinSet ID
 		@id kb
@@ -52,11 +72,6 @@ module KBaseGenomes {
 		@id external
 	*/
     typedef string Protein_id;
-	/*
-		Genome feature ID
-		@id external
-	*/
-    typedef string Feature_id;
     /*
 		Reference to an individual contig in a ContigSet object
 		@id subws KBase.ContigSet.contigs.[*].id
@@ -419,9 +434,9 @@ module KBaseGenomes {
     /* Object to carry alternative functions and probabilities for genes in a genome    
 
         probanno_id id - ID of the probabilistic annotation object    
-        genome_ref genome_ref - reference to genome probabilistic annotation was built for
-        mapping<feature_id, list<function_probability>> roleset_probabilities - mapping of features to list of alternative function_probability objects
-        list<feature_id> skipped_features - list of features in genome with no probability
+        Genome_ref genome_ref - reference to genome probabilistic annotation was built for
+        mapping<Feature_id, list<function_probability>> roleset_probabilities - mapping of features to list of alternative function_probability objects
+        list<Feature_id> skipped_features - list of features in genome with no probability
         
     	@searchable ws_subset id genome_ref skipped_features
         
@@ -574,4 +589,67 @@ module KBaseGenomes {
     	list<Genome_ref> genome_refs;
     	list<OrthologFamily> orthologs;
 	} Pangenome;
+	
+	/*
+    	GenomeComparisonGenome object: this object holds information about a genome in a genome comparison
+    */
+    typedef structure {
+		string id;
+		Genome_ref genome_ref;
+		mapping<string genome_id,tuple<int commonfamilies,int commonfunctions> > genome_similarity; 
+		string name;
+		string taxonomy;
+		int features;
+		int families;
+		int functions;
+    } GenomeComparisonGenome;
+ 
+    /*
+    	GenomeComparisonFunction object: this object holds information about a genome in a function across all genomes
+    */
+    typedef structure {
+		int core;
+		mapping<string genome_id,list<tuple<Feature_id,int famindex,float score> > > genome_features;
+		string id;
+		list<tuple<Reaction_id, string equation>> reactions;
+		string subsystem;
+		string primclass;
+		string subclass;
+		int number_genomes;
+		float fraction_genomes;
+		float fraction_consistent_families;
+		string most_consistent_family;
+    } GenomeComparisonFunction;
+    
+    /*
+    	GenomeComparisonFamily object: this object holds information about a protein family across a set of genomes
+    */
+    typedef structure {
+		int core;
+		mapping<string genome_id,list< tuple<Feature_id,list<int> funcindecies,float score > > > genome_features;
+		string id;
+		string type;
+		string protein_translation;
+		int number_genomes;
+		float fraction_genomes;
+		float fraction_consistent_annotations;
+		string most_consistent_role;
+    } GenomeComparisonFamily;
+    
+    /*
+    	GenomeComparisonData object: this object holds information about a multigenome comparison
+    	
+    	@optional protcomp_ref pangenome_ref
+    */
+    typedef structure {
+		string id;
+		string name;
+		int core_functions;
+		int core_families;
+		Protcomp_ref protcomp_ref;
+		Pangenome_ref pangenome_ref;
+		list<GenomeComparisonGenome> genomes;
+		list<GenomeComparisonFamily> families;
+		list<GenomeComparisonFunction> functions;
+    } GenomeComparison;
 };

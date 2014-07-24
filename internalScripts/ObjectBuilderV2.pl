@@ -95,6 +95,7 @@ my $baseobjects = {
 	Regulome => "KBaseRegulation",
 	ExpressionSeries => "KBaseExpression",
 	ExpressionSample => "KBaseExpression",
+	GenomeComparison => "KBaseGenomes",
 };
 my $objcorrespondence = {
 	BiochemistryStructures => "BiochemistryStructures",

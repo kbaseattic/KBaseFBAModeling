@@ -100,6 +100,12 @@ our %return_counts = (
         'create_promconstraint' => 1,
         'add_biochemistry_compounds' => 1,
         'update_object_references' => 1,
+        'add_reactions' => 1,
+        'remove_reactions' => 1,
+        'modify_reactions' => 1,
+        'add_features' => 1,
+        'remove_features' => 1,
+        'modify_features' => 1,
         'version' => 1,
 );
 
@@ -187,6 +193,12 @@ our %method_authentication = (
         'create_promconstraint' => 'required',
         'add_biochemistry_compounds' => 'required',
         'update_object_references' => 'required',
+        'add_reactions' => 'required',
+        'remove_reactions' => 'required',
+        'modify_reactions' => 'required',
+        'add_features' => 'required',
+        'remove_features' => 'required',
+        'modify_features' => 'required',
 );
 
 
@@ -277,6 +289,12 @@ sub _build_valid_methods
         'create_promconstraint' => 1,
         'add_biochemistry_compounds' => 1,
         'update_object_references' => 1,
+        'add_reactions' => 1,
+        'remove_reactions' => 1,
+        'modify_reactions' => 1,
+        'add_features' => 1,
+        'remove_features' => 1,
+        'modify_features' => 1,
         'version' => 1,
     };
     return $methods;

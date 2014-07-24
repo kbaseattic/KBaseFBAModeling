@@ -170,7 +170,6 @@ if (defined($opt->{sbml}) && $opt->{sbml} == 1) {
 		if (defined($headingColums->{equation})) {
 			$rxnobj->[8] = $rxn->[$headingColums->{equation}];
 		}
-		print $rxnobj->[0]."\n";
 		push(@{$params->{reactions}},$rxnobj);
 	}
 	if (defined($opt->{compoundfile})) {

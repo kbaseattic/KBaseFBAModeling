@@ -26,6 +26,7 @@ has genome1id => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribu
 has proteome2map => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub {return {};}, type => 'attribute', metaclass => 'Typed');
 has data2 => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
 has proteome2names => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
+has id => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has data1 => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
 has genome1ws => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has genome2ws => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
@@ -37,6 +38,7 @@ has genome2ws => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribu
 # BUILDERS:
 sub _build_reference { my ($self) = @_;return $self->uuid(); }
 sub _build_uuid { return Data::UUID->new()->create_str(); }
+
 
 # CONSTANTS:
 sub __version__ { return $VERSION; }
@@ -117,6 +119,13 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
+            'name' => 'id',
+            'type' => 'Str',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
             'name' => 'data1',
             'default' => 'sub {return [];}',
             'type' => 'ArrayRef',
@@ -138,7 +147,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {max_evalue => 0, proteome1map => 1, proteome1names => 2, sub_bbh_percent => 3, genome2id => 4, genome1id => 5, proteome2map => 6, data2 => 7, proteome2names => 8, data1 => 9, genome1ws => 10, genome2ws => 11};
+my $attribute_map = {max_evalue => 0, proteome1map => 1, proteome1names => 2, sub_bbh_percent => 3, genome2id => 4, genome1id => 5, proteome2map => 6, data2 => 7, proteome2names => 8, id => 9, data1 => 10, genome1ws => 11, genome2ws => 12};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {

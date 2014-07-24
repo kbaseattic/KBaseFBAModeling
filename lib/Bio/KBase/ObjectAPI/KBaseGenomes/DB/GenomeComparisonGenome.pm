@@ -1,34 +1,28 @@
 ########################################################################
-# Bio::KBase::ObjectAPI::KBasePhenotypes::DB::PhenotypeSet - This is the moose object corresponding to the KBasePhenotypes.PhenotypeSet object
+# Bio::KBase::ObjectAPI::KBaseGenomes::DB::GenomeComparisonGenome - This is the moose object corresponding to the KBaseGenomes.GenomeComparisonGenome object
 # Authors: Christopher Henry, Scott Devoid, Paul Frybarger
 # Contact email: chenry@mcs.anl.gov
 # Development location: Mathematics and Computer Science Division, Argonne National Lab
 ########################################################################
-package Bio::KBase::ObjectAPI::KBasePhenotypes::DB::PhenotypeSet;
-use Bio::KBase::ObjectAPI::IndexedObject;
-use Bio::KBase::ObjectAPI::KBasePhenotypes::Phenotype;
+package Bio::KBase::ObjectAPI::KBaseGenomes::DB::GenomeComparisonGenome;
+use Bio::KBase::ObjectAPI::BaseObject;
 use Moose;
 use namespace::autoclean;
-extends 'Bio::KBase::ObjectAPI::IndexedObject';
+extends 'Bio::KBase::ObjectAPI::BaseObject';
 
 
-our $VERSION = 1.0;
 # PARENT:
 has parent => (is => 'rw', isa => 'Ref', weak_ref => 1, type => 'parent', metaclass => 'Typed');
 # ATTRIBUTES:
 has uuid => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_uuid');
 has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_reference');
 has genome_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has source => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has source_id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
-has importErrors => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has features => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has name => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has type => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
-
-
-# SUBOBJECTS:
-has phenotypes => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(Phenotype)', metaclass => 'Typed', reader => '_phenotypes', printOrder => '-1');
+has taxonomy => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has functions => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has families => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has id => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
@@ -36,8 +30,8 @@ has genome => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,Genom
 
 
 # BUILDERS:
-sub _build_reference { my ($self) = @_;return $self->uuid(); }
-sub _build_uuid { return Data::UUID->new()->create_str(); }
+sub _build_reference { my ($self) = @_;return $self->parent()->_reference().'/genomes/id/'.$self->id(); }
+sub _build_uuid { my ($self) = @_;return $self->_reference(); }
 sub _build_genome {
 	 my ($self) = @_;
 	 return $self->getLinkedObject($self->genome_ref());
@@ -45,11 +39,10 @@ sub _build_genome {
 
 
 # CONSTANTS:
-sub __version__ { return $VERSION; }
-sub _type { return 'KBasePhenotypes.PhenotypeSet'; }
-sub _module { return 'KBasePhenotypes'; }
-sub _class { return 'PhenotypeSet'; }
-sub _top { return 1; }
+sub _type { return 'KBaseGenomes.GenomeComparisonGenome'; }
+sub _module { return 'KBaseGenomes'; }
+sub _class { return 'GenomeComparisonGenome'; }
+sub _top { return 0; }
 
 my $attributes = [
           {
@@ -62,22 +55,8 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'source',
-            'type' => 'Str',
-            'perm' => 'rw'
-          },
-          {
-            'req' => 1,
-            'printOrder' => 0,
-            'name' => 'source_id',
-            'type' => 'Str',
-            'perm' => 'rw'
-          },
-          {
-            'req' => 0,
-            'printOrder' => -1,
-            'name' => 'importErrors',
-            'type' => 'Str',
+            'name' => 'features',
+            'type' => 'Int',
             'perm' => 'rw'
           },
           {
@@ -90,20 +69,34 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'type',
+            'name' => 'taxonomy',
             'type' => 'Str',
             'perm' => 'rw'
           },
           {
-            'req' => 1,
-            'printOrder' => 0,
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'functions',
+            'type' => 'Int',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'families',
+            'type' => 'Int',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
             'name' => 'id',
             'type' => 'Str',
             'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {genome_ref => 0, source => 1, source_id => 2, importErrors => 3, name => 4, type => 5, id => 6};
+my $attribute_map = {genome_ref => 0, features => 1, name => 2, taxonomy => 3, functions => 4, families => 5, id => 6};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -145,17 +138,9 @@ sub _links {
 	 }
 }
 
-my $subobjects = [
-          {
-            'printOrder' => -1,
-            'name' => 'phenotypes',
-            'type' => 'child',
-            'class' => 'Phenotype',
-            'module' => 'KBasePhenotypes'
-          }
-        ];
+my $subobjects = [];
 
-my $subobject_map = {phenotypes => 0};
+my $subobject_map = {};
 sub _subobjects {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -169,12 +154,5 @@ sub _subobjects {
 	 	 return $subobjects;
 	 }
 }
-# SUBOBJECT READERS:
-around 'phenotypes' => sub {
-	 my ($orig, $self) = @_;
-	 return $self->_build_all_objects('phenotypes');
-};
-
-
 __PACKAGE__->meta->make_immutable;
 1;

@@ -1628,12 +1628,12 @@ module fbaModelServices {
 		string pangenome;
 		string pangenome_workspace;
 		string workspace;
-    } genome_compare_from_pangenome_params;
+    } genome_heatmap_from_pangenome_params;
     /*
         Builds a comparason matrix for genomes included in a pangenome object
     */
     authentication required;
-    funcdef genome_heatmap_from_pangenome(genome_compare_from_pangenome_params input) returns (heat_map_matrix output);
+    funcdef genome_heatmap_from_pangenome(genome_heatmap_from_pangenome_params input) returns (heat_map_matrix output);
 	
 	/*gene ID,gene ref,protein sequence,function,score*/
 	typedef structure {
@@ -3380,72 +3380,18 @@ module fbaModelServices {
 		
 	*/
 	typedef structure {
-		list<genome_id> genomes;
-		list<workspace_id> workspaces;
-		string auth;
+		string pangenome_id;
+		string pangenome_ws;
+		string protcomp_id;
+		string protcomp_ws;
+		string output_id;
+		string workspace;
     } compare_genomes_params;
-    
-    /* Data structure to hold genome comparison data
-	
-		genome_id genome;
-		workspace_id workspace;
-		string genome_name;
-		string taxonomy;
-		int features;
-		int core_functions;
-		int noncore_functions;
-		
-	*/
-    typedef structure {
-		genome_id genome;
-		workspace_id workspace;
-		string genome_name;
-		string taxonomy;
-		int features;
-		int core_functions;
-		int noncore_functions;
-    } GenomeComparisonGenome;
-    
-    /* Data structure to hold model reaction comparison data
-	
-		string role
-		bool core - boolean indicating if the function is core
-		mapping<genome_id,list<feature_id> > genome_features
-		string subsytem - subsystem associated with role
-		string primclass - class one of the subsystem
-		string subclass - class two of the subsystem
-		int number_genomes - number of genomes with function
-		float fraction_genomes - fraction of genomes with function
-		
-	*/
-    typedef structure {
-		bool core;
-		mapping<genome_id,list<feature_id> > genome_features;
-		string role;
-		string subsystem;
-		string primclass;
-		string subclass;
-		int number_genomes;
-		float fraction_genomes;
-    } GenomeCompareFunction;
-    
-    /* Output structure for the "compare_genomes" function.
-	
-		list<GenomeComparisonGenome> genome_comparisons;
-		list<GenomeCompareFunction> function_comparisons;
-				
-	*/
-    typedef structure {
-		list<GenomeComparisonGenome> genome_comparisons;
-		list<GenomeCompareFunction> function_comparisons;
-		string auth;
-    } GenomeComparisonData;
-    
     /*
 		Compares the specified genomes and computes unique features and core features
     */
     authentication optional;
-    funcdef compare_genomes(compare_genomes_params params) returns (GenomeComparisonData output);
+    funcdef compare_genomes(compare_genomes_params params) returns (object_metadata output);
    	
    	/*********************************************************************************
     Functions relating to construction of community models
@@ -3734,6 +3680,98 @@ module fbaModelServices {
     } update_object_references_params;
     authentication required;
     funcdef update_object_references(update_object_references_params params) returns (object_metadata output);
+	/*********************************************************************************
+    Functions relating to editing of genomes and models
+   	*********************************************************************************/
+   	/* Input parameters for the "add_reactions" function.
+	*/
+	typedef structure {
+		string model;
+		string model_workspace;
+		string output_id;
+		string workspace;
+		list<tuple<string reaction_id,string compartment,string direction,string gpr,string pathway,string name,string reference,string enzyme,string equation>> reactions;
+    } add_reactions_params;
+    /*
+		Add new reactions to the model from the biochemistry or custom reactions
+    */
+    authentication required;
+    funcdef add_reactions(add_reactions_params params) returns (object_metadata output);
+   	
+	/* Input parameters for the "remove_reactions" function.
+	*/
+	typedef structure {
+		string model;
+		string model_workspace;
+		string output_id;
+		string workspace;
+		list<string> reactions;
+    } remove_reactions_params;
+    /*
+		Remove reactions from the model
+    */
+    authentication required;
+    funcdef remove_reactions(remove_reactions_params params) returns (object_metadata output);
+	
+	/* Input parameters for the "modify_reactions" function.
+	*/
+	typedef structure {
+		string model;
+		string model_workspace;
+		string output_id;
+		string workspace;
+		list<tuple<string reaction_id,string direction,string gpr,string pathway,string name,string reference,string enzyme>> reactions;
+    } modify_reactions_params;
+    /*
+		Modify reactions in the model
+    */
+    authentication required;
+    funcdef modify_reactions(modify_reactions_params params) returns (object_metadata output);
+	
+	/* Input parameters for the "add_features" function.
+	*/
+	typedef structure {
+		string genome;
+		string genome_workspace;
+		string output_id;
+		string workspace;
+		list<tuple<feature_id feature,string function,string type,list<string> aliases,list<string> publications,list<string> annotations,string protein_translation,string dna_sequence,list<tuple<string,int,string,int>> locations>> genes;
+    } add_features_params;
+    /*
+		Add new features to the genome
+    */
+    authentication required;
+    funcdef add_features(add_features_params params) returns (object_metadata output);
+   	
+	/* Input parameters for the "remove_features" function.
+	*/
+	typedef structure {
+		string genome;
+		string genome_workspace;
+		string output_id;
+		string workspace;
+		list<string> features;
+    } remove_features_params;
+    /*
+		Remove features from the genome
+    */
+    authentication required;
+    funcdef remove_features(remove_features_params params) returns (object_metadata output);
+	
+	/* Input parameters for the "modify_genes" function.
+	*/
+	typedef structure {
+		string genome;
+		string genome_workspace;
+		string output_id;
+		string workspace;
+		list<tuple<feature_id feature,string function,string type,list<string> aliases,list<string> publications,list<string> annotations,string protein_translation,string dna_sequence,list<tuple<string,int,string,int>> locations>> genes;
+    } modify_features_params;
+    /*
+		Modify features in the genome
+    */
+    authentication required;
+    funcdef modify_features(modify_features_params params) returns (object_metadata output);   	
 };
 
 
