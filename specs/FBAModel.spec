@@ -1020,5 +1020,6 @@ module KBaseFBA {
         genome_ref genome_ref;
         list<TFtoTGmap> transcriptionFactorMaps;
         expression_series_ref expression_series_ref;
+	regulome_ref regulome_ref;
     } PromConstraint;
 };

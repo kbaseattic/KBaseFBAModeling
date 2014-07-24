@@ -19,6 +19,7 @@ my $translation = {
 	sourceid => "source_id",
 	sourcedate => "source_date",
 	ignoreerrors => "ignore_errors",
+	regulome => "regulome"
 };
 
 my $manpage = 
@@ -52,6 +53,7 @@ my $specs = [
     [ 'genomews|g:s', 'Workspace with genome' ],
     [ 'sourceid:s', 'ID of the source'],
     [ 'sourcedate|d:s', 'Date of the source', { "default", => strftime("%Y-%m-%d", localtime)}],
+    [ 'regulome|r:s', "Name for the imported regulome" ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation, $manpage);
 

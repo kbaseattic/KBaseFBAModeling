@@ -9673,7 +9673,7 @@ simulate_phenotypes_params is a reference to a hash where the following keys are
 	phenotypeSet_workspace has a value which is a workspace_id
 	formulation has a value which is an FBAFormulation
 	notes has a value which is a string
-	phenotypeSimultationSet has a value which is a phenotypeSimulationSet_id
+	phenotypeSimulationSet has a value which is a phenotypeSimulationSet_id
 	workspace has a value which is a workspace_id
 	overwrite has a value which is a bool
 	auth has a value which is a string
@@ -9763,7 +9763,7 @@ simulate_phenotypes_params is a reference to a hash where the following keys are
 	phenotypeSet_workspace has a value which is a workspace_id
 	formulation has a value which is an FBAFormulation
 	notes has a value which is a string
-	phenotypeSimultationSet has a value which is a phenotypeSimulationSet_id
+	phenotypeSimulationSet has a value which is a phenotypeSimulationSet_id
 	workspace has a value which is a workspace_id
 	overwrite has a value which is a bool
 	auth has a value which is a string
@@ -19410,10 +19410,10 @@ sub import_regulome
 
     my $genomeObj = Bio::KBase::ObjectAPI::KBaseRegulation::RGenome->new({ "genome_name" => "", "genome_id" => $genome_id, "genome_ref" => $genome->_reference() });
     $genomeObj->parent($self->_KBaseStore());
-
+    my $regulome_id = (defined $input->{"regulome"}) ? $input->{"regulome"} : "kb|regulome.".$self->_idServer()->allocate_id_range("kb|regulome",1);
     my $regulome = Bio::KBase::ObjectAPI::KBaseRegulation::Regulome->new({
-	regulome_id => "kb|regulome.".$self->_idServer()->allocate_id_range("kb|regulome",1),
-	regulome_source => "REGPRECISE_PROPAGATED",
+	regulome_id => $regulome_id,
+	regulome_source => "",
 	regulome_name => ""
     });
 
@@ -19452,7 +19452,7 @@ sub import_regulome
 
     #Saving regulome in database
     $regulome->parent($self->_KBaseStore());
-    $regulome_meta = $self->_save_msobject($regulome,"Regulome",$input->{workspace},$genome_id."-regprecise-regulome");
+    $regulome_meta = $self->_save_msobject($regulome,"Regulome",$input->{workspace},$regulome_id);
     $self->_clearContext();
 
     #END import_regulome
@@ -19486,9 +19486,11 @@ CreatePromConstraintParameters is a reference to a hash where the following keys
 	genome_id has a value which is a genome_id
 	series_id has a value which is a series_id
 	regulome_id has a value which is a regulome_id
+	promconstraint_id has a value which is a promconstraint_id
 genome_id is a string
 series_id is a string
 regulome_id is a string
+promconstraint_id is a string
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -19520,9 +19522,11 @@ CreatePromConstraintParameters is a reference to a hash where the following keys
 	genome_id has a value which is a genome_id
 	series_id has a value which is a series_id
 	regulome_id has a value which is a regulome_id
+	promconstraint_id has a value which is a promconstraint_id
 genome_id is a string
 series_id is a string
 regulome_id is a string
+promconstraint_id is a string
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -19660,7 +19664,6 @@ sub create_promconstraint
 	my $e_id = $params->{series_id};
 	my $r_id = $params->{regulome_id};
 	my $genome_id = $params->{genome_id};
-	my $promconstraint_id ="";
 
         my $ws = $self->_KBaseStore()->workspace();	
 	# check if the gene expression data collection from a workspace exists
@@ -19726,9 +19729,9 @@ sub create_promconstraint
 	    # compute the interaction probability map; this is the central component of a prom model
 	    my ($computation_log, $tfMap) = computeInteractionProbabilities($regulatory_network, $expression_data_on_off_calls);
 	    my $prefix = $genome_id."-PromConstraint.";
-	    $promconstraint_id = $prefix.$self->_idServer()->allocate_id_range($prefix,1);
+	    my $promconstraint_id = (defined $params->{"promconstraint_id"}) ? $params->{"promconstraint_id"} : $prefix.$self->_idServer()->allocate_id_range($prefix,1);
 		
-	    my $PCObj = Bio::KBase::ObjectAPI::KBaseFBA::PromConstraint->new({id=>$promconstraint_id,genome_ref=>$genome->_reference(),transcriptionFactorMaps=>$tfMap,expression_series_ref=>$exp_collection->_reference()});
+	    my $PCObj = Bio::KBase::ObjectAPI::KBaseFBA::PromConstraint->new({id=>$promconstraint_id,genome_ref=>$genome->_reference(),transcriptionFactorMaps=>$tfMap,expression_series_ref=>$exp_collection->_reference(),regulome_ref=>$regnet->_reference()});
 	    $promconstraint_meta  = $self->_save_msobject($PCObj,"PromConstraint",$params->{"workspace"},$promconstraint_id);
 	    $self->_clearContext();
 	}
@@ -27750,7 +27753,7 @@ Input parameters for the "simulate_phenotypes" function.
         workspace_id phenotypeSet_workspace - workspace containing the phenotype set to be simulated (an optional argument: default is value of workspace argument)
         FBAFormulation formulation - parameters for the simulation flux balance analysis (an optional argument: default is 'undef')
         string notes - string of notes to associate with the phenotype simulation (an optional argument: default is '')
-        phenotypeSimulationSet_id phenotypeSimultationSet - ID of the phenotype simulation set to be generated (an optional argument: default is 'undef')
+        phenotypeSimulationSet_id phenotypeSimulationSet - ID of the phenotype simulation set to be generated (an optional argument: default is 'undef')
         workspace_id workspace - workspace where the phenotype simulation set should be saved (a required argument)
         string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
         bool all_transporters - Set to TRUE if you want to add transporters for ALL media in the phenotypeset before simulating
@@ -27769,7 +27772,7 @@ phenotypeSet has a value which is a phenotype_set_id
 phenotypeSet_workspace has a value which is a workspace_id
 formulation has a value which is an FBAFormulation
 notes has a value which is a string
-phenotypeSimultationSet has a value which is a phenotypeSimulationSet_id
+phenotypeSimulationSet has a value which is a phenotypeSimulationSet_id
 workspace has a value which is a workspace_id
 overwrite has a value which is a bool
 auth has a value which is a string
@@ -27789,7 +27792,7 @@ phenotypeSet has a value which is a phenotype_set_id
 phenotypeSet_workspace has a value which is a workspace_id
 formulation has a value which is an FBAFormulation
 notes has a value which is a string
-phenotypeSimultationSet has a value which is a phenotypeSimulationSet_id
+phenotypeSimulationSet has a value which is a phenotypeSimulationSet_id
 workspace has a value which is a workspace_id
 overwrite has a value which is a bool
 auth has a value which is a string
@@ -27877,7 +27880,7 @@ positive_transporters has a value which is a bool
 
 Input parameters for the "export_phenotypeSimulationSet" function.
 
-        phenotypeSimulationSet_id phenotypeSimultationSet - ID of the phenotype simulation set to be exported (a required argument)
+        phenotypeSimulationSet_id phenotypeSimulationSet - ID of the phenotype simulation set to be exported (a required argument)
         workspace_id workspace - workspace where the phenotype simulation set is stored (a required argument)
         string format - format to which phenotype simulation set should be exported (html, json)
         string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
@@ -31874,10 +31877,11 @@ genome_id has a value which is a genome_id
 
 Named parameters for 'create_promconstraint' method.  Currently all options are required.
 
-    genome_ref genome_ref             - the workspace ID of the genome to link to the prom object
-    expression_series_ref expression_series_ref     - the workspace ID of the expression data collection needed to
+    genome_id genome_id             - the workspace ID of the genome to link to the prom object
+    series_id series_id     - the workspace ID of the expression data collection needed to
                                                    build the PROM constraints.
-    regulome_ref  regulome_ref        - the workspace ID of the regulatory network data to use
+    regulome_id  regulome_id        - the workspace ID of the regulatory network data to use
+    promconstraint_id promconstraint_id - the the workspace ID for the new PROM constraint
 
 
 =item Definition
@@ -31889,6 +31893,7 @@ a reference to a hash where the following keys are defined:
 genome_id has a value which is a genome_id
 series_id has a value which is a series_id
 regulome_id has a value which is a regulome_id
+promconstraint_id has a value which is a promconstraint_id
 
 </pre>
 
@@ -31900,6 +31905,7 @@ a reference to a hash where the following keys are defined:
 genome_id has a value which is a genome_id
 series_id has a value which is a series_id
 regulome_id has a value which is a regulome_id
+promconstraint_id has a value which is a promconstraint_id
 
 
 =end text

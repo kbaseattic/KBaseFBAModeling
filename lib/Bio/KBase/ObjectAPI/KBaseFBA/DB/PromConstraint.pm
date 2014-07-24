@@ -21,6 +21,7 @@ has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metacl
 has genome_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has expression_series_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has id => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has regulome_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 
 
 # SUBOBJECTS:
@@ -30,6 +31,7 @@ has transcriptionFactorMaps => (is => 'rw', isa => 'ArrayRef[HashRef]', default 
 # LINKS:
 has genome => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,Genome,genome_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_genome', clearer => 'clear_genome', isa => 'Bio::KBase::ObjectAPI::KBaseGenomes::Genome', weak_ref => 1);
 has expression_series => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,ExpressionSeries,expression_series_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_expression_series', clearer => 'clear_expression_series', isa => 'Bio::KBase::ObjectAPI::KBaseExpression::ExpressionSeries', weak_ref => 1);
+has regulome => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,Regulome,regulome_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_regulome', clearer => 'clear_regulome', isa => 'Bio::KBase::ObjectAPI::KBaseRegulation::Regulome', weak_ref => 1);
 
 
 # BUILDERS:
@@ -42,6 +44,10 @@ sub _build_genome {
 sub _build_expression_series {
 	 my ($self) = @_;
 	 return $self->getLinkedObject($self->expression_series_ref());
+}
+sub _build_regulome {
+	 my ($self) = @_;
+	 return $self->getLinkedObject($self->regulome_ref());
 }
 
 
@@ -73,10 +79,17 @@ my $attributes = [
             'name' => 'id',
             'type' => 'Str',
             'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'regulome_ref',
+            'type' => 'Str',
+            'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {genome_ref => 0, expression_series_ref => 1, id => 2};
+my $attribute_map = {genome_ref => 0, expression_series_ref => 1, id => 2, regulome_ref => 3};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -109,10 +122,19 @@ my $links = [
             'method' => 'ExpressionSeries',
             'class' => 'Bio::KBase::ObjectAPI::KBaseExpression::ExpressionSeries',
             'module' => 'KBaseExpression'
+          },
+          {
+            'attribute' => 'regulome_ref',
+            'parent' => 'Bio::KBase::ObjectAPI::KBaseStore',
+            'clearer' => 'clear_regulome',
+            'name' => 'regulome',
+            'method' => 'Regulome',
+            'class' => 'Bio::KBase::ObjectAPI::KBaseRegulation::Regulome',
+            'module' => 'KBaseRegulation'
           }
         ];
 
-my $link_map = {genome => 0, expression_series => 1};
+my $link_map = {genome => 0, expression_series => 1, regulome => 2};
 sub _links {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {

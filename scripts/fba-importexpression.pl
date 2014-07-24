@@ -21,6 +21,7 @@ my $translation = {
 	ignoreerrors => "ignore_errors",
 	genomeid => "genome_id",
 	numinterpret => "numerical_interpretation",
+	series => "series"
 };
 
 my $manpage = 
@@ -69,13 +70,16 @@ my $specs = [
     [ 'sourcedate:s', 'Date of the source', { "default", => strftime("%Y-%m-%d", localtime)}],
     [ 'genomeid|g:s', "ID of genome to which features belong. Required if gene ids does not contain genome id."],
     [ 'numinterpret|n:s', "Numerical Interpretation:[ 'Log2 level intensities',  'Log2 level ratios','Log2 level ratios genomic DNA control','FPKM',]"  ],
+    [ 'series:s', 'ID for the series object in the workspace']
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation, $manpage);
 if (!-e $opt->{"Gene expression flat file"}) {
 	print "Could not find input gene expressioni file!\n";
 	exit();
 }
-$params->{"series"} = basename($opt->{"Gene expression flat file"});
+if (! defined $params->{"series"}) {
+    $params->{"series"} = basename($opt->{"Gene expression flat file"});
+}
 
 my $data = Bio::KBase::ObjectAPI::utilities::LOADTABLE($opt->{"Gene expression flat file"},"\t",0);
 
