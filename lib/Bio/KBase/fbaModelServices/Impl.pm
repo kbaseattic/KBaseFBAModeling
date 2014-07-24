@@ -6880,13 +6880,17 @@ sub build_pangenome
 	    					}
 	    					my $seq = $ftrs->[$gene]->protein_translation();
 	    					my $index = @{$pangenome->{orthologs}};
-	    					push(@{$pangenome->{orthologs}},{
+	    					my $neworthofam = {
 						    	id => $ftrs->[$gene]->id(),
 						    	type => $ftrs->[$gene]->type(),
 						    	function => $ftrs->[$gene]->function(),
 								protein_translation => $ftrs->[$gene]->protein_translation(),
 								orthologs => $list
-						    });
+						    };
+						    if (!defined($neworthofam->{function})) {
+						    	$neworthofam->{function} = "unknown";
+						    }
+	    					push(@{$pangenome->{orthologs}},$neworthofam);
 	    				}
 	    				$okdb->{$kmer} = $bestorthos->[$gene];
 	    			}
@@ -18152,7 +18156,7 @@ sub compare_genomes
 	}
 	#Associating roles and reactions
 	my $template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","GramNegModelTemplate");
-	my $rolerxns = $template->roleToReactions();
+	my $rolerxns = $template->simple_role_reaction_hash();
 	#Building genome comparison object
 	my $famkeys = [keys(%{$orthos})];
 	my $famind = {};
@@ -18199,9 +18203,13 @@ sub compare_genomes
 						$functions->{$roles->[$k]}->{primclass} = $SubsysRoles->{$roles->[$k]}->class();
 						$functions->{$roles->[$k]}->{subclass} = $SubsysRoles->{$roles->[$k]}->subclass();
 					}
-					#if (defined($rolerxns->{$roles->[$k]})) {
-					#	$functions->{$roles->[$k]}->{reactions} = $rolerxns->{$roles->[$k]};
-					#}
+					if (defined($rolerxns->{$roles->[$k]})) {
+						foreach my $rxn (keys(%{$rolerxns->{$roles->[$k]}})) {
+							foreach my $comp (keys(%{$rolerxns->{$roles->[$k]}->{$rxn}})) {
+								push(@{$functions->{$roles->[$k]}->{reactions}},[$rxn."_".$comp,$rolerxns->{$roles->[$k]}->{$rxn}->{$comp}->[1]]);
+							}
+						}
+					}
 				}
 				push(@{$funind},$funcind->{$roles->[$k]});
 				push(@{$functions->{$roles->[$k]}->{genome_features}->{$g->_reference()}},[$ftr->id(),$famind->{$fam},$score]);
@@ -18213,7 +18221,7 @@ sub compare_genomes
 					genome_features => {},
 					id => $fam,
 					type => $ftr->type(),
-					protein_translation => $ftr->protein_translation(),
+					protein_translation => "none",
 					number_genomes => 0,
 					fraction_genomes => 0,
 					fraction_consistent_annotations => 0,

@@ -18,18 +18,18 @@ has parent => (is => 'rw', isa => 'Ref', weak_ref => 1, type => 'parent', metacl
 has uuid => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_uuid');
 has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_reference');
 has max_evalue => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has proteome1map => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub {return {};}, type => 'attribute', metaclass => 'Typed');
-has proteome1names => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
 has sub_bbh_percent => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has genome1ref => (is => 'rw', isa => 'Str', printOrder => '0', type => 'attribute', metaclass => 'Typed');
 has genome2id => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has genome1id => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has proteome2map => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub {return {};}, type => 'attribute', metaclass => 'Typed');
+has genome2ref => (is => 'rw', isa => 'Str', printOrder => '0', type => 'attribute', metaclass => 'Typed');
 has data2 => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
-has proteome2names => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
 has id => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has data1 => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
 has genome1ws => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has proteome1names => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
+has genome1id => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has proteome2names => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
 has genome2ws => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has data1 => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
@@ -58,24 +58,15 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'proteome1map',
-            'default' => 'sub {return {};}',
-            'type' => 'HashRef',
-            'perm' => 'rw'
-          },
-          {
-            'req' => 0,
-            'printOrder' => -1,
-            'name' => 'proteome1names',
-            'default' => 'sub {return [];}',
-            'type' => 'ArrayRef',
-            'perm' => 'rw'
-          },
-          {
-            'req' => 0,
-            'printOrder' => -1,
             'name' => 'sub_bbh_percent',
             'type' => 'Num',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => 0,
+            'name' => 'genome1ref',
+            'type' => 'Str',
             'perm' => 'rw'
           },
           {
@@ -87,31 +78,15 @@ my $attributes = [
           },
           {
             'req' => 0,
-            'printOrder' => -1,
-            'name' => 'genome1id',
+            'printOrder' => 0,
+            'name' => 'genome2ref',
             'type' => 'Str',
             'perm' => 'rw'
           },
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'proteome2map',
-            'default' => 'sub {return {};}',
-            'type' => 'HashRef',
-            'perm' => 'rw'
-          },
-          {
-            'req' => 0,
-            'printOrder' => -1,
             'name' => 'data2',
-            'default' => 'sub {return [];}',
-            'type' => 'ArrayRef',
-            'perm' => 'rw'
-          },
-          {
-            'req' => 0,
-            'printOrder' => -1,
-            'name' => 'proteome2names',
             'default' => 'sub {return [];}',
             'type' => 'ArrayRef',
             'perm' => 'rw'
@@ -126,7 +101,14 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'data1',
+            'name' => 'genome1ws',
+            'type' => 'Str',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'proteome1names',
             'default' => 'sub {return [];}',
             'type' => 'ArrayRef',
             'perm' => 'rw'
@@ -134,8 +116,16 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'genome1ws',
+            'name' => 'genome1id',
             'type' => 'Str',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'proteome2names',
+            'default' => 'sub {return [];}',
+            'type' => 'ArrayRef',
             'perm' => 'rw'
           },
           {
@@ -144,10 +134,18 @@ my $attributes = [
             'name' => 'genome2ws',
             'type' => 'Str',
             'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'data1',
+            'default' => 'sub {return [];}',
+            'type' => 'ArrayRef',
+            'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {max_evalue => 0, proteome1map => 1, proteome1names => 2, sub_bbh_percent => 3, genome2id => 4, genome1id => 5, proteome2map => 6, data2 => 7, proteome2names => 8, id => 9, data1 => 10, genome1ws => 11, genome2ws => 12};
+my $attribute_map = {max_evalue => 0, sub_bbh_percent => 1, genome1ref => 2, genome2id => 3, genome2ref => 4, data2 => 5, id => 6, genome1ws => 7, proteome1names => 8, genome1id => 9, proteome2names => 10, genome2ws => 11, data1 => 12};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {

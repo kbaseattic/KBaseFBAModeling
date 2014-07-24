@@ -2722,15 +2722,15 @@ sub translate_model {
 	my $self = shift;
 	my $protcomp = shift;
 	my $genome = $self->genome();	
-	my $ref = $protcomp->genome2ws()."/".$protcomp->genome2id();
+	my $ref = $protcomp->genome2ref();
 	my $map = $protcomp->proteome1map();
 	my $list = $protcomp->proteome1names();
 	my $data = $protcomp->data1();
 	my $omap = $protcomp->proteome2map();
 	my $olist = $protcomp->proteome2names();
 	my $odata = $protcomp->data2();
-	if ($genome->_wsname() eq $protcomp->genome2id() && $genome->_wsworkspace() eq $protcomp->genome2ws()) {
-		$ref = $protcomp->genome1ws()."/".$protcomp->genome1id();
+	if ($genome->_reference() eq $protcomp->genome2ref()) {
+		$ref = $protcomp->genome1ref();
 		$map = $protcomp->proteome2map();
 		$list = $protcomp->proteome2names();
 		$data = $protcomp->data2();

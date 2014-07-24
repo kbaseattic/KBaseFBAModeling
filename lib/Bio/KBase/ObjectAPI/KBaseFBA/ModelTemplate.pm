@@ -58,6 +58,25 @@ sub _buildbiomassHash {
 #***********************************************************************************************************
 # FUNCTIONS:
 #***********************************************************************************************************
+sub simple_role_reaction_hash {
+	my $self = shift;
+	my $rxns = $self->templateReactions();
+	my $rolehash = {};
+	for (my $i=0;$i<@{$rxns};$i++) {
+		my $rxn = $rxns->[$i];
+		my $cpxs = $rxn->complexs();
+		for (my $j=0;$j < @{$cpxs};$j++) {
+			my $cpx = $cpxs->[$j];	
+			my $roles = $cpx->complexroles();
+		    for (my $k=0; $k < @{$roles}; $k++) {
+		    	my $role = $roles->[$k]->role();
+		    	$rolehash->{$role->name()}->{$rxn->reaction()->id()}->{$rxn->compartment()->id()} = [$rxn->direction(),$rxn->reaction()->definition()];
+			});
+		}
+	}
+	return $rolehash;
+}
+
 sub roleToReactions {
 	my $self = shift;
 	my $roleToRxn = [];
