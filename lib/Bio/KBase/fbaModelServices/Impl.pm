@@ -18065,7 +18065,8 @@ sub compare_genomes
 		my $orthofam = $pg->orthologs();
 		for (my $i=0; $i < @{$orthofam}; $i++) {
 			for (my $j=0; $j < @{$orthofam->[$i]->orthologs()}; $j++) {
-				$orthos->{$orthofam->[$i]}->{$orthofam->[$i]->orthologs()->[$j]->[2]}->{$orthofam->[$i]->orthologs()->[$j]->[0]} = $orthofam->[$i]->orthologs()->[$j]->[1];
+				$orthos->{$orthofam->[$i]->id()}->{$orthofam->[$i]->orthologs()->[$j]->[2]}->{$orthofam->[$i]->orthologs()->[$j]->[0]} = $orthofam->[$i]->orthologs()->[$j]->[1];
+				$members->{$orthofam->[$i]->orthologs()->[$j]->[2]}->{$orthofam->[$i]->orthologs()->[$j]->[0]} = $orthofam->[$i]->id();
 			}
 		}
 	} elsif (defined($params->{protcomp_id})) {
@@ -18162,13 +18163,14 @@ sub compare_genomes
 	my $families = {};
 	for (my $i=0; $i < @{$genome_ids}; $i++) {
 		my $g = $self->_get_msobject("Genome",$genome_wwss->[$i],$genome_ids->[$i]);
+		print $g->_reference()."\t".$i."\n";
 		my $ftrs = $g->features();
 		my $genfam = {};
 		my $genfun = {};
 		for (my $j=0; $j < @{$ftrs}; $j++) {
 			my $ftr = $ftrs->[$j];
-			my $fam = $members->{$genome_refs->[$i]}->{$ftr->id()};
-			my $score = $orthos->{$fam}->{$genome_refs->[$i]}->{$ftr->id()};
+			my $fam = $members->{$g->_reference()}->{$ftr->id()};
+			my $score = $orthos->{$fam}->{$g->_reference()}->{$ftr->id()};
 			my $roles = $ftr->roles();
 			my $funind = [];
 			for (my $k=0; $k < @{$roles}; $k++) {
