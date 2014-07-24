@@ -18057,10 +18057,14 @@ sub compare_genomes
 		my $pg = $self->_get_msobject("Pangenome",$params->{pangenome_ws},$params->{pangenome_id});
 		$gc->{pangenome_ref} = $pg->_reference();
 		$genome_refs = $pg->genome_refs();
+		my $refhash;
 		for (my $i=0; $i < @{$genome_refs}; $i++) {
-			my $array = [split(/\//,$genome_refs->[$i])];
-			push(@{$genome_ids},$array->[1]);
-			push(@{$genome_wwss},$array->[0]);
+			if (!defined($refhash->{$genome_refs->[$i]})) {
+				my $array = [split(/\//,$genome_refs->[$i])];
+				push(@{$genome_ids},$array->[1]);
+				push(@{$genome_wwss},$array->[0]);
+				$refhash->{$genome_refs->[$i]} = 1;
+			}
 		}
 		my $orthofam = $pg->orthologs();
 		for (my $i=0; $i < @{$orthofam}; $i++) {
