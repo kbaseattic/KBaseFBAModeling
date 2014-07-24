@@ -18269,7 +18269,7 @@ sub compare_genomes
 		$gc->{families}->[$famind->{$fam}] = $families->{$fam};
 	}
 	$gc = Bio::KBase::ObjectAPI::KBaseGenomes::GenomeComparison->new($gc);
-	print "\n\n".$gc->toJSON()."\n\n";
+	print "\n\n".$gc->toJSON({pp => 1})."\n\n";
 	$output = $self->_save_msobject($gc,"GenomeComparison",$params->{workspace},$params->{output_id});
     $self->_clearContext();
     #END compare_genomes
