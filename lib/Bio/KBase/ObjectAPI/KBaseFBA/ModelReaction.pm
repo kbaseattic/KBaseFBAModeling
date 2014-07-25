@@ -383,6 +383,28 @@ sub createEquation {
 	return $code;
 }
 
+=head3 hasModelReactionReagent
+Definition:
+	boolean = Bio::KBase::ObjectAPI::KBaseFBA::ModelReaction->hasModelReactionReagent(string(uuid));
+Description:
+	Checks to see if a model reaction contains a reagent
+
+=cut
+
+sub hasModelReactionReagent {
+    my ($self,$mdlcpd_id) = @_;
+    my $rgts = $self->modelReactionReagents();
+    if (!defined($rgts->[0])) {
+	return 0;	
+    }
+    for (my $i=0; $i < @{$rgts}; $i++) {
+	if ($rgts->[$i]->modelcompound()->id() eq $mdlcpd_id) {
+	    return 1;
+	}
+    }
+    return 0;
+}
+
 =head3 addReagentToReaction
 Definition:
 	Bio::KBase::ObjectAPI::KBaseFBA::FBAModel = Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->addReagentToReaction({
