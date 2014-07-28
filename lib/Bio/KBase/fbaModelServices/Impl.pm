@@ -11171,7 +11171,8 @@ sub gapfill_model
 		timePerSolution => 3600,
 		totalTimeLimit => 18000,
 		completeGapfill => 0,
-		solver => undef
+		solver => undef,
+		fastgapfill => 0
 	});
 	$input->{formulation}->{target_reactions} = $input->{target_reactions};
 	$input->{formulation}->{timePerSolution} = $input->{timePerSolution};
@@ -11191,6 +11192,9 @@ sub gapfill_model
 	my ($gapfill,$fba) = $self->_buildGapfillObject($input->{formulation},$model,$input->{gfid});
 	if (defined($input->{solver})) {
     	$fba->parameters()->{MFASolver} = uc($input->{solver});
+    }
+    if (defined($input->{fastgapfill})) {
+    	$fba->parameters()->{"Fast gap filling"} = $input->{fastgapfill};
     }
 	$fba->runFBA();
 	#Error checking the FBA and gapfilling solution

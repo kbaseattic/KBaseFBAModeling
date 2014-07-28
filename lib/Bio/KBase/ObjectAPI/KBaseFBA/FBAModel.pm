@@ -23,10 +23,24 @@ extends 'Bio::KBase::ObjectAPI::KBaseFBA::DB::FBAModel';
 #***********************************************************************************************************
 has features => ( is => 'rw', isa => 'ArrayRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildfeatures' );
 has featureHash => ( is => 'rw', isa => 'HashRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildfeatureHash' );
+has compound_reaction_hash => ( is => 'rw', isa => 'HashRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcompound_reaction_hash' );
 
 #***********************************************************************************************************
 # BUILDERS:
 #***********************************************************************************************************
+sub _buildcompound_reaction_hash {
+	my ($self) = @_;
+	my $hash = {};
+	my $rxns = $self->modelreactions();
+	foreach my $rxn (@{$rxns}) {
+		my $rgts = $rxn->modelReactionReagents();
+		foreach my $rgt (@{$rgts}) {
+			$hash->{$rgt->modelcompound()->id()}->{$rxn->id()} = $rgt->coefficient();
+		}
+	}
+	return $hash;
+}
+
 sub _buildfeatures {
 	my ($self) = @_;
 	#Retrieving list of genes in model
@@ -227,6 +241,77 @@ sub addReactionToModel {
 				modelcompound_ref => "~/modelcompounds/id/".$mdlcpd->id()
 			});
 		}
+		$mdlrxn->setGPRFromArray({"gpr" => [[$args->{gpr}]]});
+	}
+	return $mdlrxn;
+}
+
+=head3 addBioRxnToModel
+
+Definition:
+	Bio::KBase::ObjectAPI::KBaseFBA::ModelReaction = Bio::KBase::ObjectAPI::KBaseFBA::ModelReaction->addBiochemistryRxnToModel({
+		reaction => Bio::KBase::ObjectAPI::KBaseBiochem::Reaction,
+		direction => "="/">"/"<" (default value will be pulled from reaction instance),
+		protons => int (default value will be pulled from reaction instance),
+		gpr => string (default is "UNKNOWN"),
+		compartmenttrans => {}
+	});
+Description:
+	Converts the input reaction instance into a model reaction and adds the reaction and associated compounds to the model.
+
+=cut
+
+sub addBiochemistryRxnToModel {
+    my $self = shift;
+    my $args = shift;
+	$args = Bio::KBase::ObjectAPI::utilities::args(["reaction"],{
+		direction => undef,
+		protons => undef,
+		gpr => undef,
+		compartmenttrans => {c => "c0"}
+	}, $args);
+	my $rxn = $args->{reaction};
+	if (!defined($args->{direction})) {
+		$args->{direction} = $rxn->direction();	
+	}
+	my $mdlcmp;
+	if (defined($args->{compartmenttrans}->{$rxn->compartment()->id()})) {
+		$mdlcmp = $self->getObject("modelcompartments",$args->{compartmenttrans}->{$rxn->compartment()->id()});
+	}
+	if (!defined($mdlcmp)) {
+		Bio::KBase::ObjectAPI::utilities::error("Model compartment ".$args->{compartmenttrans}->{$rxn->compartment()->id()}." not found!");
+	}
+	my $mdlrxn = $self->getObject("modelreactions",$rxn->id()."_".$mdlcmp->id());
+	if (defined($mdlrxn)) {
+		Bio::KBase::ObjectAPI::utilities::error("Reaction ".$rxn->id()."_".$mdlcmp->id()." already in model!");
+	}
+	$mdlrxn = $self->add("modelreactions",{
+		id => $rxn->id()."_".$mdlcmp->id(),
+		reaction_ref => $rxn->_reference(),
+		direction => $args->{direction},
+		protons => $rxn->defaultProtons(),
+		modelcompartment_ref => "~/modelcompartments/id/".$mdlcmp->id(),
+	});
+	my $rgts = $rxn->reagents();
+	for (my $i=0; $i < @{$rgts}; $i++) {
+		my $rgt = $rgts->[$i];
+		my $coefficient = $rgt->coefficient();
+		my $rgtcmp;
+		if (defined($args->{compartmenttrans}->{$rgt->compartment()->id()})) {
+			$rgtcmp = $self->getObject("modelcompartments",$args->{compartmenttrans}->{$rgt->compartment()->id()});
+		} else {
+			$rgtcmp = $self->getObject("modelcompartments",$rgt->compartment()->id()."0");
+		}
+		my $mdlcpd = $self->addCompoundToModel({
+			compound => $rgt->compound(),
+			modelCompartment => $rgtcmp,
+		});
+		$mdlrxn->addReagentToReaction({
+			coefficient => $coefficient,
+			modelcompound_ref => "~/modelcompounds/id/".$mdlcpd->id()
+		});
+	}
+	if (defined($args->{gpr})) {
 		$mdlrxn->setGPRFromArray({"gpr" => [[$args->{gpr}]]});
 	}
 	return $mdlrxn;
@@ -2467,7 +2552,32 @@ Description:
 
 sub addPhenotypeTransporters {
 	my $self = shift;
-	my $args = Bio::KBase::ObjectAPI::utilities::args(["phenotypes"], {positiveonly => 0}, @_);
+	my $args = Bio::KBase::ObjectAPI::utilities::args(["phenotypes"], {
+		positiveonly => 0,
+		extracellular_compartments => [0],
+		cytosol_compartments => undef
+	}, @_);
+	#Retrieving list of compartments in model
+	my $mdlcmps = $self->modelcompartments();
+	if (!defined($args->{cytosol_compartments})) {
+		my $cmphash = {};
+		for (my $i=0; $i < @{$mdlcmps}; $i++) {
+			if ($mdlcmps->[$i]->compartment()->id() eq "c") {
+				$cmphash->{$mdlcmps->[$i]->compartmentIndex()} = 1;
+			}
+		}
+		$args->{cytosol_compartments} = [keys(%{$cmphash})];
+	}
+	if (!defined($args->{extracellular_compartments})) {
+		my $cmphash = {};
+		for (my $i=0; $i < @{$mdlcmps}; $i++) {
+			if ($mdlcmps->[$i]->compartment()->id() eq "e") {
+				$cmphash->{$mdlcmps->[$i]->compartmentIndex()} = 1;
+			}
+		}
+		$args->{extracellular_compartments} = [keys(%{$cmphash})];
+	}
+	#Building hash of phenotype transporters	
 	my $phenotypes = $args->{phenotypes}->phenotypes();
 	my $mediahash;
 	for (my $i=0; $i < @{$phenotypes}; $i++) {
@@ -2484,44 +2594,73 @@ sub addPhenotypeTransporters {
 			$cpdhash->{$cpd->compound()->id()} = $cpd;
 		}
 	}
-	my $NeedTrans = [];
-	my $mdlcpds = $self->modelcompounds();
-	foreach my $cpd (@{$mdlcpds}) {
-		if (defined($cpdhash->{$cpd->compound()->id()}) && $cpd->modelcompartment()->id() =~ m/^e/) {
-			delete $cpdhash->{$cpd->compound()->id()};
-		}
-	}
-	my $bio = $self->template()->biochemistry();
-	my $rxns = $bio->reactions();
-	my $transhash = {};
+	#Identifying which compounds are transported in all compartments
+	my $needed = {};
+	my $compound_reactions = $self->compound_reaction_hash();
 	foreach my $cpd (keys(%{$cpdhash})) {
-		foreach my $rxn (@{$rxns}) {
-			my $rgts = $rxn->reagents();
-			my $extcoef;
-			my $cytcoef;
-			my $othercomps = 0;
-			foreach my $rgt (@{$rgts}) {
-				if ($rgt->compartment()->id() !~ m/[ce]/) {
-					$othercomps = 1;
-					last;
+		for (my $i=0; $i < @{$args->{cytosol_compartments}}; $i++) {
+			for (my $j=0; $j < @{$args->{extracellular_compartments}}; $j++) {
+				my $found = 0;
+				if (defined($compound_reactions->{$cpd."_e".$args->{extracellular_compartments}->[$j]})) {
+					foreach my $rxn (keys(%{$compound_reactions->{$cpd."_e".$args->{extracellular_compartments}->[$j]}})) {
+						if (defined($compound_reactions->{$cpd."_c".$args->{cytosol_compartments}->[$i]}->{$rxn})
+							&& 	$compound_reactions->{$cpd."_c".$args->{cytosol_compartments}->[$i]}->{$rxn}*$compound_reactions->{$cpd."_e".$args->{extracellular_compartments}->[$j]}->{$rxn} < 0) {
+							$found = 1;
+							last;
+						}
+					}		
+				
 				}
-				if ($rgt->compound()->id() eq $cpd && $rgt->compartment()->id() eq "e") {
-					$extcoef = $rgt->coefficient();
-				} elsif ($rgt->compound()->id() eq $cpd && $rgt->compartment()->id() eq "c") {
-					$cytcoef = $rgt->coefficient();
+				if ($found == 0) {
+					$needed->{$cpd}->{$args->{extracellular_compartments}->[$j]}->{$args->{cytosol_compartments}->[$i]} = 1;
 				}
-			}	
-			if ($othercomps == 0 && defined($extcoef) && defined($cytcoef) && ($cytcoef*$extcoef) < 0) {
-				$transhash->{$rxn->id()} = $rxn;
-				last;
-			}	
+			}
 		}
 	}
-	foreach my $rxn (keys(%{$transhash})) {
-		$self->addReactionToModel({
-			direction => "=",
-			reaction => $transhash->{$rxn}
-		});
+	#Finding transport reactions for all needed compounds
+	my $cpdtransrxn = {};
+	my $bio = $self->template()->biochemistry();
+	$compound_reactions = $bio->compound_reaction_hash();
+	foreach my $cpd (keys(%{$needed})) {
+		if (defined($compound_reactions->{$cpd}->{e})) {
+			foreach my $rxn (keys(%{$compound_reactions->{$cpd}->{e}})) {
+				if (defined($compound_reactions->{$cpd}->{c}->{$rxn})
+					&& $compound_reactions->{$cpd}->{c}->{$rxn}*$compound_reactions->{$cpd}->{e}->{$rxn} < 0) {
+						my $rxnobj = $bio->getObject("reactions",$rxn);
+						my $rgts = $rxnobj->reagents();
+						my $keep = 1;
+						foreach my $rgt (@{$rgts}) {
+							if ($rgt->compartment()->id() !~ m/[ec]/) {
+								$keep = 0;
+							}
+						}
+						if ($keep == 1) {
+							$cpdtransrxn->{$cpd} = $rxnobj;
+							last;
+						}
+				}
+			}
+		}
+	}
+	#Adding transporters to model
+	foreach my $cpd (keys(%{$needed})) {
+		foreach my $ecmp (keys(%{$needed->{$cpd}})) {
+			foreach my $ccmp (keys(%{$needed->{$cpd}->{$ecmp}})) {
+				if (defined($cpdtransrxn->{$cpd})) {
+					my $rxn = $cpdtransrxn->{$cpd};
+					if (!defined($self->getObject("modelreactions",$rxn->id()."_c".$ccmp))) {
+						$self->addBiochemistryRxnToModel({
+							reaction => $rxn,
+							direction => "=",
+							compartmenttrans => {
+								c => "c".$ccmp,
+								e => "e".$ecmp
+							}
+						});
+					}
+				}
+			}
+		}
 	}
 }
 

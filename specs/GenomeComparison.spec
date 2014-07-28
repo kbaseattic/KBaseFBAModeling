@@ -46,9 +46,9 @@ module GenomeComparison {
 		float sub_bbh_percent;
 		string max_evalue;
 		list<string> proteome1names;
-		mapping<string, int> proteome1map;
+		mapping<string,int> proteome1map;
 		list<string> proteome2names;
-		mapping<string, int> proteome2map;
+		mapping<string,int> proteome2map;
 		list<list<hit>> data1;
 		list<list<hit>> data2;
 	} ProteomeComparison;

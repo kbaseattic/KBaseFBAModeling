@@ -240,9 +240,6 @@ module KBaseFBA {
     
     /* 
     	Biomass object
-    	
-		@searchable ws_subset id name other dna rna protein cellwall lipid cofactor energy
-		@searchable ws_subset biomasscompounds.[*].(modelcompound_ref,coefficient)
     */
     typedef structure {
 		biomass_id id;
@@ -260,8 +257,6 @@ module KBaseFBA {
 
     /* 
     	ModelCompartment object
-    	
-		@searchable ws_subset id compartment_ref compartmentIndex label pH potential
     */
     typedef structure {
 		modelcompartment_id id;
@@ -276,7 +271,6 @@ module KBaseFBA {
     	ModelCompound object
     	
     	@optional aliases
-		@searchable ws_subset id compound_ref name charge formula modelcompartment_ref
     */
     typedef structure {
 		modelcompound_id id;
@@ -313,8 +307,6 @@ module KBaseFBA {
     
     /* 
     	ModelReactionProtein object
-    	 
-		@searchable ws_subset complex_ref modelReactionProteinSubunits.[*].(role,triggering,optionalSubunit,feature_refs)
     */
     typedef structure {
 		complex_ref complex_ref;
@@ -326,9 +318,6 @@ module KBaseFBA {
     	ModelReaction object
     	
     	@optional name pathway reference aliases
-		@searchable ws_subset id reaction_ref direction protons modelcompartment_ref probability
-		@searchable ws_subset modelReactionReagents.[*].(modelcompound_ref,coefficient)
-		@searchable ws_subset modelReactionProteins.[*].(complex_ref,modelReactionProteinSubunits.[*].(role,triggering,optionalSubunit,feature_refs))
     */
     typedef structure {
 		modelreaction_id id;
@@ -349,7 +338,6 @@ module KBaseFBA {
     	ModelGapfill object
     	 
     	@optional integrated_solution
-		@searchable ws_subset id gapfill_id gapfill_ref integrated_solution integrated media_ref
     */
     typedef structure {
 		gapfill_id id;
@@ -364,7 +352,6 @@ module KBaseFBA {
     	ModelGapgen object
     	
     	@optional integrated_solution
-		@searchable ws_subset id gapgen_id gapgen_ref integrated media_ref integrated_solution
     */
     typedef structure {
     	gapgen_id id;
@@ -380,12 +367,6 @@ module KBaseFBA {
     	
     	@optional metagenome_otu_ref metagenome_ref genome_ref template_refs
     	@searchable ws_subset id source_id source name type genome_ref metagenome_ref metagenome_otu_ref template_ref
-    	@searchable ws_subset gapfillings.[*].(gapfill_id,gapfill_ref,integrated,media_ref,integrated_solution) 
-    	@searchable ws_subset gapgens.[*].(gapgen_id,gapgen_ref,integrated,media_ref,integrated_solution) 
-    	@searchable ws_subset biomasses.[*].(id,name,other,dna,rna,protein,cellwall,lipid,cofactor,energy,biomasscompounds.[*].(modelcompound_ref,coefficient)) 
-    	@searchable ws_subset modelcompartments.[*].(id,compartment_ref,compartmentIndex,label,pH,potential) 
-    	@searchable ws_subset modelcompounds.[*].(id,name)
-    	@searchable ws_subset modelreactions.[*].(id,modelReactionReagents.[*].(modelcompound_ref,coefficient),modelReactionProteins.[*].(modelReactionProteinSubunits.[*].(feature_refs))) 
     */
     typedef structure {
 		fbamodel_id id;
@@ -410,8 +391,6 @@ module KBaseFBA {
     
     /* 
     	FBAConstraint object
-    	
-    	@searchable ws_subset name rhs sign compound_terms reaction_terms
     */
     typedef structure {
     	string name;
@@ -424,8 +403,6 @@ module KBaseFBA {
     
     /* 
     	FBAReactionBound object
-    	
-    	@searchable ws_subset modelreaction_ref variableType upperBound lowerBound
     */
     typedef structure {
     	modelreaction_ref modelreaction_ref;
@@ -436,8 +413,6 @@ module KBaseFBA {
     
     /* 
     	FBACompoundBound object
-    	
-    	@searchable ws_subset modelcompound_ref variableType upperBound lowerBound
     */
      typedef structure {
     	modelcompound_ref modelcompound_ref;
@@ -448,8 +423,6 @@ module KBaseFBA {
     
     /* 
     	FBACompoundVariable object
-    	
-    	@searchable ws_subset modelcompound_ref variableType upperBound lowerBound class min max value
     */
     typedef structure {
     	modelcompound_ref modelcompound_ref;
@@ -464,8 +437,6 @@ module KBaseFBA {
 	
 	/* 
     	FBAReactionVariable object
-    	
-    	@searchable ws_subset modelreaction_ref variableType upperBound lowerBound class min max value
     */
 	typedef structure {
     	modelreaction_ref modelreaction_ref;
@@ -480,8 +451,6 @@ module KBaseFBA {
 	
 	/* 
     	FBABiomassVariable object
-    	
-    	@searchable ws_subset biomass_ref variableType upperBound lowerBound class min max value
     */
 	typedef structure {
     	biomass_ref biomass_ref;
@@ -496,8 +465,6 @@ module KBaseFBA {
 	
 	/* 
     	FBAPromResult object
-    	
-    	@searchable ws_subset objectFraction alpha beta
     */
 	typedef structure {
     	float objectFraction;
@@ -513,10 +480,8 @@ module KBaseFBA {
 	 */
 	typedef string conflict_state;
 	/*
-	  FBATintleResult object
-	  
-	  @searchable ws_subset growth 
-	 */
+	  FBATintleResult object	 
+	*/
 	typedef structure {
 		float originalGrowth;
 		float growth;
@@ -527,8 +492,6 @@ module KBaseFBA {
 
     /* 
     	FBADeletionResult object
-    	
-    	@searchable ws_subset feature_refs growthFraction
     */
     typedef structure {
     	list<feature_ref> feature_refs;
@@ -537,8 +500,6 @@ module KBaseFBA {
 	
 	/* 
     	FBAMinimalMediaResult object
-    	
-    	@searchable ws_subset essentialNutrient_refs optionalNutrient_refs
     */
 	typedef structure {
     	list<compound_ref> essentialNutrient_refs;
@@ -547,8 +508,6 @@ module KBaseFBA {
     
     /* 
     	FBAMetaboliteProductionResult object
-    	
-    	@searchable ws_subset modelcompound_ref maximumProduction
     */
     typedef structure {
     	modelcompound_ref modelcompound_ref;
@@ -557,8 +516,6 @@ module KBaseFBA {
     
 	/* 
     	FBAMinimalReactionsResult object
-    	
-    	@searchable ws_subset reaction_refs id
     */
     typedef structure {
     	string id;
@@ -585,13 +542,6 @@ module KBaseFBA {
     	@optional minimize_reactions minimize_reaction_costs FBATintleResults FBAMinimalReactionsResults PROMKappa phenotypesimulationset_ref objectiveValue phenotypeset_ref promconstraint_ref regmodel_ref tintlesample_ref tintleW tintleKappa
     	@searchable ws_subset comboDeletions id fva fluxMinimization findMinimalMedia allReversible simpleThermoConstraints thermodynamicConstraints noErrorThermodynamicConstraints minimizeErrorThermodynamicConstraints
     	@searchable ws_subset regmodel_ref fbamodel_ref promconstraint_ref media_ref phenotypeset_ref geneKO_refs reactionKO_refs additionalCpd_refs objectiveValue phenotypesimulationset_ref
-    	@searchable ws_subset FBAConstraints.[*].(name,rhs,sign,compound_terms,reaction_terms) 
-    	@searchable ws_subset FBAReactionBounds.[*].(modelreaction_ref,variableType,upperBound,lowerBound)
-    	@searchable ws_subset FBACompoundBounds.[*].(modelcompound_ref,variableType,upperBound,lowerBound)
-    	@searchable ws_subset FBACompoundVariables.[*].(modelcompound_ref,variableType,upperBound,lowerBound,class,min,max,value)
-		@searchable ws_subset FBAReactionVariables.[*].(modelreaction_ref,variableType,upperBound,lowerBound,class,min,max,value)
-		@searchable ws_subset FBABiomassVariables.[*].(biomass_ref,variableType,upperBound,lowerBound,class,min,max,value)
-		@searchable ws_subset FBAPromResults.[*].(objectFraction,alpha,beta)
     */
     typedef structure {
 		fba_id id;
@@ -662,8 +612,6 @@ module KBaseFBA {
     
     /* 
     	GapGenerationSolutionReaction object holds data a reaction proposed to be removed from the model
-    	
-    	@searchable ws_subset modelreaction_ref direction
     */
     typedef structure {
     	modelreaction_ref modelreaction_ref;
@@ -672,8 +620,6 @@ module KBaseFBA {
     
     /* 
     	GapGenerationSolution object holds data on a solution proposed by the gapgeneration command
-    	
-    	@searchable ws_subset id suboptimal gapgenSolutionReactions.[*].(modelreaction_ref,direction) integrated biomassSuppplement_refs mediaRemoval_refs additionalKO_refs 
     */
     typedef structure {
     	gapgensol_id id;
@@ -691,7 +637,6 @@ module KBaseFBA {
     	
     	@optional fba_ref totalTimeLimit timePerSolution media_ref referenceMedia_ref gprHypothesis reactionRemovalHypothesis biomassHypothesis mediaHypothesis
     	@searchable ws_subset id totalTimeLimit timePerSolution referenceMedia_ref fbamodel_ref fba_ref reactionRemovalHypothesis gprHypothesis biomassHypothesis mediaHypothesis
-    	@searchable ws_subset gapgenSolutions.[*].(id,suboptimal,gapgenSolutionReactions.[*].(modelreaction_ref,direction),integrated,biomassSuppplement_refs,mediaRemoval_refs,additionalKO_refs)    	
     */
     typedef structure {
     	gapgen_id id;
@@ -716,7 +661,6 @@ module KBaseFBA {
     	GapFillingReaction object holds data on a reaction added by gapfilling analysis
     	
     	@optional compartmentIndex
-    	@searchable ws_subset reaction_ref compartment_ref direction candidateFeature_refs
     */
     typedef structure {
     	reaction_ref reaction_ref;
@@ -730,7 +674,6 @@ module KBaseFBA {
     	GapFillingSolution object holds data on a solution generated by gapfilling analysis
     	
     	@searchable ws_subset id suboptimal integrated solutionCost koRestore_refs biomassRemoval_refs mediaSupplement_refs
-    	@searchable ws_subset gapfillingSolutionReactions.[*].(reaction_ref,compartment_ref,direction,candidateFeature_refs)
     */
     typedef structure {
     	gapfillsol_id id;
@@ -750,7 +693,6 @@ module KBaseFBA {
     	
     	@optional totalTimeLimit timePerSolution transporterMultiplier singleTransporterMultiplier biomassTransporterMultiplier noDeltaGMultiplier noStructureMultiplier deltaGMultiplier directionalityMultiplier drainFluxMultiplier reactionActivationBonus allowableCompartment_refs blacklistedReaction_refs targetedreaction_refs guaranteedReaction_refs completeGapfill balancedReactionsOnly reactionAdditionHypothesis gprHypothesis biomassHypothesis mediaHypothesis fba_ref media_ref probanno_ref
     	@searchable ws_subset id totalTimeLimit timePerSolution transporterMultiplier singleTransporterMultiplier biomassTransporterMultiplier noDeltaGMultiplier noStructureMultiplier deltaGMultiplier directionalityMultiplier drainFluxMultiplier reactionActivationBonus allowableCompartment_refs blacklistedReaction_refs targetedreaction_refs guaranteedReaction_refs completeGapfill balancedReactionsOnly reactionAdditionHypothesis gprHypothesis biomassHypothesis fba_ref fbamodel_ref probanno_ref mediaHypothesis
-    	@searchable ws_subset gapfillingSolutions.[*].(id,suboptimal,integrated,solutionCost,koRestore_refs,biomassRemoval_refs,mediaSupplement_refs,gapfillingSolutionReactions.[*].(reaction_ref,compartment_ref,direction,candidateFeature_refs))
     */
     typedef structure {
     	gapfill_id id;
@@ -791,8 +733,6 @@ module KBaseFBA {
 	
     /* 
     	TemplateBiomassComponent object holds data on a compound of biomass in template
-    	
-    	@searchable ws_subset id coefficientType class compound_ref compartment_ref
     */
 	typedef structure {
     	templatebiomasscomponent_id id;
@@ -811,7 +751,6 @@ module KBaseFBA {
     	TemplateBiomass object holds data on biomass in template
     	
     	@searchable ws_subset id name type other dna rna protein lipid cellwall cofactor energy
-    	@searchable ws_subset templateBiomassComponents.[*].(id,coefficientType,class,compound_ref,compartment_ref) 
     */
 	typedef structure {
     	templatebiomass_id id;
@@ -832,7 +771,6 @@ module KBaseFBA {
     	TemplateReaction object holds data on reaction in template
     	
     	@optional base_cost forward_penalty reverse_penalty
-    	@searchable ws_subset id direction type reaction_ref compartment_ref complex_refs
     */
 	typedef structure {
     	templatereaction_id id;
@@ -851,8 +789,6 @@ module KBaseFBA {
     	    	
     	@optional name
     	@searchable ws_subset id name modelType domain mapping_ref
-    	@searchable ws_subset templateReactions.[*].(id,reaction_ref,compartment_ref,complex_refs,direction,type) 
-    	@searchable ws_subset templateBiomasses.[*].(id,name,type,other,dna,rna,protein,lipid,cellwall,cofactor,energy,templateBiomassComponents.[*].(id,coefficientType,class,compound_ref,compartment_ref)) 
     */
 	typedef structure {
     	modeltemplate_id id;
@@ -873,7 +809,6 @@ module KBaseFBA {
 		float normalized_required_reaction_count - Normalized count of reactions required for this reaction to function
 		list<ws_sub_id> required_reactions - list of reactions required for this reaction to function
 		
-		@searchable ws_subset modelreaction_ref required_reactions normalized_required_reaction_count
 		@optional
 		
 	*/
@@ -895,7 +830,6 @@ module KBaseFBA {
 		list<ws_sub_id> new_inactive_rxns - List of new reactions dependant upon reaction KO
 		list<ws_sub_id> new_essentials - List of new essential genes with reaction knockout
 	
-		@searchable ws_subset id new_essentials new_inactive_rxns biomass_compounds modelreaction_ref delete growth_fraction deleted normalized_activated_reaction_count
 		@optional direction
 	*/
 	typedef structure {
@@ -922,8 +856,6 @@ module KBaseFBA {
 		list<ReactionSensitivityAnalysisCorrectedReaction> corrected_reactions - list of reactions dependant upon tested reactions
 		
 		@searchable ws_subset id fbamodel_ref type deleted_noncontributing_reactions integrated_deletions_in_model
-		@searchable ws_subset reactions.[*].(id,new_essentials,new_inactive_rxns,biomass_compounds,modelreaction_ref,delete,growth_fraction,deleted,normalized_activated_reaction_count)
-		@searchable ws_subset corrected_reactions.[*].(modelreaction_ref,required_reactions,normalized_required_reaction_count)
 		@optional	
 	*/
     typedef structure {
