@@ -22,10 +22,24 @@ has dataDirectory => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msd
 has reactionRoleHash => ( is => 'rw', isa => 'HashRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildreactionRoleHash' );
 has compoundsByAlias => ( is => 'rw', isa => 'HashRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcompoundsByAlias' );
 has reactionsByAlias => ( is => 'rw', isa => 'HashRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildreactionsByAlias' );
+has compound_reaction_hash => ( is => 'rw', isa => 'HashRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcompound_reaction_hash' );
 
 #***********************************************************************************************************
 # BUILDERS:
 #***********************************************************************************************************
+sub _buildcompound_reaction_hash {
+	my ($self) = @_;
+	my $hash = {};
+	my $rxns = $self->reactions();
+	foreach my $rxn (@{$rxns}) {
+		my $rgts = $rxn->reagents();
+		foreach my $rgt (@{$rgts}) {
+			$hash->{$rgt->compound()->id()}->{$rgt->compartment()->id()}->{$rxn->id()} = $rgt->coefficient();
+		}
+	}
+	return $hash;
+}
+
 sub _builddefinition {
 	my ($self) = @_;
 	return $self->createEquation({format=>"name",hashed=>0});

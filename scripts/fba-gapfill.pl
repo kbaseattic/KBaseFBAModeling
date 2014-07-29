@@ -28,7 +28,8 @@ my $translation = {
 	timepersol => "timePerSolution",
 	timelimit => "totalTimeLimit",
 	iterativegf => "completeGapfill",
-	solver => "solver"
+	solver => "solver",
+	fastgapfill => "fastgapfill"
 };
 my $gfTranslation = {
 	rxnsensitivity => "sensitivity_analysis",
@@ -70,6 +71,7 @@ my $fbaTranslation = {
 my $specs = [
     [ 'modelout:s', 'ID for output model in workspace' ],
     [ 'intsol', 'Automatically integrate solution', { "default" => 0 } ],
+    [ 'longgapfill', 'Run a longer gapfilling but with a potentially better solution' ],
     [ 'iterativegf|t', 'Gapfill all inactive reactions', { "default" => 0 } ],
     [ 'targrxn|x:s@', 'Gapfill to activate these reactions only (; delimiter)'],
     [ 'rxnsensitivity|y', 'Flag indicates if sensitivity analysis of gapfill solutions should run'],
@@ -293,11 +295,21 @@ if (defined($opt->{uptakelim})) {
 }
 $params->{formulation}->{nobiomasshyp} = 1;
 #Calling the server
-my $output = runFBACommand($params,$servercommand,$opt);
-#Checking output and report results
-if (!defined($output)) {
-	print "Gapfilling queue failed!\n";
+if ($opt->{longgapfill}) {
+	my $output = runFBACommand($params,"queue_gapfill_model",$opt);
+	if (!defined($output)) {
+		print "Gapfilling queue failed!\n";
+	} else {
+		print "Gapfilling job queued:\n";
+		printJobData($output);
+	}
 } else {
-	print "Gapfilling job queued:\n";
-	printJobData($output);
+	$params->{fastgapfill} = 1;
+	my $output = runFBACommand($params,"gapfill_model",$opt);
+	if (!defined($output)) {
+		print "Gapfilling failed!\n";
+	} else {
+		print "Gapfilling successful!\n";
+		printObjectInfo($output);
+	}
 }
