@@ -24,7 +24,6 @@ my $translation = {
 	mediaws   => "media_workspace",
 	biochem   => "biochemistry",
 	biochemws => "biochemistry_workspace",
-	overwrite => "overwrite"
 };
 
 #Defining usage and options
@@ -34,7 +33,6 @@ my $specs = [
 	[ 'mediaws:s', 'ID of workspace containing media object', { "default" => fbaws() } ],
 	[ 'biochem|b:s', 'ID of the biochemistry database', { "default" => "default" } ],
 	[ 'biochemws:s', 'ID of workspace containing biochemistry database', { "default" => "kbase" } ],
-	[ 'overwrite|o', 'Set as 1 to overwrite existing output model object', { "default" => 0 } ],
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
 

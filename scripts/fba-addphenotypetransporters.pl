@@ -20,8 +20,6 @@ my $translation = {
 	phenotypews => "phenotypeSet_workspace",
 	modelws   => "model_workspace",
 	workspace => "workspace",
-	auth => "auth",
-	overwrite => "overwrite",
 	alltransporters => "all_transporters",
 	positivetransporters => "positive_transporters"
 };
@@ -30,14 +28,12 @@ my $specs = [
     [ 'workspace|w:s', 'Workspace to save the modified model', { "default" => fbaws() } ],
     [ 'modelws:s', 'Workspace in which the original model is found', { "default" => fbaws() } ],
     [ 'phenotypews:s', 'Workspace in which the PhenotypeSet is found', { "default" => fbaws() } ],
-    [ 'overwrite|o', 'Overwrite any existing FBA with same name' ],
     [ 'alltransporters|a', 'Add transporters for ALL media in the phenotype set' ],
     [ 'positivetransporters|p', 'Add transporters ONLY for media in the phenotype set with non-zero growth rates' ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
 #Calling the server
 my $output = runFBACommand($params,$servercommand,$opt);
-
 #Checking output and report results
 if (!defined($output)) {
     print "Failed to generate a new model!\n";

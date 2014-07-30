@@ -12,7 +12,137 @@ use Bio::KBase::fbaModelServices::ClientConfig;
 use Bio::KBase::workspace::ScriptHelpers qw(workspaceURL get_ws_client workspace parseObjectMeta parseWorkspaceMeta);
 use Exporter;
 use parent qw(Exporter);
-our @EXPORT_OK = qw(getToken get_old_ws_client fbaws printJobData fbaURL get_fba_client runFBACommand universalFBAScriptCode fbaTranslation roles_of_function );
+our @EXPORT_OK = qw(load_file load_table parse_input_table get_workspace_object parse_arguments getToken get_old_ws_client fbaws printJobData fbaURL get_fba_client runFBACommand universalFBAScriptCode fbaTranslation roles_of_function );
+
+=head3 load_file
+Definition:
+	[string] = load_file(string);
+Description:	
+
+=cut
+
+sub load_file {
+    my ($filename) = @_;
+    my $DataArrayRef = [];
+    open (my $fh, "<", $filename) || die "Couldn't open $filename: $!";
+    while (my $Line = <$fh>) {
+        $Line =~ s/\r//;
+        chomp($Line);
+        push(@{$DataArrayRef},$Line);
+    }
+    close($fh);
+    return $DataArrayRef;
+}
+
+=head3 load_table
+Definition:
+	
+Description:	
+
+=cut
+
+sub load_table {
+    my ($filename,$delim,$headingLine) = @_;
+    if (!defined($headingLine)) {
+    	$headingLine = 0;
+    }
+    my $output = {
+    	headings => [],
+    	data => []
+    };
+    if ($delim eq "|") {
+    	$delim = "\\|";	
+    }
+    if ($delim eq "\t") {
+    	$delim = "\\t";	
+    }
+    my $data = load_file($filename);
+    if (defined($data->[0])) {
+    	$output->{headings} = [split(/$delim/,$data->[$headingLine])];
+	    for (my $i=($headingLine+1); $i < @{$data}; $i++) {
+	    	push(@{$output->{data}},[split(/$delim/,$data->[$i])]);
+	    }
+    }
+    return $output;
+}
+
+sub parse_input_table {
+	my $filename = shift;
+	my $columns = shift;
+	if (!-e $filename) {
+		print "Could not find input file:".$filename."!\n";
+		exit();
+	}
+	open(my $fh, "<", $filename) || return;
+	my $headingline = <$fh>;
+	chomp($headingline);
+	my $headings = [split(/\t/,$headingline)];
+	my $data = [];
+	while (my $line = <$fh>) {
+		chomp($line);
+		push(@{$data},[split(/\t/,$line)]);
+	}
+	close($fh);
+	my $headingColums;
+	for (my $i=0;$i < @{$headings}; $i++) {
+		$headingColums->{$headings->[$i]} = $i;
+	}
+	my $error = 0;
+	for (my $j=0;$j < @{$columns}; $j++) {
+		if (!defined($headingColums->{$columns->[$j]->[0]}) && defined($columns->[$j]->[1]) && $columns->[$j]->[1] == 1) {
+			$error = 1;
+			print "Model file missing required column '".$columns->[$j]->[0]."'!\n";
+		}
+	}
+	if ($error == 1) {
+		exit();
+	}
+	my $objects = [];
+	foreach my $item (@{$data}) {
+		my $object = [];
+		for (my $j=0;$j < @{$columns}; $j++) {
+			$object->[$j] = undef;
+			if (defined($columns->[$j]->[2])) {
+				$object->[$j] = $columns->[$j]->[2];
+			}
+			if (defined($headingColums->{$columns->[$j]->[0]}) && defined($item->[$headingColums->{$columns->[$j]->[0]}])) {
+				$object->[$j] = $item->[$headingColums->{$columns->[$j]->[0]}];
+			}
+			if (defined($columns->[$j]->[3])) {
+				if (defined($object->[$j]) && length($object->[$j]) > 0) {
+					my $d = $columns->[$j]->[3];
+					$object->[$j] = [split(/$d/,$object->[$j])];
+				} else {
+					$object->[$j] = [];
+				}
+			}
+		}
+		push(@{$objects},$object);
+	}
+	return $objects;
+}
+
+sub get_workspace_object {
+	my $ref = shift;
+	my $array = [split(/\//,$ref)];
+	my $ws = get_ws_client();
+	my $input = {};
+	if ($array->[0] =~ m/^\d+$/) {
+		$input->{wsid} = $array->[0];
+	} else {
+		$input->{workspace} = $array->[0];
+	}
+	if ($array->[1] =~ m/^\d+$/) {
+		$input->{objid} = $array->[1];
+	} else {
+		$input->{name} = $array->[1];
+	}
+	if (defined($array->[2])) {
+		$input->{ver} = $array->[2];
+	}
+	my $objdatas = $ws->get_objects([$input]);
+	return ($objdatas->[0]->{data},$objdatas->[0]->{info});
+}
 
 sub getToken {
 	my $token='';
@@ -73,6 +203,16 @@ sub fbaURL {
 	return $currentURL;
 }
 
+sub parse_arguments {
+	my $specs = shift;
+	my $options = [];
+	push(@{$options},@{$specs});
+	push(@{$options},[ 'showerror|e', 'Set as 1 to show any errors in execution',{"default"=>0}]);
+	push(@{$options},[ 'help|h|?', 'Print this usage information' ]);
+	my ($opt, $usage) = describe_options(@{$options});
+	return $opt;
+}
+
 sub universalFBAScriptCode {
     my $specs = shift;
     my $script = shift;
@@ -80,6 +220,7 @@ sub universalFBAScriptCode {
     my $translation = shift;
     my $manpage = shift;
     my $command_param = shift;
+    my $overides = shift;
     my $in_fh;
     #Setting arguments to "describe_options" function
     my $options = [];
@@ -113,7 +254,6 @@ sub universalFBAScriptCode {
 	#Reading data from files
 	#TODO
     $translation->{workspace} = "workspace";
-    #$translation->{auth} = "auth";
     if (defined($opt->{help})) {
         if (defined($manpage)) {
             print "SYNOPSIS\n      ".$usage;
@@ -124,6 +264,17 @@ sub universalFBAScriptCode {
         }
 	    exit;
 	}
+	#Instantiating parameters
+	my $params = {
+		wsurl => workspaceURL()
+	};
+	if (defined($overides)) {
+		for (my $i=0; $i < @{$overides}; $i++) {
+			if ($opt->{$overides->[$i]}) {
+				return ($opt,$params);
+			}
+		}
+	}
 	#Processing primary arguments
 	foreach my $arg (@{$primaryArgs}) {
 		$opt->{$arg} = shift @ARGV;
@@ -132,10 +283,6 @@ sub universalFBAScriptCode {
 	    	exit;
 		}
 	}
-	#Instantiating parameters
-	my $params = {
-		wsurl => workspaceURL()
-	};
 	foreach my $key (keys(%{$translation})) {
 		if (defined($opt->{$key})) {
 			$params->{$translation->{$key}} = $opt->{$key};
@@ -164,7 +311,7 @@ sub runFBACommand {
 		}
 	};$error = $@ if $@;
 	if ($opt->{showerror} == 1 && defined($error)){
-	    print STDERR $error;
+	   print STDERR $error;
 	}elsif (defined($error) && $error =~ m/_ERROR_(.+)_ERROR_/) {
 		print STDERR $1."\n";
 	}

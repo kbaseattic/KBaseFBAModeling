@@ -69,7 +69,7 @@ my $translation = {
 	"Template ID" => "templateModel",
 	"Biomass ID" => "biomass",
 	workspace => "workspace",
-	auth => "auth"
+	outputid => "output_id"
 };
 #Defining usage and options
 my $specs = [
@@ -79,6 +79,7 @@ my $specs = [
     [ 'class=s', 'Class of template biomass compound' ],
     [ 'universal', 'Indicates if template biomass compound should be universal' ],
     [ 'linkcpds=s@', 'Compounds linked to current compound (; delimited)' ],
+    [ 'outputid|o=s', 'Output ID for altered template model'],
     [ 'workspace|w=s', 'Workspace with template model', { "default" => fbaws() } ],
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation,$manpage);

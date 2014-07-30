@@ -18,15 +18,17 @@ my $translation = {
     "RxnSensitivity ID" => "rxn_sensitivity",
     "rxnsensws" => "rxn_sensitivity_ws",
     "newmodel" => "new_model_uid",
-    "newmodelws" => "workspace"
+    "outputid" => "new_model_uid",
+    "newmodelws" => "workspace",
+    "workspace" => "workspace"
 };
 
 #Defining usage and options
 my $specs = [
     [ 'RxnSensitivity ID : ID for RxnSensitivty object in the workspace (run with --deleterxns)' ],
     [ 'rxnsensws|w:s', 'Workspace for RxnSensitivity object', { "default" => fbaws() } ],
-    [ 'newmodel:s', 'ID for new model with reactions deleted (default is to save it to the same ID as was originally used to run the RxnSensitivity)' ],
-    [ 'newmodelws:s', 'Workspace for new model with reactions deleted', { "default" => fbaws() } ]
+    [ 'newmodel|outputid:s', 'ID for new model with reactions deleted (default is to save it to the same ID as was originally used to run the RxnSensitivity)' ],
+    [ 'newmodelws|workspace:s', 'Workspace for new model with reactions deleted', { "default" => fbaws() } ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
 
@@ -36,5 +38,6 @@ my $output = runFBACommand($params,$servercommand,$opt);
 if (!defined($output)) {
     print "Deleting reactions failed!"
 } else {
+	print "Reaction deletion succeeded:"
     printObjectInfo($output);
 }

@@ -598,7 +598,7 @@ sub translate_codon {
     return $aa;
 }
 
-sub modify_gene {
+sub modify {
 	my($self,$parameters) = @_;
 	$parameters = Bio::KBase::ObjectAPI::utilities::args([], {
 		function => undef,
@@ -613,9 +613,11 @@ sub modify_gene {
 	my $list = ["function","type","protein_translation","dna_sequence","locations"];
 	foreach my $item (@{$list}) {
 		if (defined($parameters->{$item})) {
+			print $item."\t".$parameters->{$item}."\t";
 			$self->$item($parameters->{$item});
 		}
 	}
+	print $self->function()."\n";
 	$list = ["aliases","publications","annotations"];
 	foreach my $item (@{$list}) {
 		if (defined($parameters->{$item}->[0])) {

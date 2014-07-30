@@ -14,6 +14,7 @@ my $servercommand = "import_metagenome_annotation";
 my $script = "fba-import-meta-anno";
 my $translation = {
 	newuid => "metaanno_uid",
+	outputid => "metaanno_uid",
 	sourceid => "source_id",
 	source => "source",
 	workspace => "workspace",
@@ -23,14 +24,13 @@ my $translation = {
 };
 #Defining usage and options
 my $specs = [
-    [ 'newuid|u:s', 'ID for metagenome annotation in workspace' ],
+    [ 'newuid|outputid|u:s', 'ID for metagenome annotation in workspace' ],
     [ 'name|n:s', 'Name for metagenome annotation' ],
     [ 'sourceid|i:s', 'Source ID for metagenome annotation' ],
     [ 'source|s:s', 'Source for metagenome annotation' ],
     [ 'type|t:s', 'Type of metagenome annotation' ],
     [ 'conftype|c:s', 'Confidence type for hits in metagenome annotation' ],
     [ 'workspace|w:s', 'Workspace to save phenotypes in', { "default" => fbaws() } ],
-    [ 'overwrite|o', 'Overwrite any existing phenotypes with same name' ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
 $params->{annotations} = [];

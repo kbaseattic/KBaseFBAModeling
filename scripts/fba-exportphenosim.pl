@@ -15,7 +15,6 @@ my $script = "fba-exportphenosim";
 my $translation = {
 	"Phenotype simulation ID" => "phenotypeSimulationSet",
 	workspace => "workspace",
-	auth => "auth",
 };
 #Defining usage and options
 my $specs = [
@@ -26,7 +25,8 @@ my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translat
 my $output = runFBACommand($params,$servercommand,$opt);
 #Checking output and report results
 if (!defined($output)) {
-	print "Phenotype simulation set export failed!\n";
+	print STDERR "Phenotype simulation set export failed!\n";
 } else {
+	print STDERR "Phenotype simulation set export succeeded:\n";
 	print $output;
 }

@@ -21,7 +21,7 @@ my $translation = {
 
 #Defining usage and options
 my $specs = [
-    [ 'bio=s', 'Reactions file is in SBML format' ],
+    [ 'bio=s', 'Biochemistry to which compounds should be added' ],
     [ 'biows=s', 'Workspace with selected biochemistry', { "default" => fbaws() } ],
     [ 'outputid=s', 'ID of output biochemistry' ],
     [ 'workspace|w:s', 'Workspace to save imported model in', { "default" => fbaws() } ],

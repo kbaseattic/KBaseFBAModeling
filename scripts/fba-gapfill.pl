@@ -16,12 +16,10 @@ my $translation = {
 	Model => "model",
 	modelws => "model_workspace",
 	modelout => "out_model",
+	outputid => "out_model",
 	gapfillid => "gapFill",
 	gapfillws => "gapFill_workspace",
 	workspace => "workspace",
-	auth => "auth",
-	overwrite => "overwrite",
-	nosubmit => "donot_submit_job",
 	intsol => "integrate_solution",
 	phenows => "phenotypeSet_workspace",
 	phenoid => "phenotypeSet",
@@ -69,7 +67,7 @@ my $fbaTranslation = {
 };
 #Defining usage and options
 my $specs = [
-    [ 'modelout:s', 'ID for output model in workspace' ],
+    [ 'modelout|outputid:s', 'ID for output model in workspace' ],
     [ 'intsol', 'Automatically integrate solution', { "default" => 0 } ],
     [ 'longgapfill', 'Run a longer gapfilling but with a potentially better solution' ],
     [ 'iterativegf|t', 'Gapfill all inactive reactions', { "default" => 0 } ],
@@ -311,5 +309,6 @@ if ($opt->{longgapfill}) {
 	} else {
 		print "Gapfilling successful!\n";
 		printObjectInfo($output);
+		print "Run fba-getgapfills or fba-integratesolution to print solution!\n";
 	}
 }

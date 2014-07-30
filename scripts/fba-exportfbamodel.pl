@@ -17,7 +17,6 @@ my $translation = {
 	"FBAModel ID" => "model",
 	"fba" => "fbas",
 	workspace => "workspace",
-	auth => "auth",
 };
 #Defining usage and options
 my $specs = [

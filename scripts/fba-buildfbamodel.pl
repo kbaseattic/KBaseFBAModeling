@@ -43,7 +43,6 @@ AUTHORS
       Christopher Henry
 ";
 
-
 #Defining globals describing behavior
 my $primaryArgs = ["Genome"];
 my $servercommand = "genome_to_fbamodel";
@@ -54,14 +53,14 @@ my $translation = {
 	templateid => "templatemodel",
 	templatews => "templatemodel_workspace",
 	model => "model",
+	outputid => "model",
 	core => "coremodel",
 	workspace => "workspace",
-	auth => "auth",
 	fulldb => "fulldb"
 };
 #Defining usage and options
 my $specs = [
-    [ 'model|m=s', 'Name to be provided for output model' ],
+    [ 'model|outputid|m=s', 'Name to be provided for output model' ],
     [ 'genomews=s', 'Workspace where genome is located' ],
     [ 'templateid=s', 'ID of template model to use' ],
     [ 'templatews=s', 'Workspace with template model' ],

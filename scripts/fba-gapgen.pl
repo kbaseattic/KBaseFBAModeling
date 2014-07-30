@@ -16,10 +16,8 @@ my $translation = {
 	Model => "model",
 	modelws => "model_workspace",
 	modelout => "out_model",
+	outputid => "out_model",
 	workspace => "workspace",
-	auth => "auth",
-	overwrite => "overwrite",
-	nosubmit => "donot_submit_job",
 	intsol => "integrate_solution",
 	phenows => "phenotypeSet_workspace",
 	phenoid => "phenotypeSet",
@@ -53,7 +51,7 @@ my $fbaTranslation = {
 };
 #Defining usage and options
 my $specs = [
-    [ 'modelout:s', 'ID for output model in workspace' ],
+    [ 'modelout|outputid:s', 'ID for output model in workspace' ],
     [ 'intsol', 'Automatically integrate solution', { "default" => 0 } ],
     [ 'timepersol:s', 'Maximum time spent per solution' ],
     [ 'timelimit:s', 'Maximum toal time' ],
@@ -86,7 +84,6 @@ my $specs = [
     [ 'notes:s', 'Notes for flux balance analysis' ],
     [ 'solver:s', 'Solver to use for gapgen' ],
     [ 'workspace|w:s', 'Workspace to save FBA results', { "default" => fbaws() } ],
-    [ 'overwrite|o', 'Overwrite any existing FBA with same name' ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
 if (!defined($opt->{mediaws}) && defined($opt->{media})) {
