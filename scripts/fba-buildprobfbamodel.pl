@@ -18,15 +18,14 @@ my $translation = {
 	"Genome ID" => "genome",
 	genomews => "genome_workspace",
 	model => "model",
+	outputid => "model",
 	workspace => "workspace",
 	defaultprob => "default_prob",
 	rxnprobs => "reaction_probs",
-	auth => "auth",
-	overwrite => "overwrite",
 };
 #Defining usage and options
 my $specs = [
-    [ 'model|m:s', 'ID of the output model' ],
+    [ 'model|outputid|m:s', 'ID of the output model' ],
     [ 'workspace|w:s', 'Workspace where output model object is stored', { "default" => fbaws() } ],
     [ 'genomews:s', 'Workspace where genome object is located' ],
     [ 'defaultprob|d:f', 'Default probability for reactions not associated with a complex', { "default" => 0.0 } ],

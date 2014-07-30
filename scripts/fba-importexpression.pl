@@ -3,8 +3,7 @@
 use strict;
 use warnings;
 use Bio::KBase::workspace::ScriptHelpers qw(printObjectInfo get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::ScriptHelpers qw(fbaws get_fba_client runFBACommand universalFBAScriptCode getToken);
-use Bio::KBase::ObjectAPI::utilities qw(LOADTABLE);
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(load_file load_table fbaws get_fba_client runFBACommand universalFBAScriptCode getToken);
 use File::Basename;
 use POSIX qw/strftime/;
 
@@ -21,7 +20,8 @@ my $translation = {
 	ignoreerrors => "ignore_errors",
 	genomeid => "genome_id",
 	numinterpret => "numerical_interpretation",
-	series => "series"
+	series => "series",
+	outputid => "series"
 };
 
 my $manpage = 
@@ -70,7 +70,7 @@ my $specs = [
     [ 'sourcedate:s', 'Date of the source', { "default", => strftime("%Y-%m-%d", localtime)}],
     [ 'genomeid|g:s', "ID of genome to which features belong. Required if gene ids does not contain genome id."],
     [ 'numinterpret|n:s', "Numerical Interpretation:[ 'Log2 level intensities',  'Log2 level ratios','Log2 level ratios genomic DNA control','FPKM',]"  ],
-    [ 'series:s', 'ID for the series object in the workspace']
+    [ 'series|outputid:s', 'ID for the series object in the workspace']
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation, $manpage);
 if (!-e $opt->{"Gene expression flat file"}) {
@@ -81,7 +81,7 @@ if (! defined $params->{"series"}) {
     $params->{"series"} = basename($opt->{"Gene expression flat file"});
 }
 
-my $data = Bio::KBase::ObjectAPI::utilities::LOADTABLE($opt->{"Gene expression flat file"},"\t",0);
+my $data = load_table($opt->{"Gene expression flat file"},"\t",0);
 
 for (my $col_i = 0; $col_i < @{$data->{"headings"}}; $col_i++) {
     $params->{"expression_data_sample_series"}->{$data->{"headings"}->[$col_i]} = {};

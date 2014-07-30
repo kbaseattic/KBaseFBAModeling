@@ -24,7 +24,8 @@ my $translation = {
 	auth => "auth",
 	clearcomplexes => "clearComplexes",
 	complexestoadd => "complexesToAdd",
-	complexestoremove => "complexesToRemove"
+	complexestoremove => "complexesToRemove",
+	outputid => "output_id"
 };
 #Defining usage and options
 my $specs = [
@@ -36,6 +37,7 @@ my $specs = [
     [ 'clearcomplexes', 'Clear all complexes mapped to reaction' ],
     [ 'complexestoadd=s', 'Complexes to add to reaction (; delimited)' ],
     [ 'complexestoremove=s', 'Complexes to remove from reaction (; delimited)' ],
+    [ 'outputid|o=s', 'Output ID for altered template model'],
     [ 'workspace|w=s', 'Workspace to save FBA results', { "default" => fbaws() } ],
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);

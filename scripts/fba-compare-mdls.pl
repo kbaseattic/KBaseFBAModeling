@@ -16,7 +16,7 @@ my $script = "fba-compare-mdls";
 my $translation = {};
 #Defining usage and options
 my $specs = [
-    [ 'pretty|p', 'Pretty print output' ]
+    [ 'workspace|w:s', 'Workspace to save FBA results', { "default" => fbaws() } ],
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
 $params->{models} = [split(/;/,$opt->{"Model IDs (; delimiter)"})];

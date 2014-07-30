@@ -19,7 +19,6 @@ my $translation = {
 	workspace => "workspace",
 	biochem   => "biochemistry",
 	biochemws => "biochemistry_workspace",
-	overwrite => "overwrite"
 };
 
 #Defining usage and options
@@ -27,7 +26,6 @@ my $specs = [
 	[ 'workspace|w:s', 'ID of workspace for storing reaction synonyms object', { "default" => fbaws() } ],
 	[ 'biochem|b:s', 'ID of the biochemistry database', { "default" => "default" } ],
 	[ 'biochemws:s', 'ID of workspace containing biochemistry database', { "default" => "kbase" } ],
-	[ 'overwrite|o', 'Set as 1 to overwrite existing reaction synonyms object', { "default" => 0 } ],
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
 

@@ -73,9 +73,9 @@ my $translation = {
 	type => "type",
 	"new" => "new",
 	"delete" => "delete",
-	auth => "auth",
 	clearbiomasscompounds => "clearBiomassCompounds",
-	compoundstoremove => "compoundsToRemove"
+	compoundstoremove => "compoundsToRemove",
+	outputid => "output_id"
 };
 #Defining usage and options
 my $specs = [
@@ -92,6 +92,7 @@ my $specs = [
     [ 'delete', 'Delete specified biomass reaction' ],
     [ 'clearbiomasscompounds', 'Clear all biomass compounds' ],
     [ 'compoundstoremove=s', 'Compounds to remove from reaction (; delimited)' ],
+    [ 'outputid|o=s', 'Output ID for altered template model'],
     [ 'workspace|w=s', 'Workspace with template model', { "default" => fbaws() } ],
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation,$manpage);

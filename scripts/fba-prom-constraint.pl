@@ -3,17 +3,16 @@
 use strict;
 use warnings;
 use Bio::KBase::workspace::ScriptHelpers qw(printObjectInfo get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::ScriptHelpers qw(fbaws get_fba_client runFBACommand universalFBAScriptCode getToken);
-use Bio::KBase::ObjectAPI::utilities qw(LOADTABLE);
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(load_file load_table fbaws get_fba_client runFBACommand universalFBAScriptCode getToken);
 use File::Basename;
 use POSIX qw/strftime/;
 
 #Defining globals describing behavior
 my $primaryArgs = ["Regulome ID","Expression Series ID", "Genome ID"];
 my $servercommand = "create_promconstraint";
-my $script = "prom-contraint";
+my $script = "fba-prom-contraint";
 my $translation = {
-        "Genome ID" => "genome_id",
+    "Genome ID" => "genome_id",
 	"Regulome ID" => "regulome_id",
 	"Expression Series ID" => "series_id",
 	"expressionws" => "expression_workspace",

@@ -51,5 +51,9 @@ if ($opt->{showerror} == 0){
 if (!defined($output)) {
 	print "Could not retreive job!\n";
 } else {
-    printJobData($output->[0]);
+	if (!defined($output->[0])) {
+		print STDERR "Specified job ID is either invalid, or user does not have permissions to view job!\n";
+	} else {
+    	printJobData($output->[0]);
+	}
 }

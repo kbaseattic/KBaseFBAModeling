@@ -31,9 +31,7 @@ my $specs = [
     [ 'timepersol:s', 'Maximum time spent per solution' ],
     [ 'timelimit:s', 'Maximum toal time' ],
     [ 'numsol:i', 'Number of solutions desired', {"default" => 1} ],
-    [ 'nosubmit', 'Do not submit job to cluster', { "default" => 0 } ],
     [ 'workspace|w:s', 'Workspace to save FBA results', { "default" => fbaws() } ],
-    [ 'overwrite|o', 'Overwrite any existing FBA with same name' ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
 #Calling the server

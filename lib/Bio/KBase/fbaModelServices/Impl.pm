@@ -8323,6 +8323,7 @@ sub adjust_biomass_reaction
     	coefficients => [],
     	compartments => [],
     	compartmentIndecies => [],
+    	output_id => $input->{model}
     });
 	my $model = $self->_get_msobject("FBAModel",$input->{workspace},$input->{model});
 	for (my $i=0; $i < @{$input->{compounds}}; $i++) {
@@ -8343,7 +8344,7 @@ sub adjust_biomass_reaction
 	    	compartmentIndecies => $input->{compartmentIndecies}->[$i],
 	    });
 	}
-	$modelMeta = $self->_save_msobject($model,"FBAModel",$input->{workspace},$input->{model});
+	$modelMeta = $self->_save_msobject($model,"FBAModel",$input->{workspace},$input->{outputid});
     $self->_clearContext();
     #END adjust_biomass_reaction
     my @_bad_returns;
@@ -17035,7 +17036,8 @@ sub adjust_template_reaction
 		complexesToAdd => [],
 		complexesToRemove => [],
 		clearComplexes => 0,
-		"delete" => 0
+		"delete" => 0,
+		output_id => $params->{templateModel}
 	});
     my $tempmdl = $self->_get_msobject("ModelTemplate",$input->{workspace},$input->{templateModel});
     my $arguments = {reaction => $input->{reaction}};
@@ -17046,7 +17048,7 @@ sub adjust_template_reaction
     	}
     }
 	my $rxn = $tempmdl->adjustReaction($arguments);
-	$modelMeta = $self->_save_msobject($tempmdl,"ModelTemplate",$input->{workspace},$input->{templateModel});
+	$modelMeta = $self->_save_msobject($tempmdl,"ModelTemplate",$input->{workspace},$input->{output_id});
     #END adjust_template_reaction
     my @_bad_returns;
     (ref($modelMeta) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"modelMeta\" (value was \"$modelMeta\")");
@@ -17242,7 +17244,8 @@ sub adjust_template_biomass
 		cellwall => undef,
 		lipid => undef,
 		compoundsToAdd => [],
-		compoundsToRemove => []
+		compoundsToRemove => [],
+		output_id => $params->{templateModel}
 	});
     my $tempmdl = $self->_get_msobject("ModelTemplate",$input->{workspace},$input->{templateModel});
     my $arguments = {};
@@ -17253,7 +17256,7 @@ sub adjust_template_biomass
     	}
     }
 	my $bio = $tempmdl->adjustBiomass($arguments);
-    $modelMeta = $self->_save_msobject($tempmdl,"ModelTemplate",$input->{workspace},$input->{templateModel});
+    $modelMeta = $self->_save_msobject($tempmdl,"ModelTemplate",$input->{workspace},$input->{output_id});
     #END adjust_template_biomass
     my @_bad_returns;
     (ref($modelMeta) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"modelMeta\" (value was \"$modelMeta\")");
@@ -20917,7 +20920,7 @@ sub modify_features
     });
     my $genome = $self->_get_msobject("Genome",$params->{genome_workspace},$params->{genome});
     for (my $i=0; $i < @{$params->{features}}; $i++) {
-    	my $ftr = $genome->getObject("features",$params->{features}->[$i]);
+    	my $ftr = $genome->getObject("features",$params->{features}->[$i]->[0]);
     	if (defined($ftr)) {
     		$ftr->modify({
     			function => $params->{features}->[$i]->[1],
@@ -20929,6 +20932,8 @@ sub modify_features
     			dna_sequence => $params->{features}->[$i]->[7],
     			locations => $params->{features}->[$i]->[8]
     		});
+    	} else {
+    		$self->_error("Feature ".$params->{features}->[$i]->[0]." not found!");
     	}
     }
     $output = $self->_save_msobject($genome,"Genome",$params->{workspace},$params->{output_id});

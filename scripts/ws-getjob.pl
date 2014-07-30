@@ -52,5 +52,9 @@ if ($opt->{showerror} == 0){
 if (!defined($output)) {
 	print "Could not retreive job!\n";
 } else {
-    print to_json( $output->[0], { utf8 => 1, pretty => 1 } )."\n";
+    if (!defined($output->[0])) {
+		print STDERR "Specified job ID is either invalid, or user does not have permissions to view job!\n";
+	} else {
+    	print to_json( $output->[0], { utf8 => 1, pretty => 1 } )."\n";
+	}
 }

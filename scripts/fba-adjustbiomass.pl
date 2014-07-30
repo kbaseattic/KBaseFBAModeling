@@ -16,15 +16,16 @@ my $translation = {
 	"Model ID" => "model",
 	workspace => "workspace",
 	biomass => "biomass",
-	auth => "auth",
+	outputid => "output_id"
 };
 #Defining usage and options
 my $specs = [
     [ 'biomass|b:s', 'ID of biomass to be modified', { "default" => "bio1" }  ],
     [ 'product|p', 'Product compound'],
-    [ 'compartment|c:s', 'Compartment of target compound', { "default" => "c" } ],
-    [ 'compindex|i:s', 'Index of compartment for target compound', { "default" => 0 } ],
-    [ 'workspace|w:s', 'Workspace to save FBA results', { "default" => fbaws() } ],
+    [ 'compartment|c=s', 'Compartment of target compound', { "default" => "c" } ],
+    [ 'compindex|i=s', 'Index of compartment for target compound', { "default" => 0 } ],
+    [ 'outputid|o=s', 'Output ID for altered model'],
+    [ 'workspace|w=s', 'Workspace to save FBA results', { "default" => fbaws() } ],
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
 if (!defined($opt->{product})) {
