@@ -512,11 +512,11 @@ Description:
 =cut
 
 sub findReactionsWithReagent {
-    my ($self, $cpd_uuid) = @_;
+    my ($self, $cpd) = @_;
     my $reactions = $self->reactions();
     my $found_reactions = [];
     foreach my $rxn (@$reactions){
-	push(@$found_reactions, $rxn) if $rxn->hasReagent($cpd_uuid);
+	push(@$found_reactions, $rxn) if $rxn->hasReagent($cpd);
     }
     return $found_reactions;
 }
