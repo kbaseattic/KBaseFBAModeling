@@ -3361,7 +3361,7 @@ sub new
     for my $p (@{$paramlist}) {
   		if (defined($options->{$p})) {
 			$params->{$p} = $options->{$p};
-        }cd fb
+        }
         print STDERR $p."\t".$params->{$p}."\n";
     }
 
