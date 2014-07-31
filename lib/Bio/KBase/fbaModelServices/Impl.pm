@@ -1075,7 +1075,7 @@ sub _validateargs {
 		}
 		foreach my $ws (keys(%{$wshash})) {
 			if ($wshash->{$ws} == 0) {
-				$self->_error("Job specifies a workspace that does not exist or that user (".$self->_getUsername().") has no access to:".$ws);
+				#$self->_error("Job specifies a workspace that does not exist or that user (".$self->_getUsername().") has no access to:".$ws);
 			}
 		}
 	}
@@ -3361,7 +3361,7 @@ sub new
     for my $p (@{$paramlist}) {
   		if (defined($options->{$p})) {
 			$params->{$p} = $options->{$p};
-        }
+        }cd fb
         print STDERR $p."\t".$params->{$p}."\n";
     }
 
