@@ -2859,8 +2859,33 @@ Description:
 =cut
 sub translate_model {
 	my $self = shift;
-	my $protcomp = shift;
-	my $genome = $self->genome();	
+	my $args = Bio::KBase::ObjectAPI::utilities::args(["proteome_comparison"], {
+		keep_nogene_rxn => 1
+	}, @_);
+	my $protcomp = $args->{proteome_comparison};
+	my $genome = $self->genome();
+	my $ftrs = $genome->features();
+	my $numftrs = @{$ftrs};
+	my $ftrhash;
+	for (my $i=0; $i < @{$ftrs}; $i++) {
+		$ftrhash->{$ftrs->[$i]->id()} = 1;
+	}
+	my $onewgenome = $self->getLinkedObject($protcomp->genome1ref());
+	$ftrs = $onewgenome->features();
+	my $matchcount = 0;
+	for (my $i=0; $i < @{$ftrs}; $i++) {
+		if (defined($ftrhash->{$ftrs->[$i]->id()})) {
+			$matchcount++;
+		}
+	}
+	my $newgenome = $self->getLinkedObject($protcomp->genome2ref());
+	$ftrs = $newgenome->features();
+	my $omatchcount = 0;
+	for (my $i=0; $i < @{$ftrs}; $i++) {
+		if (defined($ftrhash->{$ftrs->[$i]->id()})) {
+			$omatchcount++;
+		}
+	}
 	my $ref = $protcomp->genome2ref();
 	my $map = $protcomp->proteome1map();
 	my $list = $protcomp->proteome1names();
@@ -2868,7 +2893,9 @@ sub translate_model {
 	my $omap = $protcomp->proteome2map();
 	my $olist = $protcomp->proteome2names();
 	my $odata = $protcomp->data2();
-	if ($genome->_reference() eq $protcomp->genome2ref()) {
+	if ($omatchcount >  $matchcount) {
+		$newgenome = $onewgenome;
+		$matchcount = $omatchcount;
 		$ref = $protcomp->genome1ref();
 		$map = $protcomp->proteome2map();
 		$list = $protcomp->proteome2names();
@@ -2877,12 +2904,15 @@ sub translate_model {
 		$olist = $protcomp->proteome1names();
 		$odata = $protcomp->data1();
 	}
-	my $newgenome = $self->store()->get_object($ref);
+	print "Match fraction:".$matchcount/$numftrs."\n";
+	if ($matchcount/$numftrs < 0.8) {
+		Bio::KBase::ObjectAPI::utilities::error("Proteome comparison does not involve genome used in model!");
+	}
 	my $translate;
 	for(my $i=0; $i < @{$data}; $i++) {
 		for (my $j=0; $j < @{$data->[$i]}; $j++) {
 			if ($data->[$i]->[$j]->[2] == 100) {
-				$translate->{$list->[$i]} = $olist->[$data->[$i]->[$j]->[0]];
+				push(@{$translate->{$list->[$i]}},$olist->[$data->[$i]->[$j]->[0]]);
 			}
 		}
 	}
@@ -2890,6 +2920,8 @@ sub translate_model {
 	for (my $i=0; $i < @{$reactions}; $i++) {
 		my $rxn = $reactions->[$i];
 		my $prots = $rxn->modelReactionProteins();
+		my $keeprxn = 0;
+		my $rxnftrs = 0;
 		for (my $j=0; $j < @{$prots}; $j++) {
 			my $sus = $prots->[$j]->modelReactionProteinSubunits();
 			my $keep = 0;
@@ -2897,13 +2929,18 @@ sub translate_model {
 				my $ftrs = $sus->[$k]->features();
 				my $newftrs = [];
 				for (my $m=0; $m < @{$ftrs}; $m++) {
+					$rxnftrs = 1;
 					if (defined($translate->{$ftrs->[$m]->id()})) {
-						my $newftr = $newgenome->getObject("features",$translate->{$ftrs->[$m]->id()});
-						push(@{$newftrs},$newftr->_reference());
+						foreach my $gene (@{$translate->{$ftrs->[$m]->id()}}) {
+							my $newftr = $newgenome->getObject("features",$gene);
+							push(@{$newftrs},$newftr->_reference());
+						}
 					}
 				}
 				if (@{$newftrs} > 0) {
+					print "Features found!!\n";
 					$keep = 1;
+					$keeprxn = 1;
 				}
 				$sus->[$k]->feature_refs($newftrs);
 			}
@@ -2911,8 +2948,10 @@ sub translate_model {
 				$rxn->removeLinkArrayItem("modelReactionProteins",$prots->[$j]);
 			}
 		}
-		if (@{$rxn->modelReactionProteins()} == 0) {
-			$self->remove("modelreactions",$rxn);
+		if (@{$rxn->modelReactionProteins()} == 0 || $keeprxn == 0) {
+			if ($rxnftrs == 1 || $args->{keep_nogene_rxn} == 0) {
+				$self->remove("modelreactions",$rxn);
+			}
 		}
 	}
 	$self->genome_ref($ref);

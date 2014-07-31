@@ -36,17 +36,22 @@ my $translation = {
 	protcompws => "protcomp_workspace",
 	Model => "model",
 	modelws => "model_workspace",
-	modelout => "modelout",
+	modelout => "output_id",
+	outputid => "output_id",
 	workspace => "workspace"
 };
 #Defining usage and options
 my $specs = [
-    [ 'modelout|m=s', 'Name to be provided for output model' ],
+    [ 'modelout|outputid|m=s', 'Name to be provided for output model' ],
+    [ 'removenogenerxn', 'Remove any reactions in original model with no genes' ],
     [ 'protcompws=s', 'Workspace where protein comparison is located', { "default" => fbaws() } ],
     [ 'modelws=s', 'Workspace where model is located', { "default" => fbaws() } ],
     [ 'workspace|w=s', 'Reference default workspace', { "default" => fbaws() } ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation,$manpage);
+if (defined($opt->{removenogenerxn})) {
+	$params->{keep_nogene_rxn} = 0;
+}
 #Calling the server
 my $output = runFBACommand($params,$servercommand,$opt);
 #Checking output and report results
