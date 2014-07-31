@@ -232,7 +232,7 @@ module KBaseGenomes {
 	/*
 		a notation by a curator of the genome object
     */
-    typedef tuple<string comment, string annotator, int annotation_time> annotation;
+    typedef tuple<string comment, string annotator, float annotation_time> annotation;
 	
 	typedef string Analysis_event_id;
     

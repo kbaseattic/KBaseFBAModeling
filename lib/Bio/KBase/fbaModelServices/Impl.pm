@@ -5821,8 +5821,12 @@ sub genome_object_to_workspace
 			if (defined($ftr->{dna_sequence})) {
 				$ftr->{dna_sequence_length} = length($ftr->{dna_sequence});
 			}
+			delete $ftr->{feature_creation_event};
 		}
 	}
+	delete $genome->{contigs};
+	delete $genome->{feature_creation_event};
+	delete $genome->{analysis_events};
 	my $GenomeObj = Bio::KBase::ObjectAPI::KBaseGenomes::Genome->new($genome);
 	$GenomeObj->features();
 	$genomeMeta = $self->_save_msobject($GenomeObj,"Genome",$input->{workspace},$input->{uid});
