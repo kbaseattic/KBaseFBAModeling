@@ -27,7 +27,9 @@ my $translation = {
 	timelimit => "totalTimeLimit",
 	iterativegf => "completeGapfill",
 	solver => "solver",
-	fastgapfill => "fastgapfill"
+	fastgapfill => "fastgapfill",
+	sourcemdl => "source_model",
+	sourcemdlws => "source_model_ws"
 };
 my $gfTranslation = {
 	rxnsensitivity => "sensitivity_analysis",
@@ -68,6 +70,8 @@ my $fbaTranslation = {
 #Defining usage and options
 my $specs = [
     [ 'modelout|outputid:s', 'ID for output model in workspace' ],
+    [ 'sourcemdl=s', 'Source model to gapfill from' ],
+    [ 'sourcemdlws=s', 'Workspace of source model to gapfill from', { "default" => fbaws() }  ],
     [ 'intsol', 'Automatically integrate solution', { "default" => 0 } ],
     [ 'longgapfill', 'Run a longer gapfilling but with a potentially better solution' ],
     [ 'iterativegf|t', 'Gapfill all inactive reactions', { "default" => 0 } ],

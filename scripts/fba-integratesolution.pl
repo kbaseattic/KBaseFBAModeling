@@ -19,7 +19,6 @@ my $translation = {
 	workspace => "workspace",
 	rxnprobs => "rxnprobs",
 	rxnprobws =>  "rxnprobs_workspace"
-
 };
 #Defining usage and options
 my $specs = [
@@ -30,13 +29,13 @@ my $specs = [
     [ 'rxnprobs|r:s', 'ID for a rxnprobs object to use to assign GPRs to gapfilled reactions' ],
     [ 'rxnprobsws|x:s', 'Workspace for rxnprobs object', { "default" => fbaws() } ]
 ];
-my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation,undef,["list"]);
+my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation,undef,undef,["list"]);
 if (defined($opt->{list})) {
 	my $ws = fbaws();
 	if (defined($opt->{modelws})) {
 		$ws = $opt->{modelws};
 	}
-	(my $data,my $prov) = get_workspace_object($ws."/".$params->{model});
+	(my $data,my $prov) = get_workspace_object($ws."/".$ARGV[0]);
 	my $grefs;
 	my $gfs;
 	my $intgf = 0;
@@ -140,14 +139,15 @@ if (defined($opt->{list})) {
 }
 $params->{gapfillSolutions} = [];
 $params->{gapgenSolutions} = [];
-if (defined($opt->{gapfillsols})) {
-	foreach my $solutions (@{$opt->{gapfillsols}}) {
-		push(@{$params->{gapfillSolutions}},split(/;/,$solutions));
-	}
-}
-if (defined($opt->{gapgensols})) {
-	foreach my $solutions (@{$opt->{gapgensols}}) {
-		push(@{$params->{gapgenSolutions}},split(/;/,$solutions));
+if (defined($opt->{"ID of solutions to integrate (; delimiter)"})) {
+	my $array = [split(/;/,$opt->{"ID of solutions to integrate (; delimiter)"})];
+	foreach my $solution (@{$array}) {
+		print $solution."\n";
+		#if ($solution =~ m/\.gfsol\./) {
+			push(@{$params->{gapfillSolutions}},$solution);
+		#} else {
+		#	push(@{$params->{gapgenSolutions}},$solution);
+		#}
 	}
 }
 #Calling the server

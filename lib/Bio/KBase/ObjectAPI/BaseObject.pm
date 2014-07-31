@@ -624,11 +624,11 @@ sub getLinkedObject {
 	} elsif ($ref =~ m/^([A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12})\/(\w+)\/(\w+)\/([\w\.\|\-]+)$/) {
 		Bio::KBase::ObjectAPI::utilities::error("FAILED!");
 		return $self->store()->getObjectByUUID($1)->queryObject($2,{$3 => $4});
-	} elsif ($ref =~ m/^\w+\/[\w\.\|\-]+\/[\w\.\|\-]+$/) {
+	} elsif ($ref =~ m/^[:\w]+\/[\w\.\|\-]+\/[\w\.\|\-]+$/) {
     	return $self->store()->get_object($ref);
-    } elsif ($ref =~ m/^(\w+\/\w+\/\w+)\/(\w+)\/(\w+)\/([\w\.\|\-]+)$/) {
+    } elsif ($ref =~ m/^([:\w]+\/\w+\/\w+)\/(\w+)\/(\w+)\/([\w\.\|\-]+)$/) {
     	return $self->store()->get_object($1)->queryObject($2,{$3 => $4});
-    } elsif ($ref =~ m/^\w+\/[\w\.\|\-]+$/) {
+    } elsif ($ref =~ m/^[:\w]+\/[\w\.\|\-]+$/) {
     	return $self->store()->get_object($ref);
     }
     Bio::KBase::ObjectAPI::utilities::error("Unrecognized reference format:".$ref);

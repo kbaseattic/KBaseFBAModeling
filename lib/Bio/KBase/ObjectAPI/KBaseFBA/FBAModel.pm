@@ -1857,7 +1857,14 @@ sub integrateGapfillSolution {
 	for (my $i=0; $i < @{$rxns}; $i++) {
 		my $rxn = $rxns->[$i];
 		my $rxnid = $rxn->reaction()->id();
-		my $mdlrxn = $self->getObject("modelreactions",$rxn->reaction()->id()."_".$rxn->compartment()->id().$rxn->compartmentIndex());
+		my $mdlrxn;
+		my $ismdlrxn = 0;
+		if ($rxnid =~ m/.+_[a-zA-Z]\d+$/) {
+			$ismdlrxn = 1;
+			$mdlrxn = $self->getObject("modelreactions",$rxnid);
+		} else {
+			$mdlrxn = $self->getObject("modelreactions",$rxnid."_".$rxn->compartment()->id().$rxn->compartmentIndex());
+		}
 		if (defined($mdlrxn) && $rxn->direction() ne $mdlrxn->direction()) {
 			Bio::KBase::ObjectAPI::utilities::verbose(
 				"Making ".$mdlrxn->id()." reversible."
@@ -1868,13 +1875,36 @@ sub integrateGapfillSolution {
 			Bio::KBase::ObjectAPI::utilities::verbose(
 				"Adding ".$rxn->reaction()->id()."_".$rxn->compartment()->id().$rxn->compartmentIndex()." to model in ".$rxn->direction()." direction."
 			);
-			push(@{$IntegrationReport->{added}},$rxn->reaction()->id()."_".$rxn->compartment()->id().$rxn->compartmentIndex());
-			my $mdlcmp = $self->addCompartmentToModel({compartment => $rxn->compartment(),pH => 7,potential => 0,compartmentIndex => $rxn->compartmentIndex()});
-			my $mdlrxn = $self->addReactionToModel({
-				reaction => $rxn->reaction(),
-				direction => $rxn->direction(),
-				overrideCompartment => $mdlcmp
-			});
+			if ($ismdlrxn == 1) {
+				push(@{$IntegrationReport->{added}},$rxn->reaction()->id());
+				if (!defined($self->getObject("modelcompartments",$rxn->reaction()->modelcompartment()->id()))) {
+					$self->add("modelcompartments",$rxn->reaction()->modelcompartment()->cloneObject());
+				}
+				$mdlrxn = $self->add("modelreactions",$rxn->reaction()->cloneObject());
+				$mdlrxn->parent($rxn->reaction()->parent());
+				my $prots = $mdlrxn->modelReactionProteins();
+				for (my $m=0; $m < @{$prots}; $m++) {
+					$mdlrxn->remove("modelReactionProteins",$prots->[$m]);
+				}
+				my $rgts = $mdlrxn->modelReactionReagents();
+				for (my $m=0; $m < @{$rgts}; $m++) {
+					if (!defined($self->getObject("modelcompounds",$rgts->[$m]->modelcompound()->id()))) {
+						$self->add("modelcompounds",$rgts->[$m]->modelcompound()->cloneObject());		
+						if (!defined($self->getObject("modelcompartments",$rgts->[$m]->modelcompound()->modelcompartment()->id()))) {
+							$self->add("modelcompartments",$rgts->[$m]->modelcompound()->modelcompartment()->cloneObject());
+						}
+					}
+				}
+				$mdlrxn->parent($self);
+			} else {
+				push(@{$IntegrationReport->{added}},$rxn->reaction()->id()."_".$rxn->compartment()->id().$rxn->compartmentIndex());
+				my $mdlcmp = $self->addCompartmentToModel({compartment => $rxn->compartment(),pH => 7,potential => 0,compartmentIndex => $rxn->compartmentIndex()});
+				my $mdlrxn = $self->addReactionToModel({
+					reaction => $rxn->reaction(),
+					direction => $rxn->direction(),
+					overrideCompartment => $mdlcmp
+				});
+			}
 			# If RxnProbs object is defined, use it to assign GPRs to the integrated reactions.
 			if (defined($args->{rxnProbGpr}) && defined($args->{rxnProbGpr}->{$rxnid})) {
 			    $mdlrxn->loadGPRFromString($args->{rxnProbGpr}->{$rxnid});

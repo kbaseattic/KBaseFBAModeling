@@ -10295,6 +10295,7 @@ sub integrate_reconciliation_solutions
 		$rxnprobsGPRArray = $self->_buildRxnProbsGPRArray($rxnprobs);
     }
     foreach my $id (@{$input->{gapfillSolutions}}) {
+    	print "ID:".$id."\n";
     	if ($id =~ m/^(.+\.gf\.\d+)\./) {
     		my $gfid = $1;
 			$model->integrateGapfillSolution({
@@ -10310,6 +10311,7 @@ sub integrate_reconciliation_solutions
     			my $gfobj = $gfs->[$gf]->gapfill();
     			if (defined($gfobj->gapfillingSolutions()->[$sol])) {
     				my $solution = $gfobj->gapfillingSolutions()->[$sol];
+    				print "Solution:".$solution->id()."\n";
     				$model->integrateGapfillSolution({
 						gapfill=> $gfobj->id(),
 						solution => $solution->id(),
@@ -11177,7 +11179,9 @@ sub gapfill_model
 		totalTimeLimit => 18000,
 		completeGapfill => 0,
 		solver => undef,
-		fastgapfill => 0
+		fastgapfill => 0,
+		source_model => undef,
+		source_model_ws => $input->{workspace},
 	});
 	$input->{formulation}->{target_reactions} = $input->{target_reactions};
 	$input->{formulation}->{timePerSolution} = $input->{timePerSolution};
@@ -11197,6 +11201,9 @@ sub gapfill_model
 	my ($gapfill,$fba) = $self->_buildGapfillObject($input->{formulation},$model,$input->{gfid});
 	if (defined($input->{solver})) {
     	$fba->parameters()->{MFASolver} = uc($input->{solver});
+    }
+    if (defined($input->{source_model})) {
+    	$fba->parameters()->{"gapfilling source model"} = $input->{source_model_ws}."/".$input->{source_model};
     }
     if (defined($input->{fastgapfill})) {
     	$fba->parameters()->{"Fast gap filling"} = $input->{fastgapfill};
