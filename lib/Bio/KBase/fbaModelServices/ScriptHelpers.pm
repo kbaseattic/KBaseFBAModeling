@@ -156,7 +156,11 @@ sub getToken {
 }
 
 sub fbaws {
-	return Bio::KBase::workspace::ScriptHelpers::workspace();
+	my $ws;
+	eval {
+		Bio::KBase::workspace::ScriptHelpers::workspace();
+	};
+	return $ws;
 }
 
 sub oldwsurl {
