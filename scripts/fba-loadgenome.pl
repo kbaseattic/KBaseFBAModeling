@@ -24,7 +24,7 @@ my $translation = {
 };
 #Defining usage and options
 my $specs = [
-	[ 'outputid|o', 'Output ID for loaded genome' ],
+	[ 'outputid|o=s', 'Output ID for loaded genome' ],
 	[ 'fromfile|f', 'Load genome object from file', {"default" => 0} ],
 	[ 'seed|s', 'Load genome from SEED', {"default" => 0} ],
 	[ 'rast|r', 'Load genome from RAST', {"default" => 0} ],
