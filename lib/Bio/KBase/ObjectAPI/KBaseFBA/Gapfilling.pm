@@ -530,13 +530,16 @@ sub createSolutionsFromArray {
 					my $rxn = $mdl->template()->biochemistry()->queryObject("reactions",{id => $rxnid});
 					my $mdlrxn = 0;
 					if (!defined($rxn)) {
-						if (defined($gfm)) {
-							$rxn = $gfm->queryObject("modelreactions",{id => $rxnid."_".$comp.$index});
-							$mdlrxn = 1;
+						$rxn = $mdl->queryObject("modelreactions",{id => $rxnid."_".$comp.$index});
+						if (!defined($rxn)) {
+							if (defined($gfm)) {
+								$rxn = $gfm->queryObject("modelreactions",{id => $rxnid."_".$comp.$index});
+								$mdlrxn = 1;
+							}
+						    if (!defined($rxn)) {
+								Bio::KBase::ObjectAPI::utilities::ERROR("Could not find gapfilled reaction ".$rxnid."!");
+						    }
 						}
-					    if (!defined($rxn)) {
-							Bio::KBase::ObjectAPI::utilities::ERROR("Could not find gapfilled reaction ".$rxnid."!");
-					    }
 					}
 					my $cmp = $mdl->template()->biochemistry()->queryObject("compartments",{id => $comp});
 					if (!defined($cmp)) {

@@ -759,7 +759,7 @@ sub LoadExternalReactionEquation {
 	    		}
 	    		my $cmp = $bio->searchForCompartment($compartment);
 	    		if (!defined($cmp)) {
-	    			Bio::KBase::ObjectAPI::utilities::error("Unrecognized compartment in equation:".$cmp."!");
+	    			Bio::KBase::ObjectAPI::utilities::error("Unrecognized compartment in equation:".$compartment."!");
 	    		}
 	    		my $mdlcmp = $self->getObject("modelcompartments",$compartment.$index);
 	    		if (!defined($mdlcmp)) {

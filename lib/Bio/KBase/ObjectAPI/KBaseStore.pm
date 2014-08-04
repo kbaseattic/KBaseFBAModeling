@@ -102,6 +102,11 @@ sub get_objects {
 		my $objids = [];
 		for (my $i=0; $i < @{$newrefs}; $i++) {
 			my $array = [split(/\//,$newrefs->[$i])];
+			if ($array->[0] eq "489" || $array->[0] eq "kbase") {
+				if ($array->[1] eq "6" || $array->[1] eq "default") {
+					delete $array->[2];	
+				}
+			}
 			my $objid = {};
 			if (@{$array} < 2) {
 				Bio::KBase::ObjectAPI::utilities->error("Invalid reference:".$newrefs->[$i]);

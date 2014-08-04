@@ -158,7 +158,7 @@ sub getToken {
 sub fbaws {
 	my $ws;
 	eval {
-		Bio::KBase::workspace::ScriptHelpers::workspace();
+		$ws = Bio::KBase::workspace::ScriptHelpers::workspace();
 	};
 	return $ws;
 }

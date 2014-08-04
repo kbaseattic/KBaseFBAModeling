@@ -7511,6 +7511,9 @@ sub import_fbamodel
     if (!defined($input->{model})) {
     	$input->{model} = $kbid;
     }
+    if (ref($input->{biomass}) ne 'ARRAY') {
+    	$input->{biomass} = [$input->{biomass}];
+    }
     my $model = Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->new({
 		id => $kbid,
 		source => $input->{source},
@@ -7581,33 +7584,37 @@ sub import_fbamodel
     			}
     		}
     		$rxn->[8] = $eqn;
-    		if ($rxn->[0] eq $input->{biomass}) {
-    			$input->{biomass} = $eqn;
-    			splice(@{$input->{reactions}},$i,1);
-    			$i--;
+    		for (my $i=0; $i < @{$input->{biomass}}; $i++) {
+	    		if ($rxn->[0] eq $input->{biomass}->[$i]) {
+	    			$input->{biomass}->[$i] = $eqn;
+	    			splice(@{$input->{reactions}},$i,1);
+	    			$i--;
+	    		}
     		}
     	}
     }
-    my $eqn = "| ".$input->{biomass}." |";
-    foreach my $cpd (keys(%{$translation})) {
-    	if (index($input->{biomass},$cpd) >= 0 && $cpd ne $translation->{$cpd}) {
-    		my $origcpd = $cpd;
-    		$cpd =~ s/\+/\\+/g;
-    		$cpd =~ s/\(/\\(/g;
-    		$cpd =~ s/\)/\\)/g;
-    		my $array = [split(/\s$cpd\s/,$eqn)];
-    		$eqn = join(" ".$translation->{$origcpd}." ",@{$array});
-    		$array = [split(/\s$cpd\[/,$eqn)];
-    		$eqn = join(" ".$translation->{$origcpd}."[",@{$array});
-    	}
+    for (my $i=0; $i < @{$input->{biomass}}; $i++) {
+	    my $eqn = "| ".$input->{biomass}->[$i]." |";
+	    foreach my $cpd (keys(%{$translation})) {
+	    	if (index($input->{biomass}->[$i],$cpd) >= 0 && $cpd ne $translation->{$cpd}) {
+	    		my $origcpd = $cpd;
+	    		$cpd =~ s/\+/\\+/g;
+	    		$cpd =~ s/\(/\\(/g;
+	    		$cpd =~ s/\)/\\)/g;
+	    		my $array = [split(/\s$cpd\s/,$eqn)];
+	    		$eqn = join(" ".$translation->{$origcpd}." ",@{$array});
+	    		$array = [split(/\s$cpd\[/,$eqn)];
+	    		$eqn = join(" ".$translation->{$origcpd}."[",@{$array});
+	    	}
+	    }
+	    $eqn =~ s/^\|\s//;
+	    $eqn =~ s/\s\|$//;
+	    while ($eqn =~ m/\[([A-Z])\]/) {
+	    	my $reqplace = "[".lc($1)."]";
+	    	$eqn =~ s/\[[A-Z]\]/$reqplace/;
+	    }
+	    $input->{biomass}->[$i] = $eqn;
     }
-    $eqn =~ s/^\|\s//;
-    $eqn =~ s/\s\|$//;
-    while ($eqn =~ m/\[([A-Z])\]/) {
-    	my $reqplace = "[".lc($1)."]";
-    	$eqn =~ s/\[[A-Z]\]/$reqplace/;
-    }
-    $input->{biomass} = $eqn;
     #Loading reactions to model
 	my $missingGenes = {};
 	my $missingCompounds = {};
@@ -7670,14 +7677,16 @@ sub import_fbamodel
 			$model->remove("modelreactions",$rxn);
 		}	
 	}
-	print "Biomass:".$input->{biomass}."\n";
-	my $report = $model->adjustBiomassReaction({
-		biomass => "bio1",
-		equation => $input->{biomass},
-		compartment => "c",
-		compartmentIndex => 0,
-	    compounds => $compoundhash
-	});
+	for (my $i=0; $i < @{$input->{biomass}}; $i++) {
+		print "Biomass:".$input->{biomass}->[$i]."\n";
+		my $report = $model->adjustBiomassReaction({
+			biomass => "bio".($i+1),
+			equation => $input->{biomass}->[$i],
+			compartment => "c",
+			compartmentIndex => 0,
+		    compounds => $compoundhash
+		});
+	}
 	my $msg = "";
 	#if (keys(%{$missingReactions}) > 0) {
 	#	$msg .= "Missing reactions:".join(";",keys(%{$missingReactions}))."\n";
