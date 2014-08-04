@@ -619,7 +619,7 @@ sub addModelReaction {
     #Fetching or adding model compartment
     my $mdlcmp = $self->addCompartmentToModel({compartment => $cmp,pH => 7,potential => 0,compartmentIndex => $args->{compartmentIndex}});
 	#Finding reaction reference
-	my $reference = "~/reactions/id/rxn00000";
+	my $reference = $bio->_reference()."/reactions/id/rxn00000";
 	my $coefhash = {};
 	if ($rootid =~ m/^rxn\d+$/) {
 		my $rxnobj = $bio->searchForReaction($rootid);
@@ -694,6 +694,7 @@ sub LoadExternalReactionEquation {
 	$args->{equation} =~ s/\s*\<*[-=]+\>\s*/ = /g;
 	$args->{equation} =~ s/\s*\<[-=]+\s*/ = /g;
     $args->{equation} =~ s/\s*\+\s*/ + /g;
+    print "Equation:".$args->{equation}."\n";
     my $array = [];
     if ($args->{equation} =~ m/^(.*)\s=\s(.*)$/) {
     	$array->[0] = $1;
@@ -716,7 +717,7 @@ sub LoadExternalReactionEquation {
 	    			$compartment = $args->{reaction}->modelcompartment()->compartment()->id();
 	    		}
 	    		my $index = 0;
-	    		if ($cpd =~ m/^\(*(\d+\.*\d*E*-*\d*)\)*\s+(.+)/) {
+	    		if ($cpd =~ m/^\(*(\d+\.*\d*[eE]*-*\d*)\)*\s+(.+)/) {
 	    			$coef = $1;
 	    			$cpd = $2;
 	    		}

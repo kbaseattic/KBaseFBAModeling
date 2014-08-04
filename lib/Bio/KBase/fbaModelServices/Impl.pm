@@ -7512,7 +7512,7 @@ sub import_fbamodel
     	$input->{model} = $kbid;
     }
     if (ref($input->{biomass}) ne 'ARRAY') {
-    	$input->{biomass} = [$input->{biomass}];
+    	$input->{biomass} = [split(/;/,$input->{biomass})];
     }
     my $model = Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->new({
 		id => $kbid,
@@ -7584,9 +7584,9 @@ sub import_fbamodel
     			}
     		}
     		$rxn->[8] = $eqn;
-    		for (my $i=0; $i < @{$input->{biomass}}; $i++) {
-	    		if ($rxn->[0] eq $input->{biomass}->[$i]) {
-	    			$input->{biomass}->[$i] = $eqn;
+    		for (my $j=0; $j < @{$input->{biomass}}; $j++) {
+	    		if ($rxn->[0] eq $input->{biomass}->[$j]) {
+	    			$input->{biomass}->[$j] = $eqn;
 	    			splice(@{$input->{reactions}},$i,1);
 	    			$i--;
 	    		}
