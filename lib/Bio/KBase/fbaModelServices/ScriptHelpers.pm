@@ -12,7 +12,7 @@ use Bio::KBase::fbaModelServices::ClientConfig;
 use Bio::KBase::workspace::ScriptHelpers qw(workspaceURL get_ws_client workspace parseObjectMeta parseWorkspaceMeta);
 use Exporter;
 use parent qw(Exporter);
-our @EXPORT_OK = qw(load_file load_table parse_input_table get_workspace_object parse_arguments getToken get_old_ws_client fbaws printJobData fbaURL get_fba_client runFBACommand universalFBAScriptCode fbaTranslation roles_of_function );
+our @EXPORT_OK = qw(save_workspace_object load_file load_table parse_input_table get_workspace_object parse_arguments getToken get_old_ws_client fbaws printJobData fbaURL get_fba_client runFBACommand universalFBAScriptCode fbaTranslation roles_of_function );
 
 =head3 load_file
 Definition:
@@ -122,6 +122,36 @@ sub parse_input_table {
 	return $objects;
 }
 
+sub save_workspace_object {
+	my $ref = shift;
+	my $data = shift;
+	my $type = shift;
+	my $array = [split(/\//,$ref)];
+	my $object = {
+		type => $type,
+		data => $data,
+		provenance => [],
+	};
+	if ($array->[1] =~ m/^\d+$/) {
+		$object->{objid} = $array->[1];
+	} else {
+		$object->{name} = $array->[1];
+	}
+	if (defined($array->[2])) {
+		$object->{ver} = $array->[2];
+	}
+	my $input = {
+    	objects => [$object], 	
+    };
+    if ($array->[0]  =~ m/^\d+$/) {
+    	$input->{id} = $array->[0];
+    } else {
+    	$input->{workspace} = $array->[0];
+    }
+    my $ws = get_ws_client();
+    return $ws->save_objects($input);
+}
+
 sub get_workspace_object {
 	my $ref = shift;
 	my $array = [split(/\//,$ref)];
@@ -156,7 +186,11 @@ sub getToken {
 }
 
 sub fbaws {
-	return Bio::KBase::workspace::ScriptHelpers::workspace();
+	my $ws;
+	eval {
+		$ws = Bio::KBase::workspace::ScriptHelpers::workspace();
+	};
+	return $ws;
 }
 
 sub oldwsurl {

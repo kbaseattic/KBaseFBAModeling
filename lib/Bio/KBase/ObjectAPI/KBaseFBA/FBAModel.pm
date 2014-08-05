@@ -637,7 +637,7 @@ sub addModelReaction {
     #Fetching or adding model compartment
     my $mdlcmp = $self->addCompartmentToModel({compartment => $cmp,pH => 7,potential => 0,compartmentIndex => $args->{compartmentIndex}});
 	#Finding reaction reference
-	my $reference = "~/reactions/id/rxn00000";
+	my $reference = $bio->_reference()."/reactions/id/rxn00000";
 	my $coefhash = {};
 	if ($rootid =~ m/^rxn\d+$/) {
 		my $rxnobj = $bio->searchForReaction($rootid);
@@ -712,6 +712,7 @@ sub LoadExternalReactionEquation {
 	$args->{equation} =~ s/\s*\<*[-=]+\>\s*/ = /g;
 	$args->{equation} =~ s/\s*\<[-=]+\s*/ = /g;
     $args->{equation} =~ s/\s*\+\s*/ + /g;
+    print "Equation:".$args->{equation}."\n";
     my $array = [];
     if ($args->{equation} =~ m/^(.*)\s=\s(.*)$/) {
     	$array->[0] = $1;
@@ -734,7 +735,7 @@ sub LoadExternalReactionEquation {
 	    			$compartment = $args->{reaction}->modelcompartment()->compartment()->id();
 	    		}
 	    		my $index = 0;
-	    		if ($cpd =~ m/^\(*(\d+\.*\d*E*-*\d*)\)*\s+(.+)/) {
+	    		if ($cpd =~ m/^\(*(\d+\.*\d*[eE]*-*\d*)\)*\s+(.+)/) {
 	    			$coef = $1;
 	    			$cpd = $2;
 	    		}
@@ -777,7 +778,7 @@ sub LoadExternalReactionEquation {
 	    		}
 	    		my $cmp = $bio->searchForCompartment($compartment);
 	    		if (!defined($cmp)) {
-	    			Bio::KBase::ObjectAPI::utilities::error("Unrecognized compartment in equation:".$cmp."!");
+	    			Bio::KBase::ObjectAPI::utilities::error("Unrecognized compartment in equation:".$compartment."!");
 	    		}
 	    		my $mdlcmp = $self->getObject("modelcompartments",$compartment.$index);
 	    		if (!defined($mdlcmp)) {
@@ -1875,7 +1876,14 @@ sub integrateGapfillSolution {
 	for (my $i=0; $i < @{$rxns}; $i++) {
 		my $rxn = $rxns->[$i];
 		my $rxnid = $rxn->reaction()->id();
-		my $mdlrxn = $self->getObject("modelreactions",$rxn->reaction()->id()."_".$rxn->compartment()->id().$rxn->compartmentIndex());
+		my $mdlrxn;
+		my $ismdlrxn = 0;
+		if ($rxnid =~ m/.+_[a-zA-Z]\d+$/) {
+			$ismdlrxn = 1;
+			$mdlrxn = $self->getObject("modelreactions",$rxnid);
+		} else {
+			$mdlrxn = $self->getObject("modelreactions",$rxnid."_".$rxn->compartment()->id().$rxn->compartmentIndex());
+		}
 		if (defined($mdlrxn) && $rxn->direction() ne $mdlrxn->direction()) {
 			Bio::KBase::ObjectAPI::utilities::verbose(
 				"Making ".$mdlrxn->id()." reversible."
@@ -1886,13 +1894,36 @@ sub integrateGapfillSolution {
 			Bio::KBase::ObjectAPI::utilities::verbose(
 				"Adding ".$rxn->reaction()->id()."_".$rxn->compartment()->id().$rxn->compartmentIndex()." to model in ".$rxn->direction()." direction."
 			);
-			push(@{$IntegrationReport->{added}},$rxn->reaction()->id()."_".$rxn->compartment()->id().$rxn->compartmentIndex());
-			my $mdlcmp = $self->addCompartmentToModel({compartment => $rxn->compartment(),pH => 7,potential => 0,compartmentIndex => $rxn->compartmentIndex()});
-			my $mdlrxn = $self->addReactionToModel({
-				reaction => $rxn->reaction(),
-				direction => $rxn->direction(),
-				overrideCompartment => $mdlcmp
-			});
+			if ($ismdlrxn == 1) {
+				push(@{$IntegrationReport->{added}},$rxn->reaction()->id());
+				if (!defined($self->getObject("modelcompartments",$rxn->reaction()->modelcompartment()->id()))) {
+					$self->add("modelcompartments",$rxn->reaction()->modelcompartment()->cloneObject());
+				}
+				$mdlrxn = $self->add("modelreactions",$rxn->reaction()->cloneObject());
+				$mdlrxn->parent($rxn->reaction()->parent());
+				my $prots = $mdlrxn->modelReactionProteins();
+				for (my $m=0; $m < @{$prots}; $m++) {
+					$mdlrxn->remove("modelReactionProteins",$prots->[$m]);
+				}
+				my $rgts = $mdlrxn->modelReactionReagents();
+				for (my $m=0; $m < @{$rgts}; $m++) {
+					if (!defined($self->getObject("modelcompounds",$rgts->[$m]->modelcompound()->id()))) {
+						$self->add("modelcompounds",$rgts->[$m]->modelcompound()->cloneObject());		
+						if (!defined($self->getObject("modelcompartments",$rgts->[$m]->modelcompound()->modelcompartment()->id()))) {
+							$self->add("modelcompartments",$rgts->[$m]->modelcompound()->modelcompartment()->cloneObject());
+						}
+					}
+				}
+				$mdlrxn->parent($self);
+			} else {
+				push(@{$IntegrationReport->{added}},$rxn->reaction()->id()."_".$rxn->compartment()->id().$rxn->compartmentIndex());
+				my $mdlcmp = $self->addCompartmentToModel({compartment => $rxn->compartment(),pH => 7,potential => 0,compartmentIndex => $rxn->compartmentIndex()});
+				my $mdlrxn = $self->addReactionToModel({
+					reaction => $rxn->reaction(),
+					direction => $rxn->direction(),
+					overrideCompartment => $mdlcmp
+				});
+			}
 			# If RxnProbs object is defined, use it to assign GPRs to the integrated reactions.
 			if (defined($args->{rxnProbGpr}) && defined($args->{rxnProbGpr}->{$rxnid})) {
 			    $mdlrxn->loadGPRFromString($args->{rxnProbGpr}->{$rxnid});
@@ -2877,8 +2908,33 @@ Description:
 =cut
 sub translate_model {
 	my $self = shift;
-	my $protcomp = shift;
-	my $genome = $self->genome();	
+	my $args = Bio::KBase::ObjectAPI::utilities::args(["proteome_comparison"], {
+		keep_nogene_rxn => 1
+	}, @_);
+	my $protcomp = $args->{proteome_comparison};
+	my $genome = $self->genome();
+	my $ftrs = $genome->features();
+	my $numftrs = @{$ftrs};
+	my $ftrhash;
+	for (my $i=0; $i < @{$ftrs}; $i++) {
+		$ftrhash->{$ftrs->[$i]->id()} = 1;
+	}
+	my $onewgenome = $self->getLinkedObject($protcomp->genome1ref());
+	$ftrs = $onewgenome->features();
+	my $matchcount = 0;
+	for (my $i=0; $i < @{$ftrs}; $i++) {
+		if (defined($ftrhash->{$ftrs->[$i]->id()})) {
+			$matchcount++;
+		}
+	}
+	my $newgenome = $self->getLinkedObject($protcomp->genome2ref());
+	$ftrs = $newgenome->features();
+	my $omatchcount = 0;
+	for (my $i=0; $i < @{$ftrs}; $i++) {
+		if (defined($ftrhash->{$ftrs->[$i]->id()})) {
+			$omatchcount++;
+		}
+	}
 	my $ref = $protcomp->genome2ref();
 	my $map = $protcomp->proteome1map();
 	my $list = $protcomp->proteome1names();
@@ -2886,7 +2942,9 @@ sub translate_model {
 	my $omap = $protcomp->proteome2map();
 	my $olist = $protcomp->proteome2names();
 	my $odata = $protcomp->data2();
-	if ($genome->_reference() eq $protcomp->genome2ref()) {
+	if ($omatchcount >  $matchcount) {
+		$newgenome = $onewgenome;
+		$matchcount = $omatchcount;
 		$ref = $protcomp->genome1ref();
 		$map = $protcomp->proteome2map();
 		$list = $protcomp->proteome2names();
@@ -2895,12 +2953,15 @@ sub translate_model {
 		$olist = $protcomp->proteome1names();
 		$odata = $protcomp->data1();
 	}
-	my $newgenome = $self->store()->get_object($ref);
+	print "Match fraction:".$matchcount/$numftrs."\n";
+	if ($matchcount/$numftrs < 0.8) {
+		Bio::KBase::ObjectAPI::utilities::error("Proteome comparison does not involve genome used in model!");
+	}
 	my $translate;
 	for(my $i=0; $i < @{$data}; $i++) {
 		for (my $j=0; $j < @{$data->[$i]}; $j++) {
 			if ($data->[$i]->[$j]->[2] == 100) {
-				$translate->{$list->[$i]} = $olist->[$data->[$i]->[$j]->[0]];
+				push(@{$translate->{$list->[$i]}},$olist->[$data->[$i]->[$j]->[0]]);
 			}
 		}
 	}
@@ -2908,6 +2969,8 @@ sub translate_model {
 	for (my $i=0; $i < @{$reactions}; $i++) {
 		my $rxn = $reactions->[$i];
 		my $prots = $rxn->modelReactionProteins();
+		my $keeprxn = 0;
+		my $rxnftrs = 0;
 		for (my $j=0; $j < @{$prots}; $j++) {
 			my $sus = $prots->[$j]->modelReactionProteinSubunits();
 			my $keep = 0;
@@ -2915,13 +2978,18 @@ sub translate_model {
 				my $ftrs = $sus->[$k]->features();
 				my $newftrs = [];
 				for (my $m=0; $m < @{$ftrs}; $m++) {
+					$rxnftrs = 1;
 					if (defined($translate->{$ftrs->[$m]->id()})) {
-						my $newftr = $newgenome->getObject("features",$translate->{$ftrs->[$m]->id()});
-						push(@{$newftrs},$newftr->_reference());
+						foreach my $gene (@{$translate->{$ftrs->[$m]->id()}}) {
+							my $newftr = $newgenome->getObject("features",$gene);
+							push(@{$newftrs},$newftr->_reference());
+						}
 					}
 				}
 				if (@{$newftrs} > 0) {
+					print "Features found!!\n";
 					$keep = 1;
+					$keeprxn = 1;
 				}
 				$sus->[$k]->feature_refs($newftrs);
 			}
@@ -2929,8 +2997,10 @@ sub translate_model {
 				$rxn->removeLinkArrayItem("modelReactionProteins",$prots->[$j]);
 			}
 		}
-		if (@{$rxn->modelReactionProteins()} == 0) {
-			$self->remove("modelreactions",$rxn);
+		if (@{$rxn->modelReactionProteins()} == 0 || $keeprxn == 0) {
+			if ($rxnftrs == 1 || $args->{keep_nogene_rxn} == 0) {
+				$self->remove("modelreactions",$rxn);
+			}
 		}
 	}
 	$self->genome_ref($ref);

@@ -1075,7 +1075,7 @@ sub _validateargs {
 		}
 		foreach my $ws (keys(%{$wshash})) {
 			if ($wshash->{$ws} == 0) {
-				$self->_error("Job specifies a workspace that does not exist or that user has no access to:".$ws);
+				#$self->_error("Job specifies a workspace that does not exist or that user (".$self->_getUsername().") has no access to:".$ws);
 			}
 		}
 	}
@@ -5821,8 +5821,12 @@ sub genome_object_to_workspace
 			if (defined($ftr->{dna_sequence})) {
 				$ftr->{dna_sequence_length} = length($ftr->{dna_sequence});
 			}
+			delete $ftr->{feature_creation_event};
 		}
 	}
+	delete $genome->{contigs};
+	delete $genome->{feature_creation_event};
+	delete $genome->{analysis_events};
 	my $GenomeObj = Bio::KBase::ObjectAPI::KBaseGenomes::Genome->new($genome);
 	$GenomeObj->features();
 	$genomeMeta = $self->_save_msobject($GenomeObj,"Genome",$input->{workspace},$input->{uid});
@@ -6649,11 +6653,15 @@ sub translate_fbamodel
     $input = $self->_validateargs($input,["protcomp","model","workspace"],{
     	protcomp_workspace => $input->{workspace},
     	model_workspace => $input->{workspace},
-    	output_id => "Translated_".$input->{model}
+    	output_id => "Translated_".$input->{model},
+    	keep_nogene_rxn => 1
     });
     my $model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model});
     my $protcomp = $self->_get_msobject("ProteomeComparison",$input->{protcomp_workspace},$input->{protcomp});
-	my $report = $model->translate_model($protcomp);
+	my $report = $model->translate_model({
+		proteome_comparison => $protcomp,
+		keep_nogene_rxn => $input->{keep_nogene_rxn}
+	});
 	$modelMeta = $self->_save_msobject($model,"",$input->{workspace},$input->{output_id},{meta => $report});
     #END translate_fbamodel
     my @_bad_returns;
@@ -7503,6 +7511,9 @@ sub import_fbamodel
     if (!defined($input->{model})) {
     	$input->{model} = $kbid;
     }
+    if (ref($input->{biomass}) ne 'ARRAY') {
+    	$input->{biomass} = [split(/;/,$input->{biomass})];
+    }
     my $model = Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->new({
 		id => $kbid,
 		source => $input->{source},
@@ -7573,33 +7584,37 @@ sub import_fbamodel
     			}
     		}
     		$rxn->[8] = $eqn;
-    		if ($rxn->[0] eq $input->{biomass}) {
-    			$input->{biomass} = $eqn;
-    			splice(@{$input->{reactions}},$i,1);
-    			$i--;
+    		for (my $j=0; $j < @{$input->{biomass}}; $j++) {
+	    		if ($rxn->[0] eq $input->{biomass}->[$j]) {
+	    			$input->{biomass}->[$j] = $eqn;
+	    			splice(@{$input->{reactions}},$i,1);
+	    			$i--;
+	    		}
     		}
     	}
     }
-    my $eqn = "| ".$input->{biomass}." |";
-    foreach my $cpd (keys(%{$translation})) {
-    	if (index($input->{biomass},$cpd) >= 0 && $cpd ne $translation->{$cpd}) {
-    		my $origcpd = $cpd;
-    		$cpd =~ s/\+/\\+/g;
-    		$cpd =~ s/\(/\\(/g;
-    		$cpd =~ s/\)/\\)/g;
-    		my $array = [split(/\s$cpd\s/,$eqn)];
-    		$eqn = join(" ".$translation->{$origcpd}." ",@{$array});
-    		$array = [split(/\s$cpd\[/,$eqn)];
-    		$eqn = join(" ".$translation->{$origcpd}."[",@{$array});
-    	}
+    for (my $i=0; $i < @{$input->{biomass}}; $i++) {
+	    my $eqn = "| ".$input->{biomass}->[$i]." |";
+	    foreach my $cpd (keys(%{$translation})) {
+	    	if (index($input->{biomass}->[$i],$cpd) >= 0 && $cpd ne $translation->{$cpd}) {
+	    		my $origcpd = $cpd;
+	    		$cpd =~ s/\+/\\+/g;
+	    		$cpd =~ s/\(/\\(/g;
+	    		$cpd =~ s/\)/\\)/g;
+	    		my $array = [split(/\s$cpd\s/,$eqn)];
+	    		$eqn = join(" ".$translation->{$origcpd}." ",@{$array});
+	    		$array = [split(/\s$cpd\[/,$eqn)];
+	    		$eqn = join(" ".$translation->{$origcpd}."[",@{$array});
+	    	}
+	    }
+	    $eqn =~ s/^\|\s//;
+	    $eqn =~ s/\s\|$//;
+	    while ($eqn =~ m/\[([A-Z])\]/) {
+	    	my $reqplace = "[".lc($1)."]";
+	    	$eqn =~ s/\[[A-Z]\]/$reqplace/;
+	    }
+	    $input->{biomass}->[$i] = $eqn;
     }
-    $eqn =~ s/^\|\s//;
-    $eqn =~ s/\s\|$//;
-    while ($eqn =~ m/\[([A-Z])\]/) {
-    	my $reqplace = "[".lc($1)."]";
-    	$eqn =~ s/\[[A-Z]\]/$reqplace/;
-    }
-    $input->{biomass} = $eqn;
     #Loading reactions to model
 	my $missingGenes = {};
 	my $missingCompounds = {};
@@ -7662,14 +7677,16 @@ sub import_fbamodel
 			$model->remove("modelreactions",$rxn);
 		}	
 	}
-	print "Biomass:".$input->{biomass}."\n";
-	my $report = $model->adjustBiomassReaction({
-		biomass => "bio1",
-		equation => $input->{biomass},
-		compartment => "c",
-		compartmentIndex => 0,
-	    compounds => $compoundhash
-	});
+	for (my $i=0; $i < @{$input->{biomass}}; $i++) {
+		print "Biomass:".$input->{biomass}->[$i]."\n";
+		my $report = $model->adjustBiomassReaction({
+			biomass => "bio".($i+1),
+			equation => $input->{biomass}->[$i],
+			compartment => "c",
+			compartmentIndex => 0,
+		    compounds => $compoundhash
+		});
+	}
 	my $msg = "";
 	#if (keys(%{$missingReactions}) > 0) {
 	#	$msg .= "Missing reactions:".join(";",keys(%{$missingReactions}))."\n";
@@ -10291,6 +10308,7 @@ sub integrate_reconciliation_solutions
 		$rxnprobsGPRArray = $self->_buildRxnProbsGPRArray($rxnprobs);
     }
     foreach my $id (@{$input->{gapfillSolutions}}) {
+    	print "ID:".$id."\n";
     	if ($id =~ m/^(.+\.gf\.\d+)\./) {
     		my $gfid = $1;
 			$model->integrateGapfillSolution({
@@ -10306,6 +10324,7 @@ sub integrate_reconciliation_solutions
     			my $gfobj = $gfs->[$gf]->gapfill();
     			if (defined($gfobj->gapfillingSolutions()->[$sol])) {
     				my $solution = $gfobj->gapfillingSolutions()->[$sol];
+    				print "Solution:".$solution->id()."\n";
     				$model->integrateGapfillSolution({
 						gapfill=> $gfobj->id(),
 						solution => $solution->id(),
@@ -11173,7 +11192,9 @@ sub gapfill_model
 		totalTimeLimit => 18000,
 		completeGapfill => 0,
 		solver => undef,
-		fastgapfill => 0
+		fastgapfill => 0,
+		source_model => undef,
+		source_model_ws => $input->{workspace},
 	});
 	$input->{formulation}->{target_reactions} = $input->{target_reactions};
 	$input->{formulation}->{timePerSolution} = $input->{timePerSolution};
@@ -11193,6 +11214,9 @@ sub gapfill_model
 	my ($gapfill,$fba) = $self->_buildGapfillObject($input->{formulation},$model,$input->{gfid});
 	if (defined($input->{solver})) {
     	$fba->parameters()->{MFASolver} = uc($input->{solver});
+    }
+    if (defined($input->{source_model})) {
+    	$fba->parameters()->{"gapfilling source model"} = $input->{source_model_ws}."/".$input->{source_model};
     }
     if (defined($input->{fastgapfill})) {
     	$fba->parameters()->{"Fast gap filling"} = $input->{fastgapfill};

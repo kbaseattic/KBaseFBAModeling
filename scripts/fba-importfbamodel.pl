@@ -17,7 +17,7 @@ my $translation = {
 	genomews => "genome_workspace",
 	"Biomass equation" => "biomass",
 	modelid => "model",
-	outputid => "model".
+	outputid => "model",
 	workspace => "workspace",
 	ignoreerrors => "ignore_errors",
 };
@@ -221,6 +221,7 @@ if (defined($opt->{sbml}) && $opt->{sbml} == 1) {
 		}
 	}
 }
+$params->{biomass} = [split(/;/,$params->{biomass})];
 #Calling the server
 my $output = runFBACommand($params,$servercommand,$opt);
 #Checking output and report results

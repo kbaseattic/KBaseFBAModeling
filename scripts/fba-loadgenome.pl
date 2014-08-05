@@ -20,9 +20,11 @@ my $translation = {
 	password => "sourcePassword",
 	mappingws => "mapping_workspace",
 	mapping => "mapping",
+	outputid => "uid"
 };
 #Defining usage and options
 my $specs = [
+	[ 'outputid|o=s', 'Output ID for loaded genome' ],
 	[ 'fromfile|f', 'Load genome object from file', {"default" => 0} ],
 	[ 'seed|s', 'Load genome from SEED', {"default" => 0} ],
 	[ 'rast|r', 'Load genome from RAST', {"default" => 0} ],

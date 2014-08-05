@@ -459,6 +459,11 @@ sub createSolutionsFromArray {
     my $args = Bio::KBase::ObjectAPI::utilities::args(["data"], { model => $self->fbamodel(),subopt => 0 }, @_ );
 	my $data = $args->{data};
 	my $mdl = $args->{model};
+	my $fba = $self->fba();
+	my $gfm;
+	if (defined($fba->parameters()->{"gapfilling source model"})) {
+		$gfm = $self->getLinkedObject($fba->parameters()->{"gapfilling source model"});
+	}
 	my $bio = $mdl->template()->biochemistry();
 	my $line;
     my $has_unneeded = 0;
@@ -527,11 +532,21 @@ sub createSolutionsFromArray {
 						$index = $3;
 					}
 					my $rxn = $mdl->template()->biochemistry()->queryObject("reactions",{id => $rxnid});
+					my $mdlrxn = 0;
 					if (!defined($rxn)) {
-					    Bio::KBase::ObjectAPI::utilities::ERROR("Could not find gapfilled reaction ".$rxnid."!");
+						$rxn = $mdl->queryObject("modelreactions",{id => $rxnid."_".$comp.$index});
+						if (!defined($rxn)) {
+							if (defined($gfm)) {
+								$rxn = $gfm->queryObject("modelreactions",{id => $rxnid."_".$comp.$index});
+								$mdlrxn = 1;
+							}
+						    if (!defined($rxn)) {
+								Bio::KBase::ObjectAPI::utilities::ERROR("Could not find gapfilled reaction ".$rxnid."!");
+						    }
+						}
 					}
 					my $cmp = $mdl->template()->biochemistry()->queryObject("compartments",{id => $comp});
-					if (!defined($rxn)) {
+					if (!defined($cmp)) {
 					    Bio::KBase::ObjectAPI::utilities::ERROR("Could not find gapfilled reaction compartment ".$comp."!");
 					}
 					if (defined($rxnHash->{$rxn->_reference()}->{$cmp->_reference()}->{$index}) && $rxnHash->{$rxn->_reference()}->{$cmp->_reference()}->{$index} ne $sign) {

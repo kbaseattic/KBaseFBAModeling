@@ -598,6 +598,85 @@ sub createJobDirectory {
 				push(@{$BioCpd},$cpdid."\t".$cpdid."\t".$cpd->defaultCharge()."\t".$cpd->formula()."\t0\t".$cpdid);
 			}
 		}
+		if (defined($self->parameters()->{"gapfilling source model"})) {
+			my $gfm = $self->getLinkedObject($self->parameters()->{"gapfilling source model"});
+			if (defined($gfm)) {
+				$mdlcpd = $gfm->modelcompounds();
+				for (my $i=0; $i < @{$mdlcpd}; $i++) {
+					my $cpd = $mdlcpd->[$i];
+					my $id = $cpd->id();
+					if (defined($genex->{$cpd->compound()->id()})) {
+						if (defined($genex->{$cpd->compound()->id()}->{$cpd->modelcompartment()->compartment()->id()})) {
+							if ($cpd->modelcompartment()->compartment()->id() eq "e") {
+								$exchangehash->{$cpd->id()}->{e} = $genex->{$cpd->compound()->id()}->{$cpd->modelcompartment()->compartment()->id()};
+							} else {
+								$exchangehash->{$cpd->id()}->{c} = $genex->{$cpd->compound()->id()}->{$cpd->modelcompartment()->compartment()->id()};
+							}				
+						}
+					}
+					my $name = $cpd->name();
+					my $abbrev = $cpd->id();
+					if (!defined($cpdhash->{$id})) {
+						push(@{$BioCpd},$id."\t".$abbrev."\t".$cpd->charge()."\t".$cpd->formula()."\t0\t".$name);
+						$cpdhash->{$id} = $cpd;
+					}
+				}
+				$mdlrxn = $gfm->modelreactions();
+				my $compindecies = {};
+				my $comps = $gfm->modelcompartments();
+				for (my $i=0; $i < @{$comps}; $i++) {
+					$compindecies->{$comps->[$i]->compartmentIndex()}->{$comps->[$i]->compartment()->id()} = 1;
+				}
+				for (my $i=0; $i < @{$mdlrxn}; $i++) {
+					my $rxn = $mdlrxn->[$i];
+					my $direction = $rxn->direction();
+					my $rxndir = "<=>";
+					if ($direction eq ">") {
+						$rxndir = "=>";
+					} elsif ($direction eq "<") {
+						$rxndir = "<=";
+					}
+					my $id = $rxn->id();
+					my $name = $rxn->name();
+					if (!defined($rxnhash->{$id})) {
+						$rxnhash->{$id} = $rxn;
+						my $reactants = "";
+						my $products = "";
+						my $rgts = $rxn->modelReactionReagents();
+						for (my $j=0;$j < @{$rgts}; $j++) {
+							my $rgt = $rgts->[$j];
+							my $suffix = "";
+							if ($rgt->modelcompound()->modelcompartment()->compartment()->id() eq "e") {
+								$suffix = "[e]";
+							}
+							if ($rgt->coefficient() < 0) {
+								if (length($reactants) > 0) {
+									$reactants .= " + ";
+								}
+								$reactants .= "(".abs($rgt->coefficient()).") ".$rgt->modelcompound()->id().$suffix;
+							} elsif ($rgt->coefficient() > 0) {
+								if (length($products) > 0) {
+									$products .= " + ";
+								}
+								$products .= "(".$rgt->coefficient().") ".$rgt->modelcompound()->id().$suffix;
+							}
+						}
+						my $equation = $reactants." ".$rxndir." ".$products;
+						(my $dg, my $dge, my $st) = (0,0,"OK");
+						if (defined($rxn->reaction()->deltaG())) {
+							$dg = $rxn->reaction()->deltaG();
+						}
+						if (defined($rxn->reaction()->deltaGErr())) {
+							$dge = $rxn->reaction()->deltaGErr();
+						}
+						if (defined($rxn->reaction()->status())) {
+							$st = $rxn->reaction()->status();
+						}
+						push(@{$BioRxn},$id."\t".$id."\t".$dg."\t".$dge."\t".$equation."\t".$id."\t".$rxndir."\t".$st."\t".$rxndir);
+					}
+				}
+			}
+		}
 	} elsif ($self->minimize_reactions() == 1) {
 		$self->parameters()->{"Use coefficient file exclusively"} = 1;
 		$self->parameters()->{"Objective coefficient file"} = "RxnOptCoef.txt";
