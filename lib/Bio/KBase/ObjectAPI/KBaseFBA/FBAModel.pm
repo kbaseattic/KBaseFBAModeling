@@ -168,6 +168,24 @@ sub addMediaReactions {
     }
 }
 
+=head3 findModelReactionsWithModelCompound
+Definition:
+	void Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->findModelReactionsWithModelCompound();
+Description:
+	This command returns an arrayref of reactions that contain a specificed reagent uuid
+
+=cut
+
+sub findModelReactionsWithModelCompound {
+    my ($self, $mdlcpd_id) = @_;
+    my $reactions = $self->modelreactions();
+    my $found_reactions = [];
+    foreach my $rxn (@$reactions){
+	push(@$found_reactions, $rxn) if $rxn->hasModelReactionReagent($mdlcpd_id);
+    }
+    return $found_reactions;
+}
+
 =head3 addReactionToModel
 
 Definition:

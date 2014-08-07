@@ -259,19 +259,23 @@ sub prepareFBAFormulation {
 		if (@{$self->targetedreactions()} > 0) {
 			$inactiveList = $self->targetedreactions();
 		} else {
-			my $rxnhash = {};
+			my $rxnfoundhash = {};
+			my $rxnmdlrxnhash = {};
 			for (my $i=0; $i < @{$rxns}; $i++) {
-				$rxnhash->{$rxns->[$i]->id()} = 0;	
+				$rxnfoundhash->{$rxns->[$i]->reaction()->id()} = 0;	
+				$rxnmdlrxnhash->{$rxns->[$i]->reaction()->id()}{$rxns->[$i]->id()}=1;	
 			}
 			my $priorities = $self->reactionPriorities();
 			for (my $i=0; $i < @{$priorities}; $i++) {
-				if (defined($rxnhash->{$priorities->[$i]."_c0"})) {
-					push(@{$inactiveList},$priorities->[$i]."_c0");
-					$rxnhash->{$priorities->[$i]."_c0"} = 1;
+				if (defined($rxnfoundhash->{$priorities->[$i]})) {
+				    foreach my $mdlrxn (keys %{$rxnmdlrxnhash->{$priorities->[$i]}}){
+					push(@{$inactiveList},$mdlrxn);
+				    }
+					$rxnfoundhash->{$priorities->[$i]} = 1;
 				}
 			}
 			for (my $i=0; $i < @{$rxns}; $i++) {
-				if ($rxnhash->{$rxns->[$i]->id()} == 0) {
+				if ($rxnfoundhash->{$rxns->[$i]->reaction()->id()} == 0) {
 					push(@{$inactiveList},$rxns->[$i]->id());
 				}	
 			}

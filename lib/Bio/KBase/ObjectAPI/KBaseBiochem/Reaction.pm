@@ -184,13 +184,13 @@ Description:
 =cut
 
 sub hasReagent {
-    my ($self,$rgt_uuid) = @_;
+    my ($self,$cpd) = @_;
     my $rgts = $self->reagents();
     if (!defined($rgts->[0])) {
 	return 0;	
     }
     for (my $i=0; $i < @{$rgts}; $i++) {
-	if ($rgts->[$i]->compound_ref() eq $rgt_uuid) {
+	if ($rgts->[$i]->compound()->id() eq $cpd) {
 	    return 1;
 	}
     }

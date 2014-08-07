@@ -1112,7 +1112,7 @@ sub _setDefaultFBAFormulation {
 		promconstraint => undef,
 		prommconstraint_workspace => undef,
 		eflux_sample => undef,
-		eflux_sample => undef,
+		eflux_series => undef,
 		eflux_workspace => undef,
 		regmodel => undef,
 		regmodel_workspace => undef
@@ -2627,7 +2627,9 @@ sub _annotate_genome {
 	});
 	my $gaserv = $self->_gaserv();
 	my $genomeTO = $genome->genome_typed_object();
-	if (($parameters->{call_genes} == 1 || @{$genomeTO->{features}} == 0) && @{$genomeTO->{contigs}} > 0) {
+	if( $genomeTO->{domain} eq "Plant" ){
+	    $genomeTO = $gaserv->annotate_proteins_kmer_v1($genomeTO,{dataset_name=>"Release70",kmer_size=>8});
+	} elsif (($parameters->{call_genes} == 1 || @{$genomeTO->{features}} == 0) && @{$genomeTO->{contigs}} > 0) {
 		$genomeTO = $gaserv->annotate_genome($genomeTO);
 	} elsif ($parameters->{annotate_genes} == 1) {
 		$genomeTO = $gaserv->annotate_proteins($genomeTO);
@@ -2656,6 +2658,12 @@ sub _annotate_genome {
 				co_occurring_fids => [],
 			});
 		} else {
+		    if($genomeTO->{domain} eq "Plant"){
+			if (defined($gene->{function})) {
+			    $feature->function($gene->{function});
+			}
+			next;
+		    }
 			$feature->id($gene->{id});
 			if (defined($gene->{function})) {
 				$feature->function($gene->{function});
