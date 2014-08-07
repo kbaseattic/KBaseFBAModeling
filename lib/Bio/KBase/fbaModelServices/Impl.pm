@@ -1112,7 +1112,7 @@ sub _setDefaultFBAFormulation {
 		promconstraint => undef,
 		prommconstraint_workspace => undef,
 		eflux_sample => undef,
-		eflux_sample => undef,
+		eflux_series => undef,
 		eflux_workspace => undef,
 		regmodel => undef,
 		regmodel_workspace => undef
