@@ -12,7 +12,7 @@ use Bio::KBase::fbaModelServices::ClientConfig;
 use Bio::KBase::workspace::ScriptHelpers qw(workspaceURL get_ws_client workspace parseObjectMeta parseWorkspaceMeta);
 use Exporter;
 use parent qw(Exporter);
-our @EXPORT_OK = qw(save_workspace_object load_file load_table parse_input_table get_workspace_object parse_arguments getToken get_old_ws_client fbaws printJobData fbaURL get_fba_client runFBACommand universalFBAScriptCode fbaTranslation roles_of_function );
+our @EXPORT_OK = qw(get_ws_objects_list save_workspace_object load_file load_table parse_input_table get_workspace_object parse_arguments getToken get_old_ws_client fbaws printJobData fbaURL get_fba_client runFBACommand universalFBAScriptCode fbaTranslation roles_of_function );
 
 =head3 load_file
 Definition:
@@ -172,6 +172,38 @@ sub get_workspace_object {
 	}
 	my $objdatas = $ws->get_objects([$input]);
 	return ($objdatas->[0]->{data},$objdatas->[0]->{info});
+}
+
+sub get_ws_objects_list {
+	my $workspace = shift;
+	my $type = shift;
+	my $ws = get_ws_client();
+	my $continue = 1;
+	my $skip = 0;
+	my $allobjects = [];
+	while($continue) {
+		my $input = {
+			skip => $skip,
+			limit => 10000
+		};
+		$skip += 10000;
+		if ($workspace =~ m/^\d+$/) {
+			$input->{ids} = [$workspace];
+		} else {
+			$input->{workspaces} = [$workspace];	
+		}
+		if (defined($type)) {
+			$input->{type} = $type;
+		}
+		my $currobjects = $ws->list_objects($input);
+		if (@{$currobjects} == 0) {
+			$continue = 0;
+		} else {
+			print $skip."\t".@{$currobjects}."\n";
+			push(@{$allobjects},@{$currobjects});
+		}
+	}
+	return $allobjects;
 }
 
 sub getToken {
