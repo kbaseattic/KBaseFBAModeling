@@ -127,7 +127,7 @@ sub get_objects {
 		my $objdatas = $self->workspace()->get_objects($objids);
 		for (my $i=0; $i < @{$objdatas}; $i++) {
 			my $info = $objdatas->[$i]->{info};
-			print "Retreived:".join("|",@{$info})."\n";
+			#print "Retreived:".join("|",@{$info})."\n";
 			if ($info->[2] =~ m/^(.+)\.(.+)-/) {
 				my $module = $1;
 				my $type = $2;
