@@ -8369,7 +8369,7 @@ sub adjust_biomass_reaction
 	    	compartmentIndecies => $input->{compartmentIndecies}->[$i],
 	    });
 	}
-	$modelMeta = $self->_save_msobject($model,"FBAModel",$input->{workspace},$input->{outputid});
+	$modelMeta = $self->_save_msobject($model,"FBAModel",$input->{workspace},$input->{output_id});
     $self->_clearContext();
     #END adjust_biomass_reaction
     my @_bad_returns;
