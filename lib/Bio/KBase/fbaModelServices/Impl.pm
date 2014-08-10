@@ -135,30 +135,21 @@ sub _cachedBiochemistry {
 	my ($self,$biochemistry) = @_;
 	if (defined($biochemistry)) {
 		$self->{_cachedbiochemistry} = $biochemistry;
-		$self->{_initialBiochemistryCounts}->{Compounds} = @{$biochemistry->compounds()};
-		$self->{_initialBiochemistryCounts}->{Reactions} = @{$biochemistry->reactions()};
 	}
 	return $self->{_cachedbiochemistry};
 }
 
-sub _resetCachedBiochemistry {
-	my ($self) = @_;
-	if (defined($self->_cachedBiochemistry())) {
-		if (@{$self->_cachedBiochemistry()->compounds()} >= $self->_cachedBiochemistry()) {
-			for (my $i=@{$self->_cachedBiochemistry()->compounds()}; $i >= $self->{_initialBiochemistryCounts}->{Compounds}; $i--) {
-				$self->_cachedBiochemistry()->remove("compounds",$self->_cachedBiochemistry()->compounds()->[$i]);
-			}
-		}
-		if (@{$self->_cachedBiochemistry()->reactions()} >= $self->_cachedBiochemistry()) {
-			for (my $i=@{$self->_cachedBiochemistry()->reactions()}; $i >= $self->{_initialBiochemistryCounts}->{Reactions}; $i--) {
-				$self->_cachedBiochemistry()->remove("reactions",$self->_cachedBiochemistry()->reactions()->[$i]);
+sub _resetKBaseStore {
+	my ($self,$params) = @_;
+	if (!defined($self->_cachedBiochemistry())) {
+		if (defined($self->{_kbasestore})) {
+			if (defined($self->{_kbasestore}->cache()->{"kbase/default"})) {
+				$self->_cachedBiochemistry($self->{_kbasestore}->cache()->{"kbase/default"});
+			} elsif (defined($self->{_kbasestore}->cache()->{"489/6"})) {
+				$self->_cachedBiochemistry($self->{_kbasestore}->cache()->{"489/6"});
 			}
 		}
 	}
-}
-
-sub _resetKBaseStore {
-	my ($self,$params) = @_;
 	delete $self->{_kbasestore};
 	my @calldata = caller(2);
 	my $temp = [split(/:/,$calldata[3])];
@@ -201,8 +192,8 @@ sub _resetKBaseStore {
 		});
 	}
 	if (defined($self->_cachedBiochemistry())) {
-		$self->_resetCachedBiochemistry();
 		$self->{_kbasestore}->cache()->{"kbase/default"} = $self->_cachedBiochemistry();
+		$self->{_kbasestore}->cache()->{"489/6"} = $self->_cachedBiochemistry();
 	}
 }
 
