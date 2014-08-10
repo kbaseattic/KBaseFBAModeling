@@ -11249,7 +11249,7 @@ sub gapfill_model
 	$gapfill->fba_ref($fba->_reference());
 	$meta = $self->_save_msobject($gapfill,"Gapfilling",$input->{workspace},$gapfill->id(),{hidden => 1});
 	#Since gapfilling can take hours, we retrieve the model again in case it changed since accessed previously
-	if ($input->{out_model} eq $input->{model}) {
+	if ($input->{fastgapfill} == 0 && $input->{out_model} eq $input->{model}) {
 		$model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model},{refreshcache => 1});
 	}
 	$model->add("gapfillings",{

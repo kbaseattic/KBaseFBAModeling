@@ -93,6 +93,9 @@ sub get_objects {
 	#Checking cache for objects
 	my $newrefs = [];
 	for (my $i=0; $i < @{$refs}; $i++) {
+		if ($refs->[$i] =~ m/^489\/6\/\d+$/ || $refs->[$i] =~ m/^kbase\/default\/\d+$/) {
+			$refs->[$i] = "kbase/default";
+		}
 		if (!defined($self->cache()->{$refs->[$i]}) || defined($options->{refreshcache})) {
     		push(@{$newrefs},$refs->[$i]);
     	}
@@ -102,11 +105,6 @@ sub get_objects {
 		my $objids = [];
 		for (my $i=0; $i < @{$newrefs}; $i++) {
 			my $array = [split(/\//,$newrefs->[$i])];
-			if ($array->[0] eq "489" || $array->[0] eq "kbase") {
-				if ($array->[1] eq "6" || $array->[1] eq "default") {
-					delete $array->[2];	
-				}
-			}
 			my $objid = {};
 			if (@{$array} < 2) {
 				Bio::KBase::ObjectAPI::utilities->error("Invalid reference:".$newrefs->[$i]);
@@ -284,6 +282,8 @@ sub save_objects {
 	    #Placing output into a hash of references pointing to object infos
 	    my $output = {};
 	    for (my $i=0; $i < @{$listout}; $i++) {
+	    	$self->cache()->{$listout->[$i]->[6]."/".$listout->[$i]->[0]."/".$listout->[$i]->[4]} = $refobjhash->{$wsdata->{$ws}->{refs}->[$i]}->{object};
+	    	$self->cache()->{$listout->[$i]->[7]."/".$listout->[$i]->[1]."/".$listout->[$i]->[4]} = $refobjhash->{$wsdata->{$ws}->{refs}->[$i]}->{object};
 	    	$self->uuid_refs()->{$refobjhash->{$wsdata->{$ws}->{refs}->[$i]}->{object}->uuid()} = $listout->[$i]->[6]."/".$listout->[$i]->[0]."/".$listout->[$i]->[4];
 	    	if ($refobjhash->{$wsdata->{$ws}->{refs}->[$i]}->{object}->_reference() =~ m/^\w+\/\w+\/\w+$/) {
 	    		$self->updated_refs()->{$refobjhash->{$wsdata->{$ws}->{refs}->[$i]}->{object}->_reference()} = $listout->[$i]->[6]."/".$listout->[$i]->[0]."/".$listout->[$i]->[4];
