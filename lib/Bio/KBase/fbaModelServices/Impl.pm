@@ -14119,7 +14119,7 @@ sub reaction_sensitivity_analysis
 		}
 		my $sensrxn = {
 			id => $object->id().".rxn.".($i-1),
-			modelreaction_ref => $model->_reference()."/modelreactions/id/".$rxnid."_c0",
+			modelreaction_ref => $model->_reference()."/modelreactions/id/".$rxnid,
 			growth_fraction => $row->[5],
 			"delete" => 0,
 			deleted => 0,
