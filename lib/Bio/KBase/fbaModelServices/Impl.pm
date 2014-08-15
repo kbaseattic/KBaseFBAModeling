@@ -8338,7 +8338,7 @@ sub adjust_biomass_reaction
     	biomass => "bio1",
     	coefficients => [],
     	compartments => [],
-    	compartmentIndecies => [],
+    	compartmentIndices => [],
     	output_id => $input->{model}
     });
 	my $model = $self->_get_msobject("FBAModel",$input->{workspace},$input->{model});
@@ -8347,18 +8347,16 @@ sub adjust_biomass_reaction
 			$input->{coefficients}->[$i] = 1;
 		}
 		if (!defined($input->{compartments}->[$i])) {
-			$input->{compartments}->[$i] = 1;
+			$input->{compartments}->[$i] = 'c';
 		}
-		if (!defined($input->{indecies}->[$i])) {
-			$input->{indecies}->[$i] = 1;
+		if (!defined($input->{compartmentIndices}->[$i])) {
+			$input->{compartmentIndices}->[$i] = '0';
 		}
-		$model->adjustBiomassReaction({
-			compound => $input->{compounds}->[$i],
-			coefficient => $input->{coefficients}->[$i],
-	    	biomass => $input->{biomass},
-	    	compartment => $input->{compartments}->[$i],
-	    	compartmentIndecies => $input->{compartmentIndecies}->[$i],
-	    });
+		$model->adjustBiomassReaction({compound => $input->{compounds}->[$i],
+					       coefficient => $input->{coefficients}->[$i],
+					       biomass => $input->{biomass},
+					       compartment => $input->{compartments}->[$i],
+					       compartmentIndex => $input->{compartmentIndices}->[$i]});
 	}
 	$modelMeta = $self->_save_msobject($model,"FBAModel",$input->{workspace},$input->{output_id});
     $self->_clearContext();
