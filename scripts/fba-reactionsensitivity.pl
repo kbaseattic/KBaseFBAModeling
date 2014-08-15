@@ -17,13 +17,19 @@ my $script = "fba-reactionsensitivity";
 my $translation = {
     "Model ID" => "model",
 	"modelws" => "model_ws",
+	media => "media",
+	mediaws => "media_ws",
+	objfract => "objective_fraction",
+	objrxn => "objective_reaction",
 	"rxnsensid" => "rxnsens_uid",
+	"outputid" => "rxnsens_uid",
 	"workspace" => "workspace",
 	"deleterxns" => "delete_noncontributing_reactions",
 	"rxnprobs" => "rxnprobs_id",
-	"rxnprobsws" => "rxnprobs_ws"
+	"rxnprobsws" => "rxnprobs_ws",
+	essrxn => "delete_essential_reactions",
+	objsens => "objective_sensitivity_only"
 };
-
 
 my $manpage =
     "
@@ -73,18 +79,23 @@ AUTHORS
       Matthew Benedict
 ";
 
-
 #Defining usage and options
 my $specs = [
     [ 'workspace|w:s', 'Workspace in which to save the RxnSensitivity object (default: current workspace)', { "default" => fbaws() } ],
-    [ 'rxnsensid|r:s', 'ID for RxnSensitivity object to be outputted' ],
+    [ 'rxnsensid|outputid|r:s', 'ID for RxnSensitivity object to be outputted' ],
+    [ 'media:s', 'Media for sensitivity analysis' ],
+    [ 'mediaws:s', 'Workspace of media for sensitivity analysis' ],
     [ 'modelws:s', 'Workspace in which the input model is found (default: current workspace)', { "default" => fbaws() } ],
+    [ 'objrxn:s', 'Reaction to optimize when testing sensitivity (default: bio1)' ],
+    [ 'objfract:s', 'Fraction of optimal objective to constrain (default: 0.1)' ],
+    [ 'objsens', 'Analyze sensitivity of objective only' ],
+    [ 'essrxn', 'Delete all essential reactions' ],
     [ 'deleterxns', 'Delete nonconributing reactions before testing the next sensitivity of the others in the list' ],
     [ 'rxnstotest:s', 'Reactions to test the sensitivity for, in order to try them (;-delimited). Specify this or a gapfill solution ID. Use + or - to specify a direction, by default both directions are tested.' ],
     [ 'gapfill:s', 'Gapfill solution ID (UUID.solution.#). Specify this or a list of reactions to test.'],
     [ 'rxnprobs:s', 'RxnProbs object. If provided, reaction sensitivity is done with lowest-likelihood reactions first. Only applicable if a gapfill solution is provided.' ],
     [ 'rxnprobsws:s', 'RxnProbs object workspace (default: current workspace)', { "default" => fbaws() } ]
-    ];
+];
 
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation, $manpage);
 
@@ -96,7 +107,10 @@ if ( defined($opt->{rxnstotest}) ) {
 if ( defined($opt->{gapfill}) ) {
     $params->{gapfill_solution_id} = $opt->{gapfill};
     $ok = 1;
-} 
+}
+if ( defined($opt->{essrxn}) ) {
+    $ok = 1;
+}
 if ( $ok == 0 ) {
     die "Must specify either a list of reactions to delete or a gapfill solution ID\n";
 }

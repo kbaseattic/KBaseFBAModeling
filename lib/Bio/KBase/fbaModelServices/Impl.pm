@@ -13999,33 +13999,40 @@ sub reaction_sensitivity_analysis
     #BEGIN reaction_sensitivity_analysis
     $self->_setContext($ctx,$input);
 	$input = $self->_validateargs($input,["model","workspace"],{
+		objective_fraction => 0.1,
+		objective_reaction => "bio1",
+		media => "Complete",
+		media_ws => "KBaseMedia",
 		model_ws => $input->{workspace},
 		rxnsens_uid => undef,
 		type => "unknown",
 		delete_noncontributing_reactions => 0,
 		fba_ref => undef,
+		delete_essential_reactions => 0,
+		objective_sensitivity_only => 0,
 		reactions_to_delete => undef,
 		gapfill_ws => $input->{workspace},
 		gapfill_solution_id => undef,
 		rxnprobs_id => undef,
 		rxnprobs_ws => $input->{workspace},
 	});
-    if ( ! ( defined($input->{reactions_to_delete}) || defined($input->{gapfill_solution_id}) ) ) {
+	print "Delete essential result:".$input->{delete_essential_reactions}."\n";
+    if ($input->{delete_essential_reactions} == 0 && !defined($input->{reactions_to_delete}) && !defined($input->{gapfill_solution_id})) {
 		my $msg = "Must specify either reactions_to_delete or a gapfill solution ID (if both are specified the gapfill solution is attemtped first)";
 		$self->_error($msg);
     }
     # If the user does not specify a sign we add both directions to the list of things to delete.
     my $processedReactions = [];
     if ( defined($input->{reactions_to_delete}) ) {
-	for ( my $i=0; $i<@{$input->{reactions_to_delete}}; $i++) { 
-	    my $rxn = $input->{reactions_to_delete}->[$i];
-	    if ( $rxn =~ /^[+-]/ ) {
-		push(@$processedReactions, $rxn);
-	    } else {
-		push(@$processedReactions, "+".$rxn);
-		push(@$processedReactions, "-".$rxn);
-	    }
-	}
+		for ( my $i=0; $i<@{$input->{reactions_to_delete}}; $i++) { 
+		    my $rxn = $input->{reactions_to_delete}->[$i];
+		    if ( $rxn =~ /^[+-]/ ) {
+				push(@$processedReactions, $rxn);
+		    } else {
+				push(@$processedReactions, "+".$rxn);
+				push(@$processedReactions, "-".$rxn);
+		    }
+		}
     }
     $input->{reactions_to_delete} = $processedReactions;
     # If gapfill solution is defined we need to get the reactions associated with it.
@@ -14047,17 +14054,41 @@ sub reaction_sensitivity_analysis
 		    $input->{reactions_to_delete} = $rxnlist;
 		}
     }
-	my $formulation = $self->_setDefaultFBAFormulation({});
+    my $objrxn = $model->searchForBiomass($input->{objective_reaction});
+    my $type = "biomassflux";
+    if (!defined($objrxn)) {
+    	$type = "flux";
+    	$objrxn = $model->searchForReaction($input->{objective_reaction});
+    }
+    if (!defined($objrxn)) {
+    	$self->_error("Could not find objective reaction ".$input->{objective_reaction}." in model!");
+    }
+    $input->{objective_reaction} = $objrxn->id();
+	my $formulation = $self->_setDefaultFBAFormulation({
+		media => $input->{media},
+		media_workspace => $input->{media_ws},
+		objfraction => $input->{objective_fraction},
+		objectiveTerms => [
+			[1,$type,$input->{objective_reaction}]
+		]
+	});	
 	#Creating FBAFormulation Object
 	my $fba = $self->_buildFBAObject($formulation,$model);
-	$fba->fva(1);
+	if ($input->{objective_sensitivity_only} == 1) {
+		$fba->fva(0);
+	}
 	$fba->outputfiles()->{"FBAExperimentOutput.txt"} = [];
 	$fba->parameters()->{"deletion experiments"} = "";
-	for (my $i=0; $i < @{$input->{reactions_to_delete}}; $i++) {
-		if (length($fba->parameters()->{"deletion experiments"}) > 0) {
-			$fba->parameters()->{"deletion experiments"} .= ";";
+	my $media = $input->{media};
+	if ($input->{delete_essential_reactions} == 1) {
+		$fba->parameters()->{"deletion experiments"} = "essentialreactions:".$media.":essentialreactions";
+	} else {
+		for (my $i=0; $i < @{$input->{reactions_to_delete}}; $i++) {
+			if (length($fba->parameters()->{"deletion experiments"}) > 0) {
+				$fba->parameters()->{"deletion experiments"} .= ";";
+			}
+			$fba->parameters()->{"deletion experiments"} .= $input->{reactions_to_delete}->[$i].":".$media.":".$input->{reactions_to_delete}->[$i];
 		}
-		$fba->parameters()->{"deletion experiments"} .= $input->{reactions_to_delete}->[$i].":Complete:".$input->{reactions_to_delete}->[$i];
 	}
 	if ($input->{delete_noncontributing_reactions} == 1) {
 		$fba->parameters()->{"delete noncontributing reactions"} = 1;
@@ -18450,7 +18481,10 @@ sub import_metagenome_annotation
     my($output);
     #BEGIN import_metagenome_annotation
     $self->_setContext($ctx,$params);
-	$params = $self->_validateargs($params,["annotations","workspace"],{
+	$params = $self->_validateargs($params,["workspace"],{
+		annotations => undef,
+		metaprofile_id => undef,
+		metaprofile_ws => $params->{workspace},
 		metaanno_uid => undef,
 		source_id => undef,
 		source => "KBase",
@@ -18459,6 +18493,28 @@ sub import_metagenome_annotation
 		confidence_type => "blast"
 	});
 	#Obtaining kbase ID
+	if (defined($params->{metaprofile_id})) {
+		my $input = {};
+		if ($params->{metaprofile_ws} =~ m/^\d+$/) {
+			$input->{wsid} = $params->{metaprofile_ws};
+		} else {
+			$input->{workspace} = $params->{metaprofile_ws};
+		}
+		if ($params->{metaprofile_id} =~ m/^\d+$/) {
+			$input->{objid} = $params->{metaprofile_id};
+		} else {
+			$input->{name} = $params->{metaprofile_id};
+		}
+		my $objs = $self->_KBaseStore()->workspace()->get_objects([$input]);
+		my $lines = [split(/\n/,$objs->[0]->{data}->{data})];
+		for (my $i=0; $i < @{$lines}; $i++) {
+			push(@{$params->{annotations}},[split(/\t/,$lines->[$i])]);
+		}
+		
+	}
+	if (!defined($params->{annotations})) {
+		$self->_error("Must have annotations to import!");
+	}
 	my $kbid = $self->_get_new_id("kb|mganno");
 	if (!defined($params->{source_id}) || $params->{source} eq "KBase") {
 		$params->{source_id} = $kbid;
@@ -18483,17 +18539,17 @@ sub import_metagenome_annotation
 	my $otus = {};
 	my $otuAverages = {};
 	for (my $i=0; $i < @{$params->{annotations}}; $i++) {
-		if (!defined($otuAverages->{$params->{annotations}->[$i]->[2]})) {
-			$otuAverages->{$params->{annotations}->[$i]->[2]}->{coverage} = 0;
-			$otuAverages->{$params->{annotations}->[$i]->[2]}->{confidence} = 0;
+		if (!defined($otuAverages->{$params->{annotations}->[$i]->[4]})) {
+			$otuAverages->{$params->{annotations}->[$i]->[4]}->{coverage} = 0;
+			$otuAverages->{$params->{annotations}->[$i]->[4]}->{confidence} = 0;
 		}
-		$otuAverages->{$params->{annotations}->[$i]->[2]}->{coverage} += $params->{annotations}->[$i]->[3];
-		$otuAverages->{$params->{annotations}->[$i]->[2]}->{confidence} += $params->{annotations}->[$i]->[4];
-		push(@{$otus->{$params->{annotations}->[$i]->[2]}},{
+		$otuAverages->{$params->{annotations}->[$i]->[4]}->{coverage} += $params->{annotations}->[$i]->[2];
+		$otuAverages->{$params->{annotations}->[$i]->[4]}->{confidence} += $params->{annotations}->[$i]->[3];
+		push(@{$otus->{$params->{annotations}->[$i]->[4]}},{
 			reference_genes => [split(/,/,$params->{annotations}->[$i]->[0])],
 			functional_role => $params->{annotations}->[$i]->[1],
-			abundance => $params->{annotations}->[$i]->[3]+0,
-			confidence => $params->{annotations}->[$i]->[4]+0,
+			abundance => $params->{annotations}->[$i]->[2]+0,
+			confidence => $params->{annotations}->[$i]->[3]+0,
 		}); 
 	}
 	my $counter = 0;
@@ -20479,15 +20535,15 @@ sub modify_reactions
     	output_id => $params->{model},
     });
     my $model = $self->_get_msobject("FBAModel",$params->{model_workspace},$params->{model});
-    for (my $i=0; $i < @{$params->{reactions}}; $i++) {
-    	$model->addModelReaction({
-		    reaction => $params->{reaction}->[$i]->[0],
-		    direction => $params->{reaction}->[$i]->[1],
-		    gpr => $params->{reaction}->[$i]->[2],
-		    pathway => $params->{reaction}->[$i]->[3],
-		    name => $params->{reaction}->[$i]->[4],
-		    reference => $params->{reaction}->[$i]->[5],
-		    enzyme => $params->{reaction}->[$i]->[6]
+    for (my $i=0; $i < @{$params->{reactions}}; $i++) { 
+    	$model->adjustModelReaction({
+		    reaction => $params->{reactions}->[$i]->[0],
+		    direction => $params->{reactions}->[$i]->[1],
+		    gpr => $params->{reactions}->[$i]->[2],
+		    pathway => $params->{reactions}->[$i]->[3],
+		    name => $params->{reactions}->[$i]->[4],
+		    reference => $params->{reactions}->[$i]->[5],
+		    enzyme => $params->{reactions}->[$i]->[6]
 		});
     }
     $output = $self->_save_msobject($model,"FBAModel",$params->{workspace},$params->{output_id});
