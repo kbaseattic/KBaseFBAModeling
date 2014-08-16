@@ -14015,6 +14015,7 @@ sub reaction_sensitivity_analysis
 		gapfill_solution_id => undef,
 		rxnprobs_id => undef,
 		rxnprobs_ws => $input->{workspace},
+		solver => undef
 	});
 	print "Delete essential result:".$input->{delete_essential_reactions}."\n";
     if ($input->{delete_essential_reactions} == 0 && !defined($input->{reactions_to_delete}) && !defined($input->{gapfill_solution_id})) {
@@ -14076,6 +14077,9 @@ sub reaction_sensitivity_analysis
 	my $fba = $self->_buildFBAObject($formulation,$model);
 	if ($input->{objective_sensitivity_only} == 1) {
 		$fba->fva(0);
+	}
+	if (defined($input->{solver})) {
+		$fba->parameters()->{MFASolver} = uc($input->{solver});
 	}
 	$fba->outputfiles()->{"FBAExperimentOutput.txt"} = [];
 	$fba->parameters()->{"deletion experiments"} = "";
