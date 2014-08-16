@@ -2108,7 +2108,10 @@ sub parseFVAResults {
 									if (!defined($fbaRxnVar)) {
 										$fbaRxnVar = $self->add("FBAReactionVariables",{
 											modelreaction_ref => $mdlrxn->_reference(),
-											variableType => $vartrans->{$vartype}->[0]
+											variableType => $vartrans->{$vartype}->[0],
+												upperBound => 0.0,
+												lowerBound => 0.0,
+												value => 0.0
 										});	
 									}
 									$fbaRxnVar->min($min);
@@ -2203,7 +2206,10 @@ sub parseFVAResults {
 											$fbaCpdVar = $self->add("FBACompoundVariables",{
 												modelcompound_ref => $mdlcpd->_reference(),
 												variableType => $vartrans->{$vartype}->[0],
-											});	
+												upperBound => 0.0,
+												lowerBound => 0.0,
+												value => 0.0
+											});
 										}
 										$fbaCpdVar->min($min);
 										$fbaCpdVar->max($max);
