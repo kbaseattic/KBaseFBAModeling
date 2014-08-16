@@ -35,7 +35,7 @@ my $trans = {
 	"Compound ID" => "compounds",
 	Coefficient => "coefficients",
 	compartment => "compartments",
-	compindex => "compartmentIndecies"
+	compindex => "compartmentIndices"
 };
 foreach my $param (keys(%{$trans})) {
 	$params->{$trans->{$param}} = [$opt->{$param}];

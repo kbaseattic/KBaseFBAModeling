@@ -461,7 +461,7 @@ sub adjustBiomassReaction {
 	    	if (!defined($cpdobj)) {
 	    		Bio::KBase::ObjectAPI::utilities::error("Compound ".$args->{compound}." not found!");
 	    	}
-	    	my $mdlcmp = $self->parent()->getObject("modelcompartments",$args->{compartment}.$args->{compartmentIndex});
+	    	my $mdlcmp = $self->getObject("modelcompartments",$args->{compartment}.$args->{compartmentIndex});
 	    	if (!defined($mdlcmp)) {
 	    		my $cmp = $self->template()->biochemistry()->searchForCompartment($args->{compartment});
 		    	if (!defined($cmp)) {
@@ -476,7 +476,7 @@ sub adjustBiomassReaction {
 					potential => 0,
 	    		});
 	    	}
-	    	$mdlcpd = $self->parent()->add("modelcompounds",{
+	    	$mdlcpd = $self->add("modelcompounds",{
 	    		id => $cpdobj->id()."_".$args->{compartment}.$args->{compartmentIndex},
 				compound_ref => $cpdobj->_reference(),
 				name => $cpdobj->name()."_".$args->{compartment}.$args->{compartmentIndex},
