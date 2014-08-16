@@ -246,7 +246,7 @@ sub createEquation {
 	}
 	for (my $i=0; $i < @{$rgt}; $i++) {
 		my $id = $rgt->[$i]->compound()->id();
-		next if $args->{protons}==0 && $id eq $hcpd->id() && $rxnCompID eq $rgt->[$i]->compartment()->id();
+		next if $args->{protons}==0 && $id eq $hcpd->id() && !$self->isTransport();
 		next if $args->{water}==0 && $id eq $wcpd->id();
 		if ($args->{format} eq "name" || $args->{format} eq "id") {
 			my $function = $args->{format};

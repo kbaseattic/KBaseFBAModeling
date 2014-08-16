@@ -314,7 +314,7 @@ sub createEquation {
 		if ($id eq "cpd00000") {
 			$id = $rgt->modelcompound()->id();
 		}
-		next if $args->{protons} == 0 && $id eq $hcpd->id() && $rxnCompID eq $rgt->modelcompound()->modelcompartment()->compartment()->id();
+		next if $args->{protons} == 0 && $id eq $hcpd->id() && !$self->reaction()->isTransport();
 		next if $args->{water} == 0 && $id eq $wcpd->id();
 		if ($args->{format} eq "name") {
 			my $function = $args->{format};
@@ -371,7 +371,7 @@ sub createEquation {
 		}
 	}
 
-	my $code = $productcode.$sign.$reactcode;
+	my $code = $reactcode.$sign.$productcode;
 	if($args->{reverse}==1){
 		$code = $productcode.$sign.$reactcode;
     }
