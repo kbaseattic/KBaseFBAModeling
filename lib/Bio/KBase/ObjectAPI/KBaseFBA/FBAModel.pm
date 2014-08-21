@@ -208,18 +208,22 @@ sub addReactionToModel {
 		gpr => undef,
 		overrideCompartment => undef
 	}, @_);
+
 	my $rxn = $args->{reaction};
 	if (!defined($args->{direction})) {
 		$args->{direction} = $rxn->direction();	
 	}
 	my $mdlcmp = $args->{overrideCompartment};
-	if (!defined($mdlcmp) || $rxn->isTransport()) {
-		if (defined($mdlcmp)) {
-			$mdlcmp = $self->addCompartmentToModel({compartment => $rxn->compartment(),pH => 7,potential => 0,compartmentIndex => $mdlcmp->compartmentIndex()});
-		} else {
-			$mdlcmp = $self->addCompartmentToModel({compartment => $rxn->compartment(),pH => 7,potential => 0,compartmentIndex => 0});
-		}
+	if (!defined($mdlcmp)){
+	    $mdlcmp = $self->addCompartmentToModel({compartment => $rxn->compartment(),pH => 7,potential => 0,compartmentIndex => 0});
 	}
+    if ($rxn->isTransport()) {
+	#compartment must always be non-cytosolic
+	my %Cmpts= map { $_->compartment()->id() => 1 } @{$rxn->reagents()};
+	my $Cmpt = $self->template()->biochemistry()->getObject("compartments",(grep { $_ ne "c" } sort keys %Cmpts)[0]);
+	
+	$mdlcmp = $self->addCompartmentToModel({compartment => $Cmpt,pH => 7,potential => 0,compartmentIndex => $mdlcmp->compartmentIndex()});
+    }
 	my $mdlrxn = $self->queryObject("modelreactions",{
 		reaction_ref => $rxn->_reference(),
 		modelcompartment_ref => "~/modelcompartments/id/".$mdlcmp->id()
