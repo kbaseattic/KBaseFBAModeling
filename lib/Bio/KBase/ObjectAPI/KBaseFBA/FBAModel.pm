@@ -636,7 +636,7 @@ sub addModelReaction {
     my $bio = $self->template()->biochemistry();
 	my $cmp = $bio->searchForCompartment($args->{compartment});
     if (!defined($cmp)) {
-    	Bio::KBase::ObjectAPI::utilities::error("Unrecognized compartment ".$cmp." in reaction:".$rootid."!");
+    	Bio::KBase::ObjectAPI::utilities::error("Unrecognized compartment ".$args->{compartment}." in reaction: ".$args->{reaction});
     }
     #Fetching or adding model compartment
     my $mdlcmp = $self->addCompartmentToModel({compartment => $cmp,pH => 7,potential => 0,compartmentIndex => $args->{compartmentIndex}});
@@ -716,7 +716,7 @@ sub LoadExternalReactionEquation {
 	$args->{equation} =~ s/\s*\<*[-=]+\>\s*/ = /g;
 	$args->{equation} =~ s/\s*\<[-=]+\s*/ = /g;
     $args->{equation} =~ s/\s*\+\s*/ + /g;
-    print "Equation:".$args->{equation}."\n";
+    #print "Equation:".$args->{equation}."\n";
     my $array = [];
     if ($args->{equation} =~ m/^(.*)\s=\s(.*)$/) {
     	$array->[0] = $1;
@@ -725,7 +725,7 @@ sub LoadExternalReactionEquation {
 		Bio::KBase::ObjectAPI::utilities::error("No equal sign in ".$args->{equation}."!");
 	}
 	my $bio = $self->template()->biochemistry();
-    print "Reference:".$bio->_reference()."\n";
+    #print "Reference:".$bio->_reference()."\n";
     my $compoundhash = {};
     for (my $i=0; $i < @{$array}; $i++) {
     	if (length($array->[$i]) > 0) {
@@ -819,11 +819,11 @@ sub LoadExternalReactionEquation {
 	    				}
 	    			}
 	    		} else {
-	    			print $cpd." not found!\n";
+	    			#print $cpd." not found!\n";
 	    			$mdlcpd = $self->searchForCompound($cpd."_".$compartment.$index);
 	    			if (!defined($mdlcpd)) {
 	    				if (!defined($args->{compounds}->{$cpd})) {
-	    					print "Ill defined compound:".$cpd."!\n";
+	    					print STDERR "Ill defined compound:".$cpd."!\n";
 	    					$cpd =~ s/[^\w]/_/g;
 	    					$mdlcpd = $self->searchForCompound($cpd."_".$compartment.$index);
 	    					#Bio::KBase::ObjectAPI::utilities::error("Ill defined compound:".$cpd."!");
