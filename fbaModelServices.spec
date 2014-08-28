@@ -3773,7 +3773,95 @@ module fbaModelServices {
 		Modify features in the genome
     */
     authentication required;
-    funcdef modify_features(modify_features_params params) returns (object_metadata output);   	
+    funcdef modify_features(modify_features_params params) returns (object_metadata output);
+    
+    /*********************************************************************************
+    Functions relating to classification of genomes
+   	*********************************************************************************/
+   	/* Input parameters for the "import_trainingset" function.
+	*/
+	typedef structure {
+		list<tuple<string workspace_id,string genome_id,string class>> workspace_training_set;
+		list<tuple<string database,string genome_id,string class,list<string> attributes>> external_training_set;
+		string description;
+		list<tuple<string class,string description>> class_data;
+		string attribute_type;
+		bool preload_attributes;
+		string workspace;
+		string output_id;
+    } import_trainingset_params;
+    /*
+		Import a training set of genomes and classifications
+    */
+    authentication required;
+    funcdef import_trainingset(import_trainingset_params params) returns (object_metadata output);
+
+	/* Input parameters for the "preload_trainingset" function.
+	*/
+	typedef structure {
+		string trainingset;
+		string trainingset_ws;
+		string attribute_type;
+		string workspace;
+		string output_id;
+    } preload_trainingset_params;
+    /*
+		Preloads a training set with attributes, cutting time to produce distinct classifiers
+    */
+    authentication required;
+    funcdef preload_trainingset(preload_trainingset_params params) returns (object_metadata output);
+	
+   	
+   	/* Input parameters for the "build_classifier" function.
+	*/
+	typedef structure {
+		string trainingset;
+		string trainingset_ws;
+		string attribute_type;
+		string classifier_type;
+		string workspace;
+		string output_id;
+    } build_classifier_params;
+    /*
+		Build a classifier for the input set of genomes
+    */
+    authentication required;
+    funcdef build_classifier(build_classifier_params params) returns (object_metadata output);
+    
+    /* Input parameters for the "classify_genomes" function.
+	*/
+	typedef structure {
+		list<tuple<string workspace_id,string genome_id>> workspace_genomes; 
+		list<tuple<string database,string genome_id>> external_genomes;
+		string workspace;
+		string output_id;
+		string classifier_ws;
+		string classifier;
+    } classify_genomes_params;
+    /*
+		Build a classifier for the input set of genomes
+    */
+    authentication required;
+    funcdef classify_genomes(classify_genomes_params params) returns (object_metadata output);
+    
+    /*********************************************************************************
+    Functions relating to modeling of expression data
+   	*********************************************************************************/
+   	/* Input parameters for the "build_tissue_model" function.
+	*/
+	typedef structure {
+		string expsample_ws;
+		string expsample;
+		string model_ws;
+		string model;
+		string workspace;
+		string output_id;
+    } build_tissue_model_params;
+    /*
+		Build a tissue model based on the input expression data
+    */
+    authentication required;
+    funcdef build_tissue_model(build_tissue_model_params params) returns (object_metadata output);
 };
 
 

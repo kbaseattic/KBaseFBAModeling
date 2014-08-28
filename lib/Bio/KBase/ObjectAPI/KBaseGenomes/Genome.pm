@@ -15,12 +15,25 @@ extends 'Bio::KBase::ObjectAPI::KBaseGenomes::DB::Genome';
 #***********************************************************************************************************
 # ADDITIONAL ATTRIBUTES:
 #***********************************************************************************************************
-has geneAliasHash => ( is => 'rw',printOrder => 2, isa => 'HashRef', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildgeneAliasHash' );
-has gene_subsystem_hash => ( is => 'rw',printOrder => 2, isa => 'HashRef', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildgene_subsystem_hash' );
+has geneAliasHash => ( is => 'rw',printOrder => -1, isa => 'HashRef', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildgeneAliasHash' );
+has rolehash => ( is => 'rw',printOrder => -1, isa => 'HashRef', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildrolehash' );
+has gene_subsystem_hash => ( is => 'rw',printOrder => -1, isa => 'HashRef', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildgene_subsystem_hash' );
 
 #***********************************************************************************************************
 # BUILDERS:
 #***********************************************************************************************************
+sub _buildrolehash {
+	my ($self) = @_;
+	my $rolehash = {};
+	my $ftrs = $self->features();
+    foreach my $ftr (@{$ftrs}) {
+    	my $roles = $ftr->roles();
+    	for (my $i=0; $i < @{$roles}; $i++) {
+    		push(@{$rolehash->{$roles->[$i]}},$ftr->id());
+    	}
+    }
+    return $rolehash;
+}
 sub _buildgeneAliasHash {
 	my ($self) = @_;
 	my $geneAliases = {};

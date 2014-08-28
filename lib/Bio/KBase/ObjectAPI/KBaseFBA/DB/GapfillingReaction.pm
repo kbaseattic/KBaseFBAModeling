@@ -17,16 +17,17 @@ has parent => (is => 'rw', isa => 'Ref', weak_ref => 1, type => 'parent', metacl
 has uuid => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_uuid');
 has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_reference');
 has candidateFeature_refs => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
-has direction => (is => 'rw', isa => 'Str', printOrder => '0', default => '1', type => 'attribute', metaclass => 'Typed');
 has compartmentIndex => (is => 'rw', isa => 'Int', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
 has compartment_ref => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
+has round => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has reaction_ref => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
+has direction => (is => 'rw', isa => 'Str', printOrder => '0', default => '1', type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
 has candidateFeatures => (is => 'rw', type => 'link(Genome,features,candidateFeature_refs)', metaclass => 'Typed', lazy => 1, builder => '_build_candidateFeatures', clearer => 'clear_candidateFeatures', isa => 'ArrayRef');
 has compartment => (is => 'rw', type => 'link(Biochemistry,compartments,compartment_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_compartment', clearer => 'clear_compartment', isa => 'Bio::KBase::ObjectAPI::KBaseBiochem::Compartment', weak_ref => 1);
-has reaction => (is => 'rw', type => 'link(Biochemistry,reactions,reaction_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_reaction', clearer => 'clear_reaction', isa => 'Ref', weak_ref => 1);
+has reaction => (is => 'rw', type => 'link(Biochemistry,reactions,reaction_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_reaction', clearer => 'clear_reaction', isa => 'Bio::KBase::ObjectAPI::KBaseBiochem::Reaction', weak_ref => 1);
 
 
 # BUILDERS:
@@ -62,15 +63,6 @@ my $attributes = [
           },
           {
             'req' => 0,
-            'printOrder' => 0,
-            'name' => 'direction',
-            'default' => '1',
-            'type' => 'Str',
-            'description' => undef,
-            'perm' => 'rw'
-          },
-          {
-            'req' => 0,
             'printOrder' => -1,
             'name' => 'compartmentIndex',
             'default' => 0,
@@ -87,6 +79,13 @@ my $attributes = [
             'perm' => 'rw'
           },
           {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'round',
+            'type' => 'Int',
+            'perm' => 'rw'
+          },
+          {
             'req' => 1,
             'printOrder' => 0,
             'name' => 'reaction_ref',
@@ -94,10 +93,19 @@ my $attributes = [
             'type' => 'Str',
             'description' => undef,
             'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => 0,
+            'name' => 'direction',
+            'default' => '1',
+            'type' => 'Str',
+            'description' => undef,
+            'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {candidateFeature_refs => 0, direction => 1, compartmentIndex => 2, compartment_ref => 3, reaction_ref => 4};
+my $attribute_map = {candidateFeature_refs => 0, compartmentIndex => 1, compartment_ref => 2, round => 3, reaction_ref => 4, direction => 5};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {

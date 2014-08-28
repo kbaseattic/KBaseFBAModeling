@@ -29,7 +29,9 @@ my $translation = {
 	solver => "solver",
 	fastgapfill => "fastgapfill",
 	sourcemdl => "source_model",
-	sourcemdlws => "source_model_ws"
+	sourcemdlws => "source_model_ws",
+	simultaneous => "simultaneous",
+	activitybonus => "activation_penalty"
 };
 my $gfTranslation = {
 	rxnsensitivity => "sensitivity_analysis",
@@ -39,7 +41,6 @@ my $gfTranslation = {
 	nogprhyp => "nogprhyp",
 	nopathwayhyp => "nopathwayhyp",
 	allowunbalanced => "allowunbalanced",
-	activitybonus => "activitybonus",
 	drainpen => "drainpen",
 	directionpen => "directionpen",
 	nostructpen => "nostructpen",
@@ -74,6 +75,7 @@ my $specs = [
     [ 'sourcemdlws=s', 'Workspace of source model to gapfill from', { "default" => fbaws() }  ],
     [ 'intsol', 'Automatically integrate solution', { "default" => 0 } ],
     [ 'longgapfill', 'Run a longer gapfilling but with a potentially better solution' ],
+    [ 'simultaneous', 'Simultaneous gapfill all reactions', { "default" => 0 } ],
     [ 'iterativegf|t', 'Gapfill all inactive reactions', { "default" => 0 } ],
     [ 'targrxn|x:s@', 'Gapfill to activate these reactions only (; delimiter)'],
     [ 'rxnsensitivity|y', 'Flag indicates if sensitivity analysis of gapfill solutions should run'],
@@ -90,7 +92,7 @@ my $specs = [
     [ 'allowunbalanced', 'Allow unbalanced reactions in solutions', {"default" => 0} ],
     [ 'activitybonus:s', 'Bonus for activating reactions', {"default" => 0} ],
     [ 'drainpen:s', 'Penalty for drain reactions', {"default" => 1} ],
-    [ 'directionpen:s', 'Penalty for reactions operating in wrong direction', {"default" => 1} ],
+   	[ 'directionpen:s', 'Penalty for reactions operating in wrong direction', {"default" => 1} ],
     [ 'nostructpen:s', 'Penalty for reactions with missing structures', {"default" => 1} ],
     [ 'unfavorablepen:s', 'Penalty for unfavorable reactions', {"default" => 1} ],
     [ 'nodeltagpen:s', 'Penalty for reactions with no delta G', {"default" => 1} ],

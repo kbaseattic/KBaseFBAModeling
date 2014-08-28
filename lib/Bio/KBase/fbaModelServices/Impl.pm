@@ -71,6 +71,7 @@ use Bio::KBase::GenomeAnnotation::Client;
 use Bio::KBase::ObjectAPI::KBaseStore;
 use Data::UUID;
 use Bio::KBase::ObjectAPI::KBaseExpression::ExpressionSample;
+use Bio::KBase::ObjectAPI::KBaseFBA::ClassifierTrainingSet;
 use Bio::KBase::ObjectAPI::KBaseGenomes::GenomeComparison;
 use Bio::KBase::ObjectAPI::KBaseExpression::ExpressionSeries;
 use Bio::KBase::ObjectAPI::KBaseRegulation::Regulome;
@@ -755,7 +756,7 @@ sub _get_genomeObj_from_CDM {
 
 sub _get_genomeObj_from_SEED {
 	my($self,$id) = @_;
-	my $sapsvr = ModelSEED::Client::SAP->new();;
+	my $sapsvr = ModelSEED::Client::SAP->new();
 	my $data = $sapsvr->genome_data({
 		-ids => [$id],
 		-data => [qw(gc-content dna-size name taxonomy domain genetic-code)]
@@ -11185,11 +11186,13 @@ sub gapfill_model
 		gapFill => undef,
 		gapFill_workspace => $input->{workspace},
 		target_reactions => [],
-		timePerSolution => 3600,
-		totalTimeLimit => 18000,
+		timePerSolution => 43200,
+		totalTimeLimit => 45000,
 		completeGapfill => 0,
 		solver => undef,
 		fastgapfill => 0,
+		simultaneous => 0,
+		activation_penalty => 0.05,
 		source_model => undef,
 		source_model_ws => $input->{workspace},
 	});
@@ -11197,11 +11200,16 @@ sub gapfill_model
 	$input->{formulation}->{timePerSolution} = $input->{timePerSolution};
 	$input->{formulation}->{totalTimeLimit} = $input->{totalTimeLimit};
 	$input->{formulation}->{completeGapfill} = $input->{completeGapfill};
+	print "Simultaneous:".$input->{simultaneous}."\n";
+	if ($input->{simultaneous} == 1) {
+		$input->{completeGapfill} = 1;
+	}
 	if (@{$input->{target_reactions}} > 0) {
 		$input->{completeGapfill} = 1;
 	}
 	if ($input->{completeGapfill} == 1) {
 		$input->{formulation}->{num_solutions} = 1;
+		$input->{formulation}->{completeGapfill} = 1;
 	}
 	$input->{formulation} = $self->_setDefaultGapfillFormulation($input->{formulation});
 	my $model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model});
@@ -11218,6 +11226,10 @@ sub gapfill_model
     if (defined($input->{fastgapfill})) {
     	$fba->parameters()->{"Fast gap filling"} = $input->{fastgapfill};
     }
+    if ($input->{simultaneous} == 1) {
+		$fba->parameters()->{"Simultaneous gapfill"} = $input->{simultaneous};
+	}
+	$fba->parameters()->{"Reaction activation bonus"} = $input->{activation_penalty};
 	$fba->runFBA();
 	#Error checking the FBA and gapfilling solution
 	if (!defined($fba->outputfiles()->{"CompleteGapfillingOutput.txt"}->[1] ) ) {
@@ -21026,6 +21038,756 @@ sub modify_features
 	my $msg = "Invalid returns passed to modify_features:\n" . join("", map { "\t$_\n" } @_bad_returns);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
 							       method_name => 'modify_features');
+    }
+    return($output);
+}
+
+
+
+
+=head2 import_trainingset
+
+  $output = $obj->import_trainingset($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is an import_trainingset_params
+$output is an object_metadata
+import_trainingset_params is a reference to a hash where the following keys are defined:
+	workspace_training_set has a value which is a reference to a list where each element is a reference to a list containing 3 items:
+	0: (workspace_id) a string
+	1: (genome_id) a string
+	2: (class) a string
+
+	external_training_set has a value which is a reference to a list where each element is a reference to a list containing 4 items:
+	0: (database) a string
+	1: (genome_id) a string
+	2: (class) a string
+	3: (attributes) a reference to a list where each element is a string
+
+	description has a value which is a string
+	class_data has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+	0: (class) a string
+	1: (description) a string
+
+	attribute_type has a value which is a string
+	preload_attributes has a value which is a bool
+	workspace has a value which is a string
+	output_id has a value which is a string
+bool is an int
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is an import_trainingset_params
+$output is an object_metadata
+import_trainingset_params is a reference to a hash where the following keys are defined:
+	workspace_training_set has a value which is a reference to a list where each element is a reference to a list containing 3 items:
+	0: (workspace_id) a string
+	1: (genome_id) a string
+	2: (class) a string
+
+	external_training_set has a value which is a reference to a list where each element is a reference to a list containing 4 items:
+	0: (database) a string
+	1: (genome_id) a string
+	2: (class) a string
+	3: (attributes) a reference to a list where each element is a string
+
+	description has a value which is a string
+	class_data has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+	0: (class) a string
+	1: (description) a string
+
+	attribute_type has a value which is a string
+	preload_attributes has a value which is a bool
+	workspace has a value which is a string
+	output_id has a value which is a string
+bool is an int
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+
+=end text
+
+
+
+=item Description
+
+Import a training set of genomes and classifications
+
+=back
+
+=cut
+
+sub import_trainingset
+{
+    my $self = shift;
+    my($params) = @_;
+
+    my @_bad_arguments;
+    (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"params\" (value was \"$params\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to import_trainingset:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'import_trainingset');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($output);
+    #BEGIN import_trainingset
+    $self->_setContext($ctx,$params);
+    $params = $self->_validateargs($params,["workspace"],{
+    	workspace_training_set => [],
+    	external_training_set => [],
+    	description => "",
+    	source => undef,
+    	class_data => [],
+    	attribute_type => "functional_roles",
+    	preload_attributes => 0,
+    	output_id => undef
+    });
+    if (!defined($params->{output_id})) {
+    	$params->{output_id} = $self->_get_new_id("kb|ts");;
+    }
+    my $ts = Bio::KBase::ObjectAPI::KBaseFBA::ClassifierTrainingSet->new({
+    	id => $params->{output_id},
+        description => $params->{description},
+        workspace_training_set => [], 
+		external_training_set => [],
+		class_data => []
+    });
+    $ts->load_trainingset_from_input($params);
+    $self->_save_msobject($ts,"ClassifierTrainingSet",$params->{workspace},$params->{output_id});
+    $self->_clearContext();
+    #END import_trainingset
+    my @_bad_returns;
+    (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to import_trainingset:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'import_trainingset');
+    }
+    return($output);
+}
+
+
+
+
+=head2 preload_trainingset
+
+  $output = $obj->preload_trainingset($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is a preload_trainingset_params
+$output is an object_metadata
+preload_trainingset_params is a reference to a hash where the following keys are defined:
+	trainingset has a value which is a string
+	trainingset_ws has a value which is a string
+	attribute_type has a value which is a string
+	workspace has a value which is a string
+	output_id has a value which is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is a preload_trainingset_params
+$output is an object_metadata
+preload_trainingset_params is a reference to a hash where the following keys are defined:
+	trainingset has a value which is a string
+	trainingset_ws has a value which is a string
+	attribute_type has a value which is a string
+	workspace has a value which is a string
+	output_id has a value which is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+
+=end text
+
+
+
+=item Description
+
+Preloads a training set with attributes, cutting time to produce distinct classifiers
+
+=back
+
+=cut
+
+sub preload_trainingset
+{
+    my $self = shift;
+    my($params) = @_;
+
+    my @_bad_arguments;
+    (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"params\" (value was \"$params\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to preload_trainingset:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'preload_trainingset');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($output);
+    #BEGIN preload_trainingset
+    $self->_setContext($ctx,$params);
+    $params = $self->_validateargs($params,["trainingset","workspace"],{
+    	trainingset_ws => $params->{workspace},
+    	attribute_type => "functional_roles",
+    	output_id => $params->{trainingset}
+    });
+    my $ts = $self->_get_msobject("ClassifierTrainingSet",$params->{trainingset_ws},$params->{trainingset});
+    $ts->attribute_type($params->{attribute_type});
+    $ts->load_trainingset();	
+    $self->_save_msobject($ts,"ClassifierTrainingSet",$params->{workspace},$params->{output_id});
+    $self->_clearContext();
+    #END preload_trainingset
+    my @_bad_returns;
+    (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to preload_trainingset:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'preload_trainingset');
+    }
+    return($output);
+}
+
+
+
+
+=head2 build_classifier
+
+  $output = $obj->build_classifier($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is a build_classifier_params
+$output is an object_metadata
+build_classifier_params is a reference to a hash where the following keys are defined:
+	trainingset has a value which is a string
+	trainingset_ws has a value which is a string
+	attribute_type has a value which is a string
+	classifier_type has a value which is a string
+	workspace has a value which is a string
+	output_id has a value which is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is a build_classifier_params
+$output is an object_metadata
+build_classifier_params is a reference to a hash where the following keys are defined:
+	trainingset has a value which is a string
+	trainingset_ws has a value which is a string
+	attribute_type has a value which is a string
+	classifier_type has a value which is a string
+	workspace has a value which is a string
+	output_id has a value which is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+
+=end text
+
+
+
+=item Description
+
+Build a classifier for the input set of genomes
+
+=back
+
+=cut
+
+sub build_classifier
+{
+    my $self = shift;
+    my($params) = @_;
+
+    my @_bad_arguments;
+    (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"params\" (value was \"$params\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to build_classifier:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'build_classifier');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($output);
+    #BEGIN build_classifier
+    $self->_setContext($ctx,$params);
+    $params = $self->_validateargs($params,["trainingset","workspace"],{
+    	trainingset_ws => $params->{workspace},
+    	attribute_type => "functional_roles",
+    	output_id => $params->{trainingset}
+    });
+    my $ts = $self->_get_msobject("ClassifierTrainingSet",$params->{trainingset_ws},$params->{trainingset});
+    my $cf = $ts->runjob();	
+    $self->_save_msobject($cf,"Classifier",$params->{workspace},$params->{output_id});
+    $self->_clearContext();
+    #END build_classifier
+    my @_bad_returns;
+    (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to build_classifier:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'build_classifier');
+    }
+    return($output);
+}
+
+
+
+
+=head2 classify_genomes
+
+  $output = $obj->classify_genomes($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is a classify_genomes_params
+$output is an object_metadata
+classify_genomes_params is a reference to a hash where the following keys are defined:
+	workspace_genomes has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+	0: (workspace_id) a string
+	1: (genome_id) a string
+
+	external_genomes has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+	0: (database) a string
+	1: (genome_id) a string
+
+	workspace has a value which is a string
+	output_id has a value which is a string
+	classify_ws has a value which is a string
+	classifier has a value which is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is a classify_genomes_params
+$output is an object_metadata
+classify_genomes_params is a reference to a hash where the following keys are defined:
+	workspace_genomes has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+	0: (workspace_id) a string
+	1: (genome_id) a string
+
+	external_genomes has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+	0: (database) a string
+	1: (genome_id) a string
+
+	workspace has a value which is a string
+	output_id has a value which is a string
+	classify_ws has a value which is a string
+	classifier has a value which is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+
+=end text
+
+
+
+=item Description
+
+Build a classifier for the input set of genomes
+
+=back
+
+=cut
+
+sub classify_genomes
+{
+    my $self = shift;
+    my($params) = @_;
+
+    my @_bad_arguments;
+    (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"params\" (value was \"$params\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to classify_genomes:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'classify_genomes');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($output);
+    #BEGIN classify_genomes
+    $self->_setContext($ctx,$params);
+    $params = $self->_validateargs($params,["classifier","workspace"],{
+    	workspace_genomes => [],
+    	external_genomes => [],
+    	classifier_ws => $params->{workspace},
+    	output_id => undef
+    });
+    if (!defined($params->{output_id})) {
+    	$params->{output_id} = $self->_get_new_id("kb|cfr");;
+    }
+    my $ts = Bio::KBase::ObjectAPI::KBaseFBA::ClassifierTrainingSet->new({
+    	id => $params->{output_id},
+        description => "",
+        workspace_training_set => [], 
+		external_training_set => [],
+		class_data => []
+    });
+    $params->{workspace_training_set} = $params->{workspace_genomes};
+    $params->{external_training_set} = $params->{external_genomes};
+    $params->{preload_attributes} = 1;
+    $ts->load_trainingset_from_input($params);
+    my $cf = $self->_get_msobject("Classifier",$params->{trainingset_ws},$params->{trainingset});
+    my $cr = $cf->classify_genomes($ts);
+    $output = $self->_save_msobject($cr,"ClassifierResult",$params->{workspace},$params->{output_id});
+    $self->_clearContext();
+    #END classify_genomes
+    my @_bad_returns;
+    (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to classify_genomes:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'classify_genomes');
+    }
+    return($output);
+}
+
+
+
+
+=head2 build_tissue_model
+
+  $output = $obj->build_tissue_model($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is a build_tissue_model_params
+$output is an object_metadata
+build_tissue_model_params is a reference to a hash where the following keys are defined:
+	expsample_ws has a value which is a string
+	expsample has a value which is a string
+	model_ws has a value which is a string
+	model has a value which is a string
+	workspace has a value which is a string
+	output_id has a value which is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is a build_tissue_model_params
+$output is an object_metadata
+build_tissue_model_params is a reference to a hash where the following keys are defined:
+	expsample_ws has a value which is a string
+	expsample has a value which is a string
+	model_ws has a value which is a string
+	model has a value which is a string
+	workspace has a value which is a string
+	output_id has a value which is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+
+=end text
+
+
+
+=item Description
+
+Build a tissue model based on the input expression data
+
+=back
+
+=cut
+
+sub build_tissue_model
+{
+    my $self = shift;
+    my($params) = @_;
+
+    my @_bad_arguments;
+    (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"params\" (value was \"$params\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to build_tissue_model:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'build_tissue_model');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($output);
+    #BEGIN build_tissue_model
+    $self->_setContext($ctx,$params);
+	$params = $self->_validateargs($params,["expsample","model","workspace"],{		
+		model_ws => $params->{workspace},
+		expsample_ws => $params->{workspace},
+		output_id => $params->{model},
+		solver => undef,
+		activation_penalty => 0.1
+	});
+	my $model = $self->_get_msobject("FBAModel",$params->{model_ws},$params->{model});
+	my $sample = $self->_get_msobject("ExpressionSample",$params->{expsample_ws},$params->{expsample});
+	my $formulation = $self->_setDefaultGapfillFormulation({});
+	$formulation->{completeGapfill} = 1;
+	$formulation->{num_solutions} = 1;
+	my $gfid = @{$model->gapfillings()};
+	$gfid = $model->id().".gf.".$gfid;
+	my ($gapfill,$fba) = $self->_buildGapfillObject($formulation,$model,$gfid);
+	$fba->parameters()->{"Fast gap filling"} = $params->{fastgapfill};
+	$fba->parameters()->{"Simultaneous gapfill"} = $params->{simultaneous};
+	$fba->parameters()->{"Reaction activation bonus"} = $params->{activation_penalty};
+	if (defined($params->{solver})) {
+    	$fba->parameters()->{MFASolver} = uc($params->{solver});
+    }
+	$fba->runFBA();
+	#Error checking the FBA and gapfilling solution
+	if (!defined($fba->outputfiles()->{"CompleteGapfillingOutput.txt"}->[1] ) ) {
+		$self->_error("Analysis failed to produce an output file. Check infrastructure!");
+	}
+	my $gfoutput = $fba->outputfiles()->{"CompleteGapfillingOutput.txt"};
+	for (my $i=0; $i < @{$gfoutput}; $i++) {
+		my $line = $gfoutput->[$i];
+		if ($line =~ /FAILED/ && $line =~ /Prelim/ && $line =~ /bio\d+/) {
+			my $array = [split(/\t/,$line)];
+			if (defined($array->[6])) {
+				$self->_error("Failed in preliminary feasibility determination. The following biomass compounds appear to be problematic: ".$array->[6]."!");
+			} else {
+				$self->_error("Failed in preliminary feasibility determination.");
+			}
+		} elsif ($line =~ /FAILED/ && $line =~ /bio\d+/) {
+			$self->_error("Failed with no solutions!");
+		}
+	}
+	$gapfill->parseGapfillingResults($fba);
+	if (!defined($gapfill->gapfillingSolutions()->[0])) {
+		$self->_error("Analysis completed, but no valid solutions found!");
+	}
+	my $meta = $self->_save_msobject($fba,"FBA",$params->{workspace},$fba->id(),{hidden => 1});
+	$gapfill->fba_ref($fba->_reference());
+	$meta = $self->_save_msobject($gapfill,"Gapfilling",$params->{workspace},$gapfill->id(),{hidden => 1});
+	$model->add("gapfillings",{
+		id => $gapfill->id(),
+		gapfill_id => $gapfill->id(),
+		gapfill_ref => $gapfill->_reference(),
+		integrated => 0,
+		media_ref => $fba->media()->_reference()
+	});
+	my $report = $model->integrateGapfillSolution({
+		gapfill => $gapfill->id()
+	});
+	$output = $self->_save_msobject($model,"FBAModel",$params->{workspace},$params->{output_id});
+	$self->_clearContext();
+    #END build_tissue_model
+    my @_bad_returns;
+    (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to build_tissue_model:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'build_tissue_model');
     }
     return($output);
 }
@@ -32473,6 +33235,273 @@ genes has a value which is a reference to a list where each element is a referen
 	3: an int
 
 
+
+
+=end text
+
+=back
+
+
+
+=head2 import_trainingset_params
+
+=over 4
+
+
+
+=item Description
+
+********************************************************************************
+    Functions relating to classification of genomes
+   	********************************************************************************
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+workspace_training_set has a value which is a reference to a list where each element is a reference to a list containing 3 items:
+0: (workspace_id) a string
+1: (genome_id) a string
+2: (class) a string
+
+external_training_set has a value which is a reference to a list where each element is a reference to a list containing 4 items:
+0: (database) a string
+1: (genome_id) a string
+2: (class) a string
+3: (attributes) a reference to a list where each element is a string
+
+description has a value which is a string
+class_data has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+0: (class) a string
+1: (description) a string
+
+attribute_type has a value which is a string
+preload_attributes has a value which is a bool
+workspace has a value which is a string
+output_id has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+workspace_training_set has a value which is a reference to a list where each element is a reference to a list containing 3 items:
+0: (workspace_id) a string
+1: (genome_id) a string
+2: (class) a string
+
+external_training_set has a value which is a reference to a list where each element is a reference to a list containing 4 items:
+0: (database) a string
+1: (genome_id) a string
+2: (class) a string
+3: (attributes) a reference to a list where each element is a string
+
+description has a value which is a string
+class_data has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+0: (class) a string
+1: (description) a string
+
+attribute_type has a value which is a string
+preload_attributes has a value which is a bool
+workspace has a value which is a string
+output_id has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 preload_trainingset_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "preload_trainingset" function.
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+trainingset has a value which is a string
+trainingset_ws has a value which is a string
+attribute_type has a value which is a string
+workspace has a value which is a string
+output_id has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+trainingset has a value which is a string
+trainingset_ws has a value which is a string
+attribute_type has a value which is a string
+workspace has a value which is a string
+output_id has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 build_classifier_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "build_classifier" function.
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+trainingset has a value which is a string
+trainingset_ws has a value which is a string
+attribute_type has a value which is a string
+classifier_type has a value which is a string
+workspace has a value which is a string
+output_id has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+trainingset has a value which is a string
+trainingset_ws has a value which is a string
+attribute_type has a value which is a string
+classifier_type has a value which is a string
+workspace has a value which is a string
+output_id has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 classify_genomes_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "classify_genomes" function.
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+workspace_genomes has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+0: (workspace_id) a string
+1: (genome_id) a string
+
+external_genomes has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+0: (database) a string
+1: (genome_id) a string
+
+workspace has a value which is a string
+output_id has a value which is a string
+classify_ws has a value which is a string
+classifier has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+workspace_genomes has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+0: (workspace_id) a string
+1: (genome_id) a string
+
+external_genomes has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+0: (database) a string
+1: (genome_id) a string
+
+workspace has a value which is a string
+output_id has a value which is a string
+classify_ws has a value which is a string
+classifier has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 build_tissue_model_params
+
+=over 4
+
+
+
+=item Description
+
+********************************************************************************
+    Functions relating to modeling of expression data
+   	********************************************************************************
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+expsample_ws has a value which is a string
+expsample has a value which is a string
+model_ws has a value which is a string
+model has a value which is a string
+workspace has a value which is a string
+output_id has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+expsample_ws has a value which is a string
+expsample has a value which is a string
+model_ws has a value which is a string
+model has a value which is a string
+workspace has a value which is a string
+output_id has a value which is a string
 
 
 =end text

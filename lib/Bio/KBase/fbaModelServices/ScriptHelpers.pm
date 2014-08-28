@@ -12,7 +12,7 @@ use Bio::KBase::fbaModelServices::ClientConfig;
 use Bio::KBase::workspace::ScriptHelpers qw(workspaceURL get_ws_client workspace parseObjectMeta parseWorkspaceMeta);
 use Exporter;
 use parent qw(Exporter);
-our @EXPORT_OK = qw(get_ws_objects_list save_workspace_object load_file load_table parse_input_table get_workspace_object parse_arguments getToken get_old_ws_client fbaws printJobData fbaURL get_fba_client runFBACommand universalFBAScriptCode fbaTranslation roles_of_function );
+our @EXPORT_OK = qw(get_pa_client get_ws_objects_list save_workspace_object load_file load_table parse_input_table get_workspace_object parse_arguments getToken get_old_ws_client fbaws printJobData fbaURL get_fba_client runFBACommand universalFBAScriptCode fbaTranslation roles_of_function );
 
 =head3 load_file
 Definition:
@@ -267,6 +267,11 @@ sub fbaURL {
 		$currentURL = Bio::KBase::fbaModelServices::ClientConfig::GetConfigParam("fbaModelServices.url");
 	}
 	return $currentURL;
+}
+
+sub get_pa_client {
+	require "Bio/KBase/probabilistic_annotation/Helpers.pm";
+	return Bio::KBase::probabilistic_annotation::Helpers::get_probanno_client();
 }
 
 sub parse_arguments {

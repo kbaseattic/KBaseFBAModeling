@@ -18,6 +18,9 @@ my $defaults = {
 	ModelTemplate => {
 		biochemistry_ref => "kbase/default"
 	},
+	Gapfilling => {
+		simultaneousGapfill => 0,
+	},
 	GapfillingReaction => {
 		compartmentIndex => 0
 	},
@@ -91,6 +94,9 @@ my $baseobjects = {
 	ReactionSensitivityAnalysis => "KBaseFBA",
 	GenomeDomainData =>  "KBaseGenomes",
 	PromConstraint =>  "KBaseFBA",
+	ClassifierResult => "KBaseFBA",
+	ClassifierTrainingSet => "KBaseFBA",
+	Classifier => "KBaseFBA",
 	Pangenome =>  "KBaseGenomes",
 	Regulome => "KBaseRegulation",
 	ExpressionSeries => "KBaseExpression",

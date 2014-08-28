@@ -106,6 +106,11 @@ our %return_counts = (
         'add_features' => 1,
         'remove_features' => 1,
         'modify_features' => 1,
+        'import_trainingset' => 1,
+        'preload_trainingset' => 1,
+        'build_classifier' => 1,
+        'classify_genomes' => 1,
+        'build_tissue_model' => 1,
         'version' => 1,
 );
 
@@ -199,6 +204,11 @@ our %method_authentication = (
         'add_features' => 'required',
         'remove_features' => 'required',
         'modify_features' => 'required',
+        'import_trainingset' => 'required',
+        'preload_trainingset' => 'required',
+        'build_classifier' => 'required',
+        'classify_genomes' => 'required',
+        'build_tissue_model' => 'required',
 );
 
 
@@ -295,6 +305,11 @@ sub _build_valid_methods
         'add_features' => 1,
         'remove_features' => 1,
         'modify_features' => 1,
+        'import_trainingset' => 1,
+        'preload_trainingset' => 1,
+        'build_classifier' => 1,
+        'classify_genomes' => 1,
+        'build_tissue_model' => 1,
         'version' => 1,
     };
     return $methods;

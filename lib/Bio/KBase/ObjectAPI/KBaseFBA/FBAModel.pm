@@ -1918,7 +1918,7 @@ sub integrateGapfillSolution {
 			} else {
 				push(@{$IntegrationReport->{added}},$rxn->reaction()->id()."_".$rxn->compartment()->id().$rxn->compartmentIndex());
 				my $mdlcmp = $self->addCompartmentToModel({compartment => $rxn->compartment(),pH => 7,potential => 0,compartmentIndex => $rxn->compartmentIndex()});
-				my $mdlrxn = $self->addReactionToModel({
+				$mdlrxn = $self->addReactionToModel({
 					reaction => $rxn->reaction(),
 					direction => $rxn->direction(),
 					overrideCompartment => $mdlcmp

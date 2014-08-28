@@ -457,7 +457,10 @@ Description:
 sub createSolutionsFromArray {
     my $self = shift;
     my $args = Bio::KBase::ObjectAPI::utilities::args(["data"], { model => $self->fbamodel(),subopt => 0 }, @_ );
-	my $data = $args->{data};
+    if ($self->simultaneousGapfill() eq "1") {
+    	$self->parse_simultaneous_gapfill($args);
+    }
+    my $data = $args->{data};
 	my $mdl = $args->{model};
 	my $fba = $self->fba();
 	my $gfm;
@@ -466,17 +469,17 @@ sub createSolutionsFromArray {
 	}
 	my $bio = $mdl->template()->biochemistry();
 	my $line;
-    my $has_unneeded = 0;
-	for (my $i=(@{$data}-1); $i >= 0; $i--) {
+    my $has_unneeded = 0;	
+	my $failrxnrefs = [];
+	for (my $i=0; $i < @{$data}; $i++) {
 		my $array = [split(/\t/,$data->[$i])];
 		if ($array->[1] =~ m/rxn\d+/) {
 			$line = $i;
-			last;
 		}
-		# Keep this separate becasue otherwise iterative gap fill breaks.
-		# If we find UNNEEDED and lines with reactions in them we only care about the latter.
 		if ( $array->[1] =~ m/UNNEEDED/ ) {
 		    $has_unneeded = 1;
+		} elsif ( $array->[1] =~ m/FAILED/ ) {
+		    push(@{$failrxnrefs},$mdl->_reference()."/modelreactions/id/".$array->[0]);
 		}
 	}
 	my $solcount = @{$self->gapfillingSolutions()};
@@ -494,7 +497,12 @@ sub createSolutionsFromArray {
 			    }
 			    $count = 0;
 			    $solcount++;
-			    $gfsolution = $self->add("gapfillingSolutions",{id => $self->id().".gfsol.".$solcount,suboptimal => $args->{subopt}});
+			    $gfsolution = $self->add("gapfillingSolutions",{
+			    	id => $self->id().".gfsol.".$solcount,
+			    	suboptimal => $args->{subopt},
+			    	activatedReactions => [],
+			    	failedReaction_refs => $failrxnrefs,
+			    });
 			}
 			my $subarray = [split(/[,;]/,$solutionsArray->[$k])];
 			for (my $j=0; $j < @{$subarray}; $j++) {
@@ -577,6 +585,130 @@ sub createSolutionsFromArray {
 	    $solcount++;
 	    my $gfsolution = $self->add("gapfillingSolutions",{id => $self->id().".gfsol.".$solcount});
 	} # Otherwise we assume that all of the attempts failed.
+}
+
+sub parse_simultaneous_gapfill {
+    my $self = shift;
+    my $args = Bio::KBase::ObjectAPI::utilities::args(["data"], { model => $self->fbamodel(),subopt => 0 }, @_ );
+	my $data = $args->{data};
+	my $mdl = $args->{model};
+	my $fba = $self->fba();
+	my $gfm;
+	if (defined($fba->parameters()->{"gapfilling source model"})) {
+		$gfm = $self->getLinkedObject($fba->parameters()->{"gapfilling source model"});
+	}
+	my $bio = $mdl->template()->biochemistry();
+    my $has_unneeded = 0;
+	my $failrxnrefs = [];
+	my $rxnhash = {};
+	my $actrxn = {};
+	my $round = 0;
+	for (my $i=0; $i < @{$data}; $i++) {
+		my $array = [split(/\t/,$data->[$i])];
+		if ($array->[1] =~ m/rxn\d+/) {
+			my $subarray = [split(/[,;]/,$array->[1])];
+			for (my $j=0; $j < @{$subarray}; $j++) {
+				if ($subarray->[$j] =~ m/([\-\+])(.+)/) {
+					my $sign = $1;
+					my $rxnid = $2;
+					if (defined($rxnhash->{$rxnid})) {
+						$rxnhash->{$rxnid}->[1] = "=";
+					} elsif ($sign eq "+") {
+						$rxnhash->{$rxnid} = [$round,">"];
+					} elsif ($sign eq "-") {
+						$rxnhash->{$rxnid} = [$round,"<"];
+					}
+				}
+			}
+			$subarray = [split(/[,;]/,$array->[2])];
+			for (my $j=0; $j < @{$subarray}; $j++) {
+				if ($subarray->[$j] =~ m/([\-\+])(.+)/) {
+					my $sign = $1;
+					my $rxnid = $2;
+					$actrxn->{$2} = $round;
+				}
+			}
+			$round++;
+		}
+		if ( $array->[1] =~ m/UNNEEDED/ ) {
+		    $has_unneeded = 1;
+		} elsif ( $array->[1] =~ m/FAILED/ ) {
+		    push(@{$failrxnrefs},$mdl->_reference()."/modelreactions/id/".$array->[0]);
+		}
+	}
+	my $solcount = @{$self->gapfillingSolutions()};
+	$solcount++;
+	my $gfsolution = $self->add("gapfillingSolutions",{
+		id => $self->id().".gfsol.".$solcount,
+		suboptimal => 0,
+		failedReaction_refs => $failrxnrefs
+	});
+	foreach my $key (keys(%{$actrxn})) {
+		my $mdlrxn = $mdl->searchForReaction($key);
+		if (defined($mdlrxn)) {
+			$gfsolution->add("activatedReactions",{
+			    reaction_ref => $mdlrxn->_reference(),
+			    round => $actrxn->{$key}
+			});
+		}
+	}
+	my $cost = 0;
+	foreach my $key (keys(%{$rxnhash})) {
+		if ($key =~ m/(.+)DrnRxn/) {
+			my $cpdid = $2;
+			my $bio = $mdl->biomasses()->[0];
+			my $biocpds = $bio->biomasscompounds();
+			my $found = 0;
+			for (my $m=0; $m < @{$biocpds}; $m++) {
+			    my $biocpd = $biocpds->[$m];
+			    if ($biocpd->modelcompound()->compound()->id() eq $cpdid) {
+					$found = 1;
+					push(@{$gfsolution->biomassRemovals()},$biocpd->modelcompound());
+					push(@{$gfsolution->biomassRemoval_refs()},$biocpd->modelcompound()->_reference());	
+			    }
+			}
+			if ($found == 0) {
+			    Bio::KBase::ObjectAPI::utilities::ERROR("Could not find compound to remove from biomass ".$cpdid."!");
+			}
+			$cost += 5;
+	    } else {
+	    	my $rxnid = $key;
+			my $comp = "c";
+			my $index = 0;
+			if ($rxnid =~ m/^(.+)_([a-zA-Z]+)(\d+)$/) {
+				$rxnid = $1;
+				$comp = $2;
+				$index = $3;
+			}
+			my $rxn = $mdl->template()->biochemistry()->queryObject("reactions",{id => $rxnid});
+			my $mdlrxn = 0;
+			if (!defined($rxn)) {
+				$rxn = $mdl->queryObject("modelreactions",{id => $rxnid."_".$comp.$index});
+				if (!defined($rxn)) {
+					if (defined($gfm)) {
+						$rxn = $gfm->queryObject("modelreactions",{id => $rxnid."_".$comp.$index});
+						$mdlrxn = 1;
+					}
+				    if (!defined($rxn)) {
+						Bio::KBase::ObjectAPI::utilities::ERROR("Could not find gapfilled reaction ".$rxnid."!");
+				    }
+				}
+			}
+			my $cmp = $mdl->template()->biochemistry()->queryObject("compartments",{id => $comp});
+			if (!defined($cmp)) {
+			    Bio::KBase::ObjectAPI::utilities::ERROR("Could not find gapfilled reaction compartment ".$comp."!");
+			}
+			$gfsolution->add("gapfillingSolutionReactions",{
+			    reaction_ref => $rxn->_reference(),
+			    compartment_ref => $cmp->_reference(),
+			    direction => $rxnhash->{$key}->[1],
+			    compartmentIndex => $index,
+			    round => $rxnhash->{$key}->[0]
+			});
+			$cost++;
+	    }
+	}
+	$gfsolution->solutionCost($cost);
 }
 
 sub parseGeneCandidates {

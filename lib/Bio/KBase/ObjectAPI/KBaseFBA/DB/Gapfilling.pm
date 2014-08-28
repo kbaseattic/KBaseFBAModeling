@@ -32,6 +32,7 @@ has deltaGMultiplier => (is => 'rw', isa => 'Num', printOrder => '10', default =
 has id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 has fba_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has fbamodel_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has simultaneousGapfill => (is => 'rw', isa => 'Bool', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
 has biomassHypothesis => (is => 'rw', isa => 'Bool', printOrder => '3', default => '0', type => 'attribute', metaclass => 'Typed');
 has totalTimeLimit => (is => 'rw', isa => 'Int', printOrder => '17', type => 'attribute', metaclass => 'Typed');
 has noDeltaGMultiplier => (is => 'rw', isa => 'Num', printOrder => '12', default => '1', type => 'attribute', metaclass => 'Typed');
@@ -223,6 +224,14 @@ my $attributes = [
           },
           {
             'req' => 0,
+            'printOrder' => -1,
+            'name' => 'simultaneousGapfill',
+            'default' => 0,
+            'type' => 'Bool',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
             'printOrder' => 3,
             'name' => 'biomassHypothesis',
             'default' => '0',
@@ -340,7 +349,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {reactionMultipliers => 0, allowableCompartment_refs => 1, noStructureMultiplier => 2, targetedreaction_refs => 3, balancedReactionsOnly => 4, completeGapfill => 5, gprHypothesis => 6, media_ref => 7, timePerSolution => 8, probanno_ref => 9, deltaGMultiplier => 10, id => 11, fba_ref => 12, fbamodel_ref => 13, biomassHypothesis => 14, totalTimeLimit => 15, noDeltaGMultiplier => 16, drainFluxMultiplier => 17, guaranteedReaction_refs => 18, reactionAdditionHypothesis => 19, singleTransporterMultiplier => 20, directionalityMultiplier => 21, mediaHypothesis => 22, biomassTransporterMultiplier => 23, reactionActivationBonus => 24, transporterMultiplier => 25, blacklistedReaction_refs => 26};
+my $attribute_map = {reactionMultipliers => 0, allowableCompartment_refs => 1, noStructureMultiplier => 2, targetedreaction_refs => 3, balancedReactionsOnly => 4, completeGapfill => 5, gprHypothesis => 6, media_ref => 7, timePerSolution => 8, probanno_ref => 9, deltaGMultiplier => 10, id => 11, fba_ref => 12, fbamodel_ref => 13, simultaneousGapfill => 14, biomassHypothesis => 15, totalTimeLimit => 16, noDeltaGMultiplier => 17, drainFluxMultiplier => 18, guaranteedReaction_refs => 19, reactionAdditionHypothesis => 20, singleTransporterMultiplier => 21, directionalityMultiplier => 22, mediaHypothesis => 23, biomassTransporterMultiplier => 24, reactionActivationBonus => 25, transporterMultiplier => 26, blacklistedReaction_refs => 27};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {

@@ -14295,6 +14295,701 @@ sub modify_features
 
 
 
+=head2 import_trainingset
+
+  $output = $obj->import_trainingset($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is an import_trainingset_params
+$output is an object_metadata
+import_trainingset_params is a reference to a hash where the following keys are defined:
+	workspace_training_set has a value which is a reference to a list where each element is a reference to a list containing 3 items:
+	0: (workspace_id) a string
+	1: (genome_id) a string
+	2: (class) a string
+
+	external_training_set has a value which is a reference to a list where each element is a reference to a list containing 4 items:
+	0: (database) a string
+	1: (genome_id) a string
+	2: (class) a string
+	3: (attributes) a reference to a list where each element is a string
+
+	description has a value which is a string
+	class_data has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+	0: (class) a string
+	1: (description) a string
+
+	attribute_type has a value which is a string
+	preload_attributes has a value which is a bool
+	workspace has a value which is a string
+	output_id has a value which is a string
+bool is an int
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is an import_trainingset_params
+$output is an object_metadata
+import_trainingset_params is a reference to a hash where the following keys are defined:
+	workspace_training_set has a value which is a reference to a list where each element is a reference to a list containing 3 items:
+	0: (workspace_id) a string
+	1: (genome_id) a string
+	2: (class) a string
+
+	external_training_set has a value which is a reference to a list where each element is a reference to a list containing 4 items:
+	0: (database) a string
+	1: (genome_id) a string
+	2: (class) a string
+	3: (attributes) a reference to a list where each element is a string
+
+	description has a value which is a string
+	class_data has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+	0: (class) a string
+	1: (description) a string
+
+	attribute_type has a value which is a string
+	preload_attributes has a value which is a bool
+	workspace has a value which is a string
+	output_id has a value which is a string
+bool is an int
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+
+=end text
+
+=item Description
+
+Import a training set of genomes and classifications
+
+=back
+
+=cut
+
+sub import_trainingset
+{
+    my($self, @args) = @_;
+
+# Authentication: required
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function import_trainingset (received $n, expecting 1)");
+    }
+    {
+	my($params) = @args;
+
+	my @_bad_arguments;
+        (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to import_trainingset:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'import_trainingset');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.import_trainingset",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{error}->{code},
+					       method_name => 'import_trainingset',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method import_trainingset",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'import_trainingset',
+				       );
+    }
+}
+
+
+
+=head2 preload_trainingset
+
+  $output = $obj->preload_trainingset($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is a preload_trainingset_params
+$output is an object_metadata
+preload_trainingset_params is a reference to a hash where the following keys are defined:
+	trainingset has a value which is a string
+	trainingset_ws has a value which is a string
+	attribute_type has a value which is a string
+	workspace has a value which is a string
+	output_id has a value which is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is a preload_trainingset_params
+$output is an object_metadata
+preload_trainingset_params is a reference to a hash where the following keys are defined:
+	trainingset has a value which is a string
+	trainingset_ws has a value which is a string
+	attribute_type has a value which is a string
+	workspace has a value which is a string
+	output_id has a value which is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+
+=end text
+
+=item Description
+
+Preloads a training set with attributes, cutting time to produce distinct classifiers
+
+=back
+
+=cut
+
+sub preload_trainingset
+{
+    my($self, @args) = @_;
+
+# Authentication: required
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function preload_trainingset (received $n, expecting 1)");
+    }
+    {
+	my($params) = @args;
+
+	my @_bad_arguments;
+        (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to preload_trainingset:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'preload_trainingset');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.preload_trainingset",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{error}->{code},
+					       method_name => 'preload_trainingset',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method preload_trainingset",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'preload_trainingset',
+				       );
+    }
+}
+
+
+
+=head2 build_classifier
+
+  $output = $obj->build_classifier($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is a build_classifier_params
+$output is an object_metadata
+build_classifier_params is a reference to a hash where the following keys are defined:
+	trainingset has a value which is a string
+	trainingset_ws has a value which is a string
+	attribute_type has a value which is a string
+	classifier_type has a value which is a string
+	workspace has a value which is a string
+	output_id has a value which is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is a build_classifier_params
+$output is an object_metadata
+build_classifier_params is a reference to a hash where the following keys are defined:
+	trainingset has a value which is a string
+	trainingset_ws has a value which is a string
+	attribute_type has a value which is a string
+	classifier_type has a value which is a string
+	workspace has a value which is a string
+	output_id has a value which is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+
+=end text
+
+=item Description
+
+Build a classifier for the input set of genomes
+
+=back
+
+=cut
+
+sub build_classifier
+{
+    my($self, @args) = @_;
+
+# Authentication: required
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function build_classifier (received $n, expecting 1)");
+    }
+    {
+	my($params) = @args;
+
+	my @_bad_arguments;
+        (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to build_classifier:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'build_classifier');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.build_classifier",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{error}->{code},
+					       method_name => 'build_classifier',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method build_classifier",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'build_classifier',
+				       );
+    }
+}
+
+
+
+=head2 classify_genomes
+
+  $output = $obj->classify_genomes($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is a classify_genomes_params
+$output is an object_metadata
+classify_genomes_params is a reference to a hash where the following keys are defined:
+	workspace_genomes has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+	0: (workspace_id) a string
+	1: (genome_id) a string
+
+	external_genomes has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+	0: (database) a string
+	1: (genome_id) a string
+
+	workspace has a value which is a string
+	output_id has a value which is a string
+	classify_ws has a value which is a string
+	classifier has a value which is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is a classify_genomes_params
+$output is an object_metadata
+classify_genomes_params is a reference to a hash where the following keys are defined:
+	workspace_genomes has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+	0: (workspace_id) a string
+	1: (genome_id) a string
+
+	external_genomes has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+	0: (database) a string
+	1: (genome_id) a string
+
+	workspace has a value which is a string
+	output_id has a value which is a string
+	classify_ws has a value which is a string
+	classifier has a value which is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+
+=end text
+
+=item Description
+
+Build a classifier for the input set of genomes
+
+=back
+
+=cut
+
+sub classify_genomes
+{
+    my($self, @args) = @_;
+
+# Authentication: required
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function classify_genomes (received $n, expecting 1)");
+    }
+    {
+	my($params) = @args;
+
+	my @_bad_arguments;
+        (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to classify_genomes:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'classify_genomes');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.classify_genomes",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{error}->{code},
+					       method_name => 'classify_genomes',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method classify_genomes",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'classify_genomes',
+				       );
+    }
+}
+
+
+
+=head2 build_tissue_model
+
+  $output = $obj->build_tissue_model($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is a build_tissue_model_params
+$output is an object_metadata
+build_tissue_model_params is a reference to a hash where the following keys are defined:
+	expsample_ws has a value which is a string
+	expsample has a value which is a string
+	model_ws has a value which is a string
+	model has a value which is a string
+	workspace has a value which is a string
+	output_id has a value which is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is a build_tissue_model_params
+$output is an object_metadata
+build_tissue_model_params is a reference to a hash where the following keys are defined:
+	expsample_ws has a value which is a string
+	expsample has a value which is a string
+	model_ws has a value which is a string
+	model has a value which is a string
+	workspace has a value which is a string
+	output_id has a value which is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_id is a string
+workspace_ref is a string
+
+
+=end text
+
+=item Description
+
+Build a tissue model based on the input expression data
+
+=back
+
+=cut
+
+sub build_tissue_model
+{
+    my($self, @args) = @_;
+
+# Authentication: required
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function build_tissue_model (received $n, expecting 1)");
+    }
+    {
+	my($params) = @args;
+
+	my @_bad_arguments;
+        (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to build_tissue_model:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'build_tissue_model');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.build_tissue_model",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{error}->{code},
+					       method_name => 'build_tissue_model',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method build_tissue_model",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'build_tissue_model',
+				       );
+    }
+}
+
+
+
 sub version {
     my ($self) = @_;
     my $result = $self->{client}->call($self->{url}, {
@@ -14306,16 +15001,16 @@ sub version {
             Bio::KBase::Exceptions::JSONRPC->throw(
                 error => $result->error_message,
                 code => $result->content->{code},
-                method_name => 'modify_features',
+                method_name => 'build_tissue_model',
             );
         } else {
             return wantarray ? @{$result->result} : $result->result->[0];
         }
     } else {
         Bio::KBase::Exceptions::HTTP->throw(
-            error => "Error invoking method modify_features",
+            error => "Error invoking method build_tissue_model",
             status_line => $self->{client}->status_line,
-            method_name => 'modify_features',
+            method_name => 'build_tissue_model',
         );
     }
 }
@@ -25754,6 +26449,273 @@ genes has a value which is a reference to a list where each element is a referen
 	3: an int
 
 
+
+
+=end text
+
+=back
+
+
+
+=head2 import_trainingset_params
+
+=over 4
+
+
+
+=item Description
+
+********************************************************************************
+    Functions relating to classification of genomes
+   	********************************************************************************
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+workspace_training_set has a value which is a reference to a list where each element is a reference to a list containing 3 items:
+0: (workspace_id) a string
+1: (genome_id) a string
+2: (class) a string
+
+external_training_set has a value which is a reference to a list where each element is a reference to a list containing 4 items:
+0: (database) a string
+1: (genome_id) a string
+2: (class) a string
+3: (attributes) a reference to a list where each element is a string
+
+description has a value which is a string
+class_data has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+0: (class) a string
+1: (description) a string
+
+attribute_type has a value which is a string
+preload_attributes has a value which is a bool
+workspace has a value which is a string
+output_id has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+workspace_training_set has a value which is a reference to a list where each element is a reference to a list containing 3 items:
+0: (workspace_id) a string
+1: (genome_id) a string
+2: (class) a string
+
+external_training_set has a value which is a reference to a list where each element is a reference to a list containing 4 items:
+0: (database) a string
+1: (genome_id) a string
+2: (class) a string
+3: (attributes) a reference to a list where each element is a string
+
+description has a value which is a string
+class_data has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+0: (class) a string
+1: (description) a string
+
+attribute_type has a value which is a string
+preload_attributes has a value which is a bool
+workspace has a value which is a string
+output_id has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 preload_trainingset_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "preload_trainingset" function.
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+trainingset has a value which is a string
+trainingset_ws has a value which is a string
+attribute_type has a value which is a string
+workspace has a value which is a string
+output_id has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+trainingset has a value which is a string
+trainingset_ws has a value which is a string
+attribute_type has a value which is a string
+workspace has a value which is a string
+output_id has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 build_classifier_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "build_classifier" function.
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+trainingset has a value which is a string
+trainingset_ws has a value which is a string
+attribute_type has a value which is a string
+classifier_type has a value which is a string
+workspace has a value which is a string
+output_id has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+trainingset has a value which is a string
+trainingset_ws has a value which is a string
+attribute_type has a value which is a string
+classifier_type has a value which is a string
+workspace has a value which is a string
+output_id has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 classify_genomes_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "classify_genomes" function.
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+workspace_genomes has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+0: (workspace_id) a string
+1: (genome_id) a string
+
+external_genomes has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+0: (database) a string
+1: (genome_id) a string
+
+workspace has a value which is a string
+output_id has a value which is a string
+classify_ws has a value which is a string
+classifier has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+workspace_genomes has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+0: (workspace_id) a string
+1: (genome_id) a string
+
+external_genomes has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+0: (database) a string
+1: (genome_id) a string
+
+workspace has a value which is a string
+output_id has a value which is a string
+classify_ws has a value which is a string
+classifier has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 build_tissue_model_params
+
+=over 4
+
+
+
+=item Description
+
+********************************************************************************
+    Functions relating to modeling of expression data
+   	********************************************************************************
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+expsample_ws has a value which is a string
+expsample has a value which is a string
+model_ws has a value which is a string
+model has a value which is a string
+workspace has a value which is a string
+output_id has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+expsample_ws has a value which is a string
+expsample has a value which is a string
+model_ws has a value which is a string
+model has a value which is a string
+workspace has a value which is a string
+output_id has a value which is a string
 
 
 =end text

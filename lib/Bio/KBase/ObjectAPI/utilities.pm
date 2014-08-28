@@ -567,6 +567,24 @@ sub MFATOOLKIT_JOB_DIRECTORY {
 	return $ENV{MFATOOLKIT_JOB_DIRECTORY};
 }
 
+=head3 CLASSIFIER_BINARY
+
+Definition:
+	string = Bio::KBase::ObjectAPI::utilities::CLASSIFIER_BINARY(string input);
+Description:
+	Getter setter for where the classifier binary is located
+Example:
+
+=cut
+
+sub CLASSIFIER_BINARY {
+	my ($input) = @_;
+	if (defined($input)) {
+		$ENV{CLASSIFIER_BINARY} = $input;
+	}
+	return $ENV{CLASSIFIER_BINARY};
+}
+
 =head3 MFATOOLKIT_BINARY
 
 Definition:

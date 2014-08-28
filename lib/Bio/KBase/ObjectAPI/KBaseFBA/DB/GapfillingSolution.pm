@@ -7,6 +7,7 @@
 package Bio::KBase::ObjectAPI::KBaseFBA::DB::GapfillingSolution;
 use Bio::KBase::ObjectAPI::BaseObject;
 use Bio::KBase::ObjectAPI::KBaseFBA::GapfillingReaction;
+use Bio::KBase::ObjectAPI::KBaseFBA::ActivatedReaction;
 use Moose;
 use namespace::autoclean;
 extends 'Bio::KBase::ObjectAPI::BaseObject';
@@ -22,17 +23,20 @@ has solutionCost => (is => 'rw', isa => 'Num', printOrder => '1', default => '1'
 has integrated => (is => 'rw', isa => 'Bool', printOrder => '1', default => '0', type => 'attribute', metaclass => 'Typed');
 has suboptimal => (is => 'rw', isa => 'Bool', printOrder => '1', default => '0', type => 'attribute', metaclass => 'Typed');
 has koRestore_refs => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
+has failedReaction_refs => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
 has mediaSupplement_refs => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 
 
 # SUBOBJECTS:
 has gapfillingSolutionReactions => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(GapfillingReaction)', metaclass => 'Typed', reader => '_gapfillingSolutionReactions', printOrder => '-1');
+has activatedReactions => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(ActivatedReaction)', metaclass => 'Typed', reader => '_activatedReactions', printOrder => '-1');
 
 
 # LINKS:
 has biomassRemovals => (is => 'rw', type => 'link(FBAModel,modelcompounds,biomassRemoval_refs)', metaclass => 'Typed', lazy => 1, builder => '_build_biomassRemovals', clearer => 'clear_biomassRemovals', isa => 'ArrayRef');
 has koRestores => (is => 'rw', type => 'link(FBAModel,modelreactions,koRestore_refs)', metaclass => 'Typed', lazy => 1, builder => '_build_koRestores', clearer => 'clear_koRestores', isa => 'ArrayRef');
+has failedReactions => (is => 'rw', type => 'link(FBAModel,modelreactions,failedReaction_refs)', metaclass => 'Typed', lazy => 1, builder => '_build_failedReactions', clearer => 'clear_failedReactions', isa => 'ArrayRef');
 has mediaSupplements => (is => 'rw', type => 'link(FBAModel,modelcompounds,mediaSupplement_refs)', metaclass => 'Typed', lazy => 1, builder => '_build_mediaSupplements', clearer => 'clear_mediaSupplements', isa => 'ArrayRef');
 
 
@@ -46,6 +50,10 @@ sub _build_biomassRemovals {
 sub _build_koRestores {
 	 my ($self) = @_;
 	 return $self->getLinkedObjectArray($self->koRestore_refs());
+}
+sub _build_failedReactions {
+	 my ($self) = @_;
+	 return $self->getLinkedObjectArray($self->failedReaction_refs());
 }
 sub _build_mediaSupplements {
 	 my ($self) = @_;
@@ -108,6 +116,14 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
+            'name' => 'failedReaction_refs',
+            'default' => 'sub {return [];}',
+            'type' => 'ArrayRef',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
             'name' => 'mediaSupplement_refs',
             'default' => 'sub{return [];}',
             'type' => 'ArrayRef',
@@ -123,7 +139,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {biomassRemoval_refs => 0, solutionCost => 1, integrated => 2, suboptimal => 3, koRestore_refs => 4, mediaSupplement_refs => 5, id => 6};
+my $attribute_map = {biomassRemoval_refs => 0, solutionCost => 1, integrated => 2, suboptimal => 3, koRestore_refs => 4, failedReaction_refs => 5, mediaSupplement_refs => 6, id => 7};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -163,6 +179,17 @@ my $links = [
           },
           {
             'parent' => 'FBAModel',
+            'name' => 'failedReactions',
+            'attribute' => 'failedReaction_refs',
+            'array' => 1,
+            'clearer' => 'clear_failedReactions',
+            'class' => 'Bio::KBase::ObjectAPI::KBaseFBA::ModelReaction',
+            'method' => 'modelreactions',
+            'module' => 'KBaseFBA',
+            'field' => 'id'
+          },
+          {
+            'parent' => 'FBAModel',
             'name' => 'mediaSupplements',
             'attribute' => 'mediaSupplement_refs',
             'array' => 1,
@@ -174,7 +201,7 @@ my $links = [
           }
         ];
 
-my $link_map = {biomassRemovals => 0, koRestores => 1, mediaSupplements => 2};
+my $link_map = {biomassRemovals => 0, koRestores => 1, failedReactions => 2, mediaSupplements => 3};
 sub _links {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -199,10 +226,17 @@ my $subobjects = [
             'class' => 'GapfillingReaction',
             'type' => 'child',
             'module' => 'KBaseFBA'
+          },
+          {
+            'printOrder' => -1,
+            'name' => 'activatedReactions',
+            'type' => 'child',
+            'class' => 'ActivatedReaction',
+            'module' => 'KBaseFBA'
           }
         ];
 
-my $subobject_map = {gapfillingSolutionReactions => 0};
+my $subobject_map = {gapfillingSolutionReactions => 0, activatedReactions => 1};
 sub _subobjects {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -220,6 +254,10 @@ sub _subobjects {
 around 'gapfillingSolutionReactions' => sub {
 	 my ($orig, $self) = @_;
 	 return $self->_build_all_objects('gapfillingSolutionReactions');
+};
+around 'activatedReactions' => sub {
+	 my ($orig, $self) = @_;
+	 return $self->_build_all_objects('activatedReactions');
 };
 
 
