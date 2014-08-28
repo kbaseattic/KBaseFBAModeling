@@ -7650,7 +7650,7 @@ sub import_fbamodel
 		if (defined($rxnrow->[8])) {
 			$input->{equation} = $rxnrow->[8];
 		}
-		print $input->{equation}."\n";
+		#print $input->{equation}."\n";
 		$model->addModelReaction($input);
 		#if (defined($report->{missing_genes})) {
 		#	for (my $i=0; $i < @{$report->{missing_genes}}; $i++) {
