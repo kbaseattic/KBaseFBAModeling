@@ -481,7 +481,30 @@ sub createJobDirectory {
 	my $final_gauranteed = [];
 	my $final_ko = [];
 	if (defined($self->parameters()->{"Complete gap filling"}) && $self->parameters()->{"Complete gap filling"} == 1) {	
-		my $gauranteed = {};
+		my $gauranteed = {
+			rxn07301 => 1,
+			rxn25468 => 1,
+			rxn31542 => 1,
+			rxn31420 => 1,
+			rxn04468 => 1,
+			rxn15786 => 1,
+			rxn10095 => 1,
+			rxn31005 => 1,
+			rxn24334 => 1,
+			rxn24256 => 1,
+			rxn25469 => 1,
+			rxn22880 => 1,
+			rxn25980 => 1,
+			rxn25981 => 1,
+			rxn05017 => 1,
+			rxn03190 => 1,
+			rxn26353 => 1,
+			rxn30838 => 1,
+			rxn31649 => 1,
+			rxn31650 => 1,
+			rxn31505 => 1,
+			rxn01659 => 1
+		};
 		my $blacklist = {};
 		if (defined($self->parameters()->{"Gapfilling guaranteed reactions"})) {
 			my $rxnlist = [split(/,/,$self->parameters()->{"Gapfilling guaranteed reactions"})];
