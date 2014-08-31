@@ -70,6 +70,7 @@ use Bio::KBase::probabilistic_annotation::Client;
 use Bio::KBase::GenomeAnnotation::Client;
 use Bio::KBase::ObjectAPI::KBaseStore;
 use Data::UUID;
+use Bio::KBase::ObjectAPI::KBaseFBA::Classifier;
 use Bio::KBase::ObjectAPI::KBaseExpression::ExpressionSample;
 use Bio::KBase::ObjectAPI::KBaseFBA::ClassifierTrainingSet;
 use Bio::KBase::ObjectAPI::KBaseGenomes::GenomeComparison;
@@ -1438,6 +1439,7 @@ sub _buildGapfillObject {
 	foreach my $mdlcmp (@{$mdlcmps}) {
 		$gapform->addLinkArrayItem("allowableCompartments",$mdlcmp->compartment());
 	}
+	$gapform->{expression_data} = $formulation->{expression_data};
 	$gapform->prepareFBAFormulation();
 	$gapform->fba()->numberOfSolutions($formulation->{num_solutions});
 	#Handling the probabilistic annotation
@@ -3322,7 +3324,7 @@ sub new
     $self->{'_mssserver-url'} = "http://bio-data-1.mcs.anl.gov/services/ms_fba";
     $self->{"_probanno-url"} = "http://localhost:7073";
     $self->{"_workspace-url"} = "http://kbase.us/services/ws";
-    my $paramlist = [qw(fbajobcache awe-url shock-url jobqueue gaserver-url jobserver-url fbajobdir mfatoolkitbin fba-url probanno-url mssserver-url accounttype workspace-url defaultJobState idserver-url)];
+    my $paramlist = [qw(classifierpath fbajobcache awe-url shock-url jobqueue gaserver-url jobserver-url fbajobdir mfatoolkitbin fba-url probanno-url mssserver-url accounttype workspace-url defaultJobState idserver-url)];
 
     # so it looks like params is created by looping over the config object
     # if deployment.cfg exists
@@ -3368,6 +3370,9 @@ sub new
     # now, if params has one of the predefined set of parameter keys,
     # use that value to override object instance variable values. The
     # default object instance variable values were set above.
+	if (defined($params->{classifierpath})) {
+		Bio::KBase::ObjectAPI::utilities::CLASSIFIER_PATH($params->{classifierpath});
+	}
 	if (defined($params->{mfatoolkitbin})) {
 		Bio::KBase::ObjectAPI::utilities::MFATOOLKIT_BINARY($params->{mfatoolkitbin});
 	}
@@ -11192,7 +11197,7 @@ sub gapfill_model
 		solver => undef,
 		fastgapfill => 0,
 		simultaneous => 0,
-		activation_penalty => 0.05,
+		activation_penalty => 0.1,
 		source_model => undef,
 		source_model_ws => $input->{workspace},
 	});
@@ -11200,9 +11205,10 @@ sub gapfill_model
 	$input->{formulation}->{timePerSolution} = $input->{timePerSolution};
 	$input->{formulation}->{totalTimeLimit} = $input->{totalTimeLimit};
 	$input->{formulation}->{completeGapfill} = $input->{completeGapfill};
-	print "Simultaneous:".$input->{simultaneous}."\n";
 	if ($input->{simultaneous} == 1) {
 		$input->{completeGapfill} = 1;
+	} else {
+		$input->{activation_penalty} = 0;
 	}
 	if (@{$input->{target_reactions}} > 0) {
 		$input->{completeGapfill} = 1;
@@ -11217,6 +11223,7 @@ sub gapfill_model
 		$input->{out_model} = $input->{model};
 	}
 	my ($gapfill,$fba) = $self->_buildGapfillObject($input->{formulation},$model,$input->{gfid});
+	$gapfill->simultaneousGapfill($input->{simultaneous});
 	if (defined($input->{solver})) {
     	$fba->parameters()->{MFASolver} = uc($input->{solver});
     }
@@ -21189,7 +21196,7 @@ sub import_trainingset
     	output_id => undef
     });
     if (!defined($params->{output_id})) {
-    	$params->{output_id} = $self->_get_new_id("kb|ts");;
+    	$params->{output_id} = $self->_get_new_id("kb|trainingset");
     }
     my $ts = Bio::KBase::ObjectAPI::KBaseFBA::ClassifierTrainingSet->new({
     	id => $params->{output_id},
@@ -21199,7 +21206,7 @@ sub import_trainingset
 		class_data => []
     });
     $ts->load_trainingset_from_input($params);
-    $self->_save_msobject($ts,"ClassifierTrainingSet",$params->{workspace},$params->{output_id});
+    $output = $self->_save_msobject($ts,"ClassifierTrainingSet",$params->{workspace},$params->{output_id});
     $self->_clearContext();
     #END import_trainingset
     my @_bad_returns;
@@ -21318,13 +21325,15 @@ sub preload_trainingset
     $self->_setContext($ctx,$params);
     $params = $self->_validateargs($params,["trainingset","workspace"],{
     	trainingset_ws => $params->{workspace},
-    	attribute_type => "functional_roles",
+    	attribute_type => undef,
     	output_id => $params->{trainingset}
     });
     my $ts = $self->_get_msobject("ClassifierTrainingSet",$params->{trainingset_ws},$params->{trainingset});
-    $ts->attribute_type($params->{attribute_type});
+    if (defined($params->{attribute_type})) {
+    	$ts->attribute_type($params->{attribute_type});
+    }
     $ts->load_trainingset();	
-    $self->_save_msobject($ts,"ClassifierTrainingSet",$params->{workspace},$params->{output_id});
+    $output = $self->_save_msobject($ts,"ClassifierTrainingSet",$params->{workspace},$params->{output_id});
     $self->_clearContext();
     #END preload_trainingset
     my @_bad_returns;
@@ -21444,13 +21453,14 @@ sub build_classifier
     #BEGIN build_classifier
     $self->_setContext($ctx,$params);
     $params = $self->_validateargs($params,["trainingset","workspace"],{
+    	classifier => "J48",
     	trainingset_ws => $params->{workspace},
     	attribute_type => "functional_roles",
-    	output_id => $params->{trainingset}
+    	output_id => $params->{trainingset}.".classifier"
     });
     my $ts = $self->_get_msobject("ClassifierTrainingSet",$params->{trainingset_ws},$params->{trainingset});
-    my $cf = $ts->runjob();	
-    $self->_save_msobject($cf,"Classifier",$params->{workspace},$params->{output_id});
+    my $cf = $ts->runjob({classifier => $params->{classifier}});	
+    $output = $self->_save_msobject($cf,"Classifier",$params->{workspace},$params->{output_id});
     $self->_clearContext();
     #END build_classifier
     my @_bad_returns;
@@ -21582,27 +21592,33 @@ sub classify_genomes
     #BEGIN classify_genomes
     $self->_setContext($ctx,$params);
     $params = $self->_validateargs($params,["classifier","workspace"],{
+    	trainingset => undef,
+		trainingset_ws => $params->{workspace},
     	workspace_genomes => [],
     	external_genomes => [],
     	classifier_ws => $params->{workspace},
     	output_id => undef
     });
+    my $cf = $self->_get_msobject("Classifier",$params->{classifier_ws},$params->{classifier});
     if (!defined($params->{output_id})) {
-    	$params->{output_id} = $self->_get_new_id("kb|cfr");;
+    	$params->{output_id} = $self->_get_new_id($cf->id().".result");
     }
-    my $ts = Bio::KBase::ObjectAPI::KBaseFBA::ClassifierTrainingSet->new({
-    	id => $params->{output_id},
-        description => "",
-        workspace_training_set => [], 
-		external_training_set => [],
-		class_data => []
-    });
-    $params->{workspace_training_set} = $params->{workspace_genomes};
-    $params->{external_training_set} = $params->{external_genomes};
-    $params->{preload_attributes} = 1;
-    $ts->load_trainingset_from_input($params);
-    my $cf = $self->_get_msobject("Classifier",$params->{trainingset_ws},$params->{trainingset});
-    my $cr = $cf->classify_genomes($ts);
+    my $ts;
+    if (defined($params->{trainingset})) {
+    	$ts = $self->_get_msobject("ClassifierTrainingSet",$params->{trainingset_ws},$params->{trainingset});
+	} else {
+	    my $ts = Bio::KBase::ObjectAPI::KBaseFBA::ClassifierTrainingSet->new({
+	    	id => $params->{output_id},
+	        description => "",
+	        workspace_training_set => [], 
+			external_training_set => [],
+			class_data => []
+	    });
+	    $params->{workspace_training_set} = $params->{workspace_genomes};
+	    $params->{external_training_set} = $params->{external_genomes};
+	    $ts->load_trainingset_from_input($params);
+	}
+    my $cr = $cf->classify_genomes({data => $ts});
     $output = $self->_save_msobject($cr,"ClassifierResult",$params->{workspace},$params->{output_id});
     $self->_clearContext();
     #END classify_genomes
@@ -21734,9 +21750,13 @@ sub build_tissue_model
 	my $formulation = $self->_setDefaultGapfillFormulation({});
 	$formulation->{completeGapfill} = 1;
 	$formulation->{num_solutions} = 1;
+	$formulation->{expression_data} = $sample;
 	my $gfid = @{$model->gapfillings()};
 	$gfid = $model->id().".gf.".$gfid;
 	my ($gapfill,$fba) = $self->_buildGapfillObject($formulation,$model,$gfid);
+	$fba->parameters()->{"Use coefficient file exclusively"} = 1;
+	$fba->parameters()->{"Objective coefficient file"} = "RxnOptCoef.txt";
+	$fba->parameters()->{"Add DB reactions for gapfilling"} = 0;
 	$fba->parameters()->{"Fast gap filling"} = $params->{fastgapfill};
 	$fba->parameters()->{"Simultaneous gapfill"} = $params->{simultaneous};
 	$fba->parameters()->{"Reaction activation bonus"} = $params->{activation_penalty};

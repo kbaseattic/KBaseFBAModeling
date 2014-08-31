@@ -577,12 +577,12 @@ Example:
 
 =cut
 
-sub CLASSIFIER_BINARY {
+sub CLASSIFIER_PATH {
 	my ($input) = @_;
 	if (defined($input)) {
-		$ENV{CLASSIFIER_BINARY} = $input;
+		$ENV{CLASSIFIER_PATH} = $input;
 	}
-	return $ENV{CLASSIFIER_BINARY};
+	return $ENV{CLASSIFIER_PATH};
 }
 
 =head3 MFATOOLKIT_BINARY

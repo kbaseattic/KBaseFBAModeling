@@ -281,6 +281,90 @@ sub prepareFBAFormulation {
 			}
 		}
 	}
+	if (defined($self->{expression_data})) {
+		my $sample = $self->{expression_data};
+		my $exp_scores = {};
+		my $no_reaction = {};
+		my $no_prot = {};
+		my $no_subunit = {};
+		my $miss_protein = {};
+		my $no_ftr = {};
+		my $yes_ftr = {};
+		my $unknown = {};
+		foreach my $mdlrxn (@{$self->modelreactions()}) {
+		    $exp_scores->{$mdlrxn->id()} = 0;
+		    $miss_protein->{$mdlrxn->id()} = 1 if (@{$mdlrxn->modelReactionProteins()} == 0);
+		    $unknown->{$mdlrxn->id()} = 1 if (@{$mdlrxn->modelReactionProteins()} == 0);
+		    # Maximal gene expression for a reaction
+		    my $rxn_score = POSIX::FLT_MIN;
+		    foreach my $prot (@{$mdlrxn->modelReactionProteins()}) {
+				# Minimal gene expression for a complex
+				my $prot_score = POSIX::FLT_MAX;
+				foreach my $subunit (@{$prot->modelReactionProteinSubunits()}) {
+				    if (@{$subunit->features()} == 0) {
+						next; # Not last, since there may be scores for other subunits
+				    }
+			        # Maximal gene expression for a subunit
+				    my $subunit_score = POSIX::FLT_MIN;
+				    foreach my $feature (@{$subunit->features()}) {
+						my $ftr_id = $feature->id();
+						if (!exists $sample->{"data"}->{"expression_levels"}->{$feature->id()}) {
+						    $no_ftr->{$feature->id()}=1;
+						} else{
+						    my $ftr_score = $sample->{"data"}->{"expression_levels"}->{$feature->id};
+						    $yes_ftr->{$feature->id()}=1;
+						    $subunit_score = ($subunit_score > $ftr_score) ? $subunit_score : $ftr_score;
+						}
+				    }
+				    if($subunit_score == POSIX::FLT_MIN){
+						$no_subunit->{$mdlrxn->id()}=1;
+				    }
+				    $prot_score = ($prot_score < $subunit_score) ? $prot_score : $subunit_score;
+				}			
+				if ($prot_score == POSIX::FLT_MAX) {
+				    $no_prot->{$mdlrxn->id()} = 1;
+				}
+				$rxn_score = ($rxn_score > $prot_score) ? $rxn_score : $prot_score;   
+		    }
+		    if ($rxn_score == POSIX::FLT_MIN) {
+				$no_reaction->{$mdlrxn->id()} = 1;
+		    }		
+		    $exp_scores->{$mdlrxn->id()} = $rxn_score;
+		
+		}
+		my $final_exp_scores = {};
+		my $min_exp_score = (sort {$a <=> $b} grep { $_ != POSIX::FLT_MIN && $_ != POSIX::FLT_MAX } map { $exp_scores->{$_} } keys %$exp_scores)[0];
+		my $max_exp_score = (sort {$b <=> $a} grep { $_ != POSIX::FLT_MIN && $_ != POSIX::FLT_MAX } map { $exp_scores->{$_} } keys %$exp_scores)[0];
+		foreach my $rxn_id (keys %$exp_scores) {
+		    if (exists $unknown->{$rxn_id}) {
+		    } else {
+			if($exp_scores->{$rxn_id} eq POSIX::FLT_MIN){
+			    $final_exp_scores->{$rxn_id}=0;
+			}elsif($exp_scores->{$rxn_id} eq POSIX::FLT_MAX){
+			    $final_exp_scores->{$rxn_id}=1;
+			}else{
+			    $final_exp_scores->{$rxn_id} = sprintf("%.4f",($exp_scores->{$rxn_id} / $max_exp_score));
+			}
+		    }
+		}
+		my $highexp = [];
+		my $lowexp = [];
+		for (my $i=0; $i < @{$inactiveList}; $i++) {
+			if($inactiveList->[$i] eq "bio1"){
+				push(@{$highexp},"bio1	1");
+		    } elsif(exists($final_exp_scores->{$inactiveList->[$i]})){
+		    	if($final_exp_scores->{$inactiveList->[$i]} < 0.2){
+				    push(@{$lowexp},$self->fbamodel()->getObject("modelreactions",$inactiveList->[$i])->direction()."\t".$inactiveList->[$i]."\t0.1");
+				}else{
+					push(@{$highexp},$inactiveList->[$i]."\t".$final_exp_scores->{$inactiveList->[$i]});
+				}
+		    } else {
+		    	push(@{$lowexp},$self->fbamodel()->getObject("modelreactions",$inactiveList->[$i])->direction()."\t".$inactiveList->[$i]."\t0.1");
+		    }
+		}
+		$inactiveList = $highexp;
+		$form->inputfiles()->{"RxnOptCoef.txt"} = $lowexp;
+	}
 	$form->inputfiles()->{"InactiveModelReactions.txt"} = $inactiveList;
 	$form->fluxUseVariables(1);
 	$form->decomposeReversibleFlux(1);
@@ -647,7 +731,7 @@ sub parse_simultaneous_gapfill {
 		my $mdlrxn = $mdl->searchForReaction($key);
 		if (defined($mdlrxn)) {
 			$gfsolution->add("activatedReactions",{
-			    reaction_ref => $mdlrxn->_reference(),
+			    modelreaction_ref => $mdlrxn->_reference(),
 			    round => $actrxn->{$key}
 			});
 		}

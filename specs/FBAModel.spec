@@ -1015,6 +1015,13 @@ module KBaseFBA {
         list<ClassifierClasses> classes;
     } Classifier;
     
+    typedef tuple<genome_ref genome,string class,list<string> attributes> WorkspaceGenomeClassData;
+    typedef tuple<string database,string genome_id,string class,list<string> attributes> ExternalGenomeClassData;
+	typedef tuple<string,string> ClassData;
+    typedef tuple<genome_ref genome,string class,float probability> WorkspaceGenomeClassPrediction;
+    typedef tuple<string database,string genome,string class,float probability> ExternalGenomeClassPrediction;
+
+	    
     /*
         @optional attribute_type source description
     */
@@ -1023,9 +1030,9 @@ module KBaseFBA {
         string description;
         string source;
         string attribute_type;
-        list<tuple<genome_ref,string,list<string>>> workspace_training_set; 
-		list<tuple<string database,string genome_id,string,list<string>>> external_training_set;
-		list<tuple<string,string>> class_data;
+        list<WorkspaceGenomeClassData> workspace_training_set; 
+		list<ExternalGenomeClassData> external_training_set;
+		list<ClassData> class_data;
     } ClassifierTrainingSet;
     
     /*
@@ -1033,7 +1040,7 @@ module KBaseFBA {
     typedef structure {
         string id;
         Classifier_ref classifier_ref;
-        list<tuple<genome_ref,string,float>> workspace_genomes; 
-		list<tuple<string,string,string,float>> external_genomes;
+        list<WorkspaceGenomeClassPrediction> workspace_genomes; 
+		list<ExternalGenomeClassPrediction> external_genomes;
     } ClassifierResult;
 };

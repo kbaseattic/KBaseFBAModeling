@@ -21,6 +21,7 @@ has source => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute'
 has attribute_type => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has workspace_training_set => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
 has description => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has external_training_set => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
 has class_data => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
 has id => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 
@@ -73,6 +74,14 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
+            'name' => 'external_training_set',
+            'default' => 'sub {return [];}',
+            'type' => 'ArrayRef',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
             'name' => 'class_data',
             'default' => 'sub {return [];}',
             'type' => 'ArrayRef',
@@ -87,7 +96,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {source => 0, attribute_type => 1, workspace_training_set => 2, description => 3, class_data => 4, id => 5};
+my $attribute_map = {source => 0, attribute_type => 1, workspace_training_set => 2, description => 3, external_training_set => 4, class_data => 5, id => 6};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {

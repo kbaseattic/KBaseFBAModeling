@@ -29,7 +29,7 @@ EXAMPLES
 
 SEE ALSO
       fba-buildclassifier
-      fba-preloadtrainingset
+      fba-loadtrainingset
       fba-runclassifier
 
 AUTHORS

@@ -71,6 +71,7 @@ my $fbaTranslation = {
 #Defining usage and options
 my $specs = [
     [ 'modelout|outputid:s', 'ID for output model in workspace' ],
+    [ 'modelws=s', 'Workspace of model to gapfill', { "default" => fbaws() }  ],
     [ 'sourcemdl=s', 'Source model to gapfill from' ],
     [ 'sourcemdlws=s', 'Workspace of source model to gapfill from', { "default" => fbaws() }  ],
     [ 'intsol', 'Automatically integrate solution', { "default" => 0 } ],
@@ -90,7 +91,7 @@ my $specs = [
     [ 'nogprhyp', 'Donot search for gpr hypotheses', {"default" => 0} ],
     [ 'nopathwayhyp', 'Donot search for pathway hypotheses', {"default" => 0} ],
     [ 'allowunbalanced', 'Allow unbalanced reactions in solutions', {"default" => 0} ],
-    [ 'activitybonus:s', 'Bonus for activating reactions', {"default" => 0} ],
+    [ 'activitybonus:s', 'Bonus for activating reactions'],
     [ 'drainpen:s', 'Penalty for drain reactions', {"default" => 1} ],
    	[ 'directionpen:s', 'Penalty for reactions operating in wrong direction', {"default" => 1} ],
     [ 'nostructpen:s', 'Penalty for reactions with missing structures', {"default" => 1} ],
