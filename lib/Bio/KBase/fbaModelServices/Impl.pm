@@ -10311,7 +10311,6 @@ sub integrate_reconciliation_solutions
 		$rxnprobsGPRArray = $self->_buildRxnProbsGPRArray($rxnprobs);
     }
     foreach my $id (@{$input->{gapfillSolutions}}) {
-    	print "ID:".$id."\n";
     	if ($id =~ m/^(.+\.gf\.\d+)\./) {
     		my $gfid = $1;
 			$model->integrateGapfillSolution({
@@ -21757,8 +21756,8 @@ sub build_tissue_model
 	$fba->parameters()->{"Use coefficient file exclusively"} = 1;
 	$fba->parameters()->{"Objective coefficient file"} = "RxnOptCoef.txt";
 	$fba->parameters()->{"Add DB reactions for gapfilling"} = 0;
-	$fba->parameters()->{"Fast gap filling"} = $params->{fastgapfill};
-	$fba->parameters()->{"Simultaneous gapfill"} = $params->{simultaneous};
+	$fba->parameters()->{"Fast gap filling"} = 1;
+	$fba->parameters()->{"Simultaneous gapfill"} = 1;
 	$fba->parameters()->{"Reaction activation bonus"} = $params->{activation_penalty};
 	if (defined($params->{solver})) {
     	$fba->parameters()->{MFASolver} = uc($params->{solver});
@@ -21796,9 +21795,28 @@ sub build_tissue_model
 		integrated => 0,
 		media_ref => $fba->media()->_reference()
 	});
-	my $report = $model->integrateGapfillSolution({
-		gapfill => $gapfill->id()
-	});
+	my $lowexp = $fba->inputfiles()->{"RxnOptCoef.txt"};
+	my $rxnhash;
+	for (my $i=0; $i < @{$lowexp}; $i++) {
+		my $array = [split(/\t/,$lowexp->[$i])];
+		$rxnhash->{$array->[1]} = 0;
+	}
+	my $solrxns = $gapfill->gapfillingSolutions()->[0]->gapfillingSolutionReactions();
+	for (my $i=0; $i < @{$solrxns}; $i++) {
+		my $srxn = $solrxns->[$i];
+		$rxnhash->{$srxn->reaction()->id()."_".$srxn->compartment()->id().$srxn->compartmentIndex()} = 1;
+	}
+	my $count = 0;
+	foreach my $srxn (keys(%{$rxnhash})) {
+		if ($rxnhash->{$srxn} == 0) {
+			my $mdlrxn = $model->getObject("modelreactions",$srxn);
+			if (defined($mdlrxn)) {
+				$count++;
+				$model->remove("modelreactions",$mdlrxn);
+			}
+		}
+	}
+	print $count." reactions removed out of ".@{$lowexp}." low expression reactions!\n";
 	$output = $self->_save_msobject($model,"FBAModel",$params->{workspace},$params->{output_id});
 	$self->_clearContext();
     #END build_tissue_model

@@ -291,7 +291,7 @@ sub prepareFBAFormulation {
 		my $no_ftr = {};
 		my $yes_ftr = {};
 		my $unknown = {};
-		foreach my $mdlrxn (@{$self->modelreactions()}) {
+		foreach my $mdlrxn (@{$self->fbamodel()->modelreactions()}) {
 		    $exp_scores->{$mdlrxn->id()} = 0;
 		    $miss_protein->{$mdlrxn->id()} = 1 if (@{$mdlrxn->modelReactionProteins()} == 0);
 		    $unknown->{$mdlrxn->id()} = 1 if (@{$mdlrxn->modelReactionProteins()} == 0);
