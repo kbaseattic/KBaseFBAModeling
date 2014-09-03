@@ -291,7 +291,8 @@ sub prepareFBAFormulation {
 		my $no_ftr = {};
 		my $yes_ftr = {};
 		my $unknown = {};
-		foreach my $mdlrxn (@{$self->fbamodel()->modelreactions()}) {
+		my $mdlrxns = $self->fbamodel()->modelreactions();
+		foreach my $mdlrxn (@{$mdlrxns}) {
 		    $exp_scores->{$mdlrxn->id()} = 0;
 		    $miss_protein->{$mdlrxn->id()} = 1 if (@{$mdlrxn->modelReactionProteins()} == 0);
 		    $unknown->{$mdlrxn->id()} = 1 if (@{$mdlrxn->modelReactionProteins()} == 0);
@@ -308,10 +309,10 @@ sub prepareFBAFormulation {
 				    my $subunit_score = POSIX::FLT_MIN;
 				    foreach my $feature (@{$subunit->features()}) {
 						my $ftr_id = $feature->id();
-						if (!exists $sample->{"data"}->{"expression_levels"}->{$feature->id()}) {
+						if (!exists $sample->expression_levels()->{$feature->id()}) {
 						    $no_ftr->{$feature->id()}=1;
 						} else{
-						    my $ftr_score = $sample->{"data"}->{"expression_levels"}->{$feature->id};
+						    my $ftr_score = $sample->expression_levels()->{$feature->id};
 						    $yes_ftr->{$feature->id()}=1;
 						    $subunit_score = ($subunit_score > $ftr_score) ? $subunit_score : $ftr_score;
 						}
@@ -330,21 +331,21 @@ sub prepareFBAFormulation {
 				$no_reaction->{$mdlrxn->id()} = 1;
 		    }		
 		    $exp_scores->{$mdlrxn->id()} = $rxn_score;
-		
 		}
 		my $final_exp_scores = {};
 		my $min_exp_score = (sort {$a <=> $b} grep { $_ != POSIX::FLT_MIN && $_ != POSIX::FLT_MAX } map { $exp_scores->{$_} } keys %$exp_scores)[0];
 		my $max_exp_score = (sort {$b <=> $a} grep { $_ != POSIX::FLT_MIN && $_ != POSIX::FLT_MAX } map { $exp_scores->{$_} } keys %$exp_scores)[0];
 		foreach my $rxn_id (keys %$exp_scores) {
 		    if (exists $unknown->{$rxn_id}) {
+		    
 		    } else {
-			if($exp_scores->{$rxn_id} eq POSIX::FLT_MIN){
-			    $final_exp_scores->{$rxn_id}=0;
-			}elsif($exp_scores->{$rxn_id} eq POSIX::FLT_MAX){
-			    $final_exp_scores->{$rxn_id}=1;
-			}else{
-			    $final_exp_scores->{$rxn_id} = sprintf("%.4f",($exp_scores->{$rxn_id} / $max_exp_score));
-			}
+				if($exp_scores->{$rxn_id} eq POSIX::FLT_MIN){
+				    $final_exp_scores->{$rxn_id}=0;
+				}elsif($exp_scores->{$rxn_id} eq POSIX::FLT_MAX){
+				    $final_exp_scores->{$rxn_id}=1;
+				}else{
+				    $final_exp_scores->{$rxn_id} = sprintf("%.4f",($exp_scores->{$rxn_id} / $max_exp_score));
+				}
 		    }
 		}
 		my $highexp = [];
@@ -365,15 +366,13 @@ sub prepareFBAFormulation {
 				}else{
 					push(@{$highexp},$inactiveList->[$i]."\t".$final_exp_scores->{$inactiveList->[$i]});
 				}
-		    } else {
-		    	if ($self->fbamodel()->getObject("modelreactions",$inactiveList->[$i])->direction() eq "=") {
-			    	push(@{$lowexp},"forward\t".$inactiveList->[$i]."\t0.1");
-			    	push(@{$lowexp},"reverse\t".$inactiveList->[$i]."\t0.1");
-			    } elsif ($self->fbamodel()->getObject("modelreactions",$inactiveList->[$i])->direction() eq ">") {
-			    	push(@{$lowexp},"forward\t".$inactiveList->[$i]."\t0.1");
-			    } elsif ($self->fbamodel()->getObject("modelreactions",$inactiveList->[$i])->direction() eq "<") {
-			    	push(@{$lowexp},"reverse\t".$inactiveList->[$i]."\t0.1");
-			    }
+		    } elsif ($self->fbamodel()->getObject("modelreactions",$inactiveList->[$i])->direction() eq "=") {
+			    push(@{$lowexp},"forward\t".$inactiveList->[$i]."\t0.1");
+			    push(@{$lowexp},"reverse\t".$inactiveList->[$i]."\t0.1");
+			} elsif ($self->fbamodel()->getObject("modelreactions",$inactiveList->[$i])->direction() eq ">") {
+			   	push(@{$lowexp},"forward\t".$inactiveList->[$i]."\t0.1");
+			} elsif ($self->fbamodel()->getObject("modelreactions",$inactiveList->[$i])->direction() eq "<") {
+			   	push(@{$lowexp},"reverse\t".$inactiveList->[$i]."\t0.1");
 		    }
 		}
 		$inactiveList = $highexp;
@@ -704,7 +703,7 @@ sub parse_simultaneous_gapfill {
 	my $round = 0;
 	for (my $i=0; $i < @{$data}; $i++) {
 		my $array = [split(/\t/,$data->[$i])];
-		if ($array->[1] =~ m/rxn\d+/) {
+		if ($array->[1] =~ m/rxn\d+/ || $array->[2] =~ m/rxn\d+/) {
 			my $subarray = [split(/[,;]/,$array->[1])];
 			for (my $j=0; $j < @{$subarray}; $j++) {
 				if ($subarray->[$j] =~ m/([\-\+])(.+)/) {

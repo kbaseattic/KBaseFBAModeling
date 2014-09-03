@@ -8880,7 +8880,12 @@ sub runfba
 		notes => "",
 		model_workspace => $input->{workspace},
 		fba => undef,
-		biomass => undef
+		biomass => undef,
+		expsample => undef,
+		expsamplews => $input->{workspace},
+		booleanexp => 0,
+		activation_penalty => 0.1,
+		solver => undef
 	});
 	my $model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model});
 	if (!defined($input->{fba})) {
@@ -8888,11 +8893,36 @@ sub runfba
 	}
 	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
 	#Creating FBAFormulation Object
-	my $fba = $self->_buildFBAObject($input->{formulation},$model,$input->{workspace},$input->{fba});
-	$fba->fva($input->{fva});
-	$fba->comboDeletions($input->{simulateko});
-	$fba->fluxMinimization($input->{minimizeflux});
-	$fba->findMinimalMedia($input->{findminmedia});
+	my $fba;
+	if ($input->{booleanexp}) {
+		if (!defined($input->{expsample})) {
+			$self->_error("Cannot run boolean expression FBA without providing expression data!");	
+		}
+		my $sample = $self->_get_msobject("ExpressionSample",$input->{expsample_ws},$input->{expsample});
+		my $formulation = $self->_setDefaultGapfillFormulation({formulation => $input->{formulation}});
+		$formulation->{completeGapfill} = 1;
+		$formulation->{num_solutions} = 1;
+		$formulation->{expression_data} = $sample;
+		my $gfid = @{$model->gapfillings()};
+		$gfid = $model->id().".gf.".$gfid;
+		my ($gapfill,$fba) = $self->_buildGapfillObject($formulation,$model,$gfid);
+		$gapfill->simultaneousGapfill(1);
+		$fba->parameters()->{"Use coefficient file exclusively"} = 1;
+		$fba->parameters()->{"Objective coefficient file"} = "RxnOptCoef.txt";
+		$fba->parameters()->{"Add DB reactions for gapfilling"} = 0;
+		$fba->parameters()->{"Fast gap filling"} = 1;
+		$fba->parameters()->{"Simultaneous gapfill"} = 1;
+		$fba->parameters()->{"Reaction activation bonus"} = $input->{activation_penalty};
+	} else {
+		$fba = $self->_buildFBAObject($input->{formulation},$model,$input->{workspace},$input->{fba});
+		$fba->fva($input->{fva});
+		$fba->comboDeletions($input->{simulateko});
+		$fba->fluxMinimization($input->{minimizeflux});
+		$fba->findMinimalMedia($input->{findminmedia});
+	}
+	if (defined($input->{solver})) {
+	   	$fba->parameters()->{MFASolver} = uc($input->{solver});
+	}
 	if (defined($input->{biomass}) && defined($fba->biomassflux_objterms()->{bio1})) {
 		my $bio = $model->searchForBiomass($input->{biomass});
 		if (defined($bio)) {
@@ -8904,7 +8934,6 @@ sub runfba
 		my $scores = $self->_compute_eflux_scores($model,$input->{formulation}->{eflux_series}, $input->{formulation}->{eflux_sample}, $input->{formulation}->{eflux_workspace});
 		$self->_add_eflux_bounds($fba, $model, $scores, $input->{formulation}->{eflux_sample});
 	}
-
     #Running FBA
     my $objective;
     eval {
@@ -8922,7 +8951,6 @@ sub runfba
 	$fbaMeta = $self->_save_msobject($fba,"FBA",$input->{workspace},$input->{fba});
     $fbaMeta->[10]->{Media} = $input->{formulation}->{media_workspace}."/".$input->{formulation}->{media};
     $fbaMeta->[10]->{Objective} = $objective;
-
     $self->_clearContext();
     #END runfba
     my @_bad_returns;
@@ -21753,6 +21781,7 @@ sub build_tissue_model
 	my $gfid = @{$model->gapfillings()};
 	$gfid = $model->id().".gf.".$gfid;
 	my ($gapfill,$fba) = $self->_buildGapfillObject($formulation,$model,$gfid);
+	$gapfill->simultaneousGapfill(1);
 	$fba->parameters()->{"Use coefficient file exclusively"} = 1;
 	$fba->parameters()->{"Objective coefficient file"} = "RxnOptCoef.txt";
 	$fba->parameters()->{"Add DB reactions for gapfilling"} = 0;
@@ -21816,7 +21845,8 @@ sub build_tissue_model
 			}
 		}
 	}
-	print $count." reactions removed out of ".@{$lowexp}." low expression reactions!\n";
+	my $numlowexp = keys(%{$rxnhash});
+	print $count." reactions removed out of ".$numlowexp." low expression reactions!\n";
 	$output = $self->_save_msobject($model,"FBAModel",$params->{workspace},$params->{output_id});
 	$self->_clearContext();
     #END build_tissue_model

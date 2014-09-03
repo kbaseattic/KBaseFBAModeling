@@ -25,6 +25,9 @@ my $translation = {
 	addtomodel => "add_to_model",
 	auth => "auth",
 	overwrite => "overwrite",
+	expsample => "expsample",
+	expsamplews => "expsample_ws",
+	booleanexp => "booleanexp",
 	biomass => "biomass"
 };
 my $fbaTranslation = {
@@ -66,6 +69,9 @@ my $specs = [
     [ 'rxnko:s@', 'List of reaction KO (; delimiter)' ],
     [ 'bounds:s@', 'Custom bounds' ],
     [ 'constraints:s@', 'Custom constraints' ],
+    [ 'booleanexp', 'Boolean modeling expression data' ],
+    [ 'expsample:s', 'ID of expression sample' ],
+    [ 'expsamplews:s', 'Workspace with expression sample', { "default" => fbaws() } ],
     [ 'promconstraint|p:s', 'ID of PromConstraint' ],
     [ 'promconstraintws:s', 'Workspace with PromConstraint', { "default" => fbaws() } ],
     [ 'efluxsm:s', 'ID of ExpressionSample for E-Flux analysis' ],
@@ -91,8 +97,8 @@ my $specs = [
     [ 'findminmedia', 'Find minimal media' ],
     [ 'addtomodel', 'Add FBA to model' ],
     [ 'notes:s', 'Notes for flux balance analysis' ],
+    [ 'solver:s', 'Solver' ],
     [ 'workspace|w:s', 'Workspace to save FBA results', { "default" => fbaws() } ],
-    [ 'overwrite|o', 'Overwrite any existing FBA with same name' ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
 if (!defined($opt->{mediaws}) && defined($opt->{media})) {
