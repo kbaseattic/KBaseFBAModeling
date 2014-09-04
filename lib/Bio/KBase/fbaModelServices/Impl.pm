@@ -21766,6 +21766,8 @@ sub build_tissue_model
     #BEGIN build_tissue_model
     $self->_setContext($ctx,$params);
 	$params = $self->_validateargs($params,["expsample","model","workspace"],{		
+		media => "Complete",
+		media_ws => "KBaseMedia",
 		model_ws => $params->{workspace},
 		expsample_ws => $params->{workspace},
 		output_id => $params->{model},
@@ -21774,7 +21776,12 @@ sub build_tissue_model
 	});
 	my $model = $self->_get_msobject("FBAModel",$params->{model_ws},$params->{model});
 	my $sample = $self->_get_msobject("ExpressionSample",$params->{expsample_ws},$params->{expsample});
-	my $formulation = $self->_setDefaultGapfillFormulation({});
+	my $formulation = $self->_setDefaultGapfillFormulation({
+		formulation => {
+			media => $params->{media},
+			media_workspace => $params->{media_ws}
+		}
+	});
 	$formulation->{completeGapfill} = 1;
 	$formulation->{num_solutions} = 1;
 	$formulation->{expression_data} = $sample;
