@@ -8913,6 +8913,7 @@ sub runfba
 		$fba->parameters()->{"Fast gap filling"} = 1;
 		$fba->parameters()->{"Simultaneous gapfill"} = 1;
 		$fba->parameters()->{"Reaction activation bonus"} = $input->{activation_penalty};
+		$fba->parameters()->{"Make all reactions reversible in MFA"} = 0;
 	} else {
 		$fba = $self->_buildFBAObject($input->{formulation},$model,$input->{workspace},$input->{fba});
 		$fba->fva($input->{fva});
@@ -21795,6 +21796,7 @@ sub build_tissue_model
 	$fba->parameters()->{"Fast gap filling"} = 1;
 	$fba->parameters()->{"Simultaneous gapfill"} = 1;
 	$fba->parameters()->{"Reaction activation bonus"} = $params->{activation_penalty};
+	$fba->parameters()->{"Make all reactions reversible in MFA"} = 0;
 	if (defined($params->{solver})) {
     	$fba->parameters()->{MFASolver} = uc($params->{solver});
     }
@@ -21840,7 +21842,17 @@ sub build_tissue_model
 	my $solrxns = $gapfill->gapfillingSolutions()->[0]->gapfillingSolutionReactions();
 	for (my $i=0; $i < @{$solrxns}; $i++) {
 		my $srxn = $solrxns->[$i];
-		$rxnhash->{$srxn->reaction()->id()."_".$srxn->compartment()->id().$srxn->compartmentIndex()} = 1;
+		if (defined($rxnhash->{$srxn->reaction()->id()."_".$srxn->compartment()->id().$srxn->compartmentIndex()})) {
+			$rxnhash->{$srxn->reaction()->id()."_".$srxn->compartment()->id().$srxn->compartmentIndex()} = 1;
+		} else {
+			my $rxn = $model->getObject("modelreactions",$srxn->reaction()->id()."_".$srxn->compartment()->id().$srxn->compartmentIndex());
+			if (defined($rxn) && $rxn->direction() ne $srxn->direction()) {
+				$rxn->direction("=");
+				print "Changing direction on ".$srxn->reaction()->id()."_".$srxn->compartment()->id().$srxn->compartmentIndex()."\n";
+			} else {
+				print "Problem with reaction ".$srxn->reaction()->id()."_".$srxn->compartment()->id().$srxn->compartmentIndex()."\n";
+			}
+		}
 	}
 	my $count = 0;
 	foreach my $srxn (keys(%{$rxnhash})) {
