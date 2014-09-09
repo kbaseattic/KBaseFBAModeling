@@ -9924,7 +9924,9 @@ sub simulate_phenotypes
 		formulation => undef,
 		phenotypeSimultationSet => $input->{phenotypeSet}.".simulation",
 		all_transporters => 0,
-		positive_transporters => 0
+		positive_transporters => 0,
+		gapfill_phenosim => 0,
+		solver => undef
 	});
 	my $pheno = $self->_get_msobject("PhenotypeSet",$input->{phenotypeSet_workspace},$input->{phenotypeSet});
 	my $model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model});
@@ -9933,10 +9935,27 @@ sub simulate_phenotypes
 	} elsif ( $input->{positive_transporters} ) {
 		$model->addPhenotypeTransporters({phenotypes => $pheno,positiveonly => 1});
 	}
-	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
-	my $fba = $self->_buildFBAObject($input->{formulation},$model);
+	my $fba;
+	$input->{formulation}->{media} = "Carbon-D-Glucose";
+	$input->{formulation}->{media_workspace} = "KBaseMedia";
+	if ($input->{gapfill_phenosim} == 1) {
+		my $formulation = $self->_setDefaultGapfillFormulation({formulation => $input->{formulation}});
+		$formulation->{num_solutions} = 1;
+		my $gfid = @{$model->gapfillings()};
+		$gfid = $model->id().".gf.".$gfid;
+		(my $gapfill,$fba) = $self->_buildGapfillObject($formulation,$model,$gfid);
+		$fba->parameters()->{"Fast gap filling"} = 1;
+		$fba->parameters()->{"gapfill_phenosim"} = 1;
+		$fba->parameters()->{"gapfilling source model"} = "PublishedFBAModels/iJN678";
+	} else {
+		$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
+		$fba = $self->_buildFBAObject($input->{formulation},$model);
+	}
 	$fba->parent($self->_KBaseStore());
 	$fba->phenotypeset_ref($pheno->_reference());
+	if (defined($input->{solver})) {
+	   	$fba->parameters()->{MFASolver} = uc($input->{solver});
+	}
 	$fba->runFBA();
 	if (!defined($fba->phenotypesimulationset())) {
     	$self->_error("Simulation of phenotypes failed to return results from FBA!");

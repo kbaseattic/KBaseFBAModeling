@@ -27,7 +27,9 @@ my $translation = {
 	auth => "auth",
 	overwrite => "overwrite",
 	alltransporters => "all_transporters",
-	positivetransporters => "positive_transporters"
+	positivetransporters => "positive_transporters",
+	gapfillphenosim => "gapfill_phenosim",
+	solver => "solver"
 };
 my $fbaTranslation = {
 	objfraction => "objfraction",
@@ -46,6 +48,7 @@ my $fbaTranslation = {
 #Defining usage and options
 my $specs = [
     [ 'phenosimid:s', 'ID for phenotype simulation in workspace' ],
+    [ 'gapfillphenosim', 'Gapfill phenotype simulation' ],
     [ 'phenows:s', 'Workspace with phenotype data object' ],
     [ 'modelws:s', 'Workspace with model object' ],
     [ 'maximize:s', 'Maximize objective', { "default" => 1 } ],
@@ -70,7 +73,8 @@ my $specs = [
     [ 'workspace|w:s', 'Workspace to save FBA results', { "default" => fbaws() } ],
     [ 'overwrite|o', 'Overwrite any existing FBA with same name' ],
     [ 'alltransporters', 'Add transporters for everything in EVERY media in the phenotype set before doing the simulation' ],
-    [ 'positivetransporters', 'Add transporters ONLY for media that the organism grows on in the phenotype set before doing the simulation' ]
+    [ 'positivetransporters', 'Add transporters ONLY for media that the organism grows on in the phenotype set before doing the simulation' ],
+    [ 'solver:s', 'Solver' ],
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
 $params->{formulation} = {
