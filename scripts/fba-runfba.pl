@@ -28,6 +28,7 @@ my $translation = {
 	expsample => "expsample",
 	expsamplews => "expsample_ws",
 	booleanexp => "booleanexp",
+	solver => "solver",
 	biomass => "biomass"
 };
 my $fbaTranslation = {
@@ -97,7 +98,7 @@ my $specs = [
     [ 'findminmedia', 'Find minimal media' ],
     [ 'addtomodel', 'Add FBA to model' ],
     [ 'notes:s', 'Notes for flux balance analysis' ],
-    [ 'solver:s', 'Solver' ],
+    [ 'solver:s', 'Solver to use for FBA' ],
     [ 'workspace|w:s', 'Workspace to save FBA results', { "default" => fbaws() } ],
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
