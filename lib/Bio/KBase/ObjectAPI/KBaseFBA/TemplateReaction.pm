@@ -193,8 +193,11 @@ sub addRxnToModel {
 	if (@{$proteins} == 0 && $self->type() ne "universal" && $self->type() ne "spontaneous" && $args->{fulldb} == 0) {
 		return;
 	}
-	my $mdlcmp = $mdl->addCompartmentToModel({compartment => $self->compartment(),pH => 7,potential => 0,compartmentIndex => 0});
-	my $mdlrxn = $mdl->add("modelreactions",{
+
+    my $mdlcmp = $mdl->addCompartmentToModel({compartment => $self->compartment(),pH => 7,potential => 0,compartmentIndex => 0});
+    my $mdlrxn = $mdl->getObject("modelreactions", $self->reaction()->id()."_".$mdlcmp->id());
+    if(!$mdlrxn){
+	$mdlrxn = $mdl->add("modelreactions",{
 		id => $self->reaction()->id()."_".$mdlcmp->id(),
 		probability => 0,
 		reaction_ref => $self->reaction_ref(),
@@ -218,19 +221,21 @@ sub addRxnToModel {
 			modelcompound_ref => $mdlcpd->_reference()
 		});
 	}
-	if (@{$proteins} > 0) {
-		foreach my $protein (@{$proteins}) {
-			$mdlrxn->addModelReactionProtein({
-				proteinDataTree => $protein,
-				complex_ref => $protein->{cpx}->_reference()
-			});
-		}
-	} else {
-		$mdlrxn->addModelReactionProtein({
-			proteinDataTree => {note => $self->type()},
-		});
+    }
+    if (@{$proteins} > 0 && scalar(@{$mdlrxn->modelReactionProteins()})==0) {
+	foreach my $protein (@{$proteins}) {
+	    $mdlrxn->addModelReactionProtein({
+		proteinDataTree => $protein,
+		complex_ref => $protein->{cpx}->_reference()
+					     });
 	}
-	return $mdlrxn;
+    } elsif (scalar(@{$mdlrxn->modelReactionProteins()})==0) {
+	$mdlrxn->addModelReactionProtein({
+	    proteinDataTree => {note => $self->type()},
+					 });
+    }
+
+    return $mdlrxn;
 }
 
 
