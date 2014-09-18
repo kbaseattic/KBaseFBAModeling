@@ -916,6 +916,7 @@ sub printSBML {
 		my ($name,$value) = @_;
 		$value =~ s/[\[\]\(\)\+]//g;
 		$value =~ s/[\s:,]/_/g;
+		$value =~ s/[\'\"]//g;
 		return $name.'="'.XML::LibXML::Document->new('1.0', 'UTF-8')->createTextNode($value)->toString .'"';
     };
 	#Printing header to SBML file
