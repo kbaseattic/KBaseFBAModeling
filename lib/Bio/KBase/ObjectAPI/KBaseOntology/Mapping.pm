@@ -195,7 +195,7 @@ sub getObjectsByAlias {
 		my $uuidhash = {};
 		foreach my $set (keys(%{$aliasHash})) {
 			if (defined($aliasHash->{$set}->{$alias})) {
-				foreach my $uuid (@{$aliasHash->{$set}->{$alias}}) {
+				foreach my $uuid (keys(%{$aliasHash->{$set}->{$alias}})) {
 					$uuidhash->{$uuid} = 1;
 				}
 			}
@@ -204,7 +204,7 @@ sub getObjectsByAlias {
 	} else {
 		my $uuidhash = {};
 		if (defined($aliasHash->{$aliasName})) {
-			foreach my $uuid (@{$aliasHash->{$aliasName}->{$alias}}) {
+			foreach my $uuid (keys(%{$aliasHash->{$aliasName}->{$alias}})) {
 				$uuidhash->{$uuid} = 1;
 			}
 			$objects = $self->getObjects($attribute,[keys(%{$uuidhash})]);
