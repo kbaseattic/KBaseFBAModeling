@@ -14276,7 +14276,7 @@ sub reaction_sensitivity_analysis
 		# Save the value back to our object
 		$object->reactions()->[$i]->normalized_activated_reaction_count($normalized_activated_reaction_count);
 	}
-	$output = $self->_save_msobject($object,"RxnSensitivity",$input->{workspace},$input->{rxnsens_uid});
+	$output = $self->_save_msobject($object,"ReactionSensitivityAnalysis",$input->{workspace},$input->{rxnsens_uid});
 	$self->_clearContext();
     #END reaction_sensitivity_analysis
     my @_bad_returns;
@@ -14574,7 +14574,7 @@ workspace_ref is a string
 
 =item Description
 
-Deleted flagged reactions from a RxnSensitivity object
+Deleted flagged reactions from a ReactionSensitivityAnalysis object
 
 =back
 
@@ -14602,7 +14602,7 @@ sub delete_noncontributing_reactions
 		new_model_uid => undef,
 		new_rxn_sensitivity_uid => undef
 	});
-	my $rxnsens = $self->_get_msobject("RxnSensitivity",$input->{rxn_sensitivity_ws},$input->{rxn_sensitivity});
+	my $rxnsens = $self->_get_msobject("ReactionSensitivityAnalysis",$input->{rxn_sensitivity_ws},$input->{rxn_sensitivity});
 	$rxnsens->integrated_deletions_in_model(1);
 	my $model = $rxnsens->fbamodel();
     $model->parent($self->_KBaseStore());
@@ -14649,9 +14649,9 @@ sub delete_noncontributing_reactions
     # I here update the model ref to match it...
     $rxnsens->fbamodel_ref($model->_reference());
     if (defined($input->{new_rxn_sensitivity_uid})) {
-	$self->_save_msobject($rxnsens,"RxnSensitivity",$input->{workspace},$input->{new_rxn_sensitivity_uid});
+	$self->_save_msobject($rxnsens,"ReactionSensitivityAnalysis",$input->{workspace},$input->{new_rxn_sensitivity_uid});
     } else {
-	$self->_save_msobject($rxnsens,"RxnSensitivity",$rxnsens->_wsworkspace(),$rxnsens->_wsname());
+	$self->_save_msobject($rxnsens,"ReactionSensitivityAnalysis",$rxnsens->_wsworkspace(),$rxnsens->_wsname());
     }
     $self->_clearContext();
     #END delete_noncontributing_reactions
@@ -29935,7 +29935,7 @@ Input parameters for the "reaction_sensitivity_analysis" function.
 
         fbamodel_id model - ID of model to be analyzed (a required argument)
         workspace_id model_ws - ID of workspace with model to be analyzed (an optional argument - default is value of workspace argument)
-        string rxnsens_uid - Name of RxnSensitivity object in workspace (an optional argument - default is KBase ID)
+        string rxnsens_uid - Name of ReactionSensitivityAnalysis object in workspace (an optional argument - default is KBase ID)
         workspace_id workspace - ID of workspace where output and default inputs will be selected from (a required argument)
         list<reaction_id> reactions_to_delete - list of reactions to delete in sensitiviity analysis; note, order of the reactions matters (a required argument unless gapfill solution ID is provided)                
         gapfillsolution_id gapfill_solution_id - A Gapfill solution ID. If provided, all reactions in the provided solution will be tested for deletion.
@@ -30057,7 +30057,7 @@ workspace_id workspae - Workspace for outputs and default inputs (a required arg
 workspace_id rxn_sensitivity_ws - Workspace for reaction sensitivity object used as input
 string rxn_sensitivity - Reaction sensitivity ID
 fbamodel_id new_model_uid - ID for output model with noncontributing reactions deleted
-string new_rxn_sensitivity_uid - ID for rxnsensitivity object with bits set to indicate reactions were deleted
+string new_rxn_sensitivity_uid - ID for ReactionSensitivityAnalysis object with bits set to indicate reactions were deleted
 string auth - Authorization token for user (must have appropriate permissions to read and write objects)
 
 
