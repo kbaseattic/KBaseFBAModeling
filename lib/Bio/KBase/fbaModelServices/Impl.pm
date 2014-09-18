@@ -14081,8 +14081,7 @@ sub reaction_sensitivity_analysis
 		rxnprobs_ws => $input->{workspace},
 		solver => undef
 	});
-	print "Delete essential result:".$input->{delete_essential_reactions}."\n";
-    if ($input->{delete_essential_reactions} == 0 && !defined($input->{reactions_to_delete}) && !defined($input->{gapfill_solution_id})) {
+	if ($input->{delete_essential_reactions} == 0 && !defined($input->{reactions_to_delete}) && !defined($input->{gapfill_solution_id})) {
 		my $msg = "Must specify either reactions_to_delete or a gapfill solution ID (if both are specified the gapfill solution is attemtped first)";
 		$self->_error($msg);
     }
@@ -14606,7 +14605,6 @@ sub delete_noncontributing_reactions
 		if ($rxnsens->reactions()->[$i]->delete() eq "1") {
 			my $rxn = $model->getLinkedObject($rxnsens->reactions()->[$i]->modelreaction_ref());
 			if (defined($rxn)) {
-			    my $rxnid = $rxn->reaction()->id();
 			    if ( ! defined($rxnsens->reactions()->[$i]->direction() ) ) {
 				# For reverse compatibility with old RxnSensitivity objects
 					$model->remove("modelreactions", $rxn);
@@ -14622,12 +14620,12 @@ sub delete_noncontributing_reactions
 						$model->remove("modelreactions", $rxn);
 				    } elsif ( $dir eq ">" ) {
 						$model->adjustModelReaction({
-							reaction => $rxnid,
+							reaction => $rxn->id(),
 							direction => "<" 
 						});
 				    } elsif ( $dir eq "<" ) {
 				    	$model->adjustModelReaction({
-							reaction => $rxnid,
+							reaction => $rxn->id(),
 							direction => ">" 
 						});
 				    }
@@ -18383,6 +18381,9 @@ sub compare_genomes
 		foreach my $genone (keys(%{$functions->{$function}->{genome_features}})) {
 			foreach my $gentwo (keys(%{$functions->{$function}->{genome_features}})) {
 				if ($genone ne $gentwo) {
+					if (!defined($genomehash->{$genone}->{genome_similarity}->{$gentwo})) {
+						$genomehash->{$genone}->{genome_similarity}->{$gentwo} = [0,0];
+					}
 					$genomehash->{$genone}->{genome_similarity}->{$gentwo}->[1]++;
 				}
 			}
@@ -18399,6 +18400,9 @@ sub compare_genomes
 		foreach my $genone (keys(%{$families->{$fam}->{genome_features}})) {
 			foreach my $gentwo (keys(%{$families->{$fam}->{genome_features}})) {
 				if ($genone ne $gentwo) {
+					if (!defined($genomehash->{$genone}->{genome_similarity}->{$gentwo})) {
+						$genomehash->{$genone}->{genome_similarity}->{$gentwo} = [0,0];
+					}
 					$genomehash->{$genone}->{genome_similarity}->{$gentwo}->[0]++;
 				}
 			}
@@ -18412,6 +18416,7 @@ sub compare_genomes
 		$gc->{families}->[$famind->{$fam}] = $families->{$fam};
 	}
 	$gc = Bio::KBase::ObjectAPI::KBaseGenomes::GenomeComparison->new($gc);
+	#print $gc->toJSON({pp => 1})."\n";
 	$output = $self->_save_msobject($gc,"GenomeComparison",$params->{workspace},$params->{output_id});
     $self->_clearContext();
     #END compare_genomes

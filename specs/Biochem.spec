@@ -28,6 +28,11 @@ module KBaseBiochem {
 		@id subws KBaseBiochem.Biochemistry.compounds.[*].id
 	*/
     typedef string compound_ref;
+    /*
+		Reference to a compound object in a biochemistry
+		@id subws KBaseBiochem.Media.mediacompounds.[*].id
+	*/
+    typedef string mediacompound_ref;
 	/*
 		KBase genome ID
 		@id kb
@@ -221,8 +226,6 @@ module KBaseBiochem {
     
     /* 
     	MediaCompound object
-    	
-    	@searchable ws_subset compound_ref concentration maxFlux minFlux
     */
 	typedef structure {
 		compound_ref compound_ref;
@@ -232,18 +235,39 @@ module KBaseBiochem {
 	} MediaCompound;
 	
 	/* 
+    	MediaReagent object
+    	
+    	@optional molecular_weight concentration_units concentration associated_compounds
+    */
+	typedef structure {
+		string id;
+		string name;
+		float concentration;
+		string concentration_units;
+		float molecular_weight;
+		mapping<string,float> associated_compounds;
+	} MediaReagent;
+	
+	/* 
     	Media object
     	
-    	@searchable ws_subset id isDefined isMinimal name type
-    	@searchable ws_subset mediacompounds.[*].(compound_ref,concentration,maxFlux,minFlux)
+    	@optional reagents atmosphere_addition atmosphere temperature pH_data isAerobic protocol_link source source_id 	
     */
 	typedef structure {
 		media_id id;
+		string name;
 		source_id source_id;
+		string source;
+		string protocol_link;
 		bool isDefined;
 		bool isMinimal;
-		string name;
+		bool isAerobic;
 		string type;
+		string pH_data;
+		float temperature;
+		string atmosphere;
+		string atmosphere_addition;
+		list<MediaReagent> reagents;
 		list<MediaCompound> mediacompounds;
 	} Media;
 	
