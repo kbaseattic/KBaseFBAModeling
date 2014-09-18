@@ -158,7 +158,7 @@ sub _resetKBaseStore {
 	$temp = pop(@{$temp});
 	my $newparams = {};
 	foreach my $param (keys(%{$params})) {
-		if ($param ne "fasta" && $param ne "annotations" && $param ne "genomeobj" && $param ne "gtf_file") {
+		if ($param ne "fasta" && $param ne "annotations" && $param ne "genomeobj" && $param ne "gtf_file" && $param ne "sbml") {
 			$newparams->{$param} = $params->{$param};
 		}
 	}
@@ -2956,7 +2956,11 @@ sub _parse_SBML {
     	if (!defined($name)) {
     		$name = $id;
     	}
-    	push(@{$reactions},[$id,$direction,$compartment,$gpr,$name,$enzyme,$pathway,undef,$reactants." => ".$products]);
+    	if (length($reactants) > 0 && length($products) > 0) {
+    		push(@{$reactions},[$id,$direction,$compartment,$gpr,$name,$enzyme,$pathway,undef,$reactants." => ".$products]);
+    	} else {
+    		print "Reaction ".$id." was skipped, reactants=".$reactants.", products=".$products."\n";
+    	}
     }
     return ($reactions,$compounds);
 }
@@ -7551,6 +7555,7 @@ sub import_fbamodel
     for (my $i=0; $i < @{$input->{reactions}}; $i++) {
     	my $rxn = $input->{reactions}->[$i];
     	$rxn->[0] =~ s/[^\w]/_/g;
+    	$rxn->[0] =~ s/_/-/g;
     	if (defined($rxn->[8])) {
     		if ($rxn->[8] =~ m/^\[([A-Za-z])\]\s*:\s*(.+)/) {
     			$rxn->[2] = lc($1);
