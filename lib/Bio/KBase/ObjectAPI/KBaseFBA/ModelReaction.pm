@@ -213,14 +213,8 @@ sub _buildcomplexString {
 	my ($self) = @_;
 	my $complexString = "";
 	foreach my $protein (@{$self->modelReactionProteins()}) {
-		if (length($complexString) > 0) {
-			$complexString .= "&";
-		}
 		my $sustring = "";
 		foreach my $subunit (@{$protein->modelReactionProteinSubunits()}) {
-			if (length($sustring) > 0) {
-				$sustring .= "+";
-			}
 			my $genestring = "";
 			foreach my $gene (@{$subunit->features()}) {
 				if (length($genestring) > 0) {
@@ -228,9 +222,19 @@ sub _buildcomplexString {
 				}
 				$genestring .= $gene->id();
 			}
-			$sustring .= $genestring;
+			if (length($genestring) > 0) {
+				if (length($sustring) > 0) {
+					$sustring .= "+";
+				}
+				$sustring .= $genestring;
+			}
 		}
-		$complexString .= $sustring;
+		if (length($sustring) > 0) {
+			if (length($complexString) > 0) {
+				$complexString .= "&";
+			}
+			$complexString .= $sustring;
+		}
 	}
 	return $complexString;
 }
