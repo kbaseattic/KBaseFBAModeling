@@ -44,6 +44,7 @@ has outputfiles => (is => 'rw', isa => 'HashRef', printOrder => '-1', default =>
 has parameters => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
 has noErrorThermodynamicConstraints => (is => 'rw', isa => 'Bool', printOrder => '17', default => '1', type => 'attribute', metaclass => 'Typed');
 has objectiveConstraintFraction => (is => 'rw', isa => 'Num', printOrder => '0', default => 'none', type => 'attribute', metaclass => 'Typed');
+has regulome_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has minimize_reactions => (is => 'rw', isa => 'Bool', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
 has minimizeErrorThermodynamicConstraints => (is => 'rw', isa => 'Bool', printOrder => '18', default => '1', type => 'attribute', metaclass => 'Typed');
 has uptakeLimits => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
@@ -58,7 +59,6 @@ has defaultMaxDrainFlux => (is => 'rw', isa => 'Num', printOrder => '22', requir
 has reactionflux_objterms => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub {return {};}, type => 'attribute', metaclass => 'Typed');
 has tintleW => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has fbamodel_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has regmodel_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has reactionKO_refs => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has fluxUseVariables => (is => 'rw', isa => 'Bool', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
 has findMinimalMedia => (is => 'rw', isa => 'Bool', printOrder => '13', default => '0', type => 'attribute', metaclass => 'Typed');
@@ -96,8 +96,8 @@ has promconstraint => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseSto
 has phenotypeset => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,PhenotypeSet,phenotypeset_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_phenotypeset', clearer => 'clear_phenotypeset', isa => 'Bio::KBase::ObjectAPI::KBasePhenotypes::PhenotypeSet', weak_ref => 1);
 has geneKOs => (is => 'rw', type => 'link(Genome,features,geneKO_refs)', metaclass => 'Typed', lazy => 1, builder => '_build_geneKOs', clearer => 'clear_geneKOs', isa => 'ArrayRef');
 has additionalCpds => (is => 'rw', type => 'link(FBAModel,modelcompounds,additionalCpd_refs)', metaclass => 'Typed', lazy => 1, builder => '_build_additionalCpds', clearer => 'clear_additionalCpds', isa => 'ArrayRef');
+has regulome => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,Regulome,regulome_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_regulome', clearer => 'clear_regulome', isa => 'Bio::KBase::ObjectAPI::KBaseRegulation::Regulome', weak_ref => 1);
 has fbamodel => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,FBAModel,fbamodel_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_fbamodel', clearer => 'clear_fbamodel', isa => 'Bio::KBase::ObjectAPI::KBaseFBA::FBAModel', weak_ref => 1);
-has regmodel => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,RegModel,regmodel_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_regmodel', clearer => 'clear_regmodel', isa => 'Ref', weak_ref => 1);
 has reactionKOs => (is => 'rw', type => 'link(FBAModel,modelreactions,reactionKO_refs)', metaclass => 'Typed', lazy => 1, builder => '_build_reactionKOs', clearer => 'clear_reactionKOs', isa => 'ArrayRef');
 has tintlesample => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,ExpressionSample,tintlesample_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_tintlesample', clearer => 'clear_tintlesample', isa => 'Bio::KBase::ObjectAPI::KBaseExpression::ExpressionSample', weak_ref => 1);
 
@@ -129,13 +129,13 @@ sub _build_additionalCpds {
 	 my ($self) = @_;
 	 return $self->getLinkedObjectArray($self->additionalCpd_refs());
 }
+sub _build_regulome {
+	 my ($self) = @_;
+	 return $self->getLinkedObject($self->regulome_ref());
+}
 sub _build_fbamodel {
 	 my ($self) = @_;
 	 return $self->getLinkedObject($self->fbamodel_ref());
-}
-sub _build_regmodel {
-	 my ($self) = @_;
-	 return $self->getLinkedObject($self->regmodel_ref());
 }
 sub _build_reactionKOs {
 	 my ($self) = @_;
@@ -284,6 +284,13 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
+            'name' => 'regulome_ref',
+            'type' => 'Str',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
             'name' => 'minimize_reactions',
             'default' => 0,
             'type' => 'Bool',
@@ -393,13 +400,6 @@ my $attributes = [
             'req' => 0,
             'printOrder' => -1,
             'name' => 'fbamodel_ref',
-            'type' => 'Str',
-            'perm' => 'rw'
-          },
-          {
-            'req' => 0,
-            'printOrder' => -1,
-            'name' => 'regmodel_ref',
             'type' => 'Str',
             'perm' => 'rw'
           },
@@ -519,7 +519,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {media_ref => 0, compoundflux_objterms => 1, phenotypesimulationset_ref => 2, maximizeObjective => 3, promconstraint_ref => 4, id => 5, phenotypeset_ref => 6, geneKO_refs => 7, inputfiles => 8, drainfluxUseVariables => 9, additionalCpd_refs => 10, outputfiles => 11, parameters => 12, noErrorThermodynamicConstraints => 13, objectiveConstraintFraction => 14, minimize_reactions => 15, minimizeErrorThermodynamicConstraints => 16, uptakeLimits => 17, allReversible => 18, tintleKappa => 19, objectiveValue => 20, minimize_reaction_costs => 21, numberOfSolutions => 22, fluxMinimization => 23, thermodynamicConstraints => 24, defaultMaxDrainFlux => 25, reactionflux_objterms => 26, tintleW => 27, fbamodel_ref => 28, regmodel_ref => 29, reactionKO_refs => 30, fluxUseVariables => 31, findMinimalMedia => 32, PROMKappa => 33, simpleThermoConstraints => 34, comboDeletions => 35, defaultMinDrainFlux => 36, tintlesample_ref => 37, fva => 38, decomposeReversibleDrainFlux => 39, biomassflux_objterms => 40, defaultMaxFlux => 41, decomposeReversibleFlux => 42};
+my $attribute_map = {media_ref => 0, compoundflux_objterms => 1, phenotypesimulationset_ref => 2, maximizeObjective => 3, promconstraint_ref => 4, id => 5, phenotypeset_ref => 6, geneKO_refs => 7, inputfiles => 8, drainfluxUseVariables => 9, additionalCpd_refs => 10, outputfiles => 11, parameters => 12, noErrorThermodynamicConstraints => 13, objectiveConstraintFraction => 14, regulome_ref => 15, minimize_reactions => 16, minimizeErrorThermodynamicConstraints => 17, uptakeLimits => 18, allReversible => 19, tintleKappa => 20, objectiveValue => 21, minimize_reaction_costs => 22, numberOfSolutions => 23, fluxMinimization => 24, thermodynamicConstraints => 25, defaultMaxDrainFlux => 26, reactionflux_objterms => 27, tintleW => 28, fbamodel_ref => 29, reactionKO_refs => 30, fluxUseVariables => 31, findMinimalMedia => 32, PROMKappa => 33, simpleThermoConstraints => 34, comboDeletions => 35, defaultMinDrainFlux => 36, tintlesample_ref => 37, fva => 38, decomposeReversibleDrainFlux => 39, biomassflux_objterms => 40, defaultMaxFlux => 41, decomposeReversibleFlux => 42};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -594,6 +594,15 @@ my $links = [
             'field' => 'id'
           },
           {
+            'attribute' => 'regulome_ref',
+            'parent' => 'Bio::KBase::ObjectAPI::KBaseStore',
+            'clearer' => 'clear_regulome',
+            'name' => 'regulome',
+            'method' => 'Regulome',
+            'class' => 'Bio::KBase::ObjectAPI::KBaseRegulation::Regulome',
+            'module' => 'KBaseRegulation'
+          },
+          {
             'attribute' => 'fbamodel_ref',
             'parent' => 'Bio::KBase::ObjectAPI::KBaseStore',
             'clearer' => 'clear_fbamodel',
@@ -601,15 +610,6 @@ my $links = [
             'method' => 'FBAModel',
             'class' => 'Bio::KBase::ObjectAPI::KBaseFBA::FBAModel',
             'module' => 'KBaseFBA'
-          },
-          {
-            'attribute' => 'regmodel_ref',
-            'parent' => 'Bio::KBase::ObjectAPI::KBaseStore',
-            'clearer' => 'clear_regmodel',
-            'name' => 'regmodel',
-            'method' => 'RegModel',
-            'class' => 'RegModel',
-            'module' => undef
           },
           {
             'parent' => 'FBAModel',
@@ -633,7 +633,7 @@ my $links = [
           }
         ];
 
-my $link_map = {media => 0, phenotypesimulationset => 1, promconstraint => 2, phenotypeset => 3, geneKOs => 4, additionalCpds => 5, fbamodel => 6, regmodel => 7, reactionKOs => 8, tintlesample => 9};
+my $link_map = {media => 0, phenotypesimulationset => 1, promconstraint => 2, phenotypeset => 3, geneKOs => 4, additionalCpds => 5, regulome => 6, fbamodel => 7, reactionKOs => 8, tintlesample => 9};
 sub _links {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {

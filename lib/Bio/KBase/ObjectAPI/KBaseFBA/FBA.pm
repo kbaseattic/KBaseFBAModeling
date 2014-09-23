@@ -419,7 +419,7 @@ sub createJobDirectory {
 		}
 	}
 	my $rxnhash = {};
-	my $mdlData = ["REACTIONS","LOAD;DIRECTIONALITY;COMPARTMENT;ASSOCIATED PEG"];
+	my $mdlData = ["REACTIONS","LOAD;DIRECTIONALITY;COMPARTMENT;ASSOCIATED PEG;COMPLEXES"];
 	my $BioRxn = ["id	abbrev	deltaG	deltaGErr	equation	name	reversibility	status	thermoReversibility"];
 	my $mdlrxn = $model->modelreactions();
 	my $compindecies = {};
@@ -438,7 +438,7 @@ sub createJobDirectory {
 		}
 		my $id = $rxn->id();
 		my $name = $rxn->name();
-		my $line = $id.";".$rxndir.";c;".$rxn->gprString();
+		my $line = $id.";".$rxndir.";c;".$rxn->gprString().";".$rxn->complexString();
 		$line =~ s/\|/___/g;
 		push(@{$mdlData},$line);
 		if (!defined($rxnhash->{$id})) {
@@ -1000,7 +1000,7 @@ sub createJobDirectory {
 		$self->parameters()->{"Complete gap filling"} = 0;
 	}
 	#Printing specialized bounds
-	my $mediaData = ["ID\tNAMES\tVARIABLES\tTYPES\tMAX\tMIN\tCOMPARTMENTS"];
+	my $mediaData = ["ID\tNAMES\tVARIABLES\tTYPES\tMAX\tMIN\tCOMPARTMENTS\tCONCENTRATIONS"];
 	my $cpdbnds = $self->FBACompoundBounds();
 	my $rxnbnds = $self->FBAReactionBounds();
 	foreach my $media (@{$medialist}) {
@@ -1010,12 +1010,14 @@ sub createJobDirectory {
 			if (defined($self->parameters()->{"Complete gap filling"}) && $self->parameters()->{"Complete gap filling"} == 1) {
 				$userBounds->{$mediaCpds->[$i]->compound()->id()."_e0"}->{"e"}->{"DRAIN_FLUX"} = {
 					max => 10000,
-					min => -10000
+					min => -10000,
+					conc => 0.001
 				};
 			} else {
 				$userBounds->{$mediaCpds->[$i]->compound()->id()."_e0"}->{"e"}->{"DRAIN_FLUX"} = {
 					max => $mediaCpds->[$i]->maxFlux(),
-					min => $mediaCpds->[$i]->minFlux()
+					min => $mediaCpds->[$i]->minFlux(),
+					conc => $mediaCpds->[$i]->concentration()
 				};
 			}
 		}
@@ -1027,12 +1029,14 @@ sub createJobDirectory {
 			if (defined($self->parameters()->{"Complete gap filling"}) && $self->parameters()->{"Complete gap filling"} == 1) {
 				$userBounds->{$cpdbnds->[$i]->modelcompound()->id()}->{$comp}->{$translation->{$cpdbnds->[$i]->variableType()}} = {
 					max => 10000,
-					min => -10000
+					min => -10000,
+					conc => 0.001
 				};
 			} else {
 				$userBounds->{$cpdbnds->[$i]->modelcompound()->id()}->{$comp}->{$translation->{$cpdbnds->[$i]->variableType()}} = {
 					max => $cpdbnds->[$i]->upperBound(),
-					min => $cpdbnds->[$i]->lowerBound()
+					min => $cpdbnds->[$i]->lowerBound(),
+					conc => 0.001
 				};
 			}
 		}
@@ -1040,12 +1044,14 @@ sub createJobDirectory {
 			if (defined($self->parameters()->{"Complete gap filling"}) && $self->parameters()->{"Complete gap filling"} == 1) {
 				$userBounds->{$rxnbnds->[$i]->modelreaction()->id()}->{c}->{$translation->{$rxnbnds->[$i]->variableType()}} = {
 					max => 10000,
-					min => -10000
+					min => -10000,
+					conc => 0.001
 				};
 			} else {
 				$userBounds->{$rxnbnds->[$i]->modelreaction()->id()}->{c}->{$translation->{$rxnbnds->[$i]->variableType()}} = {
 					max => $rxnbnds->[$i]->upperBound(),
-					min => $rxnbnds->[$i]->lowerBound()
+					min => $rxnbnds->[$i]->lowerBound(),
+					conc => 0.001
 				};
 			}
 		}
@@ -1058,6 +1064,7 @@ sub createJobDirectory {
 					push(@{$dataArrays->{min}},$userBounds->{$var}->{$comp}->{$type}->{min});
 					push(@{$dataArrays->{max}},$userBounds->{$var}->{$comp}->{$type}->{max});
 					push(@{$dataArrays->{comp}},$comp);
+					push(@{$dataArrays->{conc}},$userBounds->{$var}->{$comp}->{$type}->{conc});
 				}
 			}
 		}
@@ -1068,13 +1075,141 @@ sub createJobDirectory {
 				join("|",@{$dataArrays->{type}})."\t".
 				join("|",@{$dataArrays->{max}})."\t".
 				join("|",@{$dataArrays->{min}})."\t".
-				join("|",@{$dataArrays->{comp}});
+				join("|",@{$dataArrays->{comp}})."\t".
+				join("|",@{$dataArrays->{conc}});
 		} else {
-			$newLine .= "\t\t\t\t";
+			$newLine .= "\t\t\t\t\t";
 		}
 		push(@{$mediaData},$newLine);
 	}
 	Bio::KBase::ObjectAPI::utilities::PRINTFILE($directory."media.tbl",$mediaData);
+	my $genereg = {};
+	if (defined($self->regulome_ref())) {
+		my $rmodel = $self->regulome();
+		my $regulons = $rmodel->regulons();
+		for (my $i=0; $i < @{$regulons}; $i++) {
+			my $operons = $regulons->[$i]->operons();
+			my $tfs = $regulons->[$i]->tfs();
+			my $effectors = $regulons->[$i]->effectors();
+			for (my $j=0; $j < @{$operons}; $j++) {
+				my $sign = 1;
+				my $sites = $operons->[$j]->sites();
+				if (defined($sites->[0]->regulatory_mechanism())) {
+					$sign = $sites->[0]->regulatory_mechanism();
+				}
+				my $genes = $operons->[$j]->genes();
+				my $found = 0;
+				for (my $m=0; $m < @{$tfs}; $m++) {
+					if ($tfs->[$m]->locus_tag() ne "RNA") {
+						$found = 1;
+						for (my $n=0; $n < @{$effectors}; $n++) {
+							if ($effectors->[$n]->effector_class() =~ m/(.+)b$/) {
+								my $sign = $1;
+								my $compname = $effectors->[$n]->effector_name();
+								my $array = [split(/\-\-/,$compname)];
+								my $type = "standard";
+								if (defined($array->[1])) {
+									$type = $array->[1];
+									$compname = $array->[0];
+								}
+								my $comp = $self->biochemistry()->searchForCompound($compname);
+								if (!defined($comp)) {
+									print STDERR "Could not find compound stimuli ".$compname."!\n";
+									$genereg->{$tfs->[$m]->locus_tag()}->{stimuli}->{$compname} = $sign;
+								} else {
+									$genereg->{$tfs->[$m]->locus_tag()}->{compounds}->{$comp->id()} = [$sign,$type];
+								}
+							} elsif ($effectors->[$n]->effector_class() =~ m/(.+)[a-z]$/) {
+								my $sign = $1;
+								$genereg->{$tfs->[$m]->locus_tag()}->{stimuli}->{$effectors->[$n]->effector_name()} = $sign;
+							}
+						}
+					}
+				}
+				for (my $k=0; $k < @{$genes}; $k++) {
+					for (my $m=0; $m < @{$tfs}; $m++) {
+						if ($tfs->[$m]->locus_tag() eq "RNA") {
+							$genereg->{$genes->[$k]->locus_tag()}->{stimuli}->{$tfs->[$m]->locus_tag()} = $sign;
+						} else {
+							$genereg->{$genes->[$k]->locus_tag()}->{tfs}->{$tfs->[$m]->locus_tag()} = $sign;
+						}
+					}
+					if ($found == 0) {
+						for (my $n=0; $n < @{$effectors}; $n++) {
+							if ($effectors->[$n]->effector_class() =~ m/(.+)b$/) {
+								my $esign = $1;
+								my $compname = $effectors->[$n]->effector_name();
+								my $array = [split(/\-\-/,$compname)];
+								my $type = "standard";
+								if (defined($array->[1])) {
+									$type = $array->[1];
+									$compname = $array->[0];
+								}
+								my $comp = $self->biochemistry()->searchForCompound($compname);
+								if (!defined($comp)) {
+									print STDERR "Could not find compound stimuli ".$compname."!\n";
+									$genereg->{$genes->[$k]->locus_tag()}->{stimuli}->{$compname} = $esign*$sign;
+								} else {
+									$genereg->{$genes->[$k]->locus_tag()}->{compounds}->{$comp->id()} = [$esign*$sign,$type];
+								}
+							} elsif ($effectors->[$n]->effector_class() =~ m/(.+)[a-z]$/) {
+								my $esign = $1;
+								$genereg->{$genes->[$k]->locus_tag()}->{stimuli}->{$effectors->[$n]->effector_name()} = $esign*$sign;
+							}
+						}
+					}	
+				}
+			}
+		}
+	}
+	my $genedata = ["ID\tTFS\tSTIMULI\tCOMPOUNDS\n"];
+	if (@{$genedata} > 1) {
+		$parameters->{"gene list"} = join(";",keys(%{$genereg}));
+		foreach my $gene (keys(%{$genereg})) {
+			my $line = $gene."\t";
+			if (defined($genereg->{$gene}->{tfs})) {
+				my $item = "";
+				foreach my $stim (keys(%{$genereg->{$gene}->{tfs}})) {
+					if (length($item)) {
+						$item .= "|";
+					}
+					$item .= $stim.":".$genereg->{$gene}->{tfs}->{$item}.":1";
+				}
+				$line .= $item;
+			}
+			$line .= "\t";
+			if (defined($genereg->{$gene}->{stimuli})) {
+				my $item = "";
+				foreach my $stim (keys(%{$genereg->{$gene}->{stimuli}})) {
+					if (length($item)) {
+						$item .= "|";
+					}
+					$item .= $stim.":".$genereg->{$gene}->{stimuli}->{$item}.":1";
+				}
+				$line .= $item;
+			}
+			$line .= "\t";
+			if (defined($genereg->{$gene}->{compounds})) {
+				my $item = "";
+				foreach my $stim (keys(%{$genereg->{$gene}->{compounds}})) {
+					if (length($item)) {
+						$item .= "|";
+					}
+					$item .= $stim.":".$genereg->{$gene}->{compounds}->{$item}->[0];
+					if ($genereg->{$gene}->{compounds}->{$item}->[1] eq "standard") {
+						$item .= ":1:1:1";
+					} elsif ($genereg->{$gene}->{compounds}->{$item}->[1] eq "stress") {
+						$item .= ":0.5:0:1";
+					} elsif ($genereg->{$gene}->{compounds}->{$item}->[1] eq "extracellular") {
+						$item .= ":1:0:0";
+					}
+				}
+				$line .= $item;
+			}
+			push(@{$genedata},$line);
+		}
+	}
+	Bio::KBase::ObjectAPI::utilities::PRINTFILE($directory."genes.tbl",$genedata);
 	#Set StringDBFile.txt
 	my $mfatkdir = $self->mfatoolkitDirectory();
 	my $stringdb = [
@@ -1082,7 +1217,8 @@ sub createJobDirectory {
 		"compound\tid\tSINGLEFILE\t\t".$directory."Compounds.tbl\tTAB\tSC\tid",
 		"reaction\tid\tSINGLEFILE\t".$directory."reaction/\t".$directory."Reactions.tbl\tTAB\t|\tid",
 		"cue\tNAME\tSINGLEFILE\t\t".$mfatkdir."../etc/MFAToolkit/cueTable.txt\tTAB\t|\tNAME",
-		"media\tID\tSINGLEFILE\t".$directory."media/\t".$directory."media.tbl\tTAB\t|\tID;NAMES"		
+		"media\tID\tSINGLEFILE\t".$directory."media/\t".$directory."media.tbl\tTAB\t|\tID;NAMES",
+		"gene\tID\tSINGLEFILE\t".$directory."gene/\t".$directory."genes.tbl\tTAB\t|\tID;NAMES"		
 	];
 	Bio::KBase::ObjectAPI::utilities::PRINTFILE($directory."StringDBFile.txt",$stringdb);
 	#Write shell script

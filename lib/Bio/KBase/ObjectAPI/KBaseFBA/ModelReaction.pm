@@ -35,6 +35,7 @@ has revEquationCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass =
 has equationCompFreeCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcompfreeequationcode' );
 has revEquationCompFreeCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildrevcompfreeequationcode' );
 has equationFormula => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildequationformula' );
+has complexString => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcomplexString' );
 
 #***********************************************************************************************************
 # BUILDERS:
@@ -207,6 +208,31 @@ sub _buildfeatureUUIDs {
 		}
 	}
 	return [keys(%{$featureHash})];
+}
+sub _buildcomplexString {
+	my ($self) = @_;
+	my $complexString = "";
+	foreach my $protein (@{$self->modelReactionProteins()}) {
+		if (length($complexString) > 0) {
+			$complexString .= "&";
+		}
+		my $sustring = "";
+		foreach my $subunit (@{$protein->modelReactionProteinSubunits()}) {
+			if (length($sustring) > 0) {
+				$sustring .= "+";
+			}
+			my $genestring = "";
+			foreach my $gene (@{$subunit->features()}) {
+				if (length($genestring) > 0) {
+					$genestring .= "=";
+				}
+				$genestring .= $gene->id();
+			}
+			$sustring .= $genestring;
+		}
+		$complexString .= $sustring;
+	}
+	return $complexString;
 }
 
 #***********************************************************************************************************

@@ -1095,8 +1095,8 @@ sub _setDefaultFBAFormulation {
 		bounds => [],
 		constraints => [],
 		uptakelim => {},
-		defaultmaxflux => 100,
-		defaultminuptake => -100,
+		defaultmaxflux => 1000,
+		defaultminuptake => -1000,
 		defaultmaxuptake => 0,
 		simplethermoconst => 0,
 		thermoconst => 0,
@@ -1107,8 +1107,8 @@ sub _setDefaultFBAFormulation {
 		eflux_sample => undef,
 		eflux_series => undef,
 		eflux_workspace => undef,
-		regmodel => undef,
-		regmodel_workspace => undef
+		regulome => undef,
+		regulome_workspace => undef
 	});
 	return $fbaFormulation;
 }
@@ -1170,10 +1170,10 @@ sub _buildFBAObject {
 		}
 		$fbaobj->PROMKappa(1);
 	}
-	if (defined($fbaFormulation->{regmodel}) && defined($fbaFormulation->{regmodel_workspace})) {
-		my $regmodel = $self->_get_msobject("RegulatoryModel",$fbaFormulation->{regmodel_workspace},$fbaFormulation->{regmodel});
+	if (defined($fbaFormulation->{regulome}) && defined($fbaFormulation->{regulome_workspace})) {
+		my $regmodel = $self->_get_msobject("Regulome",$fbaFormulation->{regulome_workspace},$fbaFormulation->{regulome});
 		if (defined($regmodel)) {
-			$fbaobj->regmodel_ref($regmodel->_reference)
+			$fbaobj->regulome_ref($regmodel->_reference)
 		}
 	}
 	if (defined($fbaFormulation->{tintle_sample}) && defined($fbaFormulation->{tintle_workspace})) {
@@ -8534,8 +8534,8 @@ sub addmedia
 	    	my $data = {
 	    		compound_ref => $bio->_reference()."/compounds/id/".$cpdobj->id(),
 	    		concentration => 0.001,
-	    		maxFlux => 100,
-	    		minFlux => -100
+	    		maxFlux => 1000,
+	    		minFlux => -1000
 	    	};
 	    	if (defined($input->{concentrations}->[$i])) {
 	    		$data->{concentration} = $input->{concentrations}->[$i];
