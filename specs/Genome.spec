@@ -142,7 +142,11 @@ module KBaseGenomes {
 		fasta_ref fasta_ref - reference to fasta file from which contig set were read
 
 		@optional name type reads_ref fasta_ref
-    	@searchable ws_subset contigs.[*].(id,md5) md5 id name source_id source type
+    	@metadata ws type as Type
+		@metadata ws source_id as Source ID
+		@metadata ws source as Source
+		@metadata ws name as Name
+		@metadata ws length(contigs) as Number contigs
 	*/
 	typedef structure {
 		ContigSet_id id;
@@ -348,7 +352,18 @@ module KBaseGenomes {
 	Should the Genome object contain a list of contig_ids too?
 
     	@optional quality close_genomes analysis_events features source_id source contigs contig_ids publications md5 taxonomy gc_content complete dna_size num_contigs contig_lengths contigset_ref
-    	@searchable ws_subset taxonomy num_contigs source_id source genetic_code id scientific_name domain contigset_ref
+    	@metadata ws gc_content as GC content
+    	@metadata ws taxonomy as Taxonomy
+    	@metadata ws md5 as MD5
+    	@metadata ws dna_size as Size
+    	@metadata ws genetic_code as Genetic code
+    	@metadata ws domain as Domain
+		@metadata ws source_id as Source ID
+		@metadata ws source as Source
+		@metadata ws scientific_name as Name
+		@metadata ws length(close_genomes) as Close genomes
+		@metadata ws length(features) as Number features
+		@metadata ws num_contigs as Number contigs
     */
     typedef structure {
 		Genome_id id;
@@ -499,6 +514,11 @@ module KBaseGenomes {
 		list<MetagenomeAnnotationOTU> otus - list of otus in metagenome
 		
     	@searchable ws_subset type name id source_id source confidence_type otus.[*].(id,name,source_id,source,functions.[*].(id,abundance,confidence,functional_role))
+		@metadata ws type as Type
+		@metadata ws name as Name
+		@metadata ws source_id as Source ID
+		@metadata ws source as Source
+		@metadata ws length(otus) as Number OTUs
 	*/
     typedef structure {
 		string type;
@@ -581,6 +601,10 @@ module KBaseGenomes {
     	Pangenome object: this object holds all data regarding a pangenome
 
     	@searchable ws_subset id name
+		@metadata ws type as Type
+		@metadata ws name as Name
+		@metadata ws length(orthologs) as Number orthologs
+		@metadata ws length(genome_refs) as Number genomes
     */
     typedef structure {
     	string id;
@@ -640,6 +664,10 @@ module KBaseGenomes {
     	GenomeComparisonData object: this object holds information about a multigenome comparison
     	
     	@optional protcomp_ref pangenome_ref
+    	@metadata ws core_functions as Core functions
+		@metadata ws core_families as Core families
+		@metadata ws name as Name
+		@metadata ws length(genomes) as Number genomes
     */
     typedef structure {
 		string id;

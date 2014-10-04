@@ -516,7 +516,7 @@ sub adjustComplex {
 	    		$cpxrole = $cpx->add("complexroles",$newCpxRole);
    			}
    			if (defined($args->{rolesToAdd}->[$i]->[1])) {
-   				$cpxrole->optional($args->{rolesToAdd}->[$i]->[1]);
+   				$cpxrole->optionalRole($args->{rolesToAdd}->[$i]->[1]);
    			}
     		if (defined($args->{rolesToAdd}->[$i]->[3])) {
    				$cpxrole->type($args->{rolesToAdd}->[$i]->[3]);

@@ -376,7 +376,17 @@ module KBaseFBA {
     	FBAModel object
     	
     	@optional metagenome_otu_ref metagenome_ref genome_ref template_refs
-    	@searchable ws_subset id source_id source name type genome_ref metagenome_ref metagenome_otu_ref template_ref
+		@metadata ws source_id as Source ID
+		@metadata ws source as Source
+		@metadata ws name as Name
+		@metadata ws type as Type
+		@metadata ws genome_ref as Genome
+		@metadata ws length(biomasses) as Number biomasses
+		@metadata ws length(modelcompartments) as Number compartments
+		@metadata ws length(modelcompounds) as Number compounds
+		@metadata ws length(modelreactions) as Number reactions
+		@metadata ws length(gapgens) as Number gapgens
+		@metadata ws length(gapfillings) as Number gapfills
     */
     typedef structure {
 		fbamodel_id id;
@@ -550,8 +560,24 @@ module KBaseFBA {
     	FBA object holds the formulation and results of a flux balance analysis study
     	
     	@optional minimize_reactions minimize_reaction_costs FBATintleResults FBAMinimalReactionsResults PROMKappa phenotypesimulationset_ref objectiveValue phenotypeset_ref promconstraint_ref regulome_ref tintlesample_ref tintleW tintleKappa
-    	@searchable ws_subset comboDeletions id fva fluxMinimization findMinimalMedia allReversible simpleThermoConstraints thermodynamicConstraints noErrorThermodynamicConstraints minimizeErrorThermodynamicConstraints
-    	@searchable ws_subset regulome_ref fbamodel_ref promconstraint_ref media_ref phenotypeset_ref geneKO_refs reactionKO_refs additionalCpd_refs objectiveValue phenotypesimulationset_ref
+    	@metadata ws maximizeObjective as Maximized
+		@metadata ws comboDeletions as Combination deletions
+		@metadata ws minimize_reactions as Minimize reactions
+		@metadata ws regulome_ref as Regulome
+		@metadata ws fbamodel_ref as Model
+		@metadata ws promconstraint_ref as PromConstraint
+		@metadata ws media_ref as Media
+		@metadata ws objectiveValue as Objective
+		@metadata ws length(biomassflux_objterms) as Number biomass objectives
+		@metadata ws length(geneKO_refs) as Number gene KO
+		@metadata ws length(reactionKO_refs) as Number reaction KO
+		@metadata ws length(additionalCpd_refs) as Number additional compounds
+		@metadata ws length(FBAConstraints) as Number constraints
+		@metadata ws length(FBAReactionBounds) as Number reaction bounds
+		@metadata ws length(FBACompoundBound) as Number compound bounds
+		@metadata ws length(FBACompoundVariables) as Number compound variables
+		@metadata ws length(FBAReactionVariables) as Number reaction variables
+		
     */
     typedef structure {
 		fba_id id;
@@ -646,7 +672,9 @@ module KBaseFBA {
     	GapGeneration object holds data on formulation and solutions from gapgen analysis
     	
     	@optional fba_ref totalTimeLimit timePerSolution media_ref referenceMedia_ref gprHypothesis reactionRemovalHypothesis biomassHypothesis mediaHypothesis
-    	@searchable ws_subset id totalTimeLimit timePerSolution referenceMedia_ref fbamodel_ref fba_ref reactionRemovalHypothesis gprHypothesis biomassHypothesis mediaHypothesis
+		@metadata ws fba_ref as FBA
+		@metadata ws fbamodel_ref as Model
+		@metadata ws length(gapgenSolutions) as Number solutions
     */
     typedef structure {
     	gapgen_id id;
@@ -716,7 +744,11 @@ module KBaseFBA {
     	GapFilling object holds data on the formulations and solutions of a gapfilling analysis
     	
     	@optional simultaneousGapfill totalTimeLimit timePerSolution transporterMultiplier singleTransporterMultiplier biomassTransporterMultiplier noDeltaGMultiplier noStructureMultiplier deltaGMultiplier directionalityMultiplier drainFluxMultiplier reactionActivationBonus allowableCompartment_refs blacklistedReaction_refs targetedreaction_refs guaranteedReaction_refs completeGapfill balancedReactionsOnly reactionAdditionHypothesis gprHypothesis biomassHypothesis mediaHypothesis fba_ref media_ref probanno_ref
-    	@searchable ws_subset id totalTimeLimit timePerSolution transporterMultiplier singleTransporterMultiplier biomassTransporterMultiplier noDeltaGMultiplier noStructureMultiplier deltaGMultiplier directionalityMultiplier drainFluxMultiplier reactionActivationBonus allowableCompartment_refs blacklistedReaction_refs targetedreaction_refs guaranteedReaction_refs completeGapfill balancedReactionsOnly reactionAdditionHypothesis gprHypothesis biomassHypothesis fba_ref fbamodel_ref probanno_ref mediaHypothesis
+    	@metadata ws fba_ref as FBA
+		@metadata ws fbamodel_ref as Model
+		@metadata ws media_ref as Media
+		@metadata ws length(gapfillingSolutions) as Number solutions
+    
     */
     typedef structure {
     	gapfill_id id;
