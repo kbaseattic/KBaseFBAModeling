@@ -1091,6 +1091,26 @@ sub searchForCompound {
 	return $cpdobj;
 }
 
+=head3 searchForAllCompounds
+Definition:
+	[ Bio::KBase::ObjectAPI::KBaseBiochem::Compound ] = Bio::KBase::ObjectAPI::KBaseBiochem::Compound->searchForAllCompounds(string);
+Description:
+	Searches for a compound by ID, name, or alias and returns all matches.
+
+=cut
+
+sub searchForAllCompounds {
+	my ($self,$compound) = @_;
+	#First search by exact alias match
+	my $cpds = $self->getObjectsByAlias("compounds",$compound);
+	#Next, search by name
+	if (!defined($cpds->[0])) {
+		my $searchname = Bio::KBase::ObjectAPI::KBaseBiochem::Compound->nameToSearchname($compound);
+		$cpds = $self->queryObjects("compounds",{searchnames => $searchname});
+	}
+	return $cpds;
+}
+
 =head3 searchForReaction
 Definition:
 	Bio::KBase::ObjectAPI::KBaseBiochem::Reaction = Bio::KBase::ObjectAPI::KBaseBiochem::Reaction->searchForReaction(string);
@@ -1111,6 +1131,28 @@ sub searchForReaction {
 		$rxnobj = $self->queryObject("reactions",{uuid => $id});
 	}
 	return $rxnobj;
+}
+
+=head3 searchForAllReactions
+Definition:
+	[ Bio::KBase::ObjectAPI::KBaseBiochem::Reaction ] = Bio::KBase::ObjectAPI::KBaseBiochem::Reaction->searchForAllReactions(string);
+Description:
+	Searches for a reaction by ID, name, or alias and returns all matches.
+
+=cut
+
+sub searchForAllReactions {
+	my ($self,$id) = @_;
+	#First search by exact alias match
+	my $rxns = $self->getObjectsByAlias("reactions",$id);
+	#Next, search by name
+	if (!defined($rxns->[0])) {
+		$rxns = $self->queryObjects("reactions",{name => $id});
+	}
+	if (!defined($rxns)) {
+		$rxns = $self->queryObjects("reactions",{uuid => $id});
+	}
+	return $rxns;
 }
 
 =head3 searchForReactionByCode
