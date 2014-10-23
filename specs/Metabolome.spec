@@ -24,12 +24,12 @@ module KBaseMetabolome {
     typedef string genome_id;
 
     /* 
-        KBase ModelID 
-        id ws KB.Model
+        KBase BiochemistryID 
+        id ws KB.Biochmistry
 
         "ws" may change to "to" in the future 
     */
-    typedef string model_id;
+    typedef string biochemistry_id;
 
     /* mapping kbase compound id as the key and measurement as the value */
     typedef mapping<compound_id compoundID, measurement measurement> data_metabolome_levels_for_sample; 
@@ -84,8 +84,8 @@ module KBaseMetabolome {
     /* list of metabolome series ids that the sample belongs to : note this can not be a ws_reference because ws does not support bidirectional references */
     typedef list<string> metabolome_series_ids;
 
-    /* map between model ids and a list of samples from that model in this sample */
-    typedef mapping<model_id model_id, metabolome_sample_ids> model_metabolome_sample_ids_map; 
+    /* map between biochemistry ids and a list of samples from that biochemistry in this sample */
+    typedef mapping<biochemistry_id biochemistry_id, metabolome_sample_ids> biochemistry_metabolome_sample_ids_map; 
 
     /* list of Persons */ 
     typedef list<Person> persons;
@@ -96,7 +96,7 @@ module KBaseMetabolome {
        @optional description title data_quality_level original_median default_control_sample characteristics
        @optional averaged_from_samples protocol strain persons data_source shock_url processing_comments metabolome_series_ids 
        
-       @searchable ws_subset id source_id type data_quality_level model_id description title data_source characteristics
+       @searchable ws_subset id source_id type data_quality_level biochemistry_id description title data_source characteristics
        @searchable ws_subset persons.[*].email persons.[*].last_name persons.[*].institution  
        @searchable ws_subset strain.genome_id strain.reference_strain strain.wild_type          
        @searchable ws_subset protocol.name protocol.description 
@@ -113,7 +113,7 @@ module KBaseMetabolome {
         float original_median;
 	string external_source_date;
         data_metabolome_levels_for_sample metabolome_levels; 
-	model_id model_id; 
+	biochemistry_id biochemistry_id; 
         metabolome_ontology_terms metabolome_ontology_terms;
         metabolome_sample_id default_control_sample; 
         metabolome_sample_ids averaged_from_samples; 
@@ -133,12 +133,12 @@ module KBaseMetabolome {
 
         @optional title summary design publication_id 
 
-        @searchable ws_subset id source_id publication_id title summary design model_metabolome_sample_ids_map
+        @searchable ws_subset id source_id publication_id title summary design biochemistry_metabolome_sample_ids_map
     */
     typedef structure { 
         string id; 
         string source_id;
-        model_metabolome_sample_ids_map model_metabolome_sample_ids_map;
+        biochemistry_metabolome_sample_ids_map biochemistry_metabolome_sample_ids_map;
         string title; 
         string summary;
         string design; 
