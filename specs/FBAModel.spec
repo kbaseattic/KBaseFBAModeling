@@ -280,7 +280,7 @@ module KBaseFBA {
     /* 
     	ModelCompound object
     	
-    	@optional aliases
+    	@optional aliases maxuptake
     */
     typedef structure {
 		modelcompound_id id;
@@ -288,6 +288,7 @@ module KBaseFBA {
 		list<string> aliases;
 		string name;
 		float charge;
+		float maxuptake;
 		string formula;
 		modelcompartment_ref modelcompartment_ref;
     } ModelCompound;
@@ -327,7 +328,7 @@ module KBaseFBA {
     /* 
     	ModelReaction object
     	
-    	@optional name pathway reference aliases
+    	@optional name pathway reference aliases maxforflux maxrevflux
     */
     typedef structure {
 		modelreaction_id id;
@@ -338,6 +339,8 @@ module KBaseFBA {
 		string reference;
 		string direction;
 		float protons;
+		float maxforflux;
+		float maxrevflux;
 		modelcompartment_ref modelcompartment_ref;
 		float probability;
 		list<ModelReactionReagent> modelReactionReagents;
@@ -372,10 +375,32 @@ module KBaseFBA {
 		media_ref media_ref;
     } ModelGapgen;
     
+    
+    typedef structure {
+    	bool integrated;
+    	list<tuple<string rxnid,float maxbound,bool forward>> ReactionMaxBounds;
+    	list<tuple<string cpdid,float maxbound>> UptakeMaxBounds;
+    	list<tuple<string bioid,string biocpd,float modifiedcoef>> BiomassChanges; 
+    	float ATPSynthase;
+    	float ATPMaintenance;
+    } QuantOptSolution;
+    
+    /* 
+    	ModelQuantOpt object
+    */
+    typedef structure {
+    	string id;
+		fba_ref fba_ref;
+		media_ref media_ref;
+		bool integrated;
+		int integrated_solution;
+		list<QuantOptSolution> solutions;
+    } ModelQuantOpt;
+    
     /* 
     	FBAModel object
     	
-    	@optional metagenome_otu_ref metagenome_ref genome_ref template_refs
+    	@optional metagenome_otu_ref metagenome_ref genome_ref template_refs ATPSynthaseStoichiometry ATPMaintenance
 		@metadata ws source_id as Source ID
 		@metadata ws source as Source
 		@metadata ws name as Name
@@ -398,10 +423,13 @@ module KBaseFBA {
 		metagenome_ref metagenome_ref;
 		metagenome_otu_ref metagenome_otu_ref;
 		template_ref template_ref;
+		float ATPSynthaseStoichiometry;
+		float ATPMaintenance;
 		
 		list<template_ref> template_refs;
 		list<ModelGapfill> gapfillings;
 		list<ModelGapgen> gapgens;
+		list<ModelQuantOpt> quantopts;
 		
 		list<Biomass> biomasses;
 		list<ModelCompartment> modelcompartments;
@@ -556,6 +584,26 @@ module KBaseFBA {
 	    string expression_sample_ref;	    
     } TintleProbabilitySample;
 
+	
+	typedef structure {
+		string biomass_component;
+		float mod_coefficient;
+	} QuantOptBiomassMod;
+	
+	typedef structure {
+		modelreaction_ref modelreaction_ref;
+		modelcompound_ref modelcompound_ref;
+		bool reaction;
+		float mod_upperbound;
+	} QuantOptBoundMod
+	
+	typedef structure {
+		float atp_synthase;
+		float atp_maintenance;
+		list<QuantOptBiomassMod> QuantOptBiomassMods;
+		list<QuantOptBoundMod> QuantOptBoundMods;
+	} QuantitativeOptimizationSolution;
+
     /* 
     	FBA object holds the formulation and results of a flux balance analysis study
     	
@@ -589,6 +637,7 @@ module KBaseFBA {
 		bool thermodynamicConstraints;
 		bool noErrorThermodynamicConstraints;
 		bool minimizeErrorThermodynamicConstraints;
+		bool quantitativeOptimization;
 		
 		bool maximizeObjective;
 		mapping<modelcompound_id,float> compoundflux_objterms;
@@ -644,6 +693,7 @@ module KBaseFBA {
 		list<FBAMinimalMediaResult> FBAMinimalMediaResults;
 		list<FBAMetaboliteProductionResult> FBAMetaboliteProductionResults;
 		list<FBAMinimalReactionsResult> FBAMinimalReactionsResults;
+		list<QuantitativeOptimizationSolution> QuantitativeOptimizationSolutions;
     } FBA;
     
     /* 

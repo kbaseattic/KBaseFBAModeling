@@ -34,6 +34,13 @@ my $translation = {
 	activitybonus => "activation_penalty"
 };
 my $gfTranslation = {
+	expthreshtype => "expression_threshold_type",
+	lowexpthresh => "low_expression_theshold",
+	lowexppen => "low_expression_penalty_factor",
+	highexpthresh => "high_expression_theshold",
+	highexppen => "high_expression_penalty_factor",
+	expsample => "expsample",
+	expsamplews => "expsamplews",
 	rxnsensitivity => "sensitivity_analysis",
 	numsol => "num_solutions",
 	nomediahyp => "nomediahyp",
@@ -75,6 +82,13 @@ my $specs = [
     [ 'sourcemdl=s', 'Source model to gapfill from' ],
     [ 'sourcemdlws=s', 'Workspace of source model to gapfill from', { "default" => fbaws() }  ],
     [ 'intsol', 'Automatically integrate solution', { "default" => 0 } ],
+    [ 'expsample=s', 'Expression sample to fit gapfilling' ],
+    [ 'expsamplews=s', 'Workspace with expression sample', { "default" => fbaws() } ],
+    [ 'expthreshtype=s', 'Type of thresholding used with expression data' ],
+    [ 'lowexpthresh=s', 'Threshold for genes with low expression' ],
+    [ 'lowexppen=s', 'Penalty for use of genes with low expression' ],
+    [ 'highexpthresh=s', 'Threshold for genes with high expression' ],
+    [ 'highexppen=s', 'Penalty for inactive genes with high expression' ],
     [ 'longgapfill', 'Run a longer gapfilling but with a potentially better solution' ],
     [ 'simultaneous', 'Simultaneous gapfill all reactions', { "default" => 0 } ],
     [ 'iterativegf|t', 'Gapfill all inactive reactions', { "default" => 0 } ],

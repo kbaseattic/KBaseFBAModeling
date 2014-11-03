@@ -282,6 +282,7 @@ sub prepareFBAFormulation {
 		}
 	}
 	if (defined($self->{expression_data})) {
+		my $type = $self->{expression_threshold_type};
 		my $sample = $self->{expression_data};
 		my $exp_scores = {};
 		my $no_reaction = {};
@@ -354,25 +355,34 @@ sub prepareFBAFormulation {
 			if($inactiveList->[$i] eq "bio1"){
 				push(@{$highexp},"bio1	1");
 		    } elsif(exists($final_exp_scores->{$inactiveList->[$i]})){
-		    	if($final_exp_scores->{$inactiveList->[$i]} < 0.2){
+		    	if ($type eq "AbsoluteThreshold") {
+			    	if($final_exp_scores->{$inactiveList->[$i]} <= $self->{low_expression_theshold}){
+					    my $penalty = $self->{low_expression_penalty_factor}*($self->{low_expression_theshold}-$final_exp_scores->{$inactiveList->[$i]})/$self->{low_expression_theshold};
+					    if ($self->fbamodel()->getObject("modelreactions",$inactiveList->[$i])->direction() eq "=") {
+					    	push(@{$lowexp},"forward\t".$inactiveList->[$i]."\t".$penalty);
+					    	push(@{$lowexp},"reverse\t".$inactiveList->[$i]."\t".$penalty);
+					    } elsif ($self->fbamodel()->getObject("modelreactions",$inactiveList->[$i])->direction() eq ">") {
+					    	push(@{$lowexp},"forward\t".$inactiveList->[$i]."\t".$penalty);
+					    } elsif ($self->fbamodel()->getObject("modelreactions",$inactiveList->[$i])->direction() eq "<") {
+					    	push(@{$lowexp},"reverse\t".$inactiveList->[$i]."\t".$penalty);
+					    }
+					}elsif ($final_exp_scores->{$inactiveList->[$i]} >= $self->{high_expression_theshold}) {
+						my $penalty = $self->{high_expression_penalty_factor}*($final_exp_scores->{$inactiveList->[$i]}-$self->{high_expression_theshold});
+						push(@{$highexp},$inactiveList->[$i]."\t".$penalty);
+					}
+		    	}
+		    } else {
+		    	if ($type eq "AbsoluteThreshold") {
+				    my $penalty = $self->{low_expression_penalty_factor};
 				    if ($self->fbamodel()->getObject("modelreactions",$inactiveList->[$i])->direction() eq "=") {
-				    	push(@{$lowexp},"forward\t".$inactiveList->[$i]."\t0.1");
-				    	push(@{$lowexp},"reverse\t".$inactiveList->[$i]."\t0.1");
-				    } elsif ($self->fbamodel()->getObject("modelreactions",$inactiveList->[$i])->direction() eq ">") {
-				    	push(@{$lowexp},"forward\t".$inactiveList->[$i]."\t0.1");
-				    } elsif ($self->fbamodel()->getObject("modelreactions",$inactiveList->[$i])->direction() eq "<") {
-				    	push(@{$lowexp},"reverse\t".$inactiveList->[$i]."\t0.1");
+					    push(@{$lowexp},"forward\t".$inactiveList->[$i]."\t".$penalty);
+					    push(@{$lowexp},"reverse\t".$inactiveList->[$i]."\t".$penalty);
+					} elsif ($self->fbamodel()->getObject("modelreactions",$inactiveList->[$i])->direction() eq ">") {
+					   	push(@{$lowexp},"forward\t".$inactiveList->[$i]."\t".$penalty);
+					} elsif ($self->fbamodel()->getObject("modelreactions",$inactiveList->[$i])->direction() eq "<") {
+					   	push(@{$lowexp},"reverse\t".$inactiveList->[$i]."\t".$penalty);
 				    }
-				}else{
-					push(@{$highexp},$inactiveList->[$i]."\t".$final_exp_scores->{$inactiveList->[$i]});
-				}
-		    } elsif ($self->fbamodel()->getObject("modelreactions",$inactiveList->[$i])->direction() eq "=") {
-			    push(@{$lowexp},"forward\t".$inactiveList->[$i]."\t0.1");
-			    push(@{$lowexp},"reverse\t".$inactiveList->[$i]."\t0.1");
-			} elsif ($self->fbamodel()->getObject("modelreactions",$inactiveList->[$i])->direction() eq ">") {
-			   	push(@{$lowexp},"forward\t".$inactiveList->[$i]."\t0.1");
-			} elsif ($self->fbamodel()->getObject("modelreactions",$inactiveList->[$i])->direction() eq "<") {
-			   	push(@{$lowexp},"reverse\t".$inactiveList->[$i]."\t0.1");
+		    	}
 		    }
 		}
 		$inactiveList = $highexp;

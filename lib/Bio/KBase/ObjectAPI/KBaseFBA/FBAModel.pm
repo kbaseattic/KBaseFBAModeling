@@ -1390,27 +1390,39 @@ Description:
 
 sub export {
     my $self = shift;
-	my $args = Bio::KBase::ObjectAPI::utilities::args(["format"], {}, @_);
+	my $args = Bio::KBase::ObjectAPI::utilities::args(["format"], {
+		toshock => 0
+	}, @_);
+	my $output;
 	if (lc($args->{format}) eq "sbml") {
-		return $self->printSBML();
+		$output = $self->printSBML();
 	} elsif (lc($args->{format}) eq "exchange") {
-		return $self->printExchange();
+		$output = $self->printExchange();
 	} elsif (lc($args->{format}) eq "genes") {
-		return $self->printGenes();
+		$output = $self->printGenes();
 	} elsif (lc($args->{format}) eq "readable") {
-		return $self->toReadableString();
+		$output = $self->toReadableString();
 	} elsif (lc($args->{format}) eq "html") {
-		return $self->createHTML();
+		$output = $self->createHTML();
 	} elsif (lc($args->{format}) eq "json") {
-		return $self->toJSON({pp => 1});
+		$output = $self->toJSON({pp => 1});
 	} elsif (lc($args->{format}) eq "cytoseed") {
-		return $self->printCytoSEED($args->{fbas});
+		$output =  $self->printCytoSEED($args->{fbas});
 	} elsif (lc($args->{format}) eq "modelseed") {
-		return $self->printModelSEED();
+		$output = $self->printModelSEED();
 	} elsif (lc($args->{format}) eq "excel") {
-		return $self->printExcel();
+		return $self->printExcel({toshock => $args->{toshock}});
 	}
-	Bio::KBase::ObjectAPI::utilities::error("Unrecognized type for export: ".$args->{format});
+	if (!defined($output)) {
+		Bio::KBase::ObjectAPI::utilities::error("Unrecognized type for export: ".$args->{format});
+	}
+	print "test4\n";
+	if ($args->{toshock} == 1) {
+		print "test5\n";
+		return Load_data_to_shock($output);
+	}
+	print "test6\n";
+	return $output;
 }
 
 =head3 printExcel
@@ -1423,10 +1435,12 @@ Description:
 =cut
 
 sub printExcel {
-	my ($self) = @_;
-	#my ($fh, $filename) = File::Temp::tempfile("xls-XXXXXX");
-    #close($fh);
-    my $filename = "/Users/chenry/model.xls";
+	my ($self,$args) = @_;
+	$args = Bio::KBase::ObjectAPI::utilities::args([], {
+		toshock => 0
+	}, $args);
+	my $fulldir = File::Temp::tempdir(DIR => Bio::KBase::ObjectAPI::utilities::MFATOOLKIT_JOB_DIRECTORY());
+	my $filename = $fulldir."/".$self->_wsname().".xls";
 	require "Spreadsheet/WriteExcel.pm";
 	my $wkbk = Spreadsheet::WriteExcel->new($filename);
 	my $sheet = $wkbk->add_worksheet("Compounds");
@@ -1445,7 +1459,7 @@ sub printExcel {
 	}
 	$sheet = $wkbk->add_worksheet("Genes");
 	$sheet->write_row(0,0,["ID","Type","Functions","Contig","Start","Stop","Direction","Reactions"]);
-	my $ftrs = $self->annotation()->features();
+	my $ftrs = $self->genome()->features();
 	my $ftrHash = $self->featureHash();
 	for (my $i=0; $i < @{$ftrs}; $i++) {
 		my $ftr = $ftrs->[$i];
@@ -1456,6 +1470,9 @@ sub printExcel {
 		$sheet->write_row($i+1,0,[$ftr->id(),$ftr->type(),$ftr->roleList(),$ftr->contig(),$ftr->start(),$ftr->stop(),$ftr->direction(),join("|",@{$reactionList})]);
 	}
 	my $output;
+	if ($args->{toshock} == 1) {
+		return Bio::KBase::ObjectAPI::utilities::Load_file_to_shock($filename);
+	}
 	open(my $fh, "<:raw", $filename);
 	my $data = <$fh>;
 	close($fh);

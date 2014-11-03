@@ -353,6 +353,10 @@ class Application(object):
                              name='fbaModelServices.runfba',
                              types=[dict])
         self.method_authentication['fbaModelServices.runfba'] = 'required'
+        self.rpc_service.add(impl_fbaModelServices.quantitative_optimization,
+                             name='fbaModelServices.quantitative_optimization',
+                             types=[dict])
+        self.method_authentication['fbaModelServices.quantitative_optimization'] = 'required'
         self.rpc_service.add(impl_fbaModelServices.generate_model_stats,
                              name='fbaModelServices.generate_model_stats',
                              types=[dict])

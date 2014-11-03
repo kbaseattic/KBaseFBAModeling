@@ -365,6 +365,66 @@ sub runFBA {
 #	
 #}
 
+=head3 RunQuantitativeOptimization
+
+Definition:
+	void Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->RunQuantitativeOptimization({
+		TimePerSolution => int,
+		TotalTimeLimit => int,
+		Num_solutions => int,
+		MaxBoundMult => float,
+		MinFluxCoef => float,
+		Constraints => {}
+	});
+Description:
+	Runs a quantitative optimization to fit quantitative model predictions to experimental data
+
+=cut
+
+sub RunQuantitativeOptimization {
+	my ($self) = @_;
+	my $args = Bio::KBase::ObjectAPI::utilities::args(["name","media","additionalCpd"],{
+		TimePerSolution => 3600,
+		TotalTimeLimit => 3600,
+		Num_solutions => 1,
+		MaxBoundMult => 2,
+		MinFluxCoef => 0.000001,
+		Constraints => {}
+	}, @_);
+	$self->quantitativeOptimization(1);
+	$self->parameters()->{"quantopt fva bound multiplier"} = $args->{MaxBoundMult};
+	$self->parameters()->{"QuantOpt min flux coefficient"} = $args->{MinFluxCoef};
+	$self->createJobDirectory();
+	my $mediaData = Bio::KBase::ObjectAPI::utilities::LOADFILE($self->jobDirectory()."/media.tbl");
+	my $data = {};
+	for (my $i=0; $i < @{$args->{Constraints}}; $i++) {
+		my $comp = "c0";
+		if ($data->{var} =~ m/_([a-z]\d+)/) {
+			$comp = $1;
+		}
+		push(@{$data->{var}},$args->{Constraints}->[$i]->[0]);
+		push(@{$data->{type}},$args->{Constraints}->[$i]->[1]);
+		push(@{$data->{max}},$args->{Constraints}->[$i]->[3]);
+		push(@{$data->{min}},$args->{Constraints}->[$i]->[2]);
+		push(@{$data->{comp}},$comp);
+		push(@{$data->{conc}},0.001);
+	}
+	push(@{$mediaData},
+		"QuantOptMedia\tQuantOptMedia\t".
+		join("|",@{$data->{var}})."\t".
+		join("|",@{$data->{type}})."\t".
+		join("|",@{$data->{max}})."\t".
+		join("|",@{$data->{min}})."\t".
+		join("|",@{$data->{comp}})."\t".
+		join("|",@{$data->{conc}});
+	);
+	Bio::KBase::ObjectAPI::utilities::PRINTFILE($directory."media.tbl",$mediaData);
+    $self->runFBA();
+    if (!defined($self->QuantitativeOptimizationSolutions()->[0])) {
+    	$self->_error("Quantitative optimization completed, but no solutions obtained!");
+    }
+}
+
 =head3 createJobDirectory
 
 Definition:
@@ -475,8 +535,37 @@ sub createJobDirectory {
 			if (defined($rxn->reaction()->status())) {
 				$st = $rxn->reaction()->status();
 			}
+			if ($self->quantitativeOptimization() == 1 && $id eq "rxn10042_c0") {
+				$equation =~ s/\(4\)\scpd00067_e0/(7) cpd00067_e0/g;
+				$equation =~ s/\(3\)\scpd00067_c0/(6) cpd00067_c0/g;
+			}
 			push(@{$BioRxn},$id."\t".$id."\t".$dg."\t".$dge."\t".$equation."\t".$id."\t".$rxndir."\t".$st."\t".$rxndir);
 		}
+	}
+	if ($self->quantitativeOptimization() == 1) {
+		push(@{$BioRxn},"altatp\taltatp\t100000\t100000\t(1) cpd00067_e0[e] + (1) cpd00009_c0 + (1) cpd00008_c0 <=> (1) cpd00002_c0 + (1) cpd00001_c0\taltatp\t<=>\tOK\t<=>");
+		my $filename = $self->jobDirectory()."/BiomassHypothesisEquations.txt";
+		my $output = ["id\tequation\tname","energyDrnRxn\tcpd00001 + cpd00002 => cpd00008 + cpd00009 + cpd00067\tenergyDrnRxn"];
+		my $bio = $self->fbamodel()->biomasses()->[0];
+		my $biocpds = $bio->biomasscompounds();
+		my $cpdsWithProducts = {
+			cpd11493 => ["cpd12370"],
+			cpd15665 => ["cpd15666"],
+			cpd15667 => ["cpd15666"],
+			cpd15668 => ["cpd15666"],
+			cpd15669 => ["cpd15666"],
+			cpd00166 => ["cpd01997","cpd03422"],
+		};
+		foreach my $cpd (@{$biocpds}) {
+			if ($cpd->coefficient() < 0) {
+				my $equation = "=> ".$cpd->modelcompound()->compound()->id()."[b]";
+				if (defined($cpdsWithProducts->{$cpd->modelcompound()->compound()->id()})) {
+					$equation = join("[b] + ",@{$cpdsWithProducts->{$cpd->modelcompound()->compound()->id()}})."[b] ".$equation;
+				}
+				push(@{$output},$cpd->modelcompound()->compound()->id()."DrnRxn\t".$equation."\t".$cpd->modelcompound()->compound()->id()."DrnRxn");
+			}
+		}
+		Bio::KBase::ObjectAPI::utilities::PRINTFILE($filename,$output);
 	}
 	my $final_gauranteed = [];
 	my $final_ko = [];
@@ -990,12 +1079,6 @@ sub createJobDirectory {
 	foreach my $param (keys(%{$self->parameters()})) {
 		$parameters->{$param} = $self->parameters()->{$param};
 	}
-	#Printing parameter file
-	my $paramData = [];
-	foreach my $param (keys(%{$parameters})) {
-		push(@{$paramData},$param."|".$parameters->{$param}."|Specialized parameters");
-	}
-	Bio::KBase::ObjectAPI::utilities::PRINTFILE($directory."SpecializedParameters.txt",$paramData);
 	if ($self->minimize_reactions() == 1) {
 		$self->parameters()->{"Complete gap filling"} = 0;
 	}
@@ -1162,8 +1245,8 @@ sub createJobDirectory {
 			}
 		}
 	}
-	my $genedata = ["ID\tTFS\tSTIMULI\tCOMPOUNDS\n"];
-	if (@{$genedata} > 1) {
+	my $genedata = ["ID\tTFS\tSTIMULI\tCOMPOUNDS"];
+	if (keys(%{$genereg}) > 0) {
 		$parameters->{"gene list"} = join(";",keys(%{$genereg}));
 		foreach my $gene (keys(%{$genereg})) {
 			my $line = $gene."\t";
@@ -1173,7 +1256,7 @@ sub createJobDirectory {
 					if (length($item)) {
 						$item .= "|";
 					}
-					$item .= $stim.":".$genereg->{$gene}->{tfs}->{$item}.":1";
+					$item .= $stim.":".$genereg->{$gene}->{tfs}->{$stim}.":1";
 				}
 				$line .= $item;
 			}
@@ -1184,7 +1267,7 @@ sub createJobDirectory {
 					if (length($item)) {
 						$item .= "|";
 					}
-					$item .= $stim.":".$genereg->{$gene}->{stimuli}->{$item}.":1";
+					$item .= $stim.":".$genereg->{$gene}->{stimuli}->{$stim}.":1";
 				}
 				$line .= $item;
 			}
@@ -1195,12 +1278,12 @@ sub createJobDirectory {
 					if (length($item)) {
 						$item .= "|";
 					}
-					$item .= $stim.":".$genereg->{$gene}->{compounds}->{$item}->[0];
-					if ($genereg->{$gene}->{compounds}->{$item}->[1] eq "standard") {
+					$item .= $stim.":".$genereg->{$gene}->{compounds}->{$stim}->[0];
+					if ($genereg->{$gene}->{compounds}->{$stim}->[1] eq "standard") {
 						$item .= ":1:1:1";
-					} elsif ($genereg->{$gene}->{compounds}->{$item}->[1] eq "stress") {
+					} elsif ($genereg->{$gene}->{compounds}->{$stim}->[1] eq "stress") {
 						$item .= ":0.5:0:1";
-					} elsif ($genereg->{$gene}->{compounds}->{$item}->[1] eq "extracellular") {
+					} elsif ($genereg->{$gene}->{compounds}->{$stim}->[1] eq "extracellular") {
 						$item .= ":1:0:0";
 					}
 				}
@@ -1210,6 +1293,12 @@ sub createJobDirectory {
 		}
 	}
 	Bio::KBase::ObjectAPI::utilities::PRINTFILE($directory."genes.tbl",$genedata);
+	#Printing parameter file
+	my $paramData = [];
+	foreach my $param (keys(%{$parameters})) {
+		push(@{$paramData},$param."|".$parameters->{$param}."|Specialized parameters");
+	}
+	Bio::KBase::ObjectAPI::utilities::PRINTFILE($directory."SpecializedParameters.txt",$paramData);
 	#Set StringDBFile.txt
 	my $mfatkdir = $self->mfatoolkitDirectory();
 	my $stringdb = [
@@ -2468,6 +2557,44 @@ sub parseTintleResult {
 		return 1;
 	}
 	return 0;
+}
+
+=head3 parseQuantOptResult
+
+Definition:
+	void parseQuantOptResult();
+Description:
+	Parses quantitative optimization results file
+
+=cut
+
+sub parseQuantOptResult {
+	my ($self) = @_;
+	my $directory = $self->jobDirectory();
+	if (-e $directory."/QuantitativeOptimization.txt") {
+		#Loading file results into a hash
+		#TODO
+		my $table = Bio::KBase::ObjectAPI::utilities::LOADTABLE($directory."/QuantitativeOptimization.txt", "\t", 0);
+		my $tintleOutputHash;
+
+		foreach my $row (@{$table->{"data"}}) {
+			if ($row->[0] =~ /\d+/) {
+				# Assume gene variables has number, but not other labels.
+				next if ($row->[1] eq "0");
+				$row->[0] =~ s/___/|/ if ($row->[0] =~ /kb___g/);
+				if ($row->[0] =~ /Not_(.*)/) {
+					# Case 3: the gene was likely to be on, but actually inactive.
+					$tintleOutputHash->{"conflicts"}->{$1} = "InactiveOn";
+				} else {
+					# Case1: the gene was likely to be off, but actually active.
+					$tintleOutputHash->{"conflicts"}->{$row->[0]} = "ActiveOff";			    
+				}
+			} else {
+				$tintleOutputHash->{$row->[0]} = $row->[1];
+			}
+		}
+		$self->add("QuantitativeOptimizationSolutions",$tintleOutputHash);
+	}
 }
 
 =head3 parseReactionMinimization

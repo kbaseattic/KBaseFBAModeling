@@ -603,6 +603,112 @@ sub MFATOOLKIT_BINARY {
 	return $ENV{MFATOOLKIT_BINARY};
 }
 
+=head3 SHOCK_URL
+
+Definition:
+	string = Bio::KBase::ObjectAPI::utilities::SHOCK_URL(string input);
+Description:
+	Getter setter for Shock URL
+Example:
+
+=cut
+
+sub SHOCK_URL {
+	my ($input) = @_;
+	if (defined($input)) {
+		$ENV{SHOCK_URL} = $input;
+	}
+	return $ENV{SHOCK_URL};
+}
+
+=head3 AUTHTOKEN
+
+Definition:
+	string = Bio::KBase::ObjectAPI::utilities::AUTHTOKEN();
+Description:
+	Getter for auth token
+Example:
+
+=cut
+
+sub AUTHTOKEN {
+	if (defined(Bio::KBase::ObjectAPI::utilities::CONTEXT()->{_override}->{_authentication})) {
+		return Bio::KBase::ObjectAPI::utilities::CONTEXT()->{_override}->{_authentication};
+	} elsif (defined(Bio::KBase::ObjectAPI::utilities::CONTEXT()->{token})) {
+		return Bio::KBase::ObjectAPI::utilities::CONTEXT()->{token};
+	}
+}
+
+=head3 CONTEXT
+
+Definition:
+	string = Bio::KBase::ObjectAPI::utilities::CONTEXT();
+Description:
+	Getter for context
+Example:
+
+=cut
+
+sub CONTEXT {
+	if (!defined($Bio::KBase::fbaModelServices::Server::CallContext)) {
+		$Bio::KBase::fbaModelServices::Server::CallContext = {};
+	}
+	return $Bio::KBase::fbaModelServices::Server::CallContext;
+}
+
+=head3 Load_file_to_shock
+
+Definition:
+	string = Bio::KBase::ObjectAPI::utilities::Load_file_to_shock(string filename);
+Description:
+	Load a file to shock
+Example:
+
+=cut
+
+sub Load_file_to_shock {
+	my ($input) = @_;
+	my $output = Bio::KBase::ObjectAPI::utilities::runexecutable("curl -H \"Authorization: OAuth ".Bio::KBase::ObjectAPI::utilities::AUTHTOKEN()."\" -X POST -F 'upload=\@".$input."' ".Bio::KBase::ObjectAPI::utilities::SHOCK_URL()."/node");
+	$output = Bio::KBase::ObjectAPI::utilities::FROMJSON(join("\n",@{$output}));
+	return $output->{data}->{id};
+}
+
+=head3 Load_data_to_shock
+
+Definition:
+	string = Bio::KBase::ObjectAPI::utilities::Load_data_to_shock(string data);
+Description:
+	Load data to shock
+Example:
+
+=cut
+
+sub Load_data_to_shock {
+	my ($input) = @_;
+	my $uuid = Data::UUID->new()->create_str();
+	File::Path::mkpath Bio::KBase::ObjectAPI::utilities::MFATOOLKIT_JOB_DIRECTORY();
+	Bio::KBase::ObjectAPI::utilities::PRINTFILE(Bio::KBase::ObjectAPI::utilities::MFATOOLKIT_JOB_DIRECTORY().$uuid,[$input]);
+	return Load_file_to_shock(Bio::KBase::ObjectAPI::utilities::MFATOOLKIT_JOB_DIRECTORY().$uuid);
+}
+
+=head3 Pull_file_from_shock
+
+Definition:
+	string = Bio::KBase::ObjectAPI::utilities::Pull_file_from_shock(string node);
+Description:
+	Pull a file from shock given node ID
+Example:
+
+=cut
+
+sub Pull_file_from_shock {
+	my ($input) = @_;
+	my $uuid = Data::UUID->new()->create_str();
+	File::Path::mkpath Bio::KBase::ObjectAPI::utilities::MFATOOLKIT_JOB_DIRECTORY();
+	my $data = Bio::KBase::ObjectAPI::utilities::runexecutable("curl -X GET ".Bio::KBase::ObjectAPI::utilities::SHOCK_URL()."/node/".$input."?download_raw > ".File::Path::mkpath Bio::KBase::ObjectAPI::utilities::MFATOOLKIT_JOB_DIRECTORY().$uuid);
+	return File::Path::mkpath Bio::KBase::ObjectAPI::utilities::MFATOOLKIT_JOB_DIRECTORY().$uuid;
+}
+
 =head3 CurrentJobID
 
 Definition:
@@ -972,6 +1078,80 @@ sub runexecutable {
 	my $OutputArray;
 	push(@{$OutputArray},`$Command`);
 	return $OutputArray;
+}
+
+sub IsCofactor {
+	my ($cpdid) = @_;
+	my $hash = {
+		cpd00001 => 1,
+		cpd00002 => 1,
+		cpd00003 => 1,
+		cpd00004 => 1,
+		cpd00005 => 1,
+		cpd00006 => 1,
+		cpd00007 => 1,
+		cpd00008 => 1,
+		cpd00009 => 1,
+		cpd00010 => 1,
+		cpd00011 => 1,
+		cpd00012 => 1,
+		cpd00013 => 1,
+		cpd00014 => 1,
+		cpd00015 => 1,
+		cpd00018 => 1,
+		cpd00021 => 1,
+		cpd00030 => 1,
+		cpd00031 => 1,
+		cpd00034 => 1,
+		cpd00038 => 1,
+		cpd00046 => 1,
+		cpd00048 => 1,
+		cpd00050 => 1,
+		cpd00052 => 1,
+		cpd00053 => 1,
+		cpd00058 => 1,
+		cpd00062 => 1,
+		cpd00063 => 1,
+		cpd00067 => 1,
+		cpd00068 => 1,
+		cpd00074 => 1,
+		cpd00075 => 1,
+		cpd00081 => 1,
+		cpd00090 => 1,
+		cpd00091 => 1,
+		cpd00096 => 1,
+		cpd00099 => 1,
+		cpd00114 => 1,
+		cpd00115 => 1,
+		cpd00126 => 1,
+		cpd00149 => 1,
+		cpd00150 => 1,
+		cpd00173 => 1,
+		cpd00177 => 1,
+		cpd00186 => 1,
+		cpd00204 => 1,
+		cpd00205 => 1,
+		cpd00206 => 1,
+		cpd00209 => 1,
+		cpd00239 => 1,
+		cpd00241 => 1,
+		cpd00242 => 1,
+		cpd00244 => 1,
+		cpd00294 => 1,
+		cpd00295 => 1,
+		cpd00296 => 1,
+		cpd00297 => 1,
+		cpd00298 => 1,
+		cpd00299 => 1,
+		cpd00354 => 1,
+		cpd00356 => 1,
+		cpd00357 => 1,
+		cpd00358 => 1
+	};
+	if (defined($hash->{$cpdid})) {
+		return 1;
+	}
+	return 0;
 }
 
 1;
