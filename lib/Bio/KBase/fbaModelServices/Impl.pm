@@ -4715,29 +4715,32 @@ sub get_reactions
 	$out_reactions = [];
 	for (my $i=0; $i < @{$input->{reactions}}; $i++) {
 		my $rxn = $input->{reactions}->[$i];
-		my $obj;
+		my $objs;
 		if ($rxn =~ m/(rxn\d+)$/) {
-			$obj = $biochem->getObject("reactions",$1);
+			$objs = $biochem->getObjects("reactions",[$rxn]);
 		} else {
-			$obj = $biochem->searchForReaction($rxn);
+			$objs = $biochem->searchForAllReactions($rxn);
 		}
-		my $new;
-		if (defined($obj)) {
-			$new = {
-                id => $obj->id(),
-                abbrev => $obj->abbreviation(),
-                name => $obj->name(),
-                enzymes => $obj->getAliases("Enzyme Class"),
-				aliases => $obj->allAliases(),
-                direction => $obj->direction(),
-                reversibility => $obj->thermoReversibility(),
-                deltaG => $obj->deltaG(),
-                deltaGErr => $obj->deltaGErr(),
-                equation => $obj->equation(),
-                definition => $obj->definition()
-			};
+		for (my $r=0; $r < @{$objs}; $r++) {
+			my $new;
+			my $obj = $objs->[$r];
+			if (defined($obj)) {
+				$new = {
+	                id => $obj->id(),
+	                abbrev => $obj->abbreviation(),
+	                name => $obj->name(),
+	                enzymes => $obj->getAliases("Enzyme Class"),
+					aliases => $obj->allAliases(),
+	                direction => $obj->direction(),
+	                reversibility => $obj->thermoReversibility(),
+	                deltaG => $obj->deltaG(),
+	                deltaGErr => $obj->deltaGErr(),
+	                equation => $obj->equation(),
+	                definition => $obj->definition()
+				};
+			}
+			push(@{$out_reactions},$new);
 		}
-		push(@{$out_reactions},$new);
 	}
 	$self->_clearContext();
     #END get_reactions
@@ -4844,26 +4847,29 @@ sub get_compounds
 	$out_compounds = [];
 	for (my $i=0; $i < @{$input->{compounds}}; $i++) {
 		my $cpd = $input->{compounds}->[$i];
-		my $obj;
+		my $objs;
 		if ($cpd =~ m/(cpd\d+)$/) {
-			$obj = $biochem->getObject("compounds",$1);
+			$objs = $biochem->getObjects("compounds",[$cpd]);
 		} else {
-			$obj = $biochem->searchForCompound($cpd);
+			$objs = $biochem->searchForAllCompounds($cpd);
 		}
-		my $new;
-		if (defined($obj)) {
-			$new = {
-                id => $obj->id(),
-                name => $obj->name(),
-                abbrev => $obj->abbreviation(),
-                aliases => $obj->allAliases(),
-                charge => $obj->defaultCharge,
-                formula => $obj->formula,
-                deltaG => $obj->deltaG(),
-                deltaGErr => $obj->deltaGErr()
-			};
+		for (my $c=0; $c < @{$objs}; $c++) {
+			my $new;
+			my $obj = $objs->[$c];
+			if (defined($obj)) {
+				$new = {
+	                id => $obj->id(),
+	                name => $obj->name(),
+	                abbrev => $obj->abbreviation(),
+	                aliases => $obj->allAliases(),
+	                charge => $obj->defaultCharge,
+	                formula => $obj->formula,
+	                deltaG => $obj->deltaG(),
+	                deltaGErr => $obj->deltaGErr()
+				};
+			}
+			push(@{$out_compounds},$new);
 		}
-		push(@{$out_compounds},$new);
 	}
 	$self->_clearContext();
     #END get_compounds
@@ -8009,7 +8015,13 @@ sub export_genome
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["genome","workspace","format"],{});
     my $genome = $self->_get_msobject("Genome",$input->{workspace},$input->{genome});
-    $output = $genome->export({format => $input->{format}});
+	if ($input->{format} == "genomeTO") {
+		my $genomeTO = $genome->genome_typed_object();
+		my $JSON = JSON::XS->new->utf8(1);
+		$output = $JSON->encode($genomeTO);
+	} else {
+		$output = $genome->export({format => $input->{format}});
+	}
     $self->_clearContext();
     #END export_genome
     my @_bad_returns;
