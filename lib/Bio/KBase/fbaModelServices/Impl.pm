@@ -3308,6 +3308,54 @@ sub _process_reactions_list {
 	return ($reactions,$compoundhash);
 }
 
+sub _export_object {
+	my ($self,$input) = @_;
+	$input = $self->_validateargs($input,["reference","type"],{
+    	format => "excel",
+    	toshock => 0,
+    });
+	if ($input->{format} eq "excel") {
+		$input->{toshock} = 1;
+	}
+ 	my $array = [split(/\//,$input->{reference})];
+    my $obj = $self->_get_msobject($input->{type},$array->[0],$array->[1]);
+	my $output;
+	if (ref($obj) eq "HASH") {
+		my $JSON = JSON::XS->new->utf8(1);
+    	$output = $JSON->encode($obj);
+	} elsif (ref($obj) =~ m/Bio::KBase::ObjectAPI/) {
+		$output = $obj->export({format => $input->{format}});;
+	} else {
+		$output = $obj;
+	} 
+	if ($input->{toshock} == 1) {
+		$output = $self->_load_to_shock($input,$output);
+	}
+	return $output;
+}
+
+sub _load_to_shock {
+	my ($self,$input,$data) = @_;
+	$input = $self->_validateargs($input,["reference","type","format"],{});
+	my $output;
+	if (-e $data) {
+		$output = Bio::KBase::ObjectAPI::utilities::Load_file_to_shock($data,{
+			workspace_reference => $input->{reference},
+			workspace_type => $input->{type},
+			object_format => $input->{format},
+			owner => $self->_getUsername()
+		});
+	} else {
+		$output = Bio::KBase::ObjectAPI::utilities::Load_data_to_shock($data,{
+			workspace_reference => $input->{reference},
+			workspace_type => $input->{type},
+			object_format => $input->{format},
+			owner => $self->_getUsername()
+		});
+	}
+	return $output;
+}
+
 #END_HEADER
 
 sub new
@@ -7814,30 +7862,12 @@ sub export_fbamodel
     $input = $self->_validateargs($input,["model","workspace","format"],{
     	toshock => 0
     });
-    my $model = $self->_get_msobject("FBAModel",$input->{workspace},$input->{model});
-    my $fbas;
-    foreach my $fba_id (@{$input->{fbas}}) {
-    	push @$fbas, $self->_get_msobject("FBA",$input->{workspace},$fba_id);
-    }
-    my $array = [split(/;/,$input->{format})];
-    if (@{$array} > 1) {
-    	$input->{toshock} = 1;
-    }
-    if ($input->{format} eq "excel") {
-    	$input->{toshock} = 1;
-    }
-    $output = "";
-    for (my $i=0; $i < @{$array}; $i++) {
-    	if ($i > 0) {
-    		$output .= "\n";
-    	}
-    	if ($input->{toshock} == 1) {
-    		my $node = $model->export({format => $array->[$i], fbas => $fbas,toshock => $input->{toshock}});
-    		$output .= "Node\t".$array->[$i]."\t".Bio::KBase::ObjectAPI::utilities::SHOCK_URL()."/node/".$node;
-    	} else {
-    		$output .= $model->export({format => $array->[$i], fbas => $fbas,toshock => $input->{toshock}});
-    	}
-    }
+    $output = $self->_export_object({
+    	reference => $input->{workspace}."/".$input->{model},
+    	type => "FBAModel",
+    	format => $input->{format},
+    	toshock => $input->{toshock}
+    });
     $self->_clearContext();
     #END export_fbamodel
     my @_bad_returns;
@@ -7919,18 +7949,10 @@ sub export_object
     #BEGIN export_object
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["reference","type"],{
-    	format => "html"
+    	format => "text",
+    	toshock => 0,
     });
- 	my $array = [split(/\//,$input->{reference})];
-    my $obj = $self->_get_msobject($input->{type},$array->[0],$array->[1]);
-	if (ref($obj) eq "HASH") {
-		my $JSON = JSON::XS->new->utf8(1);
-    	$output = $JSON->encode($obj);
-	} elsif (ref($obj) =~ m/Bio::KBase::ObjectAPI/) {
-		$output = $obj->export({format => $input->{format}});;
-	} else {
-		$output = $obj;
-	}
+    $output = $self->_export_object($input);
     $self->_clearContext();
     #END export_object
     my @_bad_returns;
@@ -8013,15 +8035,15 @@ sub export_genome
     my($output);
     #BEGIN export_genome
     $self->_setContext($ctx,$input);
-    $input = $self->_validateargs($input,["genome","workspace","format"],{});
-    my $genome = $self->_get_msobject("Genome",$input->{workspace},$input->{genome});
-	if ($input->{format} == "genomeTO") {
-		my $genomeTO = $genome->genome_typed_object();
-		my $JSON = JSON::XS->new->utf8(1);
-		$output = $JSON->encode($genomeTO);
-	} else {
-		$output = $genome->export({format => $input->{format}});
-	}
+    $input = $self->_validateargs($input,["genome","workspace","format"],{
+    	toshock => 0
+    });
+    $output = $self->_export_object({
+    	reference => $input->{workspace}."/".$input->{genome},
+    	type => "Genome",
+    	format => $input->{format},
+    	toshock => $input->{toshock}
+    });
     $self->_clearContext();
     #END export_genome
     my @_bad_returns;
@@ -8679,11 +8701,15 @@ sub export_media
     my($output);
     #BEGIN export_media
     $self->_setContext($ctx,$input);
-	$input = $self->_validateargs($input,["media","workspace","format"],{});
-    my $med = $self->_get_msobject("Media",$input->{workspace},$input->{media});
-    $output = $med->export({
-	    format => $input->{format}
+	$input = $self->_validateargs($input,["media","workspace","format"],{
+		toshock => 0
 	});
+	$output = $self->_export_object({
+		reference => $input->{workspace}."/".$input->{media},
+		type => "Media",
+		format => $input->{format},
+		toshock => $input->{toshock}
+    });
 	$self->_clearContext();
     #END export_media
     my @_bad_returns;
@@ -9790,11 +9816,15 @@ sub export_fba
     my($output);
     #BEGIN export_fba
     $self->_setContext($ctx,$input);
-	$input = $self->_validateargs($input,["fba","workspace","format"],{});
-    my $fba = $self->_get_msobject("FBA",$input->{workspace},$input->{fba});
-    $output = $fba->export({
-	    format => $input->{format}
+	$input = $self->_validateargs($input,["fba","workspace","format"],{
+		toshock => 0
 	});
+    $output = $self->_export_object({
+    	reference => $input->{workspace}."/".$input->{fba},
+    	type => "FBA",
+    	format => $input->{format},
+    	toshock => $input->{toshock}
+    });
 	$self->_clearContext();
     #END export_fba
     my @_bad_returns;
@@ -10499,17 +10529,16 @@ sub export_phenotypeSimulationSet
     my($output);
     #BEGIN export_phenotypeSimulationSet
 	$self->_setContext($ctx,$input);
-    $input = $self->_validateargs($input,["phenotypeSimulationSet","workspace"],{});
-    my $phenosim = $self->_get_msobject("PhenotypeSimulationSet",$input->{workspace},$input->{phenotypeSimulationSet});
-    $output = "Phenosim ID\tPheno ID\tMedia\tKO\tAdditional compounds\tObserved growth\tSimulated growth\tSimulated growth fraction\tClass\n";
-    my $phenos = $phenosim->phenotypeSimulations();
-    foreach my $pheno (@{$phenos}) {
-    	$output .= $pheno->id()."\t".$pheno->phenotype()->id()."\t".
-    		$pheno->phenotype()->media()->_wsworkspace()."/".$pheno->phenotype()->media()->_wsname().
-    		"\t".$pheno->phenotype()->geneKOString()."\t".$pheno->phenotype()->additionalCpdString().
-    		"\t".$pheno->phenotype()->normalizedGrowth()."\t".$pheno->simulatedGrowth()."\t".$pheno->simulatedGrowthFraction().
-    		"\t".$pheno->phenoclass()."\n";
-    }
+    $input = $self->_validateargs($input,["phenotypeSimulationSet","workspace",],{
+    	format => "text",
+    	toshock => 0
+    });
+    $output = $self->_export_object({
+    	reference => $input->{workspace}."/".$input->{phenotypeSimulationSet},
+    	type => "PhenotypeSimulationSet",
+    	format => $input->{format},
+    	toshock => $input->{toshock}
+    });
     $self->_clearContext();
     #END export_phenotypeSimulationSet
     my @_bad_returns;

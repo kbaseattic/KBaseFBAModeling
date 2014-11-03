@@ -667,8 +667,13 @@ Example:
 =cut
 
 sub Load_file_to_shock {
-	my ($input) = @_;
-	my $output = Bio::KBase::ObjectAPI::utilities::runexecutable("curl -H \"Authorization: OAuth ".Bio::KBase::ObjectAPI::utilities::AUTHTOKEN()."\" -X POST -F 'upload=\@".$input."' ".Bio::KBase::ObjectAPI::utilities::SHOCK_URL()."/node");
+	my ($input,$meta) = @_;
+	my $att = " ";
+	if (defined($meta) && keys(%{$meta}) > 0) {
+		my $JSON = JSON->new->utf8(1);
+		$att = " 'attributes_str=".$JSON->encode($meta)."' ";
+	}
+	my $output = Bio::KBase::ObjectAPI::utilities::runexecutable("curl -H \"Authorization: OAuth".$att.Bio::KBase::ObjectAPI::utilities::AUTHTOKEN()."\" -X POST -F 'upload=\@".$input."' ".Bio::KBase::ObjectAPI::utilities::SHOCK_URL()."/node");
 	$output = Bio::KBase::ObjectAPI::utilities::FROMJSON(join("\n",@{$output}));
 	return $output->{data}->{id};
 }
@@ -684,11 +689,11 @@ Example:
 =cut
 
 sub Load_data_to_shock {
-	my ($input) = @_;
+	my ($input,$meta) = @_;
 	my $uuid = Data::UUID->new()->create_str();
 	File::Path::mkpath Bio::KBase::ObjectAPI::utilities::MFATOOLKIT_JOB_DIRECTORY();
 	Bio::KBase::ObjectAPI::utilities::PRINTFILE(Bio::KBase::ObjectAPI::utilities::MFATOOLKIT_JOB_DIRECTORY().$uuid,[$input]);
-	return Load_file_to_shock(Bio::KBase::ObjectAPI::utilities::MFATOOLKIT_JOB_DIRECTORY().$uuid);
+	return Load_file_to_shock(Bio::KBase::ObjectAPI::utilities::MFATOOLKIT_JOB_DIRECTORY().$uuid,$meta);
 }
 
 =head3 Pull_file_from_shock

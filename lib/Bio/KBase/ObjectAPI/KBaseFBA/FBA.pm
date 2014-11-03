@@ -416,9 +416,9 @@ sub RunQuantitativeOptimization {
 		join("|",@{$data->{max}})."\t".
 		join("|",@{$data->{min}})."\t".
 		join("|",@{$data->{comp}})."\t".
-		join("|",@{$data->{conc}});
+		join("|",@{$data->{conc}})
 	);
-	Bio::KBase::ObjectAPI::utilities::PRINTFILE($directory."media.tbl",$mediaData);
+	Bio::KBase::ObjectAPI::utilities::PRINTFILE($self->jobDirectory()."/media.tbl",$mediaData);
     $self->runFBA();
     if (!defined($self->QuantitativeOptimizationSolutions()->[0])) {
     	$self->_error("Quantitative optimization completed, but no solutions obtained!");

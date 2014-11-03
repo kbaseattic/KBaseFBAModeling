@@ -890,16 +890,16 @@ sub labelBiomassCompounds {
 	}
 }
 
-=head3 printSBML
+=head3 print_sbml
 
 Definition:
-	void Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->printSBML();
+	void Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->print_sbml();
 Description:
 	Prints the model in SBML format
 
 =cut
 
-sub printSBML {
+sub print_sbml {
     my $self = shift;
 	# convert ids to SIds
     my $idToSId = sub {
@@ -1125,31 +1125,31 @@ sub printSBML {
 	return join("\n",@{$output});
 }
 
-=head3 printGenes
+=head3 print_genes
 
 Definition:
-	string = Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->printGenes();
+	string = Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->print_genes();
 Description:
 	Return list of genes in model
 
 =cut
 
-sub printGenes {
+sub print_genes {
     my $self = shift;
 	my $output = join("\n",@{$self->features()});
 	return $output;
 }
 
-=head3 printExchange
+=head3 print_exchange
 
 Definition:
-	string:Exchange format = Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->printExchange();
+	string:Exchange format = Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->print_exchange();
 Description:
 	Returns a string with the model in Exchange format
 
 =cut
 
-sub printExchange {
+sub print_exchange {
     my $self = shift;
 	my $output = "Model{";
 	$output .= "attributes(id\tname\ttype\tannotation\tmapping\tbiochemistry){\n";
@@ -1183,16 +1183,16 @@ sub printExchange {
 	return $output;
 }
 
-=head3 printModelSEED
+=head3 print_modelseed
 
 Definition:
-	string:Exchange format = Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->printModelSEED();
+	string:Exchange format = Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->print_modelseed();
 Description:
 	Returns a string with the model in ModelSEED format
 
 =cut
 
-sub printModelSEED {
+sub print_modelseed {
     my $self = shift;
 	my $output = "REACTIONS\n";
 	$output .= "LOAD;DIRECTIONALITY;COMPARTMENT;ASSOCIATED PEG;EQUATION;SUBSYSTEM;CONFIDENCE;REFERENCE;NOTES\n";
@@ -1379,66 +1379,17 @@ sub htmlComponents {
 	return $output;
 }
 
-=head3 export
+=head3 print_excel
 
 Definition:
-	string = Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->export();
-Description:
-	Exports model data to the specified format.
-
-=cut
-
-sub export {
-    my $self = shift;
-	my $args = Bio::KBase::ObjectAPI::utilities::args(["format"], {
-		toshock => 0
-	}, @_);
-	my $output;
-	if (lc($args->{format}) eq "sbml") {
-		$output = $self->printSBML();
-	} elsif (lc($args->{format}) eq "exchange") {
-		$output = $self->printExchange();
-	} elsif (lc($args->{format}) eq "genes") {
-		$output = $self->printGenes();
-	} elsif (lc($args->{format}) eq "readable") {
-		$output = $self->toReadableString();
-	} elsif (lc($args->{format}) eq "html") {
-		$output = $self->createHTML();
-	} elsif (lc($args->{format}) eq "json") {
-		$output = $self->toJSON({pp => 1});
-	} elsif (lc($args->{format}) eq "cytoseed") {
-		$output =  $self->printCytoSEED($args->{fbas});
-	} elsif (lc($args->{format}) eq "modelseed") {
-		$output = $self->printModelSEED();
-	} elsif (lc($args->{format}) eq "excel") {
-		return $self->printExcel({toshock => $args->{toshock}});
-	}
-	if (!defined($output)) {
-		Bio::KBase::ObjectAPI::utilities::error("Unrecognized type for export: ".$args->{format});
-	}
-	print "test4\n";
-	if ($args->{toshock} == 1) {
-		print "test5\n";
-		return Load_data_to_shock($output);
-	}
-	print "test6\n";
-	return $output;
-}
-
-=head3 printExcel
-
-Definition:
-	string printExcel();
+	string print_excel();
 Description:
 	Prints model data in excel
 
 =cut
 
-sub printExcel {
-	my ($self,$args) = @_;
-	$args = Bio::KBase::ObjectAPI::utilities::args([], {
-		toshock => 0
-	}, $args);
+sub print_excel {
+	my ($self) = @_;
 	my $fulldir = File::Temp::tempdir(DIR => Bio::KBase::ObjectAPI::utilities::MFATOOLKIT_JOB_DIRECTORY());
 	my $filename = $fulldir."/".$self->_wsname().".xls";
 	require "Spreadsheet/WriteExcel.pm";
@@ -1469,26 +1420,22 @@ sub printExcel {
 		}
 		$sheet->write_row($i+1,0,[$ftr->id(),$ftr->type(),$ftr->roleList(),$ftr->contig(),$ftr->start(),$ftr->stop(),$ftr->direction(),join("|",@{$reactionList})]);
 	}
-	my $output;
-	if ($args->{toshock} == 1) {
-		return Bio::KBase::ObjectAPI::utilities::Load_file_to_shock($filename);
-	}
-	open(my $fh, "<:raw", $filename);
-	my $data = <$fh>;
-	close($fh);
-	return $data;
+	#open(my $fh, "<:raw", $filename);
+	#my $data = <$fh>;
+	#close($fh);
+	return $filename;
 }
 
-=head3 printCytoSEED
+=head3 print_cytoseed
 
 Definition:
-	void Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->printCytoSEED();
+	void Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->print_cytoseed();
 Description:
 	Prints the model in CytoSEED format
 
 =cut
 
-sub printCytoSEED {
+sub print_cytoseed {
 	my ($self,$fbas) = @_;
 
 	sub compound_to_results {
