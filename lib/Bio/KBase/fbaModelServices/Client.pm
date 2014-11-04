@@ -4721,6 +4721,233 @@ sub runfba
 
 
 
+=head2 quantitative_optimization
+
+  $output = $obj->quantitative_optimization($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a quantitative_optimization_params
+$output is an object_metadata
+quantitative_optimization_params is a reference to a hash where the following keys are defined:
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
+	formulation has a value which is an FBAFormulation
+	outputid has a value which is a fbamodel_id
+	workspace has a value which is a workspace_id
+	biomass has a value which is a string
+fbamodel_id is a string
+workspace_id is a string
+FBAFormulation is a reference to a hash where the following keys are defined:
+	media has a value which is a media_id
+	additionalcpds has a value which is a reference to a list where each element is a compound_id
+	promconstraint has a value which is a promconstraint_id
+	promconstraint_workspace has a value which is a workspace_id
+	eflux_sample has a value which is a sample_id
+	eflux_series has a value which is a series_id
+	eflux_workspace has a value which is a workspace_id
+	media_workspace has a value which is a workspace_id
+	objfraction has a value which is a float
+	allreversible has a value which is a bool
+	maximizeObjective has a value which is a bool
+	objectiveTerms has a value which is a reference to a list where each element is a term
+	geneko has a value which is a reference to a list where each element is a feature_id
+	rxnko has a value which is a reference to a list where each element is a reaction_id
+	bounds has a value which is a reference to a list where each element is a bound
+	constraints has a value which is a reference to a list where each element is a constraint
+	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
+	defaultmaxflux has a value which is a float
+	defaultminuptake has a value which is a float
+	defaultmaxuptake has a value which is a float
+	simplethermoconst has a value which is a bool
+	thermoconst has a value which is a bool
+	nothermoerror has a value which is a bool
+	minthermoerror has a value which is a bool
+media_id is a string
+compound_id is a string
+promconstraint_id is a string
+sample_id is a string
+series_id is a string
+bool is an int
+term is a reference to a list containing 3 items:
+	0: (coefficient) a float
+	1: (varType) a string
+	2: (variable) a string
+feature_id is a string
+reaction_id is a string
+bound is a reference to a list containing 4 items:
+	0: (min) a float
+	1: (max) a float
+	2: (varType) a string
+	3: (variable) a string
+constraint is a reference to a list containing 4 items:
+	0: (rhs) a float
+	1: (sign) a string
+	2: (terms) a reference to a list where each element is a term
+	3: (name) a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a quantitative_optimization_params
+$output is an object_metadata
+quantitative_optimization_params is a reference to a hash where the following keys are defined:
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
+	formulation has a value which is an FBAFormulation
+	outputid has a value which is a fbamodel_id
+	workspace has a value which is a workspace_id
+	biomass has a value which is a string
+fbamodel_id is a string
+workspace_id is a string
+FBAFormulation is a reference to a hash where the following keys are defined:
+	media has a value which is a media_id
+	additionalcpds has a value which is a reference to a list where each element is a compound_id
+	promconstraint has a value which is a promconstraint_id
+	promconstraint_workspace has a value which is a workspace_id
+	eflux_sample has a value which is a sample_id
+	eflux_series has a value which is a series_id
+	eflux_workspace has a value which is a workspace_id
+	media_workspace has a value which is a workspace_id
+	objfraction has a value which is a float
+	allreversible has a value which is a bool
+	maximizeObjective has a value which is a bool
+	objectiveTerms has a value which is a reference to a list where each element is a term
+	geneko has a value which is a reference to a list where each element is a feature_id
+	rxnko has a value which is a reference to a list where each element is a reaction_id
+	bounds has a value which is a reference to a list where each element is a bound
+	constraints has a value which is a reference to a list where each element is a constraint
+	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
+	defaultmaxflux has a value which is a float
+	defaultminuptake has a value which is a float
+	defaultmaxuptake has a value which is a float
+	simplethermoconst has a value which is a bool
+	thermoconst has a value which is a bool
+	nothermoerror has a value which is a bool
+	minthermoerror has a value which is a bool
+media_id is a string
+compound_id is a string
+promconstraint_id is a string
+sample_id is a string
+series_id is a string
+bool is an int
+term is a reference to a list containing 3 items:
+	0: (coefficient) a float
+	1: (varType) a string
+	2: (variable) a string
+feature_id is a string
+reaction_id is a string
+bound is a reference to a list containing 4 items:
+	0: (min) a float
+	1: (max) a float
+	2: (varType) a string
+	3: (variable) a string
+constraint is a reference to a list containing 4 items:
+	0: (rhs) a float
+	1: (sign) a string
+	2: (terms) a reference to a list where each element is a term
+	3: (name) a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+=item Description
+
+Identify ways to adjust model to quantitatively match specified uptake, growth, and excretion constraints
+
+=back
+
+=cut
+
+sub quantitative_optimization
+{
+    my($self, @args) = @_;
+
+# Authentication: required
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function quantitative_optimization (received $n, expecting 1)");
+    }
+    {
+	my($input) = @args;
+
+	my @_bad_arguments;
+        (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"input\" (value was \"$input\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to quantitative_optimization:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'quantitative_optimization');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, {
+	method => "fbaModelServices.quantitative_optimization",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{error}->{code},
+					       method_name => 'quantitative_optimization',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method quantitative_optimization",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'quantitative_optimization',
+				       );
+    }
+}
+
+
+
 =head2 generate_model_stats
 
   $output = $obj->generate_model_stats($input)
@@ -14740,7 +14967,7 @@ classify_genomes_params is a reference to a hash where the following keys are de
 
 	workspace has a value which is a string
 	output_id has a value which is a string
-	classify_ws has a value which is a string
+	classifier_ws has a value which is a string
 	classifier has a value which is a string
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
@@ -14780,7 +15007,7 @@ classify_genomes_params is a reference to a hash where the following keys are de
 
 	workspace has a value which is a string
 	output_id has a value which is a string
-	classify_ws has a value which is a string
+	classifier_ws has a value which is a string
 	classifier has a value which is a string
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
@@ -21475,6 +21702,58 @@ add_to_model has a value which is a bool
 
 
 
+=head2 quantitative_optimization_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "addmedia" function.
+
+        fbamodel_id model - ID of the model that FBA should be run on (a required argument)
+        workspace_id model_workspace - workspace where model for FBA should be run (an optional argument; default is the value of the workspace argument)
+        FBAFormulation formulation - a hash specifying the parameters for the FBA study (an optional argument)
+        fbamodel_id outputid - ID of model to be saved with quantitative optimization solution (an optional argument)
+        workspace_id workspace - workspace where all output objects will be saved (a required argument)
+        string biomass - ID of biomass reaction as target for quantitative optimization (an optional argument)
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+formulation has a value which is an FBAFormulation
+outputid has a value which is a fbamodel_id
+workspace has a value which is a workspace_id
+biomass has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+formulation has a value which is an FBAFormulation
+outputid has a value which is a fbamodel_id
+workspace has a value which is a workspace_id
+biomass has a value which is a string
+
+
+=end text
+
+=back
+
+
+
 =head2 generate_model_stats_params
 
 =over 4
@@ -26647,7 +26926,7 @@ external_genomes has a value which is a reference to a list where each element i
 
 workspace has a value which is a string
 output_id has a value which is a string
-classify_ws has a value which is a string
+classifier_ws has a value which is a string
 classifier has a value which is a string
 
 </pre>
@@ -26667,7 +26946,7 @@ external_genomes has a value which is a reference to a list where each element i
 
 workspace has a value which is a string
 output_id has a value which is a string
-classify_ws has a value which is a string
+classifier_ws has a value which is a string
 classifier has a value which is a string
 
 

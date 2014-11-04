@@ -7,6 +7,7 @@
 package Bio::KBase::ObjectAPI::KBaseFBA::DB::FBAModel;
 use Bio::KBase::ObjectAPI::IndexedObject;
 use Bio::KBase::ObjectAPI::KBaseFBA::Biomass;
+use Bio::KBase::ObjectAPI::KBaseFBA::ModelQuantOpt;
 use Bio::KBase::ObjectAPI::KBaseFBA::ModelGapgen;
 use Bio::KBase::ObjectAPI::KBaseFBA::ModelCompound;
 use Bio::KBase::ObjectAPI::KBaseFBA::ModelReaction;
@@ -25,6 +26,8 @@ has uuid => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass =>
 has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_reference');
 has source => (is => 'rw', isa => 'Str', printOrder => '0', type => 'attribute', metaclass => 'Typed');
 has template_refs => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
+has ATPMaintenance => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has ATPSynthaseStoichiometry => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has id => (is => 'rw', isa => 'Str', printOrder => '1', required => 1, type => 'attribute', metaclass => 'Typed');
 has metagenome_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has genome_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
@@ -37,6 +40,7 @@ has type => (is => 'rw', isa => 'Str', printOrder => '5', default => 'Singlegeno
 
 # SUBOBJECTS:
 has biomasses => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(Biomass)', metaclass => 'Typed', reader => '_biomasses', printOrder => '0');
+has quantopts => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(ModelQuantOpt)', metaclass => 'Typed', reader => '_quantopts', printOrder => '-1');
 has gapgens => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(ModelGapgen)', metaclass => 'Typed', reader => '_gapgens', printOrder => '-1');
 has modelcompounds => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(ModelCompound)', metaclass => 'Typed', reader => '_modelcompounds', printOrder => '2');
 has modelreactions => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(ModelReaction)', metaclass => 'Typed', reader => '_modelreactions', printOrder => '3');
@@ -100,6 +104,20 @@ my $attributes = [
             'name' => 'template_refs',
             'default' => 'sub {return [];}',
             'type' => 'ArrayRef',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'ATPMaintenance',
+            'type' => 'Num',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'ATPSynthaseStoichiometry',
+            'type' => 'Num',
             'perm' => 'rw'
           },
           {
@@ -168,7 +186,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {source => 0, template_refs => 1, id => 2, metagenome_ref => 3, genome_ref => 4, template_ref => 5, source_id => 6, name => 7, metagenome_otu_ref => 8, type => 9};
+my $attribute_map = {source => 0, template_refs => 1, ATPMaintenance => 2, ATPSynthaseStoichiometry => 3, id => 4, metagenome_ref => 5, genome_ref => 6, template_ref => 7, source_id => 8, name => 9, metagenome_otu_ref => 10, type => 11};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -261,6 +279,13 @@ my $subobjects = [
           },
           {
             'printOrder' => -1,
+            'name' => 'quantopts',
+            'type' => 'child',
+            'class' => 'ModelQuantOpt',
+            'module' => 'KBaseFBA'
+          },
+          {
+            'printOrder' => -1,
             'name' => 'gapgens',
             'type' => 'child',
             'class' => 'ModelGapgen',
@@ -305,7 +330,7 @@ my $subobjects = [
           }
         ];
 
-my $subobject_map = {biomasses => 0, gapgens => 1, modelcompounds => 2, modelreactions => 3, modelcompartments => 4, gapfillings => 5};
+my $subobject_map = {biomasses => 0, quantopts => 1, gapgens => 2, modelcompounds => 3, modelreactions => 4, modelcompartments => 5, gapfillings => 6};
 sub _subobjects {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -323,6 +348,10 @@ sub _subobjects {
 around 'biomasses' => sub {
 	 my ($orig, $self) = @_;
 	 return $self->_build_all_objects('biomasses');
+};
+around 'quantopts' => sub {
+	 my ($orig, $self) = @_;
+	 return $self->_build_all_objects('quantopts');
 };
 around 'gapgens' => sub {
 	 my ($orig, $self) = @_;

@@ -25,7 +25,8 @@ my $defaults = {
 		compartmentIndex => 0
 	},
 	FBA => {
-		minimize_reactions => 0
+		minimize_reactions => 0,
+		quantitativeOptimization => 0
 	}
 };
 

@@ -1439,6 +1439,11 @@ sub _buildGapfillObject {
 	foreach my $mdlcmp (@{$mdlcmps}) {
 		$gapform->addLinkArrayItem("allowableCompartments",$mdlcmp->compartment());
 	}
+	$gapform->{expression_threshold_type} = $formulation->{expression_threshold_type};
+	$gapform->{low_expression_theshold} = $formulation->{low_expression_theshold};
+	$gapform->{low_expression_penalty_factor} = $formulation->{low_expression_penalty_factor};
+	$gapform->{high_expression_theshold} = $formulation->{high_expression_theshold};
+	$gapform->{high_expression_penalty_factor} = $formulation->{high_expression_penalty_factor};	
 	$gapform->{expression_data} = $formulation->{expression_data};
 	$gapform->prepareFBAFormulation();
 	$gapform->fba()->numberOfSolutions($formulation->{num_solutions});
@@ -3303,6 +3308,54 @@ sub _process_reactions_list {
 	return ($reactions,$compoundhash);
 }
 
+sub _export_object {
+	my ($self,$input) = @_;
+	$input = $self->_validateargs($input,["reference","type"],{
+    	format => "excel",
+    	toshock => 0,
+    });
+	if ($input->{format} eq "excel") {
+		$input->{toshock} = 1;
+	}
+ 	my $array = [split(/\//,$input->{reference})];
+    my $obj = $self->_get_msobject($input->{type},$array->[0],$array->[1]);
+	my $output;
+	if (ref($obj) eq "HASH") {
+		my $JSON = JSON::XS->new->utf8(1);
+    	$output = $JSON->encode($obj);
+	} elsif (ref($obj) =~ m/Bio::KBase::ObjectAPI/) {
+		$output = $obj->export({format => $input->{format}});;
+	} else {
+		$output = $obj;
+	} 
+	if ($input->{toshock} == 1) {
+		$output = $self->_load_to_shock($input,$output);
+	}
+	return $output;
+}
+
+sub _load_to_shock {
+	my ($self,$input,$data) = @_;
+	$input = $self->_validateargs($input,["reference","type","format"],{});
+	my $output;
+	if (-e $data) {
+		$output = Bio::KBase::ObjectAPI::utilities::Load_file_to_shock($data,{
+			workspace_reference => $input->{reference},
+			workspace_type => $input->{type},
+			object_format => $input->{format},
+			owner => $self->_getUsername()
+		});
+	} else {
+		$output = Bio::KBase::ObjectAPI::utilities::Load_data_to_shock($data,{
+			workspace_reference => $input->{reference},
+			workspace_type => $input->{type},
+			object_format => $input->{format},
+			owner => $self->_getUsername()
+		});
+	}
+	return $output;
+}
+
 #END_HEADER
 
 sub new
@@ -3417,7 +3470,8 @@ sub new
     		$self->{'_jobqueue'} = $params->{'jobqueue'};
     }
     if (defined $params->{'shock-url'}) {
-    		$self->{'_shock-url'} = $params->{'shock-url'};
+    	Bio::KBase::ObjectAPI::utilities::SHOCK_URL($params->{"shock-url"});
+    	$self->{'_shock-url'} = $params->{'shock-url'};
     }
     if (defined $params->{'awe-url'}) {
     		$self->{'_awe-url'} = $params->{'awe-url'};
@@ -7805,13 +7859,15 @@ sub export_fbamodel
     my($output);
     #BEGIN export_fbamodel
     $self->_setContext($ctx,$input);
-    $input = $self->_validateargs($input,["model","workspace","format"],{});
-    my $model = $self->_get_msobject("FBAModel",$input->{workspace},$input->{model});
-    my $fbas;
-    foreach my $fba_id (@{$input->{fbas}}) {
-    	push @$fbas, $self->_get_msobject("FBA",$input->{workspace},$fba_id);
-    }
-    $output = $model->export({format => $input->{format}, fbas => $fbas});
+    $input = $self->_validateargs($input,["model","workspace","format"],{
+    	toshock => 0
+    });
+    $output = $self->_export_object({
+    	reference => $input->{workspace}."/".$input->{model},
+    	type => "FBAModel",
+    	format => $input->{format},
+    	toshock => $input->{toshock}
+    });
     $self->_clearContext();
     #END export_fbamodel
     my @_bad_returns;
@@ -7893,18 +7949,10 @@ sub export_object
     #BEGIN export_object
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["reference","type"],{
-    	format => "html"
+    	format => "text",
+    	toshock => 0,
     });
- 	my $array = [split(/\//,$input->{reference})];
-    my $obj = $self->_get_msobject($input->{type},$array->[0],$array->[1]);
-	if (ref($obj) eq "HASH") {
-		my $JSON = JSON::XS->new->utf8(1);
-    	$output = $JSON->encode($obj);
-	} elsif (ref($obj) =~ m/Bio::KBase::ObjectAPI/) {
-		$output = $obj->export({format => $input->{format}});;
-	} else {
-		$output = $obj;
-	}
+    $output = $self->_export_object($input);
     $self->_clearContext();
     #END export_object
     my @_bad_returns;
@@ -7987,15 +8035,15 @@ sub export_genome
     my($output);
     #BEGIN export_genome
     $self->_setContext($ctx,$input);
-    $input = $self->_validateargs($input,["genome","workspace","format"],{});
-    my $genome = $self->_get_msobject("Genome",$input->{workspace},$input->{genome});
-	if ($input->{format} == "genomeTO") {
-		my $genomeTO = $genome->genome_typed_object();
-		my $JSON = JSON::XS->new->utf8(1);
-		$output = $JSON->encode($genomeTO);
-	} else {
-		$output = $genome->export({format => $input->{format}});
-	}
+    $input = $self->_validateargs($input,["genome","workspace","format"],{
+    	toshock => 0
+    });
+    $output = $self->_export_object({
+    	reference => $input->{workspace}."/".$input->{genome},
+    	type => "Genome",
+    	format => $input->{format},
+    	toshock => $input->{toshock}
+    });
     $self->_clearContext();
     #END export_genome
     my @_bad_returns;
@@ -8653,11 +8701,15 @@ sub export_media
     my($output);
     #BEGIN export_media
     $self->_setContext($ctx,$input);
-	$input = $self->_validateargs($input,["media","workspace","format"],{});
-    my $med = $self->_get_msobject("Media",$input->{workspace},$input->{media});
-    $output = $med->export({
-	    format => $input->{format}
+	$input = $self->_validateargs($input,["media","workspace","format"],{
+		toshock => 0
 	});
+	$output = $self->_export_object({
+		reference => $input->{workspace}."/".$input->{media},
+		type => "Media",
+		format => $input->{format},
+		toshock => $input->{toshock}
+    });
 	$self->_clearContext();
     #END export_media
     my @_bad_returns;
@@ -8979,6 +9031,260 @@ sub runfba
 							       method_name => 'runfba');
     }
     return($fbaMeta);
+}
+
+
+
+
+=head2 quantitative_optimization
+
+  $output = $obj->quantitative_optimization($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a quantitative_optimization_params
+$output is an object_metadata
+quantitative_optimization_params is a reference to a hash where the following keys are defined:
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
+	formulation has a value which is an FBAFormulation
+	outputid has a value which is a fbamodel_id
+	workspace has a value which is a workspace_id
+	biomass has a value which is a string
+fbamodel_id is a string
+workspace_id is a string
+FBAFormulation is a reference to a hash where the following keys are defined:
+	media has a value which is a media_id
+	additionalcpds has a value which is a reference to a list where each element is a compound_id
+	promconstraint has a value which is a promconstraint_id
+	promconstraint_workspace has a value which is a workspace_id
+	eflux_sample has a value which is a sample_id
+	eflux_series has a value which is a series_id
+	eflux_workspace has a value which is a workspace_id
+	media_workspace has a value which is a workspace_id
+	objfraction has a value which is a float
+	allreversible has a value which is a bool
+	maximizeObjective has a value which is a bool
+	objectiveTerms has a value which is a reference to a list where each element is a term
+	geneko has a value which is a reference to a list where each element is a feature_id
+	rxnko has a value which is a reference to a list where each element is a reaction_id
+	bounds has a value which is a reference to a list where each element is a bound
+	constraints has a value which is a reference to a list where each element is a constraint
+	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
+	defaultmaxflux has a value which is a float
+	defaultminuptake has a value which is a float
+	defaultmaxuptake has a value which is a float
+	simplethermoconst has a value which is a bool
+	thermoconst has a value which is a bool
+	nothermoerror has a value which is a bool
+	minthermoerror has a value which is a bool
+media_id is a string
+compound_id is a string
+promconstraint_id is a string
+sample_id is a string
+series_id is a string
+bool is an int
+term is a reference to a list containing 3 items:
+	0: (coefficient) a float
+	1: (varType) a string
+	2: (variable) a string
+feature_id is a string
+reaction_id is a string
+bound is a reference to a list containing 4 items:
+	0: (min) a float
+	1: (max) a float
+	2: (varType) a string
+	3: (variable) a string
+constraint is a reference to a list containing 4 items:
+	0: (rhs) a float
+	1: (sign) a string
+	2: (terms) a reference to a list where each element is a term
+	3: (name) a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a quantitative_optimization_params
+$output is an object_metadata
+quantitative_optimization_params is a reference to a hash where the following keys are defined:
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
+	formulation has a value which is an FBAFormulation
+	outputid has a value which is a fbamodel_id
+	workspace has a value which is a workspace_id
+	biomass has a value which is a string
+fbamodel_id is a string
+workspace_id is a string
+FBAFormulation is a reference to a hash where the following keys are defined:
+	media has a value which is a media_id
+	additionalcpds has a value which is a reference to a list where each element is a compound_id
+	promconstraint has a value which is a promconstraint_id
+	promconstraint_workspace has a value which is a workspace_id
+	eflux_sample has a value which is a sample_id
+	eflux_series has a value which is a series_id
+	eflux_workspace has a value which is a workspace_id
+	media_workspace has a value which is a workspace_id
+	objfraction has a value which is a float
+	allreversible has a value which is a bool
+	maximizeObjective has a value which is a bool
+	objectiveTerms has a value which is a reference to a list where each element is a term
+	geneko has a value which is a reference to a list where each element is a feature_id
+	rxnko has a value which is a reference to a list where each element is a reaction_id
+	bounds has a value which is a reference to a list where each element is a bound
+	constraints has a value which is a reference to a list where each element is a constraint
+	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
+	defaultmaxflux has a value which is a float
+	defaultminuptake has a value which is a float
+	defaultmaxuptake has a value which is a float
+	simplethermoconst has a value which is a bool
+	thermoconst has a value which is a bool
+	nothermoerror has a value which is a bool
+	minthermoerror has a value which is a bool
+media_id is a string
+compound_id is a string
+promconstraint_id is a string
+sample_id is a string
+series_id is a string
+bool is an int
+term is a reference to a list containing 3 items:
+	0: (coefficient) a float
+	1: (varType) a string
+	2: (variable) a string
+feature_id is a string
+reaction_id is a string
+bound is a reference to a list containing 4 items:
+	0: (min) a float
+	1: (max) a float
+	2: (varType) a string
+	3: (variable) a string
+constraint is a reference to a list containing 4 items:
+	0: (rhs) a float
+	1: (sign) a string
+	2: (terms) a reference to a list where each element is a term
+	3: (name) a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+
+
+=item Description
+
+Identify ways to adjust model to quantitatively match specified uptake, growth, and excretion constraints
+
+=back
+
+=cut
+
+sub quantitative_optimization
+{
+    my $self = shift;
+    my($input) = @_;
+
+    my @_bad_arguments;
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to quantitative_optimization:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'quantitative_optimization');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($output);
+    #BEGIN quantitative_optimization
+    $self->_setContext($ctx,$input);
+	$input = $self->_validateargs($input,["model","constraints","workspace"],{
+		model_workspace => $input->{workspace},
+		formulation => undef,
+		outputid => undef,
+		biomass => undef,
+		solver => undef,
+		timePerSolution => 3600,
+		totalTimeLimit => 3600,
+		integrate_solution => 0,
+		num_solutions => 1,
+		MaxBoundMult => 2,
+		MinFluxCoef => 0.000001,
+	});
+	my $model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model});
+	if (!defined($input->{outputid})) {
+		$input->{outputid} = $self->_get_new_id($input->{model});
+	}
+	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
+	my $fba = $self->_buildFBAObject($input->{formulation},$model);
+	if (defined($input->{solver})) {
+	   	$fba->parameters()->{MFASolver} = uc($input->{solver});
+	}
+	if (defined($input->{biomass}) && defined($fba->biomassflux_objterms()->{bio1})) {
+		my $bio = $model->searchForBiomass($input->{biomass});
+		if (defined($bio)) {
+			delete $fba->biomassflux_objterms()->{bio1};
+			$fba->biomassflux_objterms()->{$bio->id()} = 1;
+		}			
+	}
+	$fba->RunQuantitativeOptimization({
+		TimePerSolution => $input->{timePerSolution},
+		TotalTimeLimit => $input->{totalTimeLimit},
+		Num_solutions => $input->{num_solutions},
+		MaxBoundMult => $input->{MaxBoundMult},
+		MinFluxCoef => $input->{MinFluxCoef},
+		Constraints => $input->{constraints}
+	});
+	$self->_save_msobject($fba,"FBA",$input->{workspace},$fba->id(),{hidden => 1});
+	$model->AddQuantitativeOptimization($fba,$input->{integrate_solution});	
+    $output = $self->_save_msobject($model,"FBAModel",$input->{workspace},$input->{outputid});
+    $self->_clearContext();
+    #END quantitative_optimization
+    my @_bad_returns;
+    (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to quantitative_optimization:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'quantitative_optimization');
+    }
+    return($output);
 }
 
 
@@ -9510,11 +9816,15 @@ sub export_fba
     my($output);
     #BEGIN export_fba
     $self->_setContext($ctx,$input);
-	$input = $self->_validateargs($input,["fba","workspace","format"],{});
-    my $fba = $self->_get_msobject("FBA",$input->{workspace},$input->{fba});
-    $output = $fba->export({
-	    format => $input->{format}
+	$input = $self->_validateargs($input,["fba","workspace","format"],{
+		toshock => 0
 	});
+    $output = $self->_export_object({
+    	reference => $input->{workspace}."/".$input->{fba},
+    	type => "FBA",
+    	format => $input->{format},
+    	toshock => $input->{toshock}
+    });
 	$self->_clearContext();
     #END export_fba
     my @_bad_returns;
@@ -10219,17 +10529,16 @@ sub export_phenotypeSimulationSet
     my($output);
     #BEGIN export_phenotypeSimulationSet
 	$self->_setContext($ctx,$input);
-    $input = $self->_validateargs($input,["phenotypeSimulationSet","workspace"],{});
-    my $phenosim = $self->_get_msobject("PhenotypeSimulationSet",$input->{workspace},$input->{phenotypeSimulationSet});
-    $output = "Phenosim ID\tPheno ID\tMedia\tKO\tAdditional compounds\tObserved growth\tSimulated growth\tSimulated growth fraction\tClass\n";
-    my $phenos = $phenosim->phenotypeSimulations();
-    foreach my $pheno (@{$phenos}) {
-    	$output .= $pheno->id()."\t".$pheno->phenotype()->id()."\t".
-    		$pheno->phenotype()->media()->_wsworkspace()."/".$pheno->phenotype()->media()->_wsname().
-    		"\t".$pheno->phenotype()->geneKOString()."\t".$pheno->phenotype()->additionalCpdString().
-    		"\t".$pheno->phenotype()->normalizedGrowth()."\t".$pheno->simulatedGrowth()."\t".$pheno->simulatedGrowthFraction().
-    		"\t".$pheno->phenoclass()."\n";
-    }
+    $input = $self->_validateargs($input,["phenotypeSimulationSet","workspace",],{
+    	format => "text",
+    	toshock => 0
+    });
+    $output = $self->_export_object({
+    	reference => $input->{workspace}."/".$input->{phenotypeSimulationSet},
+    	type => "PhenotypeSimulationSet",
+    	format => $input->{format},
+    	toshock => $input->{toshock}
+    });
     $self->_clearContext();
     #END export_phenotypeSimulationSet
     my @_bad_returns;
@@ -11246,6 +11555,13 @@ sub gapfill_model
     #BEGIN gapfill_model
     $self->_setContext($ctx,$input);
 	$input = $self->_validateargs($input,["model","workspace"],{		
+		expression_threshold_type => "AbsoluteThreshold",
+		low_expression_theshold => 0.2,
+		low_expression_penalty_factor => 0.5,
+		high_expression_theshold => 0.2,
+		high_expression_penalty_factor => 2,
+		expsample => undef,
+		expsamplews => $input->{workspace},
 		model_workspace => $input->{workspace},
 		formulation => undef,
 		phenotypeSet => undef,
@@ -11285,6 +11601,15 @@ sub gapfill_model
 	my $model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model});
 	if (!defined($input->{out_model})) {
 		$input->{out_model} = $input->{model};
+	}
+	if (defined($input->{expsample})) {
+		my $sample = $self->_get_msobject("ExpressionSample",$input->{expsample_ws},$input->{expsample});
+		$input->{formulation}->{expression_threshold_type} = $input->{expression_threshold_type};
+		$input->{formulation}->{low_expression_theshold} = $input->{low_expression_theshold};
+		$input->{formulation}->{low_expression_penalty_factor} = $input->{low_expression_penalty_factor};
+		$input->{formulation}->{high_expression_theshold} = $input->{high_expression_theshold};
+		$input->{formulation}->{high_expression_penalty_factor} = $input->{high_expression_penalty_factor};
+		$input->{formulation}->{expression_data} = $sample;
 	}
 	my ($gapfill,$fba) = $self->_buildGapfillObject($input->{formulation},$model,$input->{gfid});
 	$gapfill->simultaneousGapfill($input->{simultaneous});
@@ -14586,7 +14911,7 @@ workspace_ref is a string
 
 =item Description
 
-Deleted flagged reactions from a ReactionSensitivityAnalysis object
+Deleted flagged reactions from a RxnSensitivity object
 
 =back
 
@@ -21569,7 +21894,7 @@ classify_genomes_params is a reference to a hash where the following keys are de
 
 	workspace has a value which is a string
 	output_id has a value which is a string
-	classify_ws has a value which is a string
+	classifier_ws has a value which is a string
 	classifier has a value which is a string
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
@@ -21609,7 +21934,7 @@ classify_genomes_params is a reference to a hash where the following keys are de
 
 	workspace has a value which is a string
 	output_id has a value which is a string
-	classify_ws has a value which is a string
+	classifier_ws has a value which is a string
 	classifier has a value which is a string
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
@@ -28389,6 +28714,58 @@ add_to_model has a value which is a bool
 
 
 
+=head2 quantitative_optimization_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "addmedia" function.
+
+        fbamodel_id model - ID of the model that FBA should be run on (a required argument)
+        workspace_id model_workspace - workspace where model for FBA should be run (an optional argument; default is the value of the workspace argument)
+        FBAFormulation formulation - a hash specifying the parameters for the FBA study (an optional argument)
+        fbamodel_id outputid - ID of model to be saved with quantitative optimization solution (an optional argument)
+        workspace_id workspace - workspace where all output objects will be saved (a required argument)
+        string biomass - ID of biomass reaction as target for quantitative optimization (an optional argument)
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+formulation has a value which is an FBAFormulation
+outputid has a value which is a fbamodel_id
+workspace has a value which is a workspace_id
+biomass has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+formulation has a value which is an FBAFormulation
+outputid has a value which is a fbamodel_id
+workspace has a value which is a workspace_id
+biomass has a value which is a string
+
+
+=end text
+
+=back
+
+
+
 =head2 generate_model_stats_params
 
 =over 4
@@ -29947,7 +30324,7 @@ Input parameters for the "reaction_sensitivity_analysis" function.
 
         fbamodel_id model - ID of model to be analyzed (a required argument)
         workspace_id model_ws - ID of workspace with model to be analyzed (an optional argument - default is value of workspace argument)
-        string rxnsens_uid - Name of ReactionSensitivityAnalysis object in workspace (an optional argument - default is KBase ID)
+        string rxnsens_uid - Name of RxnSensitivity object in workspace (an optional argument - default is KBase ID)
         workspace_id workspace - ID of workspace where output and default inputs will be selected from (a required argument)
         list<reaction_id> reactions_to_delete - list of reactions to delete in sensitiviity analysis; note, order of the reactions matters (a required argument unless gapfill solution ID is provided)                
         gapfillsolution_id gapfill_solution_id - A Gapfill solution ID. If provided, all reactions in the provided solution will be tested for deletion.
@@ -30069,7 +30446,7 @@ workspace_id workspae - Workspace for outputs and default inputs (a required arg
 workspace_id rxn_sensitivity_ws - Workspace for reaction sensitivity object used as input
 string rxn_sensitivity - Reaction sensitivity ID
 fbamodel_id new_model_uid - ID for output model with noncontributing reactions deleted
-string new_rxn_sensitivity_uid - ID for ReactionSensitivityAnalysis object with bits set to indicate reactions were deleted
+string new_rxn_sensitivity_uid - ID for rxnsensitivity object with bits set to indicate reactions were deleted
 string auth - Authorization token for user (must have appropriate permissions to read and write objects)
 
 
@@ -33561,7 +33938,7 @@ external_genomes has a value which is a reference to a list where each element i
 
 workspace has a value which is a string
 output_id has a value which is a string
-classify_ws has a value which is a string
+classifier_ws has a value which is a string
 classifier has a value which is a string
 
 </pre>
@@ -33581,7 +33958,7 @@ external_genomes has a value which is a reference to a list where each element i
 
 workspace has a value which is a string
 output_id has a value which is a string
-classify_ws has a value which is a string
+classifier_ws has a value which is a string
 classifier has a value which is a string
 
 

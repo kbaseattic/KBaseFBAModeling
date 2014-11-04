@@ -1915,6 +1915,30 @@ module fbaModelServices {
     authentication required;
     funcdef runfba(runfba_params input) returns (object_metadata fbaMeta);
     
+    /* Input parameters for the "addmedia" function.
+	
+		fbamodel_id model - ID of the model that FBA should be run on (a required argument)
+		workspace_id model_workspace - workspace where model for FBA should be run (an optional argument; default is the value of the workspace argument)
+		FBAFormulation formulation - a hash specifying the parameters for the FBA study (an optional argument)
+		fbamodel_id outputid - ID of model to be saved with quantitative optimization solution (an optional argument)
+		workspace_id workspace - workspace where all output objects will be saved (a required argument)
+		string biomass - ID of biomass reaction as target for quantitative optimization (an optional argument)
+		
+	*/
+    typedef structure {
+    	fbamodel_id model;
+		workspace_id model_workspace;
+		FBAFormulation formulation;
+		fbamodel_id outputid;
+		workspace_id workspace;
+		string biomass;		
+    } quantitative_optimization_params;
+    /*
+        Identify ways to adjust model to quantitatively match specified uptake, growth, and excretion constraints
+    */
+    authentication required;
+    funcdef quantitative_optimization(quantitative_optimization_params input) returns (object_metadata output);
+    
     /* Input parameters for the "generate_model_stats" function.
 	
 		fbamodel_id model - ID of the models that FBA should be run on (a required argument)
