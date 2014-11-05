@@ -21,6 +21,7 @@ my $translation = {
 	auth => "auth",
 	overwrite => "overwrite",
 	nosubmit => "donot_submit_job",
+	notes => "notes"
 };
 my $fbaTranslation = {
 	objfraction => "objfraction",
