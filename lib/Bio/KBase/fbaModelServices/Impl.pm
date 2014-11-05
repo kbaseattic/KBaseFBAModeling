@@ -8941,6 +8941,11 @@ sub runfba
     #BEGIN runfba
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["model","workspace"],{
+		expression_threshold_type => "AbsoluteThreshold",
+		low_expression_theshold => 0.2,
+		low_expression_penalty_factor => 0.5,
+		high_expression_theshold => 0.2,
+		high_expression_penalty_factor => 2,
 		formulation => undef,
 		fva => 0,
 		simulateko => 0,
@@ -8969,12 +8974,17 @@ sub runfba
 		}
 		my $sample = $self->_get_msobject("ExpressionSample",$input->{expsample_ws},$input->{expsample});
 		my $formulation = $self->_setDefaultGapfillFormulation({formulation => $input->{formulation}});
+		$formulation->{expression_threshold_type} = $input->{expression_threshold_type};
+		$formulation->{low_expression_theshold} = $input->{low_expression_theshold};
+		$formulation->{low_expression_penalty_factor} = $input->{low_expression_penalty_factor};
+		$formulation->{high_expression_theshold} = $input->{high_expression_theshold};
+		$formulation->{high_expression_penalty_factor} = $input->{high_expression_penalty_factor};
 		$formulation->{completeGapfill} = 1;
 		$formulation->{num_solutions} = 1;
 		$formulation->{expression_data} = $sample;
 		my $gfid = @{$model->gapfillings()};
 		$gfid = $model->id().".gf.".$gfid;
-		my ($gapfill,$fba) = $self->_buildGapfillObject($formulation,$model,$gfid);
+		(my $gapfill,$fba) = $self->_buildGapfillObject($formulation,$model,$gfid);
 		$gapfill->simultaneousGapfill(1);
 		$fba->parameters()->{"Use coefficient file exclusively"} = 1;
 		$fba->parameters()->{"Objective coefficient file"} = "RxnOptCoef.txt";
