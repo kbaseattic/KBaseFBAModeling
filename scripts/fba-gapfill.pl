@@ -31,7 +31,8 @@ my $translation = {
 	sourcemdl => "source_model",
 	sourcemdlws => "source_model_ws",
 	simultaneous => "simultaneous",
-	activitybonus => "activation_penalty"
+	activitybonus => "activation_penalty",
+	notes => "notes"
 };
 my $gfTranslation = {
 	expthreshtype => "expression_threshold_type",

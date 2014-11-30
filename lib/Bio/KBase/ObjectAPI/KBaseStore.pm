@@ -250,6 +250,9 @@ sub save_objects {
     	if (defined($obj->{meta})) {
     		$objdata->{meta} = $obj->{meta};
     	}
+    	if (defined($objdata->{provenance}->[0]->{method_params}->[0]->{notes})) {
+    		$objdata->{meta}->{notes} = $objdata->{provenance}->[0]->{method_params}->[0]->{notes};
+    	}
     	my $array = [split(/\//,$ref)];
 		if (@{$array} < 2) {
 			Bio::KBase::ObjectAPI::utilities->error("Invalid reference:".$ref);

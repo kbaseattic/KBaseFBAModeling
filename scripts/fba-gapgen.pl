@@ -23,7 +23,8 @@ my $translation = {
 	phenoid => "phenotypeSet",
 	timepersol => "timePerSolution",
 	timelimit => "totalTimeLimit",
-	solver => "solver"
+	solver => "solver",
+	notes => "notes"
 };
 my $ggTranslation = {
 	numsol => "num_solutions",
