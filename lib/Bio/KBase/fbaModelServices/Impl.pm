@@ -19629,9 +19629,15 @@ sub import_expression
 	if ( $feature_id =~ /^(kb\|g\.\d+)/) {
 	    $genome_id = $1;
 	} else {
-	    die("Unexpected feature ID format $feature_id\n");
+	    die("Can't determine genome id from feature id: $feature_id\n");
 	}
     }
+
+
+    my $genomews = $input->{"genome_workspace"} || $input->{"workspace"};
+    print STDERR "genome workspace is $genomews\n";
+    my $genome = $self->_get_msobject("Genome",$genomews,$genome_id);
+
     my $old_series = {
 	id => $input->{"series"},
 	source_id => $input->{"source_id"},
@@ -19646,7 +19652,7 @@ sub import_expression
 	    type => "microarray",
 	    expression_levels => $sample->{"data_expression_levels_for_sample"},
 	    source_id => $input->{"source_id"}, # What source?
-	    genome_id => $genome_id,
+	    genome_id => $genome->_reference(),
 	    external_source_date => $input->{"source_date"}, # Which data?
 	    numerical_interpretation => $input->{"numerical_interpretation"},
 	    processing_comments => $input->{"processing_comments"},
