@@ -18,6 +18,7 @@ use Bio::KBase::ObjectAPI::KBaseFBA::FBAConstraint;
 use Bio::KBase::ObjectAPI::KBaseFBA::FBACompoundVariable;
 use Bio::KBase::ObjectAPI::KBaseFBA::FBATintleResult;
 use Bio::KBase::ObjectAPI::KBaseFBA::FBADeletionResult;
+use Bio::KBase::ObjectAPI::KBaseFBA::GapfillingSolution;
 use Bio::KBase::ObjectAPI::KBaseFBA::FBAReactionVariable;
 use Moose;
 use namespace::autoclean;
@@ -89,6 +90,7 @@ has FBAConstraints => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { 
 has FBACompoundVariables => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(FBACompoundVariable)', metaclass => 'Typed', reader => '_FBACompoundVariables', printOrder => '-1');
 has FBATintleResults => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(FBATintleResult)', metaclass => 'Typed', reader => '_FBATintleResults', printOrder => '-1');
 has FBADeletionResults => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(FBADeletionResult)', metaclass => 'Typed', reader => '_FBADeletionResults', printOrder => '-1');
+has gapfillingSolutions => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(GapfillingSolution)', metaclass => 'Typed', reader => '_gapfillingSolutions', printOrder => '-1');
 has FBAReactionVariables => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(FBAReactionVariable)', metaclass => 'Typed', reader => '_FBAReactionVariables', printOrder => '-1');
 
 
@@ -746,6 +748,13 @@ my $subobjects = [
           },
           {
             'printOrder' => -1,
+            'name' => 'gapfillingSolutions',
+            'type' => 'child',
+            'class' => 'GapfillingSolution',
+            'module' => 'KBaseFBA'
+          },
+          {
+            'printOrder' => -1,
             'name' => 'FBAReactionVariables',
             'type' => 'child',
             'class' => 'FBAReactionVariable',
@@ -753,7 +762,7 @@ my $subobjects = [
           }
         ];
 
-my $subobject_map = {FBAMetaboliteProductionResults => 0, FBAReactionBounds => 1, FBAPromResults => 2, FBAMinimalMediaResults => 3, FBABiomassVariables => 4, FBACompoundBounds => 5, QuantitativeOptimizationSolutions => 6, FBAMinimalReactionsResults => 7, FBAConstraints => 8, FBACompoundVariables => 9, FBATintleResults => 10, FBADeletionResults => 11, FBAReactionVariables => 12};
+my $subobject_map = {FBAMetaboliteProductionResults => 0, FBAReactionBounds => 1, FBAPromResults => 2, FBAMinimalMediaResults => 3, FBABiomassVariables => 4, FBACompoundBounds => 5, QuantitativeOptimizationSolutions => 6, FBAMinimalReactionsResults => 7, FBAConstraints => 8, FBACompoundVariables => 9, FBATintleResults => 10, FBADeletionResults => 11, gapfillingSolutions => 12, FBAReactionVariables => 13};
 sub _subobjects {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -815,6 +824,10 @@ around 'FBATintleResults' => sub {
 around 'FBADeletionResults' => sub {
 	 my ($orig, $self) = @_;
 	 return $self->_build_all_objects('FBADeletionResults');
+};
+around 'gapfillingSolutions' => sub {
+	 my ($orig, $self) = @_;
+	 return $self->_build_all_objects('gapfillingSolutions');
 };
 around 'FBAReactionVariables' => sub {
 	 my ($orig, $self) = @_;

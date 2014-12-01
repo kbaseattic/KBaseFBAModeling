@@ -113,7 +113,8 @@ module KBasePhenotypes {
     /* 
     	PhenotypeSimulation subobject holds data on a single phenotype simulation
 
-    	@searchable ws_subset id phenotype_ref simulatedGrowth simulatedGrowthFraction phenoclass
+    	@optional numGapfilledReactions
+    	@optional gapfilledReactions
     */
     typedef structure {
 		phenosim_id id;
@@ -121,6 +122,7 @@ module KBasePhenotypes {
 		float simulatedGrowth;
 		float simulatedGrowthFraction;
 		int numGapfilledReactions;
+		list<string> gapfilledReactions;
 		string phenoclass;
     } PhenotypeSimulation;
     

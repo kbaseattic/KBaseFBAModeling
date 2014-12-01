@@ -13,6 +13,7 @@ our $VERBOSE = undef; # A GLOBAL Reference to print verbose() calls to, or undef
 our $CONFIG = undef;
 our $idserver = undef;
 our $keggmaphash = undef;
+our $report = {};
 
 =head1 Bio::KBase::ObjectAPI::utilities
 
@@ -116,6 +117,19 @@ sub idServer {
 	}
 	return $idserver;
 }
+
+=head3 report
+
+Definition:
+	report(string topic,string message);
+Description:
+	Record a message in the analysis report on the specified topic
+
+=cut
+sub report {
+	my ($topic,$message) = @_;
+	push(@{$report->{$topic}},$message);
+};
 
 =head3 get_new_id
 
