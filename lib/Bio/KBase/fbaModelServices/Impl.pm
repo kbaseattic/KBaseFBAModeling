@@ -8939,7 +8939,7 @@ sub runfba
 			high_expression_penalty_factor => $input->{high_expression_penalty_factor},
 			alpha => $input->{alpha},
 			omega => $input->{omega},
-			scalefluxes => $input->{scalefluxes},
+			scalefluxes => 0,
 		});
 	}
 	$fba->fva($input->{fva});

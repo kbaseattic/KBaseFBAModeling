@@ -1123,7 +1123,6 @@ sub createJobDirectory {
 	}
 	if (defined($self->{_expsample})) {
 		my $coef = $self->process_expression_data();
-		print Data::Dumper->Dump([$coef]);
 		foreach my $key (keys(%{$coef->{lowexp}})) {
 			delete $actcoef->{$key};
 			if (defined($coef->{lowexp}->{$key}->{forward})) {
@@ -3135,19 +3134,20 @@ sub parseGapfillingOutput {
 			}
 			$array = [split(/;/,$row->[8])];
 			for (my $i=0; $i < @{$array}; $i++) {
-				my $mdlrxn = $self->FBAModel()->searchForReaction($array->[$i]);
-				push(@{$solution->{activatedReactions}},{
-					round => $round,
-					modelreaction_ref => $mdlrxn->_reference()
-				});
+				my $mdlrxn = $self->fbamodel()->searchForReaction($array->[$i]);
+				if (defined($mdlrxn)) {
+					push(@{$solution->{activatedReactions}},{
+						round => $round,
+						modelreaction_ref => $mdlrxn->_reference()
+					});
+				}
 			}
 			$array = [split(/;/,$row->[9])];
 			for (my $i=0; $i < @{$array}; $i++) {
-				my $mdlrxn = $self->FBAModel()->searchForReaction($array->[$i]);
-				push(@{$solution->{failedReaction_refs}},{
-					round => $round,
-					modelreaction_ref => $mdlrxn->_reference()
-				});
+				my $mdlrxn = $self->fbamodel()->searchForReaction($array->[$i]);
+				if (defined($mdlrxn)) {
+					push(@{$solution->{failedReaction_refs}},modelreaction_ref => $mdlrxn->_reference());
+				}
 			}
 			$array = [split(/;/,$row->[10])];
 			for (my $i=0; $i < @{$array}; $i++) {
