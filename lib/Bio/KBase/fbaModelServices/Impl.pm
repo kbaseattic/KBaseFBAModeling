@@ -2775,11 +2775,14 @@ sub _parse_SBML {
     	retic => "r",
     	lys => "l",
     	nucl => "n",
-    	cholor => "h",
+    	chlor => "d",
     	mito => "m",
     	perox => "x",
     	vacu => "v",
-    	plast => "d"
+    	plast => "d",
+	golg => "g",
+	
+	
     };
     foreach my $cmpt (@$cmpts){
     	my $cmp_SEED_id;
