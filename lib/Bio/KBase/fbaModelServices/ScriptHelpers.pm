@@ -12,7 +12,22 @@ use Bio::KBase::fbaModelServices::ClientConfig;
 use Bio::KBase::workspace::ScriptHelpers qw(workspaceURL get_ws_client workspace parseObjectMeta parseWorkspaceMeta);
 use Exporter;
 use parent qw(Exporter);
-our @EXPORT_OK = qw(get_pa_client get_ws_objects_list save_workspace_object load_file load_table parse_input_table get_workspace_object parse_arguments getToken get_old_ws_client fbaws printJobData fbaURL get_fba_client runFBACommand universalFBAScriptCode fbaTranslation roles_of_function );
+our @EXPORT_OK = qw(get_pa_client get_ws_objects_list save_workspace_object print_file load_file load_table parse_input_table get_workspace_object parse_arguments getToken get_old_ws_client fbaws printJobData fbaURL get_fba_client runFBACommand universalFBAScriptCode fbaTranslation roles_of_function );
+
+=head3 print_file
+Definition:
+Description:	
+
+=cut
+
+sub print_file {
+    my ($filename,$arrayRef) = @_;
+    open ( my $fh, ">", $filename);
+    foreach my $Item (@{$arrayRef}) {
+    	print $fh $Item."\n";
+    }
+    close($fh);
+}
 
 =head3 load_file
 Definition:
@@ -68,7 +83,7 @@ sub load_table {
 
 sub parse_input_table {
 	my $filename = shift;
-	my $columns = shift;
+	my $columns = shift;#[name,required?(0/1),default,delimiter]
 	if (!-e $filename) {
 		print "Could not find input file:".$filename."!\n";
 		exit();

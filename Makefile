@@ -95,21 +95,16 @@ deploy-libs: configure-scripts
 	rsync -arv lib/. $(TARGET)/lib/.
 
 deploy-kbscripts:
-	cp $(TARGET)/bin/fba-addaliases $(TARGET)/bin/kbfba-addaliases
 	cp $(TARGET)/bin/fba-addmedia $(TARGET)/bin/kbfba-addmedia
 	cp $(TARGET)/bin/fba-adjustbiomass $(TARGET)/bin/kbfba-adjustbiomass
 	cp $(TARGET)/bin/fba-adjustmapcomplex $(TARGET)/bin/kbfba-adjustmapcomplex
 	cp $(TARGET)/bin/fba-adjustmaprole $(TARGET)/bin/kbfba-adjustmaprole
 	cp $(TARGET)/bin/fba-adjustmapsubsystem $(TARGET)/bin/kbfba-adjustmapsubsystem
-	cp $(TARGET)/bin/fba-adjustmodel $(TARGET)/bin/kbfba-adjustmodel
 	cp $(TARGET)/bin/fba-adjusttempbiocpd $(TARGET)/bin/kbfba-adjusttempbiocpd
 	cp $(TARGET)/bin/fba-adjusttempbiomass $(TARGET)/bin/kbfba-adjusttempbiomass
 	cp $(TARGET)/bin/fba-adjusttemprxn $(TARGET)/bin/kbfba-adjusttemprxn
 	cp $(TARGET)/bin/fba-buildfbamodel $(TARGET)/bin/kbfba-buildfbamodel
-	cp $(TARGET)/bin/fba-exportfba $(TARGET)/bin/kbfba-exportfba
 	cp $(TARGET)/bin/fba-exportfbamodel $(TARGET)/bin/kbfba-exportfbamodel
-	cp $(TARGET)/bin/fba-exportgenome $(TARGET)/bin/kbfba-exportgenome
-	cp $(TARGET)/bin/fba-exportmedia $(TARGET)/bin/kbfba-exportmedia
 	cp $(TARGET)/bin/fba-exportobject $(TARGET)/bin/kbfba-exportobject
 	cp $(TARGET)/bin/fba-exportphenosim $(TARGET)/bin/kbfba-exportphenosim
 	cp $(TARGET)/bin/fba-gapfill $(TARGET)/bin/kbfba-gapfill
@@ -128,10 +123,8 @@ deploy-kbscripts:
 	cp $(TARGET)/bin/fba-importpheno $(TARGET)/bin/kbfba-importpheno
 	cp $(TARGET)/bin/fba-importprobanno $(TARGET)/bin/kbfba-importprobanno
 	cp $(TARGET)/bin/fba-importtemplate $(TARGET)/bin/kbfba-importtemplate
-	cp $(TARGET)/bin/fba-importtranslation $(TARGET)/bin/kbfba-importtranslation
 	cp $(TARGET)/bin/fba-integratesolution $(TARGET)/bin/kbfba-integratesolution
 	cp $(TARGET)/bin/fba-loadgenome $(TARGET)/bin/kbfba-loadgenome
-	cp $(TARGET)/bin/fba-queuefba $(TARGET)/bin/kbfba-queuefba
 	cp $(TARGET)/bin/fba-runfba $(TARGET)/bin/kbfba-runfba
 	cp $(TARGET)/bin/fba-runjob $(TARGET)/bin/kbfba-runjob
 	cp $(TARGET)/bin/fba-simpheno $(TARGET)/bin/kbfba-simpheno

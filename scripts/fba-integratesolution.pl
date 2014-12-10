@@ -43,7 +43,11 @@ if (defined($opt->{list})) {
 	if (defined($data->{gapfillings})) {
 		for (my $i=0; $i < @{$data->{gapfillings}}; $i++) {
 			$gfs->[$i] = $data->{gapfillings}->[$i];
-			push(@{$grefs},{"ref" => $gfs->[$i]->{gapfill_ref}});
+			if (defined($gfs->[$i]->{gapfill_ref})) {
+				push(@{$grefs},{"ref" => $gfs->[$i]->{gapfill_ref}});
+			} else {
+				push(@{$grefs},{"ref" => $gfs->[$i]->{fba_ref}});
+			}
 			if ($gfs->[$i]->{integrated} == 1) {
 				$intgf++;
 			} else {
@@ -57,6 +61,9 @@ if (defined($opt->{list})) {
 	my $allrows;
 	my $rxns = {};
 	my $count = 0;
+	
+	print Data::Dumper->Dump([$output->[0]->{data}])."\n\n";
+	
 	for (my $i=0; $i < @{$output}; $i++) {
 		for (my $j=0; $j < @{$output->[$i]->{data}->{gapfillingSolutions}}; $j++) {
 			for (my $k=0; $k < @{$output->[$i]->{data}->{gapfillingSolutions}->[$j]->{gapfillingSolutionReactions}}; $k++) {

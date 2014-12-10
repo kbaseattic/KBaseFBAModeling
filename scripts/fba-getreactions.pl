@@ -40,12 +40,16 @@ my $primaryArgs = ["Reaction IDs (; delimiter)"];
 my $servercommand = "get_reactions";
 my $script = "fba-getreactions";
 my $translation = {
-	idtype => "id_type"
+	idtype => "id_type",
+	biochem => "biochemistry",
+	biochemws => "biochemistry_workspace"
 };
 #Defining usage and options
 my $specs = [
     [ 'idtype|i:s', 'Type of ID' ],
-    [ 'pretty|p', 'Pretty print output' ]
+    [ 'pretty|p', 'Pretty print output' ],
+    [ 'biochem|b:s', 'ID of the biochemistry database' ],
+    [ 'biochemws:s', 'ID of workspace containing biochemistry database' ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation,$manpage);
 $params->{reactions} = [split(/;/,$opt->{"Reaction IDs (; delimiter)"})];

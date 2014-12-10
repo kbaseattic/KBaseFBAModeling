@@ -23,10 +23,39 @@ has reactionRoleHash => ( is => 'rw', isa => 'HashRef',printOrder => '-1', type 
 has compoundsByAlias => ( is => 'rw', isa => 'HashRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcompoundsByAlias' );
 has reactionsByAlias => ( is => 'rw', isa => 'HashRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildreactionsByAlias' );
 has compound_reaction_hash => ( is => 'rw', isa => 'HashRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcompound_reaction_hash' );
+has neighboring_reaction_hash => ( is => 'rw', isa => 'HashRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildneighboring_reaction_hash' );
 
 #***********************************************************************************************************
 # BUILDERS:
 #***********************************************************************************************************
+sub _buildneighboring_reaction_hash {
+	my ($self) = @_;
+	my $hash = {};
+	my $cpdhash = {};
+	my $rxns = $self->reactions();
+	foreach my $rxn (@{$rxns}) {
+		my $rgts = $rxn->reagents();
+		foreach my $rgt (@{$rgts}) {
+			if (Bio::KBase::ObjectAPI::utilities::IsCofactor($rgt->compound()->id()) == 0) {
+				$cpdhash->{$rgt->compound()->id()."_".$rgt->compartment()->id()}->{$rxn->id()} = $rgt->coefficient();
+			}
+		}
+	}
+	foreach my $key (keys(%{$cpdhash})) {
+		if ($key =~ m/_c$/) {
+			my $rxnlist = [keys(%{$cpdhash->{$key}})];
+			for (my $i=0; $i < @{$rxnlist}; $i++) {
+				for (my $j=0; $j < @{$rxnlist}; $j++) {
+					if ($i != $j) {
+						$hash->{$rxnlist->[$i]}->{$rxnlist->[$j]}->{$key} = 1;
+					}
+				}
+			}
+		}
+	}
+	return $hash;
+}
+
 sub _buildcompound_reaction_hash {
 	my ($self) = @_;
 	my $hash = {};
@@ -1122,6 +1151,26 @@ sub searchForCompound {
 	return $cpdobj;
 }
 
+=head3 searchForAllCompounds
+Definition:
+	[ Bio::KBase::ObjectAPI::KBaseBiochem::Compound ] = Bio::KBase::ObjectAPI::KBaseBiochem::Compound->searchForAllCompounds(string);
+Description:
+	Searches for a compound by ID, name, or alias and returns all matches.
+
+=cut
+
+sub searchForAllCompounds {
+	my ($self,$compound) = @_;
+	#First search by exact alias match
+	my $cpds = $self->getObjectsByAlias("compounds",$compound);
+	#Next, search by name
+	if (!defined($cpds->[0])) {
+		my $searchname = Bio::KBase::ObjectAPI::KBaseBiochem::Compound->nameToSearchname($compound);
+		$cpds = $self->queryObjects("compounds",{searchnames => $searchname});
+	}
+	return $cpds;
+}
+
 =head3 searchForReaction
 Definition:
 	Bio::KBase::ObjectAPI::KBaseBiochem::Reaction = Bio::KBase::ObjectAPI::KBaseBiochem::Reaction->searchForReaction(string);
@@ -1142,6 +1191,28 @@ sub searchForReaction {
 		$rxnobj = $self->queryObject("reactions",{uuid => $id});
 	}
 	return $rxnobj;
+}
+
+=head3 searchForAllReactions
+Definition:
+	[ Bio::KBase::ObjectAPI::KBaseBiochem::Reaction ] = Bio::KBase::ObjectAPI::KBaseBiochem::Reaction->searchForAllReactions(string);
+Description:
+	Searches for a reaction by ID, name, or alias and returns all matches.
+
+=cut
+
+sub searchForAllReactions {
+	my ($self,$id) = @_;
+	#First search by exact alias match
+	my $rxns = $self->getObjectsByAlias("reactions",$id);
+	#Next, search by name
+	if (!defined($rxns->[0])) {
+		$rxns = $self->queryObjects("reactions",{name => $id});
+	}
+	if (!defined($rxns)) {
+		$rxns = $self->queryObjects("reactions",{uuid => $id});
+	}
+	return $rxns;
 }
 
 =head3 searchForReactionByCode
