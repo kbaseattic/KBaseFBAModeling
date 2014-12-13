@@ -3112,7 +3112,7 @@ sub parseGapfillingOutput {
 			$solution->{candscore} += $temparray->[0];
 			my $array = [split(/;/,$row->[7])];
 			for (my $i=0; $i < @{$array}; $i++) {
-				if ($array =~ m/([+\-])(.+)_([a-z])(\d+)/) {
+				if ($array->[$i] =~ m/([+\-])(.+)_([a-z])(\d+)/) {
 					my $ind = $4;
 					my $dir = $1;
 					if ($dir eq "+") {
@@ -3123,11 +3123,11 @@ sub parseGapfillingOutput {
 					my $cmp = $self->biochemistry()->searchForCompartment($3);
 					my $rxn = $self->biochemistry()->searchForReaction($2);
 					push(@{$solution->{gapfillingSolutionReactions}},{
-						round => $round,
+						round => $round+0,
 						reaction_ref => $rxn->_reference(),
 						compartment_ref => $cmp->_reference(),
     					direction => $dir,
-    					compartmentIndex => $ind,
+    					compartmentIndex => $ind+0,
 						candidateFeature_refs => []
 					});
 				}
@@ -3151,7 +3151,7 @@ sub parseGapfillingOutput {
 			}
 			$array = [split(/;/,$row->[10])];
 			for (my $i=0; $i < @{$array}; $i++) {
-				if ($array =~ m/([+\-])(.+)_([a-z])(\d+)/) {
+				if ($array->[$i] =~ m/([+\-])(.+)_([a-z])(\d+)/) {
 					my $ind = $4;
 					my $dir = $1;
 					if ($dir eq "+") {
@@ -3162,11 +3162,11 @@ sub parseGapfillingOutput {
 					my $cmp = $self->biochemistry()->searchForCompartment($3);
 					my $rxn = $self->biochemistry()->searchForReaction($2);
 					push(@{$solution->{rejectedCandidates}},{
-						round => $round,
+						round => $round+0,
 						reaction_ref => $rxn->_reference(),
 						compartment_ref => $cmp->_reference(),
     					direction => $dir,
-    					compartmentIndex => $ind,
+    					compartmentIndex => $ind+0,
 						candidateFeature_refs => []
 					});
 				}
