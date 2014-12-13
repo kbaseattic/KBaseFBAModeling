@@ -1399,22 +1399,18 @@ sub createJobDirectory {
 		$parameters->{"os"} = "linux";
 	}
 	#Setting thermodynamic constraints
-	if ($self->thermodynamicConstraints() eq "none") {
-		$parameters->{"Thermodynamic constraints"} = 0;
-	} elsif ($self->thermodynamicConstraints() eq "simple") {
-		$parameters->{"simple thermo constraints"} = 1;
-	} elsif ($self->thermodynamicConstraints() eq "error") {
-		$parameters->{"Thermodynamic constraints"} = 1;
-		$parameters->{"Account for error in delta G"} = 1;
-		$parameters->{"minimize deltaG error"} = 0;
-	} elsif ($self->thermodynamicConstraints() eq "noerror") {
+	if ($self->thermodynamicConstraints() eq "1") {
 		$parameters->{"Thermodynamic constraints"} = 1;
 		$parameters->{"Account for error in delta G"} = 0;
 		$parameters->{"minimize deltaG error"} = 0;
-	} elsif ($self->thermodynamicConstraints() eq "minerror") {
-		$parameters->{"Thermodynamic constraints"} = 1;
-		$parameters->{"Account for error in delta G"} = 1;
-		$parameters->{"minimize deltaG error"} = 1;
+		if ($self->noErrorThermodynamicConstraints() eq "0") {
+			$parameters->{"Account for error in delta G"} = 1;
+		}
+		if ($self->minimizeErrorThermodynamicConstraints() eq "1") {
+			$parameters->{"minimize deltaG error"} = 1;
+		}
+	} elsif ($self->simpleThermoConstraints() eq "1") {
+		$parameters->{"simple thermo constraints"} = 1;
 	}
 	#Setting overide parameters
 	foreach my $param (keys(%{$self->parameters()})) {
