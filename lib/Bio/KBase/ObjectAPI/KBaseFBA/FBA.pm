@@ -628,18 +628,32 @@ Description:
 =cut
 
 sub RunQuantitativeOptimization {
-	my ($self) = @_;
-	my $args = Bio::KBase::ObjectAPI::utilities::args(["name","media","additionalCpd"],{
+	my ($self,$args) = @_;
+	$args = Bio::KBase::ObjectAPI::utilities::args([],{
+		ReactionCoef => 100,
+		DrainCoef => 10,
+		BiomassCoef => 0.1,
+		ATPSynthCoef => 1,
+		ATPMaintCoef => 1,
 		TimePerSolution => 3600,
 		TotalTimeLimit => 3600,
 		Num_solutions => 1,
 		MaxBoundMult => 2,
 		MinFluxCoef => 0.000001,
-		Constraints => {}
-	}, @_);
+		Constraints => [],
+		Resolution => 0.01,
+		MinVariables => 4
+	}, $args);
 	$self->quantitativeOptimization(1);
-	$self->parameters()->{"quantopt fva bound multiplier"} = $args->{MaxBoundMult};
+	$self->parameters()->{"Quantopt threshold"} = $args->{Resolution};
+	$self->parameters()->{"Quantopt minimum variables"} = $args->{MinVariables};
+	$self->parameters()->{"Quantopt fva bound multiplier"} = $args->{MaxBoundMult};
 	$self->parameters()->{"QuantOpt min flux coefficient"} = $args->{MinFluxCoef};
+	$self->parameters()->{"Quantopt reaction objective coefficient"} = $args->{ReactionCoef};
+	$self->parameters()->{"Quantopt drain objective coefficient"} = $args->{DrainCoef};
+	$self->parameters()->{"Quantopt biomass objective coefficient"} = $args->{BiomassCoef};
+	$self->parameters()->{"Quantopt atpsynth objective coefficient"} = $args->{ATPSynthCoef};
+	$self->parameters()->{"Quantopt atpsmaint objective coefficient"} = $args->{ATPMaintCoef};
 	$self->createJobDirectory();
 	my $mediaData = Bio::KBase::ObjectAPI::utilities::LOADFILE($self->jobDirectory()."/media.tbl");
 	my $data = {};
@@ -667,7 +681,7 @@ sub RunQuantitativeOptimization {
 	Bio::KBase::ObjectAPI::utilities::PRINTFILE($self->jobDirectory()."/media.tbl",$mediaData);
     $self->runFBA();
     if (!defined($self->QuantitativeOptimizationSolutions()->[0])) {
-    	$self->_error("Quantitative optimization completed, but no solutions obtained!");
+    	Bio::KBase::ObjectAPI::utilities::error("Quantitative optimization completed, but no solutions obtained!");
     }
 }
 
@@ -826,45 +840,51 @@ sub createJobDirectory {
 		my $bio = $self->fbamodel()->biomasses()->[0];
 		my $biocpds = $bio->biomasscompounds();
 		my $energycoef;
+		push(@{$additionalrxn},"SixATPSynth\t=\tATPSYNTH");
+		push(@{$additionalrxn},"OneATPSynth\t=\tATPSYNTH");
+		push(@{$additionalrxn},"ATPMaintenance\t=\tATPMAINT");
 		push(@{$additionalrxn},"EnergyBiomass\t=\tBiomassComp");
 		$gfcoef->{"EnergyBiomass"} = {"reverse" => 10,forward => 10,tag => "BiomassComp"};
+		push(@{$BioRxn},"SixATPSynth\tSixATPSynth\t0\t0\t(6) cpd00067[e] + cpd00008[c] + cpd00009[c] <=> cpd00002[c] + (5) cpd00067[c] + cpd00001[c]\tSixATPSynth\t<=>\tOK\t<=>");
+		push(@{$BioRxn},"OneATPSynth\tOneATPSynth\t0\t0\t(1) cpd00067[e] + cpd00008[c] + cpd00009[c] <=> cpd00002[c] + cpd00001[c]\tOneATPSynth\t<=>\tOK\t<=>");
+		push(@{$BioRxn},"ATPMaintenance\tATPMaintenance\t0\t0\tcpd00002[c] + cpd00001[c] <=> cpd00067[c] + cpd00008[c] + cpd00009[c]\tATPMaintenance\t=>\tOK\t=>");
 		push(@{$BioRxn},"EnergyBiomass\tEnergyBiomass\t0\t0\tcpd00002[b] + cpd00001[b] <=> cpd00008[b] + cpd00009[b] + cpd00067[b]\tEnergyBiomass\t<=>\tOK\t<=>");
 		my $comprxn = {};
 		foreach my $cpd (@{$biocpds}) {
 			if ($cpd->coefficient() > 0) {
-				if ($cpd->compound()->id() == "cpd00008") {
+				if ($cpd->modelcompound()->compound()->id() eq "cpd00008") {
 					$energycoef = $cpd->coefficient();
 				}
 			} else {
 				my $component = "other";
-				if ($cpd->compound()->class() eq "amino_acid") {
+				if ($cpd->modelcompound()->compound()->class() eq "amino_acid") {
 					$component = "protein";
-				} elsif ($cpd->compound()->class() eq "deoxynucleotide") {
+				} elsif ($cpd->modelcompound()->compound()->class() eq "deoxynucleotide") {
 					$component = "dna";
-				} elsif ($cpd->compound()->class() eq "nucleotide") {
+				} elsif ($cpd->modelcompound()->compound()->class() eq "nucleotide") {
 					$component = "rna";
-				} elsif ($cpd->compound()->class() eq "cellwall") {
+				} elsif ($cpd->modelcompound()->compound()->class() eq "cellwall") {
 					$component = "cellwall";
-				} elsif ($cpd->compound()->class() eq "lipid") {
+				} elsif ($cpd->modelcompound()->compound()->class() eq "lipid") {
 					$component = "lipid";
 				}
 				if ($component eq "other") {
-					$comprxn->{$cpd->compound()->id()}->{compounds}->{$cpd->compound()->id()} = 1;
-					$comprxn->{$cpd->compound()->id()}->{totalmass} = 0.001*$cpd->compound()->mass();
-					my $coprods = $cpd->compound()->biomass_coproducts();
+					$comprxn->{$cpd->modelcompound()->compound()->id()}->{compounds}->{$cpd->modelcompound()->compound()->id()} = 1;
+					$comprxn->{$cpd->modelcompound()->compound()->id()}->{totalmass} = 0.001*$cpd->modelcompound()->compound()->mass();
+					my $coprods = $cpd->modelcompound()->compound()->biomass_coproducts();
 					foreach my $cocpd (@{$coprods}) {
 						my $cpdobj = $self->biochemistry()->searchForCompound($cocpd->[0]);
-						$comprxn->{$cpd->compound()->id()}->{compounds}->{$cpdobj->id()} = $cocpd->[1];
-						$comprxn->{$cpd->compound()->id()}->{totalmass} += 0.001*$cpdobj->mass()*$cocpd->[1];
+						$comprxn->{$cpd->modelcompound()->compound()->id()}->{compounds}->{$cpdobj->id()} = $cocpd->[1];
+						$comprxn->{$cpd->modelcompound()->compound()->id()}->{totalmass} += 0.001*$cpdobj->mass()*$cocpd->[1];
 					}
 				} elsif ($component ne "dependent") {
 					my $massadaptor = 0;
-					$comprxn->{$component}->{compounds}->{$cpd->compound()->id()} = $cpd->coefficient();
+					$comprxn->{$component}->{compounds}->{$cpd->modelcompound()->compound()->id()} = $cpd->coefficient();
 					if (!defined($comprxn->{$component}->{totalmass})) {
 						$comprxn->{$component}->{totalmass} = 0;
 					}
-					$comprxn->{$component}->{totalmass}->{$cpd->compound()->id()} = $cpd->coefficient()*0.001*$cpd->compound()->mass();
-					my $coprods = $cpd->compound()->biomass_coproducts();
+					$comprxn->{$component}->{totalmass} += $cpd->coefficient()*0.001*$cpd->modelcompound()->compound()->mass();
+					my $coprods = $cpd->modelcompound()->compound()->biomass_coproducts();
 					foreach my $cocpd (@{$coprods}) {
 						my $cpdobj = $self->biochemistry()->searchForCompound($cocpd->[0]);
 						$comprxn->{$component}->{compounds}->{$cpdobj->id()} = $cpd->coefficient()*$cocpd->[1];
@@ -875,6 +895,10 @@ sub createJobDirectory {
 		}
 		my $biomasscomps = "EnergyBiomass:".$energycoef;
 		foreach my $component (keys(%{$comprxn})) {
+			if ($comprxn->{$component}->{totalmass} == 0) {
+				$comprxn->{$component}->{totalmass} = 1;
+				print "Zero mass ".$component."\n";
+			}
 			$biomasscomps .= ";".$component."Biomass:".$comprxn->{$component}->{totalmass};
 			my $reactant = "";
 			my $product = "";
@@ -1364,6 +1388,7 @@ sub createJobDirectory {
 	if (@{$final_gauranteed} > 0) {
 		$parameters->{"Allowable unbalanced reactions"} = join(",",@{$final_gauranteed});
 	}
+	print "Prom:".$self->promconstraint_ref()."\n";
 	if (defined($self->promconstraint_ref()) && length($self->promconstraint_ref()) > 0) {
 		$self->promconstraint()->PrintPROMModel($self->jobDirectory()."/"."PROMModel.txt");
 		$parameters->{"PROM model filename"} = "PROMModel.txt";

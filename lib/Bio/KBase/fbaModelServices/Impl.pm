@@ -1114,7 +1114,7 @@ sub _setDefaultFBAFormulation {
 }
 
 sub _buildFBAObject {
-	my ($self,$fbaFormulation,$model) = @_;
+	my ($self,$fbaFormulation,$model,$ws) = @_;
 	#Parsing media
 	my $mediaobj = $self->_get_msobject("Media",$fbaFormulation->{media_workspace},$fbaFormulation->{media});
 	#Building FBAFormulation object
@@ -1163,7 +1163,10 @@ sub _buildFBAObject {
 		FBAMetaboliteProductionResults => [],
 	});
 	$fbaobj->parent($self->_KBaseStore());
-	if (defined($fbaFormulation->{promconstraint}) && defined($fbaFormulation->{promconstraint_workspace})) {
+	if (defined($fbaFormulation->{promconstraint})) {
+		if (!defined($fbaFormulation->{promconstraint_workspace})) {
+			$fbaFormulation->{promconstraint_workspace} = $ws;
+		}
 		my $promobj = $self->_get_msobject("PromConstraint",$fbaFormulation->{promconstraint_workspace},$fbaFormulation->{promconstraint});
 		if (defined($promobj)) {
 			$fbaobj->promconstraint_ref($promobj->_reference)
@@ -9203,6 +9206,13 @@ sub quantitative_optimization
 		num_solutions => 1,
 		MaxBoundMult => 2,
 		MinFluxCoef => 0.000001,
+		ReactionCoef => 100,
+		DrainCoef => 10,
+		BiomassCoef => 0.1,
+		ATPSynthCoef => 1,
+		ATPMaintCoef => 1,
+		MinVariables => 3,
+		Resolution => 0.01
 	});
 	my $model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model});
 	if (!defined($input->{outputid})) {
@@ -9221,12 +9231,19 @@ sub quantitative_optimization
 		}			
 	}
 	$fba->RunQuantitativeOptimization({
+		ReactionCoef => $input->{ReactionCoef},
+		DrainCoef => $input->{DrainCoef},
+		BiomassCoef => $input->{BiomassCoef},
+		ATPSynthCoef => $input->{ATPSynthCoef},
+		ATPMaintCoef => $input->{ATPMaintCoef},
 		TimePerSolution => $input->{timePerSolution},
 		TotalTimeLimit => $input->{totalTimeLimit},
 		Num_solutions => $input->{num_solutions},
 		MaxBoundMult => $input->{MaxBoundMult},
 		MinFluxCoef => $input->{MinFluxCoef},
-		Constraints => $input->{constraints}
+		Constraints => $input->{constraints},
+		Resolution => $input->{Resolution},
+		MinVariables => $input->{MinVariables}
 	});
 	$self->_save_msobject($fba,"FBA",$input->{workspace},$fba->id(),{hidden => 1});
 	$model->AddQuantitativeOptimization($fba,$input->{integrate_solution});	
