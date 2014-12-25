@@ -1,0 +1,7 @@
+[
+	{
+		"model":"TestModelGFInt"
+		"workspace":"MetabolicModelingTest",
+		"format":"SBML"
+	}
+]

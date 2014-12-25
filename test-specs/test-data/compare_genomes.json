@@ -1,0 +1,8 @@
+[
+	{
+		"pangenome_id":"BacillusPangenome",
+		"workspace":"GenomeImportComparisonTest",
+		"pangenome_ws":"GenomeImportComparisonTest",
+		"output_id":"BacillusGenomeComparison"
+	}
+]

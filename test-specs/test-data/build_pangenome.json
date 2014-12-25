@@ -1,0 +1,9 @@
+[
+	{
+		"genomes": ["315750.3","224308.1","kb|g.2403"],
+		"workspace":"GenomeImportComparisonTest",
+		"genome_workspaces":["GenomeImportComparisonTest","GenomeImportComparisonTest","GenomeImportComparisonTest"],
+		"output_id":"BacillusPangenome",
+		"name":"BacillusPangenome",
+	}
+]

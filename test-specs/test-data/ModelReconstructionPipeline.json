@@ -1,0 +1,6 @@
+[
+["genome_object_to_workspace","GenomeImportComparisonTest",["Carsonella"]],
+["genome_to_workspace","GenomeImportComparisonTest",["315750.3","224308.1","kb|g.2403"]],
+["build_pangenome","GenomeImportComparisonTest",["BacillusPangenome"]],
+["compare_genomes","GenomeImportComparisonTest",["BacillusGenomeComparison"]
+]

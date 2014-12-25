@@ -1,0 +1,11 @@
+[
+	{
+		"model":"TestModelGFInt",
+		"workspace":"MetabolicModelingTest",
+		"formulation": {
+			"media":"TestMedia",
+			"media_workspace":"MetabolicModelingTest"
+		},
+		"fba":"TestModelGFIntFBA",
+	}
+]

@@ -1,0 +1,13 @@
+[
+	{
+		"model":"TestModel"
+		"workspace":"MetabolicModelingTest",
+		"model_workspace":"MetabolicModelingTest",
+		"formulation": {
+			"media":"TestMedia",
+			"media_workspace":"MetabolicModelingTest"
+		},
+		"out_model":"TestModelGF",
+		"fastgapfill":1,
+	}
+]

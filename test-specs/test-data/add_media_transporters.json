@@ -1,0 +1,11 @@
+[
+	{
+		"model":"TestModelGFIntRemRxn",
+		"outmodel":"TestModelGFIntRemRxnAddTransport",
+		"workspace":"MetabolicModelingTest",
+		"phenotypeSet_workspace":"MetabolicModelingTest",
+		"model_workspace":"MetabolicModelingTest",
+		"phenotypeSet":"TestPhenotypeSet",
+		"all_transporters":1	
+	}
+]

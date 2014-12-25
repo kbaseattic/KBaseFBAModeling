@@ -1,0 +1,9 @@
+[
+	{
+		"model":"TestModelGF"
+		"workspace":"MetabolicModelingTest",
+		"model_workspace":"MetabolicModelingTest",
+		"gapfillSolutions": ["0/0"],
+		"out_model":"TestModelGFInt"
+	}
+]

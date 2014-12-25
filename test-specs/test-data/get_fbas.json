@@ -1,0 +1,6 @@
+[
+	{
+		"fbas":["TestModelGFIntFBA"],
+		"workspaces":["MetabolicModelingTest"]
+	}
+]

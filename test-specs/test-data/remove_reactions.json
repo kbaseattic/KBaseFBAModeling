@@ -1,0 +1,9 @@
+[
+	{
+		"model":"TestModelGFIntModRxn",
+		"workspace":"MetabolicModelingTest",
+		"reactions":["rxn10029_c0"],
+		"model_workspace":"MetabolicModelingTest",
+		"output_id":"TestModelGFIntRemRxn"
+	}
+]
