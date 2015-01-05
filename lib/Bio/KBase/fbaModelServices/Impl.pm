@@ -20609,7 +20609,7 @@ sub add_reactions
     	output_id => $params->{model},
     	compounds => []
     });
-	($params->{reactions},my $compoundhash) = $self->process_reactions_list($params->{reactions},$params->{compounds});
+	($params->{reactions},my $compoundhash) = $self->_process_reactions_list($params->{reactions},$params->{compounds});
     my $model = $self->_get_msobject("FBAModel",$params->{model_workspace},$params->{model});
     for (my $i=0; $i < @{$params->{reactions}}; $i++) {
     	$model->addModelReaction({
