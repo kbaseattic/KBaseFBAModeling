@@ -27,6 +27,9 @@ my $defaults = {
 	FBA => {
 		minimize_reactions => 0,
 		quantitativeOptimization => 0
+	},
+	TemplateReaction => {
+		GapfillDirection => "="
 	}
 };
 

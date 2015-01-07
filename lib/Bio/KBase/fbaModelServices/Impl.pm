@@ -1083,7 +1083,7 @@ sub _setDefaultFBAFormulation {
 	$fbaFormulation = $self->_validateargs($fbaFormulation,[],{
 		media => "Complete",
 		media_workspace => "KBaseMedia",
-		objfraction => 0.1,
+		objfraction => 1,
 		allreversible => 0,
 		maximizeObjective => 1,
 		objectiveTerms => [
@@ -1114,7 +1114,7 @@ sub _setDefaultFBAFormulation {
 }
 
 sub _buildFBAObject {
-	my ($self,$fbaFormulation,$model) = @_;
+	my ($self,$fbaFormulation,$model,$ws) = @_;
 	#Parsing media
 	my $mediaobj = $self->_get_msobject("Media",$fbaFormulation->{media_workspace},$fbaFormulation->{media});
 	#Building FBAFormulation object
@@ -1163,7 +1163,10 @@ sub _buildFBAObject {
 		FBAMetaboliteProductionResults => [],
 	});
 	$fbaobj->parent($self->_KBaseStore());
-	if (defined($fbaFormulation->{promconstraint}) && defined($fbaFormulation->{promconstraint_workspace})) {
+	if (defined($fbaFormulation->{promconstraint})) {
+		if (!defined($fbaFormulation->{promconstraint_workspace})) {
+			$fbaFormulation->{promconstraint_workspace} = $ws;
+		}
 		my $promobj = $self->_get_msobject("PromConstraint",$fbaFormulation->{promconstraint_workspace},$fbaFormulation->{promconstraint});
 		if (defined($promobj)) {
 			$fbaobj->promconstraint_ref($promobj->_reference)
@@ -1291,6 +1294,7 @@ sub _buildFBAObject {
 	return $fbaobj;
 }
 
+
 sub _setDefaultGapfillFormulation {
 	my ($self,$formulation) = @_;
 	if (!defined($formulation)) {
@@ -1316,64 +1320,8 @@ sub _setDefaultGapfillFormulation {
 		biomasstranspen => 1,
 		singletranspen => 1,
 		transpen => 1,
-		blacklistedrxns => [qw(
-			rxn12985 rxn00238 rxn07058 rxn05305 rxn00154 rxn09037 rxn10643
-			rxn11317 rxn05254 rxn05257 rxn05258 rxn05259 rxn05264 rxn05268
-			rxn05269 rxn05270 rxn05271 rxn05272 rxn05273 rxn05274 rxn05275
-			rxn05276 rxn05277 rxn05278 rxn05279 rxn05280 rxn05281 rxn05282
-			rxn05283 rxn05284 rxn05285 rxn05286 rxn05963 rxn05964 rxn05971
-			rxn05989 rxn05990 rxn06041 rxn06042 rxn06043 rxn06044 rxn06045
-			rxn06046 rxn06079 rxn06080 rxn06081 rxn06086 rxn06087 rxn06088
-			rxn06089 rxn06090 rxn06091 rxn06092 rxn06138 rxn06139 rxn06140
-			rxn06141 rxn06145 rxn06217 rxn06218 rxn06219 rxn06220 rxn06221
-			rxn06222 rxn06223 rxn06235 rxn06362 rxn06368 rxn06378 rxn06474
-			rxn06475 rxn06502 rxn06562 rxn06569 rxn06604 rxn06702 rxn06706
-			rxn06715 rxn06803 rxn06811 rxn06812 rxn06850 rxn06901 rxn06971
-			rxn06999 rxn07123 rxn07172 rxn07254 rxn07255 rxn07269 rxn07451
-			rxn09037 rxn10018 rxn10077 rxn10096 rxn10097 rxn10098 rxn10099
-			rxn10101 rxn10102 rxn10103 rxn10104 rxn10105 rxn10106 rxn10107
-			rxn10109 rxn10111 rxn10403 rxn10410 rxn10416 rxn11313 rxn11316
-			rxn11318 rxn11353 rxn05224 rxn05795 rxn05796 rxn05797 rxn05798
-			rxn05799 rxn05801 rxn05802 rxn05803 rxn05804 rxn05805 rxn05806
-			rxn05808 rxn05812 rxn05815 rxn05832 rxn05836 rxn05851 rxn05857
-			rxn05869 rxn05870 rxn05884 rxn05888 rxn05896 rxn05898 rxn05900
-			rxn05903 rxn05904 rxn05905 rxn05911 rxn05921 rxn05925 rxn05936
-			rxn05947 rxn05956 rxn05959 rxn05960 rxn05980 rxn05991 rxn05992
-			rxn05999 rxn06001 rxn06014 rxn06017 rxn06021 rxn06026 rxn06027
-			rxn06034 rxn06048 rxn06052 rxn06053 rxn06054 rxn06057 rxn06059
-			rxn06061 rxn06102 rxn06103 rxn06127 rxn06128 rxn06129 rxn06130
-			rxn06131 rxn06132 rxn06137 rxn06146 rxn06161 rxn06167 rxn06172
-			rxn06174 rxn06175 rxn06187 rxn06189 rxn06203 rxn06204 rxn06246
-			rxn06261 rxn06265 rxn06266 rxn06286 rxn06291 rxn06294 rxn06310
-			rxn06320 rxn06327 rxn06334 rxn06337 rxn06339 rxn06342 rxn06343
-			rxn06350 rxn06352 rxn06358 rxn06361 rxn06369 rxn06380 rxn06395
-			rxn06415 rxn06419 rxn06420 rxn06421 rxn06423 rxn06450 rxn06457
-			rxn06463 rxn06464 rxn06466 rxn06471 rxn06482 rxn06483 rxn06486
-			rxn06492 rxn06497 rxn06498 rxn06501 rxn06505 rxn06506 rxn06521
-			rxn06534 rxn06580 rxn06585 rxn06593 rxn06609 rxn06613 rxn06654
-			rxn06667 rxn06676 rxn06693 rxn06730 rxn06746 rxn06762 rxn06779
-			rxn06790 rxn06791 rxn06792 rxn06793 rxn06794 rxn06795 rxn06796
-			rxn06797 rxn06821 rxn06826 rxn06827 rxn06829 rxn06839 rxn06841
-			rxn06842 rxn06851 rxn06866 rxn06867 rxn06873 rxn06885 rxn06891
-			rxn06892 rxn06896 rxn06938 rxn06939 rxn06944 rxn06951 rxn06952
-			rxn06955 rxn06957 rxn06960 rxn06964 rxn06965 rxn07086 rxn07097
-			rxn07103 rxn07104 rxn07105 rxn07106 rxn07107 rxn07109 rxn07119
-			rxn07179 rxn07186 rxn07187 rxn07188 rxn07195 rxn07196 rxn07197
-			rxn07198 rxn07201 rxn07205 rxn07206 rxn07210 rxn07244 rxn07245
-			rxn07253 rxn07275 rxn07299 rxn07302 rxn07651 rxn07723 rxn07736
-			rxn07878 rxn11417 rxn11582 rxn11593 rxn11597 rxn11615 rxn11617
-			rxn11619 rxn11620 rxn11624 rxn11626 rxn11638 rxn11648 rxn11651
-			rxn11665 rxn11666 rxn11667 rxn11698 rxn11983 rxn11986 rxn11994
-			rxn12006 rxn12007 rxn12014 rxn12017 rxn12022 rxn12160 rxn12161
-			rxn01267 
-		)],
-		gauranteedrxns => [qw(
-			rxn1 rxn2 rxn3 rxn4 rxn5 rxn6 rxn7 rxn8 rxn11572
-			rxn07298 rxn24256 rxn04219 rxn17241 rxn19302 rxn25468 rxn23165
-			rxn25469 rxn23171 rxn23067 rxn30830 rxn30910 rxn31440 rxn01659
-			rxn13782 rxn13783 rxn13784 rxn05294 rxn05295 rxn05296 rxn10002
-			rxn10088 rxn11921 rxn11922 rxn10200 rxn11923 rxn05029
-		)],
+		blacklistedrxns => $self->_blacklistedrxns(),
+		gauranteedrxns => $self->_gauranteedrxns(),
 		allowedcmps => []
 	});
 	$formulation->{formulation} = $self->_setDefaultFBAFormulation($formulation->{formulation});
@@ -7655,10 +7603,14 @@ sub import_fbamodel
     		}
     		$rxn->[8] = $eqn;
     		for (my $j=0; $j < @{$input->{biomass}}; $j++) {
-	    		if ($rxn->[0] eq $input->{biomass}->[$j]) {
+	    		my $biomass = $input->{biomass}->[$j];
+	    		$biomass =~ s/[^\w]/_/g;
+    			$biomass =~ s/_/-/g;
+	    		if ($rxn->[0] eq $biomass) {
 	    			$input->{biomass}->[$j] = $eqn;
 	    			splice(@{$input->{reactions}},$i,1);
 	    			$i--;
+	    			last;
 	    		}
     		}
     	}
@@ -8942,10 +8894,13 @@ sub runfba
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["model","workspace"],{
 		expression_threshold_type => "AbsoluteThreshold",
-		low_expression_theshold => 0.2,
-		low_expression_penalty_factor => 0.5,
-		high_expression_theshold => 0.2,
-		high_expression_penalty_factor => 2,
+		low_expression_theshold => 0.5,
+		low_expression_penalty_factor => 1,
+		high_expression_theshold => 0.5,
+		high_expression_penalty_factor => 1,
+		alpha => 0.5,
+		omega => 0,
+		scalefluxes => 0,
 		formulation => undef,
 		fva => 0,
 		simulateko => 0,
@@ -8967,39 +8922,33 @@ sub runfba
 	}
 	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
 	#Creating FBAFormulation Object
-	my $fba;
+	my $fba = $self->_buildFBAObject($input->{formulation},$model,$input->{workspace},$input->{fba});
 	if ($input->{booleanexp}) {
+		if (defined($input->{expsample})) {
+			$input->{expsample} = $self->_get_msobject("ExpressionSample",$input->{expsamplews},$input->{expsample});
+		}
 		if (!defined($input->{expsample})) {
 			$self->_error("Cannot run boolean expression FBA without providing expression data!");	
 		}
-		my $sample = $self->_get_msobject("ExpressionSample",$input->{expsample_ws},$input->{expsample});
-		my $formulation = $self->_setDefaultGapfillFormulation({formulation => $input->{formulation}});
-		$formulation->{expression_threshold_type} = $input->{expression_threshold_type};
-		$formulation->{low_expression_theshold} = $input->{low_expression_theshold};
-		$formulation->{low_expression_penalty_factor} = $input->{low_expression_penalty_factor};
-		$formulation->{high_expression_theshold} = $input->{high_expression_theshold};
-		$formulation->{high_expression_penalty_factor} = $input->{high_expression_penalty_factor};
-		$formulation->{completeGapfill} = 1;
-		$formulation->{num_solutions} = 1;
-		$formulation->{expression_data} = $sample;
-		my $gfid = @{$model->gapfillings()};
-		$gfid = $model->id().".gf.".$gfid;
-		(my $gapfill,$fba) = $self->_buildGapfillObject($formulation,$model,$gfid);
-		$gapfill->simultaneousGapfill(1);
-		$fba->parameters()->{"Use coefficient file exclusively"} = 1;
-		$fba->parameters()->{"Objective coefficient file"} = "RxnOptCoef.txt";
-		$fba->parameters()->{"Add DB reactions for gapfilling"} = 0;
-		$fba->parameters()->{"Fast gap filling"} = 1;
-		$fba->parameters()->{"Simultaneous gapfill"} = 1;
-		$fba->parameters()->{"Reaction activation bonus"} = $input->{activation_penalty};
-		$fba->parameters()->{"Make all reactions reversible in MFA"} = 0;
-	} else {
-		$fba = $self->_buildFBAObject($input->{formulation},$model,$input->{workspace},$input->{fba});
-		$fba->fva($input->{fva});
-		$fba->comboDeletions($input->{simulateko});
-		$fba->fluxMinimization($input->{minimizeflux});
-		$fba->findMinimalMedia($input->{findminmedia});
+		$fba->PrepareForGapfilling({
+			add_external_rxns => 0,
+			activate_all_model_reactions => 0,
+			make_model_rxns_reversible => 0,
+			expsample => $input->{expsample},
+			expression_threshold_type => $input->{expression_threshold_type},
+			low_expression_theshold => $input->{low_expression_theshold},
+			low_expression_penalty_factor => $input->{low_expression_penalty_factor},
+			high_expression_theshold => $input->{high_expression_theshold},
+			high_expression_penalty_factor => $input->{high_expression_penalty_factor},
+			alpha => $input->{alpha},
+			omega => $input->{omega},
+			scalefluxes => 0,
+		});
 	}
+	$fba->fva($input->{fva});
+	$fba->comboDeletions($input->{simulateko});
+	$fba->fluxMinimization($input->{minimizeflux});
+	$fba->findMinimalMedia($input->{findminmedia});
 	if (defined($input->{solver})) {
 	   	$fba->parameters()->{MFASolver} = uc($input->{solver});
 	}
@@ -9257,6 +9206,13 @@ sub quantitative_optimization
 		num_solutions => 1,
 		MaxBoundMult => 2,
 		MinFluxCoef => 0.000001,
+		ReactionCoef => 100,
+		DrainCoef => 10,
+		BiomassCoef => 0.1,
+		ATPSynthCoef => 1,
+		ATPMaintCoef => 1,
+		MinVariables => 3,
+		Resolution => 0.01
 	});
 	my $model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model});
 	if (!defined($input->{outputid})) {
@@ -9275,12 +9231,19 @@ sub quantitative_optimization
 		}			
 	}
 	$fba->RunQuantitativeOptimization({
+		ReactionCoef => $input->{ReactionCoef},
+		DrainCoef => $input->{DrainCoef},
+		BiomassCoef => $input->{BiomassCoef},
+		ATPSynthCoef => $input->{ATPSynthCoef},
+		ATPMaintCoef => $input->{ATPMaintCoef},
 		TimePerSolution => $input->{timePerSolution},
 		TotalTimeLimit => $input->{totalTimeLimit},
 		Num_solutions => $input->{num_solutions},
 		MaxBoundMult => $input->{MaxBoundMult},
 		MinFluxCoef => $input->{MinFluxCoef},
-		Constraints => $input->{constraints}
+		Constraints => $input->{constraints},
+		Resolution => $input->{Resolution},
+		MinVariables => $input->{MinVariables}
 	});
 	$self->_save_msobject($fba,"FBA",$input->{workspace},$fba->id(),{hidden => 1});
 	$model->AddQuantitativeOptimization($fba,$input->{integrate_solution});	
@@ -10263,7 +10226,9 @@ sub simulate_phenotypes
 		all_transporters => 0,
 		positive_transporters => 0,
 		gapfill_phenosim => 0,
-		solver => undef
+		solver => undef,
+		source_model => undef,
+		source_model_ws => $input->{workspace}
 	});
 	my $pheno = $self->_get_msobject("PhenotypeSet",$input->{phenotypeSet_workspace},$input->{phenotypeSet});
 	my $model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model});
@@ -10272,21 +10237,18 @@ sub simulate_phenotypes
 	} elsif ( $input->{positive_transporters} ) {
 		$model->addPhenotypeTransporters({phenotypes => $pheno,positiveonly => 1});
 	}
-	my $fba;
 	$input->{formulation}->{media} = "Carbon-D-Glucose";
 	$input->{formulation}->{media_workspace} = "KBaseMedia";
+	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
+	my $fba = $self->_buildFBAObject($input->{formulation},$model,$input->{workspace},$self->_get_new_id($input->{model}.".gffba."));
 	if ($input->{gapfill_phenosim} == 1) {
-		my $formulation = $self->_setDefaultGapfillFormulation({formulation => $input->{formulation}});
-		$formulation->{num_solutions} = 1;
-		my $gfid = @{$model->gapfillings()};
-		$gfid = $model->id().".gf.".$gfid;
-		(my $gapfill,$fba) = $self->_buildGapfillObject($formulation,$model,$gfid);
-		$fba->parameters()->{"Fast gap filling"} = 1;
-		$fba->parameters()->{"gapfill_phenosim"} = 1;
-		$fba->parameters()->{"gapfilling source model"} = "PublishedFBAModels/iJN678";
-	} else {
-		$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
-		$fba = $self->_buildFBAObject($input->{formulation},$model);
+		if (defined($input->{source_model})) {
+			$input->{source_model} = $self->_get_msobject("FBAModel",$input->{source_model_ws},$input->{source_model});
+		}
+		$fba->PrepareForGapfilling({
+			source_model => $input->{source_model},
+			alpha => 0,
+		});
 	}
 	$fba->parent($self->_KBaseStore());
 	$fba->phenotypeset_ref($pheno->_reference());
@@ -11566,112 +11528,75 @@ sub gapfill_model
     $self->_setContext($ctx,$input);
 	$input = $self->_validateargs($input,["model","workspace"],{		
 		expression_threshold_type => "AbsoluteThreshold",
-		low_expression_theshold => 0.2,
-		low_expression_penalty_factor => 0.5,
-		high_expression_theshold => 0.2,
-		high_expression_penalty_factor => 2,
-		expsample => undef,
-		expsamplews => $input->{workspace},
-		model_workspace => $input->{workspace},
-		formulation => undef,
-		phenotypeSet => undef,
-		phenotypeSet_workspace => $input->{workspace},
-		integrate_solution => 0,
-		out_model => undef,
-		gapFill => undef,
-		gapFill_workspace => $input->{workspace},
+		low_expression_theshold => 0.5,
+		low_expression_penalty_factor => 1,
+		high_expression_theshold => 0.5,
+		high_expression_penalty_factor => 1,
 		target_reactions => [],
+		completeGapfill => 0,
 		timePerSolution => 43200,
 		totalTimeLimit => 45000,
-		completeGapfill => 0,
 		solver => undef,
 		fastgapfill => 0,
-		simultaneous => 0,
-		activation_penalty => 0.1,
+		alpha => 0,
+		omega => 0,
+		scalefluxes => 0,
+		nomediahyp => 0,
+		nobiomasshyp => 0,#
+		nogprhyp => 0,#
+		nopathwayhyp => 0,#
+		allowunbalanced => 0,
+		drainpen => 10,
+		directionpen => 5,
+		nostructpen => 1,
+		unfavorablepen => 0.1,
+		nodeltagpen => 1,
+		biomasstranspen => 3,
+		singletranspen => 3,
+		transpen => 1,
+		blacklistedrxns => [],
+		gauranteedrxns => [],
+		gapFill => undef,
+		gapFill_workspace => $input->{workspace},
+		expsample => undef,
+		expsamplews => $input->{workspace},
 		source_model => undef,
 		source_model_ws => $input->{workspace},
-	});
-	$input->{formulation}->{target_reactions} = $input->{target_reactions};
-	$input->{formulation}->{timePerSolution} = $input->{timePerSolution};
-	$input->{formulation}->{totalTimeLimit} = $input->{totalTimeLimit};
-	$input->{formulation}->{completeGapfill} = $input->{completeGapfill};
-	if ($input->{simultaneous} == 1) {
-		$input->{completeGapfill} = 1;
-	} else {
-		$input->{activation_penalty} = 0;
-	}
-	if (@{$input->{target_reactions}} > 0) {
-		$input->{completeGapfill} = 1;
-	}
-	if ($input->{completeGapfill} == 1) {
-		$input->{formulation}->{num_solutions} = 1;
-		$input->{formulation}->{completeGapfill} = 1;
-	}
-	$input->{formulation} = $self->_setDefaultGapfillFormulation($input->{formulation});
+		out_model => undef,
+		model_workspace => $input->{workspace},
+		integrate_solution => 0,
+		formulation => undef,
+	});	
+	my $start = time();
 	my $model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model});
+	if (defined($input->{source_model})) {
+		$input->{source_model} = $self->_get_msobject("FBAModel",$input->{source_model_ws},$input->{source_model});
+	}
+	if (defined($input->{expsample})) {
+		$input->{expsample} = $self->_get_msobject("ExpressionSample",$input->{expsamplews},$input->{expsample});
+	}
+	my $gfform = $input->{formulation};
+	foreach my $key (keys(%{$gfform})) {
+		$input->{$key} = $gfform->{$key};
+	}
 	if (!defined($input->{out_model})) {
 		$input->{out_model} = $input->{model};
 	}
-	if (defined($input->{expsample})) {
-		my $sample = $self->_get_msobject("ExpressionSample",$input->{expsample_ws},$input->{expsample});
-		$input->{formulation}->{expression_threshold_type} = $input->{expression_threshold_type};
-		$input->{formulation}->{low_expression_theshold} = $input->{low_expression_theshold};
-		$input->{formulation}->{low_expression_penalty_factor} = $input->{low_expression_penalty_factor};
-		$input->{formulation}->{high_expression_theshold} = $input->{high_expression_theshold};
-		$input->{formulation}->{high_expression_penalty_factor} = $input->{high_expression_penalty_factor};
-		$input->{formulation}->{expression_data} = $sample;
-	}
-	my ($gapfill,$fba) = $self->_buildGapfillObject($input->{formulation},$model,$input->{gfid});
-	$gapfill->simultaneousGapfill($input->{simultaneous});
-	if (defined($input->{solver})) {
-    	$fba->parameters()->{MFASolver} = uc($input->{solver});
-    }
-    if (defined($input->{source_model})) {
-    	$fba->parameters()->{"gapfilling source model"} = $input->{source_model_ws}."/".$input->{source_model};
-    }
-    if (defined($input->{fastgapfill})) {
-    	$fba->parameters()->{"Fast gap filling"} = $input->{fastgapfill};
-    }
-    if ($input->{simultaneous} == 1) {
-		$fba->parameters()->{"Simultaneous gapfill"} = $input->{simultaneous};
-	}
-	$fba->parameters()->{"Reaction activation bonus"} = $input->{activation_penalty};
+	delete $input->{formulation}->{objectiveTerms};
+	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
+	my $fba = $self->_buildFBAObject($input->{formulation},$model,$input->{workspace},$self->_get_new_id($input->{model}.".gffba."));
+	$fba->PrepareForGapfilling($input);
 	$fba->runFBA();
-	#Error checking the FBA and gapfilling solution
-	if (!defined($fba->outputfiles()->{"CompleteGapfillingOutput.txt"}->[1] ) ) {
-		$self->_error("Gapfilling failed to produce an output file. Check gapfilling infrastructure!");
-	}
-	my $gfoutput = $fba->outputfiles()->{"CompleteGapfillingOutput.txt"};
-	for (my $i=0; $i < @{$gfoutput}; $i++) {
-		my $line = $gfoutput->[$i];
-		if ($line =~ /FAILED/ && $line =~ /Prelim/ && $line =~ /bio\d+/) {
-			my $array = [split(/\t/,$line)];
-			my $msg;
-			if (defined($array->[6])) {
-				$msg = "Gapfilling failed in preliminary feasibility determination. The following biomass compounds appear to be problematic: ".$array->[6]."!";
-			} else {
-				$msg = "Gapfilling failed in preliminary feasibility determination.";
-			}
-			$self->_error($msg);
-		} elsif ($line =~ /FAILED/ && $line =~ /bio\d+/) {
-			$self->_error("Gapfilling failed with no solutions!");
-		}
-	}
-	$gapfill->parseGapfillingResults($fba);
-	if (!defined($gapfill->gapfillingSolutions()->[0])) {
-		$self->_error("Gapfilling completed, but no valid solutions found!");
-	}
 	my $meta = $self->_save_msobject($fba,"FBA",$input->{workspace},$fba->id(),{hidden => 1});
-	$gapfill->fba_ref($fba->_reference());
-	$meta = $self->_save_msobject($gapfill,"Gapfilling",$input->{workspace},$gapfill->id(),{hidden => 1});
 	#Since gapfilling can take hours, we retrieve the model again in case it changed since accessed previously
-	if ($input->{fastgapfill} == 0 && $input->{out_model} eq $input->{model}) {
+	if ((time()-$start) > 3600 && $input->{out_model} eq $input->{model}) {
 		$model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model},{refreshcache => 1});
 	}
 	$model->add("gapfillings",{
-		id => $gapfill->id(),
-		gapfill_id => $gapfill->id(),
-		gapfill_ref => $gapfill->_reference(),
+		id => $fba->id(),
+		gapfill_id => $fba->id(),
+		fba_ref => $fba->_reference(),
+		fba => $fba,
 		integrated => 0,
 		media_ref => $fba->media()->_reference()
 	});
@@ -11686,7 +11611,7 @@ sub gapfill_model
 		    $rxnprobsGPRArray = $self->_buildRxnProbsGPRArray($rxnprobs);
 		}
 		my $report = $model->integrateGapfillSolution({
-			gapfill => $gapfill->id(),
+			gapfill => $fba->id(),
 			rxnProbGpr => $rxnprobsGPRArray
 		});
 	}
@@ -19721,9 +19646,15 @@ sub import_expression
 	if ( $feature_id =~ /^(kb\|g\.\d+)/) {
 	    $genome_id = $1;
 	} else {
-	    die("Unexpected feature ID format $feature_id\n");
+	    die("Can't determine genome id from feature id: $feature_id\n");
 	}
     }
+
+
+    my $genomews = $input->{"genome_workspace"} || $input->{"workspace"};
+    print STDERR "genome workspace is $genomews\n";
+    my $genome = $self->_get_msobject("Genome",$genomews,$genome_id);
+
     my $old_series = {
 	id => $input->{"series"},
 	source_id => $input->{"source_id"},
@@ -19738,7 +19669,7 @@ sub import_expression
 	    type => "microarray",
 	    expression_levels => $sample->{"data_expression_levels_for_sample"},
 	    source_id => $input->{"source_id"}, # What source?
-	    genome_id => $genome_id,
+	    genome_id => $genome->_reference(),
 	    external_source_date => $input->{"source_date"}, # Which data?
 	    numerical_interpretation => $input->{"numerical_interpretation"},
 	    processing_comments => $input->{"processing_comments"},
@@ -20678,7 +20609,7 @@ sub add_reactions
     	output_id => $params->{model},
     	compounds => []
     });
-	($params->{reactions},my $compoundhash) = $self->process_reactions_list($params->{reactions},$params->{compounds});
+	($params->{reactions},my $compoundhash) = $self->_process_reactions_list($params->{reactions},$params->{compounds});
     my $model = $self->_get_msobject("FBAModel",$params->{model_workspace},$params->{model});
     for (my $i=0; $i < @{$params->{reactions}}; $i++) {
     	$model->addModelReaction({
