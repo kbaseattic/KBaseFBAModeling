@@ -890,16 +890,16 @@ sub labelBiomassCompounds {
 	}
 }
 
-=head3 printSBML
+=head3 print_sbml
 
 Definition:
-	void Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->printSBML();
+	void Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->print_sbml();
 Description:
 	Prints the model in SBML format
 
 =cut
 
-sub printSBML {
+sub print_sbml {
     my $self = shift;
 	# convert ids to SIds
     my $idToSId = sub {
@@ -951,7 +951,7 @@ sub printSBML {
 	for (my $i=0; $i < @{$self->modelcompounds()}; $i++) {
 		my $cpd = $self->modelcompounds()->[$i];
 		push(@{$output},'<species '.$stringToString->("id",$cpd->id()).' '.$stringToString->("name",$cpd->name()).' '.$stringToString->("compartment",$cpd->modelCompartmentLabel()).' '.$stringToString->("charge",$cpd->charge()).' boundaryCondition="false"/>');
-		if ($cpd->compound()->id() eq "cpd11416" || $cpd->compound()->id() eq "cpd15302" || $cpd->compound()->id() eq "cpd08636") {
+		if ($cpd->compound()->id() eq "cpd11416" || $cpd->compound()->id() eq "cpd15302" || $cpd->compound()->id() eq "cpd08636" || $cpd->compound()->id() eq "cpd02701") {
 			push(@{$output},'<species '.$stringToString->("id",$cpd->compound()->id()."_b").' '.$stringToString->("name",$cpd->compound()->name()."_b").' '.$stringToString->("compartment",$cpd->modelCompartmentLabel()).' '.$stringToString->("charge",$cpd->charge()).' boundaryCondition="true"/>');
 		}
 	}
@@ -1091,7 +1091,7 @@ sub printSBML {
 		my $cpd = $cpds->[$i];
 		my $lb = -1000;
 		my $ub = 1000;
-		if ($cpd->modelCompartmentLabel() =~ m/^e/ || $cpd->compound()->id() eq "cpd08636" || $cpd->compound()->id() eq "cpd11416" || $cpd->compound()->id() eq "cpd15302") {
+		if ($cpd->modelCompartmentLabel() =~ m/^e/ || $cpd->compound()->id() eq "cpd08636" || $cpd->compound()->id() eq "cpd11416" || $cpd->compound()->id() eq "cpd15302" || $cpd->compound()->id() eq "cpd02701") {
 			push(@{$output},'<reaction '.$stringToString->("id",'EX_'.$cpd->id()).' '.$stringToString->("name",'EX_'.$cpd->name()).' reversible="true">');
 			push(@{$output},"\t".'<notes>');
 			push(@{$output},"\t\t".'<html:p>GENE_ASSOCIATION: </html:p>');
@@ -1125,31 +1125,31 @@ sub printSBML {
 	return join("\n",@{$output});
 }
 
-=head3 printGenes
+=head3 print_genes
 
 Definition:
-	string = Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->printGenes();
+	string = Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->print_genes();
 Description:
 	Return list of genes in model
 
 =cut
 
-sub printGenes {
+sub print_genes {
     my $self = shift;
 	my $output = join("\n",@{$self->features()});
 	return $output;
 }
 
-=head3 printExchange
+=head3 print_exchange
 
 Definition:
-	string:Exchange format = Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->printExchange();
+	string:Exchange format = Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->print_exchange();
 Description:
 	Returns a string with the model in Exchange format
 
 =cut
 
-sub printExchange {
+sub print_exchange {
     my $self = shift;
 	my $output = "Model{";
 	$output .= "attributes(id\tname\ttype\tannotation\tmapping\tbiochemistry){\n";
@@ -1183,16 +1183,16 @@ sub printExchange {
 	return $output;
 }
 
-=head3 printModelSEED
+=head3 print_modelseed
 
 Definition:
-	string:Exchange format = Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->printModelSEED();
+	string:Exchange format = Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->print_modelseed();
 Description:
 	Returns a string with the model in ModelSEED format
 
 =cut
 
-sub printModelSEED {
+sub print_modelseed {
     my $self = shift;
 	my $output = "REACTIONS\n";
 	$output .= "LOAD;DIRECTIONALITY;COMPARTMENT;ASSOCIATED PEG;EQUATION;SUBSYSTEM;CONFIDENCE;REFERENCE;NOTES\n";
@@ -1379,54 +1379,19 @@ sub htmlComponents {
 	return $output;
 }
 
-=head3 export
+=head3 print_excel
 
 Definition:
-	string = Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->export();
-Description:
-	Exports model data to the specified format.
-
-=cut
-
-sub export {
-    my $self = shift;
-	my $args = Bio::KBase::ObjectAPI::utilities::args(["format"], {}, @_);
-	if (lc($args->{format}) eq "sbml") {
-		return $self->printSBML();
-	} elsif (lc($args->{format}) eq "exchange") {
-		return $self->printExchange();
-	} elsif (lc($args->{format}) eq "genes") {
-		return $self->printGenes();
-	} elsif (lc($args->{format}) eq "readable") {
-		return $self->toReadableString();
-	} elsif (lc($args->{format}) eq "html") {
-		return $self->createHTML();
-	} elsif (lc($args->{format}) eq "json") {
-		return $self->toJSON({pp => 1});
-	} elsif (lc($args->{format}) eq "cytoseed") {
-		return $self->printCytoSEED($args->{fbas});
-	} elsif (lc($args->{format}) eq "modelseed") {
-		return $self->printModelSEED();
-	} elsif (lc($args->{format}) eq "excel") {
-		return $self->printExcel();
-	}
-	Bio::KBase::ObjectAPI::utilities::error("Unrecognized type for export: ".$args->{format});
-}
-
-=head3 printExcel
-
-Definition:
-	string printExcel();
+	string print_excel();
 Description:
 	Prints model data in excel
 
 =cut
 
-sub printExcel {
+sub print_excel {
 	my ($self) = @_;
-	#my ($fh, $filename) = File::Temp::tempfile("xls-XXXXXX");
-    #close($fh);
-    my $filename = "/Users/chenry/model.xls";
+	my $fulldir = File::Temp::tempdir(DIR => Bio::KBase::ObjectAPI::utilities::MFATOOLKIT_JOB_DIRECTORY());
+	my $filename = $fulldir."/".$self->_wsname().".xls";
 	require "Spreadsheet/WriteExcel.pm";
 	my $wkbk = Spreadsheet::WriteExcel->new($filename);
 	my $sheet = $wkbk->add_worksheet("Compounds");
@@ -1445,7 +1410,7 @@ sub printExcel {
 	}
 	$sheet = $wkbk->add_worksheet("Genes");
 	$sheet->write_row(0,0,["ID","Type","Functions","Contig","Start","Stop","Direction","Reactions"]);
-	my $ftrs = $self->annotation()->features();
+	my $ftrs = $self->genome()->features();
 	my $ftrHash = $self->featureHash();
 	for (my $i=0; $i < @{$ftrs}; $i++) {
 		my $ftr = $ftrs->[$i];
@@ -1455,23 +1420,22 @@ sub printExcel {
 		}
 		$sheet->write_row($i+1,0,[$ftr->id(),$ftr->type(),$ftr->roleList(),$ftr->contig(),$ftr->start(),$ftr->stop(),$ftr->direction(),join("|",@{$reactionList})]);
 	}
-	my $output;
-	open(my $fh, "<:raw", $filename);
-	my $data = <$fh>;
-	close($fh);
-	return $data;
+	#open(my $fh, "<:raw", $filename);
+	#my $data = <$fh>;
+	#close($fh);
+	return $filename;
 }
 
-=head3 printCytoSEED
+=head3 print_cytoseed
 
 Definition:
-	void Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->printCytoSEED();
+	void Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->print_cytoseed();
 Description:
 	Prints the model in CytoSEED format
 
 =cut
 
-sub printCytoSEED {
+sub print_cytoseed {
 	my ($self,$fbas) = @_;
 
 	sub compound_to_results {
@@ -1844,7 +1808,12 @@ sub integrateGapfillSolution {
 	if (!defined($gfmeta)) {
 		Bio::KBase::ObjectAPI::utilities::error("Gapfill ".$args->{gapfill}." not found!");
 	}
-	my $gf = $gfmeta->gapfill();
+	my $gf;
+	if (defined($gfmeta->gapfill_ref())) {
+		$gf = $gfmeta->gapfill();
+	} else {
+		$gf = $gfmeta->fba();
+	}
 	my $sol;
 	if (!defined($args->{solution})) {
 		$args->{solution} = $gf->gapfillingSolutions()->[0]->id();

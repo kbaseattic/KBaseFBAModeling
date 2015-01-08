@@ -16,10 +16,12 @@ has parent => (is => 'rw', isa => 'Ref', weak_ref => 1, type => 'parent', metacl
 # ATTRIBUTES:
 has uuid => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_uuid');
 has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_reference');
+has gapfilledReactions => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
+has phenotype_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has numGapfilledReactions => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has simulatedGrowth => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has simulatedGrowthFraction => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
-has phenotype_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has phenoclass => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 
 
@@ -46,6 +48,28 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
+            'name' => 'gapfilledReactions',
+            'default' => 'sub {return [];}',
+            'type' => 'ArrayRef',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'phenotype_ref',
+            'type' => 'Str',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'numGapfilledReactions',
+            'type' => 'Int',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
             'name' => 'simulatedGrowth',
             'type' => 'Num',
             'perm' => 'rw'
@@ -67,20 +91,13 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'phenotype_ref',
-            'type' => 'Str',
-            'perm' => 'rw'
-          },
-          {
-            'req' => 0,
-            'printOrder' => -1,
             'name' => 'phenoclass',
             'type' => 'Str',
             'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {simulatedGrowth => 0, simulatedGrowthFraction => 1, id => 2, phenotype_ref => 3, phenoclass => 4};
+my $attribute_map = {gapfilledReactions => 0, phenotype_ref => 1, numGapfilledReactions => 2, simulatedGrowth => 3, simulatedGrowthFraction => 4, id => 5, phenoclass => 6};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {

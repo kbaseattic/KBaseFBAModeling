@@ -1083,7 +1083,7 @@ sub _setDefaultFBAFormulation {
 	$fbaFormulation = $self->_validateargs($fbaFormulation,[],{
 		media => "Complete",
 		media_workspace => "KBaseMedia",
-		objfraction => 0.1,
+		objfraction => 1,
 		allreversible => 0,
 		maximizeObjective => 1,
 		objectiveTerms => [
@@ -1114,7 +1114,7 @@ sub _setDefaultFBAFormulation {
 }
 
 sub _buildFBAObject {
-	my ($self,$fbaFormulation,$model) = @_;
+	my ($self,$fbaFormulation,$model,$ws) = @_;
 	#Parsing media
 	my $mediaobj = $self->_get_msobject("Media",$fbaFormulation->{media_workspace},$fbaFormulation->{media});
 	#Building FBAFormulation object
@@ -1163,7 +1163,10 @@ sub _buildFBAObject {
 		FBAMetaboliteProductionResults => [],
 	});
 	$fbaobj->parent($self->_KBaseStore());
-	if (defined($fbaFormulation->{promconstraint}) && defined($fbaFormulation->{promconstraint_workspace})) {
+	if (defined($fbaFormulation->{promconstraint})) {
+		if (!defined($fbaFormulation->{promconstraint_workspace})) {
+			$fbaFormulation->{promconstraint_workspace} = $ws;
+		}
 		my $promobj = $self->_get_msobject("PromConstraint",$fbaFormulation->{promconstraint_workspace},$fbaFormulation->{promconstraint});
 		if (defined($promobj)) {
 			$fbaobj->promconstraint_ref($promobj->_reference)
@@ -1291,6 +1294,7 @@ sub _buildFBAObject {
 	return $fbaobj;
 }
 
+
 sub _setDefaultGapfillFormulation {
 	my ($self,$formulation) = @_;
 	if (!defined($formulation)) {
@@ -1316,64 +1320,8 @@ sub _setDefaultGapfillFormulation {
 		biomasstranspen => 1,
 		singletranspen => 1,
 		transpen => 1,
-		blacklistedrxns => [qw(
-			rxn12985 rxn00238 rxn07058 rxn05305 rxn00154 rxn09037 rxn10643
-			rxn11317 rxn05254 rxn05257 rxn05258 rxn05259 rxn05264 rxn05268
-			rxn05269 rxn05270 rxn05271 rxn05272 rxn05273 rxn05274 rxn05275
-			rxn05276 rxn05277 rxn05278 rxn05279 rxn05280 rxn05281 rxn05282
-			rxn05283 rxn05284 rxn05285 rxn05286 rxn05963 rxn05964 rxn05971
-			rxn05989 rxn05990 rxn06041 rxn06042 rxn06043 rxn06044 rxn06045
-			rxn06046 rxn06079 rxn06080 rxn06081 rxn06086 rxn06087 rxn06088
-			rxn06089 rxn06090 rxn06091 rxn06092 rxn06138 rxn06139 rxn06140
-			rxn06141 rxn06145 rxn06217 rxn06218 rxn06219 rxn06220 rxn06221
-			rxn06222 rxn06223 rxn06235 rxn06362 rxn06368 rxn06378 rxn06474
-			rxn06475 rxn06502 rxn06562 rxn06569 rxn06604 rxn06702 rxn06706
-			rxn06715 rxn06803 rxn06811 rxn06812 rxn06850 rxn06901 rxn06971
-			rxn06999 rxn07123 rxn07172 rxn07254 rxn07255 rxn07269 rxn07451
-			rxn09037 rxn10018 rxn10077 rxn10096 rxn10097 rxn10098 rxn10099
-			rxn10101 rxn10102 rxn10103 rxn10104 rxn10105 rxn10106 rxn10107
-			rxn10109 rxn10111 rxn10403 rxn10410 rxn10416 rxn11313 rxn11316
-			rxn11318 rxn11353 rxn05224 rxn05795 rxn05796 rxn05797 rxn05798
-			rxn05799 rxn05801 rxn05802 rxn05803 rxn05804 rxn05805 rxn05806
-			rxn05808 rxn05812 rxn05815 rxn05832 rxn05836 rxn05851 rxn05857
-			rxn05869 rxn05870 rxn05884 rxn05888 rxn05896 rxn05898 rxn05900
-			rxn05903 rxn05904 rxn05905 rxn05911 rxn05921 rxn05925 rxn05936
-			rxn05947 rxn05956 rxn05959 rxn05960 rxn05980 rxn05991 rxn05992
-			rxn05999 rxn06001 rxn06014 rxn06017 rxn06021 rxn06026 rxn06027
-			rxn06034 rxn06048 rxn06052 rxn06053 rxn06054 rxn06057 rxn06059
-			rxn06061 rxn06102 rxn06103 rxn06127 rxn06128 rxn06129 rxn06130
-			rxn06131 rxn06132 rxn06137 rxn06146 rxn06161 rxn06167 rxn06172
-			rxn06174 rxn06175 rxn06187 rxn06189 rxn06203 rxn06204 rxn06246
-			rxn06261 rxn06265 rxn06266 rxn06286 rxn06291 rxn06294 rxn06310
-			rxn06320 rxn06327 rxn06334 rxn06337 rxn06339 rxn06342 rxn06343
-			rxn06350 rxn06352 rxn06358 rxn06361 rxn06369 rxn06380 rxn06395
-			rxn06415 rxn06419 rxn06420 rxn06421 rxn06423 rxn06450 rxn06457
-			rxn06463 rxn06464 rxn06466 rxn06471 rxn06482 rxn06483 rxn06486
-			rxn06492 rxn06497 rxn06498 rxn06501 rxn06505 rxn06506 rxn06521
-			rxn06534 rxn06580 rxn06585 rxn06593 rxn06609 rxn06613 rxn06654
-			rxn06667 rxn06676 rxn06693 rxn06730 rxn06746 rxn06762 rxn06779
-			rxn06790 rxn06791 rxn06792 rxn06793 rxn06794 rxn06795 rxn06796
-			rxn06797 rxn06821 rxn06826 rxn06827 rxn06829 rxn06839 rxn06841
-			rxn06842 rxn06851 rxn06866 rxn06867 rxn06873 rxn06885 rxn06891
-			rxn06892 rxn06896 rxn06938 rxn06939 rxn06944 rxn06951 rxn06952
-			rxn06955 rxn06957 rxn06960 rxn06964 rxn06965 rxn07086 rxn07097
-			rxn07103 rxn07104 rxn07105 rxn07106 rxn07107 rxn07109 rxn07119
-			rxn07179 rxn07186 rxn07187 rxn07188 rxn07195 rxn07196 rxn07197
-			rxn07198 rxn07201 rxn07205 rxn07206 rxn07210 rxn07244 rxn07245
-			rxn07253 rxn07275 rxn07299 rxn07302 rxn07651 rxn07723 rxn07736
-			rxn07878 rxn11417 rxn11582 rxn11593 rxn11597 rxn11615 rxn11617
-			rxn11619 rxn11620 rxn11624 rxn11626 rxn11638 rxn11648 rxn11651
-			rxn11665 rxn11666 rxn11667 rxn11698 rxn11983 rxn11986 rxn11994
-			rxn12006 rxn12007 rxn12014 rxn12017 rxn12022 rxn12160 rxn12161
-			rxn01267 
-		)],
-		gauranteedrxns => [qw(
-			rxn1 rxn2 rxn3 rxn4 rxn5 rxn6 rxn7 rxn8 rxn11572
-			rxn07298 rxn24256 rxn04219 rxn17241 rxn19302 rxn25468 rxn23165
-			rxn25469 rxn23171 rxn23067 rxn30830 rxn30910 rxn31440 rxn01659
-			rxn13782 rxn13783 rxn13784 rxn05294 rxn05295 rxn05296 rxn10002
-			rxn10088 rxn11921 rxn11922 rxn10200 rxn11923 rxn05029
-		)],
+		blacklistedrxns => $self->_blacklistedrxns(),
+		gauranteedrxns => $self->_gauranteedrxns(),
 		allowedcmps => []
 	});
 	$formulation->{formulation} = $self->_setDefaultFBAFormulation($formulation->{formulation});
@@ -1439,6 +1387,11 @@ sub _buildGapfillObject {
 	foreach my $mdlcmp (@{$mdlcmps}) {
 		$gapform->addLinkArrayItem("allowableCompartments",$mdlcmp->compartment());
 	}
+	$gapform->{expression_threshold_type} = $formulation->{expression_threshold_type};
+	$gapform->{low_expression_theshold} = $formulation->{low_expression_theshold};
+	$gapform->{low_expression_penalty_factor} = $formulation->{low_expression_penalty_factor};
+	$gapform->{high_expression_theshold} = $formulation->{high_expression_theshold};
+	$gapform->{high_expression_penalty_factor} = $formulation->{high_expression_penalty_factor};	
 	$gapform->{expression_data} = $formulation->{expression_data};
 	$gapform->prepareFBAFormulation();
 	$gapform->fba()->numberOfSolutions($formulation->{num_solutions});
@@ -2581,7 +2534,7 @@ sub _genome_to_model {
     	$template = $self->_get_msobject("ModelTemplate",$params->{templatemodel_workspace},$params->{templatemodel});
     } elsif ($params->{coremodel} == 1) {
     	$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","CoreModelTemplate");
-    } elsif ($genome->domain() eq "Plant") {
+    } elsif ($genome->domain() eq "Plant" || $genome->taxonomy() =~ /viridiplantae/i) {
     	$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","PlantModelTemplate");
 	} else {
 		my $class = $self->_classify_genome($genome);
@@ -2621,7 +2574,7 @@ sub _annotate_genome {
 	});
 	my $gaserv = $self->_gaserv();
 	my $genomeTO = $genome->genome_typed_object();
-	if( $genomeTO->{domain} eq "Plant" ){
+	if( $genomeTO->{domain} eq "Plant" || $genome->taxonomy() =~ /viridiplantae/i ){
 	    $genomeTO = $gaserv->annotate_proteins_kmer_v1($genomeTO,{dataset_name=>"Release70",kmer_size=>8});
 	} elsif (($parameters->{call_genes} == 1 || @{$genomeTO->{features}} == 0) && @{$genomeTO->{contigs}} > 0) {
 		$genomeTO = $gaserv->annotate_genome($genomeTO);
@@ -2652,7 +2605,7 @@ sub _annotate_genome {
 				co_occurring_fids => [],
 			});
 		} else {
-		    if($genomeTO->{domain} eq "Plant"){
+		    if($genomeTO->{domain} eq "Plant" || $genome->taxonomy() =~ /viridiplantae/i ){
 			if (defined($gene->{function})) {
 			    $feature->function($gene->{function});
 			}
@@ -3303,6 +3256,54 @@ sub _process_reactions_list {
 	return ($reactions,$compoundhash);
 }
 
+sub _export_object {
+	my ($self,$input) = @_;
+	$input = $self->_validateargs($input,["reference","type"],{
+    	format => "excel",
+    	toshock => 0,
+    });
+	if ($input->{format} eq "excel") {
+		$input->{toshock} = 1;
+	}
+ 	my $array = [split(/\//,$input->{reference})];
+    my $obj = $self->_get_msobject($input->{type},$array->[0],$array->[1]);
+	my $output;
+	if (ref($obj) eq "HASH") {
+		my $JSON = JSON::XS->new->utf8(1);
+    	$output = $JSON->encode($obj);
+	} elsif (ref($obj) =~ m/Bio::KBase::ObjectAPI/) {
+		$output = $obj->export({format => $input->{format}});;
+	} else {
+		$output = $obj;
+	} 
+	if ($input->{toshock} == 1) {
+		$output = $self->_load_to_shock($input,$output);
+	}
+	return $output;
+}
+
+sub _load_to_shock {
+	my ($self,$input,$data) = @_;
+	$input = $self->_validateargs($input,["reference","type","format"],{});
+	my $output;
+	if (-e $data) {
+		$output = Bio::KBase::ObjectAPI::utilities::Load_file_to_shock($data,{
+			workspace_reference => $input->{reference},
+			workspace_type => $input->{type},
+			object_format => $input->{format},
+			owner => $self->_getUsername()
+		});
+	} else {
+		$output = Bio::KBase::ObjectAPI::utilities::Load_data_to_shock($data,{
+			workspace_reference => $input->{reference},
+			workspace_type => $input->{type},
+			object_format => $input->{format},
+			owner => $self->_getUsername()
+		});
+	}
+	return $output;
+}
+
 #END_HEADER
 
 sub new
@@ -3417,7 +3418,8 @@ sub new
     		$self->{'_jobqueue'} = $params->{'jobqueue'};
     }
     if (defined $params->{'shock-url'}) {
-    		$self->{'_shock-url'} = $params->{'shock-url'};
+    	Bio::KBase::ObjectAPI::utilities::SHOCK_URL($params->{"shock-url"});
+    	$self->{'_shock-url'} = $params->{'shock-url'};
     }
     if (defined $params->{'awe-url'}) {
     		$self->{'_awe-url'} = $params->{'awe-url'};
@@ -4709,29 +4711,32 @@ sub get_reactions
 	$out_reactions = [];
 	for (my $i=0; $i < @{$input->{reactions}}; $i++) {
 		my $rxn = $input->{reactions}->[$i];
-		my $obj;
+		my $objs;
 		if ($rxn =~ m/(rxn\d+)$/) {
-			$obj = $biochem->getObject("reactions",$1);
+			$objs = $biochem->getObjects("reactions",[$rxn]);
 		} else {
-			$obj = $biochem->searchForReaction($rxn);
+			$objs = $biochem->searchForAllReactions($rxn);
 		}
-		my $new;
-		if (defined($obj)) {
-			$new = {
-                id => $obj->id(),
-                abbrev => $obj->abbreviation(),
-                name => $obj->name(),
-                enzymes => $obj->getAliases("Enzyme Class"),
-				aliases => $obj->allAliases(),
-                direction => $obj->direction(),
-                reversibility => $obj->thermoReversibility(),
-                deltaG => $obj->deltaG(),
-                deltaGErr => $obj->deltaGErr(),
-                equation => $obj->equation(),
-                definition => $obj->definition()
-			};
+		for (my $r=0; $r < @{$objs}; $r++) {
+			my $new;
+			my $obj = $objs->[$r];
+			if (defined($obj)) {
+				$new = {
+	                id => $obj->id(),
+	                abbrev => $obj->abbreviation(),
+	                name => $obj->name(),
+	                enzymes => $obj->getAliases("Enzyme Class"),
+					aliases => $obj->allAliases(),
+	                direction => $obj->direction(),
+	                reversibility => $obj->thermoReversibility(),
+	                deltaG => $obj->deltaG(),
+	                deltaGErr => $obj->deltaGErr(),
+	                equation => $obj->equation(),
+	                definition => $obj->definition()
+				};
+			}
+			push(@{$out_reactions},$new);
 		}
-		push(@{$out_reactions},$new);
 	}
 	$self->_clearContext();
     #END get_reactions
@@ -4838,26 +4843,29 @@ sub get_compounds
 	$out_compounds = [];
 	for (my $i=0; $i < @{$input->{compounds}}; $i++) {
 		my $cpd = $input->{compounds}->[$i];
-		my $obj;
+		my $objs;
 		if ($cpd =~ m/(cpd\d+)$/) {
-			$obj = $biochem->getObject("compounds",$1);
+			$objs = $biochem->getObjects("compounds",[$cpd]);
 		} else {
-			$obj = $biochem->searchForCompound($cpd);
+			$objs = $biochem->searchForAllCompounds($cpd);
 		}
-		my $new;
-		if (defined($obj)) {
-			$new = {
-                id => $obj->id(),
-                name => $obj->name(),
-                abbrev => $obj->abbreviation(),
-                aliases => $obj->allAliases(),
-                charge => $obj->defaultCharge,
-                formula => $obj->formula,
-                deltaG => $obj->deltaG(),
-                deltaGErr => $obj->deltaGErr()
-			};
+		for (my $c=0; $c < @{$objs}; $c++) {
+			my $new;
+			my $obj = $objs->[$c];
+			if (defined($obj)) {
+				$new = {
+	                id => $obj->id(),
+	                name => $obj->name(),
+	                abbrev => $obj->abbreviation(),
+	                aliases => $obj->allAliases(),
+	                charge => $obj->defaultCharge,
+	                formula => $obj->formula,
+	                deltaG => $obj->deltaG(),
+	                deltaGErr => $obj->deltaGErr()
+				};
+			}
+			push(@{$out_compounds},$new);
 		}
-		push(@{$out_compounds},$new);
 	}
 	$self->_clearContext();
     #END get_compounds
@@ -7595,10 +7603,14 @@ sub import_fbamodel
     		}
     		$rxn->[8] = $eqn;
     		for (my $j=0; $j < @{$input->{biomass}}; $j++) {
-	    		if ($rxn->[0] eq $input->{biomass}->[$j]) {
+	    		my $biomass = $input->{biomass}->[$j];
+	    		$biomass =~ s/[^\w]/_/g;
+    			$biomass =~ s/_/-/g;
+	    		if ($rxn->[0] eq $biomass) {
 	    			$input->{biomass}->[$j] = $eqn;
 	    			splice(@{$input->{reactions}},$i,1);
 	    			$i--;
+	    			last;
 	    		}
     		}
     	}
@@ -7799,13 +7811,15 @@ sub export_fbamodel
     my($output);
     #BEGIN export_fbamodel
     $self->_setContext($ctx,$input);
-    $input = $self->_validateargs($input,["model","workspace","format"],{});
-    my $model = $self->_get_msobject("FBAModel",$input->{workspace},$input->{model});
-    my $fbas;
-    foreach my $fba_id (@{$input->{fbas}}) {
-    	push @$fbas, $self->_get_msobject("FBA",$input->{workspace},$fba_id);
-    }
-    $output = $model->export({format => $input->{format}, fbas => $fbas});
+    $input = $self->_validateargs($input,["model","workspace","format"],{
+    	toshock => 0
+    });
+    $output = $self->_export_object({
+    	reference => $input->{workspace}."/".$input->{model},
+    	type => "FBAModel",
+    	format => $input->{format},
+    	toshock => $input->{toshock}
+    });
     $self->_clearContext();
     #END export_fbamodel
     my @_bad_returns;
@@ -7887,18 +7901,10 @@ sub export_object
     #BEGIN export_object
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["reference","type"],{
-    	format => "html"
+    	format => "text",
+    	toshock => 0,
     });
- 	my $array = [split(/\//,$input->{reference})];
-    my $obj = $self->_get_msobject($input->{type},$array->[0],$array->[1]);
-	if (ref($obj) eq "HASH") {
-		my $JSON = JSON::XS->new->utf8(1);
-    	$output = $JSON->encode($obj);
-	} elsif (ref($obj) =~ m/Bio::KBase::ObjectAPI/) {
-		$output = $obj->export({format => $input->{format}});;
-	} else {
-		$output = $obj;
-	}
+    $output = $self->_export_object($input);
     $self->_clearContext();
     #END export_object
     my @_bad_returns;
@@ -7981,9 +7987,15 @@ sub export_genome
     my($output);
     #BEGIN export_genome
     $self->_setContext($ctx,$input);
-    $input = $self->_validateargs($input,["genome","workspace","format"],{});
-    my $genome = $self->_get_msobject("Genome",$input->{workspace},$input->{genome});
-    $output = $genome->export({format => $input->{format}});
+    $input = $self->_validateargs($input,["genome","workspace","format"],{
+    	toshock => 0
+    });
+    $output = $self->_export_object({
+    	reference => $input->{workspace}."/".$input->{genome},
+    	type => "Genome",
+    	format => $input->{format},
+    	toshock => $input->{toshock}
+    });
     $self->_clearContext();
     #END export_genome
     my @_bad_returns;
@@ -8641,11 +8653,15 @@ sub export_media
     my($output);
     #BEGIN export_media
     $self->_setContext($ctx,$input);
-	$input = $self->_validateargs($input,["media","workspace","format"],{});
-    my $med = $self->_get_msobject("Media",$input->{workspace},$input->{media});
-    $output = $med->export({
-	    format => $input->{format}
+	$input = $self->_validateargs($input,["media","workspace","format"],{
+		toshock => 0
 	});
+	$output = $self->_export_object({
+		reference => $input->{workspace}."/".$input->{media},
+		type => "Media",
+		format => $input->{format},
+		toshock => $input->{toshock}
+    });
 	$self->_clearContext();
     #END export_media
     my @_bad_returns;
@@ -8877,6 +8893,14 @@ sub runfba
     #BEGIN runfba
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["model","workspace"],{
+		expression_threshold_type => "AbsoluteThreshold",
+		low_expression_theshold => 0.5,
+		low_expression_penalty_factor => 1,
+		high_expression_theshold => 0.5,
+		high_expression_penalty_factor => 1,
+		alpha => 0.5,
+		omega => 0,
+		scalefluxes => 0,
 		formulation => undef,
 		fva => 0,
 		simulateko => 0,
@@ -8898,34 +8922,33 @@ sub runfba
 	}
 	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
 	#Creating FBAFormulation Object
-	my $fba;
+	my $fba = $self->_buildFBAObject($input->{formulation},$model,$input->{workspace},$input->{fba});
 	if ($input->{booleanexp}) {
+		if (defined($input->{expsample})) {
+			$input->{expsample} = $self->_get_msobject("ExpressionSample",$input->{expsamplews},$input->{expsample});
+		}
 		if (!defined($input->{expsample})) {
 			$self->_error("Cannot run boolean expression FBA without providing expression data!");	
 		}
-		my $sample = $self->_get_msobject("ExpressionSample",$input->{expsample_ws},$input->{expsample});
-		my $formulation = $self->_setDefaultGapfillFormulation({formulation => $input->{formulation}});
-		$formulation->{completeGapfill} = 1;
-		$formulation->{num_solutions} = 1;
-		$formulation->{expression_data} = $sample;
-		my $gfid = @{$model->gapfillings()};
-		$gfid = $model->id().".gf.".$gfid;
-		my ($gapfill,$fba) = $self->_buildGapfillObject($formulation,$model,$gfid);
-		$gapfill->simultaneousGapfill(1);
-		$fba->parameters()->{"Use coefficient file exclusively"} = 1;
-		$fba->parameters()->{"Objective coefficient file"} = "RxnOptCoef.txt";
-		$fba->parameters()->{"Add DB reactions for gapfilling"} = 0;
-		$fba->parameters()->{"Fast gap filling"} = 1;
-		$fba->parameters()->{"Simultaneous gapfill"} = 1;
-		$fba->parameters()->{"Reaction activation bonus"} = $input->{activation_penalty};
-		$fba->parameters()->{"Make all reactions reversible in MFA"} = 0;
-	} else {
-		$fba = $self->_buildFBAObject($input->{formulation},$model,$input->{workspace},$input->{fba});
-		$fba->fva($input->{fva});
-		$fba->comboDeletions($input->{simulateko});
-		$fba->fluxMinimization($input->{minimizeflux});
-		$fba->findMinimalMedia($input->{findminmedia});
+		$fba->PrepareForGapfilling({
+			add_external_rxns => 0,
+			activate_all_model_reactions => 0,
+			make_model_rxns_reversible => 0,
+			expsample => $input->{expsample},
+			expression_threshold_type => $input->{expression_threshold_type},
+			low_expression_theshold => $input->{low_expression_theshold},
+			low_expression_penalty_factor => $input->{low_expression_penalty_factor},
+			high_expression_theshold => $input->{high_expression_theshold},
+			high_expression_penalty_factor => $input->{high_expression_penalty_factor},
+			alpha => $input->{alpha},
+			omega => $input->{omega},
+			scalefluxes => 0,
+		});
 	}
+	$fba->fva($input->{fva});
+	$fba->comboDeletions($input->{simulateko});
+	$fba->fluxMinimization($input->{minimizeflux});
+	$fba->findMinimalMedia($input->{findminmedia});
 	if (defined($input->{solver})) {
 	   	$fba->parameters()->{MFASolver} = uc($input->{solver});
 	}
@@ -8967,6 +8990,274 @@ sub runfba
 							       method_name => 'runfba');
     }
     return($fbaMeta);
+}
+
+
+
+
+=head2 quantitative_optimization
+
+  $output = $obj->quantitative_optimization($input)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$input is a quantitative_optimization_params
+$output is an object_metadata
+quantitative_optimization_params is a reference to a hash where the following keys are defined:
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
+	formulation has a value which is an FBAFormulation
+	outputid has a value which is a fbamodel_id
+	workspace has a value which is a workspace_id
+	biomass has a value which is a string
+fbamodel_id is a string
+workspace_id is a string
+FBAFormulation is a reference to a hash where the following keys are defined:
+	media has a value which is a media_id
+	additionalcpds has a value which is a reference to a list where each element is a compound_id
+	promconstraint has a value which is a promconstraint_id
+	promconstraint_workspace has a value which is a workspace_id
+	eflux_sample has a value which is a sample_id
+	eflux_series has a value which is a series_id
+	eflux_workspace has a value which is a workspace_id
+	media_workspace has a value which is a workspace_id
+	objfraction has a value which is a float
+	allreversible has a value which is a bool
+	maximizeObjective has a value which is a bool
+	objectiveTerms has a value which is a reference to a list where each element is a term
+	geneko has a value which is a reference to a list where each element is a feature_id
+	rxnko has a value which is a reference to a list where each element is a reaction_id
+	bounds has a value which is a reference to a list where each element is a bound
+	constraints has a value which is a reference to a list where each element is a constraint
+	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
+	defaultmaxflux has a value which is a float
+	defaultminuptake has a value which is a float
+	defaultmaxuptake has a value which is a float
+	simplethermoconst has a value which is a bool
+	thermoconst has a value which is a bool
+	nothermoerror has a value which is a bool
+	minthermoerror has a value which is a bool
+media_id is a string
+compound_id is a string
+promconstraint_id is a string
+sample_id is a string
+series_id is a string
+bool is an int
+term is a reference to a list containing 3 items:
+	0: (coefficient) a float
+	1: (varType) a string
+	2: (variable) a string
+feature_id is a string
+reaction_id is a string
+bound is a reference to a list containing 4 items:
+	0: (min) a float
+	1: (max) a float
+	2: (varType) a string
+	3: (variable) a string
+constraint is a reference to a list containing 4 items:
+	0: (rhs) a float
+	1: (sign) a string
+	2: (terms) a reference to a list where each element is a term
+	3: (name) a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$input is a quantitative_optimization_params
+$output is an object_metadata
+quantitative_optimization_params is a reference to a hash where the following keys are defined:
+	model has a value which is a fbamodel_id
+	model_workspace has a value which is a workspace_id
+	formulation has a value which is an FBAFormulation
+	outputid has a value which is a fbamodel_id
+	workspace has a value which is a workspace_id
+	biomass has a value which is a string
+fbamodel_id is a string
+workspace_id is a string
+FBAFormulation is a reference to a hash where the following keys are defined:
+	media has a value which is a media_id
+	additionalcpds has a value which is a reference to a list where each element is a compound_id
+	promconstraint has a value which is a promconstraint_id
+	promconstraint_workspace has a value which is a workspace_id
+	eflux_sample has a value which is a sample_id
+	eflux_series has a value which is a series_id
+	eflux_workspace has a value which is a workspace_id
+	media_workspace has a value which is a workspace_id
+	objfraction has a value which is a float
+	allreversible has a value which is a bool
+	maximizeObjective has a value which is a bool
+	objectiveTerms has a value which is a reference to a list where each element is a term
+	geneko has a value which is a reference to a list where each element is a feature_id
+	rxnko has a value which is a reference to a list where each element is a reaction_id
+	bounds has a value which is a reference to a list where each element is a bound
+	constraints has a value which is a reference to a list where each element is a constraint
+	uptakelim has a value which is a reference to a hash where the key is a string and the value is a float
+	defaultmaxflux has a value which is a float
+	defaultminuptake has a value which is a float
+	defaultmaxuptake has a value which is a float
+	simplethermoconst has a value which is a bool
+	thermoconst has a value which is a bool
+	nothermoerror has a value which is a bool
+	minthermoerror has a value which is a bool
+media_id is a string
+compound_id is a string
+promconstraint_id is a string
+sample_id is a string
+series_id is a string
+bool is an int
+term is a reference to a list containing 3 items:
+	0: (coefficient) a float
+	1: (varType) a string
+	2: (variable) a string
+feature_id is a string
+reaction_id is a string
+bound is a reference to a list containing 4 items:
+	0: (min) a float
+	1: (max) a float
+	2: (varType) a string
+	3: (variable) a string
+constraint is a reference to a list containing 4 items:
+	0: (rhs) a float
+	1: (sign) a string
+	2: (terms) a reference to a list where each element is a term
+	3: (name) a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+
+
+=item Description
+
+Identify ways to adjust model to quantitatively match specified uptake, growth, and excretion constraints
+
+=back
+
+=cut
+
+sub quantitative_optimization
+{
+    my $self = shift;
+    my($input) = @_;
+
+    my @_bad_arguments;
+    (ref($input) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to quantitative_optimization:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'quantitative_optimization');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($output);
+    #BEGIN quantitative_optimization
+    $self->_setContext($ctx,$input);
+	$input = $self->_validateargs($input,["model","constraints","workspace"],{
+		model_workspace => $input->{workspace},
+		formulation => undef,
+		outputid => undef,
+		biomass => undef,
+		solver => undef,
+		timePerSolution => 3600,
+		totalTimeLimit => 3600,
+		integrate_solution => 0,
+		num_solutions => 1,
+		MaxBoundMult => 2,
+		MinFluxCoef => 0.000001,
+		ReactionCoef => 100,
+		DrainCoef => 10,
+		BiomassCoef => 0.1,
+		ATPSynthCoef => 1,
+		ATPMaintCoef => 1,
+		MinVariables => 3,
+		Resolution => 0.01
+	});
+	my $model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model});
+	if (!defined($input->{outputid})) {
+		$input->{outputid} = $self->_get_new_id($input->{model});
+	}
+	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
+	my $fba = $self->_buildFBAObject($input->{formulation},$model);
+	if (defined($input->{solver})) {
+	   	$fba->parameters()->{MFASolver} = uc($input->{solver});
+	}
+	if (defined($input->{biomass}) && defined($fba->biomassflux_objterms()->{bio1})) {
+		my $bio = $model->searchForBiomass($input->{biomass});
+		if (defined($bio)) {
+			delete $fba->biomassflux_objterms()->{bio1};
+			$fba->biomassflux_objterms()->{$bio->id()} = 1;
+		}			
+	}
+	$fba->RunQuantitativeOptimization({
+		ReactionCoef => $input->{ReactionCoef},
+		DrainCoef => $input->{DrainCoef},
+		BiomassCoef => $input->{BiomassCoef},
+		ATPSynthCoef => $input->{ATPSynthCoef},
+		ATPMaintCoef => $input->{ATPMaintCoef},
+		TimePerSolution => $input->{timePerSolution},
+		TotalTimeLimit => $input->{totalTimeLimit},
+		Num_solutions => $input->{num_solutions},
+		MaxBoundMult => $input->{MaxBoundMult},
+		MinFluxCoef => $input->{MinFluxCoef},
+		Constraints => $input->{constraints},
+		Resolution => $input->{Resolution},
+		MinVariables => $input->{MinVariables}
+	});
+	$self->_save_msobject($fba,"FBA",$input->{workspace},$fba->id(),{hidden => 1});
+	$model->AddQuantitativeOptimization($fba,$input->{integrate_solution});	
+    $output = $self->_save_msobject($model,"FBAModel",$input->{workspace},$input->{outputid});
+    $self->_clearContext();
+    #END quantitative_optimization
+    my @_bad_returns;
+    (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to quantitative_optimization:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'quantitative_optimization');
+    }
+    return($output);
 }
 
 
@@ -9498,11 +9789,15 @@ sub export_fba
     my($output);
     #BEGIN export_fba
     $self->_setContext($ctx,$input);
-	$input = $self->_validateargs($input,["fba","workspace","format"],{});
-    my $fba = $self->_get_msobject("FBA",$input->{workspace},$input->{fba});
-    $output = $fba->export({
-	    format => $input->{format}
+	$input = $self->_validateargs($input,["fba","workspace","format"],{
+		toshock => 0
 	});
+    $output = $self->_export_object({
+    	reference => $input->{workspace}."/".$input->{fba},
+    	type => "FBA",
+    	format => $input->{format},
+    	toshock => $input->{toshock}
+    });
 	$self->_clearContext();
     #END export_fba
     my @_bad_returns;
@@ -9931,7 +10226,9 @@ sub simulate_phenotypes
 		all_transporters => 0,
 		positive_transporters => 0,
 		gapfill_phenosim => 0,
-		solver => undef
+		solver => undef,
+		source_model => undef,
+		source_model_ws => $input->{workspace}
 	});
 	my $pheno = $self->_get_msobject("PhenotypeSet",$input->{phenotypeSet_workspace},$input->{phenotypeSet});
 	my $model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model});
@@ -9940,21 +10237,18 @@ sub simulate_phenotypes
 	} elsif ( $input->{positive_transporters} ) {
 		$model->addPhenotypeTransporters({phenotypes => $pheno,positiveonly => 1});
 	}
-	my $fba;
 	$input->{formulation}->{media} = "Carbon-D-Glucose";
 	$input->{formulation}->{media_workspace} = "KBaseMedia";
+	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
+	my $fba = $self->_buildFBAObject($input->{formulation},$model,$input->{workspace},$self->_get_new_id($input->{model}.".gffba."));
 	if ($input->{gapfill_phenosim} == 1) {
-		my $formulation = $self->_setDefaultGapfillFormulation({formulation => $input->{formulation}});
-		$formulation->{num_solutions} = 1;
-		my $gfid = @{$model->gapfillings()};
-		$gfid = $model->id().".gf.".$gfid;
-		(my $gapfill,$fba) = $self->_buildGapfillObject($formulation,$model,$gfid);
-		$fba->parameters()->{"Fast gap filling"} = 1;
-		$fba->parameters()->{"gapfill_phenosim"} = 1;
-		$fba->parameters()->{"gapfilling source model"} = "PublishedFBAModels/iJN678";
-	} else {
-		$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
-		$fba = $self->_buildFBAObject($input->{formulation},$model);
+		if (defined($input->{source_model})) {
+			$input->{source_model} = $self->_get_msobject("FBAModel",$input->{source_model_ws},$input->{source_model});
+		}
+		$fba->PrepareForGapfilling({
+			source_model => $input->{source_model},
+			alpha => 0,
+		});
 	}
 	$fba->parent($self->_KBaseStore());
 	$fba->phenotypeset_ref($pheno->_reference());
@@ -10207,17 +10501,16 @@ sub export_phenotypeSimulationSet
     my($output);
     #BEGIN export_phenotypeSimulationSet
 	$self->_setContext($ctx,$input);
-    $input = $self->_validateargs($input,["phenotypeSimulationSet","workspace"],{});
-    my $phenosim = $self->_get_msobject("PhenotypeSimulationSet",$input->{workspace},$input->{phenotypeSimulationSet});
-    $output = "Phenosim ID\tPheno ID\tMedia\tKO\tAdditional compounds\tObserved growth\tSimulated growth\tSimulated growth fraction\tClass\n";
-    my $phenos = $phenosim->phenotypeSimulations();
-    foreach my $pheno (@{$phenos}) {
-    	$output .= $pheno->id()."\t".$pheno->phenotype()->id()."\t".
-    		$pheno->phenotype()->media()->_wsworkspace()."/".$pheno->phenotype()->media()->_wsname().
-    		"\t".$pheno->phenotype()->geneKOString()."\t".$pheno->phenotype()->additionalCpdString().
-    		"\t".$pheno->phenotype()->normalizedGrowth()."\t".$pheno->simulatedGrowth()."\t".$pheno->simulatedGrowthFraction().
-    		"\t".$pheno->phenoclass()."\n";
-    }
+    $input = $self->_validateargs($input,["phenotypeSimulationSet","workspace",],{
+    	format => "text",
+    	toshock => 0
+    });
+    $output = $self->_export_object({
+    	reference => $input->{workspace}."/".$input->{phenotypeSimulationSet},
+    	type => "PhenotypeSimulationSet",
+    	format => $input->{format},
+    	toshock => $input->{toshock}
+    });
     $self->_clearContext();
     #END export_phenotypeSimulationSet
     my @_bad_returns;
@@ -11234,97 +11527,76 @@ sub gapfill_model
     #BEGIN gapfill_model
     $self->_setContext($ctx,$input);
 	$input = $self->_validateargs($input,["model","workspace"],{		
-		model_workspace => $input->{workspace},
-		formulation => undef,
-		phenotypeSet => undef,
-		phenotypeSet_workspace => $input->{workspace},
-		integrate_solution => 0,
-		out_model => undef,
-		gapFill => undef,
-		gapFill_workspace => $input->{workspace},
+		expression_threshold_type => "AbsoluteThreshold",
+		low_expression_theshold => 0.5,
+		low_expression_penalty_factor => 1,
+		high_expression_theshold => 0.5,
+		high_expression_penalty_factor => 1,
 		target_reactions => [],
+		completeGapfill => 0,
 		timePerSolution => 43200,
 		totalTimeLimit => 45000,
-		completeGapfill => 0,
 		solver => undef,
 		fastgapfill => 0,
-		simultaneous => 0,
-		activation_penalty => 0.1,
+		alpha => 0,
+		omega => 0,
+		scalefluxes => 0,
+		nomediahyp => 0,
+		nobiomasshyp => 0,#
+		nogprhyp => 0,#
+		nopathwayhyp => 0,#
+		allowunbalanced => 0,
+		drainpen => 10,
+		directionpen => 5,
+		nostructpen => 1,
+		unfavorablepen => 0.1,
+		nodeltagpen => 1,
+		biomasstranspen => 3,
+		singletranspen => 3,
+		transpen => 1,
+		blacklistedrxns => [],
+		gauranteedrxns => [],
+		gapFill => undef,
+		gapFill_workspace => $input->{workspace},
+		expsample => undef,
+		expsamplews => $input->{workspace},
 		source_model => undef,
 		source_model_ws => $input->{workspace},
-	});
-	$input->{formulation}->{target_reactions} = $input->{target_reactions};
-	$input->{formulation}->{timePerSolution} = $input->{timePerSolution};
-	$input->{formulation}->{totalTimeLimit} = $input->{totalTimeLimit};
-	$input->{formulation}->{completeGapfill} = $input->{completeGapfill};
-	if ($input->{simultaneous} == 1) {
-		$input->{completeGapfill} = 1;
-	} else {
-		$input->{activation_penalty} = 0;
-	}
-	if (@{$input->{target_reactions}} > 0) {
-		$input->{completeGapfill} = 1;
-	}
-	if ($input->{completeGapfill} == 1) {
-		$input->{formulation}->{num_solutions} = 1;
-		$input->{formulation}->{completeGapfill} = 1;
-	}
-	$input->{formulation} = $self->_setDefaultGapfillFormulation($input->{formulation});
+		out_model => undef,
+		model_workspace => $input->{workspace},
+		integrate_solution => 0,
+		formulation => undef,
+	});	
+	my $start = time();
 	my $model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model});
+	if (defined($input->{source_model})) {
+		$input->{source_model} = $self->_get_msobject("FBAModel",$input->{source_model_ws},$input->{source_model});
+	}
+	if (defined($input->{expsample})) {
+		$input->{expsample} = $self->_get_msobject("ExpressionSample",$input->{expsamplews},$input->{expsample});
+	}
+	my $gfform = $input->{formulation};
+	foreach my $key (keys(%{$gfform})) {
+		$input->{$key} = $gfform->{$key};
+	}
 	if (!defined($input->{out_model})) {
 		$input->{out_model} = $input->{model};
 	}
-	my ($gapfill,$fba) = $self->_buildGapfillObject($input->{formulation},$model,$input->{gfid});
-	$gapfill->simultaneousGapfill($input->{simultaneous});
-	if (defined($input->{solver})) {
-    	$fba->parameters()->{MFASolver} = uc($input->{solver});
-    }
-    if (defined($input->{source_model})) {
-    	$fba->parameters()->{"gapfilling source model"} = $input->{source_model_ws}."/".$input->{source_model};
-    }
-    if (defined($input->{fastgapfill})) {
-    	$fba->parameters()->{"Fast gap filling"} = $input->{fastgapfill};
-    }
-    if ($input->{simultaneous} == 1) {
-		$fba->parameters()->{"Simultaneous gapfill"} = $input->{simultaneous};
-	}
-	$fba->parameters()->{"Reaction activation bonus"} = $input->{activation_penalty};
+	delete $input->{formulation}->{objectiveTerms};
+	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
+	my $fba = $self->_buildFBAObject($input->{formulation},$model,$input->{workspace},$self->_get_new_id($input->{model}.".gffba."));
+	$fba->PrepareForGapfilling($input);
 	$fba->runFBA();
-	#Error checking the FBA and gapfilling solution
-	if (!defined($fba->outputfiles()->{"CompleteGapfillingOutput.txt"}->[1] ) ) {
-		$self->_error("Gapfilling failed to produce an output file. Check gapfilling infrastructure!");
-	}
-	my $gfoutput = $fba->outputfiles()->{"CompleteGapfillingOutput.txt"};
-	for (my $i=0; $i < @{$gfoutput}; $i++) {
-		my $line = $gfoutput->[$i];
-		if ($line =~ /FAILED/ && $line =~ /Prelim/ && $line =~ /bio\d+/) {
-			my $array = [split(/\t/,$line)];
-			my $msg;
-			if (defined($array->[6])) {
-				$msg = "Gapfilling failed in preliminary feasibility determination. The following biomass compounds appear to be problematic: ".$array->[6]."!";
-			} else {
-				$msg = "Gapfilling failed in preliminary feasibility determination.";
-			}
-			$self->_error($msg);
-		} elsif ($line =~ /FAILED/ && $line =~ /bio\d+/) {
-			$self->_error("Gapfilling failed with no solutions!");
-		}
-	}
-	$gapfill->parseGapfillingResults($fba);
-	if (!defined($gapfill->gapfillingSolutions()->[0])) {
-		$self->_error("Gapfilling completed, but no valid solutions found!");
-	}
 	my $meta = $self->_save_msobject($fba,"FBA",$input->{workspace},$fba->id(),{hidden => 1});
-	$gapfill->fba_ref($fba->_reference());
-	$meta = $self->_save_msobject($gapfill,"Gapfilling",$input->{workspace},$gapfill->id(),{hidden => 1});
 	#Since gapfilling can take hours, we retrieve the model again in case it changed since accessed previously
-	if ($input->{fastgapfill} == 0 && $input->{out_model} eq $input->{model}) {
+	if ((time()-$start) > 3600 && $input->{out_model} eq $input->{model}) {
 		$model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model},{refreshcache => 1});
 	}
 	$model->add("gapfillings",{
-		id => $gapfill->id(),
-		gapfill_id => $gapfill->id(),
-		gapfill_ref => $gapfill->_reference(),
+		id => $fba->id(),
+		gapfill_id => $fba->id(),
+		fba_ref => $fba->_reference(),
+		fba => $fba,
 		integrated => 0,
 		media_ref => $fba->media()->_reference()
 	});
@@ -11339,7 +11611,7 @@ sub gapfill_model
 		    $rxnprobsGPRArray = $self->_buildRxnProbsGPRArray($rxnprobs);
 		}
 		my $report = $model->integrateGapfillSolution({
-			gapfill => $gapfill->id(),
+			gapfill => $fba->id(),
 			rxnProbGpr => $rxnprobsGPRArray
 		});
 	}
@@ -14574,7 +14846,7 @@ workspace_ref is a string
 
 =item Description
 
-Deleted flagged reactions from a ReactionSensitivityAnalysis object
+Deleted flagged reactions from a RxnSensitivity object
 
 =back
 
@@ -19374,9 +19646,15 @@ sub import_expression
 	if ( $feature_id =~ /^(kb\|g\.\d+)/) {
 	    $genome_id = $1;
 	} else {
-	    die("Unexpected feature ID format $feature_id\n");
+	    die("Can't determine genome id from feature id: $feature_id\n");
 	}
     }
+
+
+    my $genomews = $input->{"genome_workspace"} || $input->{"workspace"};
+    print STDERR "genome workspace is $genomews\n";
+    my $genome = $self->_get_msobject("Genome",$genomews,$genome_id);
+
     my $old_series = {
 	id => $input->{"series"},
 	source_id => $input->{"source_id"},
@@ -19391,7 +19669,7 @@ sub import_expression
 	    type => "microarray",
 	    expression_levels => $sample->{"data_expression_levels_for_sample"},
 	    source_id => $input->{"source_id"}, # What source?
-	    genome_id => $genome_id,
+	    genome_id => $genome->_reference(),
 	    external_source_date => $input->{"source_date"}, # Which data?
 	    numerical_interpretation => $input->{"numerical_interpretation"},
 	    processing_comments => $input->{"processing_comments"},
@@ -20331,7 +20609,7 @@ sub add_reactions
     	output_id => $params->{model},
     	compounds => []
     });
-	($params->{reactions},my $compoundhash) = $self->process_reactions_list($params->{reactions},$params->{compounds});
+	($params->{reactions},my $compoundhash) = $self->_process_reactions_list($params->{reactions},$params->{compounds});
     my $model = $self->_get_msobject("FBAModel",$params->{model_workspace},$params->{model});
     for (my $i=0; $i < @{$params->{reactions}}; $i++) {
     	$model->addModelReaction({
@@ -21557,7 +21835,7 @@ classify_genomes_params is a reference to a hash where the following keys are de
 
 	workspace has a value which is a string
 	output_id has a value which is a string
-	classify_ws has a value which is a string
+	classifier_ws has a value which is a string
 	classifier has a value which is a string
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
@@ -21597,7 +21875,7 @@ classify_genomes_params is a reference to a hash where the following keys are de
 
 	workspace has a value which is a string
 	output_id has a value which is a string
-	classify_ws has a value which is a string
+	classifier_ws has a value which is a string
 	classifier has a value which is a string
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
@@ -28377,6 +28655,58 @@ add_to_model has a value which is a bool
 
 
 
+=head2 quantitative_optimization_params
+
+=over 4
+
+
+
+=item Description
+
+Input parameters for the "addmedia" function.
+
+        fbamodel_id model - ID of the model that FBA should be run on (a required argument)
+        workspace_id model_workspace - workspace where model for FBA should be run (an optional argument; default is the value of the workspace argument)
+        FBAFormulation formulation - a hash specifying the parameters for the FBA study (an optional argument)
+        fbamodel_id outputid - ID of model to be saved with quantitative optimization solution (an optional argument)
+        workspace_id workspace - workspace where all output objects will be saved (a required argument)
+        string biomass - ID of biomass reaction as target for quantitative optimization (an optional argument)
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+formulation has a value which is an FBAFormulation
+outputid has a value which is a fbamodel_id
+workspace has a value which is a workspace_id
+biomass has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+model has a value which is a fbamodel_id
+model_workspace has a value which is a workspace_id
+formulation has a value which is an FBAFormulation
+outputid has a value which is a fbamodel_id
+workspace has a value which is a workspace_id
+biomass has a value which is a string
+
+
+=end text
+
+=back
+
+
+
 =head2 generate_model_stats_params
 
 =over 4
@@ -29935,7 +30265,7 @@ Input parameters for the "reaction_sensitivity_analysis" function.
 
         fbamodel_id model - ID of model to be analyzed (a required argument)
         workspace_id model_ws - ID of workspace with model to be analyzed (an optional argument - default is value of workspace argument)
-        string rxnsens_uid - Name of ReactionSensitivityAnalysis object in workspace (an optional argument - default is KBase ID)
+        string rxnsens_uid - Name of RxnSensitivity object in workspace (an optional argument - default is KBase ID)
         workspace_id workspace - ID of workspace where output and default inputs will be selected from (a required argument)
         list<reaction_id> reactions_to_delete - list of reactions to delete in sensitiviity analysis; note, order of the reactions matters (a required argument unless gapfill solution ID is provided)                
         gapfillsolution_id gapfill_solution_id - A Gapfill solution ID. If provided, all reactions in the provided solution will be tested for deletion.
@@ -30057,7 +30387,7 @@ workspace_id workspae - Workspace for outputs and default inputs (a required arg
 workspace_id rxn_sensitivity_ws - Workspace for reaction sensitivity object used as input
 string rxn_sensitivity - Reaction sensitivity ID
 fbamodel_id new_model_uid - ID for output model with noncontributing reactions deleted
-string new_rxn_sensitivity_uid - ID for ReactionSensitivityAnalysis object with bits set to indicate reactions were deleted
+string new_rxn_sensitivity_uid - ID for rxnsensitivity object with bits set to indicate reactions were deleted
 string auth - Authorization token for user (must have appropriate permissions to read and write objects)
 
 
@@ -33549,7 +33879,7 @@ external_genomes has a value which is a reference to a list where each element i
 
 workspace has a value which is a string
 output_id has a value which is a string
-classify_ws has a value which is a string
+classifier_ws has a value which is a string
 classifier has a value which is a string
 
 </pre>
@@ -33569,7 +33899,7 @@ external_genomes has a value which is a reference to a list where each element i
 
 workspace has a value which is a string
 output_id has a value which is a string
-classify_ws has a value which is a string
+classifier_ws has a value which is a string
 classifier has a value which is a string
 
 

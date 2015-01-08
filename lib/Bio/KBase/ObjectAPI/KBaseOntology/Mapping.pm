@@ -27,6 +27,7 @@ has rolesByAlias => ( is => 'rw', isa => 'HashRef',printOrder => '-1', type => '
 has subsystemsByAlias => ( is => 'rw', isa => 'HashRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildsubsystemsByAlias' );
 has complexesByAlias => ( is => 'rw', isa => 'HashRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcomplexesByAlias' );
 has roleSubsystemHash => ( is => 'rw', isa => 'HashRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildroleSubsystemHash' );
+has RoleNameSubsystemHash => ( is => 'rw', isa => 'HashRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildRoleNameSubsystemHash' );
 
 #***********************************************************************************************************
 # BUILDERS:
@@ -109,6 +110,19 @@ sub _buildroleSubsystemHash {
 		my $roles = $ss->roles();
 		foreach my $role (@{$roles}) {
 			$hash->{$role->id()}->{$ss->id()} = $ss;
+		}
+	}
+	return $hash;
+}
+
+sub _buildRoleNameSubsystemHash {
+	my ($self) = @_;
+	my $hash = {};
+	my $sss = $self->subsystems();
+	foreach my $ss (@{$sss}) {
+		my $roles = $ss->roles();
+		foreach my $role (@{$roles}) {
+			$hash->{$role->name()}->{$ss->name()} = $ss;
 		}
 	}
 	return $hash;

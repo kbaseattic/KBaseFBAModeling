@@ -386,14 +386,53 @@ Description:
 sub export {
     my $self = shift;
 	my $args = Bio::KBase::ObjectAPI::utilities::args(["format"], {}, @_);
-	if (lc($args->{format}) eq "readable") {
-		return $self->toReadableString();
-	} elsif (lc($args->{format}) eq "html") {
-		return $self->createHTML();
-	} elsif (lc($args->{format}) eq "json") {
-		return $self->toJSON({pp => 1});
+	my $function = "print_".$args->{format};
+	if (!$self->can($function)) {
+		Bio::KBase::ObjectAPI::utilities::error("Unrecognized type for export: ".$args->{format});
 	}
-	Bio::KBase::ObjectAPI::utilities::error("Unrecognized type for export: ".$args->{format});
+	$self->$function();
+}
+
+=head3 print_html
+
+Definition:
+	
+Description:
+	Exports data to html format
+
+=cut
+
+sub print_html {
+    my $self = shift;
+	return $self->createHTML();
+}
+
+=head3 print_readable
+
+Definition:
+	
+Description:
+	Exports data to readable format
+
+=cut
+
+sub print_readable {
+    my $self = shift;
+	return $self->toReadableString();
+}
+
+=head3 print_json
+
+Definition:
+	
+Description:
+	Exports data to json format
+
+=cut
+
+sub print_json {
+    my $self = shift;
+	return $self->toJSON();
 }
 
 ######################################################################

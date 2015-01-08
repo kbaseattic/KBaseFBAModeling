@@ -19,6 +19,7 @@ my $translation = {
 	processing_comments => "processing_comments",
 	ignoreerrors => "ignore_errors",
 	genomeid => "genome_id",
+	genomews => "genome_workspace",
 	numinterpret => "numerical_interpretation",
 	series => "series",
 	outputid => "series"
@@ -69,6 +70,7 @@ my $specs = [
     [ 'processing_comments|p:s', 'Optional comments', { "default" => ""}],
     [ 'sourcedate:s', 'Date of the source', { "default", => strftime("%Y-%m-%d", localtime)}],
     [ 'genomeid|g:s', "ID of genome to which features belong. Required if gene ids does not contain genome id."],
+    [ 'genomews:s', "Workspace for genome",{ "default" => fbaws() } ],
     [ 'numinterpret|n:s', "Numerical Interpretation:[ 'Log2 level intensities',  'Log2 level ratios','Log2 level ratios genomic DNA control','FPKM',]"  ],
     [ 'series|outputid:s', 'ID for the series object in the workspace']
 ];
@@ -90,6 +92,10 @@ for (my $col_i = 0; $col_i < @{$data->{"headings"}}; $col_i++) {
 	# Associate gene feature ID with expession value
 	$params->{"expression_data_sample_series"}->{$sample_id}->{"sample_id"} = $sample_id;
 	#Make sure that it is treated as a number so that Json conversion can work.
+	if ($row->[$col_i+1] eq "") {
+	    print "Missing expression value for sample $sample_id and feature $row->[0]\n";
+	    exit();
+	}
 	$params->{"expression_data_sample_series"}->{$sample_id}->{"data_expression_levels_for_sample"}->{$row->[0]} = 0+$row->[$col_i+1];
     }
 }

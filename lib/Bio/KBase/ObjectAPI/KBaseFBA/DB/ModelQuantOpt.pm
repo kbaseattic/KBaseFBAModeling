@@ -1,11 +1,12 @@
 ########################################################################
-# Bio::KBase::ObjectAPI::KBaseFBA::DB::ModelGapfill - This is the moose object corresponding to the KBaseFBA.ModelGapfill object
+# Bio::KBase::ObjectAPI::KBaseFBA::DB::ModelQuantOpt - This is the moose object corresponding to the KBaseFBA.ModelQuantOpt object
 # Authors: Christopher Henry, Scott Devoid, Paul Frybarger
 # Contact email: chenry@mcs.anl.gov
 # Development location: Mathematics and Computer Science Division, Argonne National Lab
 ########################################################################
-package Bio::KBase::ObjectAPI::KBaseFBA::DB::ModelGapfill;
+package Bio::KBase::ObjectAPI::KBaseFBA::DB::ModelQuantOpt;
 use Bio::KBase::ObjectAPI::BaseObject;
+use Bio::KBase::ObjectAPI::KBaseFBA::QuantOptSolution;
 use Moose;
 use namespace::autoclean;
 extends 'Bio::KBase::ObjectAPI::BaseObject';
@@ -16,31 +17,28 @@ has parent => (is => 'rw', isa => 'Ref', weak_ref => 1, type => 'parent', metacl
 # ATTRIBUTES:
 has uuid => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_uuid');
 has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_reference');
-has gapfill_id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 has media_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has integrated => (is => 'rw', isa => 'Bool', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has integrated_solution => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has gapfill_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
+has integrated_solution => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has id => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has fba_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+
+
+# SUBOBJECTS:
+has solutions => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(QuantOptSolution)', metaclass => 'Typed', reader => '_solutions', printOrder => '-1');
 
 
 # LINKS:
 has media => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,Media,media_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_media', clearer => 'clear_media', isa => 'Bio::KBase::ObjectAPI::KBaseBiochem::Media', weak_ref => 1);
-has gapfill => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,Gapfilling,gapfill_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_gapfill', clearer => 'clear_gapfill', isa => 'Bio::KBase::ObjectAPI::KBaseFBA::Gapfilling', weak_ref => 1);
 has fba => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,FBA,fba_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_fba', clearer => 'clear_fba', isa => 'Bio::KBase::ObjectAPI::KBaseFBA::FBA', weak_ref => 1);
 
 
 # BUILDERS:
-sub _build_reference { my ($self) = @_;return $self->parent()->_reference().'/gapfillings/id/'.$self->id(); }
+sub _build_reference { my ($self) = @_;return $self->parent()->_reference().'/quantopts/id/'.$self->id(); }
 sub _build_uuid { my ($self) = @_;return $self->_reference(); }
 sub _build_media {
 	 my ($self) = @_;
 	 return $self->getLinkedObject($self->media_ref());
-}
-sub _build_gapfill {
-	 my ($self) = @_;
-	 return $self->getLinkedObject($self->gapfill_ref());
 }
 sub _build_fba {
 	 my ($self) = @_;
@@ -49,19 +47,12 @@ sub _build_fba {
 
 
 # CONSTANTS:
-sub _type { return 'KBaseFBA.ModelGapfill'; }
+sub _type { return 'KBaseFBA.ModelQuantOpt'; }
 sub _module { return 'KBaseFBA'; }
-sub _class { return 'ModelGapfill'; }
+sub _class { return 'ModelQuantOpt'; }
 sub _top { return 0; }
 
 my $attributes = [
-          {
-            'req' => 1,
-            'printOrder' => 0,
-            'name' => 'gapfill_id',
-            'type' => 'Str',
-            'perm' => 'rw'
-          },
           {
             'req' => 0,
             'printOrder' => -1,
@@ -80,19 +71,12 @@ my $attributes = [
             'req' => 0,
             'printOrder' => -1,
             'name' => 'integrated_solution',
-            'type' => 'Str',
+            'type' => 'Int',
             'perm' => 'rw'
           },
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'gapfill_ref',
-            'type' => 'Str',
-            'perm' => 'rw'
-          },
-          {
-            'req' => 1,
-            'printOrder' => 0,
             'name' => 'id',
             'type' => 'Str',
             'perm' => 'rw'
@@ -106,7 +90,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {gapfill_id => 0, media_ref => 1, integrated => 2, integrated_solution => 3, gapfill_ref => 4, id => 5, fba_ref => 6};
+my $attribute_map = {media_ref => 0, integrated => 1, integrated_solution => 2, id => 3, fba_ref => 4};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -132,15 +116,6 @@ my $links = [
             'module' => 'KBaseBiochem'
           },
           {
-            'attribute' => 'gapfill_ref',
-            'parent' => 'Bio::KBase::ObjectAPI::KBaseStore',
-            'clearer' => 'clear_gapfill',
-            'name' => 'gapfill',
-            'method' => 'Gapfilling',
-            'class' => 'Bio::KBase::ObjectAPI::KBaseFBA::Gapfilling',
-            'module' => 'KBaseFBA'
-          },
-          {
             'attribute' => 'fba_ref',
             'parent' => 'Bio::KBase::ObjectAPI::KBaseStore',
             'clearer' => 'clear_fba',
@@ -151,7 +126,7 @@ my $links = [
           }
         ];
 
-my $link_map = {media => 0, gapfill => 1, fba => 2};
+my $link_map = {media => 0, fba => 1};
 sub _links {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -166,9 +141,17 @@ sub _links {
 	 }
 }
 
-my $subobjects = [];
+my $subobjects = [
+          {
+            'printOrder' => -1,
+            'name' => 'solutions',
+            'type' => 'child',
+            'class' => 'QuantOptSolution',
+            'module' => 'KBaseFBA'
+          }
+        ];
 
-my $subobject_map = {};
+my $subobject_map = {solutions => 0};
 sub _subobjects {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -182,5 +165,12 @@ sub _subobjects {
 	 	 return $subobjects;
 	 }
 }
+# SUBOBJECT READERS:
+around 'solutions' => sub {
+	 my ($orig, $self) = @_;
+	 return $self->_build_all_objects('solutions');
+};
+
+
 __PACKAGE__->meta->make_immutable;
 1;

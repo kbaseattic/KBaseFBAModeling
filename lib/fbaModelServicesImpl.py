@@ -474,6 +474,19 @@ uniquely identifies a workspace among all workspaces.
         # return the results
         return [fbaMeta]
 
+    def quantitative_optimization(self, input):
+        # self.ctx is set by the wsgi application class
+        # return variables are: output
+        #BEGIN quantitative_optimization
+        #END quantitative_optimization
+
+        #At some point might do deeper type checking...
+        if not isinstance(output, list):
+            raise ValueError('Method quantitative_optimization return value ' +
+                             'output is not type list as required.')
+        # return the results
+        return [output]
+
     def generate_model_stats(self, input):
         # self.ctx is set by the wsgi application class
         # return variables are: output

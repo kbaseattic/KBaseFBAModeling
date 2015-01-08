@@ -7,6 +7,7 @@
 package Bio::KBase::ObjectAPI::KBaseFBA::DB::GapfillingSolution;
 use Bio::KBase::ObjectAPI::BaseObject;
 use Bio::KBase::ObjectAPI::KBaseFBA::GapfillingReaction;
+use Bio::KBase::ObjectAPI::KBaseFBA::GapfillingReaction;
 use Bio::KBase::ObjectAPI::KBaseFBA::ActivatedReaction;
 use Moose;
 use namespace::autoclean;
@@ -20,15 +21,21 @@ has uuid => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass =>
 has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_reference');
 has biomassRemoval_refs => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has solutionCost => (is => 'rw', isa => 'Num', printOrder => '1', default => '1', type => 'attribute', metaclass => 'Typed');
+has rejscore => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has integrated => (is => 'rw', isa => 'Bool', printOrder => '1', default => '0', type => 'attribute', metaclass => 'Typed');
-has suboptimal => (is => 'rw', isa => 'Bool', printOrder => '1', default => '0', type => 'attribute', metaclass => 'Typed');
+has objective => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has koRestore_refs => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
+has candscore => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has failedReaction_refs => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
+has gfscore => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has mediaSupplement_refs => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
+has suboptimal => (is => 'rw', isa => 'Bool', printOrder => '1', default => '0', type => 'attribute', metaclass => 'Typed');
+has actscore => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 
 
 # SUBOBJECTS:
+has rejectedCandidates => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(GapfillingReaction)', metaclass => 'Typed', reader => '_rejectedCandidates', printOrder => '-1');
 has gapfillingSolutionReactions => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(GapfillingReaction)', metaclass => 'Typed', reader => '_gapfillingSolutionReactions', printOrder => '-1');
 has activatedReactions => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(ActivatedReaction)', metaclass => 'Typed', reader => '_activatedReactions', printOrder => '-1');
 
@@ -88,6 +95,13 @@ my $attributes = [
           },
           {
             'req' => 0,
+            'printOrder' => -1,
+            'name' => 'rejscore',
+            'type' => 'Num',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
             'printOrder' => 1,
             'name' => 'integrated',
             'default' => 0,
@@ -97,11 +111,9 @@ my $attributes = [
           },
           {
             'req' => 0,
-            'printOrder' => 1,
-            'name' => 'suboptimal',
-            'default' => 0,
-            'type' => 'Bool',
-            'description' => undef,
+            'printOrder' => -1,
+            'name' => 'objective',
+            'type' => 'Num',
             'perm' => 'rw'
           },
           {
@@ -116,9 +128,23 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
+            'name' => 'candscore',
+            'type' => 'Num',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
             'name' => 'failedReaction_refs',
             'default' => 'sub {return [];}',
             'type' => 'ArrayRef',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'gfscore',
+            'type' => 'Num',
             'perm' => 'rw'
           },
           {
@@ -136,10 +162,26 @@ my $attributes = [
             'name' => 'id',
             'type' => 'Str',
             'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => 1,
+            'name' => 'suboptimal',
+            'default' => 0,
+            'type' => 'Bool',
+            'description' => undef,
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'actscore',
+            'type' => 'Num',
+            'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {biomassRemoval_refs => 0, solutionCost => 1, integrated => 2, suboptimal => 3, koRestore_refs => 4, failedReaction_refs => 5, mediaSupplement_refs => 6, id => 7};
+my $attribute_map = {biomassRemoval_refs => 0, solutionCost => 1, rejscore => 2, integrated => 3, objective => 4, koRestore_refs => 5, candscore => 6, failedReaction_refs => 7, gfscore => 8, mediaSupplement_refs => 9, id => 10, suboptimal => 11, actscore => 12};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -218,6 +260,13 @@ sub _links {
 
 my $subobjects = [
           {
+            'printOrder' => -1,
+            'name' => 'rejectedCandidates',
+            'type' => 'child',
+            'class' => 'GapfillingReaction',
+            'module' => 'KBaseFBA'
+          },
+          {
             'req' => undef,
             'printOrder' => -1,
             'name' => 'gapfillingSolutionReactions',
@@ -236,7 +285,7 @@ my $subobjects = [
           }
         ];
 
-my $subobject_map = {gapfillingSolutionReactions => 0, activatedReactions => 1};
+my $subobject_map = {rejectedCandidates => 0, gapfillingSolutionReactions => 1, activatedReactions => 2};
 sub _subobjects {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -251,6 +300,10 @@ sub _subobjects {
 	 }
 }
 # SUBOBJECT READERS:
+around 'rejectedCandidates' => sub {
+	 my ($orig, $self) = @_;
+	 return $self->_build_all_objects('rejectedCandidates');
+};
 around 'gapfillingSolutionReactions' => sub {
 	 my ($orig, $self) = @_;
 	 return $self->_build_all_objects('gapfillingSolutionReactions');
