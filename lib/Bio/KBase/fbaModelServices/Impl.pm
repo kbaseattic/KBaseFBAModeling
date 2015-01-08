@@ -5978,6 +5978,7 @@ sub genome_to_workspace
     	sourceLogin => undef,
     	sourcePassword => undef,
     	source => "kbase",
+    	uid => $input->{genome}
     });
     my $objects;
     if ($input->{source} eq "kbase") {
@@ -5991,7 +5992,7 @@ sub genome_to_workspace
     	my $contigmeta = $self->_save_msobject($objects->[1],"ContigSet",$input->{workspace},$objects->[1]->{id});
 		$objects->[0]->contigset_ref($objects->[1]->_reference());
     }
-	$genomeMeta = $self->_save_msobject($objects->[0],"Genome",$input->{workspace},$input->{genome});
+	$genomeMeta = $self->_save_msobject($objects->[0],"Genome",$input->{workspace},$input->{uid});
 	$self->_clearContext();
     #END genome_to_workspace
     my @_bad_returns;
