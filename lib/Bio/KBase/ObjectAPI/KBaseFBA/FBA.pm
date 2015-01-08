@@ -1388,9 +1388,8 @@ sub createJobDirectory {
 	if (@{$final_gauranteed} > 0) {
 		$parameters->{"Allowable unbalanced reactions"} = join(",",@{$final_gauranteed});
 	}
-	print "Prom:".$self->promconstraint_ref()."\n";
 	if (defined($self->promconstraint_ref()) && length($self->promconstraint_ref()) > 0) {
-		$self->promconstraint()->PrintPROMModel($self->jobDirectory()."/"."PROMModel.txt");
+		$self->promconstraint()->PrintPROMModel($self->jobDirectory()."/PROMModel.txt");
 		$parameters->{"PROM model filename"} = "PROMModel.txt";
 		$parameters->{"PROM Kappa"} = $self->PROMKappa();
 		$parameters->{"prom constraints"} = 1;
