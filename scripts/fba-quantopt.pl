@@ -7,30 +7,26 @@
 use strict;
 use warnings;
 use Bio::KBase::workspace::ScriptHelpers qw(printObjectInfo get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::ScriptHelpers qw(fbaws get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(parse_input_table fbaws get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
-my $primaryArgs = ["Model"];
-my $servercommand = "runfba";
-my $script = "fba-runfba";
+my $primaryArgs = ["Model","Constraints filename"];
+my $servercommand = "quantitative_optimization";
+my $script = "fba-quantopt";
 my $translation = {
 	Model => "model",
 	modelws => "model_workspace",
-	fva => "fva",
-	simko => "simulateko",
-	minfluxes => "minimizeflux",
-	findminmedia => "findminmedia",
-	notes => "notes",
-	fbaid => "fba",
+	outputid => "outputid",
 	workspace => "workspace",
-	addtomodel => "add_to_model",
-	auth => "auth",
-	overwrite => "overwrite",
-	expsample => "expsample",
-	expsamplews => "expsamplews",
-	booleanexp => "booleanexp",
 	solver => "solver",
-	biomass => "biomass"
+	biomass => "biomass",
+	intsol => "integrate_solution",
+	numsol => "num_solutions",
+	timepersol => "timePerSolution",
+	timelimit => "totalTimeLimit",
+	maxboundmult => "MaxBoundMult",
+	minfluxcoef => "MinFluxCoef",
 };
+
 my $fbaTranslation = {
 	media => "media",
 	mediaws => "media_workspace",
@@ -41,9 +37,9 @@ my $fbaTranslation = {
 	defaultminuptake => "defaultminuptake",
 	defaultmaxuptake => "defaultmaxuptake",
 	simplethermo => "simplethermoconst",
-#	thermoconst => "thermoconst",
-#	nothermoerror => "nothermoerror",
-#	minthermoerror => "minthermoerror",
+	thermoconst => "thermoconst",
+	nothermoerror => "nothermoerror",
+	minthermoerror => "minthermoerror",
 	addlcpd => "additionalcpds",
 	promconstraint => "promconstraint",
 	promconstraintws => "promconstraint_workspace",
@@ -60,9 +56,16 @@ my $fbaTranslation = {
 };
 #Defining usage and options
 my $specs = [
-    [ 'fbaid:s', 'ID for FBA in workspace' ],
-    [ 'media|m:s', 'Media formulation for FBA' ],
+    [ 'outputid:s', 'ID for output model object' ],
+    [ 'intsol', 'Integrate solution immediately' ],
+    [ 'media|m:s', 'Media formulation for QuantOpt' ],
     [ 'mediaws:s', 'Workspace with media formulation' ],
+    [ 'maxboundmult:s', 'Multiplier on max bounds from FVA' ],
+    [ 'minfluxcoef:s', 'Coefficient on minimal flux portion of objective function' ],
+    [ 'timepersol:s', 'Maximum time spent per solution' ],
+    [ 'timelimit:s', 'Maximum toal time' ],
+    [ 'numsol:i', 'Number of solutions desired', {"default" => 1} ],
+    [ 'media|m:s', 'Media formulation for QuantOpt' ],
     [ 'modelws:s', 'Workspace with model' ],
     [ 'addlcpd|c:s@', 'Additional compounds (; delimiter)' ],
     [ 'maximize:s', 'Maximize objective', { "default" => 1 } ],
@@ -72,50 +75,29 @@ my $specs = [
     [ 'rxnko:s@', 'List of reaction KO (; delimiter)' ],
     [ 'bounds:s@', 'Custom bounds' ],
     [ 'constraints:s@', 'Custom constraints' ],
-    [ 'booleanexp', 'Boolean modeling expression data' ],
-    [ 'expsample:s', 'ID of expression sample' ],
-    [ 'expsamplews:s', 'Workspace with expression sample' ],
-    [ 'promconstraint|p:s', 'ID of PromConstraint' ],
-    [ 'promconstraintws:s', 'Workspace with PromConstraint' ],
-    [ 'regulome:s', 'ID of regulome' ],
-    [ 'regulomews:s', 'Workspace with regulome' ],
-    [ 'efluxsm:s', 'ID of ExpressionSample for E-Flux analysis' ],
-    [ 'efluxsr:s', 'ID of ExpressionSeries for Improved E-Flux analysis (without this but with --efluxsm, the original E-Flux will be conducted.)' ],
-    [ 'efluxws:s', 'Workspace with ExpressionSample/Series' ],
-    [ 'tintlesample:s', 'ID of ProbabilitySample for Tintle2014 analysis' ],
-    [ 'tintlews:s', 'Workspace with ProbabilitySample/Series' ],
-    [ 'tintlew:s', 'Weights of biomass against gene penalty. In (0,1]', { "default" => 0.5}],
-    [ 'tintlek:s', 'Tolerance to classify genes as unknown, not on or off. In [0,0.5]', {"default" => 0.1}],
-    [ 'defaultmaxflux:s', 'Default maximum reaction flux' ],
-    [ 'defaultminuptake:s', 'Default minimum nutrient uptake' ],
-    [ 'defaultmaxuptake:s', 'Default maximum nutrient uptake' ],
-    [ 'uptakelim:s@', 'Atom uptake limits' ],
-    [ 'simplethermo', 'Use simple thermodynamic constraints' ],
-#    [ 'thermoconst', 'Use full thermodynamic constraints' ],
-#    [ 'nothermoerror', 'No uncertainty in thermodynamic constraints' ],
-#    [ 'minthermoerror', 'Minimize uncertainty in thermodynamic constraints' ],
-    [ 'allrev', 'Treat all reactions as reversible', { "default" => 0 } ],
-    [ 'objfraction:s', 'Fraction of objective for follow on analysis', { "default" => 1 }],
-    [ 'fva', 'Run flux variability analysis' ],
-    [ 'simko', 'Simulate single gene KO' ],
-    [ 'minfluxes', 'Minimize fluxes from FBA' ],
-    [ 'findminmedia', 'Find minimal media' ],
-    [ 'addtomodel', 'Add FBA to model' ],
-    [ 'notes:s', 'Notes for flux balance analysis' ],
-    [ 'solver:s', 'Solver to use for FBA' ],
-    [ 'workspace|w:s', 'Workspace to save FBA results', { "default" => fbaws() } ],
+    [ 'solver:s', 'Solver to use for QuantOpt' ],
+    [ 'workspace|w:s', 'Workspace to save modified model in', { "default" => fbaws() } ],
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
 if (!defined($opt->{mediaws}) && defined($opt->{media})) {
 	$opt->{mediaws} = $opt->{workspace};
 }
+if (!-e $opt->{"Constraints filename"}) {
+	print "Input constrains file not found!\n";
+	exit();
+}
+$params->{constraints} = parse_input_table($opt->{"Constraints filename"},[
+	["variable",1,undef,undef],
+	["type",1,undef,undef],
+	["min",1,undef,undef],
+	["max",1,undef,undef],
+]);
 $params->{formulation} = {
 	geneko => [],
 	rxnko => [],
 	bounds => [],
 	constraints => [],
 	additionalcpds => [],
-	uptakelim => {}
 };
 foreach my $key (keys(%{$fbaTranslation})) {
 	if (defined($opt->{$key})) {
@@ -174,17 +156,6 @@ if (defined($opt->{constraints})) {
 		}
 		push(@{$params->{formulation}->{constraints}},[$rhs,$sign,$terms,"Constraint ".$count]);
 		$count++;
-	}
-}
-if (defined($opt->{uptakelim})) {
-	foreach my $uplims (@{$opt->{rxnko}}) {
-		my $array = [split(/;/,$uplims)];
-		foreach my $uplim (@{$array}) {
-			my $pair = [split(/:/,$uplim)];
-			if (defined($pair->[1])) {
-				$params->{formulation}->{uptakelim}->{$pair->[0]} = $pair->[1];
-			}
-		}
 	}
 }
 #Calling the server

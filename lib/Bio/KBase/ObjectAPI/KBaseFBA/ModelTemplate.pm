@@ -464,6 +464,39 @@ sub searchForBiomass {
     }
     return $obj;
 }
+
+=head3 searchForReaction
+
+Definition:
+	Bio::KBase::ObjectAPI::KBaseFBA::TemplateReaction Bio::KBase::ObjectAPI::KBaseFBA::TemplateBiomass->searchForReaction(string:id);
+Description:
+	Search for reaction in template model
+	
+=cut
+
+sub searchForReaction {
+    my $self = shift;
+    my $id = shift;
+    my $compartment = shift;
+    my $index = shift;
+    if ($id =~ m/^(.+)\[([a-z]+)(\d*)]$/) {
+    	$id = $1;
+    	$compartment = $2;
+    	$index = $3;
+    } elsif ($id =~ m/^(.+)_([a-z]+)(\d*)$/) {
+    	$id = $1;
+    	$compartment = $2;
+    	$index = $3;
+    }
+    if (!defined($compartment)) {
+    	$compartment = "c";
+    }
+    if (!defined($index) || length($index) == 0) {
+    	$index = 0;
+    }
+    return $self->queryObject("templateReactions",{reactionID => $id."_".$compartment});
+}
+
 =head3 calculatePenalties
 
 Definition:
