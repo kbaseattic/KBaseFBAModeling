@@ -139,7 +139,7 @@ sub addAlias {
 	}
 	if (!defined($aliasHash->{$args->{aliasName}}->{$args->{alias}}->{$args->{uuid}})) {
 		$aliasHash->{$args->{aliasName}}->{$args->{alias}}->{$args->{uuid}} = 1;
-		push(@{$idhash->{$args->{uuid}}->{$args->{aliasName}}},$args->{uuid});
+		push(@{$idhash->{$args->{uuid}}->{$args->{aliasName}}},$args->{alias});
 	}
 }
 
@@ -708,7 +708,8 @@ Description:
 sub addCompoundFromHash {
     my ($self,$arguments) = @_;
     $arguments = Bio::KBase::ObjectAPI::utilities::args(["names","id"],{
-	namespace => $self->defaultNameSpace(),
+	reference => "",
+	namespace => "ModelSEED",
 	matchbyname => 0,
 	mergeto => [],
 	abbreviation => undef,
@@ -720,21 +721,27 @@ sub addCompoundFromHash {
 	deltagerr => [10000000],
 	addmergealias => 0}, $arguments);
 
+    #delete reference argument if not used, to be sure of no collusion
+    delete($arguments->{reference});
+
     # Remove names that are too long
-    $arguments->{names} = [ grep { length($_) < 255 } @{$arguments->{names}} ];
-    $arguments->{names} = [$arguments->{id}->[0]] unless defined $arguments->{names}->[0];
-    $arguments->{abbreviation} = [$arguments->{names}->[0]] unless defined $arguments->{abbreviation};
+    # $arguments->{names} = [ grep { length($_) < 255 } @{$arguments->{names}} ];
+    $arguments->{names} = [$arguments->{id}[0]] unless defined $arguments->{names}[0];
+    $arguments->{abbreviation} = [$arguments->{names}[0]] unless defined $arguments->{abbreviation};
 
     # Checking for id uniqueness within scope of own aliasType
-    my $cpd = $self->getObjectByAlias("compounds",$arguments->{id}->[0],$arguments->{namespace});
+
+    #Check to see if id already exists
+    my $cpd = $self->getObject("compounds",$arguments->{id}[0]);
+    $cpd = $self->getObjectByAlias("compounds",$arguments->{id}[0],$arguments->{namespace}) if !defined($cpd);
     if (defined($cpd)) {
-	Bio::KBase::ObjectAPI::utilities::verbose("Compound found with matching id ".$arguments->{id}->[0]." for namespace ".$arguments->{namespace});
+	Bio::KBase::ObjectAPI::utilities::verbose("Compound found (".$cpd->id().") with matching id ".$arguments->{id}[0]." for namespace ".$arguments->{namespace});
 	if($arguments->{addmergealias}){
 	    foreach my $aliasType (@{$arguments->{mergeto}}){
 		$self->addAlias({ attribute => "compounds",
 				  aliasName => $aliasType,
-				  alias => $arguments->{id}->[0],
-				  uuid => $cpd->uuid()
+				  alias => $arguments->{id}[0],
+				  uuid => $cpd->id()
 				});
 	    }
 	}
@@ -745,55 +752,83 @@ sub addCompoundFromHash {
     foreach my $aliasType (@{$arguments->{mergeto}}) {
 
 	#define whether a column in table is available that matches merging namespace
-	my $matchingId=$arguments->{id}->[0];
-	$matchingId=$arguments->{lc($aliasType)}->[0] if(exists($arguments->{lc($aliasType)}));
+	my $matchingId=$arguments->{id}[0];
+	$matchingId=$arguments->{lc($aliasType)}[0] if(exists($arguments->{lc($aliasType)}));
 
 	$cpd = $self->getObjectByAlias("compounds",$matchingId,$aliasType);
 	if (defined($cpd)) {
 	    Bio::KBase::ObjectAPI::utilities::verbose("Compound found with matching id ".$matchingId." for namespace ".$aliasType);
 	    $self->addAlias({ attribute => "compounds",
 			      aliasName => $arguments->{namespace},
-			      alias => $arguments->{id}->[0],
-			      uuid => $cpd->uuid()
+			      alias => $arguments->{id}[0],
+			      uuid => $cpd->id()
 			    });
 	    if($arguments->{addmergealias}){
 		foreach my $otherAliasType (@{$arguments->{mergeto}}){
 		    next if $otherAliasType eq $aliasType;
 		    $self->addAlias({ attribute => "compounds",
 				      aliasName => $otherAliasType,
-				      alias => $arguments->{id}->[0],
-				      uuid => $cpd->uuid()
+				      alias => $arguments->{id}[0],
+				      uuid => $cpd->id()
 				    });
 		}
 	    }
 	    return $cpd;
 	}
     }
+
     #Special case of checking for protons
-    if(($arguments->{namespace} eq "ModelSEED" && $arguments->{id}->[0] eq "cpd00067") ||
-       ($arguments->{namespace} eq "KEGG" && $arguments->{id}->[0] eq "C00080") ||
-       ($arguments->{namespace} =~ /Cyc$/ && $arguments->{id}->[0] eq "PROTON") ||
-       (scalar( grep { $_ =~ /proton/i } @{$arguments->{names}} )>0)){
+    if(($arguments->{namespace} eq "ModelSEED" && $arguments->{id}[0] eq "cpd00067") ||
+       ($arguments->{namespace} eq "KEGG" && $arguments->{id}[0] eq "C00080") ||
+       ($arguments->{namespace} =~ /Cyc$/ && $arguments->{id}[0] eq "PROTON") ||
+       (scalar( grep { $_ =~ /^protons?$/i } @{$arguments->{names}} )>0)){
 	$cpd=$self->checkForProton();
 	if(defined($cpd)){
-	    Bio::KBase::ObjectAPI::utilities::verbose("Proton found: ".$arguments->{id}->[0].":".join("|",@{$arguments->{names}}));
+	    Bio::KBase::ObjectAPI::utilities::verbose("Proton found: ".$arguments->{id}[0].":".join("|",@{$arguments->{names}}));
 	    $self->addAlias({ attribute => "compounds",
 			      aliasName => $arguments->{namespace},
-			      alias => $arguments->{id}->[0],
-			      uuid => $cpd->uuid()
+			      alias => $arguments->{id}[0],
+			      uuid => $cpd->id()
 			    });
 	    if($arguments->{addmergealias}){
 		foreach my $aliasType (@{$arguments->{mergeto}}){
 		    $self->addAlias({ attribute => "compounds",
 				      aliasName => $aliasType,
-				      alias => $arguments->{id}->[0],
-				      uuid => $cpd->uuid()
+				      alias => $arguments->{id}[0],
+				      uuid => $cpd->id()
 				    });
 		}
 	    }
 	    return $cpd;
 	}
     }
+
+    #Special case of checking for water
+    if(($arguments->{namespace} eq "ModelSEED" && $arguments->{id}[0] eq "cpd00001") ||
+       ($arguments->{namespace} eq "KEGG" && $arguments->{id}[0] eq "C00001") ||
+       ($arguments->{namespace} =~ /Cyc$/ && $arguments->{id}[0] eq "WATER") ||
+       (scalar( grep { $_ =~ /^water$/i } @{$arguments->{names}} )>0)){
+	$cpd=$self->checkForWater();
+	if(defined($cpd)){
+	    Bio::KBase::ObjectAPI::utilities::verbose("Water found: ".$arguments->{id}[0].":".join("|",@{$arguments->{names}}));
+	    $self->addAlias({ attribute => "compounds",
+			      aliasName => $arguments->{namespace},
+			      alias => $arguments->{id}[0],
+			      uuid => $cpd->id()
+			    });
+	    if($arguments->{addmergealias}){
+		foreach my $aliasType (@{$arguments->{mergeto}}){
+		    $self->addAlias({ attribute => "compounds",
+				      aliasName => $aliasType,
+				      alias => $arguments->{id}[0],
+				      uuid => $cpd->id()
+				    });
+		}
+	    }
+	    return $cpd;
+	}
+    }
+
     #Checking for match by name if requested
     if (defined($arguments->{matchbyname}) && $arguments->{matchbyname} == 1) {
 	foreach my $name (@{$arguments->{names}}) {
@@ -809,19 +844,19 @@ sub addCompoundFromHash {
 	    }
 
 	    if (defined($cpd)){
-		Bio::KBase::ObjectAPI::utilities::verbose("Compound (".$arguments->{id}->[0].") matched based on name ".$name);
+		Bio::KBase::ObjectAPI::utilities::verbose("Compound (".$arguments->{id}[0].") matched based on name ".$name);
 		
 		$self->addAlias({attribute => "compounds",
 				 aliasName => $arguments->{namespace},
-				 alias => $arguments->{id}->[0],
-				 uuid => $cpd->uuid()
+				 alias => $arguments->{id}[0],
+				 uuid => $cpd->id()
 				});
 		if($arguments->{addmergealias}){
 		    foreach my $aliasType (@{$arguments->{mergeto}}){
 			$self->addAlias({ attribute => "compounds",
 					  aliasName => $aliasType,
-					  alias => $arguments->{id}->[0],
-					  uuid => $cpd->uuid()
+					  alias => $arguments->{id}[0],
+					  uuid => $cpd->id()
 					});
 		    }
 		}
@@ -831,51 +866,46 @@ sub addCompoundFromHash {
     }
 
     # Actually creating compound
-    Bio::KBase::ObjectAPI::utilities::verbose("Creating compound ".$arguments->{id}->[0]);
+    Bio::KBase::ObjectAPI::utilities::verbose("Creating compound ".$arguments->{id}[0]);
 
-    $cpd = $self->add("compounds",{
-	name => $arguments->{names}->[0],
-	abbreviation => $arguments->{abbreviation}->[0],
-	formula => $arguments->{formula}->[0],
-	unchargedFormula => $arguments->{unchargedFormula}->[0],
-	mass => $arguments->{mass}->[0],
-	defaultCharge => $arguments->{charge}->[0],
-	deltaG => $arguments->{deltag}->[0],
-	deltaGErr => $arguments->{deltagerr}->[0]});
+    $cpd = $self->add("compounds",{id => $arguments->{id}[0],
+				   name => $arguments->{names}[0],
+				   abbreviation => $arguments->{abbreviation}[0],
+				   formula => $arguments->{formula}[0],
+				   mass => $arguments->{mass}[0],
+				   defaultCharge => $arguments->{charge}[0],
+				   deltaG => $arguments->{deltag}[0],
+				   deltaGErr => $arguments->{deltagerr}[0]});
 
     # Adding id as alias
-    $self->addAlias({
-	attribute => "compounds",
-	aliasName => $arguments->{namespace},
-	alias => $arguments->{id}->[0],
-	uuid => $cpd->uuid()});
+    $self->addAlias({attribute => "compounds",
+		     aliasName => $arguments->{namespace},
+		     alias => $arguments->{id}[0],
+		     uuid => $cpd->id()});
 
     if($arguments->{addmergealias}){
 	foreach my $aliasType (@{$arguments->{mergeto}}){
-	    $self->addAlias({ attribute => "compounds",
-			      aliasName => $aliasType,
-			      alias => $arguments->{id}->[0],
-			      uuid => $cpd->uuid()});
+	    $self->addAlias({attribute => "compounds",
+			     aliasName => $aliasType,
+			     alias => $arguments->{id}[0],
+			     uuid => $cpd->id()});
 	}
     }
 
     #Adding alternative names as aliases
     #Adding searchnames as *unique* aliases
     foreach my $name (@{$arguments->{names}}) {
-	$self->addAlias({
-	    attribute => "compounds",
-	    aliasName => "name",
-	    alias => $name,
-	    uuid => $cpd->uuid()
-			});
+	$self->addAlias({attribute => "compounds",
+			 aliasName => "name",
+			 alias => $name,
+			 uuid => $cpd->id()});
+
 	my $searchname = $cpd->nameToSearchname($name);
 	if(!$self->getObjectByAlias("compounds",$searchname,"searchname")){
-	    $self->addAlias({
-		attribute => "compounds",
-		aliasName => "searchname",
-		alias => $searchname,
-		uuid => $cpd->uuid()
-			    });
+	    $self->addAlias({attribute => "compounds",
+			     aliasName => "searchname",
+			     alias => $searchname,
+			     uuid => $cpd->id()});
 	}
     }
     return $cpd;
@@ -893,8 +923,8 @@ sub addReactionFromHash {
     my ($self,$arguments) = @_;
 	$arguments = Bio::KBase::ObjectAPI::utilities::args(["equation","id"], {
 	    names => undef,
-	    equationAliasType => $self->defaultNameSpace(),
-	    reactionIDaliasType => $self->defaultNameSpace(),
+	    equationAliasType => "id",
+	    reactionIDaliasType => "ModelSEED",
 	    direction => ["="],
 	    deltag => [10000000],
 	    deltagerr => [10000000],
@@ -904,19 +934,20 @@ sub addReactionFromHash {
 	    balancedonly => 0}, $arguments);
 
 	# Remove names that are too long
-	$arguments->{names} = [ grep { length($_) < 255 } @{$arguments->{names}} ];
-        $arguments->{names} = [$arguments->{id}->[0]] unless defined $arguments->{names}->[0];
-        $arguments->{abbreviation} = [$arguments->{id}->[0]] unless defined $arguments->{abbreviation};
+	#$arguments->{names} = [ grep { length($_) < 255 } @{$arguments->{names}} ];
+        $arguments->{names} = [$arguments->{id}[0]] unless defined $arguments->{names}[0];
+        $arguments->{abbreviation} = [$arguments->{id}[0]] unless defined $arguments->{abbreviation};
+
 	#Checking for id uniqueness
-	my $rxn = $self->getObjectByAlias("reactions",$arguments->{id}->[0],$arguments->{reactionIDaliasType});
+	my $rxn = $self->getObjectByAlias("reactions",$arguments->{id}[0],$arguments->{reactionIDaliasType});
 	if (defined($rxn)) {
-		Bio::KBase::ObjectAPI::utilities::verbose("Reaction found with matching id ".$arguments->{id}->[0]." for namespace ".$arguments->{reactionIDaliasType});
+		Bio::KBase::ObjectAPI::utilities::verbose("Reaction found with matching id ".$arguments->{id}[0]." for namespace ".$arguments->{reactionIDaliasType});
 		if($arguments->{addmergealias}){
 		    foreach my $aliasType (@{$arguments->{mergeto}}){
 			$self->addAlias({ attribute => "reactions",
 					  aliasName => $aliasType,
-					  alias => $arguments->{id}->[0],
-					  uuid => $rxn->uuid()
+					  alias => $arguments->{id}[0],
+					  uuid => $rxn->id()
 					});
 		    }
 		}
@@ -924,15 +955,15 @@ sub addReactionFromHash {
 	}
 	# Checking for id uniqueness within scope of another aliasType, if passed
         foreach my $aliasType (@{$arguments->{mergeto}}){
-	    $rxn = $self->getObjectByAlias("reactions",$arguments->{id}->[0],$aliasType);
+	    $rxn = $self->getObjectByAlias("reactions",$arguments->{id}[0],$aliasType);
 	    if( defined($rxn) ){
-			Bio::KBase::ObjectAPI::utilities::verbose("Reaction found with matching id ".$arguments->{id}->[0]." for namespace ".$aliasType);
+			Bio::KBase::ObjectAPI::utilities::verbose("Reaction found with matching id ".$arguments->{id}[0]." for namespace ".$aliasType);
 			#Alias needs to be created for original namespace if found in different namespace
 			$self->addAlias({
 			    attribute => "reactions",
 			    aliasName => $arguments->{reactionIDaliasType},
-			    alias => $arguments->{id}->[0],
-			    uuid => $rxn->uuid()
+			    alias => $arguments->{id}[0],
+			    uuid => $rxn->id()
 			});
 
 			if($arguments->{addmergealias}){
@@ -940,8 +971,8 @@ sub addReactionFromHash {
 				next if $otherAliasType eq $aliasType;
 				$self->addAlias({ attribute => "reactions",
 						  aliasName => $otherAliasType,
-						  alias => $arguments->{id}->[0],
-						  uuid => $rxn->uuid()
+						  alias => $arguments->{id}[0],
+						  uuid => $rxn->id()
 						});
 			    }
 			}
@@ -950,30 +981,31 @@ sub addReactionFromHash {
 	}
 	# Creating reaction from equation
 	$rxn = Bio::KBase::ObjectAPI::KBaseBiochem::Reaction->new({
-		name => $arguments->{names}->[0],
-		abbreviation => $arguments->{abbreviation}->[0],
-		direction => $arguments->{direction}->[0],
-		deltaG => $arguments->{deltag}->[0],
-		deltaGErr => $arguments->{deltagerr}->[0],
-		status => "OK",
-		thermoReversibility => "=",
-		defaultProtons => '0.0'
+	    id=> $arguments->{id}[0],
+	    name => $arguments->{names}[0],
+	    abbreviation => $arguments->{abbreviation}[0],
+	    direction => $arguments->{direction}[0],
+	    deltaG => $arguments->{deltag}[0],
+	    deltaGErr => $arguments->{deltagerr}[0],
+	    status => "OK",
+	    thermoReversibility => "=",
+	    defaultProtons => '0.0'
 	});
 	# Attach biochemistry object to reaction object
 	$rxn->parent($self);
 	# Parse the equation string to finish defining the reaction object
 	# a return of zero indicates that the reaction was rejected
 	if(!$rxn->loadFromEquation({
-	    equation => $arguments->{equation}->[0],
+	    equation => $arguments->{equation}[0],
 	    aliasType => $arguments->{equationAliasType},
 	    autoadd => $arguments->{autoadd},
-	    rxnId => $arguments->{id}->[0],
-	    compartment => $arguments->{compartment}->[0]
+	    rxnId => $arguments->{id}[0],
+	    compartment => $arguments->{compartment}[0]
 	})) {
-	    Bio::KBase::ObjectAPI::utilities::verbose("Reaction ".$arguments->{id}->[0]." was rejected");
+	    Bio::KBase::ObjectAPI::utilities::verbose("Reaction ".$arguments->{id}[0]." was rejected");
 	    return undef;
 	}else{
-	    #Bio::KBase::ObjectAPI::utilities::verbose("Reaction ".$arguments->{id}->[0]." passed: ".$rxn->equationCode());
+	    #Bio::KBase::ObjectAPI::utilities::verbose("Reaction ".$arguments->{id}[0]." passed: ".$rxn->equationCode());
 	}
 
 	# Generate equation search string and check to see if reaction not already in database
@@ -991,9 +1023,8 @@ sub addReactionFromHash {
 	    my $aliasSetName=$arguments->{reactionIDaliasType};
 	    # If not, need to find any alias to use (avoiding names for now)
 	    if(!$alias){
-		foreach my $set ( grep { $_->name() !~ /name/ && $_->name() ne "Enzyme Class"} @{$self->aliasSets()}){
-		    $aliasSetName=$set->name();
-		    $alias=$searchRxn->getAlias($aliasSetName);
+		foreach my $set ( grep { $_  ne "name" && $_ ne "searchname" && $_ ne "Enzyme Class"} keys %{$self->reactionsByAlias()}){
+		    $alias=$searchRxn->getAlias($set);
 		    last if $alias;
 		}
 		# Fall back onto name
@@ -1002,18 +1033,18 @@ sub addReactionFromHash {
 		    $aliasSetName="could not find ID";
 		}
 	    }
-	    Bio::KBase::ObjectAPI::utilities::verbose("Reaction ".$alias." (".$aliasSetName.") found with matching equation for Reaction ".$arguments->{id}->[0]);
+	    Bio::KBase::ObjectAPI::utilities::verbose("Reaction ".$alias." (".$aliasSetName.") found with matching equation for Reaction ".$arguments->{id}[0]);
 	    $self->addAlias({ attribute => "reactions",
 			      aliasName => $arguments->{reactionIDaliasType},
-			      alias => $arguments->{id}->[0],
-			      uuid => $searchRxn->uuid()
+			      alias => $arguments->{id}[0],
+			      uuid => $searchRxn->id()
 			    });
 	    if($arguments->{addmergealias}){
 		foreach my $aliasType (@{$arguments->{mergeto}}){
 		    $self->addAlias({ attribute => "reactions",
 				      aliasName => $aliasType,
-				      alias => $arguments->{id}->[0],
-				      uuid => $searchRxn->uuid()
+				      alias => $arguments->{id}[0],
+				      uuid => $searchRxn->id()
 				    });
 		}
 	    }
@@ -1033,22 +1064,22 @@ sub addReactionFromHash {
 	}
     }
 
-    Bio::KBase::ObjectAPI::utilities::verbose("Creating reaction ".$rxn->uuid()." (".$arguments->{id}->[0].")");
+    Bio::KBase::ObjectAPI::utilities::verbose("Creating reaction ".$rxn->uuid()." (".$arguments->{id}[0].")");
 
 	# Attach reaction to biochemistry
 	$self->add("reactions", $rxn);
 	$self->addAlias({
 		attribute => "reactions",
 		aliasName => $arguments->{reactionIDaliasType},
-		alias => $arguments->{id}->[0],
-		uuid => $rxn->uuid()
+		alias => $arguments->{id}[0],
+		uuid => $rxn->id()
 	});
     if($arguments->{addmergealias}){
         foreach my $aliasType (@{$arguments->{mergeto}}){
 	    $self->addAlias({ attribute => "reactions",
 			      aliasName => $aliasType,
-			      alias => $arguments->{id}->[0],
-			      uuid => $rxn->uuid()
+			      alias => $arguments->{id}[0],
+			      uuid => $rxn->id()
 			    });
 	}
     }
@@ -1056,16 +1087,16 @@ sub addReactionFromHash {
 		$self->addAlias({
 			attribute => "reactions",
 			aliasName => "name",
-			alias => $arguments->{names}->[$i],
-			uuid => $rxn->uuid()
+			alias => $arguments->{names}[$i],
+			uuid => $rxn->id()
 		});
 	}
 	for (my $i=0;$i < @{$arguments->{enzymes}}; $i++) {
 		$self->addAlias({
 			attribute => "reactions",
 			aliasName => "Enzyme Class",
-			alias => $arguments->{enzymes}->[$i],
-			uuid => $rxn->uuid()
+			alias => $arguments->{enzymes}[$i],
+			uuid => $rxn->id()
 		});
 	}
 	return $rxn;
@@ -1537,23 +1568,23 @@ sub checkForDuplicateCue {
 
 sub checkForProton {
     my ($self) = @_;
-   	my $obj=$self->getObjectByAlias("compounds","cpd00067","ModelSEED");
-	return $obj if $obj;
-	$obj=$self->getObjectByAlias("compounds","C00080","KEGG");
-	return $obj if $obj;
+    my $obj=$self->getObjectByAlias("compounds","cpd00067","ModelSEED");
+    return $obj if $obj;
+    $obj=$self->getObjectByAlias("compounds","C00080","KEGG");
+    return $obj if $obj;
     $obj=$self->getObjectByAlias("compounds","PROTON","MetaCyc");
-	return $obj if $obj;
+    return $obj if $obj;
     return $self->queryObject("compounds",{name => "H+"});
 }
 
 sub checkForWater {
     my ($self) = @_;
-	my $obj=$self->getObjectByAlias("compounds","cpd00001","ModelSEED");
-	return $obj if $obj;
+    my $obj=$self->getObjectByAlias("compounds","cpd00001","ModelSEED");
+    return $obj if $obj;
     $obj=$self->getObjectByAlias("compounds","C00001","KEGG");
-	return $obj if $obj;
+    return $obj if $obj;
     $obj=$self->getObjectByAlias("compounds","WATER","MetaCyc");
-	return $obj if $obj;
+    return $obj if $obj;
     return $self->queryObject("compounds",{name => "Water"});
 }
 

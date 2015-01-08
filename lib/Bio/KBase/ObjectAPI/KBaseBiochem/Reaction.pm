@@ -371,12 +371,12 @@ sub loadFromEquation {
 		$compHash->{$comp->id()} = $comp;
 		$NewRow->{compartment} = $comp;
 		my $cpd;
-		if ($args->{aliasType} eq "uuid" || $args->{aliasType} eq "name") {
-		    $cpd = $bio->queryObject("compounds",{$args->{aliasType} => $NewRow->{compound}});
-		} else {
+		if($args->{aliasType} eq "id"){
+		    $cpd = $bio->getObject("compounds",$NewRow->{compound});
+		}else{ 
 		    $cpd = $bio->getObjectByAlias("compounds",$NewRow->{compound},$args->{aliasType});
 		}
-		if (!defined($cpd)) {
+		if(!defined($cpd)) {
 		    Bio::KBase::ObjectAPI::utilities::USEWARNING("Unrecognized compound '".$NewRow->{compound}."' used in reaction ".$args->{rxnId});
 		    if(defined($args->{autoadd}) && $args->{autoadd}==1){
 			Bio::KBase::ObjectAPI::utilities::verbose("Compound '".$NewRow->{compound}."' automatically added to database");
