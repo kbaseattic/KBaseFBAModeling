@@ -56,6 +56,7 @@ my $translation = {
 	probrxn => "probabilisticReactions",
 	probanno => "probabilisticAnnotation",
 	probannows => "probabilisticAnnotation_workspace",
+	notes => "notes",
 };
 my $fbaTranslation = {
 	media => "media",
@@ -234,7 +235,7 @@ if (defined($opt->{constraints})) {
 	}
 }
 if (defined($opt->{uptakelim})) {
-	foreach my $uplims (@{$opt->{rxnko}}) {
+	foreach my $uplims (@{$opt->{uptakelim}}) {
 		my $array = [split(/;/,$uplims)];
 		foreach my $uplim (@{$array}) {
 			my $pair = [split(/:/,$uplim)];

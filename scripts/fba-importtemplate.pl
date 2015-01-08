@@ -18,12 +18,14 @@ my $translation = {
 	"Biomass components file" => "Biomass components file",
 	mapping => "map",
 	mappingws => "mapping_workspace",
+	biochem => "biochem",
+	biochemws => "biochem_workspace",
 	templateReactions=> "templateReactions",
 	templateBiomass => "templateBiomass",
 	name => "name",
 	type => "modelType",
 	domain => "domain",
-	templateid => "id",
+	templateid => "uid",
 	workspace => "workspace",
 	ignoreerrors => "ignore_errors",
 	auth => "auth"
@@ -37,6 +39,8 @@ my $specs = [
 	[ 'templateid=s', 'ID for imported template in workspace' ],
 	["mapping=s", "Mapping to which the template should be linked"],
     ["mappingws=s", "Workspace with mapping to which the template should be linked"],
+    ["biochem=s", "ID of the biochemistry database"],
+    ["biochemws=s", "ID of workspace containing biochemistry database"],
 	[ 'ignoreerrors|i', 'Ignore errors encountered during load' ],
     [ 'workspace|w=s', 'Workspace to save imported template', { "default" => fbaws() } ],
     [ 'overwrite|o', 'Overwrite any existing phenotypes with same name' ]
@@ -49,12 +53,16 @@ my $tempRxns = [];
 my $tempBioComp = [];
 my $tempBio = [];
 for (my $i=0; $i < @{$rxnTbl->{data}}; $i++) {
+	my $complexes = [];
+	if (defined($rxnTbl->{data}->[$i]->[$rxnTbl->{headings}->{complexes}])) {
+		$complexes = [split(/\|/,$rxnTbl->{data}->[$i]->[$rxnTbl->{headings}->{complexes}])];
+	}
 	my $rxnRow = [
 		$rxnTbl->{data}->[$i]->[$rxnTbl->{headings}->{id}],
 		$rxnTbl->{data}->[$i]->[$rxnTbl->{headings}->{compartment}],
 		$rxnTbl->{data}->[$i]->[$rxnTbl->{headings}->{direction}],
 		$rxnTbl->{data}->[$i]->[$rxnTbl->{headings}->{type}],
-		[split(/\|/,$rxnTbl->{data}->[$i]->[$rxnTbl->{headings}->{complexes}])]
+		$complexes
 	];
 	push(@{$tempRxns},$rxnRow);
 }
@@ -78,9 +86,11 @@ for (my $i=0; $i < @{$bioTbl->{data}}; $i++) {
 for (my $i=0; $i < @{$bioCompTbl->{data}}; $i++) {
 	if (defined($bioNameHash->{$bioCompTbl->{data}->[$i]->[$bioCompTbl->{headings}->{biomass}]})) {
 		my $index = $bioNameHash->{$bioCompTbl->{data}->[$i]->[$bioCompTbl->{headings}->{biomass}]};
-		my $links = [split(/;/,$bioCompTbl->{data}->[$i]->[$bioCompTbl->{headings}->{linked}])];
-		for (my $j=0; $j < @{$links}; $j++) {
-			$links->[$j] = [split(/:/,$links->[$j])];
+		my $links = [];
+		if (defined($bioCompTbl->{data}->[$i]->[$bioCompTbl->{headings}->{linked}])) {
+			$links = [split(/;/,$bioCompTbl->{data}->[$i]->[$bioCompTbl->{headings}->{linked}])];
+			for (my $j=0; $j < @{$links}; $j++) {
+				$links->[$j] = [split(/:/,$links->[$j])];
 		}
 		my $bioRow = [
 			$bioCompTbl->{data}->[$i]->[$bioCompTbl->{headings}->{id}],

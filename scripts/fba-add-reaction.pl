@@ -53,7 +53,7 @@ my $specs = [
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation,$manpage,undef,["list"]);
 if (defined($opt->{list})) {
-	my $bio = get_fba_client()->get_biochemistry();
+	my $bio = get_fba_client()->get_biochemistry( { } );
 	print "Listing reactions available for modification:\n";
 	print join("\n",@{$bio->{reactions}})."\n";
 	exit;
