@@ -1,0 +1,6 @@
+[
+	{
+		"models":["TestModelGFInt"],
+		"workspaces":["MetabolicModelingTest"]
+	}
+]

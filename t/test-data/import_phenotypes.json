@@ -1,0 +1,13 @@
+[
+	{
+		"phenotypes":[
+			[[],"Carbon-D-Glucose","KBaseMedia",[],1],
+			[[],"ArgonneLBMedia","KBaseMedia",[],1],
+			[[],"ArgonneNMSMedia","KBaseMedia",[],1],
+		],
+		"genome":"TestGenome"
+		"workspace":"MetabolicModelingTest",
+		"genome_workspace":"MetabolicModelingTest",
+		"phenotypeSet":"TestPhenotypeSet",
+	}
+]

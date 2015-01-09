@@ -1,0 +1,19 @@
+[
+	{
+		"genome":"315750.3",
+		"workspace":"GenomeImportComparisonTest",
+		"source":"rast",
+		"sourceLogin":"reviewer",
+		"sourcePassword":"reviewer",
+	},
+	{
+		"genome":"224308.1",
+		"workspace":"GenomeImportComparisonTest",
+		"source":"seed",
+	},
+	{
+		"genome":"kb|g.2403",
+		"workspace":"GenomeImportComparisonTest",
+		"source":"kbase",
+	}
+]
