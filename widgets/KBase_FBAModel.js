@@ -120,6 +120,9 @@ function KBase_FBAModel(modeltabs) {
 	
 	this.ReactionTab = function (id) {
 		var rxn = this.rxnhash[id];
+		if (id =~ /rxn\d+/ {
+			var rxndata = this.modeltabs.get_biochem_reaction(id);
+		}
 		return [{
 				"label": "ID",
 				"data": rxn.id
@@ -128,11 +131,11 @@ function KBase_FBAModel(modeltabs) {
 				"data": rxn.name
 			},{
 				"label": "Equation",
-				"data": rxn.equation
+				"data": rxn.eqdata,
+				"type": "pictureequation"
 			},{
-				"label": "Genes",
-				"data": rxn.genes,
-				"type": "tabLinkArray"
+				"label": "GPR",
+				"data": rxn.gpr,
 		}];
 	}
 	
@@ -153,6 +156,9 @@ function KBase_FBAModel(modeltabs) {
 		return [{
 			"label": "Compound",
 			"data": cpd.id,
+		}, {
+			"label": "Structures",
+			"key": this.modeltabs.reaction_image(id),
 		}, {
 			"label": "Name",
 			"key": "name"
@@ -246,7 +252,8 @@ function KBase_FBAModel(modeltabs) {
 			"key": "name"
 		}, {
 			"label": "Equation",
-			"key": "equation"
+			"key": "eqdata",
+			"type": "linkequation",
 		}, {
 			"label": "Genes",
 			"key": "genes",
@@ -314,7 +321,7 @@ function KBase_FBAModel(modeltabs) {
 		"columns": [{
 			"label": "Biomass",
 			"key": "biomass",
-			"type": "tabLink",
+			"type": "subTabLink",
 			"function": "BiomassTab"
 		}, {
 			"label": "Compound",
@@ -353,5 +360,9 @@ function KBase_FBAModel(modeltabs) {
 			"key": "fba_ref",
 			"type": "wslink"
 		}]
+	}, {
+		"key": "pathways",
+		"label": "Pathways",
+		"widget": "kbasePathways"
 	}];
 }
