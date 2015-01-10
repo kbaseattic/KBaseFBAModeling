@@ -7994,12 +7994,19 @@ sub export_genome
     $input = $self->_validateargs($input,["genome","workspace","format"],{
     	toshock => 0
     });
-    $output = $self->_export_object({
-    	reference => $input->{workspace}."/".$input->{genome},
-    	type => "Genome",
-    	format => $input->{format},
-    	toshock => $input->{toshock}
-    });
+    if ($input->{format} == "genomeTO") {
+        my $genome = $self->_get_msobject("Genome",$input->{workspace},$input->{genome});
+        my $genomeTO = $genome->genome_typed_object();
+        my $JSON = JSON::XS->new->utf8(1);
+        $output = $JSON->encode($genomeTO);
+    } else {
+	    $output = $self->_export_object({
+	    	reference => $input->{workspace}."/".$input->{genome},
+	    	type => "Genome",
+	    	format => $input->{format},
+	    	toshock => $input->{toshock}
+	    });
+    }
     $self->_clearContext();
     #END export_genome
     my @_bad_returns;
@@ -11591,6 +11598,11 @@ sub gapfill_model
 	my $fba = $self->_buildFBAObject($input->{formulation},$model,$input->{workspace},$self->_get_new_id($input->{model}.".gffba."));
 	$fba->PrepareForGapfilling($input);
 	$fba->runFBA();
+	#Error checking the FBA and gapfilling solution
+	$fba->parseGapfillingOutput();
+	if (!defined($fba->gapfillingSolutions()->[0])) {
+		$self->_error("Analysis completed, but no valid solutions found!");
+	}
 	my $meta = $self->_save_msobject($fba,"FBA",$input->{workspace},$fba->id(),{hidden => 1});
 	#Since gapfilling can take hours, we retrieve the model again in case it changed since accessed previously
 	if ((time()-$start) > 3600 && $input->{out_model} eq $input->{model}) {
@@ -18291,6 +18303,7 @@ sub compare_models
 					});
 				}
 				my $index = $rxnhash->{$mdlrxn->reaction()->id()}->{$mdlrxn->modelcompartment()->compartment()->id()};
+				$modelcomp->{gapfilled_reactions} += $self->_was_reaction_gapfilled($mdlrxn);
 				my $ftrs = $mdlrxn->featureIDs();
 				if (@{$ftrs} == 0) {
 					if (defined($universal->{$mdlrxn->reaction()->id()})) {
@@ -18299,7 +18312,6 @@ sub compare_models
 						$ftrs = ["Spontaneous"];
 					} else {
 						$ftrs = ["Gapfilled"];
-						$model->{gapfilled_reactions}++;
 					}
 				}
 				push(@{$output->{reaction_comparisons}->[$index]->{model_features}->{$ws."/".$mdl}},@{$ftrs});
@@ -20617,16 +20629,16 @@ sub add_reactions
     my $model = $self->_get_msobject("FBAModel",$params->{model_workspace},$params->{model});
     for (my $i=0; $i < @{$params->{reactions}}; $i++) {
     	$model->addModelReaction({
-		    reaction => $params->{reaction}->[$i]->[0],
-		    direction => $params->{reaction}->[$i]->[2],
-		    compartment => $params->{reaction}->[$i]->[1],
-		    gpr => $params->{reaction}->[$i]->[3],
+		    reaction => $params->{reactions}->[$i]->[0],
+		    direction => $params->{reactions}->[$i]->[2],
+		    compartment => $params->{reactions}->[$i]->[1],
+		    gpr => $params->{reactions}->[$i]->[3],
 		    compounds => $compoundhash,
-		    equation => $params->{reaction}->[$i]->[8],
-		    pathway => $params->{reaction}->[$i]->[4],
-		    name => $params->{reaction}->[$i]->[5],
-		    reference => $params->{reaction}->[$i]->[6],
-		    enzyme => $params->{reaction}->[$i]->[7]
+		    equation => $params->{reactions}->[$i]->[8],
+		    pathway => $params->{reactions}->[$i]->[4],
+		    name => $params->{reactions}->[$i]->[5],
+		    reference => $params->{reactions}->[$i]->[6],
+		    enzyme => $params->{reactions}->[$i]->[7]
 		});
     }
     $output = $self->_save_msobject($model,"FBAModel",$params->{workspace},$params->{output_id});
@@ -20752,7 +20764,7 @@ sub remove_reactions
     });
     my $model = $self->_get_msobject("FBAModel",$params->{model_workspace},$params->{model});
     for (my $i=0; $i < @{$params->{reactions}}; $i++) {
-    	my $rxn = $model->getObject("models",$params->{reactions}->[$i]);
+    	my $rxn = $model->getObject("modelreactions",$params->{reactions}->[$i]);
     	if (defined($rxn)) {
     		$model->remove("modelreactions",$rxn);
     	}
