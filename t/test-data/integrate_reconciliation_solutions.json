@@ -1,6 +1,6 @@
 [
 	{
-		"model":"TestModelGF"
+		"model":"TestModelGF",
 		"workspace":"MetabolicModelingTest",
 		"model_workspace":"MetabolicModelingTest",
 		"gapfillSolutions": ["0/0"],

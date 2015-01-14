@@ -6,6 +6,6 @@
 			"media":"TestMedia",
 			"media_workspace":"MetabolicModelingTest"
 		},
-		"fba":"TestModelGFIntFBA",
+		"fba":"TestModelGFIntFBA"
 	}
 ]

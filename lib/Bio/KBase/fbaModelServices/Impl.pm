@@ -1417,10 +1417,11 @@ sub _buildGapfillObject {
 	});
 	$gapform->fba($fba);
 	$gapform->parent($self->_KBaseStore());
-	foreach my $reaction (@{$formulation->{targeted_reactions}}) {
-		my $rxnObj = $model->template()->biochemistry()->searchForReaction($reaction);
+	foreach my $reaction (@{$formulation->{target_reactions}}) {
+		#my $rxnObj = $model->template()->biochemistry()->searchForReaction($reaction);
+		my $rxnObj = $model->searchForReaction($reaction);
 		if (defined($rxnObj)) {
-			$gapform->addLinkArrayItem("targetedreactions",$rxnObj);
+		$gapform->addLinkArrayItem("targetedreactions",$rxnObj);
 		}
 	}
 	foreach my $reaction (@{$formulation->{gauranteedrxns}}) {

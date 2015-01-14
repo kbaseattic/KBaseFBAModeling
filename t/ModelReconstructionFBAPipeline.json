@@ -16,5 +16,5 @@
 ["import_phenotypes","MetabolicModelingTest",["TestPhenotypeSet"]],
 ["add_media_transporters","MetabolicModelingTest",["TestModelGFIntRemRxnAddTransport"]],
 ["simulate_phenotypes","MetabolicModelingTest",["TestPhenotypeSetSimulation"]],
-["export_phenotypeSimulationSet","MetabolicModelingTest",[null]],
+["export_phenotypeSimulationSet","MetabolicModelingTest",[null]]
 ]
