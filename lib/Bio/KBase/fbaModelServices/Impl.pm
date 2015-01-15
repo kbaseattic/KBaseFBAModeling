@@ -2574,7 +2574,7 @@ sub _annotate_genome {
 	});
 	my $gaserv = $self->_gaserv();
 	my $genomeTO = $genome->genome_typed_object();
-	if( $genomeTO->{domain} eq "Plant" || $genome->taxonomy() =~ /viridiplantae/i ){
+	if( $genomeTO->{domain} eq "Plant" || $genome->{taxonomy} =~ /viridiplantae/i ){
 	    $genomeTO = $gaserv->annotate_proteins_kmer_v1($genomeTO,{dataset_name=>"Release70",kmer_size=>8});
 	} elsif (($parameters->{call_genes} == 1 || @{$genomeTO->{features}} == 0) && @{$genomeTO->{contigs}} > 0) {
 		$genomeTO = $gaserv->annotate_genome($genomeTO);
@@ -2605,7 +2605,7 @@ sub _annotate_genome {
 				co_occurring_fids => [],
 			});
 		} else {
-		    if($genomeTO->{domain} eq "Plant" || $genome->taxonomy() =~ /viridiplantae/i){
+		    if($genomeTO->{domain} eq "Plant" || $genome->{taxonomy} =~ /viridiplantae/i){
 			if (defined($gene->{function})) {
 			    $feature->function($gene->{function});
 			}
