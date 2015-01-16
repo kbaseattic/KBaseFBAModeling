@@ -2769,18 +2769,19 @@ sub _parse_SBML {
     my $cmpts = [$doc->getElementsByTagName("compartment")];
     my $cmptrans;
     my $nonexactcmptrans = {
-    	xtra => "e",
-    	wall => "w",
-    	peri => "p",
-    	cyto => "c",
-    	retic => "r",
-    	lys => "l",
-    	nucl => "n",
+    	xtra   => "e",
+    	wall   => "w",
+    	peri   => "p",
+    	cyto   => "c",
+    	retic  => "r",
+    	lys    => "l",
+    	nucl   => "n",
     	cholor => "h",
-    	mito => "m",
-    	perox => "x",
-    	vacu => "v",
-    	plast => "d"
+    	mito   => "m",
+    	perox  => "x",
+    	vacu   => "v",
+    	plast  => "d",
+	olgi   => "g"
     };
     foreach my $cmpt (@$cmpts){
     	my $cmp_SEED_id;
