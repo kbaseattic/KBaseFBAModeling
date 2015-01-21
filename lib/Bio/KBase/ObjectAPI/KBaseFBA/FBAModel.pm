@@ -264,6 +264,17 @@ sub addReactionToModel {
 			});
 		}
 		$mdlrxn->setGPRFromArray({"gpr" => [[$args->{gpr}]]});
+	} else {
+		if ($mdlrxn->equationCode() ne $mdlrxn->reaction()->equationCode()) {
+			if ($args->{direction} eq ">") {
+				$args->{direction} = "<";
+			} elsif ($args->{direction} eq "<") {
+				$args->{direction} = ">";
+			}
+		}
+		if ($mdlrxn->direction() ne $args->{direction}) {
+			$mdlrxn->direction("=");
+		}
 	}
 	return $mdlrxn;
 }
