@@ -7,7 +7,6 @@ use Getopt::Long::Descriptive;
 use Text::Table;
 use Bio::KBase::Auth;
 use Bio::KBase::fbaModelServices::Client;
-use Bio::KBase::workspaceService::Client;
 use Bio::KBase::fbaModelServices::ClientConfig;
 use Bio::KBase::workspace::ScriptHelpers qw(workspaceURL get_ws_client workspace parseObjectMeta parseWorkspaceMeta);
 use Exporter;
@@ -245,11 +244,7 @@ sub oldwsurl {
 }
 
 sub get_old_ws_client {
-	my $url = shift;
-	if (!defined($url)) {
-		$url = oldwsurl();
-	}
-	return Bio::KBase::workspaceService::Client->new($url);
+	return undef;
 }
 
 sub get_fba_client {
