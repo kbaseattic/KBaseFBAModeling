@@ -574,7 +574,7 @@ module KBaseFBA {
 		@metadata ws length(additionalCpd_refs) as Number additional compounds
 		@metadata ws length(FBAConstraints) as Number constraints
 		@metadata ws length(FBAReactionBounds) as Number reaction bounds
-		@metadata ws length(FBACompoundBound) as Number compound bounds
+		@metadata ws length(FBACompoundBounds) as Number compound bounds
 		@metadata ws length(FBACompoundVariables) as Number compound variables
 		@metadata ws length(FBAReactionVariables) as Number reaction variables
 		
@@ -1075,4 +1075,22 @@ module KBaseFBA {
         list<WorkspaceGenomeClassPrediction> workspace_genomes; 
 		list<ExternalGenomeClassPrediction> external_genomes;
     } ClassifierResult;
+    
+	/*
+	This type represents an element of a FBAModelSet.
+	@optional metadata
+	*/
+	typedef structure {
+	  mapping<string, string> metadata;
+	  fbamodel_ref ref;
+	} FBAModelSetElement;
+
+	/*
+	A type describing a set of FBAModels, where each element of the set 
+	is an FBAModel object reference.
+	*/
+	typedef structure {
+	  string description;
+	  mapping<string, FBAModelSetElement> elements;
+	} FBAModelSet;
 };
