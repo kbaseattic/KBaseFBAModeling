@@ -19141,7 +19141,7 @@ sub metagenome_to_fbamodels
 	#Sorting OTUs by coverage, placing highest coverage OTU first
 	my $otus = $metaanno->otus();
 	my $sortedOtus = [sort { $b->ave_coverage() <=> $a->ave_coverage() } @{$otus}];
-	my $functions;
+	my $functionhash;
 	my $nummodels = 0;
 	for (my $i=0; $i < @{$sortedOtus}; $i++) {
 		my $otu = $sortedOtus->[$i];
@@ -19162,7 +19162,6 @@ sub metagenome_to_fbamodels
 			my $genome = $self->_buildGenomeFromFunctions($otu->id().".g.0",$mdlfunc,$otu->name());
 			my $genomeMeta = $self->_save_msobject($genome,"Genome",$params->{workspace},$genome->id(),{hidden=>1});
 			my $mdl = $self->_genome_to_model($genome,$genome->id().".fbamdl.0");
-			print $otu->name()."\t".$otu->ave_coverage()."\t".@{$otu->functions()}."\t".@{$mdl->modelreactions()}."\n";
 			#Saving OTU model if it's large enough
 			if (@{$mdl->modelreactions()} > $params->{min_reactions}) {
 				$nummodels++;
@@ -19191,44 +19190,46 @@ sub metagenome_to_fbamodels
 			for (my $j=0; $j < @{$otu->functions()}; $j++) {
 				my $func = $funcs->[$j];
 				if ($self->_assess_confidence($metaanno->confidence_type(),$params->{confidence_threshold},$func->confidence()) == 1) {
-					if (!defined($functions->{$func->functional_role()})) {
-						$functions->{$func->functional_role()} = {
+					if (!defined($functionhash->{$func->functional_role()})) {
+						$functionhash->{$func->functional_role()} = {
 							abundance => 0,
 							confidence => 0,
 							reference_genes => []
 						};
 					}
-					$functions->{$func->functional_role()}->{abundance} += $func->abundance();
-					$functions->{$func->functional_role()}->{confidence} += $func->abundance()*$func->confidence();
-					push(@{$functions->{$func->{functional_role}}->{reference_genes}},@{$func->reference_genes()});
+					$functionhash->{$func->functional_role()}->{abundance} += $func->abundance();
+					$functionhash->{$func->functional_role()}->{confidence} += $func->abundance()*$func->confidence();
+					push(@{$functionhash->{$func->{functional_role}}->{reference_genes}},@{$func->reference_genes()});
 				}
 			}
 		}
 	}
 	#Building ensemble model
 	my $mdlfunc = {};
-	foreach my $function (keys(%{$functions})) {
-		if ($self->_assess_confidence($metaanno->confidence_type(),$params->{confidence_threshold},$functions->{$function}->{confidence}) == 1) {
+	foreach my $function (keys(%{$functionhash})) {
+		if ($self->_assess_confidence($metaanno->confidence_type(),$params->{confidence_threshold},$functionhash->{$function}->{confidence}) == 1) {
 			if (!defined($mdlfunc->{$function})) {
 				$mdlfunc->{$function} = 0;
 			}
-			$mdlfunc->{$function} += $functions->{$function}->{abundance};
+			$mdlfunc->{$function} += $functionhash->{$function}->{abundance};
 		}
 	}
-	my $genome = $self->_buildGenomeFromFunctions($metaanno->id().".tail.0.g.0",$mdlfunc,$metaanno->id().".tail.0.g.0");
-	my $genomeMeta = $self->_save_msobject($genome,"Genome",$params->{workspace},$genome->id(),{hidden=>1});
-	my $mdl = $self->_genome_to_model($genome,$genome->id().".fbamdl.0");
-	my $modelid;
-	if (defined($params->{model_uids}->{tail})) {
-		$modelid = $params->{model_uids}->{tail};
+	if (keys(%{$mdlfunc}) > 0) {
+		my $genome = $self->_buildGenomeFromFunctions($metaanno->id().".tail.0.g.0",$mdlfunc,$metaanno->id().".tail.0.g.0");
+		my $genomeMeta = $self->_save_msobject($genome,"Genome",$params->{workspace},$genome->id(),{hidden=>1});
+		my $mdl = $self->_genome_to_model($genome,$genome->id().".fbamdl.0");
+		my $modelid;
+		if (defined($params->{model_uids}->{tail})) {
+			$modelid = $params->{model_uids}->{tail};
+		}
+		if (!defined($modelid)) {
+			$modelid = $mdl->id();
+		}
+		$mdl->name("tailmodel");
+		$mdl->source("KBase");
+		$mdl->source_id($mdl->id());
+		push(@{$outputs},$self->_save_msobject($mdl,"FBAModel",$params->{workspace},$modelid));
 	}
-	if (!defined($modelid)) {
-		$modelid = $mdl->id();
-	}
-	$mdl->name("tailmodel");
-	$mdl->source("KBase");
-	$mdl->source_id($mdl->id());
-	push(@{$outputs},$self->_save_msobject($mdl,"FBAModel",$params->{workspace},$modelid));
 	$self->_clearContext();
     #END metagenome_to_fbamodels
     my @_bad_returns;
