@@ -613,7 +613,7 @@ sub addModelReaction {
     	reference => undef
     }, @_);
     my $rootid = $args->{reaction};
-	if ($rootid =~ m/(.+)_([a-zA-Z])(\d)/) {
+	if ($rootid =~ m/(.+)_([a-zA-Z])(\d+)$/) {
 		$rootid = $1;
 		$args->{compartment} = $2;
     	$args->{compartmentIndex} = $3;
@@ -757,6 +757,9 @@ sub LoadExternalReactionEquation {
 	    		if ($cpd =~ m/^(.+)\[([a-z]\d*)\]$/) {
 	    			$cpd = $1;
 	    			$compartment = $2;	
+	    		}
+	    		if ($cpd =~m/(.+)_([a-z]\d+)$/) {
+	    			$cpd = $1;
 	    		}
 	    		if ($compartment =~ m/([a-z])(\d+)/) {
 	    			$index = $2;
@@ -922,14 +925,6 @@ sub printSBML {
         $cpy =~ s/[^a-zA-Z0-9_]/_/g;
         return $cpy;
     };
-    #clean names
-    my $stringToString = sub {
-		my ($name,$value) = @_;
-		$value =~ s/[\[\]\(\)\+]//g;
-		$value =~ s/[\s:,]/_/g;
-		$value =~ s/[\'\"]//g;
-		return $name.'="'.XML::LibXML::Document->new('1.0', 'UTF-8')->createTextNode($value)->toString .'"';
-    };
 	#Printing header to SBML file
 	my $ModelName = $idToSId->($self->id());
 	my $output;
@@ -954,22 +949,22 @@ sub printSBML {
 	push(@{$output},'<listOfCompartments>');
 	for (my $i=0; $i < @{$self->modelcompartments()}; $i++) {
 		my $cmp = $self->modelcompartments()->[$i];
-    	push(@{$output},'<compartment '.$stringToString->("id",$cmp->id()).' '.$stringToString->("name",$cmp->label()).' />');
+    	push(@{$output},'<compartment '.$self->CleanNames("id",$cmp->id()).' '.$self->CleanNames("name",$cmp->label()).' />');
     }
 	push(@{$output},'</listOfCompartments>');
 	#Printing the list of metabolites involved in the model
 	push(@{$output},'<listOfSpecies>');
 	for (my $i=0; $i < @{$self->modelcompounds()}; $i++) {
 		my $cpd = $self->modelcompounds()->[$i];
-		push(@{$output},'<species '.$stringToString->("id",$cpd->id()).' '.$stringToString->("name",$cpd->name()).' '.$stringToString->("compartment",$cpd->modelCompartmentLabel()).' '.$stringToString->("charge",$cpd->charge()).' boundaryCondition="false"/>');
+		push(@{$output},'<species '.$self->CleanNames("id",$cpd->id()).' '.$self->CleanNames("name",$cpd->name()).' compartment="'.$cpd->modelCompartmentLabel().'" charge="'.$cpd->charge().'" boundaryCondition="false"/>');
 		if ($cpd->compound()->id() eq "cpd11416" || $cpd->compound()->id() eq "cpd15302" || $cpd->compound()->id() eq "cpd08636") {
-			push(@{$output},'<species '.$stringToString->("id",$cpd->compound()->id()."_b").' '.$stringToString->("name",$cpd->compound()->name()."_b").' '.$stringToString->("compartment",$cpd->modelCompartmentLabel()).' '.$stringToString->("charge",$cpd->charge()).' boundaryCondition="true"/>');
+			push(@{$output},'<species '.$self->CleanNames("id",$cpd->compound()->id()."_b").' '.$self->CleanNames("name",$cpd->compound()->name()."_b").' compartment="'.$cpd->modelCompartmentLabel().'" charge="'.$cpd->charge().'" boundaryCondition="true"/>');
 		}
 	}
 	for (my $i=0; $i < @{$self->modelcompounds()}; $i++) {
 		my $cpd = $self->modelcompounds()->[$i];
 		if ($cpd->modelCompartmentLabel() =~ m/^e/) {
-			push(@{$output},'<species '.$stringToString->("id",$cpd->compound()->id()."_b").' '.$stringToString->("name",$cpd->compound()->name()."_b").' '.$stringToString->("compartment",$cpd->modelCompartmentLabel()).' '.$stringToString->("charge",$cpd->charge()).' boundaryCondition="true"/>');
+			push(@{$output},'<species '.$self->CleanNames("id",$cpd->compound()->id()."_b").' '.$self->CleanNames("name",$cpd->compound()->name()."_b").' compartment="'.$cpd->modelCompartmentLabel().'" charge="'.$cpd->charge().'" boundaryCondition="true"/>');
 		}
 	}
 	push(@{$output},'</listOfSpecies>');
@@ -983,7 +978,7 @@ sub printSBML {
 			$lb = 0;
 			$reversibility = "false";
 		}
-		push(@{$output},'<reaction '.$stringToString->("id",$rxn->id()).' '.$stringToString->("name",$rxn->name()).' '.$stringToString->("reversible",$reversibility).'>');
+		push(@{$output},'<reaction '.$self->CleanNames("id",$rxn->id()).' '.$self->CleanNames("name",$rxn->name()).' '.$self->CleanNames("reversible",$reversibility).'>');
 		push(@{$output},"<notes>");
 		my $ec = $rxn->reaction->getAlias("Enzyme Class");
 		my $keggID = $rxn->reaction->getAlias("KEGG");
@@ -1006,20 +1001,20 @@ sub printSBML {
 		if ($rxn->direction() eq "<") {
 			$sign = -1;
 		}
-		for (my $i=0; $i < @{$rgts}; $i++) {
-			my $rgt = $rgts->[$i];
+		for (my $j=0; $j < @{$rgts}; $j++) {
+			my $rgt = $rgts->[$j];
 			if ($sign*$rgt->coefficient() < 0) {
 				if ($firstreact == 1) {
 					$firstreact = 0;
 					push(@{$output},"<listOfReactants>");
 				}
-				push(@{$output},'<speciesReference '.$stringToString->("species",$rgt->modelcompound()->id()).' '.$stringToString->("stoichiometry",(-1*$sign*$rgt->coefficient())).'/>');	
+				push(@{$output},'<speciesReference '.$self->CleanNames("species",$rgt->modelcompound()->id()).' '.$self->CleanNames("stoichiometry",(-1*$sign*$rgt->coefficient())).'/>');	
 			} else {
 				if ($firstprod == 1) {
 					$firstprod = 0;
 					push(@{$prodoutput},"<listOfProducts>");
 				}
-				push(@{$prodoutput},'<speciesReference '.$stringToString->("species",$rgt->modelcompound()->id()).' '.$stringToString->("stoichiometry",$sign*$rgt->coefficient()).'/>');
+				push(@{$prodoutput},'<speciesReference '.$self->CleanNames("species",$rgt->modelcompound()->id()).' '.$self->CleanNames("stoichiometry",$sign*$rgt->coefficient()).'/>');
 			}
 		}
 		if ($firstreact != 1) {
@@ -1050,7 +1045,7 @@ sub printSBML {
 			$obj = 1;
 		}
 		my $reversibility = "false";
-		push(@{$output},'<reaction '.$stringToString->("id","biomass".$i).' '.$stringToString->("name",$rxn->name()).' '.$stringToString->("reversible",$reversibility).'>');
+		push(@{$output},'<reaction '.$self->CleanNames("id","biomass".$i).' '.$self->CleanNames("name",$rxn->name()).' '.$self->CleanNames("reversible",$reversibility).'>');
 		push(@{$output},"<notes>");
 		push(@{$output},"<html:p>GENE_ASSOCIATION: </html:p>");
 		push(@{$output},"<html:p>PROTEIN_ASSOCIATION: </html:p>");
@@ -1061,20 +1056,20 @@ sub printSBML {
 		my $firstprod = 1;
 		my $prodoutput = [];
 		my $biocpds = $rxn->biomasscompounds();
-		for (my $i=0; $i < @{$biocpds}; $i++) {
-			my $rgt = $biocpds->[$i];
+		for (my $j=0; $j < @{$biocpds}; $j++) {
+			my $rgt = $biocpds->[$j];
 			if ($rgt->coefficient() < 0) {
 				if ($firstreact == 1) {
 					$firstreact = 0;
 					push(@{$output},"<listOfReactants>");
 				}
-				push(@{$output},'<speciesReference '.$stringToString->("species",$rgt->modelcompound()->id()).' '.$stringToString->("stoichiometry",-1*$rgt->coefficient()).'/>');	
+				push(@{$output},'<speciesReference '.$self->CleanNames("species",$rgt->modelcompound()->id()).' '.$self->CleanNames("stoichiometry",-1*$rgt->coefficient()).'/>');	
 			} else {
 				if ($firstprod == 1) {
 					$firstprod = 0;
 					push(@{$prodoutput},"<listOfProducts>");
 				}
-				push(@{$prodoutput},'<speciesReference '.$stringToString->("species",$rgt->modelcompound()->id()).' '.$stringToString->("stoichiometry",$rgt->coefficient()).'/>');
+				push(@{$prodoutput},'<speciesReference '.$self->CleanNames("species",$rgt->modelcompound()->id()).' '.$self->CleanNames("stoichiometry",$rgt->coefficient()).'/>');
 			}
 		}
 		if ($firstreact != 1) {
@@ -1103,17 +1098,17 @@ sub printSBML {
 		my $lb = -1000;
 		my $ub = 1000;
 		if ($cpd->modelCompartmentLabel() =~ m/^e/ || $cpd->compound()->id() eq "cpd08636" || $cpd->compound()->id() eq "cpd11416" || $cpd->compound()->id() eq "cpd15302") {
-			push(@{$output},'<reaction '.$stringToString->("id",'EX_'.$cpd->id()).' '.$stringToString->("name",'EX_'.$cpd->name()).' reversible="true">');
+			push(@{$output},'<reaction '.$self->CleanNames("id",'EX_'.$cpd->id()).' '.$self->CleanNames("name",'EX_'.$cpd->name()).' reversible="true">');
 			push(@{$output},"\t".'<notes>');
 			push(@{$output},"\t\t".'<html:p>GENE_ASSOCIATION: </html:p>');
 			push(@{$output},"\t\t".'<html:p>PROTEIN_ASSOCIATION: </html:p>');
 			push(@{$output},"\t\t".'<html:p>PROTEIN_CLASS: </html:p>');
 			push(@{$output},"\t".'</notes>');
 			push(@{$output},"\t".'<listOfReactants>');
-			push(@{$output},"\t\t".'<speciesReference '.$stringToString->("species",$cpd->id()).' stoichiometry="1.000000"/>');
+			push(@{$output},"\t\t".'<speciesReference '.$self->CleanNames("species",$cpd->id()).' stoichiometry="1.000000"/>');
 			push(@{$output},"\t".'</listOfReactants>');
 			push(@{$output},"\t".'<listOfProducts>');
-			push(@{$output},"\t\t".'<speciesReference '.$stringToString->("species",$cpd->compound()->id()."_b").' stoichiometry="1.000000"/>');
+			push(@{$output},"\t\t".'<speciesReference '.$self->CleanNames("species",$cpd->compound()->id()."_b").' stoichiometry="1.000000"/>');
 			push(@{$output},"\t".'</listOfProducts>');
 			push(@{$output},"\t".'<kineticLaw>');
 			push(@{$output},"\t\t".'<math xmlns="http://www.w3.org/1998/Math/MathML">');
@@ -1134,6 +1129,14 @@ sub printSBML {
 	push(@{$output},'</model>');
 	push(@{$output},'</sbml>');
 	return join("\n",@{$output});
+}
+
+sub CleanNames {
+		my ($self,$name,$value) = @_;
+		$value =~ s/[\[\]\(\)\+]//g;
+		$value =~ s/[\s:,]/_/g;
+		$value =~ s/[\'\"]//g;
+		return $name.'="'.$value.'"';
 }
 
 =head3 printGenes

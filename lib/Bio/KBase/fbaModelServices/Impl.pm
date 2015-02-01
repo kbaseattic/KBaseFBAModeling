@@ -2795,6 +2795,9 @@ sub _parse_SBML {
     			$cmpname = $value;
     		}
     	}
+    	if ($cmpid =~ m/([a-zA-Z]+)\d+/) {
+    		$cmpid = $1;
+    	}
     	my $cmp = $bio->searchForCompartment($cmpid);
     	if (defined($cmp)) {
     		$cmp_SEED_id = $cmp->id();
@@ -7555,6 +7558,9 @@ sub import_fbamodel
     }
     for (my $i=0; $i < @{$input->{reactions}}; $i++) {
     	my $rxn = $input->{reactions}->[$i];
+    	if ($rxn->[0] =~ m/(.+)_[a-z]\d+$/) {
+    		$rxn->[0] = $1;
+    	}
     	$rxn->[0] =~ s/[^\w]/_/g;
     	$rxn->[0] =~ s/_/-/g;
     	if (defined($rxn->[8])) {
