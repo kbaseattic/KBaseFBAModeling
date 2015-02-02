@@ -19137,6 +19137,7 @@ sub metagenome_to_fbamodels
 		min_reactions => 100,
 		templates => {}
 	});
+	my $mapping = $self->_get_msobject("Mapping","kbase","default-mapping");
 	my $metaanno = $self->_get_msobject("MetagenomeAnnotation",$params->{metaanno_ws},$params->{metaanno_uid});
 	#Sorting OTUs by coverage, placing highest coverage OTU first
 	my $otus = $metaanno->otus();
@@ -19146,17 +19147,20 @@ sub metagenome_to_fbamodels
 	for (my $i=0; $i < @{$sortedOtus}; $i++) {
 		my $otu = $sortedOtus->[$i];
 		my $built = 0;
+		my $mdlfunc = {};
 		#Building OTU model if appropriate
 		if ($otu->name() ne "tail" && $nummodels < $params->{max_otu_models} && $otu->ave_coverage() >= $params->{min_abundance}) {
-			my $mdlfunc = {};
 			my $functions = $otu->functions();
 			for (my $j=0; $j < @{$functions}; $j++) {
 				my $func = $functions->[$j];
 				if ($self->_assess_confidence($metaanno->confidence_type(),$params->{confidence_threshold},$func->confidence()) == 1) {
-					if (!defined($mdlfunc->{$func->functional_role()})) {
-						$mdlfunc->{$func->functional_role()} = 0;
+					my $searchname = Bio::KBase::ObjectAPI::utilities::convertRoleToSearchRole($func->functional_role());
+					if (defined($mapping->queryObject("roles",{searchname => $searchname}))) {
+						if (!defined($mdlfunc->{$func->functional_role()})) {
+							$mdlfunc->{$func->functional_role()} = 0;
+						}
+						$mdlfunc->{$func->functional_role()} += $func->abundance();
 					}
-					$mdlfunc->{$func->functional_role()} += $func->abundance();
 				}
 			}
 			my $genome = $self->_buildGenomeFromFunctions($otu->id().".g.0",$mdlfunc,$otu->name());
@@ -19186,36 +19190,17 @@ sub metagenome_to_fbamodels
 		}
 		#Adding OTU functions to functions in tail
 		if ($built == 0) {
-			my $funcs = $otu->functions();
-			for (my $j=0; $j < @{$otu->functions()}; $j++) {
-				my $func = $funcs->[$j];
-				if ($self->_assess_confidence($metaanno->confidence_type(),$params->{confidence_threshold},$func->confidence()) == 1) {
-					if (!defined($functionhash->{$func->functional_role()})) {
-						$functionhash->{$func->functional_role()} = {
-							abundance => 0,
-							confidence => 0,
-							reference_genes => []
-						};
-					}
-					$functionhash->{$func->functional_role()}->{abundance} += $func->abundance();
-					$functionhash->{$func->functional_role()}->{confidence} += $func->abundance()*$func->confidence();
-					push(@{$functionhash->{$func->{functional_role}}->{reference_genes}},@{$func->reference_genes()});
+			foreach my $func (keys(%{$mdlfunc})) {
+				if (!defined($functionhash->{$func})) {
+					$functionhash->{$func} = 0;
 				}
+				$functionhash->{$func} += $mdlfunc->{$func};
 			}
 		}
 	}
 	#Building ensemble model
-	my $mdlfunc = {};
-	foreach my $function (keys(%{$functionhash})) {
-		if ($self->_assess_confidence($metaanno->confidence_type(),$params->{confidence_threshold},$functionhash->{$function}->{confidence}) == 1) {
-			if (!defined($mdlfunc->{$function})) {
-				$mdlfunc->{$function} = 0;
-			}
-			$mdlfunc->{$function} += $functionhash->{$function}->{abundance};
-		}
-	}
-	if (keys(%{$mdlfunc}) > 0) {
-		my $genome = $self->_buildGenomeFromFunctions($metaanno->id().".tail.0.g.0",$mdlfunc,$metaanno->id().".tail.0.g.0");
+	if (keys(%{$functionhash}) > 0) {
+		my $genome = $self->_buildGenomeFromFunctions($metaanno->id().".tail.0.g.0",$functionhash,$metaanno->id().".tail.0.g.0");
 		my $genomeMeta = $self->_save_msobject($genome,"Genome",$params->{workspace},$genome->id(),{hidden=>1});
 		my $mdl = $self->_genome_to_model($genome,$genome->id().".fbamdl.0");
 		my $modelid;
