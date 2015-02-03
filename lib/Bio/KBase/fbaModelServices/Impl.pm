@@ -8958,10 +8958,10 @@ sub runfba
 		alarm 0;
 	};
 	if ($@) {
-		$self->_error($@);
+		$self->_error($@." See ".$fba->jobnode());
     }
     if (!defined($objective)) {
-    	$self->_error("FBA failed with no solution returned!");
+    	$self->_error("FBA failed with no solution returned! See ".$fba->jobnode());
     }
 	$fbaMeta = $self->_save_msobject($fba,"FBA",$input->{workspace},$input->{fba});
     $fbaMeta->[10]->{Media} = $input->{formulation}->{media_workspace}."/".$input->{formulation}->{media};
@@ -11301,7 +11301,7 @@ sub gapfill_model
 	$fba->runFBA();
 	#Error checking the FBA and gapfilling solution
 	if (!defined($fba->outputfiles()->{"CompleteGapfillingOutput.txt"}->[1] ) ) {
-		$self->_error("Gapfilling failed to produce an output file. Check gapfilling infrastructure!");
+		$self->_error("Gapfilling failed to produce an output file. Check gapfilling infrastructure! See ".$fba->jobnode());
 	}
 	my $gfoutput = $fba->outputfiles()->{"CompleteGapfillingOutput.txt"};
 	for (my $i=0; $i < @{$gfoutput}; $i++) {
@@ -11314,14 +11314,15 @@ sub gapfill_model
 			} else {
 				$msg = "Gapfilling failed in preliminary feasibility determination.";
 			}
+			$msg .= "See ".$fba->jobnode();
 			$self->_error($msg);
 		} elsif ($line =~ /FAILED/ && $line =~ /bio\d+/) {
-			$self->_error("Gapfilling failed with no solutions!");
+			$self->_error("Gapfilling failed with no solutions! See ".$fba->jobnode());
 		}
 	}
 	$gapfill->parseGapfillingResults($fba);
 	if (!defined($gapfill->gapfillingSolutions()->[0])) {
-		$self->_error("Gapfilling completed, but no valid solutions found!");
+		$self->_error("Gapfilling completed, but no valid solutions found! See ".$fba->jobnode());
 	}
 	my $meta = $self->_save_msobject($fba,"FBA",$input->{workspace},$fba->id(),{hidden => 1});
 	$gapfill->fba_ref($fba->_reference());
