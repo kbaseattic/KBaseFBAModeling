@@ -1,11 +1,12 @@
 ########################################################################
-# Bio::KBase::ObjectAPI::KBaseFBA::DB::ModelGapgen - This is the moose object corresponding to the KBaseFBA.ModelGapgen object
+# Bio::KBase::ObjectAPI::KBaseFBA::DB::ModelQuantOpt - This is the moose object corresponding to the KBaseFBA.ModelQuantOpt object
 # Authors: Christopher Henry, Scott Devoid, Paul Frybarger
 # Contact email: chenry@mcs.anl.gov
 # Development location: Mathematics and Computer Science Division, Argonne National Lab
 ########################################################################
-package Bio::KBase::ObjectAPI::KBaseFBA::DB::ModelGapgen;
+package Bio::KBase::ObjectAPI::KBaseFBA::DB::ModelQuantOpt;
 use Bio::KBase::ObjectAPI::BaseObject;
+use Bio::KBase::ObjectAPI::KBaseFBA::QuantOptSolution;
 use Moose;
 use namespace::autoclean;
 extends 'Bio::KBase::ObjectAPI::BaseObject';
@@ -17,31 +18,27 @@ has parent => (is => 'rw', isa => 'Ref', weak_ref => 1, type => 'parent', metacl
 has uuid => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_uuid');
 has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_reference');
 has media_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has gapgen_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has integrated => (is => 'rw', isa => 'Bool', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has jobnode => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has integrated_solution => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has gapgen_id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
-has id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
+has integrated_solution => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has id => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has fba_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+
+
+# SUBOBJECTS:
+has solutions => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(QuantOptSolution)', metaclass => 'Typed', reader => '_solutions', printOrder => '-1');
 
 
 # LINKS:
 has media => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,Media,media_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_media', clearer => 'clear_media', isa => 'Bio::KBase::ObjectAPI::KBaseBiochem::Media', weak_ref => 1);
-has gapgen => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,Gapgeneration,gapgen_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_gapgen', clearer => 'clear_gapgen', isa => 'Bio::KBase::ObjectAPI::KBaseFBA::Gapgeneration', weak_ref => 1);
 has fba => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,FBA,fba_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_fba', clearer => 'clear_fba', isa => 'Bio::KBase::ObjectAPI::KBaseFBA::FBA', weak_ref => 1);
 
 
 # BUILDERS:
-sub _build_reference { my ($self) = @_;return $self->parent()->_reference().'/gapgens/id/'.$self->id(); }
+sub _build_reference { my ($self) = @_;return $self->parent()->_reference().'/quantopts/id/'.$self->id(); }
 sub _build_uuid { my ($self) = @_;return $self->_reference(); }
 sub _build_media {
 	 my ($self) = @_;
 	 return $self->getLinkedObject($self->media_ref());
-}
-sub _build_gapgen {
-	 my ($self) = @_;
-	 return $self->getLinkedObject($self->gapgen_ref());
 }
 sub _build_fba {
 	 my ($self) = @_;
@@ -50,9 +47,9 @@ sub _build_fba {
 
 
 # CONSTANTS:
-sub _type { return 'KBaseFBA.ModelGapgen'; }
+sub _type { return 'KBaseFBA.ModelQuantOpt'; }
 sub _module { return 'KBaseFBA'; }
-sub _class { return 'ModelGapgen'; }
+sub _class { return 'ModelQuantOpt'; }
 sub _top { return 0; }
 
 my $attributes = [
@@ -66,13 +63,6 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'gapgen_ref',
-            'type' => 'Str',
-            'perm' => 'rw'
-          },
-          {
-            'req' => 0,
-            'printOrder' => -1,
             'name' => 'integrated',
             'type' => 'Bool',
             'perm' => 'rw'
@@ -80,27 +70,13 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'jobnode',
-            'type' => 'Str',
+            'name' => 'integrated_solution',
+            'type' => 'Int',
             'perm' => 'rw'
           },
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'integrated_solution',
-            'type' => 'Str',
-            'perm' => 'rw'
-          },
-          {
-            'req' => 1,
-            'printOrder' => 0,
-            'name' => 'gapgen_id',
-            'type' => 'Str',
-            'perm' => 'rw'
-          },
-          {
-            'req' => 1,
-            'printOrder' => 0,
             'name' => 'id',
             'type' => 'Str',
             'perm' => 'rw'
@@ -114,7 +90,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {media_ref => 0, gapgen_ref => 1, integrated => 2, jobnode => 3, integrated_solution => 4, gapgen_id => 5, id => 6, fba_ref => 7};
+my $attribute_map = {media_ref => 0, integrated => 1, integrated_solution => 2, id => 3, fba_ref => 4};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -140,15 +116,6 @@ my $links = [
             'module' => 'KBaseBiochem'
           },
           {
-            'attribute' => 'gapgen_ref',
-            'parent' => 'Bio::KBase::ObjectAPI::KBaseStore',
-            'clearer' => 'clear_gapgen',
-            'name' => 'gapgen',
-            'method' => 'Gapgeneration',
-            'class' => 'Bio::KBase::ObjectAPI::KBaseFBA::Gapgeneration',
-            'module' => 'KBaseFBA'
-          },
-          {
             'attribute' => 'fba_ref',
             'parent' => 'Bio::KBase::ObjectAPI::KBaseStore',
             'clearer' => 'clear_fba',
@@ -159,7 +126,7 @@ my $links = [
           }
         ];
 
-my $link_map = {media => 0, gapgen => 1, fba => 2};
+my $link_map = {media => 0, fba => 1};
 sub _links {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -174,9 +141,17 @@ sub _links {
 	 }
 }
 
-my $subobjects = [];
+my $subobjects = [
+          {
+            'printOrder' => -1,
+            'name' => 'solutions',
+            'type' => 'child',
+            'class' => 'QuantOptSolution',
+            'module' => 'KBaseFBA'
+          }
+        ];
 
-my $subobject_map = {};
+my $subobject_map = {solutions => 0};
 sub _subobjects {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -190,5 +165,12 @@ sub _subobjects {
 	 	 return $subobjects;
 	 }
 }
+# SUBOBJECT READERS:
+around 'solutions' => sub {
+	 my ($orig, $self) = @_;
+	 return $self->_build_all_objects('solutions');
+};
+
+
 __PACKAGE__->meta->make_immutable;
 1;

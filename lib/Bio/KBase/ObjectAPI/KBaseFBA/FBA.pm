@@ -42,7 +42,7 @@ sub _buildjobid {
 		if (!-d $fulldir) {
 			File::Path::mkpath ($fulldir);
 		}
-		$jobid = substr($fulldir,length($path."/"));
+		$jobid = substr($fulldir,length($path));
 	}
 	return $jobid
 }
@@ -300,10 +300,17 @@ sub runFBA {
 	system($self->command());
 	$self->loadMFAToolkitResults();
 	if (defined(Bio::KBase::ObjectAPI::utilities::FinalJobCache())) {
-		if (!-d Bio::KBase::ObjectAPI::utilities::FinalJobCache()) {
-			File::Path::mkpath (Bio::KBase::ObjectAPI::utilities::FinalJobCache());
+		if (Bio::KBase::ObjectAPI::utilities::FinalJobCache() eq "SHOCK") {
+			system("cd ".$self->jobPath().";tar -czf ".$self->jobPath().$self->jobID().".tgz ".$self->jobID());
+			my $node = Bio::KBase::ObjectAPI::utilities::LoadToShock($self->jobPath().$self->jobID().".tgz");
+			unlink($self->jobPath().$self->jobID().".tgz");
+			$self->jobnode($node);
+		} else {
+			if (!-d Bio::KBase::ObjectAPI::utilities::FinalJobCache()) {
+				File::Path::mkpath (Bio::KBase::ObjectAPI::utilities::FinalJobCache());
+			}
+			system("cd ".$self->jobPath().";tar -czf ".Bio::KBase::ObjectAPI::utilities::FinalJobCache()."/".$self->jobID().".tgz ".$self->jobID());
 		}
-		system("cd ".$self->jobPath().";tar -czf ".Bio::KBase::ObjectAPI::utilities::FinalJobCache()."/".$self->jobID().".tgz ".$self->jobID());
 	}
 	if ($self->jobDirectory() =~ m/\/fbajobs\/.+/) {
 		if (!defined($self->parameters()->{nodelete}) || $self->parameters()->{nodelete} == 0) {

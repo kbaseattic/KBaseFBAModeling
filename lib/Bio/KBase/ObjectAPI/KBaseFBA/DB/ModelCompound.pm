@@ -18,9 +18,10 @@ has uuid => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass =>
 has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_reference');
 has compound_ref => (is => 'rw', isa => 'Str', printOrder => '6', required => 1, type => 'attribute', metaclass => 'Typed');
 has name => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has maxuptake => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has modelcompartment_ref => (is => 'rw', isa => 'Str', printOrder => '5', required => 1, type => 'attribute', metaclass => 'Typed');
-has charge => (is => 'rw', isa => 'Num', printOrder => '3', type => 'attribute', metaclass => 'Typed');
 has formula => (is => 'rw', isa => 'Str', printOrder => '4', default => '', type => 'attribute', metaclass => 'Typed');
+has charge => (is => 'rw', isa => 'Num', printOrder => '3', type => 'attribute', metaclass => 'Typed');
 has aliases => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
 has id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 
@@ -67,6 +68,13 @@ my $attributes = [
             'perm' => 'rw'
           },
           {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'maxuptake',
+            'type' => 'Num',
+            'perm' => 'rw'
+          },
+          {
             'req' => 1,
             'printOrder' => 5,
             'name' => 'modelcompartment_ref',
@@ -77,19 +85,19 @@ my $attributes = [
           },
           {
             'req' => 0,
-            'printOrder' => 3,
-            'name' => 'charge',
-            'default' => undef,
-            'type' => 'Num',
+            'printOrder' => 4,
+            'name' => 'formula',
+            'default' => '',
+            'type' => 'Str',
             'description' => undef,
             'perm' => 'rw'
           },
           {
             'req' => 0,
-            'printOrder' => 4,
-            'name' => 'formula',
-            'default' => '',
-            'type' => 'Str',
+            'printOrder' => 3,
+            'name' => 'charge',
+            'default' => undef,
+            'type' => 'Num',
             'description' => undef,
             'perm' => 'rw'
           },
@@ -110,7 +118,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {compound_ref => 0, name => 1, modelcompartment_ref => 2, charge => 3, formula => 4, aliases => 5, id => 6};
+my $attribute_map = {compound_ref => 0, name => 1, maxuptake => 2, modelcompartment_ref => 3, formula => 4, charge => 5, aliases => 6, id => 7};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {

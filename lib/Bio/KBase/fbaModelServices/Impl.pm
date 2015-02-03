@@ -303,6 +303,8 @@ sub _setContext {
 			}
 		}
 	}
+	Bio::KBase::ObjectAPI::utilities::token($self->_authentication());
+	Bio::KBase::ObjectAPI::utilities::shockurl($self->_shockurl());
 	return $params;
 }
 
@@ -3323,7 +3325,7 @@ sub new
     $self->{_defaultJobState} = "queued";
     $self->{_accounttype} = "kbase";
     $self->{'_awe-url'} = "http://140.221.85.54:7080";
-    $self->{'_shock-url'} = "http://140.221.85.54:7445";
+    $self->{'_shockurl'} = "http://140.221.85.54:7445";
     $self->{_jobqueue} = "workspace";
     $self->{'_fba-url'} = "";
     Bio::KBase::ObjectAPI::utilities::ID_SERVER_URL("http://kbase.us/services/idserver");
@@ -3421,7 +3423,7 @@ sub new
     		$self->{'_jobqueue'} = $params->{'jobqueue'};
     }
     if (defined $params->{'shock-url'}) {
-    		$self->{'_shock-url'} = $params->{'shock-url'};
+    		$self->{'_shockurl'} = $params->{'shock-url'};
     }
     if (defined $params->{'awe-url'}) {
     		$self->{'_awe-url'} = $params->{'awe-url'};
@@ -11333,7 +11335,8 @@ sub gapfill_model
 		gapfill_id => $gapfill->id(),
 		gapfill_ref => $gapfill->_reference(),
 		integrated => 0,
-		media_ref => $fba->media()->_reference()
+		media_ref => $fba->media()->_reference(),
+		jobnode => $fba->jobnode()
 	});
 	#If specified, we now integrate the first solution of the gapfilling into the model
 	if ($input->{integrate_solution} == 1) {

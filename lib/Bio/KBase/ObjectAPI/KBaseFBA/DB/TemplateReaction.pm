@@ -16,6 +16,7 @@ has parent => (is => 'rw', isa => 'Ref', weak_ref => 1, type => 'parent', metacl
 # ATTRIBUTES:
 has uuid => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_uuid');
 has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_reference');
+has GapfillDirection => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has reverse_penalty => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has compartment_ref => (is => 'rw', isa => 'Str', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
 has base_cost => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
@@ -23,8 +24,8 @@ has reaction_ref => (is => 'rw', isa => 'Str', printOrder => '-1', required => 1
 has complex_refs => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has direction => (is => 'rw', isa => 'Str', printOrder => '1', type => 'attribute', metaclass => 'Typed');
 has forward_penalty => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 has type => (is => 'rw', isa => 'Str', printOrder => '1', type => 'attribute', metaclass => 'Typed');
+has id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
@@ -57,6 +58,13 @@ sub _class { return 'TemplateReaction'; }
 sub _top { return 0; }
 
 my $attributes = [
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'GapfillDirection',
+            'type' => 'Str',
+            'perm' => 'rw'
+          },
           {
             'req' => 0,
             'printOrder' => -1,
@@ -115,13 +123,6 @@ my $attributes = [
             'perm' => 'rw'
           },
           {
-            'req' => 1,
-            'printOrder' => 0,
-            'name' => 'id',
-            'type' => 'Str',
-            'perm' => 'rw'
-          },
-          {
             'req' => 0,
             'printOrder' => 1,
             'name' => 'type',
@@ -129,10 +130,17 @@ my $attributes = [
             'type' => 'Str',
             'description' => undef,
             'perm' => 'rw'
+          },
+          {
+            'req' => 1,
+            'printOrder' => 0,
+            'name' => 'id',
+            'type' => 'Str',
+            'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {reverse_penalty => 0, compartment_ref => 1, base_cost => 2, reaction_ref => 3, complex_refs => 4, direction => 5, forward_penalty => 6, id => 7, type => 8};
+my $attribute_map = {GapfillDirection => 0, reverse_penalty => 1, compartment_ref => 2, base_cost => 3, reaction_ref => 4, complex_refs => 5, direction => 6, forward_penalty => 7, type => 8, id => 9};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
