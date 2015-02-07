@@ -1133,9 +1133,8 @@ sub printSBML {
 
 sub CleanNames {
 		my ($self,$name,$value) = @_;
-		$value =~ s/[\[\]\(\)\+]//g;
-		$value =~ s/[\s:,]/_/g;
-		$value =~ s/[\'\"]//g;
+		$value =~ s/[\s:,-]/_/g;
+		$value =~ s/\W//g;
 		return $name.'="'.$value.'"';
 }
 
