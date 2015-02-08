@@ -403,7 +403,7 @@ sub createJobDirectory {
 	my $exchangehash;
 	#Print model to Model.tbl
 	my $model = $self->fbamodel();
-	my $BioCpd = ["id	abbrev	charge	deltaG	deltaGErr	formula	mass	name"];
+	my $BioCpd = ["id	abbrev	charge	formula	mass	name"];
 	my $mdlcpd = $model->modelcompounds();
 	my $cpdhash = {};
 	for (my $i=0; $i < @{$mdlcpd}; $i++) {

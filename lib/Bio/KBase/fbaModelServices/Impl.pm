@@ -1149,7 +1149,7 @@ sub _buildFBAObject {
 		geneKO_refs => [],
 		reactionKO_refs => [],
 		additionalCpd_refs => [],
-		uptakeLimits => {},
+		uptakeLimits => $fbaFormulation->{uptakelim},
 		parameters => {},
 		inputfiles => {},
 		FBAConstraints => [],
