@@ -898,6 +898,8 @@ sub createJobDirectory {
 	}
 	#Setting parameters
 	my $parameters = {
+#		"write LP file" => 1,
+#		"write variable key" => 1,
 		"perform MFA" => 1,
 		"Default min drain flux" => $self->defaultMinDrainFlux(),
 		"Default max drain flux" => $self->defaultMaxDrainFlux(),
@@ -1944,6 +1946,25 @@ sub parseFluxFiles {
 								max => $upper,
 								class => "unknown"
 							});
+						} else {
+							my $biorxn = $self->fbamodel()->getObject("biomasses",$row->[$reactionColumn]);
+							if (defined($biorxn)) {
+								if (abs($value) < 0.00000001) {
+									$value = 0;
+								}
+								my $lower = 0;
+								my $upper = $self->defaultMaxFlux();
+								$self->add("FBABiomassVariables",{
+									biomass_ref => $biorxn->_reference(),
+									variableType => "biomassflux",
+									value => $value,
+									lowerBound => $lower,
+									upperBound => $upper,
+									min => $lower,
+									max => $upper,
+									class => "unknown"
+								});
+							}
 						}
 					}
 				}
