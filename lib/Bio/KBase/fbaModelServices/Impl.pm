@@ -8894,6 +8894,7 @@ sub runfba
 		notes => "",
 		model_workspace => $input->{workspace},
 		fba => undef,
+		custom_bounds => undef,
 		biomass => undef,
 		expsample => undef,
 		expsamplews => $input->{workspace},
@@ -8943,7 +8944,43 @@ sub runfba
 		if (defined($bio)) {
 			delete $fba->biomassflux_objterms()->{bio1};
 			$fba->biomassflux_objterms()->{$bio->id()} = 1;
-		}			
+		} else {
+			my $rxn = $model->searchForReaction($input->{biomass});
+			if (defined($rxn)) {
+				delete $fba->biomassflux_objterms()->{bio1};
+				$fba->reactionflux_objterms()->{$rxn->id()} = 1;
+			} else {
+				my $cpd = $model->searchForCompound($input->{biomass});
+				if (defined($cpd)) {
+					delete $fba->biomassflux_objterms()->{bio1};
+					$fba->compoundflux_objterms()->{$cpd->id()} = 1;
+				}
+			}
+		}
+	}
+	if (defined($input->{custom_bounds})) {
+		for (my $i=0; $i < @{$input->{custom_bounds}}; $i++) {
+			my $array = [split(/\</,$input->{custom_bounds}->[$i])];
+			my $rxn = $model->searchForReaction($array->[1]);
+			if (defined($rxn)) {
+				$fba->add("FBAReactionBounds",{
+					modelreaction_ref => $rxn->_reference(),
+					variableType => "flux",
+					upperBound => $array->[2]+0,
+					lowerBound => $array->[0]+0
+				});
+			} else {
+				my $cpd = $model->searchForCompound($array->[1]);
+				if (defined($cpd)) {
+					$fba->add("FBACompoundBounds",{
+						modelcompound_ref => $cpd->_reference(),
+						variableType => "drainflux",
+						upperBound => $array->[2]+0,
+						lowerBound => $array->[0]+0
+					});
+				}
+			}
+		}
 	}
 	if (defined($input->{formulation}->{eflux_sample}) && defined($input->{formulation}->{eflux_workspace})) {
 		my $scores = $self->_compute_eflux_scores($model,$input->{formulation}->{eflux_series}, $input->{formulation}->{eflux_sample}, $input->{formulation}->{eflux_workspace});
