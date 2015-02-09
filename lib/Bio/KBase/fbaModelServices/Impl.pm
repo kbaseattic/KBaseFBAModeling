@@ -8960,7 +8960,7 @@ sub runfba
 	}
 	if (defined($input->{custom_bounds})) {
 		for (my $i=0; $i < @{$input->{custom_bounds}}; $i++) {
-			my $array = [split(/\</,$input->{custom_bounds}->[$i])];
+			my $array = [split(/[\<;]/,$input->{custom_bounds}->[$i])];
 			my $rxn = $model->searchForReaction($array->[1]);
 			if (defined($rxn)) {
 				$fba->add("FBAReactionBounds",{
