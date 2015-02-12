@@ -586,12 +586,12 @@ sub ImportExternalEquation {
     		}
     	}	
     } else {
-    	print "Not found:".$self->id()."\n";
+#    	print "Not found:".$self->id()."\n";
     	my $array = [split(/_/,$self->id())];
     	my $rxn = $bio->searchForReaction($array->[0]);
     	if (defined($rxn)) {
-    		print $rxn->createEquation({format=>"id",protons=>0,direction=>0})."\n";
-    		print $self->createEquation({indecies => 0,format=>"id",hashed=>0,protons=>0,direction=>0})."\n";
+#    		print $rxn->createEquation({format=>"id",protons=>0,direction=>0})."\n";
+#    		print $self->createEquation({indecies => 0,format=>"id",hashed=>0,protons=>0,direction=>0})."\n";
     	}
     	$self->reaction_ref($bio->_reference()."/reactions/id/rxn00000");
     }
