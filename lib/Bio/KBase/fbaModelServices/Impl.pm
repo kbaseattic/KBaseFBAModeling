@@ -2584,7 +2584,7 @@ sub _genome_to_model {
     	$template = $self->_get_msobject("ModelTemplate",$params->{templatemodel_workspace},$params->{templatemodel});
     } elsif ($params->{coremodel} == 1) {
     	$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","CoreModelTemplate");
-    } elsif ($genome->domain() eq "Plant") {
+    } elsif ($genome->domain() eq "Plant" || $genome->taxonomy() =~ /viridiplantae/i ) {
     	$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","PlantModelTemplate");
 	} else {
 		my $class = $self->_classify_genome($genome);
@@ -2592,7 +2592,7 @@ sub _genome_to_model {
     		$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","GramPosModelTemplate");
     	} elsif ($class eq "Gram negative") {
     		$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","GramNegModelTemplate");
-    	} elsif ($class eq "Plant") {
+    	} elsif ($class eq "Plant" || $genome->taxonomy() =~ /viridiplantae/i ) {
     		$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","PlantModelTemplate");
     	}
     }
@@ -2624,7 +2624,7 @@ sub _annotate_genome {
 	});
 	my $gaserv = $self->_gaserv();
 	my $genomeTO = $genome->genome_typed_object();
-	if( $genomeTO->{domain} eq "Plant" ){
+	if( $genomeTO->{domain} eq "Plant" || $genomeTO->{taxonomy} =~ /viridiplantae/i  ){
 	    $genomeTO = $gaserv->annotate_proteins_kmer_v1($genomeTO,{dataset_name=>"Release70",kmer_size=>8});
 	} elsif (($parameters->{call_genes} == 1 || @{$genomeTO->{features}} == 0) && @{$genomeTO->{contigs}} > 0) {
 		$genomeTO = $gaserv->annotate_genome($genomeTO);
@@ -2655,7 +2655,7 @@ sub _annotate_genome {
 				co_occurring_fids => [],
 			});
 		} else {
-		    if($genomeTO->{domain} eq "Plant"){
+		    if($genomeTO->{domain} eq "Plant" || $genomeTO->{taxonomy} =~ /viridiplantae/i ){
 			if (defined($gene->{function})) {
 			    $feature->function($gene->{function});
 			}
@@ -7513,7 +7513,7 @@ sub import_fbamodel
     		$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","GramPosModelTemplate");
     	} elsif ($class eq "Gram negative") {
     		$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","GramNegModelTemplate");
-    	} elsif ($class eq "Plant") {
+    	} elsif ($class eq "Plant"  || $genome->taxonomy() =~ /viridiplantae/i ) {
     		$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","PlantModelTemplate");
     	}
     }
