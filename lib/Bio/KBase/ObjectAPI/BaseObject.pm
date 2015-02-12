@@ -287,6 +287,11 @@ sub serializeToDB {
 				foreach my $key (keys(%{$self->$name()})) {
 					$data->{$name}->{$key} = $self->$name()->{$key}+0;
 				}
+			} elsif ($name =~ m/uptakeLimits/) {
+				$data->{$name} = {};
+				foreach my $key (keys(%{$self->$name()})) {
+					$data->{$name}->{$key} = $self->$name()->{$key}+0;
+				}
 			} elsif ($name =~ m/minimize_reaction_costs/) {
 				$data->{$name} = {};
 				foreach my $key (keys(%{$self->$name()})) {
@@ -656,7 +661,7 @@ sub getLinkedObject {
     my ($self, $ref) = @_;
 	if ($ref =~ m/^~$/) {
 		return $self->topparent();
-	} elsif ($ref =~ m/^~\/(\w+)\/(\w+)\/([\w\.\|\-]+)$/) {
+	} elsif ($ref =~ m/^~\/(\w+)\/(\w+)\/([\w\.\|\-:]+)$/) {
 		return $self->topparent()->queryObject($1,{$2 => $3});
 	} elsif ($ref =~ m/^[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}$/) {
 		return $self->store()->getObjectByUUID($ref);
@@ -665,7 +670,7 @@ sub getLinkedObject {
 		return $self->store()->getObjectByUUID($1)->queryObject($2,{$3 => $4});
 	} elsif ($ref =~ m/^[:\w]+\/[\w\.\|\-]+\/[\w\.\|\-]+$/) {
     	return $self->store()->get_object($ref);
-    } elsif ($ref =~ m/^([:\w]+\/\w+\/\w+)\/(\w+)\/(\w+)\/([\w\.\|\-]+)$/) {
+    } elsif ($ref =~ m/^([:\w]+\/\w+\/\w+)\/(\w+)\/(\w+)\/([\w\.\|\-:]+)$/) {
     	return $self->store()->get_object($1)->queryObject($2,{$3 => $4});
     } elsif ($ref =~ m/^[:\w]+\/[\w\.\|\-]+$/) {
     	return $self->store()->get_object($ref);

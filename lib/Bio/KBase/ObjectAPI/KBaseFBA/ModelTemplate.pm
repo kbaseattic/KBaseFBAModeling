@@ -353,7 +353,7 @@ sub buildModel {
 	$mdl->_reference("~");
 	$mdl->parent($self->parent());
 	my $rxns = $self->templateReactions();
-	my $roleFeatures;
+	my $roleFeatures = {};
 	my $features = $genome->features();
 	for (my $i=0; $i < @{$features}; $i++) {
 		my $ftr = $features->[$i];

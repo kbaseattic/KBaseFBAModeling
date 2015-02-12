@@ -4,6 +4,6 @@
 		"workspace":"GenomeImportComparisonTest",
 		"genome_workspaces":["GenomeImportComparisonTest","GenomeImportComparisonTest","GenomeImportComparisonTest"],
 		"output_id":"BacillusPangenome",
-		"name":"BacillusPangenome",
+		"name":"BacillusPangenome"
 	}
 ]

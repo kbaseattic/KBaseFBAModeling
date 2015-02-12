@@ -352,7 +352,7 @@ module KBaseFBA {
     	 
     	@optional integrated_solution
     	@optional fba_ref
-    	@optional gapfill_ref
+    	@optional gapfill_ref jobnode
     */
     typedef structure {
 		gapfill_id id;
@@ -362,6 +362,7 @@ module KBaseFBA {
 		bool integrated;
 		string integrated_solution;
 		media_ref media_ref;
+		string jobnode;
     } ModelGapfill;
     
     /* 
@@ -369,7 +370,7 @@ module KBaseFBA {
     	
     	@optional integrated_solution
     	@optional fba_ref
-    	@optional gapgen_ref
+    	@optional gapgen_ref jobnode
     */
     typedef structure {
     	gapgen_id id;
@@ -379,6 +380,7 @@ module KBaseFBA {
 		bool integrated;
 		string integrated_solution;
 		media_ref media_ref;
+		string jobnode;
     } ModelGapgen;
     
     
@@ -666,7 +668,7 @@ module KBaseFBA {
     /* 
     	FBA object holds the formulation and results of a flux balance analysis study
     	
-    	@optional gapfillingSolutions QuantitativeOptimizationSolutions quantitativeOptimization minimize_reactions minimize_reaction_costs FBATintleResults FBAMinimalReactionsResults PROMKappa phenotypesimulationset_ref objectiveValue phenotypeset_ref promconstraint_ref regulome_ref tintlesample_ref tintleW tintleKappa
+    	@optional jobnode gapfillingSolutions QuantitativeOptimizationSolutions quantitativeOptimization minimize_reactions minimize_reaction_costs FBATintleResults FBAMinimalReactionsResults PROMKappa phenotypesimulationset_ref objectiveValue phenotypeset_ref promconstraint_ref regulome_ref tintlesample_ref tintleW tintleKappa
     	@metadata ws maximizeObjective as Maximized
 		@metadata ws comboDeletions as Combination deletions
 		@metadata ws minimize_reactions as Minimize reactions
@@ -720,6 +722,7 @@ module KBaseFBA {
 		bool drainfluxUseVariables;
 		bool minimize_reactions;
 		
+		string jobnode;
 		regulome_ref regulome_ref;
 		fbamodel_ref fbamodel_ref;
 		promconstraint_ref promconstraint_ref;
@@ -1141,4 +1144,23 @@ module KBaseFBA {
         list<WorkspaceGenomeClassPrediction> workspace_genomes; 
 		list<ExternalGenomeClassPrediction> external_genomes;
     } ClassifierResult;
+    
+    /*
+	This type represents an element of a FBAModelSet.
+	@optional metadata
+	*/
+	typedef structure {
+	  mapping<string, string> metadata;
+	  fbamodel_ref ref;
+	} FBAModelSetElement;
+
+	/*
+	A type describing a set of FBAModels, where each element of the set 
+	is an FBAModel object reference.
+	*/
+	typedef structure {
+	  string description;
+	  mapping<string, FBAModelSetElement> elements;
+	} FBAModelSet;
 };
+

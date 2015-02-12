@@ -264,6 +264,17 @@ sub addReactionToModel {
 			});
 		}
 		$mdlrxn->setGPRFromArray({"gpr" => [[$args->{gpr}]]});
+	} else {
+		if ($mdlrxn->equationCode() ne $mdlrxn->reaction()->equationCode()) {
+			if ($args->{direction} eq ">") {
+				$args->{direction} = "<";
+			} elsif ($args->{direction} eq "<") {
+				$args->{direction} = ">";
+			}
+		}
+		if ($mdlrxn->direction() ne $args->{direction}) {
+			$mdlrxn->direction("=");
+		}
 	}
 	return $mdlrxn;
 }
@@ -602,7 +613,7 @@ sub addModelReaction {
     	reference => undef
     }, @_);
     my $rootid = $args->{reaction};
-	if ($rootid =~ m/(.+)_([a-zA-Z])(\d)/) {
+	if ($rootid =~ m/(.+)_([a-zA-Z])(\d+)$/) {
 		$rootid = $1;
 		$args->{compartment} = $2;
     	$args->{compartmentIndex} = $3;
@@ -747,6 +758,9 @@ sub LoadExternalReactionEquation {
 	    			$cpd = $1;
 	    			$compartment = $2;	
 	    		}
+	    		if ($cpd =~m/(.+)_([a-z]\d+)$/) {
+	    			$cpd = $1;
+	    		}
 	    		if ($compartment =~ m/([a-z])(\d+)/) {
 	    			$index = $2;
 	    			$compartment = $1;	
@@ -890,16 +904,16 @@ sub labelBiomassCompounds {
 	}
 }
 
-=head3 print_sbml
+=head3 printSBML
 
 Definition:
-	void Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->print_sbml();
+	void Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->printSBML();
 Description:
 	Prints the model in SBML format
 
 =cut
 
-sub print_sbml {
+sub printSBML {
     my $self = shift;
 	# convert ids to SIds
     my $idToSId = sub {
@@ -910,14 +924,6 @@ sub print_sbml {
         # SIDs must only contain letters numbers or '_'
         $cpy =~ s/[^a-zA-Z0-9_]/_/g;
         return $cpy;
-    };
-    #clean names
-    my $stringToString = sub {
-		my ($name,$value) = @_;
-		$value =~ s/[\[\]\(\)\+]//g;
-		$value =~ s/[\s:,]/_/g;
-		$value =~ s/[\'\"]//g;
-		return $name.'="'.XML::LibXML::Document->new('1.0', 'UTF-8')->createTextNode($value)->toString .'"';
     };
 	#Printing header to SBML file
 	my $ModelName = $idToSId->($self->id());
@@ -943,22 +949,22 @@ sub print_sbml {
 	push(@{$output},'<listOfCompartments>');
 	for (my $i=0; $i < @{$self->modelcompartments()}; $i++) {
 		my $cmp = $self->modelcompartments()->[$i];
-    	push(@{$output},'<compartment '.$stringToString->("id",$cmp->id()).' '.$stringToString->("name",$cmp->label()).' />');
+    	push(@{$output},'<compartment '.$self->CleanNames("id",$cmp->id()).' '.$self->CleanNames("name",$cmp->label()).' />');
     }
 	push(@{$output},'</listOfCompartments>');
 	#Printing the list of metabolites involved in the model
 	push(@{$output},'<listOfSpecies>');
 	for (my $i=0; $i < @{$self->modelcompounds()}; $i++) {
 		my $cpd = $self->modelcompounds()->[$i];
-		push(@{$output},'<species '.$stringToString->("id",$cpd->id()).' '.$stringToString->("name",$cpd->name()).' '.$stringToString->("compartment",$cpd->modelCompartmentLabel()).' '.$stringToString->("charge",$cpd->charge()).' boundaryCondition="false"/>');
-		if ($cpd->compound()->id() eq "cpd11416" || $cpd->compound()->id() eq "cpd15302" || $cpd->compound()->id() eq "cpd08636" || $cpd->compound()->id() eq "cpd02701") {
-			push(@{$output},'<species '.$stringToString->("id",$cpd->compound()->id()."_b").' '.$stringToString->("name",$cpd->compound()->name()."_b").' '.$stringToString->("compartment",$cpd->modelCompartmentLabel()).' '.$stringToString->("charge",$cpd->charge()).' boundaryCondition="true"/>');
+		push(@{$output},'<species '.$self->CleanNames("id",$cpd->id()).' '.$self->CleanNames("name",$cpd->name()).' compartment="'.$cpd->modelCompartmentLabel().'" charge="'.$cpd->charge().'" boundaryCondition="false"/>');
+		if ($cpd->compound()->id() eq "cpd11416" || $cpd->compound()->id() eq "cpd15302" || $cpd->compound()->id() eq "cpd08636") {
+			push(@{$output},'<species '.$self->CleanNames("id",$cpd->compound()->id()."_b").' '.$self->CleanNames("name",$cpd->compound()->name()."_b").' compartment="'.$cpd->modelCompartmentLabel().'" charge="'.$cpd->charge().'" boundaryCondition="true"/>');
 		}
 	}
 	for (my $i=0; $i < @{$self->modelcompounds()}; $i++) {
 		my $cpd = $self->modelcompounds()->[$i];
 		if ($cpd->modelCompartmentLabel() =~ m/^e/) {
-			push(@{$output},'<species '.$stringToString->("id",$cpd->compound()->id()."_b").' '.$stringToString->("name",$cpd->compound()->name()."_b").' '.$stringToString->("compartment",$cpd->modelCompartmentLabel()).' '.$stringToString->("charge",$cpd->charge()).' boundaryCondition="true"/>');
+			push(@{$output},'<species '.$self->CleanNames("id",$cpd->compound()->id()."_b").' '.$self->CleanNames("name",$cpd->compound()->name()."_b").' compartment="'.$cpd->modelCompartmentLabel().'" charge="'.$cpd->charge().'" boundaryCondition="true"/>');
 		}
 	}
 	push(@{$output},'</listOfSpecies>');
@@ -972,7 +978,7 @@ sub print_sbml {
 			$lb = 0;
 			$reversibility = "false";
 		}
-		push(@{$output},'<reaction '.$stringToString->("id",$rxn->id()).' '.$stringToString->("name",$rxn->name()).' '.$stringToString->("reversible",$reversibility).'>');
+		push(@{$output},'<reaction '.$self->CleanNames("id",$rxn->id()).' '.$self->CleanNames("name",$rxn->name()).' '.$self->CleanNames("reversible",$reversibility).'>');
 		push(@{$output},"<notes>");
 		my $ec = $rxn->reaction->getAlias("Enzyme Class");
 		my $keggID = $rxn->reaction->getAlias("KEGG");
@@ -995,20 +1001,20 @@ sub print_sbml {
 		if ($rxn->direction() eq "<") {
 			$sign = -1;
 		}
-		for (my $i=0; $i < @{$rgts}; $i++) {
-			my $rgt = $rgts->[$i];
+		for (my $j=0; $j < @{$rgts}; $j++) {
+			my $rgt = $rgts->[$j];
 			if ($sign*$rgt->coefficient() < 0) {
 				if ($firstreact == 1) {
 					$firstreact = 0;
 					push(@{$output},"<listOfReactants>");
 				}
-				push(@{$output},'<speciesReference '.$stringToString->("species",$rgt->modelcompound()->id()).' '.$stringToString->("stoichiometry",(-1*$sign*$rgt->coefficient())).'/>');	
+				push(@{$output},'<speciesReference '.$self->CleanNames("species",$rgt->modelcompound()->id()).' stoichiometry="'.-1*$sign*$rgt->coefficient().'"/>');	
 			} else {
 				if ($firstprod == 1) {
 					$firstprod = 0;
 					push(@{$prodoutput},"<listOfProducts>");
 				}
-				push(@{$prodoutput},'<speciesReference '.$stringToString->("species",$rgt->modelcompound()->id()).' '.$stringToString->("stoichiometry",$sign*$rgt->coefficient()).'/>');
+				push(@{$prodoutput},'<speciesReference '.$self->CleanNames("species",$rgt->modelcompound()->id()).' stoichiometry="'.$sign*$rgt->coefficient().'"/>');
 			}
 		}
 		if ($firstreact != 1) {
@@ -1039,7 +1045,7 @@ sub print_sbml {
 			$obj = 1;
 		}
 		my $reversibility = "false";
-		push(@{$output},'<reaction '.$stringToString->("id","biomass".$i).' '.$stringToString->("name",$rxn->name()).' '.$stringToString->("reversible",$reversibility).'>');
+		push(@{$output},'<reaction '.$self->CleanNames("id","biomass".$i).' '.$self->CleanNames("name",$rxn->name()).' '.$self->CleanNames("reversible",$reversibility).'>');
 		push(@{$output},"<notes>");
 		push(@{$output},"<html:p>GENE_ASSOCIATION: </html:p>");
 		push(@{$output},"<html:p>PROTEIN_ASSOCIATION: </html:p>");
@@ -1050,20 +1056,20 @@ sub print_sbml {
 		my $firstprod = 1;
 		my $prodoutput = [];
 		my $biocpds = $rxn->biomasscompounds();
-		for (my $i=0; $i < @{$biocpds}; $i++) {
-			my $rgt = $biocpds->[$i];
+		for (my $j=0; $j < @{$biocpds}; $j++) {
+			my $rgt = $biocpds->[$j];
 			if ($rgt->coefficient() < 0) {
 				if ($firstreact == 1) {
 					$firstreact = 0;
 					push(@{$output},"<listOfReactants>");
 				}
-				push(@{$output},'<speciesReference '.$stringToString->("species",$rgt->modelcompound()->id()).' '.$stringToString->("stoichiometry",-1*$rgt->coefficient()).'/>');	
+				push(@{$output},'<speciesReference '.$self->CleanNames("species",$rgt->modelcompound()->id()).' stoichiometry="'.-1*$rgt->coefficient().'"/>');	
 			} else {
 				if ($firstprod == 1) {
 					$firstprod = 0;
 					push(@{$prodoutput},"<listOfProducts>");
 				}
-				push(@{$prodoutput},'<speciesReference '.$stringToString->("species",$rgt->modelcompound()->id()).' '.$stringToString->("stoichiometry",$rgt->coefficient()).'/>');
+				push(@{$prodoutput},'<speciesReference '.$self->CleanNames("species",$rgt->modelcompound()->id()).' stoichiometry="'.$rgt->coefficient().'"/>');
 			}
 		}
 		if ($firstreact != 1) {
@@ -1091,18 +1097,18 @@ sub print_sbml {
 		my $cpd = $cpds->[$i];
 		my $lb = -1000;
 		my $ub = 1000;
-		if ($cpd->modelCompartmentLabel() =~ m/^e/ || $cpd->compound()->id() eq "cpd08636" || $cpd->compound()->id() eq "cpd11416" || $cpd->compound()->id() eq "cpd15302" || $cpd->compound()->id() eq "cpd02701") {
-			push(@{$output},'<reaction '.$stringToString->("id",'EX_'.$cpd->id()).' '.$stringToString->("name",'EX_'.$cpd->name()).' reversible="true">');
+		if ($cpd->modelCompartmentLabel() =~ m/^e/ || $cpd->compound()->id() eq "cpd08636" || $cpd->compound()->id() eq "cpd11416" || $cpd->compound()->id() eq "cpd15302") {
+			push(@{$output},'<reaction '.$self->CleanNames("id",'EX_'.$cpd->id()).' '.$self->CleanNames("name",'EX_'.$cpd->name()).' reversible="true">');
 			push(@{$output},"\t".'<notes>');
 			push(@{$output},"\t\t".'<html:p>GENE_ASSOCIATION: </html:p>');
 			push(@{$output},"\t\t".'<html:p>PROTEIN_ASSOCIATION: </html:p>');
 			push(@{$output},"\t\t".'<html:p>PROTEIN_CLASS: </html:p>');
 			push(@{$output},"\t".'</notes>');
 			push(@{$output},"\t".'<listOfReactants>');
-			push(@{$output},"\t\t".'<speciesReference '.$stringToString->("species",$cpd->id()).' stoichiometry="1.000000"/>');
+			push(@{$output},"\t\t".'<speciesReference '.$self->CleanNames("species",$cpd->id()).' stoichiometry="1.000000"/>');
 			push(@{$output},"\t".'</listOfReactants>');
 			push(@{$output},"\t".'<listOfProducts>');
-			push(@{$output},"\t\t".'<speciesReference '.$stringToString->("species",$cpd->compound()->id()."_b").' stoichiometry="1.000000"/>');
+			push(@{$output},"\t\t".'<speciesReference '.$self->CleanNames("species",$cpd->compound()->id()."_b").' stoichiometry="1.000000"/>');
 			push(@{$output},"\t".'</listOfProducts>');
 			push(@{$output},"\t".'<kineticLaw>');
 			push(@{$output},"\t\t".'<math xmlns="http://www.w3.org/1998/Math/MathML">');
@@ -1125,31 +1131,38 @@ sub print_sbml {
 	return join("\n",@{$output});
 }
 
-=head3 print_genes
+sub CleanNames {
+		my ($self,$name,$value) = @_;
+		$value =~ s/[\s:,-]/_/g;
+		$value =~ s/\W//g;
+		return $name.'="'.$value.'"';
+}
+
+=head3 printGenes
 
 Definition:
-	string = Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->print_genes();
+	string = Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->printGenes();
 Description:
 	Return list of genes in model
 
 =cut
 
-sub print_genes {
+sub printGenes {
     my $self = shift;
 	my $output = join("\n",@{$self->features()});
 	return $output;
 }
 
-=head3 print_exchange
+=head3 printExchange
 
 Definition:
-	string:Exchange format = Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->print_exchange();
+	string:Exchange format = Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->printExchange();
 Description:
 	Returns a string with the model in Exchange format
 
 =cut
 
-sub print_exchange {
+sub printExchange {
     my $self = shift;
 	my $output = "Model{";
 	$output .= "attributes(id\tname\ttype\tannotation\tmapping\tbiochemistry){\n";
@@ -1183,16 +1196,16 @@ sub print_exchange {
 	return $output;
 }
 
-=head3 print_modelseed
+=head3 printModelSEED
 
 Definition:
-	string:Exchange format = Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->print_modelseed();
+	string:Exchange format = Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->printModelSEED();
 Description:
 	Returns a string with the model in ModelSEED format
 
 =cut
 
-sub print_modelseed {
+sub printModelSEED {
     my $self = shift;
 	my $output = "REACTIONS\n";
 	$output .= "LOAD;DIRECTIONALITY;COMPARTMENT;ASSOCIATED PEG;EQUATION;SUBSYSTEM;CONFIDENCE;REFERENCE;NOTES\n";
@@ -1379,19 +1392,54 @@ sub htmlComponents {
 	return $output;
 }
 
-=head3 print_excel
+=head3 export
 
 Definition:
-	string print_excel();
+	string = Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->export();
+Description:
+	Exports model data to the specified format.
+
+=cut
+
+sub export {
+    my $self = shift;
+	my $args = Bio::KBase::ObjectAPI::utilities::args(["format"], {}, @_);
+	if (lc($args->{format}) eq "sbml") {
+		return $self->printSBML();
+	} elsif (lc($args->{format}) eq "exchange") {
+		return $self->printExchange();
+	} elsif (lc($args->{format}) eq "genes") {
+		return $self->printGenes();
+	} elsif (lc($args->{format}) eq "readable") {
+		return $self->toReadableString();
+	} elsif (lc($args->{format}) eq "html") {
+		return $self->createHTML();
+	} elsif (lc($args->{format}) eq "json") {
+		return $self->toJSON({pp => 1});
+	} elsif (lc($args->{format}) eq "cytoseed") {
+		return $self->printCytoSEED($args->{fbas});
+	} elsif (lc($args->{format}) eq "modelseed") {
+		return $self->printModelSEED();
+	} elsif (lc($args->{format}) eq "excel") {
+		return $self->printExcel();
+	}
+	Bio::KBase::ObjectAPI::utilities::error("Unrecognized type for export: ".$args->{format});
+}
+
+=head3 printExcel
+
+Definition:
+	string printExcel();
 Description:
 	Prints model data in excel
 
 =cut
 
-sub print_excel {
+sub printExcel {
 	my ($self) = @_;
-	my $fulldir = File::Temp::tempdir(DIR => Bio::KBase::ObjectAPI::utilities::MFATOOLKIT_JOB_DIRECTORY());
-	my $filename = $fulldir."/".$self->_wsname().".xls";
+	#my ($fh, $filename) = File::Temp::tempfile("xls-XXXXXX");
+    #close($fh);
+    my $filename = "/Users/chenry/model.xls";
 	require "Spreadsheet/WriteExcel.pm";
 	my $wkbk = Spreadsheet::WriteExcel->new($filename);
 	my $sheet = $wkbk->add_worksheet("Compounds");
@@ -1410,7 +1458,7 @@ sub print_excel {
 	}
 	$sheet = $wkbk->add_worksheet("Genes");
 	$sheet->write_row(0,0,["ID","Type","Functions","Contig","Start","Stop","Direction","Reactions"]);
-	my $ftrs = $self->genome()->features();
+	my $ftrs = $self->annotation()->features();
 	my $ftrHash = $self->featureHash();
 	for (my $i=0; $i < @{$ftrs}; $i++) {
 		my $ftr = $ftrs->[$i];
@@ -1420,22 +1468,23 @@ sub print_excel {
 		}
 		$sheet->write_row($i+1,0,[$ftr->id(),$ftr->type(),$ftr->roleList(),$ftr->contig(),$ftr->start(),$ftr->stop(),$ftr->direction(),join("|",@{$reactionList})]);
 	}
-	#open(my $fh, "<:raw", $filename);
-	#my $data = <$fh>;
-	#close($fh);
-	return $filename;
+	my $output;
+	open(my $fh, "<:raw", $filename);
+	my $data = <$fh>;
+	close($fh);
+	return $data;
 }
 
-=head3 print_cytoseed
+=head3 printCytoSEED
 
 Definition:
-	void Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->print_cytoseed();
+	void Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->printCytoSEED();
 Description:
 	Prints the model in CytoSEED format
 
 =cut
 
-sub print_cytoseed {
+sub printCytoSEED {
 	my ($self,$fbas) = @_;
 
 	sub compound_to_results {
@@ -1808,12 +1857,7 @@ sub integrateGapfillSolution {
 	if (!defined($gfmeta)) {
 		Bio::KBase::ObjectAPI::utilities::error("Gapfill ".$args->{gapfill}." not found!");
 	}
-	my $gf;
-	if (defined($gfmeta->gapfill_ref())) {
-		$gf = $gfmeta->gapfill();
-	} else {
-		$gf = $gfmeta->fba();
-	}
+	my $gf = $gfmeta->gapfill();
 	my $sol;
 	if (!defined($args->{solution})) {
 		$args->{solution} = $gf->gapfillingSolutions()->[0]->id();
