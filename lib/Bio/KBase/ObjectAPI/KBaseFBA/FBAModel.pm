@@ -1008,13 +1008,13 @@ sub printSBML {
 					$firstreact = 0;
 					push(@{$output},"<listOfReactants>");
 				}
-				push(@{$output},'<speciesReference '.$self->CleanNames("species",$rgt->modelcompound()->id()).' '.$self->CleanNames("stoichiometry",(-1*$sign*$rgt->coefficient())).'/>');	
+				push(@{$output},'<speciesReference '.$self->CleanNames("species",$rgt->modelcompound()->id()).' stoichiometry="'.-1*$sign*$rgt->coefficient().'"/>');	
 			} else {
 				if ($firstprod == 1) {
 					$firstprod = 0;
 					push(@{$prodoutput},"<listOfProducts>");
 				}
-				push(@{$prodoutput},'<speciesReference '.$self->CleanNames("species",$rgt->modelcompound()->id()).' '.$self->CleanNames("stoichiometry",$sign*$rgt->coefficient()).'/>');
+				push(@{$prodoutput},'<speciesReference '.$self->CleanNames("species",$rgt->modelcompound()->id()).' stoichiometry="'.$sign*$rgt->coefficient().'"/>');
 			}
 		}
 		if ($firstreact != 1) {
@@ -1063,13 +1063,13 @@ sub printSBML {
 					$firstreact = 0;
 					push(@{$output},"<listOfReactants>");
 				}
-				push(@{$output},'<speciesReference '.$self->CleanNames("species",$rgt->modelcompound()->id()).' '.$self->CleanNames("stoichiometry",-1*$rgt->coefficient()).'/>');	
+				push(@{$output},'<speciesReference '.$self->CleanNames("species",$rgt->modelcompound()->id()).' stoichiometry="'.-1*$rgt->coefficient().'"/>');	
 			} else {
 				if ($firstprod == 1) {
 					$firstprod = 0;
 					push(@{$prodoutput},"<listOfProducts>");
 				}
-				push(@{$prodoutput},'<speciesReference '.$self->CleanNames("species",$rgt->modelcompound()->id()).' '.$self->CleanNames("stoichiometry",$rgt->coefficient()).'/>');
+				push(@{$prodoutput},'<speciesReference '.$self->CleanNames("species",$rgt->modelcompound()->id()).' stoichiometry="'.$rgt->coefficient().'"/>');
 			}
 		}
 		if ($firstreact != 1) {
