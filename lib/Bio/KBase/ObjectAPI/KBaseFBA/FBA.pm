@@ -924,6 +924,7 @@ sub createJobDirectory {
 			push(@{$BioRxn},$component."Biomass\t".$component."Biomass\t0\t0\t".$reactant." <=> ".$product."\t".$component."Biomass\t<=>\tOK\t<=>");
 		}
 		$self->parameters()->{"Biomass component coefficients"} = $biomasscomps;
+		$self->parameters()->{"quantitative optimization"} = 1;
 	}
 	#Adding gapfilling candidates from template
 	if (defined($self->parameters()->{add_external_rxns}) && $self->parameters()->{add_external_rxns} == 1 && defined($self->parameters()->{"Perform gap filling"}) && $self->parameters()->{"Perform gap filling"} == 1) {	
