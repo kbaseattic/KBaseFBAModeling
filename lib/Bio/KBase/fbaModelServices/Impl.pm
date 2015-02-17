@@ -3369,12 +3369,12 @@ sub new
     # is found in the incoming hash, let the associated value override what
     # was previously assigned to the params hash from the config object.
 
-	print STDERR "\nServer config values:\n";
+	#print STDERR "\nServer config values:\n";
     for my $p (@{$paramlist}) {
   		if (defined($options->{$p})) {
 			$params->{$p} = $options->{$p};
         }
-        print STDERR $p."\t".$params->{$p}."\n";
+        #print STDERR $p."\t".$params->{$p}."\n";
     }
 
     # now, if params has one of the predefined set of parameter keys,
