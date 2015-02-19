@@ -344,7 +344,7 @@ sub createEquation {
 		if ($id eq "cpd00000") {
 			$id = $rgt->modelcompound()->id();
 		}
-		next if $args->{protons} == 0 && $id eq $hcpd->id() && !$self->isTransport();
+		next if $args->{protons} == 0 && $id eq $hcpd->id() && !$self->isTransporter();
 		next if $args->{water} == 0 && $id eq $wcpd->id();
 		if ($args->{format} eq "name") {
 			my $function = $args->{format};
