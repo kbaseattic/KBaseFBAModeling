@@ -1,6 +1,5 @@
 use strict;
 use warnings;
-use Bio::KBase::workspaceService::Client;
 use Bio::KBase::AuthToken;
 use Bio::KBase::fbaModelServices::Client;
 use JSON::XS;
@@ -20,7 +19,6 @@ $token = $tokenObj->token();
 
 #Instantiating client workspace
 my $wsurl = "http://140.221.84.209:7058";
-my $ws = Bio::KBase::workspaceService::Client->new($wsurl,$token);
 #Instantiating client object
 my $obj = Bio::KBase::fbaModelServices::Client->new("http://localhost:7036",$token);
 my $obj = Bio::KBase::fbaModelServices::Client->new("http://140.221.85.73:4043",$token);

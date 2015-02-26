@@ -63,7 +63,6 @@ uniquely identifies a workspace among all workspaces.
 use URI;
 use ModelSEED::Client::SAP;
 use Bio::KBase::IDServer::Client;
-use Bio::KBase::workspaceService::Client;
 use Bio::KBase::CDMI::CDMIClient;
 use Bio::KBase::AuthToken;
 use Bio::KBase::probabilistic_annotation::Client;
@@ -3435,7 +3434,7 @@ sub new
     if (defined($options->{verbose})) {
     	set_verbose(1);
     }
-	$self->{_jobserver} = Bio::KBase::workspaceService::Client->new($self->{'_jobserver-url'});
+	#$self->{_jobserver} = Bio::KBase::workspaceService::Client->new($self->{'_jobserver-url'});
     #END_CONSTRUCTOR
 
     if ($self->can('_init_instance'))

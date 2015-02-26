@@ -845,10 +845,10 @@ sub createJobDirectory {
 		push(@{$additionalrxn},"ATPMaintenance\t=\tATPMAINT");
 		push(@{$additionalrxn},"EnergyBiomass\t=\tBiomassComp");
 		$gfcoef->{"EnergyBiomass"} = {"reverse" => 10,forward => 10,tag => "BiomassComp"};
-		push(@{$BioRxn},"SixATPSynth\tSixATPSynth\t0\t0\t(6) cpd00067[e] + cpd00008[c] + cpd00009[c] <=> cpd00002[c] + (5) cpd00067[c] + cpd00001[c]\tSixATPSynth\t<=>\tOK\t<=>");
-		push(@{$BioRxn},"OneATPSynth\tOneATPSynth\t0\t0\t(1) cpd00067[e] + cpd00008[c] + cpd00009[c] <=> cpd00002[c] + cpd00001[c]\tOneATPSynth\t<=>\tOK\t<=>");
-		push(@{$BioRxn},"ATPMaintenance\tATPMaintenance\t0\t0\tcpd00002[c] + cpd00001[c] <=> cpd00067[c] + cpd00008[c] + cpd00009[c]\tATPMaintenance\t=>\tOK\t=>");
-		push(@{$BioRxn},"EnergyBiomass\tEnergyBiomass\t0\t0\tcpd00002[b] + cpd00001[b] <=> cpd00008[b] + cpd00009[b] + cpd00067[b]\tEnergyBiomass\t<=>\tOK\t<=>");
+		push(@{$BioRxn},"SixATPSynth\tSixATPSynth\t0\t0\t(6) cpd00067_e0[e] + cpd00008_c0[c] + cpd00009_c0[c] <=> cpd00002_c0[c] + (5) cpd00067_c0[c] + cpd00001_c0[c]\tSixATPSynth\t<=>\tOK\t<=>");
+		push(@{$BioRxn},"OneATPSynth\tOneATPSynth\t0\t0\t(1) cpd00067_e0[e] + cpd00008_c0[c] + cpd00009_c0[c] <=> cpd00002_c0[c] + cpd00001_c0[c]\tOneATPSynth\t<=>\tOK\t<=>");
+		push(@{$BioRxn},"ATPMaintenance\tATPMaintenance\t0\t0\tcpd00002_c0[c] + cpd00001_c0[c] <=> cpd00067_c0[c] + cpd00008_c0[c] + cpd00009_c0[c]\tATPMaintenance\t=>\tOK\t=>");
+		push(@{$BioRxn},"EnergyBiomass\tEnergyBiomass\t0\t0\tcpd00002_c0[b] + cpd00001_c0[b] <=> cpd00008_c0[b] + cpd00009_c0[b] + cpd00067_c0[b]\tEnergyBiomass\t<=>\tOK\t<=>");
 		my $comprxn = {};
 		foreach my $cpd (@{$biocpds}) {
 			if ($cpd->coefficient() > 0) {
@@ -910,18 +910,18 @@ sub createJobDirectory {
 						$reactant .= " + ";
 					}
 					my $coef = -1*$comprxn->{$component}->{compounds}->{$cpd};
-					$reactant .= "(".$coef.") ".$cpd."[b]";
+					$reactant .= "(".$coef.") ".$cpd."_c0[b]";
 				} else {
 					if (length($product) > 0) {
 						$product .= " + ";
 					}
 					my $coef = $comprxn->{$component}->{compounds}->{$cpd};
-					$product .= "(".$coef.") ".$cpd."[b]";
+					$product .= "(".$coef.") ".$cpd."_c0[b]";
 				}
 			}
 			push(@{$additionalrxn},$component."Biomass\t=\tBiomassComp");
 			$gfcoef->{$component."Biomass"} = {"reverse" => 10,forward => 10,tag => "BiomassComp"};
-			push(@{$BioRxn},$component."Biomass\t".$component."Biomass\t0\t0\t".$reactant." <=>".$product."\t".$component."Biomass\t<=>\tOK\t<=>");
+			push(@{$BioRxn},$component."Biomass\t".$component."Biomass\t0\t0\t".$reactant." <=> ".$product."\t".$component."Biomass\t<=>\tOK\t<=>");
 		}
 		$self->parameters()->{"Biomass component coefficients"} = $biomasscomps;
 	}
@@ -1346,6 +1346,7 @@ sub createJobDirectory {
 	#Setting parameters
 	my $parameters = {
 		"write LP file" => 1,
+		"write variable key" => 1,
 		"new fba pipeline" => 1,
 		"perform MFA" => 1,
 		"Default min drain flux" => $self->defaultMinDrainFlux(),
