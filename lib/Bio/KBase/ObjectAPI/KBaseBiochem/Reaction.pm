@@ -17,10 +17,13 @@ extends 'Bio::KBase::ObjectAPI::KBaseBiochem::DB::Reaction';
 #***********************************************************************************************************
 has definition => ( is => 'rw',printOrder => 3, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_builddefinition' );
 has equation => ( is => 'rw',printOrder => 4, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildequation' );
+has genEquation => ( is => 'rw',printOrder => 4, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildgenequation' );
 has equationDir => ( is => 'rw',printOrder => 4, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildequationdirection' );
 has code => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcode' );
 has equationCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildequationcode' );
 has revEquationCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildrevequationcode' );
+has genEquationCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildgenequationcode' );
+has revGenEquationCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildgenrevequationcode' );
 has equationCompFreeCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcompfreeequationcode' );
 has revEquationCompFreeCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildrevcompfreeequationcode' );
 has equationFormula => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildequationformula' );
@@ -43,6 +46,10 @@ sub _buildequation {
 	my ($self) = @_;
 	return $self->createEquation({format=>"id",hashed=>0});
 }
+sub _buildgenequation {
+	my ($self) = @_;
+	return $self->createEquation({format=>"id",hashed=>0,generalized=>1});
+}
 
 sub _buildequationdirection {
 	my ($self) = @_;
@@ -60,6 +67,15 @@ sub _buildcode {
 sub _buildrevequationcode {
 	my ($self) = @_;
 	return $self->createEquation({format=>"id",hashed=>1,protons=>0,reverse=>1,direction=>0});
+}
+
+sub _buildgenequationcode {
+	my ($self) = @_;
+	return $self->createEquation({format=>"id",hashed=>1,protons=>0,direction=>0,generalized=>1});
+}
+sub _buildgenrevequationcode {
+	my ($self) = @_;
+	return $self->createEquation({format=>"id",hashed=>1,protons=>0,reverse=>1,direction=>0,generalized=>1});
 }
 
 sub _buildcompfreeequationcode {
@@ -232,7 +248,14 @@ Description:
 
 sub createEquation {
     my $self = shift;
-    my $args = Bio::KBase::ObjectAPI::utilities::args([], { format => "id", hashed => 0, water => 1, compts=>1, reverse=>0, direction=>1,protons => 1 }, @_);
+    my $args = Bio::KBase::ObjectAPI::utilities::args([], { format => "id", 
+							    hashed => 0, 
+							    water => 1, 
+							    compts=>1, 
+							    reverse=>0, 
+							    direction=>1, 
+							    protons => 1, 
+							    generalized => 0 }, @_);
 	my $rgt = $self->reagents();
 	my $rgtHash;
     my $rxnCompID = $self->compartment()->id();
@@ -261,48 +284,50 @@ sub createEquation {
 		}
 		$rgtHash->{$id}->{$rgt->[$i]->compartment()->id()} += $rgt->[$i]->coefficient();
 	}
-#Deliberately commented out for the time being, as protons are being added to the reagents list a priori
-#	if (defined($self->defaultProtons()) && $self->defaultProtons() != 0 && !$args->{hashed}) {
-#		my $id = $hcpd->uuid();
-#		if ($args->{format} eq "name" || $args->{format} eq "id") {
-#			my $function = $args->{format};
-#			$id = $hcpd->$function();
-#		} elsif ($args->{format} ne "uuid") {
-#			$id = $hcpd->getAlias($args->{format});
-#		}
-#		$rgtHash->{$id}->{$rxnCompID} += $self->defaultProtons();
-#	}
 	my $reactcode = "";
 	my $productcode = "";
 	my $sign = " <=> ";
+
     if($args->{direction}==1){
 	$sign = " => " if $self->direction() eq ">";
 	$sign = " <= " if $self->direction() eq "<";
     }
-	my $sortedCpd = [sort(keys(%{$rgtHash}))];
-	for (my $i=0; $i < @{$sortedCpd}; $i++) {
-	    my $printId=$sortedCpd->[$i];
-	    if($args->{format} eq "formula"){
-		$printId=$self->parent()->getObject("compounds",$sortedCpd->[$i])->formula();
-	    }
-		my $comps = [sort(keys(%{$rgtHash->{$sortedCpd->[$i]}}))];
-		for (my $j=0; $j < @{$comps}; $j++) {
-			my $compartment = "[".$comps->[$j]."]";
-			$compartment="" if !$args->{compts};
-			if ($rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]} < 0) {
-				my $coef = -1*$rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]};
-				if (length($reactcode) > 0) {
-					$reactcode .= " + ";	
-				}
-				$reactcode .= "(".$coef.") ".$printId.$compartment;
-			} elsif ($rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]} > 0) {
-				if (length($productcode) > 0) {
-					$productcode .= " + ";	
-				}
-				$productcode .= "(".$rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]}.") ".$printId.$compartment;
-			} 
-		}
+
+    my %FoundComps=();
+    my $CompCount=0;
+
+    my $sortedCpd = [sort(keys(%{$rgtHash}))];
+    for (my $i=0; $i < @{$sortedCpd}; $i++) {
+	my $printId=$sortedCpd->[$i];
+	if($args->{format} eq "formula"){
+	    $printId=$self->parent()->getObject("compounds",$sortedCpd->[$i])->formula();
 	}
+	my $comps = [sort(keys(%{$rgtHash->{$sortedCpd->[$i]}}))];
+	for (my $j=0; $j < @{$comps}; $j++) {
+	    my $compartment = "[".$comps->[$j]."]";
+	    if($args->{generalized} && !exists($FoundComps{$comps->[$j]})){
+		$compartment = "[".$CompCount."]";
+		$FoundComps{$comps->[$j]}=$CompCount;
+		$CompCount++;
+	    }elsif($args->{generalized} && exists($FoundComps{$comps->[$j]})){
+		$compartment = "[".$FoundComps{$comps->[$j]}."]";
+	    }
+	    $compartment="" if !$args->{compts};
+	    if ($rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]} < 0) {
+		my $coef = -1*$rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]};
+		if (length($reactcode) > 0) {
+		    $reactcode .= " + ";	
+		}
+		$reactcode .= "(".$coef.") ".$printId.$compartment;
+	    } elsif ($rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]} > 0) {
+		if (length($productcode) > 0) {
+		    $productcode .= " + ";	
+		}
+		$productcode .= "(".$rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]}.") ".$printId.$compartment;
+	    } 
+	}
+    }
+
     my $reaction_string = $reactcode.$sign.$productcode;
     if($args->{reverse}==1){
 	$reaction_string = $productcode.$sign.$reactcode;
