@@ -768,7 +768,7 @@ sub _get_genomeObj_from_SEED {
     	$self->_error("PubSEED genome ".$id." not found!",'get_genomeobject');
     }
     my $genomeObj = {
-		id => $self->_register_kb_id("kb|g",$id,"SEED"),
+		id => $id,
 		scientific_name => $data->{$id}->[2],
 		domain => $data->{$id}->[4],
 		genetic_code => $data->{$id}->[5],
@@ -825,7 +825,7 @@ sub _get_genomeObj_from_SEED {
 	}
 	$genomeObj->{md5} = Digest::MD5::md5_hex($str);
 	$contigset->{md5} = $genomeObj->{md5};
-	$contigset->{id} = $self->_register_kb_id("kb|contigset",$contigset->{md5},"md5hash");
+	$contigset->{id} = $id.".contigs";
 	for (my $i=0; $i < @{$featureList}; $i++) {
 		my $feature = {
   			id => $featureList->[$i],
