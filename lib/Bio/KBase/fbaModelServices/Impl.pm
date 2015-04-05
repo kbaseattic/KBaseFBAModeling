@@ -63,7 +63,6 @@ uniquely identifies a workspace among all workspaces.
 use URI;
 use ModelSEED::Client::SAP;
 use Bio::KBase::IDServer::Client;
-use Bio::KBase::workspaceService::Client;
 use Bio::KBase::CDMI::CDMIClient;
 use Bio::KBase::AuthToken;
 use Bio::KBase::probabilistic_annotation::Client;
@@ -423,11 +422,6 @@ sub _gaserv {
 		}
     }
     return $self->{_gaserver};
-}
-
-sub _jobserv {
-	my $self = shift;
-    return $self->{_jobserver};
 }
 
 sub _jobqueue {
@@ -2334,7 +2328,8 @@ sub _queueJob {
 		if (!defined($args->{jobdata}->{wsurl})) {
 			$args->{jobdata}->{wsurl} = $self->_workspaceURL();
 		}
-		return $self->_jobserv()->queue_job($input);
+		die "Needs to be rewritten to use NJS! For now, non functional!";
+		#TODO
 	}
 }
 
@@ -3329,7 +3324,6 @@ sub new
     $self->{_jobqueue} = "workspace";
     $self->{'_fba-url'} = "";
     Bio::KBase::ObjectAPI::utilities::ID_SERVER_URL("http://kbase.us/services/idserver");
-    $self->{'_jobserver-url'} = "http://kbase.us/services/workspace";
     $self->{'_gaserver-url'} = "http://kbase.us/services/genome_annotation";
     $self->{'_mssserver-url'} = "http://bio-data-1.mcs.anl.gov/services/ms_fba";
     $self->{"_probanno-url"} = "http://localhost:7073";
@@ -3407,9 +3401,6 @@ sub new
     if (defined $params->{'idserver-url'}) {
     	Bio::KBase::ObjectAPI::utilities::ID_SERVER_URL($params->{'idserver-url'});
     }
-    if (defined $params->{'jobserver-url'}) {
-    		$self->{'_jobserver-url'} = $params->{'jobserver-url'};
-    }
     if (defined $params->{'mssserver-url'}) {
     		$self->{'_mssserver-url'} = $params->{'mssserver-url'};
     }
@@ -3436,8 +3427,7 @@ sub new
     if (defined($options->{verbose})) {
     	set_verbose(1);
     }
-	$self->{_jobserver} = Bio::KBase::workspaceService::Client->new($self->{'_jobserver-url'});
-    #END_CONSTRUCTOR
+	#END_CONSTRUCTOR
 
     if ($self->can('_init_instance'))
     {
@@ -12880,16 +12870,6 @@ sub queue_reconciliation_sensitivity_analysis
 					my $simResult = $result->fbaPhenotypeSimultationResults()->[$i];
 					push(@{$phenoSense->{reconciliationSolutionSimulations}->[$index]->[5]},[$simResult->simulatedGrowth(),$simResult->simulatedGrowthFraction(),$simResult->class()]);
 				}
-#				$self->_workspaceServices()->delete_object_permanently({
-#					type => "Model",
-#					id => $fba->model_uuid(),
-#					workspace => "NO_WORKSPACE"
-#				});
-#				$self->_workspaceServices()->delete_object_permanently({
-#					type => "FBA",
-#					id => $fba->uuid(),
-#					workspace => "NO_WORKSPACE"
-#				});
 			}
 		}
 		#delete $phenoSense->{fbaids};
