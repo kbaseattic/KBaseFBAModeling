@@ -157,7 +157,7 @@ sub _resetKBaseStore {
 	$temp = pop(@{$temp});
 	my $newparams = {};
 	foreach my $param (keys(%{$params})) {
-		if ($param ne "fasta" && $param ne "annotations" && $param ne "genomeobj" && $param ne "gtf_file" && $param ne "sbml") {
+		if ($param ne "fasta" && $param ne "annotations" && $param ne "genomeobj" && $param ne "gtf_file" && $param ne "sbml" && $param ne "templateReactions") {
 			$newparams->{$param} = $params->{$param};
 		}
 	}
@@ -16965,6 +16965,8 @@ sub get_template_model
     	domain => $template->domain(),
     	"map" => $template->{_kbaseWSMeta}->{wsid},
     	mappingws => $template->{_kbaseWSMeta}->{ws},
+    	mapping_ref => $template->mapping_ref(),
+    	biochemistry_ref => $template->biochemistry_ref(),
     	reactions => [],
     	biomasses => []
     };
