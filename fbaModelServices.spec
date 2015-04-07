@@ -3130,6 +3130,8 @@ module fbaModelServices {
 		string domain;
 		mapping_id map;
 		workspace_id mappingws;
+		string mapping_ref;
+		string biochemistry_ref;
 		list<TemplateReaction> reactions;
 		list<TemplateBiomass> biomasses;
     } TemplateModel;
