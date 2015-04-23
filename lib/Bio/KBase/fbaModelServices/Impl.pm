@@ -19385,7 +19385,7 @@ sub import_expression
 	$genome_id = $input->{"genome_id"};
     } else {
 	my $feature_id = (keys $input->{"expression_data_sample_series"}->{(keys $input->{"expression_data_sample_series"})[0]}->{"data_expression_levels_for_sample"})[0];
-	if ( $feature_id =~ /^(kb\|g\.\d+)/) {
+	if ( $feature_id =~ /(.+)\.[a-zA-Z]+\.\d+$/) {
 	    $genome_id = $1;
 	} else {
 	    die("Unexpected feature ID format $feature_id\n");
@@ -19405,7 +19405,7 @@ sub import_expression
 	    type => "microarray",
 	    expression_levels => $sample->{"data_expression_levels_for_sample"},
 	    source_id => $input->{"source_id"}, # What source?
-	    genome_id => $genome_id,
+	    genome_id => $input->{workspace}."/".$genome_id,
 	    external_source_date => $input->{"source_date"}, # Which data?
 	    numerical_interpretation => $input->{"numerical_interpretation"},
 	    processing_comments => $input->{"processing_comments"},
