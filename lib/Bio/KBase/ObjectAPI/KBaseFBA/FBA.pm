@@ -1676,72 +1676,57 @@ sub process_expression_data {
 	my ($self) = @_;
 	my $type = $self->parameters()->{expression_threshold_type};
 	my $sample = $self->{_expsample};
+	my $exphash = $sample;
+	if (ref($sample) ne "HASH") {
+		$exphash = $sample->expression_levels();
+	}
 	my $exp_scores = {};
-	my $no_reaction = {};
-	my $no_prot = {};
-	my $no_subunit = {};
-	my $miss_protein = {};
-	my $no_ftr = {};
-	my $yes_ftr = {};
-	my $unknown = {};
+	my $max_exp_score = 0;
 	my $mdlrxns = $self->fbamodel()->modelreactions();
 	my $inactiveList = ["bio1"];
 	foreach my $mdlrxn (@{$mdlrxns}) {
 	    push(@{$inactiveList},$mdlrxn->id());
-	    $exp_scores->{$mdlrxn->id()} = 0;
-	    $miss_protein->{$mdlrxn->id()} = 1 if (@{$mdlrxn->modelReactionProteins()} == 0);
-	    $unknown->{$mdlrxn->id()} = 1 if (@{$mdlrxn->modelReactionProteins()} == 0);
 	    # Maximal gene expression for a reaction
-	    my $rxn_score = POSIX::FLT_MIN;
+	    my $rxn_score;
 	    foreach my $prot (@{$mdlrxn->modelReactionProteins()}) {
 			# Minimal gene expression for a complex
-			my $prot_score = POSIX::FLT_MAX;
+			my $prot_score;
 			foreach my $subunit (@{$prot->modelReactionProteinSubunits()}) {
 			    if (@{$subunit->features()} == 0) {
 					next; # Not last, since there may be scores for other subunits
 			    }
 		        # Maximal gene expression for a subunit
-			    my $subunit_score = POSIX::FLT_MIN;
+			    my $subunit_score;
 			    foreach my $feature (@{$subunit->features()}) {
 					my $ftr_id = $feature->id();
-					if (!exists $sample->expression_levels()->{$feature->id()}) {
-					    $no_ftr->{$feature->id()}=1;
-					} else{
-					    my $ftr_score = $sample->expression_levels()->{$feature->id};
-					    $yes_ftr->{$feature->id()}=1;
-					    $subunit_score = ($subunit_score > $ftr_score) ? $subunit_score : $ftr_score;
+					if (defined($exphash->{$feature->id()})) {
+					    my $ftr_score = $exphash->{$feature->id};
+					    if ($ftr_score > $max_exp_score) {
+					    	$max_exp_score = $ftr_score;
+					    }
+					    if (!defined($subunit_score) || $subunit_score <  $ftr_score) {
+					    	$subunit_score = $ftr_score;
+					    }
 					}
 			    }
-			    if($subunit_score == POSIX::FLT_MIN){
-					$no_subunit->{$mdlrxn->id()}=1;
+			    if (defined($subunit_score)) {
+					if (!defined($prot_score) || $prot_score > $subunit_score) {
+						$prot_score = $subunit_score;
+					}
 			    }
-			    $prot_score = ($prot_score < $subunit_score) ? $prot_score : $subunit_score;
-			}			
-			if ($prot_score == POSIX::FLT_MAX) {
-			    $no_prot->{$mdlrxn->id()} = 1;
 			}
-			$rxn_score = ($rxn_score > $prot_score) ? $rxn_score : $prot_score;   
+			if (defined($prot_score)) {
+				if (!defined($rxn_score) || $rxn_score < $prot_score) {
+					$rxn_score = $prot_score;
+				}
+		    }
 	    }
-	    if ($rxn_score == POSIX::FLT_MIN) {
-			$no_reaction->{$mdlrxn->id()} = 1;
-	    }		
-	    $exp_scores->{$mdlrxn->id()} = $rxn_score;
+	    if (defined($rxn_score)) {
+	    	$exp_scores->{$mdlrxn->id()} = $rxn_score;
+	    }
 	}
-	my $final_exp_scores = {};
-	my $min_exp_score = (sort {$a <=> $b} grep { $_ != POSIX::FLT_MIN && $_ != POSIX::FLT_MAX } map { $exp_scores->{$_} } keys %$exp_scores)[0];
-	my $max_exp_score = (sort {$b <=> $a} grep { $_ != POSIX::FLT_MIN && $_ != POSIX::FLT_MAX } map { $exp_scores->{$_} } keys %$exp_scores)[0];
-	foreach my $rxn_id (keys %$exp_scores) {
-	    if (exists $unknown->{$rxn_id}) {
-	    
-	    } else {
-			if($exp_scores->{$rxn_id} eq POSIX::FLT_MIN){
-			    $final_exp_scores->{$rxn_id}=0;
-			}elsif($exp_scores->{$rxn_id} eq POSIX::FLT_MAX){
-			    $final_exp_scores->{$rxn_id}=1;
-			}else{
-			    $final_exp_scores->{$rxn_id} = sprintf("%.4f",($exp_scores->{$rxn_id} / $max_exp_score));
-			}
-	    }
+	foreach my $rxn (keys(%{$exp_scores})) {
+		$exp_scores->{$rxn} = $exp_scores->{$rxn}/$max_exp_score;
 	}
 	my $coef = {
 		highexp => {},
@@ -1750,10 +1735,10 @@ sub process_expression_data {
 	for (my $i=0; $i < @{$inactiveList}; $i++) {
 		if($inactiveList->[$i] eq "bio1"){
 			$coef->{highexp}->{bio1} = 1;
-	    } elsif(exists($final_exp_scores->{$inactiveList->[$i]})){
+	    } elsif(exists($exp_scores->{$inactiveList->[$i]})){
 	    	if ($type eq "AbsoluteThreshold") {
-		    	if($final_exp_scores->{$inactiveList->[$i]} <= $self->parameters()->{low_expression_theshold}){
-				    my $penalty = $self->parameters()->{low_expression_penalty_factor}*($self->parameters()->{low_expression_theshold}-$final_exp_scores->{$inactiveList->[$i]})/$self->parameters()->{low_expression_theshold};
+		    	if($exp_scores->{$inactiveList->[$i]} <= $self->parameters()->{low_expression_theshold}){
+				    my $penalty = $self->parameters()->{low_expression_penalty_factor}*($self->parameters()->{low_expression_theshold}-$exp_scores->{$inactiveList->[$i]})/$self->parameters()->{low_expression_theshold};
 				    if ($self->fbamodel()->getObject("modelreactions",$inactiveList->[$i])->direction() eq "=") {
 				    	$coef->{lowexp}->{$inactiveList->[$i]}->{forward} = $penalty;
 				    	$coef->{lowexp}->{$inactiveList->[$i]}->{"reverse"} = $penalty;
@@ -1762,22 +1747,10 @@ sub process_expression_data {
 				    } elsif ($self->fbamodel()->getObject("modelreactions",$inactiveList->[$i])->direction() eq "<") {
 				    	$coef->{lowexp}->{$inactiveList->[$i]}->{"reverse"} = $penalty;
 				    }
-				}elsif ($final_exp_scores->{$inactiveList->[$i]} >= $self->parameters()->{high_expression_theshold}) {
-					my $penalty = $self->parameters()->{high_expression_penalty_factor}*($final_exp_scores->{$inactiveList->[$i]}-$self->parameters()->{high_expression_theshold})/$self->parameters()->{high_expression_theshold};
+				}elsif ($exp_scores->{$inactiveList->[$i]} >= $self->parameters()->{high_expression_theshold}) {
+					my $penalty = $self->parameters()->{high_expression_penalty_factor}*($exp_scores->{$inactiveList->[$i]}-$self->parameters()->{high_expression_theshold})/(1-$self->parameters()->{high_expression_theshold});
 					$coef->{highexp}->{$inactiveList->[$i]} = $penalty;
 				}
-	    	}
-	    } else {
-	    	if ($type eq "AbsoluteThreshold") {
-			    my $penalty = $self->parameters()->{low_expression_penalty_factor};
-			    if ($self->fbamodel()->getObject("modelreactions",$inactiveList->[$i])->direction() eq "=") {
-				    #$coef->{lowexp}->{$inactiveList->[$i]}->{forward} = $penalty;
-				    #$coef->{lowexp}->{$inactiveList->[$i]}->{"reverse"} = $penalty;
-				} elsif ($self->fbamodel()->getObject("modelreactions",$inactiveList->[$i])->direction() eq ">") {
-				   	#$coef->{lowexp}->{$inactiveList->[$i]}->{forward} = $penalty;
-				} elsif ($self->fbamodel()->getObject("modelreactions",$inactiveList->[$i])->direction() eq "<") {
-				   	#$coef->{lowexp}->{$inactiveList->[$i]}->{"reverse"} = $penalty;
-			    }
 	    	}
 	    }
 	}
@@ -3128,6 +3101,34 @@ sub parseGapfillingOutput {
 		my $tbl = Bio::KBase::ObjectAPI::utilities::LOADTABLE($directory."/GapfillingOutput.txt","\t");
 		my $solution;
 		my $round = 0;
+		print $tbl->{data}->[0]->[1]."\t".$tbl->{data}->[0]->[2]."\t".$tbl->{data}->[0]->[3]."\t".$tbl->{data}->[0]->[4]."\t".$tbl->{data}->[0]->[5]."\t".$tbl->{data}->[0]->[6]."\n";
+		my $rxns = $self->fbamodel()->modelreactions();
+		my $rxnhash;
+		for (my $i=0; $i < @{$rxns}; $i++) {
+			$rxnhash->{$rxns->[$i]->id()}->{$rxns->[$i]->direction()} = 1;
+		}
+		my $currrxns = [split(/;/,$tbl->{data}->[0]->[7])];
+		my $count = [0];
+		for (my $i=0; $i < @{$currrxns}; $i++) {
+			if ($currrxns->[$i] =~ /^(.)(rxn.+)/) {
+				my $rxnid = $2;
+				my $sign = $1;
+				if (defined($rxnhash->{$rxnid}->{"="})) {
+					$count->[0]++;
+				}
+				if ($sign eq "-") {
+					if (defined($rxnhash->{$rxnid}->{"<"})) {
+						$count->[0]++;
+					}
+				} else {
+					if (defined($rxnhash->{$rxnid}->{">"})) {
+						$count->[0]++;
+					}
+				}
+				
+			}
+		}
+		print $count->[0]."\n";
 		foreach my $row (@{$tbl->{data}}) {
 			if (!defined($solution)) {
 				$solution = {

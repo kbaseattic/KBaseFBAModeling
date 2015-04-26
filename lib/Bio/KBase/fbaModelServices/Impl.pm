@@ -11613,6 +11613,7 @@ sub gapfill_model
 		gauranteedrxns => [],
 		gapFill => undef,
 		gapFill_workspace => $input->{workspace},
+		exp_raw_data => {},
 		expsample => undef,
 		expsamplews => $input->{workspace},
 		source_model => undef,
@@ -11629,6 +11630,8 @@ sub gapfill_model
 	}
 	if (defined($input->{expsample})) {
 		$input->{expsample} = $self->_get_msobject("ExpressionSample",$input->{expsamplews},$input->{expsample});
+	} elsif (keys(%{$input->{exp_raw_data}}) > 0) {
+		$input->{expsample} = $input->{exp_raw_data}
 	}
 	my $gfform = $input->{formulation};
 	foreach my $key (keys(%{$gfform})) {
@@ -11647,7 +11650,7 @@ sub gapfill_model
 	if (!defined($fba->gapfillingSolutions()->[0])) {
 		$self->_error("Analysis completed, but no valid solutions found!");
 	}
-	my $meta = $self->_save_msobject($fba,"FBA",$input->{workspace},$fba->id(),{hidden => 1});
+	my $meta = $self->_save_msobject($fba,"FBA",$input->{workspace},$fba->id());
 	#Since gapfilling can take hours, we retrieve the model again in case it changed since accessed previously
 	if ((time()-$start) > 3600 && $input->{out_model} eq $input->{model}) {
 		$model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model},{refreshcache => 1});

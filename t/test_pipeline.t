@@ -11,7 +11,7 @@ use warnings;
 use Test::More;
 use Data::Dumper;
 use File::Temp qw(tempfile);
-my $test_count = 17;
+my $test_count = 0;
 
 use Data::Dumper;
 use Bio::KBase::workspace::ScriptHelpers qw(printObjectInfo get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
@@ -55,9 +55,8 @@ for (my $i=0; $i < @{$pipe_list}; $i++) {
 			eval {
 				$output = $obj->$func($params->[$k]);
 			};
-			if (!defined($output)) {
-				print STDERR $func.".".$k." failed!\n";
-			}
+			$test_count++;
+			ok defined($output), "Step ".$pipeline->[$j]->[0].".".$k.":".$func.":Function successfully ran and generated output!\n";
 			if (defined($pipeline->[$j]->[2]->[$k])) {
 				my $objinfo = undef;
 				eval {
@@ -66,9 +65,8 @@ for (my $i=0; $i < @{$pipe_list}; $i++) {
 						name => $pipeline->[$j]->[2]->[$k]
 					}],1);
 				};
-				if (!defined($objinfo)) {
-					print STDERR $func.".".$k." failed to produce expected object:".$uuid."/".$pipeline->[$j]->[0]."\n";
-				}
+				$test_count++;
+				ok defined($objinfo), "Step ".$pipeline->[$j]->[0].".".$k.":".$func.":Expected object created - ".$uuid."/".$pipeline->[$j]->[2]->[$k]."\n";
 			}
 		}
 	}
@@ -76,3 +74,5 @@ for (my $i=0; $i < @{$pipe_list}; $i++) {
 		workspace => $uuid
 	});
 }
+
+done_testing($test_count);
