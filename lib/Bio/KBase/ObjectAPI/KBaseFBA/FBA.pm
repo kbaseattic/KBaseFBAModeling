@@ -3101,7 +3101,12 @@ sub parseGapfillingOutput {
 		my $tbl = Bio::KBase::ObjectAPI::utilities::LOADTABLE($directory."/GapfillingOutput.txt","\t");
 		my $solution;
 		my $round = 0;
-		print $tbl->{data}->[0]->[1]."\t".$tbl->{data}->[0]->[2]."\t".$tbl->{data}->[0]->[3]."\t".$tbl->{data}->[0]->[4]."\t".$tbl->{data}->[0]->[5]."\t".$tbl->{data}->[0]->[6]."\n";
+		my $temparray = [split(/\//,$tbl->{data}->[0]->[3])];
+		print "Number of gapfilled reactions (lower better):".$temparray->[1]."\n";
+		$temparray = [split(/\//,$tbl->{data}->[0]->[4])];
+		print "Activated high expression reactions (higher better):".$temparray->[1]."\n";
+		$temparray = [split(/\//,$tbl->{data}->[0]->[5])];
+		print "High expression reactions left (lower better):".$temparray->[1]."\n";
 		my $rxns = $self->fbamodel()->modelreactions();
 		my $rxnhash;
 		for (my $i=0; $i < @{$rxns}; $i++) {
@@ -3128,7 +3133,7 @@ sub parseGapfillingOutput {
 				
 			}
 		}
-		print $count->[0]."\n";
+		print "Activated low expression reactions (lower better):".$count->[0]."\n";
 		foreach my $row (@{$tbl->{data}}) {
 			if (!defined($solution)) {
 				$solution = {
