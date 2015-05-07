@@ -454,9 +454,9 @@ sub PrepareForGapfilling {
 	$args = Bio::KBase::ObjectAPI::utilities::args([],{
 		expsample => undef,
 		expression_threshold_type => "AbsoluteThreshold",
-		low_expression_theshold => 0.5,
+		low_expression_threshold => 0.5,
 		low_expression_penalty_factor => 1,
-		high_expression_theshold => 0.5,
+		high_expression_threshold => 0.5,
 		high_expression_penalty_factor => 1,
 		source_model => undef,
 		timePerSolution => 43200,
@@ -511,9 +511,9 @@ sub PrepareForGapfilling {
 	}
     if (defined($self->{_expsample})) {
 		$self->parameters()->{expression_threshold_type} = $args->{expression_threshold_type};
-		$self->parameters()->{low_expression_theshold} = $args->{low_expression_theshold};
+		$self->parameters()->{low_expression_threshold} = $args->{low_expression_threshold};
 		$self->parameters()->{low_expression_penalty_factor} = $args->{low_expression_penalty_factor};
-		$self->parameters()->{high_expression_theshold} = $args->{high_expression_theshold};
+		$self->parameters()->{high_expression_threshold} = $args->{high_expression_threshold};
 		$self->parameters()->{high_expression_penalty_factor} = $args->{high_expression_penalty_factor};
 	}
     $self->numberOfSolutions($args->{num_solutions});
@@ -1737,8 +1737,8 @@ sub process_expression_data {
 			$coef->{highexp}->{bio1} = 1;
 	    } elsif(exists($exp_scores->{$inactiveList->[$i]})){
 	    	if ($type eq "AbsoluteThreshold") {
-		    	if($exp_scores->{$inactiveList->[$i]} <= $self->parameters()->{low_expression_theshold}){
-				    my $penalty = $self->parameters()->{low_expression_penalty_factor}*($self->parameters()->{low_expression_theshold}-$exp_scores->{$inactiveList->[$i]})/$self->parameters()->{low_expression_theshold};
+		    	if($exp_scores->{$inactiveList->[$i]} <= $self->parameters()->{low_expression_threshold}){
+				    my $penalty = $self->parameters()->{low_expression_penalty_factor}*($self->parameters()->{low_expression_threshold}-$exp_scores->{$inactiveList->[$i]})/$self->parameters()->{low_expression_threshold};
 				    if ($self->fbamodel()->getObject("modelreactions",$inactiveList->[$i])->direction() eq "=") {
 				    	$coef->{lowexp}->{$inactiveList->[$i]}->{forward} = $penalty;
 				    	$coef->{lowexp}->{$inactiveList->[$i]}->{"reverse"} = $penalty;
@@ -1747,8 +1747,10 @@ sub process_expression_data {
 				    } elsif ($self->fbamodel()->getObject("modelreactions",$inactiveList->[$i])->direction() eq "<") {
 				    	$coef->{lowexp}->{$inactiveList->[$i]}->{"reverse"} = $penalty;
 				    }
-				}elsif ($exp_scores->{$inactiveList->[$i]} >= $self->parameters()->{high_expression_theshold}) {
-					my $penalty = $self->parameters()->{high_expression_penalty_factor}*($exp_scores->{$inactiveList->[$i]}-$self->parameters()->{high_expression_theshold})/(1-$self->parameters()->{high_expression_theshold});
+				}
+			# use "greater than" rather than "greater than or equal" in case low and high expression thresholds are equivalent
+			elsif ($exp_scores->{$inactiveList->[$i]} > $self->parameters()->{high_expression_threshold}) {
+					my $penalty = $self->parameters()->{high_expression_penalty_factor}*($exp_scores->{$inactiveList->[$i]}-$self->parameters()->{high_expression_threshold})/(1-$self->parameters()->{high_expression_threshold});
 					$coef->{highexp}->{$inactiveList->[$i]} = $penalty;
 				}
 	    	}
