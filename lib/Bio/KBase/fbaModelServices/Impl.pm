@@ -2334,7 +2334,11 @@ Description:
 sub _error {
 	my($self,$msg) = @_;
 	$msg = "_ERROR_".$msg."_ERROR_";
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => $self->_KBaseStore()->provenance()->[0]->{method});
+	my $method = "unknown";
+	if (defined($self->_KBaseStore())) {
+		$method = $self->_KBaseStore()->provenance()->[0]->{method};
+	}
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => $method);
 }
 
 =head3 _build_sequence_object
@@ -10712,7 +10716,7 @@ sub integrate_reconciliation_solutions
 		$rxnprobsGPRArray = $self->_buildRxnProbsGPRArray($rxnprobs);
     }
     foreach my $id (@{$input->{gapfillSolutions}}) {
-    	if ($id =~ m/^(.+\.gf\.\d+)\./) {
+    	if ($id =~ m/^(.+\.gf[fba]*\.\d+)\./) {
     		my $gfid = $1;
 			$model->integrateGapfillSolution({
 				gapfill=> $gfid,
@@ -11642,7 +11646,7 @@ sub gapfill_model
 	}
 	delete $input->{formulation}->{objectiveTerms};
 	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
-	my $fba = $self->_buildFBAObject($input->{formulation},$model,$input->{workspace},$self->_get_new_id($input->{model}.".gffba."));
+	my $fba = $self->_buildFBAObject($input->{formulation},$model,$input->{workspace},$self->_get_new_id($input->{model}.".gf."));
 	$fba->PrepareForGapfilling($input);
 	$fba->runFBA();
 	#Error checking the FBA and gapfilling solution
