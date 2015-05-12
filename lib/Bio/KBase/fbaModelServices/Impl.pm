@@ -1390,9 +1390,9 @@ sub _buildGapfillObject {
 		$gapform->addLinkArrayItem("allowableCompartments",$mdlcmp->compartment());
 	}
 	$gapform->{expression_threshold_type} = $formulation->{expression_threshold_type};
-	$gapform->{low_expression_theshold} = $formulation->{low_expression_theshold};
+	$gapform->{low_expression_threshold} = $formulation->{low_expression_threshold};
 	$gapform->{low_expression_penalty_factor} = $formulation->{low_expression_penalty_factor};
-	$gapform->{high_expression_theshold} = $formulation->{high_expression_theshold};
+	$gapform->{high_expression_threshold} = $formulation->{high_expression_threshold};
 	$gapform->{high_expression_penalty_factor} = $formulation->{high_expression_penalty_factor};	
 	$gapform->{expression_data} = $formulation->{expression_data};
 	$gapform->prepareFBAFormulation();
@@ -8916,9 +8916,9 @@ sub runfba
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["model","workspace"],{
 		expression_threshold_type => "AbsoluteThreshold",
-		low_expression_theshold => 0.5,
+		low_expression_threshold => 0.5,
 		low_expression_penalty_factor => 1,
-		high_expression_theshold => 0.5,
+		high_expression_threshold => 0.5,
 		high_expression_penalty_factor => 1,
 		alpha => 0.5,
 		omega => 0,
@@ -8950,7 +8950,7 @@ sub runfba
 		if (defined($input->{expsample})) {
 			$input->{expsample} = $self->_get_msobject("ExpressionSample",$input->{expsamplews},$input->{expsample});
 		}
-		if (!defined($input->{expsample})) {
+		else {
 			$self->_error("Cannot run boolean expression FBA without providing expression data!");	
 		}
 		$fba->PrepareForGapfilling({
@@ -8959,9 +8959,9 @@ sub runfba
 			make_model_rxns_reversible => 0,
 			expsample => $input->{expsample},
 			expression_threshold_type => $input->{expression_threshold_type},
-			low_expression_theshold => $input->{low_expression_theshold},
+			low_expression_threshold => $input->{low_expression_threshold},
 			low_expression_penalty_factor => $input->{low_expression_penalty_factor},
-			high_expression_theshold => $input->{high_expression_theshold},
+			high_expression_threshold => $input->{high_expression_threshold},
 			high_expression_penalty_factor => $input->{high_expression_penalty_factor},
 			alpha => $input->{alpha},
 			omega => $input->{omega},
@@ -11587,9 +11587,9 @@ sub gapfill_model
     $self->_setContext($ctx,$input);
 	$input = $self->_validateargs($input,["model","workspace"],{		
 		expression_threshold_type => "AbsoluteThreshold",
-		low_expression_theshold => 0.5,
+		low_expression_threshold => 0.5,
 		low_expression_penalty_factor => 1,
-		high_expression_theshold => 0.5,
+		high_expression_threshold => 0.5,
 		high_expression_penalty_factor => 1,
 		target_reactions => [],
 		completeGapfill => 0,
