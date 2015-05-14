@@ -1080,15 +1080,10 @@ sub checkReactionMassChargeBalance {
 	$status.="|HB";
     }
 
-    foreach my $atom (keys(%{$imbalancedAtoms})) { 
-	if ($status eq "OK") {
-	    $status = "MI:";	
-	} else {
-	    $status .= "|";
-	}
+    if(scalar(keys %{$imbalancedAtoms})>0){
 	$results->{balanced} = 0;
-	$results->{imbalancedAtoms}->{$atom} = $atomHash->{$atom};
-	$status .= $atom.":".$atomHash->{$atom};
+	$status = "MI:".join("/", map { $_.":".$atomHash->{$_} } sort keys %{$imbalancedAtoms});	
+	$results->{imbalancedAtoms} = { map { $_ => $atomHash->{$_} } keys %{$imbalancedAtoms} };
     }
     
     if ($netCharge != 0) {
