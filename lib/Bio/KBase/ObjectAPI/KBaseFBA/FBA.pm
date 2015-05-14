@@ -1257,7 +1257,8 @@ sub createJobDirectory {
 		$primMedia = $newPrimMedia;
 	}
 	#Selecting the solver based on whether the problem is MILP
-	my $solver = "GLPK";
+	#First check whether the user has set a specific solver
+	my $solver = defined $self->parameters()->{MFASolver} ? $self->parameters()->{MFASolver} : "GLPK";
 	if ($self->fluxUseVariables() == 1 || $self->drainfluxUseVariables() == 1 || $self->findMinimalMedia()) {
 		$solver = "SCIP";
 	}
