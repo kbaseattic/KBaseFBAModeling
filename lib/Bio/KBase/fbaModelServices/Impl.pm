@@ -2902,8 +2902,9 @@ sub _parse_SBML {
     				}
     			}	
     		} elsif ($node->getNodeName() eq "notes") {
-    			foreach my $html ($node->getElementsByTagName("*",0)){
-    				my $text = $html->getFirstChild()->getNodeValue();
+    			foreach my $html ($node->getElementsByTagName("*",1)){
+			    foreach my $cnode ($html->getChildNodes()) {
+    				my $text = $cnode->getNodeValue();
 					if ($text =~ m/GENE_ASSOCIATION:\s*(.+)/) {
 						$gpr = $1;
 					} elsif ($text =~ m/PROTEIN_ASSOCIATION:\s*/) {
@@ -2915,6 +2916,7 @@ sub _parse_SBML {
 						$pathway = $1;
 						$pathway =~ s/^S_//;
 					}
+			    }
     			}
     		}
     	}
