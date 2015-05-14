@@ -47,7 +47,7 @@ if (-e $opt->{"Compound list (; delimiter) or Filename"}) {
 	}
 	close($fh);
 } else {
-	$params->{compounds} = [split($opt->{"Compound list (; delimiter) or Filename"})];
+	$params->{compounds} = [split(/;/,$opt->{"Compound list (; delimiter) or Filename"})];
 	if (defined($params->{concentrations})) {
 	    $params->{concentrations} = [split(/;/,$params->{concentrations})];
 	}
