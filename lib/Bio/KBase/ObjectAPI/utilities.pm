@@ -952,6 +952,7 @@ sub parseGPR {
 	$gprHash->{root} = $gpr;
 	$index = 0;
 	my $nodelist = ["root"];
+	my @itemsToDelete;
 	while (defined($nodelist->[$index])) {
 		my $currentNode = $nodelist->[$index];
 		my $data = $gprHash->{$currentNode};
@@ -968,7 +969,7 @@ sub parseGPR {
 					my $newdata = $gprHash->{$item};
 					if ($newdata =~ m/$delim/) {
 						$gprHash->{$currentNode} =~ s/$item/$newdata/g;
-						delete $gprHash->{$item};
+						push @itemsToDelete, $item;
 						$index--;
 					} else {
 						push(@{$nodelist},$item);
@@ -980,6 +981,7 @@ sub parseGPR {
 		}
 		$index++;
 	}
+	map { delete $gprHash->{$_} } @itemsToDelete;
 	foreach my $item (keys(%{$gprHash})) {
 		$gprHash->{$item} =~ s/;/+/g;
 		$gprHash->{$item} =~ s/___/\|/g;
