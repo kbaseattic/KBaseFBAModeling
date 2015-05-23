@@ -1860,7 +1860,12 @@ sub integrateGapfillSolution {
 	if (!defined($gfmeta)) {
 		Bio::KBase::ObjectAPI::utilities::error("Gapfill ".$args->{gapfill}." not found!");
 	}
-	my $gf = $gfmeta->gapfill();
+	my $gf;
+	if (defined($gfmeta->gapfill_ref())) {
+		$gf = $gfmeta->gapfill();
+	} else {
+		$gf = $gfmeta->fba();
+	}
 	my $sol;
 	if (!defined($args->{solution})) {
 		$args->{solution} = $gf->gapfillingSolutions()->[0]->id();

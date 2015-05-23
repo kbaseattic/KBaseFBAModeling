@@ -216,6 +216,7 @@ sub get_object {
 
 sub get_object_by_handle {
     my ($self,$handle,$type,$options) = @_;
+    Bio::KBase::ObjectAPI::utilities->error($handle);
     my $typehandle = [split(/\./,$type)];
     my $class = "Bio::KBase::ObjectAPI::".$typehandle->[0]."::".$typehandle->[1];
     my $data;

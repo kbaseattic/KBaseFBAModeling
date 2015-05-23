@@ -11626,7 +11626,7 @@ sub gapfill_model
 		model_workspace => $input->{workspace},
 		integrate_solution => 0,
 		formulation => undef,
-	});	
+	});
 	my $start = time();
 	my $model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model});
 	if (defined($input->{source_model})) {
@@ -11646,7 +11646,7 @@ sub gapfill_model
 	}
 	delete $input->{formulation}->{objectiveTerms};
 	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
-	my $fba = $self->_buildFBAObject($input->{formulation},$model,$input->{workspace},$self->_get_new_id($input->{model}.".gf."));
+	my $fba = $self->_buildFBAObject($input->{formulation},$model,$input->{workspace},$input->{out_model}.".gf");
 	$fba->PrepareForGapfilling($input);
 	$fba->runFBA();
 	#Error checking the FBA and gapfilling solution
@@ -11654,7 +11654,7 @@ sub gapfill_model
 	if (!defined($fba->gapfillingSolutions()->[0])) {
 		$self->_error("Analysis completed, but no valid solutions found!");
 	}
-	my $meta = $self->_save_msobject($fba,"FBA",$input->{workspace},$fba->id());
+	my $meta = $self->_save_msobject($fba,"FBA",$input->{workspace},$input->{out_model}.".gf");
 	#Since gapfilling can take hours, we retrieve the model again in case it changed since accessed previously
 	if ((time()-$start) > 3600 && $input->{out_model} eq $input->{model}) {
 		$model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model},{refreshcache => 1});

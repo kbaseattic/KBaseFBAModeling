@@ -1756,6 +1756,10 @@ sub process_expression_data {
 	    	}
 	    }
 	}
+	push(@{$self->{outputfiles}->{gapfillrxns}},"Lowexp reactions:".join("|",keys(%{$coef->{lowexp}})));
+	push(@{$self->{outputfiles}->{gapfillrxns}},"Highexp reactions:".join("|",keys(%{$coef->{highexp}})));
+	push(@{$self->{outputfiles}->{gapfillstats}},"Lowexp reactions:".keys(%{$coef->{lowexp}}));
+	push(@{$self->{outputfiles}->{gapfillstats}},"Highexp reactions:".keys(%{$coef->{highexp}}));
 	return $coef;
 }
 
@@ -3104,10 +3108,13 @@ sub parseGapfillingOutput {
 		my $solution;
 		my $round = 0;
 		my $temparray = [split(/\//,$tbl->{data}->[0]->[3])];
+		push(@{$self->{outputfiles}->{gapfillstats}},"Gapfilled:".$temparray->[1]);
 		print "Number of gapfilled reactions (lower better):".$temparray->[1]."\n";
 		$temparray = [split(/\//,$tbl->{data}->[0]->[4])];
+		push(@{$self->{outputfiles}->{gapfillstats}},"Active on:".$temparray->[1]);
 		print "Activated high expression reactions (higher better):".$temparray->[1]."\n";
 		$temparray = [split(/\//,$tbl->{data}->[0]->[5])];
+		push(@{$self->{outputfiles}->{gapfillstats}},"Inactive on:".$temparray->[1]);
 		print "High expression reactions left (lower better):".$temparray->[1]."\n";
 		my $rxns = $self->fbamodel()->modelreactions();
 		my $rxnhash;
@@ -3115,6 +3122,7 @@ sub parseGapfillingOutput {
 			$rxnhash->{$rxns->[$i]->id()}->{$rxns->[$i]->direction()} = 1;
 		}
 		my $currrxns = [split(/;/,$tbl->{data}->[0]->[7])];
+		push(@{$self->{outputfiles}->{gapfillrxns}},"Active reactions:".$tbl->{data}->[0]->[7]);
 		my $count = [0];
 		for (my $i=0; $i < @{$currrxns}; $i++) {
 			if ($currrxns->[$i] =~ /^(.)(rxn.+)/) {
@@ -3135,6 +3143,7 @@ sub parseGapfillingOutput {
 				
 			}
 		}
+		push(@{$self->{outputfiles}->{gapfillstats}},"Active off:".$count->[0]);
 		print "Activated low expression reactions (lower better):".$count->[0]."\n";
 		foreach my $row (@{$tbl->{data}}) {
 			if (!defined($solution)) {
