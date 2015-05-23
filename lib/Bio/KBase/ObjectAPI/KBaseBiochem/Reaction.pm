@@ -29,6 +29,8 @@ has revGenEquationCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclas
 has equationCompFreeCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcompfreeequationcode' );
 has revEquationCompFreeCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildrevcompfreeequationcode' );
 has equationFormula => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildequationformula' );
+has stoichiometry => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildstoichiometry' );
+has genStoichiometry => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildgenstoichiometry' );
 has balanced => ( is => 'rw', isa => 'Bool',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildbalanced' );
 has mapped_uuid  => ( is => 'rw', isa => 'ModelSEED::uuid',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildmapped_uuid' );
 has compartment  => ( is => 'rw', isa => 'Bio::KBase::ObjectAPI::KBaseBiochem::Compartment',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcompartment' );
@@ -73,7 +75,14 @@ sub _buildgencode {
 	my ($self) = @_;
 	return $self->createEquation({format=>"id",generalized=>1});
 }
-
+sub _buildstoichiometry {
+	my ($self) = @_;
+	return $self->createEquation({format=>"id",stoichiometry=>1});
+}
+sub _buildgenstoichiometry {
+	my ($self) = @_;
+	return $self->createEquation({format=>"id",stoichiometry=>1,generalized=>1});
+}
 sub _buildrevequationcode {
 	my ($self) = @_;
 	return $self->createEquation({format=>"id",hashed=>1,protons=>0,reverse=>1,direction=>0});
@@ -265,7 +274,8 @@ sub createEquation {
 							    reverse=>0, 
 							    direction=>1, 
 							    protons => 1, 
-							    generalized => 0 }, @_);
+							    generalized => 0,
+							    stoichiometry => 0}, @_);
 	my $rgt = $self->reagents();
 	my $rgtHash;
     my $rxnCompID = $self->compartment()->id();
@@ -294,9 +304,10 @@ sub createEquation {
 		}
 		$rgtHash->{$id}->{$rgt->[$i]->compartment()->id()} += $rgt->[$i]->coefficient();
 	}
-	my $reactcode = "";
-	my $productcode = "";
-	my $sign = " <=> ";
+
+    my @reactcode = ();
+    my @productcode = ();
+    my $sign = " <=> ";
 
     if($args->{direction}==1){
 	$sign = " => " if $self->direction() eq ">";
@@ -314,34 +325,51 @@ sub createEquation {
 	}
 	my $comps = [sort(keys(%{$rgtHash->{$sortedCpd->[$i]}}))];
 	for (my $j=0; $j < @{$comps}; $j++) {
-	    my $compartment = "[".$comps->[$j]."]";
+	    my $compartment = $comps->[$j];
+
 	    if($args->{generalized} && !exists($FoundComps{$comps->[$j]})){
-		$compartment = "[".$CompCount."]";
+		$compartment = $CompCount;
 		$FoundComps{$comps->[$j]}=$CompCount;
 		$CompCount++;
 	    }elsif($args->{generalized} && exists($FoundComps{$comps->[$j]})){
-		$compartment = "[".$FoundComps{$comps->[$j]}."]";
+		$compartment = $FoundComps{$comps->[$j]};
 	    }
-	    $compartment="" if !$args->{compts};
+	    $compartment = "[".$compartment."]" if !$args->{stoichiometry};
+	    $compartment = "" if !$args->{compts};
+
 	    if ($rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]} < 0) {
 		my $coef = -1*$rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]};
-		if (length($reactcode) > 0) {
-		    $reactcode .= " + ";	
+
+		my $reactcode = "(".$coef.") ".$printId.$compartment;
+		if($args->{stoichiometry}==1){
+		    my $name = $self->parent()->getObject("compounds",$sortedCpd->[$i])->name();
+		    $reactcode = join(":",($coef,$printId,$compartment,'0',"\"".$name."\""));
 		}
-		$reactcode .= "(".$coef.") ".$printId.$compartment;
+		push(@reactcode,$reactcode);
+		
 	    } elsif ($rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]} > 0) {
-		if (length($productcode) > 0) {
-		    $productcode .= " + ";	
+		my $coef = $rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]};
+
+		my $productcode .= "(".$coef.") ".$printId.$compartment;
+		if($args->{stoichiometry}==1){
+		    my $name = $self->parent()->getObject("compounds",$sortedCpd->[$i])->name();
+		    $productcode = join(":",($coef,$printId,$compartment,'0',"\"".$name."\""));
 		}
-		$productcode .= "(".$rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]}.") ".$printId.$compartment;
+		push(@productcode, $productcode);
 	    } 
 	}
     }
 
-    my $reaction_string = $reactcode.$sign.$productcode;
-    if($args->{reverse}==1){
-	$reaction_string = $productcode.$sign.$reactcode;
+    my $reaction_string = join(" + ",@reactcode).$sign.join(" + ",@productcode);
+
+    if($args->{stoichiometry} == 1){
+	$reaction_string = join(";",@reactcode).";".join(";",@productcode);
     }
+
+    if($args->{reverse}==1){
+	$reaction_string = join(" + ",@productcode).$sign.join(" + ",@reactcode);
+    }
+
     if ($args->{hashed} == 1) {
 	return Digest::MD5::md5_hex($reaction_string);
     }
