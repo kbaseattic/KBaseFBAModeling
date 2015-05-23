@@ -16,10 +16,12 @@ extends 'Bio::KBase::ObjectAPI::KBaseBiochem::DB::Reaction';
 # ADDITIONAL ATTRIBUTES:
 #***********************************************************************************************************
 has definition => ( is => 'rw',printOrder => 3, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_builddefinition' );
+has genDefinition => ( is => 'rw',printOrder => 3, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildgendefinition' );
 has equation => ( is => 'rw',printOrder => 4, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildequation' );
 has genEquation => ( is => 'rw',printOrder => 4, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildgenequation' );
 has equationDir => ( is => 'rw',printOrder => 4, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildequationdirection' );
 has code => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcode' );
+has genCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildgencode' );
 has equationCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildequationcode' );
 has revEquationCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildrevequationcode' );
 has genEquationCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildgenequationcode' );
@@ -41,7 +43,10 @@ sub _builddefinition {
 	my ($self) = @_;
 	return $self->createEquation({format=>"name",hashed=>0});
 }
-
+sub _buildgendefinition {
+	my ($self) = @_;
+	return $self->createEquation({format=>"name",hashed=>0,generalized=>1});
+}
 sub _buildequation {
 	my ($self) = @_;
 	return $self->createEquation({format=>"id",hashed=>0});
@@ -64,6 +69,11 @@ sub _buildcode {
 	my ($self) = @_;
 	return $self->createEquation({format=>"id"});
 }
+sub _buildgencode {
+	my ($self) = @_;
+	return $self->createEquation({format=>"id",generalized=>1});
+}
+
 sub _buildrevequationcode {
 	my ($self) = @_;
 	return $self->createEquation({format=>"id",hashed=>1,protons=>0,reverse=>1,direction=>0});
