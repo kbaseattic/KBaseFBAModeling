@@ -364,7 +364,7 @@ sub createEquation {
     my $reaction_string = join(" + ",@reactcode).$sign.join(" + ",@productcode);
 
     if($args->{stoichiometry} == 1){
-	$reaction_string = join(";",@reactcode).";".join(";",@productcode);
+	$reaction_string = join(";",@reactcode,@productcode);
     }
 
     if($args->{reverse}==1){
