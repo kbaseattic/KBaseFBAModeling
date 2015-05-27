@@ -339,10 +339,11 @@ sub createEquation {
 
 	    if ($rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]} < 0) {
 		my $coef = -1*$rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]};
-
 		my $reactcode = "(".$coef.") ".$printId.$compartment;
+
 		if($args->{stoichiometry}==1){
 		    my $name = $self->parent()->getObject("compounds",$sortedCpd->[$i])->name();
+		    $coef = $rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]};
 		    $reactcode = join(":",($coef,$printId,$compartment,'0',"\"".$name."\""));
 		}
 		push(@reactcode,$reactcode);
