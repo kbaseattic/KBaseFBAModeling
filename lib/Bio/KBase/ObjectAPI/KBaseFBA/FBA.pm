@@ -515,7 +515,8 @@ sub PrepareForGapfilling {
 		$self->parameters()->{low_expression_penalty_factor} = $args->{low_expression_penalty_factor};
 		$self->parameters()->{high_expression_threshold} = $args->{high_expression_threshold};
 		$self->parameters()->{high_expression_penalty_factor} = $args->{high_expression_penalty_factor};
-	}
+		$self->parameters()->{"scale penalty by flux"} = 1;	
+    }
     $self->numberOfSolutions($args->{num_solutions});
     if ($args->{completeGapfill} == 1 && @{$args->{target_reactions}} == 0) {
     	my $rxnfoundhash = {};
@@ -1259,8 +1260,8 @@ sub createJobDirectory {
 	#Selecting the solver based on whether the problem is MILP
 	#First check whether the user has set a specific solver
 	my $solver = defined $self->parameters()->{MFASolver} ? $self->parameters()->{MFASolver} : "GLPK";
-	if ($self->fluxUseVariables() == 1 || $self->drainfluxUseVariables() == 1 || $self->findMinimalMedia()) {
-		$solver = "SCIP";
+	if ($self->fluxUseVariables() == 1 || $self->drainfluxUseVariables() == 1 || $self->findMinimalMedia() || defined $self->{_expsample}) {
+	    $solver = "SCIP" if $solver ne "CPLEX";
 	}
 	#Setting gene KO
 	my $geneKO = "none";
@@ -3110,13 +3111,13 @@ sub parseGapfillingOutput {
 		my $round = 0;
 		my $temparray = [split(/\//,$tbl->{data}->[0]->[3])];
 		push(@{$self->{outputfiles}->{gapfillstats}},"Gapfilled:".$temparray->[1]);
-		print "Number of gapfilled reactions (lower better):".$temparray->[1]."\n";
+		print "Number of gapfilled reactions [includes low expression reactions that were retained] (lower better):".$temparray->[1]."\n";
 		$temparray = [split(/\//,$tbl->{data}->[0]->[4])];
 		push(@{$self->{outputfiles}->{gapfillstats}},"Active on:".$temparray->[1]);
 		print "Activated high expression reactions (higher better):".$temparray->[1]."\n";
 		$temparray = [split(/\//,$tbl->{data}->[0]->[5])];
 		push(@{$self->{outputfiles}->{gapfillstats}},"Inactive on:".$temparray->[1]);
-		print "High expression reactions left (lower better):".$temparray->[1]."\n";
+		print "High expression reactions that were not activated (lower better):".$temparray->[1]."\n";
 		my $rxns = $self->fbamodel()->modelreactions();
 		my $rxnhash;
 		for (my $i=0; $i < @{$rxns}; $i++) {
@@ -3176,6 +3177,7 @@ sub parseGapfillingOutput {
 			$solution->{rejscore} += $temparray->[0];
 			$temparray = [split(/\//,$row->[6])];
 			$solution->{candscore} += $temparray->[0];
+			next if (@$row < 8);
 			my $array = [split(/;/,$row->[7])];
 			for (my $i=0; $i < @{$array}; $i++) {
 				if ($array->[$i] =~ m/([+\-])(.+)_([a-z])(\d+)/) {
@@ -3198,6 +3200,7 @@ sub parseGapfillingOutput {
 					});
 				}
 			}
+			next if (@$row < 9);
 			$array = [split(/;/,$row->[8])];
 			for (my $i=0; $i < @{$array}; $i++) {
 				my $mdlrxn = $self->fbamodel()->searchForReaction($array->[$i]);
@@ -3208,6 +3211,7 @@ sub parseGapfillingOutput {
 					});
 				}
 			}
+			next if (@$row < 10);
 			$array = [split(/;/,$row->[9])];
 			for (my $i=0; $i < @{$array}; $i++) {
 				my $mdlrxn = $self->fbamodel()->searchForReaction($array->[$i]);
@@ -3215,6 +3219,7 @@ sub parseGapfillingOutput {
 					push(@{$solution->{failedReaction_refs}},modelreaction_ref => $mdlrxn->_reference());
 				}
 			}
+			next if (@$row < 11);
 			$array = [split(/;/,$row->[10])];
 			for (my $i=0; $i < @{$array}; $i++) {
 				if ($array->[$i] =~ m/([+\-])(.+)_([a-z])(\d+)/) {

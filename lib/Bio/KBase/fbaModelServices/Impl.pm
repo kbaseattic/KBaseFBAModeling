@@ -1180,7 +1180,10 @@ sub _buildFBAObject {
 			$fbaobj->regulome_ref($regmodel->_reference)
 		}
 	}
-	if (defined($fbaFormulation->{tintle_sample}) && defined($fbaFormulation->{tintle_workspace})) {
+	if (defined($fbaFormulation->{tintle_sample})) {
+		if (!defined($fbaFormulation->{tintle_workspace})) {
+			$fbaFormulation->{tintle_workspace} = $ws;
+		}
 	    my $sample = $self->_get_msobject("ExpressionSample", $fbaFormulation->{tintle_workspace}, $fbaFormulation->{tintle_sample});
 	    $fbaobj->tintlesample_ref($sample->_reference);
 	    $fbaobj->tintleW($fbaFormulation->{tintle_w});
@@ -8929,7 +8932,7 @@ sub runfba
 		high_expression_threshold => 0.5,
 		high_expression_penalty_factor => 1,
 		alpha => 0.5,
-		omega => 0,
+		omega => 0.5,
 		scalefluxes => 0,
 		formulation => undef,
 		fva => 0,
