@@ -14,6 +14,8 @@ our $CONFIG = undef;
 our $idserver = undef;
 our $keggmaphash = undef;
 our $report = {};
+our $shockurl = undef;
+our $token = undef;
 
 =head1 Bio::KBase::ObjectAPI::utilities
 
@@ -581,6 +583,42 @@ sub MFATOOLKIT_JOB_DIRECTORY {
 	return $ENV{MFATOOLKIT_JOB_DIRECTORY};
 }
 
+=head3 token
+
+Definition:
+	string = Bio::KBase::ObjectAPI::utilities::token(string input);
+Description:
+	Getter setter for authentication token
+Example:
+
+=cut
+
+sub token {
+	my ($input) = @_;
+	if (defined($input)) {
+		$token = $input;
+	}
+	return $token;
+}
+
+=head3 shockurl
+
+Definition:
+	string = Bio::KBase::ObjectAPI::utilities::shockurl(string input);
+Description:
+	Getter setter for authentication shock url
+Example:
+
+=cut
+
+sub shockurl {
+	my ($input) = @_;
+	if (defined($input)) {
+		$shockurl = $input;
+	}
+	return $shockurl;
+}
+
 =head3 CLASSIFIER_BINARY
 
 Definition:
@@ -914,6 +952,7 @@ sub parseGPR {
 	$gprHash->{root} = $gpr;
 	$index = 0;
 	my $nodelist = ["root"];
+	my @itemsToDelete;
 	while (defined($nodelist->[$index])) {
 		my $currentNode = $nodelist->[$index];
 		my $data = $gprHash->{$currentNode};
@@ -930,7 +969,7 @@ sub parseGPR {
 					my $newdata = $gprHash->{$item};
 					if ($newdata =~ m/$delim/) {
 						$gprHash->{$currentNode} =~ s/$item/$newdata/g;
-						delete $gprHash->{$item};
+						push @itemsToDelete, $item;
 						$index--;
 					} else {
 						push(@{$nodelist},$item);
@@ -942,6 +981,7 @@ sub parseGPR {
 		}
 		$index++;
 	}
+	map { delete $gprHash->{$_} } @itemsToDelete;
 	foreach my $item (keys(%{$gprHash})) {
 		$gprHash->{$item} =~ s/;/+/g;
 		$gprHash->{$item} =~ s/___/\|/g;
@@ -1171,6 +1211,14 @@ sub IsCofactor {
 		return 1;
 	}
 	return 0;
+}
+
+sub LoadToShock {
+	my ($filename) = @_;
+	my $output = Bio::KBase::ObjectAPI::utilities::runexecutable('curl -X POST -H "Authorization: OAuth '.Bio::KBase::ObjectAPI::utilities::token().'" --data-binary @'.$filename.' '.Bio::KBase::ObjectAPI::utilities::shockurl().'/node');
+	my $json = JSON::XS->new;
+	my $data = $json->decode(join("\n",@{$output}));
+	return $data->{data}->{id};
 }
 
 1;

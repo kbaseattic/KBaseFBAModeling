@@ -1,6 +1,6 @@
 [
 	{
-		"model":"TestModel"
+		"model":"TestModel",
 		"workspace":"MetabolicModelingTest",
 		"model_workspace":"MetabolicModelingTest",
 		"formulation": {
@@ -10,6 +10,6 @@
 			}
 		},
 		"out_model":"TestModelGF",
-		"fastgapfill":1,
+		"fastgapfill":1
 	}
 ]

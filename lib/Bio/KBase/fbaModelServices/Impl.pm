@@ -157,7 +157,7 @@ sub _resetKBaseStore {
 	$temp = pop(@{$temp});
 	my $newparams = {};
 	foreach my $param (keys(%{$params})) {
-		if ($param ne "fasta" && $param ne "annotations" && $param ne "genomeobj" && $param ne "gtf_file" && $param ne "sbml") {
+		if ($param ne "reactions" && $param ne "compounds" && $param ne "fasta" && $param ne "annotations" && $param ne "genomeobj" && $param ne "gtf_file" && $param ne "sbml") {
 			$newparams->{$param} = $params->{$param};
 		}
 	}
@@ -302,6 +302,8 @@ sub _setContext {
 			}
 		}
 	}
+	Bio::KBase::ObjectAPI::utilities::token($self->_authentication());
+	Bio::KBase::ObjectAPI::utilities::shockurl($self->_shockurl());
 	return $params;
 }
 
@@ -1146,7 +1148,7 @@ sub _buildFBAObject {
 		geneKO_refs => [],
 		reactionKO_refs => [],
 		additionalCpd_refs => [],
-		uptakeLimits => {},
+		uptakeLimits => $fbaFormulation->{uptakelim},
 		parameters => {},
 		inputfiles => {},
 		FBAConstraints => [],
@@ -1364,10 +1366,11 @@ sub _buildGapfillObject {
 	});
 	$gapform->fba($fba);
 	$gapform->parent($self->_KBaseStore());
-	foreach my $reaction (@{$formulation->{targeted_reactions}}) {
-		my $rxnObj = $model->template()->biochemistry()->searchForReaction($reaction);
+	foreach my $reaction (@{$formulation->{target_reactions}}) {
+		#my $rxnObj = $model->template()->biochemistry()->searchForReaction($reaction);
+		my $rxnObj = $model->searchForReaction($reaction);
 		if (defined($rxnObj)) {
-			$gapform->addLinkArrayItem("targetedreactions",$rxnObj);
+		$gapform->addLinkArrayItem("targetedreactions",$rxnObj);
 		}
 	}
 	foreach my $reaction (@{$formulation->{gauranteedrxns}}) {
@@ -1387,9 +1390,9 @@ sub _buildGapfillObject {
 		$gapform->addLinkArrayItem("allowableCompartments",$mdlcmp->compartment());
 	}
 	$gapform->{expression_threshold_type} = $formulation->{expression_threshold_type};
-	$gapform->{low_expression_theshold} = $formulation->{low_expression_theshold};
+	$gapform->{low_expression_threshold} = $formulation->{low_expression_threshold};
 	$gapform->{low_expression_penalty_factor} = $formulation->{low_expression_penalty_factor};
-	$gapform->{high_expression_theshold} = $formulation->{high_expression_theshold};
+	$gapform->{high_expression_threshold} = $formulation->{high_expression_threshold};
 	$gapform->{high_expression_penalty_factor} = $formulation->{high_expression_penalty_factor};	
 	$gapform->{expression_data} = $formulation->{expression_data};
 	$gapform->prepareFBAFormulation();
@@ -2331,7 +2334,11 @@ Description:
 sub _error {
 	my($self,$msg) = @_;
 	$msg = "_ERROR_".$msg."_ERROR_";
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => $self->_KBaseStore()->provenance()->[0]->{method});
+	my $method = "unknown";
+	if (defined($self->_KBaseStore())) {
+		$method = $self->_KBaseStore()->provenance()->[0]->{method};
+	}
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,method_name => $method);
 }
 
 =head3 _build_sequence_object
@@ -2749,6 +2756,9 @@ sub _parse_SBML {
     			$cmpname = $value;
     		}
     	}
+    	if ($cmpid =~ m/([a-zA-Z]+)\d+/) {
+    		$cmpid = $1;
+    	}
     	my $cmp = $bio->searchForCompartment($cmpid);
     	if (defined($cmp)) {
     		$cmp_SEED_id = $cmp->id();
@@ -2860,6 +2870,7 @@ sub _parse_SBML {
     			#print $nm.":".$value."\n";
     		}
     	}
+	my %cpd_compartments;
     	foreach my $node ($rxn->getElementsByTagName("*",0)){
     		if ($node->getNodeName() eq "listOfReactants" || $node->getNodeName() eq "listOfProducts") {
     			foreach my $species ($node->getElementsByTagName("speciesReference",0)){
@@ -2871,7 +2882,9 @@ sub _parse_SBML {
     						$spec = $attr->getValue();
     						if (defined($cpdhash->{$spec})) {
     							$boundary = $cpdhash->{$spec}->[2];
-    							$spec = $cpdhash->{$spec}->[0]."[".$cpdhash->{$spec}->[1]."]";
+							my $cpt = $cpdhash->{$spec}->[1];
+    							$spec = $cpdhash->{$spec}->[0]."[".$cpt."]";
+							$cpd_compartments{$cpt} = 1;
     						}
     					} elsif ($attr->getName() eq "stoichiometry") {
     						$stoich = $attr->getValue();
@@ -2892,8 +2905,9 @@ sub _parse_SBML {
     				}
     			}	
     		} elsif ($node->getNodeName() eq "notes") {
-    			foreach my $html ($node->getElementsByTagName("*",0)){
-    				my $text = $html->getFirstChild()->getNodeValue();
+    			foreach my $html ($node->getElementsByTagName("*",1)){
+			    foreach my $cnode ($html->getChildNodes()) {
+    				my $text = $cnode->getNodeValue();
 					if ($text =~ m/GENE_ASSOCIATION:\s*(.+)/) {
 						$gpr = $1;
 					} elsif ($text =~ m/PROTEIN_ASSOCIATION:\s*/) {
@@ -2905,16 +2919,20 @@ sub _parse_SBML {
 						$pathway = $1;
 						$pathway =~ s/^S_//;
 					}
+			    }
     			}
     		}
     	}
     	if (!defined($name)) {
     		$name = $id;
     	}
-    	if (length($reactants) > 0 && length($products) > 0) {
+	# either reaction has both reactants and products, or else it is a drain for an intracellular compound
+    	if ((length($reactants) > 0 && length($products) > 0) ||
+	    (length($reactants) > 0 && length($products) == 0 && ! exists $cpd_compartments{"e"}))
+	    {
     		push(@{$reactions},[$id,$direction,$compartment,$gpr,$name,$enzyme,$pathway,undef,$reactants." => ".$products]);
     	} else {
-    		print "Reaction ".$id." was skipped, reactants=".$reactants.", products=".$products."\n";
+    		print "Reaction ".$id." was skipped, reactants=".$reactants.", products=".$products.", compartments=".(join " ", keys %cpd_compartments)."\n";
     	}
     }
     return ($reactions,$compounds);
@@ -3322,7 +3340,7 @@ sub new
     $self->{_defaultJobState} = "queued";
     $self->{_accounttype} = "kbase";
     $self->{'_awe-url'} = "http://140.221.85.54:7080";
-    $self->{'_shock-url'} = "http://140.221.85.54:7445";
+    $self->{'_shockurl'} = "http://140.221.85.54:7445";
     $self->{_jobqueue} = "workspace";
     $self->{'_fba-url'} = "";
     Bio::KBase::ObjectAPI::utilities::ID_SERVER_URL("http://kbase.us/services/idserver");
@@ -3420,8 +3438,7 @@ sub new
     		$self->{'_jobqueue'} = $params->{'jobqueue'};
     }
     if (defined $params->{'shock-url'}) {
-    	Bio::KBase::ObjectAPI::utilities::SHOCK_URL($params->{"shock-url"});
-    	$self->{'_shock-url'} = $params->{'shock-url'};
+    		$self->{'_shockurl'} = $params->{'shock-url'};
     }
     if (defined $params->{'awe-url'}) {
     		$self->{'_awe-url'} = $params->{'awe-url'};
@@ -7565,6 +7582,9 @@ sub import_fbamodel
     }
     for (my $i=0; $i < @{$input->{reactions}}; $i++) {
     	my $rxn = $input->{reactions}->[$i];
+    	if ($rxn->[0] =~ m/(.+)_[a-z]\d+$/) {
+    		$rxn->[0] = $1;
+    	}
     	$rxn->[0] =~ s/[^\w]/_/g;
     	$rxn->[0] =~ s/_/-/g;
     	if (defined($rxn->[8])) {
@@ -8904,9 +8924,9 @@ sub runfba
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["model","workspace"],{
 		expression_threshold_type => "AbsoluteThreshold",
-		low_expression_theshold => 0.5,
+		low_expression_threshold => 0.5,
 		low_expression_penalty_factor => 1,
-		high_expression_theshold => 0.5,
+		high_expression_threshold => 0.5,
 		high_expression_penalty_factor => 1,
 		alpha => 0.5,
 		omega => 0,
@@ -8919,6 +8939,7 @@ sub runfba
 		notes => "",
 		model_workspace => $input->{workspace},
 		fba => undef,
+		custom_bounds => undef,
 		biomass => undef,
 		expsample => undef,
 		expsamplews => $input->{workspace},
@@ -8937,7 +8958,7 @@ sub runfba
 		if (defined($input->{expsample})) {
 			$input->{expsample} = $self->_get_msobject("ExpressionSample",$input->{expsamplews},$input->{expsample});
 		}
-		if (!defined($input->{expsample})) {
+		else {
 			$self->_error("Cannot run boolean expression FBA without providing expression data!");	
 		}
 		$fba->PrepareForGapfilling({
@@ -8946,9 +8967,9 @@ sub runfba
 			make_model_rxns_reversible => 0,
 			expsample => $input->{expsample},
 			expression_threshold_type => $input->{expression_threshold_type},
-			low_expression_theshold => $input->{low_expression_theshold},
+			low_expression_threshold => $input->{low_expression_threshold},
 			low_expression_penalty_factor => $input->{low_expression_penalty_factor},
-			high_expression_theshold => $input->{high_expression_theshold},
+			high_expression_threshold => $input->{high_expression_threshold},
 			high_expression_penalty_factor => $input->{high_expression_penalty_factor},
 			alpha => $input->{alpha},
 			omega => $input->{omega},
@@ -8967,7 +8988,43 @@ sub runfba
 		if (defined($bio)) {
 			delete $fba->biomassflux_objterms()->{bio1};
 			$fba->biomassflux_objterms()->{$bio->id()} = 1;
-		}			
+		} else {
+			my $rxn = $model->searchForReaction($input->{biomass});
+			if (defined($rxn)) {
+				delete $fba->biomassflux_objterms()->{bio1};
+				$fba->reactionflux_objterms()->{$rxn->id()} = 1;
+			} else {
+				my $cpd = $model->searchForCompound($input->{biomass});
+				if (defined($cpd)) {
+					delete $fba->biomassflux_objterms()->{bio1};
+					$fba->compoundflux_objterms()->{$cpd->id()} = 1;
+				}
+			}
+		}
+	}
+	if (defined($input->{custom_bounds})) {
+		for (my $i=0; $i < @{$input->{custom_bounds}}; $i++) {
+			my $array = [split(/[\<;]/,$input->{custom_bounds}->[$i])];
+			my $rxn = $model->searchForReaction($array->[1]);
+			if (defined($rxn)) {
+				$fba->add("FBAReactionBounds",{
+					modelreaction_ref => $rxn->_reference(),
+					variableType => "flux",
+					upperBound => $array->[2]+0,
+					lowerBound => $array->[0]+0
+				});
+			} else {
+				my $cpd = $model->searchForCompound($array->[1]);
+				if (defined($cpd)) {
+					$fba->add("FBACompoundBounds",{
+						modelcompound_ref => $cpd->_reference(),
+						variableType => "drainflux",
+						upperBound => $array->[2]+0,
+						lowerBound => $array->[0]+0
+					});
+				}
+			}
+		}
 	}
 	if (defined($input->{formulation}->{eflux_sample}) && defined($input->{formulation}->{eflux_workspace})) {
 		my $scores = $self->_compute_eflux_scores($model,$input->{formulation}->{eflux_series}, $input->{formulation}->{eflux_sample}, $input->{formulation}->{eflux_workspace});
@@ -8982,10 +9039,10 @@ sub runfba
 		alarm 0;
 	};
 	if ($@) {
-		$self->_error($@);
+		$self->_error($@." See ".$fba->jobnode());
     }
     if (!defined($objective)) {
-    	$self->_error("FBA failed with no solution returned!");
+    	$self->_error("FBA failed with no solution returned! See ".$fba->jobnode());
     }
 	$fbaMeta = $self->_save_msobject($fba,"FBA",$input->{workspace},$input->{fba});
     $fbaMeta->[10]->{Media} = $input->{formulation}->{media_workspace}."/".$input->{formulation}->{media};
@@ -10667,7 +10724,7 @@ sub integrate_reconciliation_solutions
 		$rxnprobsGPRArray = $self->_buildRxnProbsGPRArray($rxnprobs);
     }
     foreach my $id (@{$input->{gapfillSolutions}}) {
-    	if ($id =~ m/^(.+\.gf\.\d+)\./) {
+    	if ($id =~ m/^(.+\.gf[fba]*\.\d+)\./) {
     		my $gfid = $1;
 			$model->integrateGapfillSolution({
 				gapfill=> $gfid,
@@ -11538,9 +11595,9 @@ sub gapfill_model
     $self->_setContext($ctx,$input);
 	$input = $self->_validateargs($input,["model","workspace"],{		
 		expression_threshold_type => "AbsoluteThreshold",
-		low_expression_theshold => 0.5,
+		low_expression_threshold => 0.5,
 		low_expression_penalty_factor => 1,
-		high_expression_theshold => 0.5,
+		high_expression_threshold => 0.5,
 		high_expression_penalty_factor => 1,
 		target_reactions => [],
 		completeGapfill => 0,
@@ -11568,6 +11625,7 @@ sub gapfill_model
 		gauranteedrxns => [],
 		gapFill => undef,
 		gapFill_workspace => $input->{workspace},
+		exp_raw_data => {},
 		expsample => undef,
 		expsamplews => $input->{workspace},
 		source_model => undef,
@@ -11576,7 +11634,7 @@ sub gapfill_model
 		model_workspace => $input->{workspace},
 		integrate_solution => 0,
 		formulation => undef,
-	});	
+	});
 	my $start = time();
 	my $model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model});
 	if (defined($input->{source_model})) {
@@ -11584,6 +11642,8 @@ sub gapfill_model
 	}
 	if (defined($input->{expsample})) {
 		$input->{expsample} = $self->_get_msobject("ExpressionSample",$input->{expsamplews},$input->{expsample});
+	} elsif (keys(%{$input->{exp_raw_data}}) > 0) {
+		$input->{expsample} = $input->{exp_raw_data}
 	}
 	my $gfform = $input->{formulation};
 	foreach my $key (keys(%{$gfform})) {
@@ -11594,7 +11654,7 @@ sub gapfill_model
 	}
 	delete $input->{formulation}->{objectiveTerms};
 	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
-	my $fba = $self->_buildFBAObject($input->{formulation},$model,$input->{workspace},$self->_get_new_id($input->{model}.".gffba."));
+	my $fba = $self->_buildFBAObject($input->{formulation},$model,$input->{workspace},$input->{out_model}.".gf");
 	$fba->PrepareForGapfilling($input);
 	$fba->runFBA();
 	#Error checking the FBA and gapfilling solution
@@ -11602,7 +11662,7 @@ sub gapfill_model
 	if (!defined($fba->gapfillingSolutions()->[0])) {
 		$self->_error("Analysis completed, but no valid solutions found!");
 	}
-	my $meta = $self->_save_msobject($fba,"FBA",$input->{workspace},$fba->id(),{hidden => 1});
+	my $meta = $self->_save_msobject($fba,"FBA",$input->{workspace},$input->{out_model}.".gf");
 	#Since gapfilling can take hours, we retrieve the model again in case it changed since accessed previously
 	if ((time()-$start) > 3600 && $input->{out_model} eq $input->{model}) {
 		$model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model},{refreshcache => 1});
@@ -11613,7 +11673,8 @@ sub gapfill_model
 		fba_ref => $fba->_reference(),
 		fba => $fba,
 		integrated => 0,
-		media_ref => $fba->media()->_reference()
+		media_ref => $fba->media()->_reference(),
+		jobnode => $fba->jobnode()
 	});
 	#If specified, we now integrate the first solution of the gapfilling into the model
 	if ($input->{integrate_solution} == 1) {
@@ -19417,32 +19478,35 @@ sub metagenome_to_fbamodels
 		min_reactions => 100,
 		templates => {}
 	});
+	my $mapping = $self->_get_msobject("Mapping","kbase","default-mapping");
 	my $metaanno = $self->_get_msobject("MetagenomeAnnotation",$params->{metaanno_ws},$params->{metaanno_uid});
 	#Sorting OTUs by coverage, placing highest coverage OTU first
 	my $otus = $metaanno->otus();
 	my $sortedOtus = [sort { $b->ave_coverage() <=> $a->ave_coverage() } @{$otus}];
-	my $functions;
+	my $functionhash;
 	my $nummodels = 0;
 	for (my $i=0; $i < @{$sortedOtus}; $i++) {
 		my $otu = $sortedOtus->[$i];
 		my $built = 0;
+		my $mdlfunc = {};
 		#Building OTU model if appropriate
 		if ($otu->name() ne "tail" && $nummodels < $params->{max_otu_models} && $otu->ave_coverage() >= $params->{min_abundance}) {
-			my $mdlfunc = {};
 			my $functions = $otu->functions();
 			for (my $j=0; $j < @{$functions}; $j++) {
 				my $func = $functions->[$j];
 				if ($self->_assess_confidence($metaanno->confidence_type(),$params->{confidence_threshold},$func->confidence()) == 1) {
-					if (!defined($mdlfunc->{$func->functional_role()})) {
-						$mdlfunc->{$func->functional_role()} = 0;
+					my $searchname = Bio::KBase::ObjectAPI::utilities::convertRoleToSearchRole($func->functional_role());
+					if (defined($mapping->queryObject("roles",{searchname => $searchname}))) {
+						if (!defined($mdlfunc->{$func->functional_role()})) {
+							$mdlfunc->{$func->functional_role()} = 0;
+						}
+						$mdlfunc->{$func->functional_role()} += $func->abundance();
 					}
-					$mdlfunc->{$func->functional_role()} += $func->abundance();
 				}
 			}
 			my $genome = $self->_buildGenomeFromFunctions($otu->id().".g.0",$mdlfunc,$otu->name());
 			my $genomeMeta = $self->_save_msobject($genome,"Genome",$params->{workspace},$genome->id(),{hidden=>1});
 			my $mdl = $self->_genome_to_model($genome,$genome->id().".fbamdl.0");
-			print $otu->name()."\t".$otu->ave_coverage()."\t".@{$otu->functions()}."\t".@{$mdl->modelreactions()}."\n";
 			#Saving OTU model if it's large enough
 			if (@{$mdl->modelreactions()} > $params->{min_reactions}) {
 				$nummodels++;
@@ -19467,48 +19531,31 @@ sub metagenome_to_fbamodels
 		}
 		#Adding OTU functions to functions in tail
 		if ($built == 0) {
-			my $funcs = $otu->functions();
-			for (my $j=0; $j < @{$otu->functions()}; $j++) {
-				my $func = $funcs->[$j];
-				if ($self->_assess_confidence($metaanno->confidence_type(),$params->{confidence_threshold},$func->confidence()) == 1) {
-					if (!defined($functions->{$func->functional_role()})) {
-						$functions->{$func->functional_role()} = {
-							abundance => 0,
-							confidence => 0,
-							reference_genes => []
-						};
-					}
-					$functions->{$func->functional_role()}->{abundance} += $func->abundance();
-					$functions->{$func->functional_role()}->{confidence} += $func->abundance()*$func->confidence();
-					push(@{$functions->{$func->{functional_role}}->{reference_genes}},@{$func->reference_genes()});
+			foreach my $func (keys(%{$mdlfunc})) {
+				if (!defined($functionhash->{$func})) {
+					$functionhash->{$func} = 0;
 				}
+				$functionhash->{$func} += $mdlfunc->{$func};
 			}
 		}
 	}
 	#Building ensemble model
-	my $mdlfunc = {};
-	foreach my $function (keys(%{$functions})) {
-		if ($self->_assess_confidence($metaanno->confidence_type(),$params->{confidence_threshold},$functions->{$function}->{confidence}) == 1) {
-			if (!defined($mdlfunc->{$function})) {
-				$mdlfunc->{$function} = 0;
-			}
-			$mdlfunc->{$function} += $functions->{$function}->{abundance};
+	if (keys(%{$functionhash}) > 0) {
+		my $genome = $self->_buildGenomeFromFunctions($metaanno->id().".tail.0.g.0",$functionhash,$metaanno->id().".tail.0.g.0");
+		my $genomeMeta = $self->_save_msobject($genome,"Genome",$params->{workspace},$genome->id(),{hidden=>1});
+		my $mdl = $self->_genome_to_model($genome,$genome->id().".fbamdl.0");
+		my $modelid;
+		if (defined($params->{model_uids}->{tail})) {
+			$modelid = $params->{model_uids}->{tail};
 		}
+		if (!defined($modelid)) {
+			$modelid = $mdl->id();
+		}
+		$mdl->name("tailmodel");
+		$mdl->source("KBase");
+		$mdl->source_id($mdl->id());
+		push(@{$outputs},$self->_save_msobject($mdl,"FBAModel",$params->{workspace},$modelid));
 	}
-	my $genome = $self->_buildGenomeFromFunctions($metaanno->id().".tail.0.g.0",$mdlfunc,$metaanno->id().".tail.0.g.0");
-	my $genomeMeta = $self->_save_msobject($genome,"Genome",$params->{workspace},$genome->id(),{hidden=>1});
-	my $mdl = $self->_genome_to_model($genome,$genome->id().".fbamdl.0");
-	my $modelid;
-	if (defined($params->{model_uids}->{tail})) {
-		$modelid = $params->{model_uids}->{tail};
-	}
-	if (!defined($modelid)) {
-		$modelid = $mdl->id();
-	}
-	$mdl->name("tailmodel");
-	$mdl->source("KBase");
-	$mdl->source_id($mdl->id());
-	push(@{$outputs},$self->_save_msobject($mdl,"FBAModel",$params->{workspace},$modelid));
 	$self->_clearContext();
     #END metagenome_to_fbamodels
     my @_bad_returns;

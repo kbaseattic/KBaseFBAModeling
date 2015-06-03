@@ -19,6 +19,7 @@ has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metacl
 has gapfill_id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 has media_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has integrated => (is => 'rw', isa => 'Bool', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has jobnode => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has integrated_solution => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has gapfill_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
@@ -79,6 +80,13 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
+            'name' => 'jobnode',
+            'type' => 'Str',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
             'name' => 'integrated_solution',
             'type' => 'Str',
             'perm' => 'rw'
@@ -106,7 +114,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {gapfill_id => 0, media_ref => 1, integrated => 2, integrated_solution => 3, gapfill_ref => 4, id => 5, fba_ref => 6};
+my $attribute_map = {gapfill_id => 0, media_ref => 1, integrated => 2, jobnode => 3, integrated_solution => 4, gapfill_ref => 5, id => 6, fba_ref => 7};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
