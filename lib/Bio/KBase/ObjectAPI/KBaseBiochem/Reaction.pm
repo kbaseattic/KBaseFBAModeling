@@ -69,11 +69,11 @@ sub _buildequationcode {
 }
 sub _buildcode {
 	my ($self) = @_;
-	return $self->createEquation({format=>"id"});
+	return $self->createEquation({format=>"id",protons=>0,direction=>0});
 }
 sub _buildgencode {
 	my ($self) = @_;
-	return $self->createEquation({format=>"id",generalized=>1});
+	return $self->createEquation({format=>"id",generalized=>1,protons=>0,direction=>0});
 }
 sub _buildstoichiometry {
 	my ($self) = @_;
@@ -124,7 +124,10 @@ sub _buildcompartment {
 	my ($self) = @_;
 	my $comp = $self->parent()->queryObject("compartments",{name => "Cytosol"});
 	if (!defined($comp)) {
+	    $comp = $self->parent()->getObject("compartments",0);
+	    if(!defined($comp)){
 		Bio::KBase::ObjectAPI::utilities::error("Could not find cytosol compartment in biochemistry!");	
+	    }
 	}
 	return $comp;
 }
@@ -899,7 +902,7 @@ sub checkReactionMassChargeBalance {
     my $args = Bio::KBase::ObjectAPI::utilities::args([], {rebalanceProtons => 0,rebalanceWater => 0, saveStatus => 0}, @_);
     my $atomHash;
     my $netCharge = 0;
-    my $status = "OK";
+    my @status = ("OK");
 
     #Adding up atoms and charge from all reagents
     my $rgts = $self->reagents();
@@ -1116,28 +1119,25 @@ sub checkReactionMassChargeBalance {
 	$netCharge += -1*$imbalancedAtoms->{"H"};
 	$atomHash->{H} = 0;
 	delete($imbalancedAtoms->{H});
-	$status.="|HB";
+	push(@status,"HB");
     }
 
     if(scalar(keys %{$imbalancedAtoms})>0){
 	$results->{balanced} = 0;
-	$status = "MI:".join("/", map { $_.":".$atomHash->{$_} } sort keys %{$imbalancedAtoms});	
+	$status[0] = "MI:".join("/", map { $_.":".$atomHash->{$_} } sort keys %{$imbalancedAtoms});	
 	$results->{imbalancedAtoms} = { map { $_ => $atomHash->{$_} } keys %{$imbalancedAtoms} };
     }
     
     if ($netCharge != 0) {
-	if ($status eq "OK") {
-	    $status = "CI:".$netCharge;	
-	} else {
-	    $status .= "|CI:".$netCharge;
-	}
+	push(@status,"CI:".$netCharge);
+	shift(@status) if $status[0] eq "OK";
 	$results->{balanced} = 0;
 	$results->{imbalancedCharge} = $netCharge;
 	
     }
     
     if($args->{saveStatus} == 1){
-	$self->status($status);
+	$self->status(join("|",@status));
     }
 
     return $results;
