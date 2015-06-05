@@ -1186,8 +1186,8 @@ sub _buildFBAObject {
 		}
 	    my $sample = $self->_get_msobject("ExpressionSample", $fbaFormulation->{tintle_workspace}, $fbaFormulation->{tintle_sample});
 	    $fbaobj->tintlesample_ref($sample->_reference);
-	    $fbaobj->tintleW($fbaFormulation->{tintle_w});
-	    $fbaobj->tintleKappa($fbaFormulation->{tintle_kappa});
+	    $fbaobj->tintleW($fbaFormulation->{omega});
+	    $fbaobj->tintleKappa($fbaFormulation->{kappa});
 	}
 	#Parse objective equation
 	foreach my $term (@{$fbaFormulation->{objectiveTerms}}) {
@@ -8933,6 +8933,7 @@ sub runfba
 		high_expression_penalty_factor => 1,
 		alpha => 0.5,
 		omega => 0.5,
+		kappa => 0.1,
 		scalefluxes => 0,
 		formulation => undef,
 		fva => 0,
@@ -8976,6 +8977,7 @@ sub runfba
 			high_expression_penalty_factor => $input->{high_expression_penalty_factor},
 			alpha => $input->{alpha},
 			omega => $input->{omega},
+			kappa => $input->{kappa},
 			scalefluxes => 0,
 		});
 	}
@@ -11610,6 +11612,7 @@ sub gapfill_model
 		fastgapfill => 0,
 		alpha => 0,
 		omega => 0,
+		kappa => 0,
 		scalefluxes => 0,
 		nomediahyp => 0,
 		nobiomasshyp => 0,#

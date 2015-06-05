@@ -688,6 +688,7 @@ sub addModelReaction {
 		id => $fullid,
 		reaction_ref => $reference,
 		direction => $args->{direction},
+		name => $args->{name},
 		protons => 0,
 		modelcompartment_ref => "~/modelcompartments/id/".$mdlcmp->id(),
 		probability => 0,
