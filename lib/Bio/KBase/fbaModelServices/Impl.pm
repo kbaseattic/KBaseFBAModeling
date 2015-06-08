@@ -8957,6 +8957,8 @@ sub runfba
 	}
 	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
 	#Creating FBAFormulation Object
+    $input->{formulation}->{kappa} = $input->{kappa};
+    $input->{formulation}->{omega} = $input->{omega};
 	my $fba = $self->_buildFBAObject($input->{formulation},$model,$input->{workspace},$input->{fba});
 	if ($input->{booleanexp}) {
 		if (defined($input->{expsample})) {

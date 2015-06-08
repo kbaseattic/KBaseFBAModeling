@@ -3065,7 +3065,7 @@ sub parseTintleResult {
 		}
 		$self->add("FBATintleResults",$tintleOutputHash);
 		# debug	
-		use Data::Dumper; print(Dumper([{"W" => $self->tintleW, "K" => $self->tintleKappa},$tintleOutputHash, $self->tintlesample()->expression_levels()]));
+		use Data::Dumper; print(Dumper($tintleOutputHash));
 		return 1;
 	}
 	return 0;
