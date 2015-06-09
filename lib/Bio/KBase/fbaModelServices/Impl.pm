@@ -2739,9 +2739,7 @@ sub _parse_SBML {
     	perox => "x",
     	vacu => "v",
     	plast => "d",
-	golg => "g",
-	
-	
+		golg => "g"
     };
     foreach my $cmpt (@$cmpts){
     	my $cmp_SEED_id;
