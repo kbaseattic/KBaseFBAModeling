@@ -3051,7 +3051,7 @@ sub parseTintleResult {
 			if ($row->[0] =~ /\d+/) {
 				# Assume gene variables has number, but not other labels.
 				next if ($row->[1] eq "0");
-				$row->[0] =~ s/___/|/ if ($row->[0] =~ /kb___g/);
+				$row->[0] =~ s/___/|/ if ($row->[0] =~ /kb___g/ || $row->[0] =~ /fig___/);
 				if ($row->[0] =~ /Not_(.*)/) {
 					# Case 3: the gene was likely to be on, but actually inactive.
 					$tintleOutputHash->{"conflicts"}->{$1} = "InactiveOn";
@@ -3065,7 +3065,19 @@ sub parseTintleResult {
 		}
 		$self->add("FBATintleResults",$tintleOutputHash);
 		# debug	
-		use Data::Dumper; print(Dumper($tintleOutputHash));
+		my $ftrhash = {};
+		my $rxns = $self->fbamodel()->modelreactions();
+		for (my $i=0; $i < @{$rxns};$i++) {
+		    my $rxn = $rxns->[$i];
+		    my $ftrs = $rxn->featureIDs();
+		    foreach my $ftr (@{$ftrs}) {
+			push @{$ftrhash->{$ftr}}, $rxn->id();
+		    }
+		}
+
+		foreach my $feature (keys %{$tintleOutputHash->{"conflicts"}}) {
+		    print $feature, "\t", $tintleOutputHash->{"conflicts"}->{$feature}, "\t", (join ",", @{$ftrhash->{$feature}}), "\n";
+		}
 		return 1;
 	}
 	return 0;
