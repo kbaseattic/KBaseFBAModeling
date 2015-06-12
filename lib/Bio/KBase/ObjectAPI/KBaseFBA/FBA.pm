@@ -452,6 +452,7 @@ Description:
 sub PrepareForGapfilling {
 	my ($self,$args) = @_;
 	$args = Bio::KBase::ObjectAPI::utilities::args([],{
+	        booleanexp => "absolute",
 		expsample => undef,
 		expression_threshold_type => "AbsoluteThreshold",
 		low_expression_threshold => 0.5,
@@ -517,6 +518,7 @@ sub PrepareForGapfilling {
 		$self->parameters()->{high_expression_threshold} = $args->{high_expression_threshold};
 		$self->parameters()->{high_expression_penalty_factor} = $args->{high_expression_penalty_factor};
 		$self->parameters()->{kappa} = $args->{kappa};	
+		$self->parameters()->{booleanexp} = $args->{booleanexp};	
 		$self->parameters()->{"scale penalty by flux"} = 1;	
     }
     $self->numberOfSolutions($args->{num_solutions});
@@ -1678,7 +1680,8 @@ Description:
 
 sub process_expression_data {
 	my ($self) = @_;
-	my $type = $self->parameters()->{expression_threshold_type};
+	my $booleanexp = $self->parameters()->{booleanexp};
+	my $threshold_type = $self->parameters()->{expression_threshold_type};
 	my $sample = $self->{_expsample};
 	my $exphash = $sample;
 	if (ref($sample) ne "HASH") {
@@ -1686,6 +1689,7 @@ sub process_expression_data {
 	}
 	my $exp_scores = {};
 	my $max_exp_score = 0;
+	my $min_exp_score = -1;
 	my $mdlrxns = $self->fbamodel()->modelreactions();
 	my $inactiveList = ["bio1"];
 	foreach my $mdlrxn (@{$mdlrxns}) {
@@ -1708,6 +1712,9 @@ sub process_expression_data {
 					    if ($ftr_score > $max_exp_score) {
 					    	$max_exp_score = $ftr_score;
 					    }
+					    if ($min_exp_score >= 0 && $ftr_score < $min_exp_score) {
+						$min_exp_score = $ftr_score;
+					    }
 					    if (!defined($subunit_score) || $subunit_score <  $ftr_score) {
 					    	$subunit_score = $ftr_score;
 					    }
@@ -1729,23 +1736,27 @@ sub process_expression_data {
 	    	$exp_scores->{$mdlrxn->id()} = $rxn_score;
 	    }
 	}
-	foreach my $rxn (keys(%{$exp_scores})) {
-		$exp_scores->{$rxn} = $exp_scores->{$rxn}/$max_exp_score;
+	# don't scale probabilities - they are already on a 0 to 1 scale
+	if ($booleanexp eq "absolute") {
+	    foreach my $rxn (keys(%{$exp_scores})) {
+		$exp_scores->{$rxn} = ($exp_scores->{$rxn}-$min_exp_score)/$max_exp_score;
+	    }
 	}
+
 	my $coef = {
 		highexp => {},
 		lowexp => {}
 	};
 	my $high_expression_threshold = $self->parameters()->{high_expression_threshold}+$self->parameters()->{kappa};
 	my $low_expression_threshold = $self->parameters()->{low_expression_threshold}-$self->parameters()->{kappa};
-	print STDERR "In process_expression_data, high_expression_threshold is $high_expression_threshold and low_expression_threshold is $low_expression_threshold\n";
+
 	for (my $i=0; $i < @{$inactiveList}; $i++) {
 		if($inactiveList->[$i] eq "bio1"){
 			$coef->{highexp}->{bio1} = 1;
 	    } elsif(exists($exp_scores->{$inactiveList->[$i]})){
-	    	if ($type eq "AbsoluteThreshold") {
+	    	if ($threshold_type eq "AbsoluteThreshold") {
 		    	if($exp_scores->{$inactiveList->[$i]} <= $low_expression_threshold){
-				    my $penalty = $self->parameters()->{low_expression_penalty_factor}*($low_expression_threshold-$exp_scores->{$inactiveList->[$i]})/$low_expression_threshold;
+				    my $penalty = $self->parameters()->{low_expression_penalty_factor}*(.5-$exp_scores->{$inactiveList->[$i]})/.5;
 				    if ($self->fbamodel()->getObject("modelreactions",$inactiveList->[$i])->direction() eq "=") {
 				    	$coef->{lowexp}->{$inactiveList->[$i]}->{forward} = $penalty;
 				    	$coef->{lowexp}->{$inactiveList->[$i]}->{"reverse"} = $penalty;
@@ -1754,12 +1765,12 @@ sub process_expression_data {
 				    } elsif ($self->fbamodel()->getObject("modelreactions",$inactiveList->[$i])->direction() eq "<") {
 				    	$coef->{lowexp}->{$inactiveList->[$i]}->{"reverse"} = $penalty;
 				    }
-				}
+			}
 			# use "greater than" rather than "greater than or equal" in case low and high expression thresholds are equivalent
 			elsif ($exp_scores->{$inactiveList->[$i]} > $high_expression_threshold) {
-					my $penalty = $self->parameters()->{high_expression_penalty_factor}*($exp_scores->{$inactiveList->[$i]}-$high_expression_threshold)/(1-$high_expression_threshold);
-					$coef->{highexp}->{$inactiveList->[$i]} = $penalty;
-				}
+			    my $penalty = $self->parameters()->{high_expression_penalty_factor}*($exp_scores->{$inactiveList->[$i]}-.5)/.5;
+			    $coef->{highexp}->{$inactiveList->[$i]} = $penalty;
+			}
 	    	}
 	    }
 	}
@@ -3133,12 +3144,44 @@ Description:
 sub parseGapfillingOutput {
     my $self = shift;
     my $directory = $self->jobDirectory();
+
+    sub addExpressionLeveltoGPR {
+	my ($gprstring, $sample) = @_;
+	my $exphash = $sample;
+	if (ref($sample) ne "HASH") {
+	    $exphash = $sample->expression_levels();
+	}
+	my $gpr = Bio::KBase::ObjectAPI::utilities::translateGPRHash(Bio::KBase::ObjectAPI::utilities::parseGPR($gprstring));
+	my @result;
+	foreach my $node (@$gpr) {
+	    my @inner;
+	    foreach my $fa (@$node) {
+		my @innerinner;
+		foreach my $innerinner (@$fa) {
+		    push @innerinner, $innerinner.":".sprintf("%.2f",$exphash->{$innerinner});
+		}
+		if (@innerinner > 1) {
+		    push @inner, "(".(join " or ", @innerinner).")";
+		}
+		else {
+		    push @inner, @innerinner;
+		}
+	    }
+	    if (@inner > 1) {
+		push @result, "(".(join " and ", @inner).")";
+	    }
+	    else {
+		push @result, @inner;
+	    }
+	}
+	return "(".(join " or ", @result).")";
+    }
+
 	if (-e $directory."/GapfillingOutput.txt") {
 		my $rxns = $self->fbamodel()->modelreactions();
 		my $rxnhash;
 		for (my $i=0; $i < @{$rxns}; $i++) {
-			$rxnhash->{$rxns->[$i]->id()}->{$rxns->[$i]->direction()} = 1;
-			$rxnhash->{$rxns->[$i]->id()}->{name} = $rxns->[$i]->name();
+		    $rxnhash->{$rxns->[$i]->id()} = $rxns->[$i];
 		}	
 		my $tbl = Bio::KBase::ObjectAPI::utilities::LOADTABLE($directory."/GapfillingOutput.txt","\t");
 		my $solution;
@@ -3148,7 +3191,7 @@ sub parseGapfillingOutput {
 		print "Number of gapfilled reactions [includes low expression reactions that must carry flux] (lower better): ".$temparray->[1]."\n";
 		for my $rxn (split ";", $tbl->{data}->[0]->[7]) {
 		    if ($rxn =~ /^(.)(.+)/) {
-			print "\t", $rxn, "\t", $rxnhash->{$2}->{name}, "\n";
+			print "\t", $rxn, "\t", $rxnhash->{$2}->name(), "\t", addExpressionLeveltoGPR($rxnhash->{$2}->gprString(), $self->{_expsample}), "\n";
 		    }
 		}
 		$temparray = [split(/\//,$tbl->{data}->[0]->[4])];
@@ -3158,7 +3201,7 @@ sub parseGapfillingOutput {
 		push(@{$self->{outputfiles}->{gapfillstats}},"Inactive on:".$temparray->[1]);
 		print "High expression reactions that were not activated [do not carry flux] (lower better): ".$temparray->[1]."\n";
 		for my $rxn (split ";", $tbl->{data}->[0]->[9]) {
-		    print "\t", $rxn, "\t", $rxnhash->{$rxn}->{name}, "\n";
+		    print "\t", $rxn, "\t", $rxnhash->{$rxn}->name(), "\t", addExpressionLeveltoGPR($rxnhash->{$rxn}->gprString(), $self->{_expsample}), "\n";
 		}
 		my $currrxns = [split(/;/,$tbl->{data}->[0]->[7])];
 		push(@{$self->{outputfiles}->{gapfillrxns}},"Active reactions:".$tbl->{data}->[0]->[7]);
@@ -3167,15 +3210,15 @@ sub parseGapfillingOutput {
 			if ($currrxns->[$i] =~ /^(.)(.+)/) {
 				my $rxnid = $2;
 				my $sign = $1;
-				if (defined($rxnhash->{$rxnid}->{"="})) {
+				if (defined($rxnhash->{$rxnid}->direction() eq "=")) {
 					$count->[0]++;
 				}
 				if ($sign eq "-") {
-					if (defined($rxnhash->{$rxnid}->{"<"})) {
+					if (defined($rxnhash->{$rxnid}->direction() eq "<")) {
 						$count->[0]++;
 					}
 				} else {
-					if (defined($rxnhash->{$rxnid}->{">"})) {
+					if (defined($rxnhash->{$rxnid}->direction() eq ">")) {
 						$count->[0]++;
 					}
 				}
@@ -3270,7 +3313,6 @@ sub parseGapfillingOutput {
 					my $cmp = $self->biochemistry()->searchForCompartment($3);
 					my $rxn = $self->biochemistry()->searchForReaction($2);
 					if (!defined $rxn) {
-					    print STDERR "rejected candidate not found in biochemistry: $2\n";
 					    next;
 					}
 					push(@{$solution->{rejectedCandidates}},{

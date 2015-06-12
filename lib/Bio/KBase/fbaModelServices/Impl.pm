@@ -8947,10 +8947,10 @@ sub runfba
 		biomass => undef,
 		expsample => undef,
 		expsamplews => $input->{workspace},
-		booleanexp => 0,
 		activation_penalty => 0.1,
 		solver => undef
 	});
+    $input->{booleanexp} = "absolute" if (exists $input->{booleanexp} && $input->{booleanexp} eq "");
 	my $model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model});
 	if (!defined($input->{fba})) {
 		$input->{fba} = $self->_get_new_id($input->{model}.".fba.");
@@ -8965,13 +8965,14 @@ sub runfba
 			$input->{expsample} = $self->_get_msobject("ExpressionSample",$input->{expsamplews},$input->{expsample});
 		}
 		else {
-			$self->_error("Cannot run boolean expression FBA without providing expression data!");	
+			$self->_error("Cannot run expression-constrained FBA without providing expression data!");	
 		}
 		$fba->PrepareForGapfilling({
 			add_external_rxns => 0,
 			activate_all_model_reactions => 0,
 			make_model_rxns_reversible => 0,
 			expsample => $input->{expsample},
+			booleanexp => $input->{booleanexp},
 			expression_threshold_type => $input->{expression_threshold_type},
 			low_expression_threshold => $input->{low_expression_threshold},
 			low_expression_penalty_factor => $input->{low_expression_penalty_factor},

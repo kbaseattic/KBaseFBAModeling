@@ -72,7 +72,7 @@ my $specs = [
     [ 'rxnko:s@', 'List of reaction KO (; delimiter)' ],
     [ 'bounds:s@', 'Custom bounds' ],
     [ 'constraints:s@', 'Custom constraints' ],
-    [ 'booleanexp', 'Boolean modeling expression data' ],
+    [ 'booleanexp:s', 'Constrain modeling with on/off expression data of specified type. Either "absolute" or "probability"'],
     [ 'expsample:s', 'ID of expression sample' ],
     [ 'expsamplews:s', 'Workspace with expression sample' ],
     [ 'promconstraint|p:s', 'ID of PromConstraint' ],
