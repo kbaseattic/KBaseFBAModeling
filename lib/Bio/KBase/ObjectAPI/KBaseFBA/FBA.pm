@@ -2412,7 +2412,7 @@ sub parseFluxFiles {
 						my $mdlcpd = $self->fbamodel()->getObject("modelcompounds",$row->[$compoundColumn]);
 						if (defined($mdlcpd)) {
 							my $value = $row->[$drainCompartmentColumns->{$comp}];
-							if (abs($value) < 0.00000001) {
+							if (abs($value) < 0.000000001) {
 								$value = 0;
 							}
 							my $lower = $self->defaultMinDrainFlux();
@@ -2470,7 +2470,7 @@ sub parseFluxFiles {
 						} else {
 							my $mdlrxn = $self->fbamodel()->getObject("modelreactions",$row->[$reactionColumn]);
 							if (defined($mdlrxn)) {
-								if (abs($value) < 0.00000001) {
+								if (abs($value) < 0.000000001) {
 									$value = 0;
 								}
 								my $lower = -1*$self->defaultMaxFlux();
@@ -2497,7 +2497,7 @@ sub parseFluxFiles {
 							} else {
 								my $biorxn = $self->fbamodel()->getObject("biomasses",$row->[$reactionColumn]);
 								if (defined($biorxn)) {
-									if (abs($value) < 0.00000001) {
+									if (abs($value) < 0.000000001) {
 										$value = 0;
 									}
 									my $lower = 0;
@@ -2866,10 +2866,10 @@ sub parseFVAResults {
 								if ($vartrans->{$vartype}->[1] != -1 && $vartrans->{$vartype}->[2] != -1) {
 									my $min = $row->[$vartrans->{$vartype}->[1]];
 									my $max = $row->[$vartrans->{$vartype}->[2]];
-									if (abs($min) < 0.0000001) {
+									if (abs($min) < 0.000000001) {
 										$min = 0;	
 									}
-									if (abs($max) < 0.0000001) {
+									if (abs($max) < 0.000000001) {
 										$max = 0;	
 									}
 									my $fbaRxnVar = $self->queryObject("FBAReactionVariables",{
@@ -2963,10 +2963,10 @@ sub parseFVAResults {
 									my $min = $row->[$vartrans->{$vartype}->[1]];
 									my $max = $row->[$vartrans->{$vartype}->[2]];
 									if ($min != 10000000) {
-										if (abs($min) < 0.0000001) {
+										if (abs($min) < 0.000000001) {
 											$min = 0;	
 										}
-										if (abs($max) < 0.0000001) {
+										if (abs($max) < 0.000000001) {
 											$max = 0;	
 										}
 										my $fbaCpdVar = $self->queryObject("FBACompoundVariables",{
@@ -3177,6 +3177,13 @@ sub parseGapfillingOutput {
 	return "(".(join " or ", @result).")";
     }
 
+    sub fluxForRxn {
+	my  ($self, $rxn) = @_;
+	my $fbaRxnVar = $self->queryObject("FBAReactionVariables",{
+	    modelreaction_ref => $rxn->_reference()});
+	return $fbaRxnVar->variableType().":".$fbaRxnVar->value();
+    }
+
 	if (-e $directory."/GapfillingOutput.txt") {
 		my $rxns = $self->fbamodel()->modelreactions();
 		my $rxnhash;
@@ -3191,7 +3198,7 @@ sub parseGapfillingOutput {
 		print "Number of gapfilled reactions [includes low expression reactions that must carry flux] (lower better): ".$temparray->[1]."\n";
 		for my $rxn (split ";", $tbl->{data}->[0]->[7]) {
 		    if ($rxn =~ /^(.)(.+)/) {
-			print "\t", $rxn, "\t", $rxnhash->{$2}->name(), "\t", addExpressionLeveltoGPR($rxnhash->{$2}->gprString(), $self->{_expsample}), "\n";
+			print "\t", $rxn, "\t", $rxnhash->{$2}->name(), "\t", fluxForRxn($self, $rxnhash->{$2}), "\t", addExpressionLeveltoGPR($rxnhash->{$2}->gprString(), $self->{_expsample}), "\n";
 		    }
 		}
 		$temparray = [split(/\//,$tbl->{data}->[0]->[4])];
