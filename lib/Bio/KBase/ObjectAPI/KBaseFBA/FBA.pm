@@ -3210,15 +3210,15 @@ sub parseGapfillingOutput {
 			if ($currrxns->[$i] =~ /^(.)(.+)/) {
 				my $rxnid = $2;
 				my $sign = $1;
-				if (defined($rxnhash->{$rxnid}->direction() eq "=")) {
+				if ($rxnhash->{$rxnid}->direction() eq "=") {
 					$count->[0]++;
 				}
 				if ($sign eq "-") {
-					if (defined($rxnhash->{$rxnid}->direction() eq "<")) {
+					if ($rxnhash->{$rxnid}->direction() eq "<") {
 						$count->[0]++;
 					}
 				} else {
-					if (defined($rxnhash->{$rxnid}->direction() eq ">")) {
+					if ($rxnhash->{$rxnid}->direction() eq ">") {
 						$count->[0]++;
 					}
 				}
@@ -3270,6 +3270,7 @@ sub parseGapfillingOutput {
 					}
 					my $cmp = $self->biochemistry()->searchForCompartment($3);
 					my $rxn = $self->biochemistry()->searchForReaction($2);
+					next if ! defined $rxn;
 					push(@{$solution->{gapfillingSolutionReactions}},{
 						round => $round+0,
 						reaction_ref => $rxn->_reference(),

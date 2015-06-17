@@ -29,6 +29,7 @@ my $translation = {
 	expsamplews => "expsamplews",
 	booleanexp => "booleanexp",
 	kappa => "kappa",
+	omega => "omega",
 	solver => "solver",
 	biomass => "biomass"
 };
