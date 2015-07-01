@@ -34,6 +34,8 @@ has equationCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => '
 has revEquationCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildrevequationcode' );
 has equationCompFreeCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcompfreeequationcode' );
 has revEquationCompFreeCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildrevcompfreeequationcode' );
+has genEquationCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildgenequationcode' );
+has revGenEquationCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildgenrevequationcode' );
 has equationFormula => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildequationformula' );
 has complexString => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcomplexString' );
 
@@ -66,6 +68,14 @@ sub _buildequationcode {
 sub _buildrevequationcode {
 	my ($self) = @_;
 	return $self->createEquation({indecies => 0,format=>"id",hashed=>1,protons=>0,reverse=>1,direction=>0});
+}
+sub _buildgenequationcode {
+	my ($self) = @_;
+	return $self->createEquation({format=>"id",hashed=>1,protons=>0,direction=>0,generalized=>1});
+}
+sub _buildgenrevequationcode {
+	my ($self) = @_;
+	return $self->createEquation({format=>"id",hashed=>1,protons=>0,reverse=>1,direction=>0,generalized=>1});
 }
 
 sub _buildcompfreeequationcode {
@@ -323,8 +333,16 @@ Description:
 =cut
 
 sub createEquation {
-	my ($self,$args) = @_;
-    $args = Bio::KBase::ObjectAPI::utilities::args([], { indecies => 1,format => "id", hashed => 0, water => 1, compts=>1, reverse=>0, direction=>1,protons => 1 }, $args);
+    my ($self,$args) = @_;
+    $args = Bio::KBase::ObjectAPI::utilities::args([], { indecies => 1,
+							 format => id,
+                                                         hashed => 0,
+                                                         water => 1,
+							 compts=>1,
+							 reverse=>0,
+							 direction=>1,
+							 protons => 1,
+							 generalized => 0}, $args);
 	
 	my $rgts = $self->modelReactionReagents();
 	my $rgtHash;
@@ -359,56 +377,74 @@ sub createEquation {
 		}
 		$rgtHash->{$id}->{$rgt->modelcompound()->modelcompartment()->id()} += $rgt->coefficient();
 	}
-	
-	my $reactcode = "";
-	my $productcode = "";
-	my $sign = " <=> ";
-    if($args->{direction}==1){
-		$sign = " => " if $self->direction() eq ">";
-		$sign = " <= " if $self->direction() eq "<";
-    }
-	
-	my $sortedCpd = [sort(keys(%{$rgtHash}))];
-	for (my $i=0; $i < @{$sortedCpd}; $i++) {
-	    my $printId = $sortedCpd->[$i];
-	    if($args->{format} eq "formula"){
-			$printId = $self->parent()->biochemistry()->getObject("compounds",$sortedCpd->[$i])->formula();
-	    }
-		my $comps = [sort(keys(%{$rgtHash->{$sortedCpd->[$i]}}))];
-		for (my $j=0; $j < @{$comps}; $j++) {
-			if ($comps->[$j] =~ m/([a-z])(\d+)/) {
-				my $comp = $1;
-				my $index = $2;
-				my $compartment = "[".$comp.$index."]";
-				if ($args->{indecies} == 0) {
-					$compartment = "[".$comp."]";
-				}
-				#$compartment= "" if ($comp eq "c" && ($index == 0 || $args->{indecies} == 0));
-				$compartment= "" if !$args->{compts};
-				if ($rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]} < 0) {
-					my $coef = -1*$rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]};
-					if (length($reactcode) > 0) {
-						$reactcode .= " + ";	
-					}
-					$reactcode .= "(".$coef.") ".$printId.$compartment;
-				} elsif ($rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]} > 0) {
-					if (length($productcode) > 0) {
-						$productcode .= " + ";	
-					}
-					$productcode .= "(".$rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]}.") ".$printId.$compartment;
-				}
-			}
-		}
-	}
 
-	my $code = $reactcode.$sign.$productcode;
-	if($args->{reverse}==1){
-		$code = $productcode.$sign.$reactcode;
+    my @reactcode = ();
+    my @productcode = ();
+    my $sign = " <=> ";
+
+    if($args->{direction}==1){
+	$sign = " => " if $self->direction() eq ">";
+	$sign = " <= " if $self->direction() eq "<";
     }
+	
+    my %FoundComps=();
+    my $CompCount=0;
+
+    my $sortedCpd = [sort(keys(%{$rgtHash}))];
+    for (my $i=0; $i < @{$sortedCpd}; $i++) {
+	my $printId = $sortedCpd->[$i];
+	if($args->{format} eq "formula"){
+	    $printId = $self->parent()->biochemistry()->getObject("compounds",$sortedCpd->[$i])->formula();
+	}
+	my $comps = [sort(keys(%{$rgtHash->{$sortedCpd->[$i]}}))];
+	for (my $j=0; $j < @{$comps}; $j++) {
+	    if ($comps->[$j] =~ m/([a-z])(\d+)/) {
+		my $comp = $1;
+		my $index = $2;
+		my $compartment = $comp;
+
+		if($args->{generalized} && !exists($FoundComps{$comp})){
+		    $compartment = $CompCount;
+		    $FoundComps{$comp}=$CompCount;
+		    $CompCount++;
+		}elsif($args->{generalized} && exists($FoundComps{$comp})){
+		    $compartment = $FoundComps{$comp};
+		}
+		
+		if ($args->{indecies} == 0) {
+		    $compartment = "[".$compartment."]";
+		}else{
+		    $compartment = "[".$compartment.$index."]";
+		}
+
+		$compartment= "" if !$args->{compts};
+
+		if ($rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]} < 0) {
+		    my $coef = -1*$rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]};
+		    my $reactcode = "(".$coef.") ".$printId.$compartment;
+		    push(@reactcode,$reactcode);
+
+		} elsif ($rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]} > 0) {
+		    my $coef = $rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]};
+		    
+		    my $productcode .= "(".$coef.") ".$printId.$compartment;
+		    push(@productcode, $productcode);
+		}
+	    }
+	}
+    }
+    
+
+    my $reaction_string = join(" + ",@reactcode).$sign.join(" + ",@productcode);
+
+    if($args->{reverse}==1){
+	$reaction_string = join(" + ",@productcode).$sign.join(" + ",@reactcode);
+    }
+
     if ($args->{hashed} == 1) {
-		return Digest::MD5::md5_hex($code);
+	return Digest::MD5::md5_hex($reaction_string);
     }
-	return $code;
+    return $reaction_string;
 }
 
 =head3 hasModelReactionReagent
