@@ -335,7 +335,7 @@ Description:
 sub createEquation {
     my ($self,$args) = @_;
     $args = Bio::KBase::ObjectAPI::utilities::args([], { indecies => 1,
-							 format => id,
+							 format => 'id',
                                                          hashed => 0,
                                                          water => 1,
 							 compts=>1,
