@@ -16,14 +16,21 @@ extends 'Bio::KBase::ObjectAPI::KBaseBiochem::DB::Reaction';
 # ADDITIONAL ATTRIBUTES:
 #***********************************************************************************************************
 has definition => ( is => 'rw',printOrder => 3, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_builddefinition' );
+has genDefinition => ( is => 'rw',printOrder => 3, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildgendefinition' );
 has equation => ( is => 'rw',printOrder => 4, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildequation' );
+has genEquation => ( is => 'rw',printOrder => 4, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildgenequation' );
 has equationDir => ( is => 'rw',printOrder => 4, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildequationdirection' );
 has code => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcode' );
+has genCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildgencode' );
 has equationCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildequationcode' );
 has revEquationCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildrevequationcode' );
+has genEquationCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildgenequationcode' );
+has revGenEquationCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildgenrevequationcode' );
 has equationCompFreeCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcompfreeequationcode' );
 has revEquationCompFreeCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildrevcompfreeequationcode' );
 has equationFormula => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildequationformula' );
+has stoichiometry => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildstoichiometry' );
+has genStoichiometry => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildgenstoichiometry' );
 has balanced => ( is => 'rw', isa => 'Bool',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildbalanced' );
 has mapped_uuid  => ( is => 'rw', isa => 'ModelSEED::uuid',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildmapped_uuid' );
 has compartment  => ( is => 'rw', isa => 'Bio::KBase::ObjectAPI::KBaseBiochem::Compartment',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcompartment' );
@@ -38,10 +45,17 @@ sub _builddefinition {
 	my ($self) = @_;
 	return $self->createEquation({format=>"name",hashed=>0});
 }
-
+sub _buildgendefinition {
+	my ($self) = @_;
+	return $self->createEquation({format=>"name",hashed=>0,generalized=>1});
+}
 sub _buildequation {
 	my ($self) = @_;
 	return $self->createEquation({format=>"id",hashed=>0});
+}
+sub _buildgenequation {
+	my ($self) = @_;
+	return $self->createEquation({format=>"id",hashed=>0,generalized=>1});
 }
 
 sub _buildequationdirection {
@@ -55,11 +69,32 @@ sub _buildequationcode {
 }
 sub _buildcode {
 	my ($self) = @_;
-	return $self->createEquation({format=>"id"});
+	return $self->createEquation({format=>"id",protons=>0,direction=>0});
+}
+sub _buildgencode {
+	my ($self) = @_;
+	return $self->createEquation({format=>"id",generalized=>1,protons=>0,direction=>0});
+}
+sub _buildstoichiometry {
+	my ($self) = @_;
+	return $self->createEquation({format=>"id",stoichiometry=>1});
+}
+sub _buildgenstoichiometry {
+	my ($self) = @_;
+	return $self->createEquation({format=>"id",stoichiometry=>1,generalized=>1});
 }
 sub _buildrevequationcode {
 	my ($self) = @_;
 	return $self->createEquation({format=>"id",hashed=>1,protons=>0,reverse=>1,direction=>0});
+}
+
+sub _buildgenequationcode {
+	my ($self) = @_;
+	return $self->createEquation({format=>"id",hashed=>1,protons=>0,direction=>0,generalized=>1});
+}
+sub _buildgenrevequationcode {
+	my ($self) = @_;
+	return $self->createEquation({format=>"id",hashed=>1,protons=>0,reverse=>1,direction=>0,generalized=>1});
 }
 
 sub _buildcompfreeequationcode {
@@ -89,7 +124,10 @@ sub _buildcompartment {
 	my ($self) = @_;
 	my $comp = $self->parent()->queryObject("compartments",{name => "Cytosol"});
 	if (!defined($comp)) {
+	    $comp = $self->parent()->getObject("compartments",0);
+	    if(!defined($comp)){
 		Bio::KBase::ObjectAPI::utilities::error("Could not find cytosol compartment in biochemistry!");	
+	    }
 	}
 	return $comp;
 }
@@ -232,7 +270,15 @@ Description:
 
 sub createEquation {
     my $self = shift;
-    my $args = Bio::KBase::ObjectAPI::utilities::args([], { format => "id", hashed => 0, water => 1, compts=>1, reverse=>0, direction=>1,protons => 1 }, @_);
+    my $args = Bio::KBase::ObjectAPI::utilities::args([], { format => "id", 
+							    hashed => 0, 
+							    water => 1, 
+							    compts=>1, 
+							    reverse=>0, 
+							    direction=>1, 
+							    protons => 1, 
+							    generalized => 0,
+							    stoichiometry => 0}, @_);
 	my $rgt = $self->reagents();
 	my $rgtHash;
     my $rxnCompID = $self->compartment()->id();
@@ -261,52 +307,73 @@ sub createEquation {
 		}
 		$rgtHash->{$id}->{$rgt->[$i]->compartment()->id()} += $rgt->[$i]->coefficient();
 	}
-#Deliberately commented out for the time being, as protons are being added to the reagents list a priori
-#	if (defined($self->defaultProtons()) && $self->defaultProtons() != 0 && !$args->{hashed}) {
-#		my $id = $hcpd->uuid();
-#		if ($args->{format} eq "name" || $args->{format} eq "id") {
-#			my $function = $args->{format};
-#			$id = $hcpd->$function();
-#		} elsif ($args->{format} ne "uuid") {
-#			$id = $hcpd->getAlias($args->{format});
-#		}
-#		$rgtHash->{$id}->{$rxnCompID} += $self->defaultProtons();
-#	}
-	my $reactcode = "";
-	my $productcode = "";
-	my $sign = " <=> ";
+
+    my @reactcode = ();
+    my @productcode = ();
+    my $sign = " <=> ";
+
     if($args->{direction}==1){
 	$sign = " => " if $self->direction() eq ">";
 	$sign = " <= " if $self->direction() eq "<";
     }
-	my $sortedCpd = [sort(keys(%{$rgtHash}))];
-	for (my $i=0; $i < @{$sortedCpd}; $i++) {
-	    my $printId=$sortedCpd->[$i];
-	    if($args->{format} eq "formula"){
-		$printId=$self->parent()->getObject("compounds",$sortedCpd->[$i])->formula();
-	    }
-		my $comps = [sort(keys(%{$rgtHash->{$sortedCpd->[$i]}}))];
-		for (my $j=0; $j < @{$comps}; $j++) {
-			my $compartment = "[".$comps->[$j]."]";
-			$compartment="" if !$args->{compts};
-			if ($rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]} < 0) {
-				my $coef = -1*$rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]};
-				if (length($reactcode) > 0) {
-					$reactcode .= " + ";	
-				}
-				$reactcode .= "(".$coef.") ".$printId.$compartment;
-			} elsif ($rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]} > 0) {
-				if (length($productcode) > 0) {
-					$productcode .= " + ";	
-				}
-				$productcode .= "(".$rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]}.") ".$printId.$compartment;
-			} 
-		}
+
+    my %FoundComps=();
+    my $CompCount=0;
+
+    my $sortedCpd = [sort(keys(%{$rgtHash}))];
+    for (my $i=0; $i < @{$sortedCpd}; $i++) {
+	my $printId=$sortedCpd->[$i];
+	if($args->{format} eq "formula"){
+	    $printId=$self->parent()->getObject("compounds",$sortedCpd->[$i])->formula();
 	}
-    my $reaction_string = $reactcode.$sign.$productcode;
-    if($args->{reverse}==1){
-	$reaction_string = $productcode.$sign.$reactcode;
+	my $comps = [sort(keys(%{$rgtHash->{$sortedCpd->[$i]}}))];
+	for (my $j=0; $j < @{$comps}; $j++) {
+	    my $compartment = $comps->[$j];
+
+	    if($args->{generalized} && !exists($FoundComps{$comps->[$j]})){
+		$compartment = $CompCount;
+		$FoundComps{$comps->[$j]}=$CompCount;
+		$CompCount++;
+	    }elsif($args->{generalized} && exists($FoundComps{$comps->[$j]})){
+		$compartment = $FoundComps{$comps->[$j]};
+	    }
+	    $compartment = "[".$compartment."]" if !$args->{stoichiometry};
+	    $compartment = "" if !$args->{compts};
+
+	    if ($rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]} < 0) {
+		my $coef = -1*$rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]};
+		my $reactcode = "(".$coef.") ".$printId.$compartment;
+
+		if($args->{stoichiometry}==1){
+		    my $name = $self->parent()->getObject("compounds",$sortedCpd->[$i])->name();
+		    $coef = $rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]};
+		    $reactcode = join(":",($coef,$printId,$compartment,'0',"\"".$name."\""));
+		}
+		push(@reactcode,$reactcode);
+		
+	    } elsif ($rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]} > 0) {
+		my $coef = $rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]};
+
+		my $productcode .= "(".$coef.") ".$printId.$compartment;
+		if($args->{stoichiometry}==1){
+		    my $name = $self->parent()->getObject("compounds",$sortedCpd->[$i])->name();
+		    $productcode = join(":",($coef,$printId,$compartment,'0',"\"".$name."\""));
+		}
+		push(@productcode, $productcode);
+	    } 
+	}
     }
+
+    my $reaction_string = join(" + ",@reactcode).$sign.join(" + ",@productcode);
+
+    if($args->{stoichiometry} == 1){
+	$reaction_string = join(";",@reactcode,@productcode);
+    }
+
+    if($args->{reverse}==1){
+	$reaction_string = join(" + ",@productcode).$sign.join(" + ",@reactcode);
+    }
+
     if ($args->{hashed} == 1) {
 	return Digest::MD5::md5_hex($reaction_string);
     }
@@ -835,7 +902,7 @@ sub checkReactionMassChargeBalance {
     my $args = Bio::KBase::ObjectAPI::utilities::args([], {rebalanceProtons => 0,rebalanceWater => 0, saveStatus => 0}, @_);
     my $atomHash;
     my $netCharge = 0;
-    my $status = "OK";
+    my @status = ("OK");
 
     #Adding up atoms and charge from all reagents
     my $rgts = $self->reagents();
@@ -1052,33 +1119,25 @@ sub checkReactionMassChargeBalance {
 	$netCharge += -1*$imbalancedAtoms->{"H"};
 	$atomHash->{H} = 0;
 	delete($imbalancedAtoms->{H});
-	$status.="|HB";
+	push(@status,"HB");
     }
 
-    foreach my $atom (keys(%{$imbalancedAtoms})) { 
-	if ($status eq "OK") {
-	    $status = "MI:";	
-	} else {
-	    $status .= "|";
-	}
+    if(scalar(keys %{$imbalancedAtoms})>0){
 	$results->{balanced} = 0;
-	$results->{imbalancedAtoms}->{$atom} = $atomHash->{$atom};
-	$status .= $atom.":".$atomHash->{$atom};
+	$status[0] = "MI:".join("/", map { $_.":".$atomHash->{$_} } sort keys %{$imbalancedAtoms});	
+	$results->{imbalancedAtoms} = { map { $_ => $atomHash->{$_} } keys %{$imbalancedAtoms} };
     }
     
     if ($netCharge != 0) {
-	if ($status eq "OK") {
-	    $status = "CI:".$netCharge;	
-	} else {
-	    $status .= "|CI:".$netCharge;
-	}
+	push(@status,"CI:".$netCharge);
+	shift(@status) if $status[0] eq "OK";
 	$results->{balanced} = 0;
 	$results->{imbalancedCharge} = $netCharge;
 	
     }
     
     if($args->{saveStatus} == 1){
-	$self->status($status);
+	$self->status(join("|",@status));
     }
 
     return $results;

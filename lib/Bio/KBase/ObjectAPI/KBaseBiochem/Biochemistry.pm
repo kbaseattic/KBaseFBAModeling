@@ -1568,7 +1568,9 @@ sub checkForDuplicateCue {
 
 sub checkForProton {
     my ($self) = @_;
-    my $obj=$self->getObjectByAlias("compounds","cpd00067","ModelSEED");
+    my $obj=$self->getObject("compounds","cpd00067");
+    return $obj if $obj;
+    $obj=$self->getObjectByAlias("compounds","cpd00067","ModelSEED");
     return $obj if $obj;
     $obj=$self->getObjectByAlias("compounds","C00080","KEGG");
     return $obj if $obj;
@@ -1579,7 +1581,9 @@ sub checkForProton {
 
 sub checkForWater {
     my ($self) = @_;
-    my $obj=$self->getObjectByAlias("compounds","cpd00001","ModelSEED");
+    my $obj=$self->getObject("compounds","cpd00001");
+    return $obj if $obj;
+    $obj=$self->getObjectByAlias("compounds","cpd00001","ModelSEED");
     return $obj if $obj;
     $obj=$self->getObjectByAlias("compounds","C00001","KEGG");
     return $obj if $obj;
