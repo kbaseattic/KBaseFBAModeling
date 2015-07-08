@@ -30,7 +30,7 @@ my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translat
 my $output = runFBACommand($params,$servercommand,$opt);
 #Checking output and report results
 if (!defined($output)) {
-	print "Biochemitry retreival failed!\n";
+	print "Biochemistry retreival failed!\n";
 } else {
 	print to_json( $output, { utf8 => 1, pretty => $opt->{pretty} } )."\n";
 }
