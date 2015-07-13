@@ -1115,12 +1115,12 @@ sub _setDefaultFBAFormulation {
 }
 
 sub _buildFBAObject {
-	my ($self,$fbaFormulation,$model,$ws) = @_;
+	my ($self,$fbaFormulation,$model,$ws,$id) = @_;
 	#Parsing media
 	my $mediaobj = $self->_get_msobject("Media",$fbaFormulation->{media_workspace},$fbaFormulation->{media});
 	#Building FBAFormulation object
 	my $fbaobj = Bio::KBase::ObjectAPI::KBaseFBA::FBA->new({
-		id => $self->_get_new_id($model->id().".fba."),
+		id => $id,
 		fva => 0,
 		fluxMinimization => 0,
 		findMinimalMedia => 0,
