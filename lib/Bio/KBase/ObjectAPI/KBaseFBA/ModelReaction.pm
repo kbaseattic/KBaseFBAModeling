@@ -362,16 +362,10 @@ sub createEquation {
 		if ($id eq "cpd00000") {
 			$id = $rgt->modelcompound()->id();
 		}
+
 		next if $args->{protons} == 0 && $id eq $hcpd->id() && !$self->isTransporter();
 		next if $args->{water} == 0 && $id eq $wcpd->id();
-		if ($args->{format} eq "name") {
-			my $function = $args->{format};
-			$id = $rgt->modelcompound()->compound()->$function();
-		} elsif ($args->{format} ne "uuid" && $args->{format} ne "id") {
-		    if($args->{format} ne "formula"){
-			$id = $rgt->modelcompound()->compound()->getAlias($args->{format});
-		    }
-		}
+
 		if (!defined($rgtHash->{$id}->{$rgt->modelcompound()->modelcompartment()->id()})) {
 			$rgtHash->{$id}->{$rgt->modelcompound()->modelcompartment()->id()} = 0;
 		}
@@ -392,10 +386,26 @@ sub createEquation {
 
     my $sortedCpd = [sort(keys(%{$rgtHash}))];
     for (my $i=0; $i < @{$sortedCpd}; $i++) {
-	my $printId = $sortedCpd->[$i];
-	if($args->{format} eq "formula"){
-	    $printId = $self->parent()->biochemistry()->getObject("compounds",$sortedCpd->[$i])->formula();
+
+	#Cpds sorted on original modelseed identifiers
+	#But representative strings collected here (if not 'id')
+	my $printId=$sortedCpd->[$i];
+
+	if($args->{format} ne "id"){
+	    my $cpd = ( grep { $printId eq $_->modelcompound()->compound()->id() } @{$self->modelReactionReagents()} )[0]->modelcompound()->compound();
+	    if(!$cpd){
+		$cpd = ( grep { $printId eq $_->modelcompound()->id() } @{$self->modelReactionReagents()} )[0]->modelcompound()->compound();
+	    }
+
+	    if($args->{format} eq "name"){
+		$printId = $cpd->name();
+	    } elsif($args->{format} ne "uuid" && $args->{format} ne "formula") {
+		$printId = $cpd->getAlias($args->{format});
+	    }elsif($args->{format} eq "formula"){
+		$printId = $cpd->formula();
+	    }
 	}
+
 	my $comps = [sort(keys(%{$rgtHash->{$sortedCpd->[$i]}}))];
 	for (my $j=0; $j < @{$comps}; $j++) {
 	    if ($comps->[$j] =~ m/([a-z])(\d+)/) {
