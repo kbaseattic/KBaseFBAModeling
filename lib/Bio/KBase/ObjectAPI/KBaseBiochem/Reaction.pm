@@ -321,8 +321,6 @@ sub createEquation {
 	#But representative strings collected here (if not 'id')
 	my $printId=$sortedCpd->[$i];
 
-	print $printId,"\n";
-
 	if($args->{format} ne "id"){
 	    my $cpd = ( grep { $printId eq $_->compound()->id() } @{$self->reagents()} )[0]->compound();
 
