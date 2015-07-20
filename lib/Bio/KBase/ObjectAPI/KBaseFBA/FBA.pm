@@ -488,7 +488,8 @@ sub PrepareForGapfilling {
 		gauranteedrxns => [],
 		add_external_rxns => 1,
 		make_model_rxns_reversible => 1,
-		activate_all_model_reactions => 1
+		activate_all_model_reactions => 1,
+		scale_penalty_by_flux => 0
 	}, $args);
 	push(@{$self->gauranteedrxns()},@{$args->{gauranteedrxns}});
 	push(@{$self->blacklistedrxns()},@{$args->{blacklistedrxns}});
@@ -519,7 +520,7 @@ sub PrepareForGapfilling {
 		$self->parameters()->{high_expression_penalty_factor} = $args->{high_expression_penalty_factor};
 		$self->parameters()->{kappa} = $args->{kappa};	
 		$self->parameters()->{booleanexp} = $args->{booleanexp};	
-		$self->parameters()->{"scale penalty by flux"} = 1;	
+		$self->parameters()->{"scale penalty by flux"} = $args->{scale_penalty_by_flux}
     }
     $self->numberOfSolutions($args->{num_solutions});
     if ($args->{completeGapfill} == 1 && @{$args->{target_reactions}} == 0) {
