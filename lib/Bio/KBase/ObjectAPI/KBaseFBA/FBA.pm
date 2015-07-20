@@ -2707,7 +2707,7 @@ sub parseMinimalMediaResults {
 		my $data = Bio::KBase::ObjectAPI::utilities::LOADFILE($directory."/MinimalMediaSolutions.txt");
 		my $essIDs = [];
 		my $essCpds;
-		my $essuuids;
+		my $essuuids = [];
 		if ($data->[0] =~ m/Essentials:(.+)/) {
 		    print "Essentials:\n";
 			$essIDs = [split(/\t/,$1)];
@@ -2750,7 +2750,7 @@ sub parseMinimalMediaResults {
 							$group->[$k] = $cpd->_reference();	
 						}
 						else {
-						    print "\t", $essIDs->[$i], "\n";
+						    print "\t", $group->[$k], "\t", $group->[$k], "\n";
 						}
 					}
 					if ($j == 0) {
