@@ -485,11 +485,14 @@ sub PRINTTABLESPARSE {
     for (my $i=1; $i < @{$table->{data}};$i++) {
     	for (my $j=1; $j < @{$table->{headings}};$j++) {
     		if (defined($table->{data}->[$i]->[$j])) {
-    			if (!defined($min) || $table->{data}->[$i]->[$j] >= $min) {
-    				if (!defined($max) || $table->{data}->[$i]->[$j] <= $max) {
+		    if ($table->{data}->[$i]->[$j] =~ /^(\d+)/) {
+			my $comp = $1;
+    			if (!defined($min) || $comp >= $min) {
+    				if (!defined($max) || $comp <= $max) {
     					print $out_fh $table->{data}->[$i]->[0].$delimiter.$table->{headings}->[$j].$delimiter.$table->{data}->[$i]->[$j]."\n";
     				}
     			}
+		    }
     		}	
     	}
     }
