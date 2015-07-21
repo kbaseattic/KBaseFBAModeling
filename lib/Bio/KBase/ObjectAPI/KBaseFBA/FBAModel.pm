@@ -2102,6 +2102,7 @@ sub buildGraph {
 		my $rgts = $rxns->[$i]->modelReactionReagents();
 		for (my $j=0; $j < @{$rgts}; $j++) {
 			my $rgt = $rgts->[$j];
+			next if $rgt->modelcompound()->id() =~ "cpd00067"; # imported models may have unbalanced protons
 			if (!$rgt->isCofactor() && $rgt->coefficient() < 0 && $rxns->[$i]->direction() ne "<") {
 				if ($args->{reactions} == 1) {
 #				    print STDERR "\tAdding ", $rgt->modelcompound()->id(), " as a start cpd\n";
@@ -2184,6 +2185,7 @@ sub mark_cofactors {
 	["cpd00475" => {"rxn00778" => 1}], # ribose 1-phosphate
 	["cpd00509" => {"rxn01986" => 1}], # deoxy-ribose 1-phosphate 
 	["cpd00014" => {"rxn00119" => 1, "rxn00712" => 1, "rxn06075" => 1, "rxn00117" => 1, "rxn00368" => 1}], # UDP 
+	["cpd00971" => {"rxn05209" => 1, "rxn08982" => 1, "rxn08983" => 1, "rxn08985" => 1, "rxn10178" => 1, "rxn10179" => 1, "rxn12448" => 1}], # Na+
 	];
 
     # prioritized list, e.g., ATP/ADP come before Pyruvate/PEP
@@ -2344,9 +2346,9 @@ sub computeNetworkDistances {
 				}
 				else {
 				    foreach my $subunit (@{$protein->modelReactionProteinSubunits()}) {
-					foreach my $subunitGene (@{$subunit->modelReactionProteinSubunitGenes()}) {
+					foreach my $feature (@{$subunit->features()}) {
 					    # push id rather than object itself because there is no object for unknown genes					   
-					    $genes{$subunitGene->feature()->id()} = 1;
+					    $genes{$feature->id()} = 1;
 					}				    				    
 				    }
 				}
