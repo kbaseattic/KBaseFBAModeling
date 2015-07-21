@@ -39,7 +39,7 @@ sub _buildgauranteedrxns {
 	my ($self) = @_;
 	return [qw(
 		rxn07301 rxn25468 rxn31542 rxn31420 rxn04468 rxn15786 rxn10095 rxn31005 rxn24334 rxn24256 rxn25469
-		rxn22880 rxn25980 rxn25981 rxn05017 rxn03190 rxn26353 rxn30838 rxn31649 rxn31650 rxn31505 rxn01659
+		rxn22880 rxn25980 rxn25981 rxn30838 rxn31505 rxn01659
 		rxn1 rxn2 rxn3 rxn4 rxn5 rxn6 rxn7 rxn8 rxn11572
 		rxn07298 rxn24256 rxn04219 rxn17241 rxn19302 rxn25468 rxn23165
 		rxn25469 rxn23171 rxn23067 rxn30830 rxn30910 rxn31440 rxn01659
