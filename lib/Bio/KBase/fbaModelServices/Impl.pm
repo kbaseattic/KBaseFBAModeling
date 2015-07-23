@@ -2688,11 +2688,7 @@ Description:
 sub _classify_genome {
 	my($self,$genome) = @_;
 	if (!defined($self->{_classifierdata})) {
-	    my ($fh1, $classifierFile) = File::Temp::tempfile();
-	    close($fh1);
-	    my $status = LWP::Simple::getstore("http://bioseed.mcs.anl.gov/~chenry/ModelSEED/classifier.txt", $classifierFile);
-	    $self->_error("Unable to fetch cell wall classifier data!") unless($status == 200);
-		my $data = Bio::KBase::ObjectAPI::utilities::LOADFILE($classifierFile);
+		my $data = Bio::KBase::ObjectAPI::utilities::LOADFILE($self->{"_classifier_file"});
 		my $headings = [split(/\t/,$data->[0])];
 		my $popprob = [split(/\t/,$data->[1])];
 		for (my $i=1; $i < @{$headings}; $i++) {
@@ -2939,29 +2935,36 @@ sub _parse_SBML {
     			}	
     		} elsif ($node->getNodeName() eq "notes") {
     			foreach my $html ($node->getElementsByTagName("*",0)){
-    				my $text = $html->getFirstChild()->getNodeValue();
-					if ($text =~ m/GENE_ASSOCIATION:\s*(.+)/) {
-						$gpr = $1;
-					} elsif ($text =~ m/PROTEIN_ASSOCIATION:\s*/) {
-						$protein = $1;
-					} elsif ($text =~ m/PROTEIN_CLASS:\s*(.+)/) {
-						my $array = [split(/\s/,$1)];
-						$enzyme = $array->[0];
-					} elsif ($text =~ m/SUBSYSTEM:\s*(.+)/) {
-						$pathway = $1;
-						$pathway =~ s/^S_//;
-					}
+    				my $nodes = $html->getChildNodes();
+    				foreach my $node (@{$nodes}) {
+	    				my $text = $node->toString();
+						if ($text =~ m/GENE_ASSOCIATION:\s*([^<]+)/) {
+							if (length($1) > 0) {
+								$gpr = $1;
+							}
+						} elsif ($text =~ m/PROTEIN_ASSOCIATION:\s*([^<]+)/) {
+							if (length($1) > 0) {
+								$protein = $1;
+							}
+						} elsif ($text =~ m/PROTEIN_CLASS:\s*([^<]+)/ || $text =~ m/EC\sNumber:\s*([^<]+)/) {
+							if (length($1) > 0) {
+								my $array = [split(/\s/,$1)];
+								$enzyme = $array->[0];
+							}
+						} elsif ($text =~ m/SUBSYSTEM:\s*([^<]+)/) {
+							if (length($1) > 0) {
+								$pathway = $1;
+								$pathway =~ s/^S_//;
+							}
+						}
+    				}
     			}
     		}
     	}
     	if (!defined($name)) {
     		$name = $id;
     	}
-    	if (length($reactants) > 0 && length($products) > 0) {
-    		push(@{$reactions},[$id,$direction,$compartment,$gpr,$name,$enzyme,$pathway,undef,$reactants." => ".$products]);
-    	} else {
-    		print "Reaction ".$id." was skipped, reactants=".$reactants.", products=".$products."\n";
-    	}
+    	push(@{$reactions},[$id,$direction,$compartment,$gpr,$name,$enzyme,$pathway,undef,$reactants." => ".$products]);
     }
     return ($reactions,$compounds);
 }
@@ -3328,7 +3331,8 @@ sub new
     $self->{'_mssserver-url'} = "http://bio-data-1.mcs.anl.gov/services/ms_fba";
     $self->{"_probanno-url"} = "http://localhost:7073";
     $self->{"_workspace-url"} = "http://kbase.us/services/ws";
-    my $paramlist = [qw(classifierpath fbajobcache awe-url shock-url jobqueue gaserver-url jobserver-url fbajobdir mfatoolkitbin fba-url probanno-url mssserver-url accounttype workspace-url defaultJobState idserver-url)];
+    $self->{"_classifier_file"} = "/kb/deployment/etc/classifier.txt";
+    my $paramlist = [qw(classifier_file classifierpath fbajobcache awe-url shock-url jobqueue gaserver-url jobserver-url fbajobdir mfatoolkitbin fba-url probanno-url mssserver-url accounttype workspace-url defaultJobState idserver-url)];
 
     # so it looks like params is created by looping over the config object
     # if deployment.cfg exists
@@ -3418,6 +3422,9 @@ sub new
     }
     if (defined $params->{'awe-url'}) {
     		$self->{'_awe-url'} = $params->{'awe-url'};
+    }
+    if (defined $params->{'classifier_file'}) {
+    		$self->{'_classifier_file'} = $params->{'classifier_file'};
     }
     #This final condition allows one to specify a fully implemented workspace IMPL or CLIENT for use
 
