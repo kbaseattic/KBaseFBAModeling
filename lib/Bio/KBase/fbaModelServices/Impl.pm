@@ -424,11 +424,6 @@ sub _gaserv {
     return $self->{_gaserver};
 }
 
-sub _jobserv {
-	my $self = shift;
-    return $self->{_jobserver};
-}
-
 sub _jobqueue {
 	my $self = shift;
     return $self->{_jobqueue};
@@ -767,7 +762,7 @@ sub _get_genomeObj_from_SEED {
     	$self->_error("PubSEED genome ".$id." not found!",'get_genomeobject');
     }
     my $genomeObj = {
-		id => $self->_register_kb_id("kb|g",$id,"SEED"),
+		id => $id,
 		scientific_name => $data->{$id}->[2],
 		domain => $data->{$id}->[4],
 		genetic_code => $data->{$id}->[5],
@@ -824,7 +819,7 @@ sub _get_genomeObj_from_SEED {
 	}
 	$genomeObj->{md5} = Digest::MD5::md5_hex($str);
 	$contigset->{md5} = $genomeObj->{md5};
-	$contigset->{id} = $self->_register_kb_id("kb|contigset",$contigset->{md5},"md5hash");
+	$contigset->{id} = $id.".contigs";
 	for (my $i=0; $i < @{$featureList}; $i++) {
 		my $feature = {
   			id => $featureList->[$i],
@@ -2289,7 +2284,8 @@ sub _queueJob {
 		if (!defined($args->{jobdata}->{wsurl})) {
 			$args->{jobdata}->{wsurl} = $self->_workspaceURL();
 		}
-		return $self->_jobserv()->queue_job($input);
+		die "Needs to be rewritten to use NJS! For now, non functional!";
+		#TODO
 	}
 }
 
@@ -2543,7 +2539,7 @@ sub _genome_to_model {
     	$template = $self->_get_msobject("ModelTemplate",$params->{templatemodel_workspace},$params->{templatemodel});
     } elsif ($params->{coremodel} == 1) {
     	$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","CoreModelTemplate");
-    } elsif ($genome->domain() eq "Plant" || $genome->taxonomy() =~ /viridiplantae/i) {
+    } elsif ($genome->domain() eq "Plant" || $genome->taxonomy() =~ /viridiplantae/i ) {
     	$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","PlantModelTemplate");
 	} else {
 		my $class = $self->_classify_genome($genome);
@@ -2551,7 +2547,7 @@ sub _genome_to_model {
     		$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","GramPosModelTemplate");
     	} elsif ($class eq "Gram negative") {
     		$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","GramNegModelTemplate");
-    	} elsif ($class eq "Plant") {
+    	} elsif ($class eq "Plant" || $genome->taxonomy() =~ /viridiplantae/i ) {
     		$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","PlantModelTemplate");
     	}
     }
@@ -2583,7 +2579,7 @@ sub _annotate_genome {
 	});
 	my $gaserv = $self->_gaserv();
 	my $genomeTO = $genome->genome_typed_object();
-	if( $genomeTO->{domain} eq "Plant" || $genome->taxonomy() =~ /viridiplantae/i ){
+	if( $genomeTO->{domain} eq "Plant" || $genomeTO->{taxonomy} =~ /viridiplantae/i  ){
 	    $genomeTO = $gaserv->annotate_proteins_kmer_v1($genomeTO,{dataset_name=>"Release70",kmer_size=>8});
 	} elsif (($parameters->{call_genes} == 1 || @{$genomeTO->{features}} == 0) && @{$genomeTO->{contigs}} > 0) {
 		$genomeTO = $gaserv->annotate_genome($genomeTO);
@@ -2614,11 +2610,11 @@ sub _annotate_genome {
 				co_occurring_fids => [],
 			});
 		} else {
-		    if($genomeTO->{domain} eq "Plant" || $genome->taxonomy() =~ /viridiplantae/i){
-			if (defined($gene->{function})) {
-			    $feature->function($gene->{function});
-			}
-			next;
+		    if($genomeTO->{domain} eq "Plant" || $genomeTO->{taxonomy} =~ /viridiplantae/i ){
+				if (defined($gene->{function})) {
+				    $feature->function($gene->{function});
+				}
+				next;
 		    }
 			$feature->id($gene->{id});
 			if (defined($gene->{function})) {
@@ -2652,11 +2648,7 @@ Description:
 sub _classify_genome {
 	my($self,$genome) = @_;
 	if (!defined($self->{_classifierdata})) {
-	    my ($fh1, $classifierFile) = File::Temp::tempfile();
-	    close($fh1);
-	    my $status = LWP::Simple::getstore("http://bioseed.mcs.anl.gov/~chenry/ModelSEED/classifier.txt", $classifierFile);
-	    $self->_error("Unable to fetch cell wall classifier data!") unless($status == 200);
-		my $data = Bio::KBase::ObjectAPI::utilities::LOADFILE($classifierFile);
+		my $data = Bio::KBase::ObjectAPI::utilities::LOADFILE($self->{"_classifier_file"});
 		my $headings = [split(/\t/,$data->[0])];
 		my $popprob = [split(/\t/,$data->[1])];
 		for (my $i=1; $i < @{$headings}; $i++) {
@@ -2906,35 +2898,37 @@ sub _parse_SBML {
     				}
     			}	
     		} elsif ($node->getNodeName() eq "notes") {
-    			foreach my $html ($node->getElementsByTagName("*",1)){
-			    foreach my $cnode ($html->getChildNodes()) {
-    				my $text = $cnode->getNodeValue();
-					if ($text =~ m/GENE_ASSOCIATION:\s*(.+)/) {
-						$gpr = $1;
-					} elsif ($text =~ m/PROTEIN_ASSOCIATION:\s*/) {
-						$protein = $1;
-					} elsif ($text =~ m/PROTEIN_CLASS:\s*(.+)/) {
-						my $array = [split(/\s/,$1)];
-						$enzyme = $array->[0];
-					} elsif ($text =~ m/SUBSYSTEM:\s*(.+)/) {
-						$pathway = $1;
-						$pathway =~ s/^S_//;
-					}
-			    }
+    			foreach my $html ($node->getElementsByTagName("*",0)){
+    				my $nodes = $html->getChildNodes();
+    				foreach my $node (@{$nodes}) {
+	    				my $text = $node->toString();
+						if ($text =~ m/GENE_ASSOCIATION:\s*([^<]+)/) {
+							if (length($1) > 0) {
+								$gpr = $1;
+							}
+						} elsif ($text =~ m/PROTEIN_ASSOCIATION:\s*([^<]+)/) {
+							if (length($1) > 0) {
+								$protein = $1;
+							}
+						} elsif ($text =~ m/PROTEIN_CLASS:\s*([^<]+)/ || $text =~ m/EC\sNumber:\s*([^<]+)/) {
+							if (length($1) > 0) {
+								my $array = [split(/\s/,$1)];
+								$enzyme = $array->[0];
+							}
+						} elsif ($text =~ m/SUBSYSTEM:\s*([^<]+)/) {
+							if (length($1) > 0) {
+								$pathway = $1;
+								$pathway =~ s/^S_//;
+							}
+						}
+    				}
     			}
     		}
     	}
     	if (!defined($name)) {
     		$name = $id;
     	}
-	# either reaction has both reactants and products, or else it is a drain for an intracellular compound
-    	if ((length($reactants) > 0 && length($products) > 0) ||
-	    (length($reactants) > 0 && length($products) == 0 && ! exists $cpd_compartments{"e"}))
-	    {
-    		push(@{$reactions},[$id,$direction,$compartment,$gpr,$name,$enzyme,$pathway,undef,$reactants." => ".$products]);
-    	} else {
-    		print "Reaction ".$id." was skipped, reactants=".$reactants.", products=".$products.", compartments=".(join " ", keys %cpd_compartments)."\n";
-    	}
+    	push(@{$reactions},[$id,$direction,$compartment,$gpr,$name,$enzyme,$pathway,undef,$reactants." => ".$products]);
     }
     return ($reactions,$compounds);
 }
@@ -3345,12 +3339,12 @@ sub new
     $self->{_jobqueue} = "workspace";
     $self->{'_fba-url'} = "";
     Bio::KBase::ObjectAPI::utilities::ID_SERVER_URL("http://kbase.us/services/idserver");
-    $self->{'_jobserver-url'} = "http://kbase.us/services/workspace";
     $self->{'_gaserver-url'} = "http://kbase.us/services/genome_annotation";
     $self->{'_mssserver-url'} = "http://bio-data-1.mcs.anl.gov/services/ms_fba";
     $self->{"_probanno-url"} = "http://localhost:7073";
     $self->{"_workspace-url"} = "http://kbase.us/services/ws";
-    my $paramlist = [qw(classifierpath fbajobcache awe-url shock-url jobqueue gaserver-url jobserver-url fbajobdir mfatoolkitbin fba-url probanno-url mssserver-url accounttype workspace-url defaultJobState idserver-url)];
+    $self->{"_classifier_file"} = "/kb/deployment/etc/classifier.txt";
+    my $paramlist = [qw(classifier_file classifierpath fbajobcache awe-url shock-url jobqueue gaserver-url jobserver-url fbajobdir mfatoolkitbin fba-url probanno-url mssserver-url accounttype workspace-url defaultJobState idserver-url)];
 
     # so it looks like params is created by looping over the config object
     # if deployment.cfg exists
@@ -3385,12 +3379,12 @@ sub new
     # is found in the incoming hash, let the associated value override what
     # was previously assigned to the params hash from the config object.
 
-	print STDERR "\nServer config values:\n";
+	#print STDERR "\nServer config values:\n";
     for my $p (@{$paramlist}) {
   		if (defined($options->{$p})) {
 			$params->{$p} = $options->{$p};
         }
-        print STDERR $p."\t".$params->{$p}."\n";
+        #print STDERR $p."\t".$params->{$p}."\n";
     }
 
     # now, if params has one of the predefined set of parameter keys,
@@ -3423,9 +3417,6 @@ sub new
     if (defined $params->{'idserver-url'}) {
     	Bio::KBase::ObjectAPI::utilities::ID_SERVER_URL($params->{'idserver-url'});
     }
-    if (defined $params->{'jobserver-url'}) {
-    		$self->{'_jobserver-url'} = $params->{'jobserver-url'};
-    }
     if (defined $params->{'mssserver-url'}) {
     		$self->{'_mssserver-url'} = $params->{'mssserver-url'};
     }
@@ -3444,6 +3435,9 @@ sub new
     if (defined $params->{'awe-url'}) {
     		$self->{'_awe-url'} = $params->{'awe-url'};
     }
+    if (defined $params->{'classifier_file'}) {
+    		$self->{'_classifier_file'} = $params->{'classifier_file'};
+    }
     #This final condition allows one to specify a fully implemented workspace IMPL or CLIENT for use
 
     if (defined($options->{workspace})) {
@@ -3452,8 +3446,7 @@ sub new
     if (defined($options->{verbose})) {
     	set_verbose(1);
     }
-	#$self->{_jobserver} = Bio::KBase::workspaceService::Client->new($self->{'_jobserver-url'});
-    #END_CONSTRUCTOR
+	#END_CONSTRUCTOR
 
     if ($self->can('_init_instance'))
     {
@@ -7536,7 +7529,7 @@ sub import_fbamodel
     		$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","GramPosModelTemplate");
     	} elsif ($class eq "Gram negative") {
     		$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","GramNegModelTemplate");
-    	} elsif ($class eq "Plant") {
+    	} elsif ($class eq "Plant"  || $genome->taxonomy() =~ /viridiplantae/i ) {
     		$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","PlantModelTemplate");
     	}
     }
@@ -13187,16 +13180,6 @@ sub queue_reconciliation_sensitivity_analysis
 					my $simResult = $result->fbaPhenotypeSimultationResults()->[$i];
 					push(@{$phenoSense->{reconciliationSolutionSimulations}->[$index]->[5]},[$simResult->simulatedGrowth(),$simResult->simulatedGrowthFraction(),$simResult->class()]);
 				}
-#				$self->_workspaceServices()->delete_object_permanently({
-#					type => "Model",
-#					id => $fba->model_uuid(),
-#					workspace => "NO_WORKSPACE"
-#				});
-#				$self->_workspaceServices()->delete_object_permanently({
-#					type => "FBA",
-#					id => $fba->uuid(),
-#					workspace => "NO_WORKSPACE"
-#				});
 			}
 		}
 		#delete $phenoSense->{fbaids};
@@ -19712,7 +19695,7 @@ sub import_expression
 	$genome_id = $input->{"genome_id"};
     } else {
 	my $feature_id = (keys $input->{"expression_data_sample_series"}->{(keys $input->{"expression_data_sample_series"})[0]}->{"data_expression_levels_for_sample"})[0];
-	if ( $feature_id =~ /^(kb\|g\.\d+)/) {
+	if ( $feature_id =~ /(.+)\.[a-zA-Z]+\.\d+$/) {
 	    $genome_id = $1;
 	} else {
 	    die("Can't determine genome id from feature id: $feature_id\n");
@@ -19738,7 +19721,7 @@ sub import_expression
 	    type => "microarray",
 	    expression_levels => $sample->{"data_expression_levels_for_sample"},
 	    source_id => $input->{"source_id"}, # What source?
-	    genome_id => $genome->_reference(),
+	    genome_id => $input->{workspace}."/".$genome_id,
 	    external_source_date => $input->{"source_date"}, # Which data?
 	    numerical_interpretation => $input->{"numerical_interpretation"},
 	    processing_comments => $input->{"processing_comments"},

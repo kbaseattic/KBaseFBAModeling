@@ -244,7 +244,8 @@ sub oldwsurl {
 }
 
 sub get_old_ws_client {
-	return undef;
+	my $url = shift;
+	die "old workspace no longer supported!";
 }
 
 sub get_fba_client {

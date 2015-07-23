@@ -601,6 +601,9 @@ sub loadGPRFromString {
 	my $self = shift;
 	my $gprstring = shift;
 	my $geneAliases = $self->parent()->genome()->geneAliasHash();
+	if ($gprstring =~ m/^\s+$/) {
+		return;
+	}
 	my $gpr = Bio::KBase::ObjectAPI::utilities::translateGPRHash(Bio::KBase::ObjectAPI::utilities::parseGPR($gprstring));
 	my $missingGenes;
 	for (my $m=0; $m < @{$gpr}; $m++) {
@@ -608,7 +611,7 @@ sub loadGPRFromString {
 			complex_ref => "",
 			note => "Imported GPR",
 			modelReactionProteinSubunits => []
-		});		
+		});
 		for (my $j=0; $j < @{$gpr->[$m]}; $j++) {
 			my $subObj = $protObj->add("modelReactionProteinSubunits",{
 				role => "",
@@ -619,10 +622,37 @@ sub loadGPRFromString {
 			});		
 			for (my $k=0; $k < @{$gpr->[$m]->[$j]}; $k++) {
 				my $ftrID = $gpr->[$m]->[$j]->[$k];
-				if (!defined($geneAliases->{$ftrID})) {
-					$missingGenes->{$ftrID} = 1;
+				$ftrID =~ s/\s+$//g;
+				$ftrID =~ s/^\s+//g;
+				if ($ftrID =~ /\+/) {
+					my $protObj = $self->add("modelReactionProteins",{
+						complex_ref => "",
+						note => "Imported GPR",
+						modelReactionProteinSubunits => []
+					});
+					my $array = [split(/\+/,$ftrID)];
+					for (my $n = 0; $n < @{$array}; $n++) {
+						my $subObj = $protObj->add("modelReactionProteinSubunits",{
+							role => "",
+							triggering => 0,
+							optionalSubunit => 0,
+							note => "Imported GPR",
+							feature_refs => []
+						});
+						if (!defined($geneAliases->{$array->[$n]})) {
+							print "Missing feature:".$array->[$n]."\n\n";
+							$missingGenes->{$array->[$n]} = 1;
+						} else {
+							$subObj->addLinkArrayItem("features",$geneAliases->{$array->[$n]});
+						}
+					}
 				} else {
-					$subObj->addLinkArrayItem("features",$geneAliases->{$ftrID});
+					if (!defined($geneAliases->{$ftrID})) {
+						print "Missing feature:".$ftrID."\n\n";
+						$missingGenes->{$ftrID} = 1;
+					} else {
+						$subObj->addLinkArrayItem("features",$geneAliases->{$ftrID});
+					}
 				}
 			}
 		}
