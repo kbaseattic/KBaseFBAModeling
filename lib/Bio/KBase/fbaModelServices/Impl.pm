@@ -1115,12 +1115,12 @@ sub _setDefaultFBAFormulation {
 }
 
 sub _buildFBAObject {
-	my ($self,$fbaFormulation,$model,$ws) = @_;
+	my ($self,$fbaFormulation,$model,$ws,$id) = @_;
 	#Parsing media
 	my $mediaobj = $self->_get_msobject("Media",$fbaFormulation->{media_workspace},$fbaFormulation->{media});
 	#Building FBAFormulation object
 	my $fbaobj = Bio::KBase::ObjectAPI::KBaseFBA::FBA->new({
-		id => $self->_get_new_id($model->id().".fba."),
+		id => $id,
 		fva => 0,
 		fluxMinimization => 0,
 		findMinimalMedia => 0,
@@ -1180,11 +1180,14 @@ sub _buildFBAObject {
 			$fbaobj->regulome_ref($regmodel->_reference)
 		}
 	}
-	if (defined($fbaFormulation->{tintle_sample}) && defined($fbaFormulation->{tintle_workspace})) {
+	if (defined($fbaFormulation->{tintle_sample})) {
+		if (!defined($fbaFormulation->{tintle_workspace})) {
+			$fbaFormulation->{tintle_workspace} = $ws;
+		}
 	    my $sample = $self->_get_msobject("ExpressionSample", $fbaFormulation->{tintle_workspace}, $fbaFormulation->{tintle_sample});
 	    $fbaobj->tintlesample_ref($sample->_reference);
-	    $fbaobj->tintleW($fbaFormulation->{tintle_w});
-	    $fbaobj->tintleKappa($fbaFormulation->{tintle_kappa});
+	    $fbaobj->tintleW($fbaFormulation->{omega});
+	    $fbaobj->tintleKappa($fbaFormulation->{kappa});
 	}
 	#Parse objective equation
 	foreach my $term (@{$fbaFormulation->{objectiveTerms}}) {
@@ -8927,7 +8930,8 @@ sub runfba
 		high_expression_threshold => 0.5,
 		high_expression_penalty_factor => 1,
 		alpha => 0.5,
-		omega => 0,
+		omega => 0.5,
+		kappa => 0.1,
 		scalefluxes => 0,
 		formulation => undef,
 		fva => 0,
@@ -8941,29 +8945,32 @@ sub runfba
 		biomass => undef,
 		expsample => undef,
 		expsamplews => $input->{workspace},
-		booleanexp => 0,
 		activation_penalty => 0.1,
 		solver => undef
 	});
+    $input->{booleanexp} = "absolute" if (exists $input->{booleanexp} && $input->{booleanexp} eq "");
 	my $model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model});
 	if (!defined($input->{fba})) {
 		$input->{fba} = $self->_get_new_id($input->{model}.".fba.");
 	}
 	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
 	#Creating FBAFormulation Object
+    $input->{formulation}->{kappa} = $input->{kappa};
+    $input->{formulation}->{omega} = $input->{omega};
 	my $fba = $self->_buildFBAObject($input->{formulation},$model,$input->{workspace},$input->{fba});
 	if ($input->{booleanexp}) {
 		if (defined($input->{expsample})) {
 			$input->{expsample} = $self->_get_msobject("ExpressionSample",$input->{expsamplews},$input->{expsample});
 		}
 		else {
-			$self->_error("Cannot run boolean expression FBA without providing expression data!");	
+			$self->_error("Cannot run expression-constrained FBA without providing expression data!");	
 		}
 		$fba->PrepareForGapfilling({
 			add_external_rxns => 0,
 			activate_all_model_reactions => 0,
 			make_model_rxns_reversible => 0,
 			expsample => $input->{expsample},
+			booleanexp => $input->{booleanexp},
 			expression_threshold_type => $input->{expression_threshold_type},
 			low_expression_threshold => $input->{low_expression_threshold},
 			low_expression_penalty_factor => $input->{low_expression_penalty_factor},
@@ -8971,6 +8978,7 @@ sub runfba
 			high_expression_penalty_factor => $input->{high_expression_penalty_factor},
 			alpha => $input->{alpha},
 			omega => $input->{omega},
+			kappa => $input->{kappa},
 			scalefluxes => 0,
 		});
 	}
@@ -11605,6 +11613,7 @@ sub gapfill_model
 		fastgapfill => 0,
 		alpha => 0,
 		omega => 0,
+		kappa => 0,
 		scalefluxes => 0,
 		nomediahyp => 0,
 		nobiomasshyp => 0,#

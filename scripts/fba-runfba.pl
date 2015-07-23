@@ -28,6 +28,8 @@ my $translation = {
 	expsample => "expsample",
 	expsamplews => "expsamplews",
 	booleanexp => "booleanexp",
+	kappa => "kappa",
+	omega => "omega",
 	solver => "solver",
 	biomass => "biomass"
 };
@@ -52,8 +54,7 @@ my $fbaTranslation = {
 	efluxws => "eflux_workspace",
 	tintlesample => "tintle_sample",
 	tintlews => "tintle_workspace",
-	tintlew => "tintle_w",
-	tintlek => "tintle_kappa",
+	omega => "omega",
 	modelws => "model_workspace",
 	regulome => "regulome",
 	regulomews => "regulome_workspace"
@@ -72,7 +73,7 @@ my $specs = [
     [ 'rxnko:s@', 'List of reaction KO (; delimiter)' ],
     [ 'bounds:s@', 'Custom bounds' ],
     [ 'constraints:s@', 'Custom constraints' ],
-    [ 'booleanexp', 'Boolean modeling expression data' ],
+    [ 'booleanexp:s', 'Constrain modeling with on/off expression data of specified type. Either "absolute" or "probability"'],
     [ 'expsample:s', 'ID of expression sample' ],
     [ 'expsamplews:s', 'Workspace with expression sample' ],
     [ 'promconstraint|p:s', 'ID of PromConstraint' ],
@@ -84,8 +85,8 @@ my $specs = [
     [ 'efluxws:s', 'Workspace with ExpressionSample/Series' ],
     [ 'tintlesample:s', 'ID of ProbabilitySample for Tintle2014 analysis' ],
     [ 'tintlews:s', 'Workspace with ProbabilitySample/Series' ],
-    [ 'tintlew:s', 'Weights of biomass against gene penalty. In (0,1]', { "default" => 0.5}],
-    [ 'tintlek:s', 'Tolerance to classify genes as unknown, not on or off. In [0,0.5]', {"default" => 0.1}],
+    [ 'omega:s', 'Weights of biomass against gene penalty. In (0,1]', { "default" => 0.5}],
+    [ 'kappa:s', 'Tolerance to classify genes as unknown, not on or off. In [0,0.5]', {"default" => 0.1}],
     [ 'defaultmaxflux:s', 'Default maximum reaction flux' ],
     [ 'defaultminuptake:s', 'Default minimum nutrient uptake' ],
     [ 'defaultmaxuptake:s', 'Default maximum nutrient uptake' ],
