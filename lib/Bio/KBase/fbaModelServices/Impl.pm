@@ -2868,6 +2868,7 @@ sub _parse_SBML {
     			#print $nm.":".$value."\n";
     		}
     	}
+	my %cpd_compartments;
     	foreach my $node ($rxn->getElementsByTagName("*",0)){
     		if ($node->getNodeName() eq "listOfReactants" || $node->getNodeName() eq "listOfProducts") {
     			foreach my $species ($node->getElementsByTagName("speciesReference",0)){
@@ -2879,7 +2880,9 @@ sub _parse_SBML {
     						$spec = $attr->getValue();
     						if (defined($cpdhash->{$spec})) {
     							$boundary = $cpdhash->{$spec}->[2];
-    							$spec = $cpdhash->{$spec}->[0]."[".$cpdhash->{$spec}->[1]."]";
+							my $cpt = $cpdhash->{$spec}->[1];
+    							$spec = $cpdhash->{$spec}->[0]."[".$cpt."]";
+							$cpd_compartments{$cpt} = 1;
     						}
     					} elsif ($attr->getName() eq "stoichiometry") {
     						$stoich = $attr->getValue();
@@ -2921,10 +2924,13 @@ sub _parse_SBML {
     	if (!defined($name)) {
     		$name = $id;
     	}
-    	if (length($reactants) > 0 && length($products) > 0) {
+	# either reaction has both reactants and products, or else it is a drain for an intracellular compound
+    	if ((length($reactants) > 0 && length($products) > 0) ||
+	    (length($reactants) > 0 && length($products) == 0 && ! exists $cpd_compartments{"e"}))
+	    {
     		push(@{$reactions},[$id,$direction,$compartment,$gpr,$name,$enzyme,$pathway,undef,$reactants." => ".$products]);
     	} else {
-    		print "Reaction ".$id." was skipped, reactants=".$reactants.", products=".$products."\n";
+    		print "Reaction ".$id." was skipped, reactants=".$reactants.", products=".$products.", compartments=".(join " ", keys %cpd_compartments)."\n";
     	}
     }
     return ($reactions,$compounds);
