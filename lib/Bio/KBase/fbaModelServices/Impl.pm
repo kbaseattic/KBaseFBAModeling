@@ -8917,15 +8917,13 @@ sub runfba
     #BEGIN runfba
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["model","workspace"],{
-		expression_threshold_type => "AbsoluteThreshold",
-		low_expression_threshold => 0.5,
-		low_expression_penalty_factor => 1,
-		high_expression_threshold => 0.5,
-		high_expression_penalty_factor => 1,
+		booleanexp => undef,
+		expression_threshold_percentile => 0.5,
+		scale_penalty_by_flux => 0,
+		exp_raw_data => {},
 		alpha => 0.5,
 		omega => 0.5,
 		kappa => 0.1,
-		scalefluxes => 0,
 		formulation => undef,
 		fva => 0,
 		simulateko => 0,
@@ -8941,7 +8939,9 @@ sub runfba
 		activation_penalty => 0.1,
 		solver => undef
 	});
-    $input->{booleanexp} = "absolute" if (exists $input->{booleanexp} && $input->{booleanexp} eq "");
+    if (defined($input->{booleanexp}) && $input->{booleanexp} eq "") {
+    	$input->{booleanexp} = "absolute";
+    }
 	my $model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model});
 	if (!defined($input->{fba})) {
 		$input->{fba} = $self->_get_new_id($input->{model}.".fba.");
@@ -8954,8 +8954,9 @@ sub runfba
 	if ($input->{booleanexp}) {
 		if (defined($input->{expsample})) {
 			$input->{expsample} = $self->_get_msobject("ExpressionSample",$input->{expsamplews},$input->{expsample});
-		}
-		else {
+		} elsif (keys(%{$input->{exp_raw_data}}) > 0) {
+			$input->{expsample} = $input->{exp_raw_data}
+		} else {
 			$self->_error("Cannot run expression-constrained FBA without providing expression data!");	
 		}
 		$fba->PrepareForGapfilling({
@@ -8964,15 +8965,11 @@ sub runfba
 			make_model_rxns_reversible => 0,
 			expsample => $input->{expsample},
 			booleanexp => $input->{booleanexp},
-			expression_threshold_type => $input->{expression_threshold_type},
-			low_expression_threshold => $input->{low_expression_threshold},
-			low_expression_penalty_factor => $input->{low_expression_penalty_factor},
-			high_expression_threshold => $input->{high_expression_threshold},
-			high_expression_penalty_factor => $input->{high_expression_penalty_factor},
+			expression_threshold_percentile => $input->{expression_threshold_percentile},
 			alpha => $input->{alpha},
 			omega => $input->{omega},
 			kappa => $input->{kappa},
-			scalefluxes => 0,
+			scale_penalty_by_flux => $input->{scale_penalty_by_flux},
 		});
 	}
 	$fba->fva($input->{fva});
