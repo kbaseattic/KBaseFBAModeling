@@ -7,7 +7,7 @@
 use strict;
 use warnings;
 use Bio::KBase::workspace::ScriptHelpers qw(get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta printObjectInfo);
-use Bio::KBase::fbaModelServices::ScriptHelpers qw(fbaws printJobData get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(load_table fbaws printJobData get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Model"];
 my $servercommand = "queue_gapfill_model";
@@ -32,9 +32,9 @@ my $translation = {
 	omega => "omega",
 	scalefluxes => "scalefluxes",
 	expthreshtype => "expression_threshold_type",
-	lowexpthresh => "low_expression_theshold",
+	lowexpthresh => "low_expression_threshold",
 	lowexppen => "low_expression_penalty_factor",
-	highexpthresh => "high_expression_theshold",
+	highexpthresh => "high_expression_threshold",
 	highexppen => "high_expression_penalty_factor",
 	expsample => "expsample",
 	expsamplews => "expsamplews",
@@ -151,6 +151,13 @@ if (defined($opt->{targrxn})) {
 		my $array = [split(/;/,$terms)];
 		push(@{$params->{target_reactions}},@{$array});
 	}
+}
+if (-e $params->{expsample}) {
+	my $data = load_table($params->{expsample},"\t",0);
+	foreach my $row (@{$data->{"data"}}) {
+		$params->{exp_raw_data}->{$row->[0]} = $row->[1];
+	}
+	delete $params->{expsample};
 }
 
 $params->{blacklistedrxns} = [];

@@ -3,7 +3,7 @@
 # Authors: Christopher Henry, Scott Devoid, Paul Frybarger
 # Contact email: chenry@mcs.anl.gov
 # Development location: Mathematics and Computer Science Division, Argonne National Lab
-# Date of module creation: 2014-11-20T02:29:26
+# Date of module creation: 2015-02-02T23:20:04
 ########################################################################
 use strict;
 use Bio::KBase::ObjectAPI::KBaseFBA::DB::QuantOptBoundMod;

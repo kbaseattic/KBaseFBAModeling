@@ -35,13 +35,14 @@ has media_ref => (is => 'rw', isa => 'Str', printOrder => '-1', required => 1, t
 has compoundflux_objterms => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub {return {};}, type => 'attribute', metaclass => 'Typed');
 has phenotypesimulationset_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has maximizeObjective => (is => 'rw', isa => 'Bool', printOrder => '-1', required => 1, default => '1', type => 'attribute', metaclass => 'Typed');
+has jobnode => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has promconstraint_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 has phenotypeset_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has geneKO_refs => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has inputfiles => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
 has drainfluxUseVariables => (is => 'rw', isa => 'Bool', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
-has quantitativeOptimization => (is => 'rw', isa => 'Bool', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
+has quantitativeOptimization => (is => 'rw', isa => 'Bool', printOrder => '-1', type => 'attribute', metaclass => 'Typed',default => "0");
 has additionalCpd_refs => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has outputfiles => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has parameters => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
@@ -60,8 +61,8 @@ has fluxMinimization => (is => 'rw', isa => 'Bool', printOrder => '12', default 
 has thermodynamicConstraints => (is => 'rw', isa => 'Bool', printOrder => '16', default => '1', type => 'attribute', metaclass => 'Typed');
 has defaultMaxDrainFlux => (is => 'rw', isa => 'Num', printOrder => '22', required => 1, default => '1000', type => 'attribute', metaclass => 'Typed');
 has reactionflux_objterms => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub {return {};}, type => 'attribute', metaclass => 'Typed');
-has tintleW => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has fbamodel_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has tintleW => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has reactionKO_refs => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has fluxUseVariables => (is => 'rw', isa => 'Bool', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
 has findMinimalMedia => (is => 'rw', isa => 'Bool', printOrder => '13', default => '0', type => 'attribute', metaclass => 'Typed');
@@ -196,6 +197,13 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
+            'name' => 'jobnode',
+            'type' => 'Str',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
             'name' => 'promconstraint_ref',
             'type' => 'Str',
             'perm' => 'rw'
@@ -245,7 +253,6 @@ my $attributes = [
             'req' => 0,
             'printOrder' => -1,
             'name' => 'quantitativeOptimization',
-            'default' => 0,
             'type' => 'Bool',
             'perm' => 'rw'
           },
@@ -405,15 +412,15 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'tintleW',
-            'type' => 'Num',
+            'name' => 'fbamodel_ref',
+            'type' => 'Str',
             'perm' => 'rw'
           },
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'fbamodel_ref',
-            'type' => 'Str',
+            'name' => 'tintleW',
+            'type' => 'Num',
             'perm' => 'rw'
           },
           {
@@ -532,7 +539,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {media_ref => 0, compoundflux_objterms => 1, phenotypesimulationset_ref => 2, maximizeObjective => 3, promconstraint_ref => 4, id => 5, phenotypeset_ref => 6, geneKO_refs => 7, inputfiles => 8, drainfluxUseVariables => 9, quantitativeOptimization => 10, additionalCpd_refs => 11, outputfiles => 12, parameters => 13, noErrorThermodynamicConstraints => 14, objectiveConstraintFraction => 15, regulome_ref => 16, minimize_reactions => 17, minimizeErrorThermodynamicConstraints => 18, uptakeLimits => 19, allReversible => 20, tintleKappa => 21, objectiveValue => 22, minimize_reaction_costs => 23, numberOfSolutions => 24, fluxMinimization => 25, thermodynamicConstraints => 26, defaultMaxDrainFlux => 27, reactionflux_objterms => 28, tintleW => 29, fbamodel_ref => 30, reactionKO_refs => 31, fluxUseVariables => 32, findMinimalMedia => 33, PROMKappa => 34, simpleThermoConstraints => 35, comboDeletions => 36, defaultMinDrainFlux => 37, tintlesample_ref => 38, fva => 39, decomposeReversibleDrainFlux => 40, biomassflux_objterms => 41, defaultMaxFlux => 42, decomposeReversibleFlux => 43};
+my $attribute_map = {media_ref => 0, compoundflux_objterms => 1, phenotypesimulationset_ref => 2, maximizeObjective => 3, jobnode => 4, promconstraint_ref => 5, id => 6, phenotypeset_ref => 7, geneKO_refs => 8, inputfiles => 9, drainfluxUseVariables => 10, quantitativeOptimization => 11, additionalCpd_refs => 12, outputfiles => 13, parameters => 14, noErrorThermodynamicConstraints => 15, objectiveConstraintFraction => 16, regulome_ref => 17, minimize_reactions => 18, minimizeErrorThermodynamicConstraints => 19, uptakeLimits => 20, allReversible => 21, tintleKappa => 22, objectiveValue => 23, minimize_reaction_costs => 24, numberOfSolutions => 25, fluxMinimization => 26, thermodynamicConstraints => 27, defaultMaxDrainFlux => 28, reactionflux_objterms => 29, fbamodel_ref => 30, tintleW => 31, reactionKO_refs => 32, fluxUseVariables => 33, findMinimalMedia => 34, PROMKappa => 35, simpleThermoConstraints => 36, comboDeletions => 37, defaultMinDrainFlux => 38, tintlesample_ref => 39, fva => 40, decomposeReversibleDrainFlux => 41, biomassflux_objterms => 42, defaultMaxFlux => 43, decomposeReversibleFlux => 44};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {

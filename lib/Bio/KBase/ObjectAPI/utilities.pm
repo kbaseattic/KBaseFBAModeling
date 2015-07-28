@@ -14,6 +14,8 @@ our $CONFIG = undef;
 our $idserver = undef;
 our $keggmaphash = undef;
 our $report = {};
+our $shockurl = undef;
+our $token = undef;
 
 =head1 Bio::KBase::ObjectAPI::utilities
 
@@ -483,11 +485,14 @@ sub PRINTTABLESPARSE {
     for (my $i=1; $i < @{$table->{data}};$i++) {
     	for (my $j=1; $j < @{$table->{headings}};$j++) {
     		if (defined($table->{data}->[$i]->[$j])) {
-    			if (!defined($min) || $table->{data}->[$i]->[$j] >= $min) {
-    				if (!defined($max) || $table->{data}->[$i]->[$j] <= $max) {
+		    if ($table->{data}->[$i]->[$j] =~ /^(\d+)/) {
+			my $comp = $1;
+    			if (!defined($min) || $comp >= $min) {
+    				if (!defined($max) || $comp <= $max) {
     					print $out_fh $table->{data}->[$i]->[0].$delimiter.$table->{headings}->[$j].$delimiter.$table->{data}->[$i]->[$j]."\n";
     				}
     			}
+		    }
     		}	
     	}
     }
@@ -579,6 +584,42 @@ sub MFATOOLKIT_JOB_DIRECTORY {
 		$ENV{MFATOOLKIT_JOB_DIRECTORY} = "/tmp/fbajobs/";
 	}
 	return $ENV{MFATOOLKIT_JOB_DIRECTORY};
+}
+
+=head3 token
+
+Definition:
+	string = Bio::KBase::ObjectAPI::utilities::token(string input);
+Description:
+	Getter setter for authentication token
+Example:
+
+=cut
+
+sub token {
+	my ($input) = @_;
+	if (defined($input)) {
+		$token = $input;
+	}
+	return $token;
+}
+
+=head3 shockurl
+
+Definition:
+	string = Bio::KBase::ObjectAPI::utilities::shockurl(string input);
+Description:
+	Getter setter for authentication shock url
+Example:
+
+=cut
+
+sub shockurl {
+	my ($input) = @_;
+	if (defined($input)) {
+		$shockurl = $input;
+	}
+	return $shockurl;
 }
 
 =head3 CLASSIFIER_BINARY
@@ -914,6 +955,7 @@ sub parseGPR {
 	$gprHash->{root} = $gpr;
 	$index = 0;
 	my $nodelist = ["root"];
+	my @itemsToDelete;
 	while (defined($nodelist->[$index])) {
 		my $currentNode = $nodelist->[$index];
 		my $data = $gprHash->{$currentNode};
@@ -930,7 +972,7 @@ sub parseGPR {
 					my $newdata = $gprHash->{$item};
 					if ($newdata =~ m/$delim/) {
 						$gprHash->{$currentNode} =~ s/$item/$newdata/g;
-						delete $gprHash->{$item};
+						push @itemsToDelete, $item;
 						$index--;
 					} else {
 						push(@{$nodelist},$item);
@@ -942,6 +984,7 @@ sub parseGPR {
 		}
 		$index++;
 	}
+	map { delete $gprHash->{$_} } @itemsToDelete;
 	foreach my $item (keys(%{$gprHash})) {
 		$gprHash->{$item} =~ s/;/+/g;
 		$gprHash->{$item} =~ s/___/\|/g;
@@ -1171,6 +1214,14 @@ sub IsCofactor {
 		return 1;
 	}
 	return 0;
+}
+
+sub LoadToShock {
+	my ($filename) = @_;
+	my $output = Bio::KBase::ObjectAPI::utilities::runexecutable('curl -X POST -H "Authorization: OAuth '.Bio::KBase::ObjectAPI::utilities::token().'" --data-binary @'.$filename.' '.Bio::KBase::ObjectAPI::utilities::shockurl().'/node');
+	my $json = JSON::XS->new;
+	my $data = $json->decode(join("\n",@{$output}));
+	return $data->{data}->{id};
 }
 
 1;

@@ -110,7 +110,7 @@ sub _buildjobid {
 		if (!-d $fulldir) {
 			File::Path::mkpath ($fulldir);
 		}
-		$jobid = substr($fulldir,length($path."/"));
+		$jobid = substr($fulldir,length($path));
 	}
 	return $jobid
 }
@@ -368,10 +368,17 @@ sub runFBA {
 	system($self->command());
 	$self->loadMFAToolkitResults();
 	if (defined(Bio::KBase::ObjectAPI::utilities::FinalJobCache())) {
-		if (!-d Bio::KBase::ObjectAPI::utilities::FinalJobCache()) {
-			File::Path::mkpath (Bio::KBase::ObjectAPI::utilities::FinalJobCache());
+		if (Bio::KBase::ObjectAPI::utilities::FinalJobCache() eq "SHOCK") {
+			system("cd ".$self->jobPath().";tar -czf ".$self->jobPath().$self->jobID().".tgz ".$self->jobID());
+			my $node = Bio::KBase::ObjectAPI::utilities::LoadToShock($self->jobPath().$self->jobID().".tgz");
+			unlink($self->jobPath().$self->jobID().".tgz");
+			$self->jobnode($node);
+		} else {
+			if (!-d Bio::KBase::ObjectAPI::utilities::FinalJobCache()) {
+				File::Path::mkpath (Bio::KBase::ObjectAPI::utilities::FinalJobCache());
+			}
+			system("cd ".$self->jobPath().";tar -czf ".Bio::KBase::ObjectAPI::utilities::FinalJobCache()."/".$self->jobID().".tgz ".$self->jobID());
 		}
-		system("cd ".$self->jobPath().";tar -czf ".Bio::KBase::ObjectAPI::utilities::FinalJobCache()."/".$self->jobID().".tgz ".$self->jobID());
 	}
 	if ($self->jobDirectory() =~ m/\/fbajobs\/.+/) {
 		if (!defined($self->parameters()->{nodelete}) || $self->parameters()->{nodelete} == 0) {
@@ -445,12 +452,10 @@ Description:
 sub PrepareForGapfilling {
 	my ($self,$args) = @_;
 	$args = Bio::KBase::ObjectAPI::utilities::args([],{
+	    booleanexp => "absolute",
 		expsample => undef,
-		expression_threshold_type => "AbsoluteThreshold",
-		low_expression_theshold => 0.5,
-		low_expression_penalty_factor => 1,
-		high_expression_theshold => 0.5,
-		high_expression_penalty_factor => 1,
+		expression_threshold_percentile => 0.5,
+		kappa => .1,
 		source_model => undef,
 		timePerSolution => 43200,
 		totalTimeLimit => 45000,
@@ -479,7 +484,8 @@ sub PrepareForGapfilling {
 		gauranteedrxns => [],
 		add_external_rxns => 1,
 		make_model_rxns_reversible => 1,
-		activate_all_model_reactions => 1
+		activate_all_model_reactions => 1,
+		scale_penalty_by_flux => 0
 	}, $args);
 	push(@{$self->gauranteedrxns()},@{$args->{gauranteedrxns}});
 	push(@{$self->blacklistedrxns()},@{$args->{blacklistedrxns}});
@@ -503,12 +509,14 @@ sub PrepareForGapfilling {
 		$self->{_expsample} = $args->{expsample};
 	}
     if (defined($self->{_expsample})) {
-		$self->parameters()->{expression_threshold_type} = $args->{expression_threshold_type};
-		$self->parameters()->{low_expression_theshold} = $args->{low_expression_theshold};
-		$self->parameters()->{low_expression_penalty_factor} = $args->{low_expression_penalty_factor};
-		$self->parameters()->{high_expression_theshold} = $args->{high_expression_theshold};
-		$self->parameters()->{high_expression_penalty_factor} = $args->{high_expression_penalty_factor};
-	}
+		$self->parameters()->{expression_threshold_percentile} = $args->{expression_threshold_percentile};
+		$self->parameters()->{kappa} = $args->{kappa};	
+		$self->parameters()->{booleanexp} = $args->{booleanexp};	
+		$self->parameters()->{"scale penalty by flux"} = $args->{scale_penalty_by_flux};
+		if ($args->{scale_penalty_by_flux} == 0) {
+	    	$self->parameters()->{"Reactions use variables"} = 1;
+	    }
+    }
     $self->numberOfSolutions($args->{num_solutions});
     if ($args->{completeGapfill} == 1 && @{$args->{target_reactions}} == 0) {
     	my $rxnfoundhash = {};
@@ -716,7 +724,7 @@ sub createJobDirectory {
 	my $exchangehash;
 	#Print model to Model.tbl
 	my $model = $self->fbamodel();
-	my $BioCpd = ["id	abbrev	charge	deltaG	deltaGErr	formula	mass	name"];
+	my $BioCpd = ["id	abbrev	charge	formula	mass	name"];
 	my $mdlcpd = $model->modelcompounds();
 	my $cpdhash = {};
 	for (my $i=0; $i < @{$mdlcpd}; $i++) {
@@ -845,10 +853,10 @@ sub createJobDirectory {
 		push(@{$additionalrxn},"ATPMaintenance\t=\tATPMAINT");
 		push(@{$additionalrxn},"EnergyBiomass\t=\tBiomassComp");
 		$gfcoef->{"EnergyBiomass"} = {"reverse" => 10,forward => 10,tag => "BiomassComp"};
-		push(@{$BioRxn},"SixATPSynth\tSixATPSynth\t0\t0\t(6) cpd00067[e] + cpd00008[c] + cpd00009[c] <=> cpd00002[c] + (5) cpd00067[c] + cpd00001[c]\tSixATPSynth\t<=>\tOK\t<=>");
-		push(@{$BioRxn},"OneATPSynth\tOneATPSynth\t0\t0\t(1) cpd00067[e] + cpd00008[c] + cpd00009[c] <=> cpd00002[c] + cpd00001[c]\tOneATPSynth\t<=>\tOK\t<=>");
-		push(@{$BioRxn},"ATPMaintenance\tATPMaintenance\t0\t0\tcpd00002[c] + cpd00001[c] <=> cpd00067[c] + cpd00008[c] + cpd00009[c]\tATPMaintenance\t=>\tOK\t=>");
-		push(@{$BioRxn},"EnergyBiomass\tEnergyBiomass\t0\t0\tcpd00002[b] + cpd00001[b] <=> cpd00008[b] + cpd00009[b] + cpd00067[b]\tEnergyBiomass\t<=>\tOK\t<=>");
+		push(@{$BioRxn},"SixATPSynth\tSixATPSynth\t0\t0\t(6) cpd00067_e0[e] + cpd00008_c0[c] + cpd00009_c0[c] <=> cpd00002_c0[c] + (5) cpd00067_c0[c] + cpd00001_c0[c]\tSixATPSynth\t<=>\tOK\t<=>");
+		push(@{$BioRxn},"OneATPSynth\tOneATPSynth\t0\t0\t(1) cpd00067_e0[e] + cpd00008_c0[c] + cpd00009_c0[c] <=> cpd00002_c0[c] + cpd00001_c0[c]\tOneATPSynth\t<=>\tOK\t<=>");
+		push(@{$BioRxn},"ATPMaintenance\tATPMaintenance\t0\t0\tcpd00002_c0[c] + cpd00001_c0[c] <=> cpd00067_c0[c] + cpd00008_c0[c] + cpd00009_c0[c]\tATPMaintenance\t=>\tOK\t=>");
+		push(@{$BioRxn},"EnergyBiomass\tEnergyBiomass\t0\t0\tcpd00002_c0[b] + cpd00001_c0[b] <=> cpd00008_c0[b] + cpd00009_c0[b] + cpd00067_c0[b]\tEnergyBiomass\t<=>\tOK\t<=>");
 		my $comprxn = {};
 		foreach my $cpd (@{$biocpds}) {
 			if ($cpd->coefficient() > 0) {
@@ -910,20 +918,21 @@ sub createJobDirectory {
 						$reactant .= " + ";
 					}
 					my $coef = -1*$comprxn->{$component}->{compounds}->{$cpd};
-					$reactant .= "(".$coef.") ".$cpd."[b]";
+					$reactant .= "(".$coef.") ".$cpd."_c0[b]";
 				} else {
 					if (length($product) > 0) {
 						$product .= " + ";
 					}
 					my $coef = $comprxn->{$component}->{compounds}->{$cpd};
-					$product .= "(".$coef.") ".$cpd."[b]";
+					$product .= "(".$coef.") ".$cpd."_c0[b]";
 				}
 			}
 			push(@{$additionalrxn},$component."Biomass\t=\tBiomassComp");
 			$gfcoef->{$component."Biomass"} = {"reverse" => 10,forward => 10,tag => "BiomassComp"};
-			push(@{$BioRxn},$component."Biomass\t".$component."Biomass\t0\t0\t".$reactant." <=>".$product."\t".$component."Biomass\t<=>\tOK\t<=>");
+			push(@{$BioRxn},$component."Biomass\t".$component."Biomass\t0\t0\t".$reactant." <=> ".$product."\t".$component."Biomass\t<=>\tOK\t<=>");
 		}
 		$self->parameters()->{"Biomass component coefficients"} = $biomasscomps;
+		$self->parameters()->{"quantitative optimization"} = 1;
 	}
 	#Adding gapfilling candidates from template
 	if (defined($self->parameters()->{add_external_rxns}) && $self->parameters()->{add_external_rxns} == 1 && defined($self->parameters()->{"Perform gap filling"}) && $self->parameters()->{"Perform gap filling"} == 1) {	
@@ -1249,9 +1258,10 @@ sub createJobDirectory {
 		$primMedia = $newPrimMedia;
 	}
 	#Selecting the solver based on whether the problem is MILP
-	my $solver = "GLPK";
-	if ($self->fluxUseVariables() == 1 || $self->drainfluxUseVariables() == 1 || $self->findMinimalMedia()) {
-		$solver = "SCIP";
+	#First check whether the user has set a specific solver
+	my $solver = defined $self->parameters()->{MFASolver} ? $self->parameters()->{MFASolver} : "GLPK";
+	if ($self->fluxUseVariables() == 1 || $self->drainfluxUseVariables() == 1 || $self->findMinimalMedia() || defined $self->{_expsample}) {
+	    $solver = "SCIP" if $solver ne "CPLEX";
 	}
 	#Setting gene KO
 	my $geneKO = "none";
@@ -1346,6 +1356,7 @@ sub createJobDirectory {
 	#Setting parameters
 	my $parameters = {
 		"write LP file" => 1,
+		"write variable key" => 1,
 		"new fba pipeline" => 1,
 		"perform MFA" => 1,
 		"Default min drain flux" => $self->defaultMinDrainFlux(),
@@ -1665,113 +1676,104 @@ Description:
 
 sub process_expression_data {
 	my ($self) = @_;
-	my $type = $self->parameters()->{expression_threshold_type};
+	my $booleanexp = $self->parameters()->{booleanexp};
+	my $threshold_type = $self->parameters()->{expression_threshold_type};
 	my $sample = $self->{_expsample};
+	my $exphash = $sample;
+	if (ref($sample) ne "HASH") {
+		$exphash = $sample->expression_levels();#This is what we must modify to connect to Mike's object
+	}
 	my $exp_scores = {};
-	my $no_reaction = {};
-	my $no_prot = {};
-	my $no_subunit = {};
-	my $miss_protein = {};
-	my $no_ftr = {};
-	my $yes_ftr = {};
-	my $unknown = {};
+	my $max_exp_score = 0;
+	my $min_exp_score = -1;
 	my $mdlrxns = $self->fbamodel()->modelreactions();
 	my $inactiveList = ["bio1"];
 	foreach my $mdlrxn (@{$mdlrxns}) {
 	    push(@{$inactiveList},$mdlrxn->id());
-	    $exp_scores->{$mdlrxn->id()} = 0;
-	    $miss_protein->{$mdlrxn->id()} = 1 if (@{$mdlrxn->modelReactionProteins()} == 0);
-	    $unknown->{$mdlrxn->id()} = 1 if (@{$mdlrxn->modelReactionProteins()} == 0);
 	    # Maximal gene expression for a reaction
-	    my $rxn_score = POSIX::FLT_MIN;
+	    my $rxn_score;
 	    foreach my $prot (@{$mdlrxn->modelReactionProteins()}) {
 			# Minimal gene expression for a complex
-			my $prot_score = POSIX::FLT_MAX;
+			my $prot_score;
 			foreach my $subunit (@{$prot->modelReactionProteinSubunits()}) {
 			    if (@{$subunit->features()} == 0) {
 					next; # Not last, since there may be scores for other subunits
 			    }
 		        # Maximal gene expression for a subunit
-			    my $subunit_score = POSIX::FLT_MIN;
+			    my $subunit_score;
 			    foreach my $feature (@{$subunit->features()}) {
 					my $ftr_id = $feature->id();
-					if (!exists $sample->expression_levels()->{$feature->id()}) {
-					    $no_ftr->{$feature->id()}=1;
-					} else{
-					    my $ftr_score = $sample->expression_levels()->{$feature->id};
-					    $yes_ftr->{$feature->id()}=1;
-					    $subunit_score = ($subunit_score > $ftr_score) ? $subunit_score : $ftr_score;
+					if (defined($exphash->{$feature->id()})) {
+					    my $ftr_score = $exphash->{$feature->id};
+					    if ($ftr_score > $max_exp_score) {
+					    	$max_exp_score = $ftr_score;
+					    }
+					    if ($min_exp_score >= 0 && $ftr_score < $min_exp_score) {
+						$min_exp_score = $ftr_score;
+					    }
+					    if (!defined($subunit_score) || $subunit_score <  $ftr_score) {
+					    	$subunit_score = $ftr_score;
+					    }
 					}
 			    }
-			    if($subunit_score == POSIX::FLT_MIN){
-					$no_subunit->{$mdlrxn->id()}=1;
+			    if (defined($subunit_score)) {
+					if (!defined($prot_score) || $prot_score > $subunit_score) {
+						$prot_score = $subunit_score;
+					}
 			    }
-			    $prot_score = ($prot_score < $subunit_score) ? $prot_score : $subunit_score;
-			}			
-			if ($prot_score == POSIX::FLT_MAX) {
-			    $no_prot->{$mdlrxn->id()} = 1;
 			}
-			$rxn_score = ($rxn_score > $prot_score) ? $rxn_score : $prot_score;   
+			if (defined($prot_score)) {
+				if (!defined($rxn_score) || $rxn_score < $prot_score) {
+					$rxn_score = $prot_score;
+				}
+		    }
 	    }
-	    if ($rxn_score == POSIX::FLT_MIN) {
-			$no_reaction->{$mdlrxn->id()} = 1;
-	    }		
-	    $exp_scores->{$mdlrxn->id()} = $rxn_score;
-	}
-	my $final_exp_scores = {};
-	my $min_exp_score = (sort {$a <=> $b} grep { $_ != POSIX::FLT_MIN && $_ != POSIX::FLT_MAX } map { $exp_scores->{$_} } keys %$exp_scores)[0];
-	my $max_exp_score = (sort {$b <=> $a} grep { $_ != POSIX::FLT_MIN && $_ != POSIX::FLT_MAX } map { $exp_scores->{$_} } keys %$exp_scores)[0];
-	foreach my $rxn_id (keys %$exp_scores) {
-	    if (exists $unknown->{$rxn_id}) {
-	    
-	    } else {
-			if($exp_scores->{$rxn_id} eq POSIX::FLT_MIN){
-			    $final_exp_scores->{$rxn_id}=0;
-			}elsif($exp_scores->{$rxn_id} eq POSIX::FLT_MAX){
-			    $final_exp_scores->{$rxn_id}=1;
-			}else{
-			    $final_exp_scores->{$rxn_id} = sprintf("%.4f",($exp_scores->{$rxn_id} / $max_exp_score));
-			}
+	    if (defined($rxn_score)) {
+	    	$exp_scores->{$mdlrxn->id()} = $rxn_score;
 	    }
 	}
+	# don't scale probabilities - they are already on a 0 to 1 scale
+	if ($booleanexp eq "absolute") {
+	    my $sortedrxns = [sort { $exp_scores->{$a} <=> $exp_scores->{$b} } keys(%{$exp_scores})];
+		my $multiple = 1/@{$sortedrxns};
+		for (my $i=0; $i < @{$sortedrxns}; $i++) {
+			$exp_scores->{$sortedrxns->[$i]} = $i*$multiple;
+		}
+	}
+	
 	my $coef = {
 		highexp => {},
 		lowexp => {}
 	};
+	my $threshold = $self->parameters()->{expression_threshold_percentile};
+	my $kappa = $self->parameters()->{kappa};
+	my $high_expression_threshold = $threshold+$kappa;
+	my $low_expression_threshold = $threshold-$kappa;
+
 	for (my $i=0; $i < @{$inactiveList}; $i++) {
 		if($inactiveList->[$i] eq "bio1"){
 			$coef->{highexp}->{bio1} = 1;
-	    } elsif(exists($final_exp_scores->{$inactiveList->[$i]})){
-	    	if ($type eq "AbsoluteThreshold") {
-		    	if($final_exp_scores->{$inactiveList->[$i]} <= $self->parameters()->{low_expression_theshold}){
-				    my $penalty = $self->parameters()->{low_expression_penalty_factor}*($self->parameters()->{low_expression_theshold}-$final_exp_scores->{$inactiveList->[$i]})/$self->parameters()->{low_expression_theshold};
-				    if ($self->fbamodel()->getObject("modelreactions",$inactiveList->[$i])->direction() eq "=") {
-				    	$coef->{lowexp}->{$inactiveList->[$i]}->{forward} = $penalty;
-				    	$coef->{lowexp}->{$inactiveList->[$i]}->{"reverse"} = $penalty;
-				    } elsif ($self->fbamodel()->getObject("modelreactions",$inactiveList->[$i])->direction() eq ">") {
-				    	$coef->{lowexp}->{$inactiveList->[$i]}->{forward} = $penalty;
-				    } elsif ($self->fbamodel()->getObject("modelreactions",$inactiveList->[$i])->direction() eq "<") {
-				    	$coef->{lowexp}->{$inactiveList->[$i]}->{"reverse"} = $penalty;
-				    }
-				}elsif ($final_exp_scores->{$inactiveList->[$i]} >= $self->parameters()->{high_expression_theshold}) {
-					my $penalty = $self->parameters()->{high_expression_penalty_factor}*($final_exp_scores->{$inactiveList->[$i]}-$self->parameters()->{high_expression_theshold})/$self->parameters()->{high_expression_theshold};
-					$coef->{highexp}->{$inactiveList->[$i]} = $penalty;
-				}
-	    	}
-	    } else {
-	    	if ($type eq "AbsoluteThreshold") {
-			    my $penalty = $self->parameters()->{low_expression_penalty_factor};
+	    } elsif(exists($exp_scores->{$inactiveList->[$i]})){
+	    	if($exp_scores->{$inactiveList->[$i]} <= $low_expression_threshold) {
+			    my $penalty = ($threshold-$exp_scores->{$inactiveList->[$i]})/$threshold;
 			    if ($self->fbamodel()->getObject("modelreactions",$inactiveList->[$i])->direction() eq "=") {
-				    #$coef->{lowexp}->{$inactiveList->[$i]}->{forward} = $penalty;
-				    #$coef->{lowexp}->{$inactiveList->[$i]}->{"reverse"} = $penalty;
-				} elsif ($self->fbamodel()->getObject("modelreactions",$inactiveList->[$i])->direction() eq ">") {
-				   	#$coef->{lowexp}->{$inactiveList->[$i]}->{forward} = $penalty;
-				} elsif ($self->fbamodel()->getObject("modelreactions",$inactiveList->[$i])->direction() eq "<") {
-				   	#$coef->{lowexp}->{$inactiveList->[$i]}->{"reverse"} = $penalty;
+			    	$coef->{lowexp}->{$inactiveList->[$i]}->{forward} = $penalty;
+			    	$coef->{lowexp}->{$inactiveList->[$i]}->{"reverse"} = $penalty;
+			    } elsif ($self->fbamodel()->getObject("modelreactions",$inactiveList->[$i])->direction() eq ">") {
+			    	$coef->{lowexp}->{$inactiveList->[$i]}->{forward} = $penalty;
+			    } elsif ($self->fbamodel()->getObject("modelreactions",$inactiveList->[$i])->direction() eq "<") {
+			    	$coef->{lowexp}->{$inactiveList->[$i]}->{"reverse"} = $penalty;
 			    }
-	    	}
+			} elsif ($exp_scores->{$inactiveList->[$i]} > $high_expression_threshold) {
+			    my $penalty = ($exp_scores->{$inactiveList->[$i]}-$threshold)/$threshold;
+			    $coef->{highexp}->{$inactiveList->[$i]} = $penalty;
+			}
 	    }
 	}
+	push(@{$self->{outputfiles}->{gapfillrxns}},"Lowexp reactions:".join("|",keys(%{$coef->{lowexp}})));
+	push(@{$self->{outputfiles}->{gapfillrxns}},"Highexp reactions:".join("|",keys(%{$coef->{highexp}})));
+	push(@{$self->{outputfiles}->{gapfillstats}},"Lowexp reactions:".keys(%{$coef->{lowexp}}));
+	push(@{$self->{outputfiles}->{gapfillstats}},"Highexp reactions:".keys(%{$coef->{highexp}}));
 	return $coef;
 }
 
@@ -2406,7 +2408,7 @@ sub parseFluxFiles {
 						my $mdlcpd = $self->fbamodel()->getObject("modelcompounds",$row->[$compoundColumn]);
 						if (defined($mdlcpd)) {
 							my $value = $row->[$drainCompartmentColumns->{$comp}];
-							if (abs($value) < 0.00000001) {
+							if (abs($value) < 0.000000001) {
 								$value = 0;
 							}
 							my $lower = $self->defaultMinDrainFlux();
@@ -2464,7 +2466,7 @@ sub parseFluxFiles {
 						} else {
 							my $mdlrxn = $self->fbamodel()->getObject("modelreactions",$row->[$reactionColumn]);
 							if (defined($mdlrxn)) {
-								if (abs($value) < 0.00000001) {
+								if (abs($value) < 0.000000001) {
 									$value = 0;
 								}
 								my $lower = -1*$self->defaultMaxFlux();
@@ -2488,6 +2490,25 @@ sub parseFluxFiles {
 									max => $upper,
 									class => "unknown"
 								});
+							} else {
+								my $biorxn = $self->fbamodel()->getObject("biomasses",$row->[$reactionColumn]);
+								if (defined($biorxn)) {
+									if (abs($value) < 0.000000001) {
+										$value = 0;
+									}
+									my $lower = 0;
+									my $upper = $self->defaultMaxFlux();
+									$self->add("FBABiomassVariables",{
+										biomass_ref => $biorxn->_reference(),
+										variableType => "biomassflux",
+										value => $value,
+										lowerBound => $lower,
+										upperBound => $upper,
+										min => $lower,
+										max => $upper,
+										class => "unknown"
+									});
+								}
 							}
 						}
 					}
@@ -2681,8 +2702,9 @@ sub parseMinimalMediaResults {
 		my $data = Bio::KBase::ObjectAPI::utilities::LOADFILE($directory."/MinimalMediaSolutions.txt");
 		my $essIDs = [];
 		my $essCpds;
-		my $essuuids;
+		my $essuuids = [];
 		if ($data->[0] =~ m/Essentials:(.+)/) {
+		    print "Essentials:\n";
 			$essIDs = [split(/\t/,$1)];
 			for (my $i=0; $i < @{$essIDs};$i++) {
 				if ($essIDs->[$i] =~ m/(.+)_(.+)$/) {
@@ -2690,8 +2712,12 @@ sub parseMinimalMediaResults {
 				}
 				my $cpd = $self->biochemistry()->getObject("compounds",$essIDs->[$i]);
 				if (defined($cpd)) {
+				    print "\t",$cpd->id(), "\t", $cpd->name(), "\n";
 					push(@{$essCpds},$cpd);
 					push(@{$essuuids},$cpd->_reference());	
+				}
+				else {
+				    print "\t", $essIDs->[$i], "\n";
 				}
 			}
 		}
@@ -2701,11 +2727,13 @@ sub parseMinimalMediaResults {
 			optionalNutrient_refs => []
 		}];
 		for (my $i=1; $i < @{$data}; $i++) {
+		    print "Optionals:\n";
 			my $base = [];
 			push(@{$base},@{$mediaresults->[0]->{optionalNutrient_refs}});
 			if ($data->[$i] =~ m/\d+:(.+)/) {
 				my $optsets = [split(/\t/,$1)];
 				for (my $j=0; $j < @{$optsets}; $j++) {
+				    print "Set $j\n";
 					my $group = [split(/;/,$optsets->[$j])];
 					for (my $k = 0; $k < @{$group}; $k++) {
 						if ($group->[$k] =~ m/(.+)_(.+)$/) {
@@ -2713,7 +2741,11 @@ sub parseMinimalMediaResults {
 						}
 						my $cpd = $self->biochemistry()->getObject("compounds",$group->[$k]);
 						if (defined($cpd)) {
+						    print "\t",$cpd->id(), "\t", $cpd->name(), "\n";
 							$group->[$k] = $cpd->_reference();	
+						}
+						else {
+						    print "\t", $group->[$k], "\t", $group->[$k], "\n";
 						}
 					}
 					if ($j == 0) {
@@ -2830,10 +2862,10 @@ sub parseFVAResults {
 								if ($vartrans->{$vartype}->[1] != -1 && $vartrans->{$vartype}->[2] != -1) {
 									my $min = $row->[$vartrans->{$vartype}->[1]];
 									my $max = $row->[$vartrans->{$vartype}->[2]];
-									if (abs($min) < 0.0000001) {
+									if (abs($min) < 0.000000001) {
 										$min = 0;	
 									}
-									if (abs($max) < 0.0000001) {
+									if (abs($max) < 0.000000001) {
 										$max = 0;	
 									}
 									my $fbaRxnVar = $self->queryObject("FBAReactionVariables",{
@@ -2927,10 +2959,10 @@ sub parseFVAResults {
 									my $min = $row->[$vartrans->{$vartype}->[1]];
 									my $max = $row->[$vartrans->{$vartype}->[2]];
 									if ($min != 10000000) {
-										if (abs($min) < 0.0000001) {
+										if (abs($min) < 0.000000001) {
 											$min = 0;	
 										}
-										if (abs($max) < 0.0000001) {
+										if (abs($max) < 0.000000001) {
 											$max = 0;	
 										}
 										my $fbaCpdVar = $self->queryObject("FBACompoundVariables",{
@@ -3026,7 +3058,7 @@ sub parseTintleResult {
 			if ($row->[0] =~ /\d+/) {
 				# Assume gene variables has number, but not other labels.
 				next if ($row->[1] eq "0");
-				$row->[0] =~ s/___/|/ if ($row->[0] =~ /kb___g/);
+				$row->[0] =~ s/___/|/ if ($row->[0] =~ /kb___g/ || $row->[0] =~ /fig___/);
 				if ($row->[0] =~ /Not_(.*)/) {
 					# Case 3: the gene was likely to be on, but actually inactive.
 					$tintleOutputHash->{"conflicts"}->{$1} = "InactiveOn";
@@ -3040,7 +3072,19 @@ sub parseTintleResult {
 		}
 		$self->add("FBATintleResults",$tintleOutputHash);
 		# debug	
-		use Data::Dumper; print(Dumper([{"W" => $self->tintleW, "K" => $self->tintleKappa},$tintleOutputHash, $self->tintlesample()->expression_levels()]));
+		my $ftrhash = {};
+		my $rxns = $self->fbamodel()->modelreactions();
+		for (my $i=0; $i < @{$rxns};$i++) {
+		    my $rxn = $rxns->[$i];
+		    my $ftrs = $rxn->featureIDs();
+		    foreach my $ftr (@{$ftrs}) {
+			push @{$ftrhash->{$ftr}}, $rxn->id();
+		    }
+		}
+
+		foreach my $feature (keys %{$tintleOutputHash->{"conflicts"}}) {
+		    print $feature, "\t", $tintleOutputHash->{"conflicts"}->{$feature}, "\t", (join ",", @{$ftrhash->{$feature}}), "\n";
+		}
 		return 1;
 	}
 	return 0;
@@ -3096,10 +3140,96 @@ Description:
 sub parseGapfillingOutput {
     my $self = shift;
     my $directory = $self->jobDirectory();
+
+    sub addExpressionLeveltoGPR {
+	my ($gprstring, $sample) = @_;
+	my $exphash = $sample;
+	if (ref($sample) ne "HASH") {
+	    $exphash = $sample->expression_levels();
+	}
+	my $gpr = Bio::KBase::ObjectAPI::utilities::translateGPRHash(Bio::KBase::ObjectAPI::utilities::parseGPR($gprstring));
+	my @result;
+	foreach my $node (@$gpr) {
+	    my @inner;
+	    foreach my $fa (@$node) {
+		my @innerinner;
+		foreach my $innerinner (@$fa) {
+		    push @innerinner, $innerinner.":".sprintf("%.2f",$exphash->{$innerinner});
+		}
+		if (@innerinner > 1) {
+		    push @inner, "(".(join " or ", @innerinner).")";
+		}
+		else {
+		    push @inner, @innerinner;
+		}
+	    }
+	    if (@inner > 1) {
+		push @result, "(".(join " and ", @inner).")";
+	    }
+	    else {
+		push @result, @inner;
+	    }
+	}
+	return "(".(join " or ", @result).")";
+    }
+
+    sub fluxForRxn {
+	my  ($self, $rxn) = @_;
+	my $fbaRxnVar = $self->queryObject("FBAReactionVariables",{
+	    modelreaction_ref => $rxn->_reference()});
+	return $fbaRxnVar->variableType().":".$fbaRxnVar->value();
+    }
+
 	if (-e $directory."/GapfillingOutput.txt") {
+		my $rxns = $self->fbamodel()->modelreactions();
+		my $rxnhash;
+		for (my $i=0; $i < @{$rxns}; $i++) {
+		    $rxnhash->{$rxns->[$i]->id()} = $rxns->[$i];
+		}	
 		my $tbl = Bio::KBase::ObjectAPI::utilities::LOADTABLE($directory."/GapfillingOutput.txt","\t");
 		my $solution;
 		my $round = 0;
+		my $temparray = [split(/\//,$tbl->{data}->[0]->[3])];
+		push(@{$self->{outputfiles}->{gapfillstats}},"Gapfilled:".$temparray->[1]);
+		print "Number of gapfilled reactions [includes low expression reactions that must carry flux] (lower better): ".$temparray->[1]."\n";
+		for my $rxn (split ";", $tbl->{data}->[0]->[7]) {
+		    if ($rxn =~ /^(.)(.+)/) {
+			print "\t", $rxn, "\t", $rxnhash->{$2}->name(), "\t", fluxForRxn($self, $rxnhash->{$2}), "\t", addExpressionLeveltoGPR($rxnhash->{$2}->gprString(), $self->{_expsample}), "\n";
+		    }
+		}
+		$temparray = [split(/\//,$tbl->{data}->[0]->[4])];
+		push(@{$self->{outputfiles}->{gapfillstats}},"Active on:".$temparray->[1]);
+		print "Activated high expression reactions [do carry flux] (higher better): ".$temparray->[1]."\n";
+		$temparray = [split(/\//,$tbl->{data}->[0]->[5])];
+		push(@{$self->{outputfiles}->{gapfillstats}},"Inactive on:".$temparray->[1]);
+		print "High expression reactions that were not activated [do not carry flux] (lower better): ".$temparray->[1]."\n";
+		for my $rxn (split ";", $tbl->{data}->[0]->[9]) {
+		    print "\t", $rxn, "\t", $rxnhash->{$rxn}->name(), "\t", addExpressionLeveltoGPR($rxnhash->{$rxn}->gprString(), $self->{_expsample}), "\n";
+		}
+		my $currrxns = [split(/;/,$tbl->{data}->[0]->[7])];
+		push(@{$self->{outputfiles}->{gapfillrxns}},"Active reactions:".$tbl->{data}->[0]->[7]);
+		my $count = [0];
+		for (my $i=0; $i < @{$currrxns}; $i++) {
+			if ($currrxns->[$i] =~ /^(.)(.+)/) {
+				my $rxnid = $2;
+				my $sign = $1;
+				if ($rxnhash->{$rxnid}->direction() eq "=") {
+					$count->[0]++;
+				}
+				if ($sign eq "-") {
+					if ($rxnhash->{$rxnid}->direction() eq "<") {
+						$count->[0]++;
+					}
+				} else {
+					if ($rxnhash->{$rxnid}->direction() eq ">") {
+						$count->[0]++;
+					}
+				}
+				
+			}
+		}
+		push(@{$self->{outputfiles}->{gapfillstats}},"Active off:".$count->[0]);
+		print "Activated low expression reactions [must carry flux] (lower better): ".$count->[0]."\n";
 		foreach my $row (@{$tbl->{data}}) {
 			if (!defined($solution)) {
 				$solution = {
@@ -3130,6 +3260,7 @@ sub parseGapfillingOutput {
 			$solution->{rejscore} += $temparray->[0];
 			$temparray = [split(/\//,$row->[6])];
 			$solution->{candscore} += $temparray->[0];
+			next if (@$row < 8);
 			my $array = [split(/;/,$row->[7])];
 			for (my $i=0; $i < @{$array}; $i++) {
 				if ($array->[$i] =~ m/([+\-])(.+)_([a-z])(\d+)/) {
@@ -3142,6 +3273,7 @@ sub parseGapfillingOutput {
 					}
 					my $cmp = $self->biochemistry()->searchForCompartment($3);
 					my $rxn = $self->biochemistry()->searchForReaction($2);
+					next if ! defined $rxn;
 					push(@{$solution->{gapfillingSolutionReactions}},{
 						round => $round+0,
 						reaction_ref => $rxn->_reference(),
@@ -3152,6 +3284,7 @@ sub parseGapfillingOutput {
 					});
 				}
 			}
+			next if (@$row < 9);
 			$array = [split(/;/,$row->[8])];
 			for (my $i=0; $i < @{$array}; $i++) {
 				my $mdlrxn = $self->fbamodel()->searchForReaction($array->[$i]);
@@ -3162,6 +3295,7 @@ sub parseGapfillingOutput {
 					});
 				}
 			}
+			next if (@$row < 10);
 			$array = [split(/;/,$row->[9])];
 			for (my $i=0; $i < @{$array}; $i++) {
 				my $mdlrxn = $self->fbamodel()->searchForReaction($array->[$i]);
@@ -3169,6 +3303,7 @@ sub parseGapfillingOutput {
 					push(@{$solution->{failedReaction_refs}},modelreaction_ref => $mdlrxn->_reference());
 				}
 			}
+			next if (@$row < 11);
 			$array = [split(/;/,$row->[10])];
 			for (my $i=0; $i < @{$array}; $i++) {
 				if ($array->[$i] =~ m/([+\-])(.+)_([a-z])(\d+)/) {
@@ -3181,6 +3316,9 @@ sub parseGapfillingOutput {
 					}
 					my $cmp = $self->biochemistry()->searchForCompartment($3);
 					my $rxn = $self->biochemistry()->searchForReaction($2);
+					if (!defined $rxn) {
+					    next;
+					}
 					push(@{$solution->{rejectedCandidates}},{
 						round => $round+0,
 						reaction_ref => $rxn->_reference(),

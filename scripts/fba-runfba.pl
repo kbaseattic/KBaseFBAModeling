@@ -7,7 +7,7 @@
 use strict;
 use warnings;
 use Bio::KBase::workspace::ScriptHelpers qw(printObjectInfo get_ws_client workspace workspaceURL parseObjectMeta parseWorkspaceMeta printObjectMeta);
-use Bio::KBase::fbaModelServices::ScriptHelpers qw(fbaws get_fba_client runFBACommand universalFBAScriptCode );
+use Bio::KBase::fbaModelServices::ScriptHelpers qw(load_table fbaws get_fba_client runFBACommand universalFBAScriptCode );
 #Defining globals describing behavior
 my $primaryArgs = ["Model"];
 my $servercommand = "runfba";
@@ -28,8 +28,12 @@ my $translation = {
 	expsample => "expsample",
 	expsamplews => "expsamplews",
 	booleanexp => "booleanexp",
+	kappa => "kappa",
+	omega => "omega",
 	solver => "solver",
-	biomass => "biomass"
+	biomass => "biomass",
+	expthreshold => "expression_threshold_percentile", 
+	scalebyflux => "scale_penalty_by_flux"
 };
 my $fbaTranslation = {
 	media => "media",
@@ -52,8 +56,7 @@ my $fbaTranslation = {
 	efluxws => "eflux_workspace",
 	tintlesample => "tintle_sample",
 	tintlews => "tintle_workspace",
-	tintlew => "tintle_w",
-	tintlek => "tintle_kappa",
+	omega => "omega",
 	modelws => "model_workspace",
 	regulome => "regulome",
 	regulomews => "regulome_workspace"
@@ -72,7 +75,9 @@ my $specs = [
     [ 'rxnko:s@', 'List of reaction KO (; delimiter)' ],
     [ 'bounds:s@', 'Custom bounds' ],
     [ 'constraints:s@', 'Custom constraints' ],
-    [ 'booleanexp', 'Boolean modeling expression data' ],
+    [ 'booleanexp:s', 'Constrain modeling with on/off expression data of specified type. Either "absolute" or "probability"'],
+    [ 'expthreshold:s', 'Set threshold percentile for considering genes on or off from expression' ],
+    [ 'scalebyflux', 'Scale expression penalties by flux' ],
     [ 'expsample:s', 'ID of expression sample' ],
     [ 'expsamplews:s', 'Workspace with expression sample' ],
     [ 'promconstraint|p:s', 'ID of PromConstraint' ],
@@ -84,8 +89,8 @@ my $specs = [
     [ 'efluxws:s', 'Workspace with ExpressionSample/Series' ],
     [ 'tintlesample:s', 'ID of ProbabilitySample for Tintle2014 analysis' ],
     [ 'tintlews:s', 'Workspace with ProbabilitySample/Series' ],
-    [ 'tintlew:s', 'Weights of biomass against gene penalty. In (0,1]', { "default" => 0.5}],
-    [ 'tintlek:s', 'Tolerance to classify genes as unknown, not on or off. In [0,0.5]', {"default" => 0.1}],
+    [ 'omega:s', 'Weights of biomass against gene penalty. In (0,1]', { "default" => 0.5}],
+    [ 'kappa:s', 'Tolerance to classify genes as unknown, not on or off. In [0,0.5]', {"default" => 0.1}],
     [ 'defaultmaxflux:s', 'Default maximum reaction flux' ],
     [ 'defaultminuptake:s', 'Default minimum nutrient uptake' ],
     [ 'defaultmaxuptake:s', 'Default maximum nutrient uptake' ],
@@ -109,6 +114,15 @@ my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translat
 if (!defined($opt->{mediaws}) && defined($opt->{media})) {
 	$opt->{mediaws} = $opt->{workspace};
 }
+
+if (-e $params->{expsample}) {
+	my $data = load_table($params->{expsample},"\t",0);
+	foreach my $row (@{$data->{"data"}}) {
+		$params->{exp_raw_data}->{$row->[0]} = $row->[1];
+	}
+	delete $params->{expsample};
+}
+
 $params->{formulation} = {
 	geneko => [],
 	rxnko => [],

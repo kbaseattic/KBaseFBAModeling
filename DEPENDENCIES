@@ -1,6 +1,5 @@
 typecomp
 kb_seed
-workspace_service
 auth
 idserver
 kb_model_seed

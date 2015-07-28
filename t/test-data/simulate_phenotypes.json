@@ -6,6 +6,6 @@
 		"phenotypeSet_workspace":"MetabolicModelingTest",
 		"model_workspace":"MetabolicModelingTest",
 		"phenotypeSimultationSet":"TestPhenotypeSetSimulation",			
-		"outmodel":"TestModelGFIntRemRxnAddTransport",
+		"outmodel":"TestModelGFIntRemRxnAddTransport"
 	}
 ]

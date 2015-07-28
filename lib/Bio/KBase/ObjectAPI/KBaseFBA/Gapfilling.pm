@@ -256,7 +256,11 @@ sub prepareFBAFormulation {
 	my $rxns = $self->fbamodel()->modelreactions();
 	if ($self->completeGapfill() eq "1") {
 		if (@{$self->targetedreactions()} > 0) {
-			$inactiveList = $self->targetedreactions();
+			my $list = $self->targetedreactions();
+			$inactiveList = [];
+			for (my $i=0; $i < @{$list}; $i++) {
+				push(@{$inactiveList},$list->[$i]->id());
+			}
 		} else {
 			my $rxnfoundhash = {};
 			my $rxnmdlrxnhash = {};

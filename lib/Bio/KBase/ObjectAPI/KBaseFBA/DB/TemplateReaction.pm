@@ -16,7 +16,7 @@ has parent => (is => 'rw', isa => 'Ref', weak_ref => 1, type => 'parent', metacl
 # ATTRIBUTES:
 has uuid => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_uuid');
 has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_reference');
-has GapfillDirection => (is => 'rw', isa => 'Str', printOrder => '-1', default => '=', type => 'attribute', metaclass => 'Typed');
+has GapfillDirection => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed', default => "=");
 has reverse_penalty => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has compartment_ref => (is => 'rw', isa => 'Str', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
 has base_cost => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
@@ -62,7 +62,6 @@ my $attributes = [
             'req' => 0,
             'printOrder' => -1,
             'name' => 'GapfillDirection',
-            'default' => '=',
             'type' => 'Str',
             'perm' => 'rw'
           },
