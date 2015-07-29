@@ -1114,6 +1114,9 @@ sub _buildFBAObject {
 	#Parsing media
 	my $mediaobj = $self->_get_msobject("Media",$fbaFormulation->{media_workspace},$fbaFormulation->{media});
 	#Building FBAFormulation object
+	if (! defined $id || $id eq "") {
+	    $id = $self->_get_new_id($model->id().".fba.");
+	}
 	my $fbaobj = Bio::KBase::ObjectAPI::KBaseFBA::FBA->new({
 		id => $id,
 		fva => 0,
@@ -2579,7 +2582,7 @@ sub _annotate_genome {
 	});
 	my $gaserv = $self->_gaserv();
 	my $genomeTO = $genome->genome_typed_object();
-	if( $genomeTO->{domain} eq "Plant" || $genomeTO->{taxonomy} =~ /viridiplantae/i  ){
+	if( $genomeTO->{domain} eq "Plant" || $genome->{taxonomy} =~ /viridiplantae/i ){
 	    $genomeTO = $gaserv->annotate_proteins_kmer_v1($genomeTO,{dataset_name=>"Release70",kmer_size=>8});
 	} elsif (($parameters->{call_genes} == 1 || @{$genomeTO->{features}} == 0) && @{$genomeTO->{contigs}} > 0) {
 		$genomeTO = $gaserv->annotate_genome($genomeTO);
@@ -2610,11 +2613,11 @@ sub _annotate_genome {
 				co_occurring_fids => [],
 			});
 		} else {
-		    if($genomeTO->{domain} eq "Plant" || $genomeTO->{taxonomy} =~ /viridiplantae/i ){
-				if (defined($gene->{function})) {
-				    $feature->function($gene->{function});
-				}
-				next;
+		    if($genomeTO->{domain} eq "Plant" || $genome->{taxonomy} =~ /viridiplantae/i){
+			if (defined($gene->{function})) {
+			    $feature->function($gene->{function});
+			}
+			next;
 		    }
 			$feature->id($gene->{id});
 			if (defined($gene->{function})) {
@@ -9282,7 +9285,7 @@ sub quantitative_optimization
 		$input->{outputid} = $self->_get_new_id($input->{model});
 	}
 	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
-	my $fba = $self->_buildFBAObject($input->{formulation},$model);
+	my $fba = $self->_buildFBAObject($input->{formulation},$model,$input->{workspace},$input->{outputid});
 	if (defined($input->{solver})) {
 	   	$fba->parameters()->{MFASolver} = uc($input->{solver});
 	}
