@@ -20,6 +20,8 @@ my $translation = {
 	outputid => "model",
 	workspace => "workspace",
 	ignoreerrors => "ignore_errors",
+	template => "template",
+	templatews => "template_workspace"
 };
 
 my $manpage = 
@@ -101,6 +103,8 @@ my $specs = [
     [ 'genomews:s', 'Workspace with genome object' ],
     [ 'ignoreerrors|i', 'Ignore errors encountered during load' ],
     [ 'workspace|w:s', 'Workspace to save imported model in', { "default" => fbaws() } ],
+    [ 'template:s', 'ID of ModelTemplate object' ],
+    [ 'templatews:s', 'Workspace with ModelTemplate object', { "default" => fbaws() } ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation, $manpage);
 if (!-e $opt->{"Model reactions file"}) {
