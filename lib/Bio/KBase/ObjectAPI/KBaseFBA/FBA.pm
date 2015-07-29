@@ -110,6 +110,7 @@ sub _buildjobid {
 		if (!-d $fulldir) {
 			File::Path::mkpath ($fulldir);
 		}
+		$path.="/" if substr($path,-1) ne "/";
 		$jobid = substr($fulldir,length($path));
 	}
 	return $jobid

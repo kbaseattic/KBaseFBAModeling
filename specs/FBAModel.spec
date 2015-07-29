@@ -493,6 +493,9 @@ module KBaseFBA {
 	
 	/* 
     	FBAReactionVariable object
+    	
+    	@optional exp_state expression scaled_exp
+    	
     */
 	typedef structure {
     	modelreaction_ref modelreaction_ref;
@@ -503,6 +506,9 @@ module KBaseFBA {
     	float min;
     	float max;
     	float value;
+		string exp_state;
+		float expression;
+		float scaled_exp;
 	} FBAReactionVariable;
 	
 	/* 
