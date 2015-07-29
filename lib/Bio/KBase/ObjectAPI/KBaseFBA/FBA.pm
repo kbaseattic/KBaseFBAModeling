@@ -1689,7 +1689,9 @@ sub process_expression_data {
 	my $min_exp_score = -1;
 	my $mdlrxns = $self->fbamodel()->modelreactions();
 	my $inactiveList = ["bio1"];
+	my $rxnhash = {};
 	foreach my $mdlrxn (@{$mdlrxns}) {
+	    $rxnhash->{$mdlrxn->id()} = $mdlrxn;
 	    push(@{$inactiveList},$mdlrxn->id());
 	    # Maximal gene expression for a reaction
 	    my $rxn_score;
@@ -1730,15 +1732,21 @@ sub process_expression_data {
 		    }
 	    }
 	    if (defined($rxn_score)) {
+	    	$mdlrxn->{raw_exp_score} = $rxn_score;
 	    	$exp_scores->{$mdlrxn->id()} = $rxn_score;
 	    }
 	}
 	# don't scale probabilities - they are already on a 0 to 1 scale
 	if ($booleanexp eq "absolute") {
-	    my $sortedrxns = [sort { $exp_scores->{$a} <=> $exp_scores->{$b} } keys(%{$exp_scores})];
-		my $multiple = 1/@{$sortedrxns};
-		for (my $i=0; $i < @{$sortedrxns}; $i++) {
-			$exp_scores->{$sortedrxns->[$i]} = $i*$multiple;
+		my $sortedrxns = [keys(%{$exp_scores})];
+	    $sortedrxns = [sort { $exp_scores->{$a} <=> $exp_scores->{$b} } @{$sortedrxns}];
+		my $multiple = @{$sortedrxns};
+		if ($multiple > 0) {
+			$multiple = 1/$multiple;
+			for (my $i=0; $i < @{$sortedrxns}; $i++) {
+				$exp_scores->{$sortedrxns->[$i]} = $i*$multiple;
+				$rxnhash->{$sortedrxns->[$i]}->{norm_exp_score} = $exp_scores->{$sortedrxns->[$i]};
+			}
 		}
 	}
 	
@@ -1756,6 +1764,7 @@ sub process_expression_data {
 			$coef->{highexp}->{bio1} = 1;
 	    } elsif(exists($exp_scores->{$inactiveList->[$i]})){
 	    	if($exp_scores->{$inactiveList->[$i]} <= $low_expression_threshold) {
+			    $rxnhash->{$inactiveList->[$i]}->{exp_state} = "off";
 			    my $penalty = ($threshold-$exp_scores->{$inactiveList->[$i]})/$threshold;
 			    if ($self->fbamodel()->getObject("modelreactions",$inactiveList->[$i])->direction() eq "=") {
 			    	$coef->{lowexp}->{$inactiveList->[$i]}->{forward} = $penalty;
@@ -1766,6 +1775,7 @@ sub process_expression_data {
 			    	$coef->{lowexp}->{$inactiveList->[$i]}->{"reverse"} = $penalty;
 			    }
 			} elsif ($exp_scores->{$inactiveList->[$i]} > $high_expression_threshold) {
+			    $rxnhash->{$inactiveList->[$i]}->{exp_state} = "on";
 			    my $penalty = ($exp_scores->{$inactiveList->[$i]}-$threshold)/$threshold;
 			    $coef->{highexp}->{$inactiveList->[$i]} = $penalty;
 			}
@@ -2481,7 +2491,7 @@ sub parseFluxFiles {
 									$lower = $rxnid2bound->{$mdlrxn->id()}->{lower};
 									$upper = $rxnid2bound->{$mdlrxn->id()}->{upper};
 								}
-								$self->add("FBAReactionVariables",{
+								my $rxnvar = $self->add("FBAReactionVariables",{
 									modelreaction_ref => $mdlrxn->_reference(),
 									variableType => "flux",
 									value => $value,
@@ -2491,6 +2501,17 @@ sub parseFluxFiles {
 									max => $upper,
 									class => "unknown"
 								});
+								if (defined($mdlrxn->{raw_exp_score})) {
+									$rxnvar->exp_state("unknown");
+									$rxnvar->expression($mdlrxn->{raw_exp_score});
+									$rxnvar->scaled_exp($mdlrxn->{raw_exp_score});
+									if (defined($mdlrxn->{norm_exp_score})) {
+										$rxnvar->scaled_exp($mdlrxn->{norm_exp_score});
+									}
+									if (defined($mdlrxn->{exp_state})) {
+										$rxnvar->exp_state($mdlrxn->{exp_state});
+									}
+								}
 							} else {
 								my $biorxn = $self->fbamodel()->getObject("biomasses",$row->[$reactionColumn]);
 								if (defined($biorxn)) {
@@ -2509,6 +2530,58 @@ sub parseFluxFiles {
 										max => $upper,
 										class => "unknown"
 									});
+								} elsif (abs($value) > 0.000000001) {
+									my $tmprxn = $self->fbamodel()->template()->getObject("templateReactions",$row->[$reactionColumn]);
+									if (defined($tmprxn)) {
+										my $lower = -1*$self->defaultMaxFlux();
+										my $upper = $self->defaultMaxFlux();
+										if ($tmprxn->GapfillDirection() eq "<") {
+											$upper = 0;
+										} elsif ($tmprxn->GapfillDirection() eq ">") {
+											$lower = 0;
+										}
+										if (exists $rxnid2bound->{$tmprxn->id()}) {
+											$lower = $rxnid2bound->{$tmprxn->id()}->{lower};
+											$upper = $rxnid2bound->{$tmprxn->id()}->{upper};
+										}
+										my $rxnvar = $self->add("FBAReactionVariables",{
+											modelreaction_ref => $tmprxn->_reference(),
+											variableType => "gapfillflux",
+											value => $value,
+											lowerBound => $lower,
+											upperBound => $upper,
+											min => $lower,
+											max => $upper,
+											class => "unknown"
+										});
+									} else {
+										my $srcrxn = $self->{_source_model}->getObject("modelreactions",$row->[$reactionColumn]);
+										if (defined($srcrxn)) {
+											my $lower = -1*$self->defaultMaxFlux();
+											my $upper = $self->defaultMaxFlux();
+											if ($srcrxn->direction() eq "<") {
+												$upper = 0;
+											} elsif ($srcrxn->direction() eq ">") {
+												$lower = 0;
+											}
+											if (exists $rxnid2bound->{$srcrxn->id()}) {
+												$lower = $rxnid2bound->{$srcrxn->id()}->{lower};
+												$upper = $rxnid2bound->{$srcrxn->id()}->{upper};
+											}
+											my $rxnvar = $self->add("FBAReactionVariables",{
+												modelreaction_ref => $srcrxn->_reference(),
+												variableType => "srcgapfillflux",
+												value => $value,
+												lowerBound => $lower,
+												upperBound => $upper,
+												min => $lower,
+												max => $upper,
+												class => "unknown"
+											});
+										} else {
+											print STDERR "Could not find flux reaction ".$row->[$reactionColumn]."\n";
+										}
+									}
 								}
 							}
 						}
@@ -3195,8 +3268,10 @@ sub parseGapfillingOutput {
 		print "Number of gapfilled reactions [includes low expression reactions that must carry flux] (lower better): ".$temparray->[1]."\n";
 		for my $rxn (split ";", $tbl->{data}->[0]->[7]) {
 		    if ($rxn =~ /^(.)(.+)/) {
-			print "\t", $rxn, "\t", $rxnhash->{$2}->name(), "\t", fluxForRxn($self, $rxnhash->{$2}), "\t", addExpressionLeveltoGPR($rxnhash->{$2}->gprString(), $self->{_expsample}), "\n";
-		    }
+				if (defined($rxnhash->{$2})) {
+					print "\t", $rxn, "\t", $rxnhash->{$2}->name(), "\t", fluxForRxn($self, $rxnhash->{$2}), "\t", addExpressionLeveltoGPR($rxnhash->{$2}->gprString(), $self->{_expsample}), "\n";
+				}
+			}
 		}
 		$temparray = [split(/\//,$tbl->{data}->[0]->[4])];
 		push(@{$self->{outputfiles}->{gapfillstats}},"Active on:".$temparray->[1]);
@@ -3205,7 +3280,9 @@ sub parseGapfillingOutput {
 		push(@{$self->{outputfiles}->{gapfillstats}},"Inactive on:".$temparray->[1]);
 		print "High expression reactions that were not activated [do not carry flux] (lower better): ".$temparray->[1]."\n";
 		for my $rxn (split ";", $tbl->{data}->[0]->[9]) {
-		    print "\t", $rxn, "\t", $rxnhash->{$rxn}->name(), "\t", addExpressionLeveltoGPR($rxnhash->{$rxn}->gprString(), $self->{_expsample}), "\n";
+		    if (defined($rxnhash->{$rxn})) {
+		    	print "\t", $rxn, "\t", $rxnhash->{$rxn}->name(), "\t", addExpressionLeveltoGPR($rxnhash->{$rxn}->gprString(), $self->{_expsample}), "\n";
+		    }
 		}
 		my $currrxns = [split(/;/,$tbl->{data}->[0]->[7])];
 		push(@{$self->{outputfiles}->{gapfillrxns}},"Active reactions:".$tbl->{data}->[0]->[7]);

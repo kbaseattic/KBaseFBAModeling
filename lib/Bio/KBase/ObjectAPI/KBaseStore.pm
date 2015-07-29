@@ -76,6 +76,8 @@ has uuid_refs => ( is => 'rw', isa => 'HashRef',default => sub { return {}; });
 has updated_refs => ( is => 'rw', isa => 'HashRef',default => sub { return {}; });
 has provenance => ( is => 'rw', isa => 'ArrayRef',default => sub { return []; });
 has user_override => ( is => 'rw', isa => 'Str',default => "");
+has file_cache => ( is => 'rw', isa => 'Str',default => "");
+has cache_targets => ( is => 'rw', isa => 'HashRef',default => sub { return {}; });
 
 #***********************************************************************************************************
 # BUILDERS:
@@ -97,108 +99,20 @@ sub get_objects {
 			$refs->[$i] = "kbase/default";
 		}
 		if (!defined($self->cache()->{$refs->[$i]}) || defined($options->{refreshcache})) {
-    		push(@{$newrefs},$refs->[$i]);
+    		if ($self->read_object_from_file_cache($refs->[$i]) == 0) {
+    			push(@{$newrefs},$refs->[$i]);
+    		}
     	}
 	}
 	#Pulling objects from workspace
 	if (@{$newrefs} > 0) {
 		my $objids = [];
-		for (my $i=0; $i < @{$newrefs}; $i++) {
-			my $array = [split(/\//,$newrefs->[$i])];
-			my $objid = {};
-			if (@{$array} < 2) {
-				Bio::KBase::ObjectAPI::utilities->error("Invalid reference:".$newrefs->[$i]);
-			}
-			if ($array->[0] =~ m/^\d+$/) {
-				$objid->{wsid} = $array->[0];
-			} else {
-				$objid->{workspace} = $array->[0];
-			}
-			if ($array->[1] =~ m/^\d+$/) {
-				$objid->{objid} = $array->[1];
-			} else {
-				$objid->{name} = $array->[1];
-			}
-			if (defined($array->[2])) {
-				$objid->{ver} = $array->[2];
-			}
-			push(@{$objids},$objid);
+		for (my $i=0; $i < @{$newrefs}; $i++) {		
+			push(@{$objids},$self->ref_to_identify($newrefs->[$i]));
 		}
 		my $objdatas = $self->workspace()->get_objects($objids);
 		for (my $i=0; $i < @{$objdatas}; $i++) {
-			my $info = $objdatas->[$i]->{info};
-			#print "Retreived:".join("|",@{$info})."\n";
-			if ($info->[2] =~ m/^(.+)\.(.+)-/) {
-				my $module = $1;
-				my $type = $2;
-				my $class = "Bio::KBase::ObjectAPI::".$module."::".$type;
-				$self->cache()->{$newrefs->[$i]} = $class->new($objdatas->[$i]->{data});
-				if (!defined($self->cache()->{$info->[6]."/".$info->[0]."/".$info->[4]})) {
-					$self->cache()->{$info->[6]."/".$info->[0]."/".$info->[4]} = $self->cache()->{$newrefs->[$i]};
-				}
-				$self->cache()->{$newrefs->[$i]}->parent($self);
-				if ($type eq "Biochemistry") {
-					$self->cache()->{$newrefs->[$i]}->add("compounds",{
-						id => "cpd00000",
-				    	isCofactor => 0,
-				    	name => "CustomCompound",
-				    	abbreviation => "CustomCompound",
-				    	md5 => "",
-				    	formula => "",
-				    	unchargedFormula => "",
-				    	mass => 0,
-				    	defaultCharge => 0,
-				    	deltaG => 0,
-				    	deltaGErr => 0,
-				    	comprisedOfCompound_refs => [],
-				    	cues => {},
-				    	pkas => {},
-				    	pkbs => {}
-					});
-					$self->cache()->{$newrefs->[$i]}->add("reactions",{
-						id => "rxn00000",
-				    	name => "CustomReaction",
-				    	abbreviation => "CustomReaction",
-				    	md5 => "",
-				    	direction => "=",
-				    	thermoReversibility => "=",
-				    	status => "OK",
-				    	defaultProtons => 0,
-				    	deltaG => 0,
-				    	deltaGErr => 0,
-				    	cues => {},
-				    	reagents => []
-					});
-				}
-				if ($type eq "FBAModel") {
-					if (defined($self->cache()->{$newrefs->[$i]}->template_ref())) {
-						if ($self->cache()->{$newrefs->[$i]}->template_ref() =~ m/(\w+)\/(\w+)\/\d+/) {
-							$self->cache()->{$newrefs->[$i]}->template_ref($1."/".$2);
-						}
-					}
-					if (defined($self->cache()->{$newrefs->[$i]}->template_refs())) {
-						my $temprefs = $self->cache()->{$newrefs->[$i]}->template_refs();
-						for (my $i=0; $i < @{$temprefs}; $i++) {
-							if ($temprefs->[$i] =~ m/(\w+)\/(\w+)\/\d+/) {
-								$temprefs->[$i] = $1."/".$2;
-							}
-						}
-					}
-				}
-				$self->cache()->{$newrefs->[$i]}->_wsobjid($info->[0]);
-				$self->cache()->{$newrefs->[$i]}->_wsname($info->[1]);
-				$self->cache()->{$newrefs->[$i]}->_wstype($info->[2]);
-				$self->cache()->{$newrefs->[$i]}->_wssave_date($info->[3]);
-				$self->cache()->{$newrefs->[$i]}->_wsversion($info->[4]);
-				$self->cache()->{$newrefs->[$i]}->_wssaved_by($info->[5]);
-				$self->cache()->{$newrefs->[$i]}->_wswsid($info->[6]);
-				$self->cache()->{$newrefs->[$i]}->_wsworkspace($info->[7]);
-				$self->cache()->{$newrefs->[$i]}->_wschsum($info->[8]);
-				$self->cache()->{$newrefs->[$i]}->_wssize($info->[9]);
-				$self->cache()->{$newrefs->[$i]}->_wsmeta($info->[10]);
-				$self->cache()->{$newrefs->[$i]}->_reference($info->[6]."/".$info->[0]."/".$info->[4]);
-				$self->uuid_refs()->{$self->cache()->{$newrefs->[$i]}->uuid()} = $info->[6]."/".$info->[0]."/".$info->[4];
-			}
+			$self->process_object($objdatas->[$i]->{info},$objdatas->[$i]->{data},$newrefs->[$i]);
 		}
 	}
 	#Gathering objects out of the cache
@@ -209,9 +123,141 @@ sub get_objects {
 	return $objs;
 }
 
+sub process_object {
+	my ($self,$info,$data,$ref) = @_;
+	$self->write_object_to_file_cache($info,$data);
+	if ($info->[2] =~ m/^(.+)\.(.+)-/) {
+		my $module = $1;
+		my $type = $2;
+		my $class = "Bio::KBase::ObjectAPI::".$module."::".$type;
+		$self->cache()->{$ref} = $class->new($data);
+		if (!defined($self->cache()->{$info->[6]."/".$info->[0]."/".$info->[4]})) {
+			$self->cache()->{$info->[6]."/".$info->[0]."/".$info->[4]} = $self->cache()->{$ref};
+		}
+		$self->cache()->{$ref}->parent($self);
+		if ($type eq "Biochemistry") {
+			$self->cache()->{$ref}->add("compounds",{
+				id => "cpd00000",
+		    	isCofactor => 0,
+		    	name => "CustomCompound",
+		    	abbreviation => "CustomCompound",
+		    	md5 => "",
+		    	formula => "",
+		    	unchargedFormula => "",
+		    	mass => 0,
+		    	defaultCharge => 0,
+		    	deltaG => 0,
+		    	deltaGErr => 0,
+		    	comprisedOfCompound_refs => [],
+		    	cues => {},
+		    	pkas => {},
+		    	pkbs => {}
+			});
+			$self->cache()->{$ref}->add("reactions",{
+				id => "rxn00000",
+		    	name => "CustomReaction",
+		    	abbreviation => "CustomReaction",
+		    	md5 => "",
+		    	direction => "=",
+		    	thermoReversibility => "=",
+		    	status => "OK",
+		    	defaultProtons => 0,
+		    	deltaG => 0,
+		    	deltaGErr => 0,
+		    	cues => {},
+		    	reagents => []
+			});
+		}
+		if ($type eq "FBAModel") {
+			if (defined($self->cache()->{$ref}->template_ref())) {
+				if ($self->cache()->{$ref}->template_ref() =~ m/(\w+)\/(\w+)\/\d+/) {
+					$self->cache()->{$ref}->template_ref($1."/".$2);
+				}
+			}
+			if (defined($self->cache()->{$ref}->template_refs())) {
+				my $temprefs = $self->cache()->{$ref}->template_refs();
+				for (my $i=0; $i < @{$temprefs}; $i++) {
+					if ($temprefs->[$i] =~ m/(\w+)\/(\w+)\/\d+/) {
+						$temprefs->[$i] = $1."/".$2;
+					}
+				}
+			}
+		}
+		$self->cache()->{$ref}->_wsobjid($info->[0]);
+		$self->cache()->{$ref}->_wsname($info->[1]);
+		$self->cache()->{$ref}->_wstype($info->[2]);
+		$self->cache()->{$ref}->_wssave_date($info->[3]);
+		$self->cache()->{$ref}->_wsversion($info->[4]);
+		$self->cache()->{$ref}->_wssaved_by($info->[5]);
+		$self->cache()->{$ref}->_wswsid($info->[6]);
+		$self->cache()->{$ref}->_wsworkspace($info->[7]);
+		$self->cache()->{$ref}->_wschsum($info->[8]);
+		$self->cache()->{$ref}->_wssize($info->[9]);
+		$self->cache()->{$ref}->_wsmeta($info->[10]);
+		$self->cache()->{$ref}->_reference($info->[6]."/".$info->[0]."/".$info->[4]);
+		$self->uuid_refs()->{$self->cache()->{$ref}->uuid()} = $info->[6]."/".$info->[0]."/".$info->[4];
+	}
+}
+
+sub ref_to_identify {
+	my ($self,$ref) = @_;
+	my $array = [split(/\//,$ref)];
+	my $objid = {};
+	if (@{$array} < 2) {
+		Bio::KBase::ObjectAPI::utilities->error("Invalid reference:".$ref);
+	}
+	if ($array->[0] =~ m/^\d+$/) {
+		$objid->{wsid} = $array->[0];
+	} else {
+		$objid->{workspace} = $array->[0];
+	}
+	if ($array->[1] =~ m/^\d+$/) {
+		$objid->{objid} = $array->[1];
+	} else {
+		$objid->{name} = $array->[1];
+	}
+	if (defined($array->[2])) {
+		$objid->{ver} = $array->[2];
+	}
+	return $objid;
+}
+
+#This function writes data to file cache if it's been flagged for local file caching
+sub write_object_to_file_cache {
+	my ($self,$info,$data) = @_;
+	if (length($self->file_cache()) > 0 && defined($self->cache_targets()->{$info->[6]."/".$info->[0]."/".$info->[4]}) && !-e $self->file_cache()."/KBCache/".$info->[6]."/".$info->[0]."/".$info->[4]."/meta") {
+		print "Saving to cache!\n";
+		File::Path::mkpath $self->file_cache()."/KBCache/".$info->[6]."/".$info->[0]."/".$info->[4];
+		Bio::KBase::ObjectAPI::utilities::PRINTFILE($self->file_cache()."/KBCache/".$info->[6]."/".$info->[0]."/".$info->[4]."/meta",[Bio::KBase::ObjectAPI::utilities::TOJSON($info)]);
+		Bio::KBase::ObjectAPI::utilities::PRINTFILE($self->file_cache()."/KBCache/".$info->[6]."/".$info->[0]."/".$info->[4]."/data",[Bio::KBase::ObjectAPI::utilities::TOJSON($data)]);
+	}
+}
+
+#This function writes data to file cache if it's been flagged for local file caching
+sub read_object_from_file_cache {
+	my ($self,$ref) = @_;
+	if (defined($self->cache_targets()->{$ref})) {
+		print "Checking cache!\n";
+		#Get WS metadata
+		my $infos = $self->workspace()->get_object_info([$self->ref_to_identify($ref)],0);
+		my $info = $infos->[0];
+		if (-e $self->file_cache()."/KBCache/".$info->[6]."/".$info->[0]."/".$info->[4]."/meta") {
+			my $filearray = Bio::KBase::ObjectAPI::utilities::LOADFILE($self->file_cache()."/KBCache/".$info->[6]."/".$info->[0]."/".$info->[4]."/meta");
+			my $meta = Bio::KBase::ObjectAPI::utilities::FROMJSON(join("\n",@{$filearray}));
+			$filearray = Bio::KBase::ObjectAPI::utilities::LOADFILE($self->file_cache()."/KBCache/".$info->[6]."/".$info->[0]."/".$info->[4]."/data");
+			my $data = Bio::KBase::ObjectAPI::utilities::FROMJSON(join("\n",@{$filearray}));
+			$self->process_object($meta,$data,$ref);
+			return 1;
+		}
+	}
+	return 0;
+}
+
 sub get_object {
     my ($self,$ref,$options) = @_;
+    print "Getting ".$ref."\n";
     return $self->get_objects([$ref])->[0];
+    print "Done getting ".$ref."\n";
 }
 
 sub get_object_by_handle {

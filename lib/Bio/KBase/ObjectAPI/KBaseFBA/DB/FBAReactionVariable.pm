@@ -16,13 +16,16 @@ has parent => (is => 'rw', isa => 'Ref', weak_ref => 1, type => 'parent', metacl
 # ATTRIBUTES:
 has uuid => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_uuid');
 has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_reference');
+has exp_state => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has value => (is => 'rw', isa => 'Num', printOrder => '6', type => 'attribute', metaclass => 'Typed');
 has min => (is => 'rw', isa => 'Num', printOrder => '7', type => 'attribute', metaclass => 'Typed');
 has lowerBound => (is => 'rw', isa => 'Num', printOrder => '4', type => 'attribute', metaclass => 'Typed');
 has max => (is => 'rw', isa => 'Num', printOrder => '8', type => 'attribute', metaclass => 'Typed');
 has modelreaction_ref => (is => 'rw', isa => 'Str', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
+has expression => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has upperBound => (is => 'rw', isa => 'Num', printOrder => '5', type => 'attribute', metaclass => 'Typed');
 has class => (is => 'rw', isa => 'Str', printOrder => '9', type => 'attribute', metaclass => 'Typed');
+has scaled_exp => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has variableType => (is => 'rw', isa => 'Str', printOrder => '3', type => 'attribute', metaclass => 'Typed');
 
 
@@ -44,6 +47,13 @@ sub _class { return 'FBAReactionVariable'; }
 sub _top { return 0; }
 
 my $attributes = [
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'exp_state',
+            'type' => 'Str',
+            'perm' => 'rw'
+          },
           {
             'req' => 0,
             'printOrder' => 6,
@@ -91,6 +101,13 @@ my $attributes = [
           },
           {
             'req' => 0,
+            'printOrder' => -1,
+            'name' => 'expression',
+            'type' => 'Num',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
             'printOrder' => 5,
             'name' => 'upperBound',
             'default' => undef,
@@ -109,6 +126,13 @@ my $attributes = [
           },
           {
             'req' => 0,
+            'printOrder' => -1,
+            'name' => 'scaled_exp',
+            'type' => 'Num',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
             'printOrder' => 3,
             'name' => 'variableType',
             'default' => undef,
@@ -118,7 +142,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {value => 0, min => 1, lowerBound => 2, max => 3, modelreaction_ref => 4, upperBound => 5, class => 6, variableType => 7};
+my $attribute_map = {exp_state => 0, value => 1, min => 2, lowerBound => 3, max => 4, modelreaction_ref => 5, expression => 6, upperBound => 7, class => 8, scaled_exp => 9, variableType => 10};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {

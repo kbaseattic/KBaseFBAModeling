@@ -174,7 +174,9 @@ sub _resetKBaseStore {
 				intermediate_incoming => [],
 				intermediate_outgoing => []
 			}],
-			workspace => $self->_workspaceServices()
+			workspace => $self->_workspaceServices(),
+			file_cache => $self->_file_cache(),
+			cache_targets => $self->_cache_targets(),
 		});
 	} else {
 		$self->{_kbasestore} = Bio::KBase::ObjectAPI::KBaseStore->new({
@@ -196,6 +198,16 @@ sub _resetKBaseStore {
 		$self->{_kbasestore}->cache()->{"kbase/default"} = $self->_cachedBiochemistry();
 		$self->{_kbasestore}->cache()->{"489/6"} = $self->_cachedBiochemistry();
 	}
+}
+
+sub _file_cache {
+	my ($self) = @_;
+	return $self->{_file_cache};
+}
+
+sub _cache_targets {
+	my ($self) = @_;
+	return $self->{_cache_targets};
 }
 
 sub _KBaseStore {
@@ -3341,13 +3353,15 @@ sub new
     $self->{'_shockurl'} = "http://140.221.85.54:7445";
     $self->{_jobqueue} = "workspace";
     $self->{'_fba-url'} = "";
+    $self->{'_file_cache'} = "";
+    $self->{'_cache_targets'} = {};
     Bio::KBase::ObjectAPI::utilities::ID_SERVER_URL("http://kbase.us/services/idserver");
     $self->{'_gaserver-url'} = "http://kbase.us/services/genome_annotation";
     $self->{'_mssserver-url'} = "http://bio-data-1.mcs.anl.gov/services/ms_fba";
     $self->{"_probanno-url"} = "http://localhost:7073";
     $self->{"_workspace-url"} = "http://kbase.us/services/ws";
     $self->{"_classifier_file"} = "/kb/deployment/etc/classifier.txt";
-    my $paramlist = [qw(classifier_file classifierpath fbajobcache awe-url shock-url jobqueue gaserver-url jobserver-url fbajobdir mfatoolkitbin fba-url probanno-url mssserver-url accounttype workspace-url defaultJobState idserver-url)];
+    my $paramlist = [qw(file_cache cache_targets classifier_file classifierpath fbajobcache awe-url shock-url jobqueue gaserver-url jobserver-url fbajobdir mfatoolkitbin fba-url probanno-url mssserver-url accounttype workspace-url defaultJobState idserver-url)];
 
     # so it looks like params is created by looping over the config object
     # if deployment.cfg exists
@@ -3411,6 +3425,15 @@ sub new
     if (defined $params->{defaultJobState}) {
 		$self->{_defaultJobState} = $params->{defaultJobState};
     }
+    if (defined $params->{file_cache}) {
+		$self->{_file_cache} = $params->{file_cache};
+    }
+    if (defined $params->{cache_targets}) {
+    	my $array = [split(/;/,$params->{cache_targets})];
+    	for (my $i=0; $i < @{$array}; $i++) {
+    		$self->{_cache_targets}->{$array->[$i]} = 1;
+    	}
+    }
     if (defined $params->{'gaserver-url'}) {
     		$self->{'_gaserver-url'} = $params->{'gaserver-url'};
     }
@@ -3449,7 +3472,7 @@ sub new
     if (defined($options->{verbose})) {
     	set_verbose(1);
     }
-	#END_CONSTRUCTOR
+    #END_CONSTRUCTOR
 
     if ($self->can('_init_instance'))
     {
@@ -5899,9 +5922,11 @@ genome_to_workspace_params is a reference to a hash where the following keys are
 	source has a value which is a string
 	auth has a value which is a string
 	overwrite has a value which is a bool
+	uid has a value which is a Genome_uid
 genome_id is a string
 workspace_id is a string
 bool is an int
+Genome_uid is a string
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -5936,9 +5961,11 @@ genome_to_workspace_params is a reference to a hash where the following keys are
 	source has a value which is a string
 	auth has a value which is a string
 	overwrite has a value which is a bool
+	uid has a value which is a Genome_uid
 genome_id is a string
 workspace_id is a string
 bool is an int
+Genome_uid is a string
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -11593,11 +11620,10 @@ sub gapfill_model
     #BEGIN gapfill_model
     $self->_setContext($ctx,$input);
 	$input = $self->_validateargs($input,["model","workspace"],{		
-		expression_threshold_type => "AbsoluteThreshold",
-		low_expression_threshold => 0.5,
-		low_expression_penalty_factor => 1,
-		high_expression_threshold => 0.5,
-		high_expression_penalty_factor => 1,
+		booleanexp => undef,
+		expression_threshold_percentile => 0.5,
+		scale_penalty_by_flux => 0,
+		exp_raw_data => {},
 		target_reactions => [],
 		completeGapfill => 0,
 		timePerSolution => 43200,
@@ -11625,7 +11651,6 @@ sub gapfill_model
 		gauranteedrxns => [],
 		gapFill => undef,
 		gapFill_workspace => $input->{workspace},
-		exp_raw_data => {},
 		expsample => undef,
 		expsamplews => $input->{workspace},
 		source_model => undef,
@@ -11645,6 +11670,9 @@ sub gapfill_model
 	} elsif (keys(%{$input->{exp_raw_data}}) > 0) {
 		$input->{expsample} = $input->{exp_raw_data}
 	}
+	if (defined($input->{booleanexp}) && $input->{booleanexp} eq "") {
+    	$input->{booleanexp} = "absolute";
+    }
 	my $gfform = $input->{formulation};
 	foreach my $key (keys(%{$gfform})) {
 		$input->{$key} = $gfform->{$key};
@@ -16874,6 +16902,8 @@ TemplateModel is a reference to a hash where the following keys are defined:
 	domain has a value which is a string
 	map has a value which is a mapping_id
 	mappingws has a value which is a workspace_id
+	mapping_ref has a value which is a string
+	biochemistry_ref has a value which is a string
 	reactions has a value which is a reference to a list where each element is a TemplateReaction
 	biomasses has a value which is a reference to a list where each element is a TemplateBiomass
 mapping_id is a string
@@ -16936,6 +16966,8 @@ TemplateModel is a reference to a hash where the following keys are defined:
 	domain has a value which is a string
 	map has a value which is a mapping_id
 	mappingws has a value which is a workspace_id
+	mapping_ref has a value which is a string
+	biochemistry_ref has a value which is a string
 	reactions has a value which is a reference to a list where each element is a TemplateReaction
 	biomasses has a value which is a reference to a list where each element is a TemplateBiomass
 mapping_id is a string
@@ -18395,6 +18427,124 @@ sub compare_models
 	my $msg = "Invalid returns passed to compare_models:\n" . join("", map { "\t$_\n" } @_bad_returns);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
 							       method_name => 'compare_models');
+    }
+    return($output);
+}
+
+
+
+
+=head2 compare_fbas
+
+  $output = $obj->compare_fbas($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is a compare_fbas_params
+$output is an object_metadata
+compare_fbas_params is a reference to a hash where the following keys are defined:
+	output_id has a value which is a string
+	fbas has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+	0: a workspace_id
+	1: a fba_id
+
+	workspace has a value which is a workspace_id
+workspace_id is a string
+fba_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is a compare_fbas_params
+$output is an object_metadata
+compare_fbas_params is a reference to a hash where the following keys are defined:
+	output_id has a value which is a string
+	fbas has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+	0: a workspace_id
+	1: a fba_id
+
+	workspace has a value which is a workspace_id
+workspace_id is a string
+fba_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+
+
+=item Description
+
+Compares the specified flux balance analyses and saves comparison results to workspace
+
+=back
+
+=cut
+
+sub compare_fbas
+{
+    my $self = shift;
+    my($params) = @_;
+
+    my @_bad_arguments;
+    (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"params\" (value was \"$params\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to compare_fbas:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'compare_fbas');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($output);
+    #BEGIN compare_fbas
+    #END compare_fbas
+    my @_bad_returns;
+    (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to compare_fbas:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'compare_fbas');
     }
     return($output);
 }
@@ -27625,6 +27775,7 @@ Input parameters for the "genome_to_workspace" function.
         string source - Source database for genome (i.e. seed, rast, kbase)
         workspace_id workspace - ID of the workspace into which the genome typed object is to be loaded (a required argument)
         string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+        Genome_uid uid - ID to use when saving genome to workspace
 
 
 =item Definition
@@ -27640,6 +27791,7 @@ sourcePassword has a value which is a string
 source has a value which is a string
 auth has a value which is a string
 overwrite has a value which is a bool
+uid has a value which is a Genome_uid
 
 </pre>
 
@@ -27655,6 +27807,7 @@ sourcePassword has a value which is a string
 source has a value which is a string
 auth has a value which is a string
 overwrite has a value which is a bool
+uid has a value which is a Genome_uid
 
 
 =end text
@@ -31664,6 +31817,8 @@ type has a value which is a string
 domain has a value which is a string
 map has a value which is a mapping_id
 mappingws has a value which is a workspace_id
+mapping_ref has a value which is a string
+biochemistry_ref has a value which is a string
 reactions has a value which is a reference to a list where each element is a TemplateReaction
 biomasses has a value which is a reference to a list where each element is a TemplateBiomass
 
@@ -31680,6 +31835,8 @@ type has a value which is a string
 domain has a value which is a string
 map has a value which is a mapping_id
 mappingws has a value which is a workspace_id
+mapping_ref has a value which is a string
+biochemistry_ref has a value which is a string
 reactions has a value which is a reference to a list where each element is a TemplateReaction
 biomasses has a value which is a reference to a list where each element is a TemplateBiomass
 
@@ -32463,6 +32620,53 @@ a reference to a hash where the following keys are defined:
 model_comparisons has a value which is a reference to a list where each element is a ModelComparisonModel
 reaction_comparisons has a value which is a reference to a list where each element is a ModelCompareReaction
 auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 compare_fbas_params
+
+=over 4
+
+
+
+=item Description
+
+********************************************************************************
+    Functions relating to comparison of FBAs
+   	********************************************************************************
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+output_id has a value which is a string
+fbas has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+0: a workspace_id
+1: a fba_id
+
+workspace has a value which is a workspace_id
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+output_id has a value which is a string
+fbas has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+0: a workspace_id
+1: a fba_id
+
+workspace has a value which is a workspace_id
 
 
 =end text
