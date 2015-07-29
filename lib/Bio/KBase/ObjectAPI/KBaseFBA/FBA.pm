@@ -42,7 +42,7 @@ sub _buildjobid {
 		if (!-d $fulldir) {
 			File::Path::mkpath ($fulldir);
 		}
-		$jobid = substr($fulldir,length($path));
+		$jobid = substr($fulldir,length($path)+1);
 	}
 	return $jobid
 }
