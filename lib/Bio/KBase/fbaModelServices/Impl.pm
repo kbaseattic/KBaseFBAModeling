@@ -1114,6 +1114,9 @@ sub _buildFBAObject {
 	#Parsing media
 	my $mediaobj = $self->_get_msobject("Media",$fbaFormulation->{media_workspace},$fbaFormulation->{media});
 	#Building FBAFormulation object
+	if (! defined $id || $id eq "") {
+	    $id = $self->_get_new_id($model->id().".fba.");
+	}
 	my $fbaobj = Bio::KBase::ObjectAPI::KBaseFBA::FBA->new({
 		id => $id,
 		fva => 0,
@@ -9282,7 +9285,7 @@ sub quantitative_optimization
 		$input->{outputid} = $self->_get_new_id($input->{model});
 	}
 	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
-	my $fba = $self->_buildFBAObject($input->{formulation},$model);
+	my $fba = $self->_buildFBAObject($input->{formulation},$model,$input->{workspace},$input->{outputid});
 	if (defined($input->{solver})) {
 	   	$fba->parameters()->{MFASolver} = uc($input->{solver});
 	}
