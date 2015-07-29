@@ -1180,11 +1180,8 @@ module KBaseFBA {
 	*/
 	typedef structure {
 		string id;
-		string name;
-		string taxonomy;
 		fba_ref fba_ref;
 		fbamodel_ref model_ref;
-		genome_ref genome_ref;
 		mapping<string fba_id,tuple<int common_reactions,int common_active_reactions,int common_reaction_states,int common_exchange_compounds,int common_active_exchanges,int common_exchange_states> > fba_similarity;
 
 		float objective;
@@ -1232,7 +1229,6 @@ module KBaseFBA {
 	*/
 	typedef structure {
 		string id;
-		string name;
 		int common_reactions;
 		int common_compounds;
 		list<FBAComparisonFBA> fbas;
@@ -1240,4 +1236,3 @@ module KBaseFBA {
 		list<FBAComparisonCompound> compounds;
 	} FBAComparison;
 };
-
