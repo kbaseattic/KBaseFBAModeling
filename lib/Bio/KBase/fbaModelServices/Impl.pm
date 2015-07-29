@@ -275,8 +275,8 @@ sub _test_comp_FBA {
 	    print "$fba1 and $fba2 have $num_common_excrete_compounds common excrete compounds\n";
 
 	    # now load the mapping
-	    $fbaComps{$fba1}->{fba_similarity}->{$fba2} = [$num_common_active_reactions+$num_common_inactive_reactions, $num_common_active_reactions, $num_common_active_forward_reactions+$num_common_active_reverse_reactions, $num_common_active_compounds, $num_common_active_compounds, $num_common_uptake_compounds+$num_common_excrete_compounds];
-	    $fbaComps{$fba2}->{fba_similarity}->{$fba1} = [$num_common_active_reactions+$num_common_inactive_reactions, $num_common_active_reactions, $num_common_active_forward_reactions+$num_common_active_reverse_reactions, $num_common_active_compounds, $num_common_active_compounds, $num_common_uptake_compounds+$num_common_excrete_compounds];
+	    $fbaComps{$fba1}->fba_similarity()->{$fba2} = [$num_common_active_reactions+$num_common_inactive_reactions, $num_common_active_reactions, $num_common_active_forward_reactions+$num_common_active_reverse_reactions, $num_common_active_compounds, $num_common_active_compounds, $num_common_uptake_compounds+$num_common_excrete_compounds];
+	    $fbaComps{$fba2}->fba_similarity()->{$fba1} = [$num_common_active_reactions+$num_common_inactive_reactions, $num_common_active_reactions, $num_common_active_forward_reactions+$num_common_active_reverse_reactions, $num_common_active_compounds, $num_common_active_compounds, $num_common_uptake_compounds+$num_common_excrete_compounds];
 	}
     }
 }
