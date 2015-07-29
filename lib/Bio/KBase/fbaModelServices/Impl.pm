@@ -109,6 +109,178 @@ use Config::Simple;
 use Digest::MD5;
 use LWP::Simple "getstore";
 
+sub _test_comp_FBA {
+    use Bio::KBase::ObjectAPI::KBaseFBA::FBAComparisonFBA;
+    my ($self) = @_;
+# mapping<string fba_id,tuple<int common_reactions,int common_active_reactions,int common_reaction_states,int common_exchange_compounds,int common_active_exchanges,int common_exchange_states> > fba_similarity;
+
+# get the FBAs
+    my $mws = "janakakbase:Ana";
+    my $ws_arr = [$mws,$mws];
+    my $fba1_name = "Super_L2_GP_Complete_Apr29_GP_THA.fba.1";
+    my $fba2_name = "Super_L4_GP_Complete_Apr29_GP_THA.fba.1";  
+    my $fba1 = $self->_get_msobject("FBA", $mws, $fba1_name);
+    my $fba2 = $self->_get_msobject("FBA", $mws, $fba2_name);
+    my $fba_out = [$fba1, $fba2];
+
+# loop through all the FBAs and get their reactions and compounds organized by state
+# each of these hashes has a fba_id as key, followed by an inner hash with reaction or compound as key
+    my (%active_reactions, %active_forward_reactions, %active_reverse_reactions, %inactive_reactions,  %active_compounds, %uptake_compounds, %excrete_compounds);
+
+
+# get reaction fluxes and compound fluxes
+    for (my $j=0; $j<@{$fba_out}; $j++){
+	my $fb= $fba_out->[$j];
+	my $fba_id = $fb->id();
+	my $fR = $fb->FBAReactionVariables();
+	my $fC = $fb->FBACompoundVariables();
+	
+	# loop through reaction list
+	foreach my $hash (@$fR) {
+	    my $rxn_id = $hash->modelreaction()->id();
+	    my $flux_val = $hash->value();
+	    if ($flux_val > 1e-9){
+		$active_forward_reactions{$fba_id}->{$rxn_id} = 1;
+		$active_reactions{$fba_id}->{$rxn_id} = 1;
+	    }
+	    elsif ($flux_val < -1e-9) {
+		$active_reverse_reactions{$fba_id}->{$rxn_id} = 1;
+		$active_reactions{$fba_id}->{$rxn_id} = 1;
+	    }
+	    else {
+		$inactive_reactions{$fba_id}->{$rxn_id} = 1;
+	    }
+	}    
+	# loop through compound list; only interested in exchange fluxes
+	foreach my $hash (@$fC) {
+	    my $comp = $hash->modelcompound()->id();
+	    my $flux_val = $hash->value();
+	    if ($flux_val > 1e-9){
+		$uptake_compounds{$fba_id}->{$comp} = 1;
+		$active_compounds{$fba_id}->{$comp} = 1;
+	    }
+	    elsif ($flux_val < -1e-9) {
+		$excrete_compounds{$fba_id}->{$comp} = 1;
+		$active_compounds{$fba_id}->{$comp} = 1;
+	    }
+	    else {
+		# ignoring compounds with no flux for now
+	    }
+	}
+    }
+
+# create all the FBAComparisonFBA objects
+    my %fbaComps;
+
+    for (my $i=0; $i<@{$fba_out}; $i++) {
+	my $fba1 = $fba_out->[$i];
+	my $fbaComp = Bio::KBase::ObjectAPI::KBaseFBA::FBAComparisonFBA->new({
+	    id => $fba1->id()."comparison", # should be passed in as an argument
+	    fba => $fba1,
+	    model => $fba1->fbamodel(),
+	    fba_similarity => {},
+	    objective => $fba1->objectiveValue(),
+	    media => $fba1->media()->_reference(), # compute everthing below here
+	    reactions => 0,
+	    compounds => 0,
+	    active_reactions => scalar keys %{$active_reactions{$fba1->id()}},
+	    uptake_compounds => 0,
+	    excretion_compounds => 0
+									     });
+	$fbaComps{$fba1->id()} = $fbaComp;
+    }
+
+# perform the FBA comparisons
+    for (my $i=0; $i<@{$fba_out}; $i++) {
+	my $fba1 = $fba_out->[$i]->id();
+	for (my $j=$i+1; $j<@{$fba_out}; $j++){
+	    my $fba2 = $fba_out->[$j]->id();
+	    my (%common_active_reactions, %common_active_forward_reactions, %common_active_reverse_reactions, %common_inactive_reactions,  %common_active_compounds, %common_uptake_compounds, %common_excrete_compounds);
+	    foreach my $reaction (keys %{$active_forward_reactions{$fba1}}) {
+		$common_active_forward_reactions{$reaction}++;
+	    }
+	    foreach my $reaction (keys %{$active_forward_reactions{$fba2}}) {
+		$common_active_forward_reactions{$reaction}++;
+	    }
+	    my $num_common_active_forward_reactions = 0;
+	    foreach my $reaction (keys %common_active_forward_reactions) {
+		$num_common_active_forward_reactions++ if $common_active_forward_reactions{$reaction} == 2;
+	    }
+	    print "$fba1 and $fba2 have $num_common_active_forward_reactions common active forward reactions\n";
+	    foreach my $reaction (keys %{$active_reverse_reactions{$fba1}}) {
+		$common_active_reverse_reactions{$reaction}++;
+	    }
+	    foreach my $reaction (keys %{$active_reverse_reactions{$fba2}}) {
+		$common_active_reverse_reactions{$reaction}++;
+	    }
+	    my $num_common_active_reverse_reactions = 0;
+	    foreach my $reaction (keys %common_active_reverse_reactions) {
+		$num_common_active_reverse_reactions++ if $common_active_reverse_reactions{$reaction} == 2;
+	    }
+	    print "$fba1 and $fba2 have $num_common_active_reverse_reactions common active reverse reactions\n";
+	    foreach my $reaction (keys %{$active_reactions{$fba1}}) {
+		$common_active_reactions{$reaction}++;
+	    }
+	    foreach my $reaction (keys %{$active_reactions{$fba2}}) {
+		$common_active_reactions{$reaction}++;
+	    }
+	    my $num_common_active_reactions = 0;
+	    foreach my $reaction (keys %common_active_reactions) {
+		$num_common_active_reactions++ if $common_active_reactions{$reaction} == 2;
+	    }
+	    print "$fba1 and $fba2 have $num_common_active_reactions common active reactions\n";
+	    foreach my $reaction (keys %{$inactive_reactions{$fba1}}) {
+		$common_inactive_reactions{$reaction}++;
+	    }
+	    foreach my $reaction (keys %{$inactive_reactions{$fba2}}) {
+		$common_inactive_reactions{$reaction}++;
+	    }
+	    my $num_common_inactive_reactions = 0;
+	    foreach my $reaction (keys %common_inactive_reactions) {
+		$num_common_inactive_reactions++ if $common_inactive_reactions{$reaction} == 2;
+	    }
+	    print "$fba1 and $fba2 have $num_common_inactive_reactions common inactive reactions\n";
+	    foreach my $compound (keys %{$active_compounds{$fba1}}) {
+		$common_active_compounds{$compound}++;
+	    }
+	    foreach my $compound (keys %{$active_compounds{$fba2}}) {
+		$common_active_compounds{$compound}++;
+	    }
+	    my $num_common_active_compounds = 0;
+	    foreach my $compound (keys %common_active_compounds) {
+		$num_common_active_compounds++ if $common_active_compounds{$compound} == 2;
+	    }
+	    print "$fba1 and $fba2 have $num_common_active_compounds common active compounds\n";
+	    foreach my $compound (keys %{$uptake_compounds{$fba1}}) {
+		$common_uptake_compounds{$compound}++;
+	    }
+	    foreach my $compound (keys %{$uptake_compounds{$fba2}}) {
+		$common_uptake_compounds{$compound}++;
+	    }
+	    my $num_common_uptake_compounds = 0;
+	    foreach my $compound (keys %common_uptake_compounds) {
+		$num_common_uptake_compounds++ if $common_uptake_compounds{$compound} == 2;
+	    }
+	    print "$fba1 and $fba2 have $num_common_uptake_compounds common uptake compounds\n";
+	    foreach my $compound (keys %{$excrete_compounds{$fba1}}) {
+		$common_excrete_compounds{$compound}++;
+	    }
+	    foreach my $compound (keys %{$excrete_compounds{$fba2}}) {
+		$common_excrete_compounds{$compound}++;
+	    }
+	    my $num_common_excrete_compounds = 0;
+	    foreach my $compound (keys %common_excrete_compounds) {
+		$num_common_excrete_compounds++ if $common_excrete_compounds{$compound} == 2;
+	    }
+	    print "$fba1 and $fba2 have $num_common_excrete_compounds common excrete compounds\n";
+
+	    # now load the mapping
+	    $fbaComps{$fba1}->{fba_similarity}->{$fba2} = [$num_common_active_reactions+$num_common_inactive_reactions, $num_common_active_reactions, $num_common_active_forward_reactions+$num_common_active_reverse_reactions, $num_common_active_compounds, $num_common_active_compounds, $num_common_uptake_compounds+$num_common_excrete_compounds];
+	    $fbaComps{$fba2}->{fba_similarity}->{$fba1} = [$num_common_active_reactions+$num_common_inactive_reactions, $num_common_active_reactions, $num_common_active_forward_reactions+$num_common_active_reverse_reactions, $num_common_active_compounds, $num_common_active_compounds, $num_common_uptake_compounds+$num_common_excrete_compounds];
+	}
+    }
+}
+
 sub _authentication {
 	my($self) = @_;
 	if (defined($self->_getContext->{_override}->{_authentication})) {
