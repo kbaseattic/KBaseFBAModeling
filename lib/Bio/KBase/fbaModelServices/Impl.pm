@@ -100,6 +100,7 @@ use Bio::KBase::ObjectAPI::KBaseFBA::ReactionSensitivityAnalysis;
 use Bio::KBase::workspace::Client;
 use Bio::KBase::ObjectAPI::KBaseGenomes::MetagenomeAnnotation;
 use Bio::KBase::ObjectAPI::GenomeComparison::ProteomeComparison;
+use Bio::KBase::ObjectAPI::KBaseFBA::FBAComparison;
 use Bio::KBase::ObjectAPI::utilities qw( args verbose set_verbose translateArrayOptions);
 use POSIX;
 use File::Basename;
@@ -108,178 +109,6 @@ use Data::Dumper;
 use Config::Simple;
 use Digest::MD5;
 use LWP::Simple "getstore";
-
-sub _test_comp_FBA {
-    use Bio::KBase::ObjectAPI::KBaseFBA::FBAComparisonFBA;
-    my ($self) = @_;
-# mapping<string fba_id,tuple<int common_reactions,int common_active_reactions,int common_reaction_states,int common_exchange_compounds,int common_active_exchanges,int common_exchange_states> > fba_similarity;
-
-# get the FBAs
-    my $mws = "janakakbase:Ana";
-    my $ws_arr = [$mws,$mws];
-    my $fba1_name = "Super_L2_GP_Complete_Apr29_GP_THA.fba.1";
-    my $fba2_name = "Super_L4_GP_Complete_Apr29_GP_THA.fba.1";  
-    my $fba1 = $self->_get_msobject("FBA", $mws, $fba1_name);
-    my $fba2 = $self->_get_msobject("FBA", $mws, $fba2_name);
-    my $fba_out = [$fba1, $fba2];
-
-# loop through all the FBAs and get their reactions and compounds organized by state
-# each of these hashes has a fba_id as key, followed by an inner hash with reaction or compound as key
-    my (%active_reactions, %active_forward_reactions, %active_reverse_reactions, %inactive_reactions,  %active_compounds, %uptake_compounds, %excrete_compounds);
-
-
-# get reaction fluxes and compound fluxes
-    for (my $j=0; $j<@{$fba_out}; $j++){
-	my $fb= $fba_out->[$j];
-	my $fba_id = $fb->id();
-	my $fR = $fb->FBAReactionVariables();
-	my $fC = $fb->FBACompoundVariables();
-	
-	# loop through reaction list
-	foreach my $hash (@$fR) {
-	    my $rxn_id = $hash->modelreaction()->id();
-	    my $flux_val = $hash->value();
-	    if ($flux_val > 1e-9){
-		$active_forward_reactions{$fba_id}->{$rxn_id} = 1;
-		$active_reactions{$fba_id}->{$rxn_id} = 1;
-	    }
-	    elsif ($flux_val < -1e-9) {
-		$active_reverse_reactions{$fba_id}->{$rxn_id} = 1;
-		$active_reactions{$fba_id}->{$rxn_id} = 1;
-	    }
-	    else {
-		$inactive_reactions{$fba_id}->{$rxn_id} = 1;
-	    }
-	}    
-	# loop through compound list; only interested in exchange fluxes
-	foreach my $hash (@$fC) {
-	    my $comp = $hash->modelcompound()->id();
-	    my $flux_val = $hash->value();
-	    if ($flux_val > 1e-9){
-		$uptake_compounds{$fba_id}->{$comp} = 1;
-		$active_compounds{$fba_id}->{$comp} = 1;
-	    }
-	    elsif ($flux_val < -1e-9) {
-		$excrete_compounds{$fba_id}->{$comp} = 1;
-		$active_compounds{$fba_id}->{$comp} = 1;
-	    }
-	    else {
-		# ignoring compounds with no flux for now
-	    }
-	}
-    }
-
-# create all the FBAComparisonFBA objects
-    my %fbaComps;
-
-    for (my $i=0; $i<@{$fba_out}; $i++) {
-	my $fba1 = $fba_out->[$i];
-	my $fbaComp = Bio::KBase::ObjectAPI::KBaseFBA::FBAComparisonFBA->new({
-	    id => $fba1->id()."comparison", # should be passed in as an argument
-	    fba => $fba1,
-	    model => $fba1->fbamodel(),
-	    fba_similarity => {},
-	    objective => $fba1->objectiveValue(),
-	    media => $fba1->media()->_reference(), # compute everthing below here
-	    reactions => 0,
-	    compounds => 0,
-	    active_reactions => scalar keys %{$active_reactions{$fba1->id()}},
-	    uptake_compounds => 0,
-	    excretion_compounds => 0
-									     });
-	$fbaComps{$fba1->id()} = $fbaComp;
-    }
-
-# perform the FBA comparisons
-    for (my $i=0; $i<@{$fba_out}; $i++) {
-	my $fba1 = $fba_out->[$i]->id();
-	for (my $j=$i+1; $j<@{$fba_out}; $j++){
-	    my $fba2 = $fba_out->[$j]->id();
-	    my (%common_active_reactions, %common_active_forward_reactions, %common_active_reverse_reactions, %common_inactive_reactions,  %common_active_compounds, %common_uptake_compounds, %common_excrete_compounds);
-	    foreach my $reaction (keys %{$active_forward_reactions{$fba1}}) {
-		$common_active_forward_reactions{$reaction}++;
-	    }
-	    foreach my $reaction (keys %{$active_forward_reactions{$fba2}}) {
-		$common_active_forward_reactions{$reaction}++;
-	    }
-	    my $num_common_active_forward_reactions = 0;
-	    foreach my $reaction (keys %common_active_forward_reactions) {
-		$num_common_active_forward_reactions++ if $common_active_forward_reactions{$reaction} == 2;
-	    }
-	    print "$fba1 and $fba2 have $num_common_active_forward_reactions common active forward reactions\n";
-	    foreach my $reaction (keys %{$active_reverse_reactions{$fba1}}) {
-		$common_active_reverse_reactions{$reaction}++;
-	    }
-	    foreach my $reaction (keys %{$active_reverse_reactions{$fba2}}) {
-		$common_active_reverse_reactions{$reaction}++;
-	    }
-	    my $num_common_active_reverse_reactions = 0;
-	    foreach my $reaction (keys %common_active_reverse_reactions) {
-		$num_common_active_reverse_reactions++ if $common_active_reverse_reactions{$reaction} == 2;
-	    }
-	    print "$fba1 and $fba2 have $num_common_active_reverse_reactions common active reverse reactions\n";
-	    foreach my $reaction (keys %{$active_reactions{$fba1}}) {
-		$common_active_reactions{$reaction}++;
-	    }
-	    foreach my $reaction (keys %{$active_reactions{$fba2}}) {
-		$common_active_reactions{$reaction}++;
-	    }
-	    my $num_common_active_reactions = 0;
-	    foreach my $reaction (keys %common_active_reactions) {
-		$num_common_active_reactions++ if $common_active_reactions{$reaction} == 2;
-	    }
-	    print "$fba1 and $fba2 have $num_common_active_reactions common active reactions\n";
-	    foreach my $reaction (keys %{$inactive_reactions{$fba1}}) {
-		$common_inactive_reactions{$reaction}++;
-	    }
-	    foreach my $reaction (keys %{$inactive_reactions{$fba2}}) {
-		$common_inactive_reactions{$reaction}++;
-	    }
-	    my $num_common_inactive_reactions = 0;
-	    foreach my $reaction (keys %common_inactive_reactions) {
-		$num_common_inactive_reactions++ if $common_inactive_reactions{$reaction} == 2;
-	    }
-	    print "$fba1 and $fba2 have $num_common_inactive_reactions common inactive reactions\n";
-	    foreach my $compound (keys %{$active_compounds{$fba1}}) {
-		$common_active_compounds{$compound}++;
-	    }
-	    foreach my $compound (keys %{$active_compounds{$fba2}}) {
-		$common_active_compounds{$compound}++;
-	    }
-	    my $num_common_active_compounds = 0;
-	    foreach my $compound (keys %common_active_compounds) {
-		$num_common_active_compounds++ if $common_active_compounds{$compound} == 2;
-	    }
-	    print "$fba1 and $fba2 have $num_common_active_compounds common active compounds\n";
-	    foreach my $compound (keys %{$uptake_compounds{$fba1}}) {
-		$common_uptake_compounds{$compound}++;
-	    }
-	    foreach my $compound (keys %{$uptake_compounds{$fba2}}) {
-		$common_uptake_compounds{$compound}++;
-	    }
-	    my $num_common_uptake_compounds = 0;
-	    foreach my $compound (keys %common_uptake_compounds) {
-		$num_common_uptake_compounds++ if $common_uptake_compounds{$compound} == 2;
-	    }
-	    print "$fba1 and $fba2 have $num_common_uptake_compounds common uptake compounds\n";
-	    foreach my $compound (keys %{$excrete_compounds{$fba1}}) {
-		$common_excrete_compounds{$compound}++;
-	    }
-	    foreach my $compound (keys %{$excrete_compounds{$fba2}}) {
-		$common_excrete_compounds{$compound}++;
-	    }
-	    my $num_common_excrete_compounds = 0;
-	    foreach my $compound (keys %common_excrete_compounds) {
-		$num_common_excrete_compounds++ if $common_excrete_compounds{$compound} == 2;
-	    }
-	    print "$fba1 and $fba2 have $num_common_excrete_compounds common excrete compounds\n";
-
-	    # now load the mapping
-	    $fbaComps{$fba1}->{fba_similarity}->{$fba2} = [$num_common_active_reactions+$num_common_inactive_reactions, $num_common_active_reactions, $num_common_active_forward_reactions+$num_common_active_reverse_reactions, $num_common_active_compounds, $num_common_active_compounds, $num_common_uptake_compounds+$num_common_excrete_compounds];
-	    $fbaComps{$fba2}->{fba_similarity}->{$fba1} = [$num_common_active_reactions+$num_common_inactive_reactions, $num_common_active_reactions, $num_common_active_forward_reactions+$num_common_active_reverse_reactions, $num_common_active_compounds, $num_common_active_compounds, $num_common_uptake_compounds+$num_common_excrete_compounds];
-	}
-    }
-}
 
 sub _authentication {
 	my($self) = @_;
@@ -18710,6 +18539,211 @@ sub compare_fbas
     my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
     my($output);
     #BEGIN compare_fbas
+    $self->_setContext($ctx,$params);
+	$params = $self->_validateargs($params,["fbas","workspace","output_id"],{});
+    my $fbacomp = Bio::KBase::ObjectAPI::KBaseFBA::FBAComparison->new({
+    	id => $params->{output_id},
+    	common_reactions => 0,
+    	common_compounds => 0,
+    	fbas => [],
+    	reactions => [],
+    	compounds => []
+    });
+    my $commoncompounds = 0;
+    my $commonreactions = 0;
+    my $fbahash = {};
+    my $fbaids = [];
+    my $fbarxns = {};
+    my $rxnhash = {};
+    my $cpdhash = {};
+    my $fbacpds = {};
+    my $fbacount = @{$params->{fbas}};
+    for (my $i=0; $i < @{$params->{fbas}}; $i++) {
+    	$fbaids->[$i] = $params->{fbas}->[$i]->[0]."/".$params->{fbas}->[$i]->[1];
+    	my $fba = $self->_get_msobject("FBA",$params->{fbas}->[$i]->[0],$params->{fbas}->[$i]->[1]);
+		my $rxns = $fba->FBAReactionVariables();
+		my $cpds = $fba->FBACompoundVariables();
+		my $cpdcount = @{$cpds};
+		my $rxncount = @{$rxns};
+		$fbahash->{$fbaids->[$i]} = $fbacomp->add("fbas",{
+			id => $params->{fbas}->[$i]->[1],
+			fba_ref => $fba->_reference(),
+			fbamodel_ref => $fba->fbamodel_ref(),
+			fba_similarity => {},
+			objective => $fba->objectiveValue(),
+			media_ref => $fba->media_ref(),
+			reactions => $rxncount,
+			compounds => $cpdcount,
+			active_reactions => 0,
+			uptake_compounds => 0,
+			excretion_compounds => 0
+		});
+		my $activerxn = 0;
+		my $uptakecpd = 0;
+		my $excretecpd = 0;
+		for (my $j=0; $j < @{$rxns}; $j++) {
+			my $id = $rxns->[$j]->modelreaction()->id();
+			if (!defined($rxnhash->{$id})) {
+				$rxnhash->{$id} = $fbacomp->add("reactions",{
+					id => $id,
+					name => $rxns->[$j]->modelreaction()->name(),
+					stoichiometry => $rxns->[$j]->modelreaction()->stoichiometry(),
+					direction => $rxns->[$j]->modelreaction()->direction(),
+					state_conservation => {},
+					most_common_state => "unknown",
+					reaction_fluxes => {}
+				});
+			}
+			my $state = "IA";
+			if ($rxns->[$j]->value() > 0.000000001) {
+				$state = "FOR";
+				$activerxn++;
+			} elsif ($rxns->[$j]->value() < -0.000000001) {
+				$state = "REV";
+				$activerxn++;
+			}
+			if (!defined($rxnhash->{$id}->state_conservation()->{$state})) {
+				$rxnhash->{$id}->state_conservation()->{$state} = [0,0,0,0];
+			}
+			$rxnhash->{$id}->state_conservation()->{$state}->[0]++;
+			$rxnhash->{$id}->state_conservation()->{$state}->[2] += $rxns->[$j]->value();
+			$rxnhash->{$id}->reaction_fluxes()->{$fbaids->[$i]} = [$state,$rxns->[$j]->upperBound(),$rxns->[$j]->lowerBound(),$rxns->[$j]->max(),$rxns->[$j]->min(),$rxns->[$j]->value(),$rxns->[$j]->scaled_exp(),$rxns->[$j]->exp_state(),$rxns->[$j]->class()];
+			$fbarxns->{$fbaids->[$i]}->{$id} = $state;
+		}
+		for (my $j=0; $j < @{$cpds}; $j++) {
+			my $id = $cpds->[$j]->modelcompound()->id();
+			if (!defined($cpdhash->{$id})) {
+				$cpdhash->{$id} = $fbacomp->add("compounds",{
+					id => $id,
+					name => $cpds->[$j]->modelcompound()->name(),
+					charge => $cpds->[$j]->modelcompound()->charge(),
+					formula => $cpds->[$j]->modelcompound()->formula(),
+					state_conservation => {},
+					most_common_state => "unknown",
+					exchanges => {}
+				});
+			}
+			my $state = "IA";
+			if ($cpds->[$j]->value() > 0.000000001) {
+				$state = "UP";
+				$uptakecpd++;
+			} elsif ($cpds->[$j]->value() < -0.000000001) {
+				$state = "EX";
+				$excretecpd++;
+			}
+			if (!defined($cpdhash->{$id}->state_conservation()->{$state})) {
+				$cpdhash->{$id}->state_conservation()->{$state} = [0,0,0,0];
+			}
+			$cpdhash->{$id}->state_conservation()->{$state}->[0]++;
+			$cpdhash->{$id}->state_conservation()->{$state}->[2] += $cpds->[$j]->value();
+			$cpdhash->{$id}->exchanges()->{$fbaids->[$i]} = [$state,$cpds->[$j]->upperBound(),$cpds->[$j]->lowerBound(),$cpds->[$j]->max(),$cpds->[$j]->min(),$cpds->[$j]->value(),$cpds->[$j]->class()];
+			$fbacpds->{$fbaids->[$i]}->{$id} = $state;
+		}
+		foreach my $comprxn (keys(%{$rxnhash})) {
+			if (!defined($rxnhash->{$comprxn}->reaction_fluxes()->{$fbaids->[$i]})) {
+				if (!defined($rxnhash->{$comprxn}->state_conservation()->{NA})) {
+					$rxnhash->{$comprxn}->state_conservation()->{NA} = [0,0,0,0];
+				}
+				$rxnhash->{$comprxn}->state_conservation()->{NA}->[0]++;
+			}
+		}
+		foreach my $compcpd (keys(%{$cpdhash})) {
+			if (!defined($cpdhash->{$compcpd}->exchanges()->{$fbaids->[$i]})) {
+				if (!defined($cpdhash->{$compcpd}->state_conservation()->{NA})) {
+					$cpdhash->{$compcpd}->state_conservation()->{NA} = [0,0,0,0];
+				}
+				$cpdhash->{$compcpd}->state_conservation()->{NA}->[0]++;
+			}
+		}
+		$fbahash->{$fbaids->[$i]}->active_reactions($activerxn);
+		$fbahash->{$fbaids->[$i]}->uptake_compounds($uptakecpd);
+		$fbahash->{$fbaids->[$i]}->excretion_compounds($excretecpd);
+    }
+    for (my $i=0; $i < @{$fbaids}; $i++) {
+    	for (my $j=0; $j < @{$fbaids}; $j++) {
+    		if ($j != $i) {
+    			$fbahash->{$fbaids->[$i]}->fba_similarity()->{$fbaids->[$j]} = [0,0,0,0,0,0];
+    		}
+    	}
+    }
+    foreach my $rxn (keys(%{$rxnhash})) {
+    	my $fbalist = [keys(%{$rxnhash->{$rxn}->reaction_fluxes()})];
+    	foreach my $state (keys(%{$rxnhash->{$rxn}->state_conservation()})) {
+    		$rxnhash->{$rxn}->state_conservation()->{$state}->[1] = $rxnhash->{$rxn}->state_conservation()->{$state}->[0]/$fbacount;
+			$rxnhash->{$rxn}->state_conservation()->{$state}->[2] = $rxnhash->{$rxn}->state_conservation()->{$state}->[2]/$fbacount;
+    	}
+    	for (my $i=0; $i < @{$fbalist}; $i++) {
+    		my $item = $rxnhash->{$rxn}->reaction_fluxes()->{$fbalist->[$i]};
+    		my $diff = $item->[5]-$rxnhash->{$rxn}->state_conservation()->{$item->[0]}->[2];
+    		$rxnhash->{$rxn}->state_conservation()->{$item->[0]}->[3] += ($diff*$diff);
+    		for (my $j=0; $j < @{$fbalist}; $j++) {
+    			if ($j != $i) {
+    				$fbahash->{$fbalist->[$i]}->fba_similarity()->{$fbalist->[$j]}->[0]++;
+    				if ($rxnhash->{$rxn}->reaction_fluxes()->{$fbalist->[$i]}->[0] eq $rxnhash->{$rxn}->reaction_fluxes()->{$fbalist->[$j]}->[0]) {
+    					$fbahash->{$fbalist->[$i]}->fba_similarity()->{$fbalist->[$j]}->[2]++;
+    				}
+    				if (abs($rxnhash->{$rxn}->reaction_fluxes()->{$fbalist->[$i]}->[5]) > 0.00000001 && abs($rxnhash->{$rxn}->reaction_fluxes()->{$fbalist->[$j]}->[5]) > 0.00000001) {
+    					$fbahash->{$fbalist->[$i]}->fba_similarity()->{$fbalist->[$j]}->[1]++;
+    				}
+    			}	
+    		}
+    	}
+    	my $bestcount = 0;
+    	my $beststate;
+    	foreach my $state (keys(%{$rxnhash->{$rxn}->state_conservation()})) {
+    		$rxnhash->{$rxn}->state_conservation()->{$state}->[3] = $rxnhash->{$rxn}->state_conservation()->{$state}->[3]/$fbacount;
+    		$rxnhash->{$rxn}->state_conservation()->{$state}->[3] = sqrt($rxnhash->{$rxn}->state_conservation()->{$state}->[3]);
+    		if ($rxnhash->{$rxn}->state_conservation()->{$state}->[0] > $bestcount) {
+    			$bestcount = $rxnhash->{$rxn}->state_conservation()->{$state}->[0];
+    			$beststate = $state;
+    		}
+    	}
+    	$rxnhash->{$rxn}->most_common_state($beststate);
+    	if (@{$fbalist} == $fbacount) {
+    		$commonreactions++;
+    	}
+    }
+    foreach my $cpd (keys(%{$cpdhash})) {
+    	my $fbalist = [keys(%{$cpdhash->{$cpd}->exchanges()})];
+    	foreach my $state (keys(%{$cpdhash->{$cpd}->state_conservation()})) {
+    		$cpdhash->{$cpd}->state_conservation()->{$state}->[1] = $cpdhash->{$cpd}->state_conservation()->{$state}->[0]/$fbacount;
+			$cpdhash->{$cpd}->state_conservation()->{$state}->[2] = $cpdhash->{$cpd}->state_conservation()->{$state}->[2]/$fbacount;
+    	}
+    	for (my $i=0; $i < @{$fbalist}; $i++) {
+    		my $item = $cpdhash->{$cpd}->exchanges()->{$fbalist->[$i]};
+    		my $diff = $item->[5]-$cpdhash->{$cpd}->state_conservation()->{$item->[0]}->[2];
+    		$cpdhash->{$cpd}->state_conservation()->{$item->[0]}->[3] += ($diff*$diff);
+    		for (my $j=0; $j < @{$fbalist}; $j++) {
+    			if ($j != $i) {
+    				$fbahash->{$fbalist->[$i]}->fba_similarity()->{$fbalist->[$j]}->[3]++;
+    				if ($cpdhash->{$cpd}->exchanges()->{$fbalist->[$i]}->[0] eq $cpdhash->{$cpd}->exchanges()->{$fbalist->[$j]}->[0]) {
+    					$fbahash->{$fbalist->[$i]}->fba_similarity()->{$fbalist->[$j]}->[5]++;
+    				}
+    				if (abs($cpdhash->{$cpd}->exchanges()->{$fbalist->[$i]}->[5]) > 0.00000001 && abs($cpdhash->{$cpd}->exchanges()->{$fbalist->[$j]}->[5]) > 0.00000001) {
+    					$fbahash->{$fbalist->[$i]}->fba_similarity()->{$fbalist->[$j]}->[4]++;
+    				}
+    			}	
+    		}
+    	}
+    	my $bestcount = 0;
+    	my $beststate;
+    	foreach my $state (keys(%{$cpdhash->{$cpd}->state_conservation()})) {
+    		$cpdhash->{$cpd}->state_conservation()->{$state}->[3] = $cpdhash->{$cpd}->state_conservation()->{$state}->[3]/$fbacount;
+    		$cpdhash->{$cpd}->state_conservation()->{$state}->[3] = sqrt($cpdhash->{$cpd}->state_conservation()->{$state}->[3]);
+    		if ($cpdhash->{$cpd}->state_conservation()->{$state}->[0] > $bestcount) {
+    			$bestcount = $cpdhash->{$cpd}->state_conservation()->{$state}->[0];
+    			$beststate = $state;
+    		}
+    	}
+    	$cpdhash->{$cpd}->most_common_state($beststate);
+    	if (@{$fbalist} == $fbacount) {
+    		$commoncompounds++;
+    	}
+    }
+    $fbacomp->common_compounds($commoncompounds);
+    $fbacomp->common_reactions($commonreactions);
+    $output = $self->_save_msobject($fbacomp,"FBAComparison",$params->{workspace},$params->{output_id});
+    $self->_clearContext();
     #END compare_fbas
     my @_bad_returns;
     (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");

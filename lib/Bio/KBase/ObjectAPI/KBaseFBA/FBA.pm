@@ -2554,7 +2554,7 @@ sub parseFluxFiles {
 											max => $upper,
 											class => "unknown"
 										});
-									} else {
+									} elsif (defined($self->{_source_model})) {
 										my $srcrxn = $self->{_source_model}->getObject("modelreactions",$row->[$reactionColumn]);
 										if (defined($srcrxn)) {
 											my $lower = -1*$self->defaultMaxFlux();
@@ -2581,6 +2581,8 @@ sub parseFluxFiles {
 										} else {
 											print STDERR "Could not find flux reaction ".$row->[$reactionColumn]."\n";
 										}
+									} else {
+										print STDERR "Could not find flux reaction ".$row->[$reactionColumn]."\n";
 									}
 								}
 							}
@@ -3291,19 +3293,20 @@ sub parseGapfillingOutput {
 			if ($currrxns->[$i] =~ /^(.)(.+)/) {
 				my $rxnid = $2;
 				my $sign = $1;
-				if ($rxnhash->{$rxnid}->direction() eq "=") {
-					$count->[0]++;
-				}
-				if ($sign eq "-") {
-					if ($rxnhash->{$rxnid}->direction() eq "<") {
+				if (defined($rxnhash->{$rxnid})) {
+					if ($rxnhash->{$rxnid}->direction() eq "=") {
 						$count->[0]++;
 					}
-				} else {
-					if ($rxnhash->{$rxnid}->direction() eq ">") {
-						$count->[0]++;
+					if ($sign eq "-") {
+						if ($rxnhash->{$rxnid}->direction() eq "<") {
+							$count->[0]++;
+						}
+					} else {
+						if ($rxnhash->{$rxnid}->direction() eq ">") {
+							$count->[0]++;
+						}
 					}
 				}
-				
 			}
 		}
 		push(@{$self->{outputfiles}->{gapfillstats}},"Active off:".$count->[0]);

@@ -38,6 +38,7 @@ has genEquationCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass =
 has revGenEquationCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildgenrevequationcode' );
 has equationFormula => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildequationformula' );
 has complexString => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcomplexString' );
+has stoichiometry => ( is => 'rw', isa => 'ArrayRef', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildstoichiometry' );
 
 #***********************************************************************************************************
 # BUILDERS:
@@ -247,6 +248,15 @@ sub _buildcomplexString {
 		}
 	}
 	return $complexString;
+}
+
+sub _buildstoichiometry {
+	my ($self) = @_;
+	my $stoichiometry = [];
+	foreach my $reagent (@{$self->modelReactionReagents()}) {
+		push(@{$stoichiometry},[$reagent->coefficient(),$reagent->modelcompound()->name(),$reagent->modelcompound()->id()]);
+	}
+	return $stoichiometry;
 }
 
 #***********************************************************************************************************

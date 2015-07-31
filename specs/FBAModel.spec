@@ -1181,11 +1181,11 @@ module KBaseFBA {
 	typedef structure {
 		string id;
 		fba_ref fba_ref;
-		fbamodel_ref model_ref;
+		fbamodel_ref fbamodel_ref;
 		mapping<string fba_id,tuple<int common_reactions,int common_active_reactions,int common_reaction_states,int common_exchange_compounds,int common_active_exchanges,int common_exchange_states> > fba_similarity;
 
 		float objective;
-		media_ref media;
+		media_ref media_ref;
 		int reactions;
 		int compounds;
 		int active_reactions;
@@ -1199,7 +1199,8 @@ module KBaseFBA {
 	typedef structure {
 		string id;
 		string name;
-		string equation;
+		list<tuple<float coefficient,string name,string compound>> stoichiometry;
+		string direction;
 		mapping<Conserved_state,tuple<int count,float fraction,float flux_mean, float flux_stddev>> state_conservation;
 		Conserved_state most_common_state;
 		mapping<string fba_id,tuple<Conserved_state,float UpperBound,float LowerBound,float Max,float Min,float flux,float expression_score,string expression_class,string fva_class>> reaction_fluxes;
@@ -1213,16 +1214,17 @@ module KBaseFBA {
 		string name;
 		float charge;
 		string formula;
-		mapping<Conserved_state,tuple<int count,float fraction,float stddev>> state_conservation;
+		mapping<Conserved_state,tuple<int count,float fraction,float flux_mean,float stddev>> state_conservation;
 		Conserved_state most_common_state;
-		mapping<string fba_id,list<tuple<compartment_ref,Conserved_state,float LowerBound,float UpperBound,float Max,float Min,float Flux>>> model_drains;
+		mapping<string fba_id,tuple<Conserved_state,float UpperBound,float LowerBound,float Max,float Min,float Flux,string class>> exchanges;
 	} FBAComparisonCompound;
 
 	/*
 		FBAComparison object: this object holds information about a comparison of multiple FBA simulations
 
-		@metadata ws name as Name
 		@metadata ws id as ID
+		@metadata ws common_reactions as Common reactions
+		@metadata ws common_reactions as Common compounds
 		@metadata ws length(fbas) as Number FBAs
 		@metadata ws length(reactions) as Number reactions
 		@metadata ws length(compounds) as Number compounds
