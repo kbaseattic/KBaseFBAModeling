@@ -7758,6 +7758,9 @@ sub import_fbamodel
 		});
 	}
 	my $msg = "";
+	if (defined($model->{missinggenes})) {
+		print STDERR "Missing genes:\n".join("\n",keys(%{$model->{missinggenes}}))."\n";
+	}
 	#if (keys(%{$missingReactions}) > 0) {
 	#	$msg .= "Missing reactions:".join(";",keys(%{$missingReactions}))."\n";
 	#}
@@ -18549,6 +18552,7 @@ sub compare_fbas
     	reactions => [],
     	compounds => []
     });
+    $fbacomp->parent($self->_KBaseStore());
     my $commoncompounds = 0;
     my $commonreactions = 0;
     my $fbahash = {};

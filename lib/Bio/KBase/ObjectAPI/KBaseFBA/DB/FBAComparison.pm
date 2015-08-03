@@ -5,15 +5,15 @@
 # Development location: Mathematics and Computer Science Division, Argonne National Lab
 ########################################################################
 package Bio::KBase::ObjectAPI::KBaseFBA::DB::FBAComparison;
-use Bio::KBase::ObjectAPI::BaseObject;
+use Bio::KBase::ObjectAPI::IndexedObject;
 use Bio::KBase::ObjectAPI::KBaseFBA::FBAComparisonCompound;
 use Bio::KBase::ObjectAPI::KBaseFBA::FBAComparisonReaction;
 use Bio::KBase::ObjectAPI::KBaseFBA::FBAComparisonFBA;
 use Moose;
 use namespace::autoclean;
-extends 'Bio::KBase::ObjectAPI::BaseObject';
+extends 'Bio::KBase::ObjectAPI::IndexedObject';
 
-
+our $VERSION = 1.0;
 # PARENT:
 has parent => (is => 'rw', isa => 'Ref', weak_ref => 1, type => 'parent', metaclass => 'Typed');
 # ATTRIBUTES:
@@ -34,11 +34,12 @@ has fbas => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return [];
 
 
 # BUILDERS:
-sub _build_reference { my ($self) = @_;return $self->parent()->_reference().'//id/'.$self->id(); }
-sub _build_uuid { my ($self) = @_;return $self->_reference(); }
+sub _build_reference { my ($self) = @_;return $self->uuid(); }
+sub _build_uuid { return Data::UUID->new()->create_str(); }
 
 
 # CONSTANTS:
+sub __version__ { return $VERSION; }
 sub _type { return 'KBaseFBA.FBAComparison'; }
 sub _module { return 'KBaseFBA'; }
 sub _class { return 'FBAComparison'; }

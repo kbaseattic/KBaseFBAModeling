@@ -23,7 +23,7 @@ has active_reactions => (is => 'rw', isa => 'Int', printOrder => '-1', type => '
 has compounds => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has objective => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has reactions => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has model_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has fbamodel_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has id => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has fba_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has fba_similarity => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub {return {};}, type => 'attribute', metaclass => 'Typed');
@@ -31,7 +31,7 @@ has fba_similarity => (is => 'rw', isa => 'HashRef', printOrder => '-1', default
 
 # LINKS:
 has media => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,Media,media_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_media', clearer => 'clear_media', isa => 'Bio::KBase::ObjectAPI::KBaseBiochem::Media', weak_ref => 1);
-has model => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,FBAModel,model_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_model', clearer => 'clear_model', isa => 'Bio::KBase::ObjectAPI::KBaseFBA::FBAModel', weak_ref => 1);
+has fbamodel => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,FBAModel,fbamodel_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_model', clearer => 'clear_model', isa => 'Bio::KBase::ObjectAPI::KBaseFBA::FBAModel', weak_ref => 1);
 has fba => (is => 'rw', type => 'link(Bio::KBase::ObjectAPI::KBaseStore,FBA,fba_ref)', metaclass => 'Typed', lazy => 1, builder => '_build_fba', clearer => 'clear_fba', isa => 'Bio::KBase::ObjectAPI::KBaseFBA::FBA', weak_ref => 1);
 
 
@@ -44,7 +44,7 @@ sub _build_media {
 }
 sub _build_model {
 	 my ($self) = @_;
-	 return $self->getLinkedObject($self->model_ref());
+	 return $self->getLinkedObject($self->fbamodel_ref());
 }
 sub _build_fba {
 	 my ($self) = @_;
@@ -111,7 +111,7 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'model_ref',
+            'name' => 'fbamodel_ref',
             'type' => 'Str',
             'perm' => 'rw'
           },
@@ -139,7 +139,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {uptake_compounds => 0, media_ref => 1, excretion_compounds => 2, active_reactions => 3, compounds => 4, objective => 5, reactions => 6, model_ref => 7, id => 8, fba_ref => 9};
+my $attribute_map = {uptake_compounds => 0, media_ref => 1, excretion_compounds => 2, active_reactions => 3, compounds => 4, objective => 5, reactions => 6, fbamodel_ref => 7, id => 8, fba_ref => 9};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -165,7 +165,7 @@ my $links = [
             'module' => 'KBaseBiochem'
           },
           {
-            'attribute' => 'model_ref',
+            'attribute' => 'fbamodel_ref',
             'parent' => 'Bio::KBase::ObjectAPI::KBaseStore',
             'clearer' => 'clear_model',
             'name' => 'model',

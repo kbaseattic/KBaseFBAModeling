@@ -344,15 +344,17 @@ Description:
 
 sub createEquation {
     my ($self,$args) = @_;
-    $args = Bio::KBase::ObjectAPI::utilities::args([], { indecies => 1,
-							 format => 'id',
-                                                         hashed => 0,
-                                                         water => 1,
-							 compts=>1,
-							 reverse=>0,
-							 direction=>1,
-							 protons => 1,
-							 generalized => 0}, $args);
+    $args = Bio::KBase::ObjectAPI::utilities::args([], { 
+		indecies => 1,
+		format => 'id',
+		hashed => 0,
+		water => 1,
+		compts=>1,
+		reverse=>0,
+		direction=>1,
+		protons => 1,
+		generalized => 0
+	}, $args);
 	
 	my $rgts = $self->modelReactionReagents();
 	my $rgtHash;
@@ -387,8 +389,8 @@ sub createEquation {
     my $sign = " <=> ";
 
     if($args->{direction}==1){
-	$sign = " => " if $self->direction() eq ">";
-	$sign = " <= " if $self->direction() eq "<";
+		$sign = " => " if $self->direction() eq ">";
+		$sign = " <= " if $self->direction() eq "<";
     }
 	
     my %FoundComps=();
@@ -397,72 +399,83 @@ sub createEquation {
     my $sortedCpd = [sort(keys(%{$rgtHash}))];
     for (my $i=0; $i < @{$sortedCpd}; $i++) {
 
-	#Cpds sorted on original modelseed identifiers
-	#But representative strings collected here (if not 'id')
-	my $printId=$sortedCpd->[$i];
-
-	if($args->{format} ne "id"){
-	    my $cpd = ( grep { $printId eq $_->modelcompound()->compound()->id() } @{$self->modelReactionReagents()} )[0]->modelcompound()->compound();
-	    if(!$cpd){
-		$cpd = ( grep { $printId eq $_->modelcompound()->id() } @{$self->modelReactionReagents()} )[0]->modelcompound()->compound();
-	    }
-
-	    if($args->{format} eq "name"){
-		$printId = $cpd->name();
-	    } elsif($args->{format} ne "uuid" && $args->{format} ne "formula") {
-		$printId = $cpd->getAlias($args->{format});
-	    }elsif($args->{format} eq "formula"){
-		$printId = $cpd->formula();
-	    }
-	}
-
-	my $comps = [sort(keys(%{$rgtHash->{$sortedCpd->[$i]}}))];
-	for (my $j=0; $j < @{$comps}; $j++) {
-	    if ($comps->[$j] =~ m/([a-z])(\d+)/) {
-		my $comp = $1;
-		my $index = $2;
-		my $compartment = $comp;
-
-		if($args->{generalized} && !exists($FoundComps{$comp})){
-		    $compartment = $CompCount;
-		    $FoundComps{$comp}=$CompCount;
-		    $CompCount++;
-		}elsif($args->{generalized} && exists($FoundComps{$comp})){
-		    $compartment = $FoundComps{$comp};
+		#Cpds sorted on original modelseed identifiers
+		#But representative strings collected here (if not 'id')
+		my $printId=$sortedCpd->[$i];
+	
+		if($args->{format} ne "id") {
+			my $rgts = $self->modelReactionReagents();
+		    my $cpd;
+		    foreach my $rgt (@{$rgts}) {
+		    	if ($printId eq $rgt->modelcompound()->compound()->id()) {
+		    		$cpd = $rgt->modelcompound()->compound();
+		    		last;
+		    	}
+		    }
+		    if (!defined($cpd)) {
+				foreach my $rgt (@{$rgts}) {
+			    	if ($printId eq $rgt->modelcompound()->id()) {
+			    		$cpd = $rgt->modelcompound();
+			    		last;
+			    	}
+			    }
+		    }
+		    if($args->{format} eq "name"){
+				$printId = $cpd->name();
+		    } elsif($args->{format} ne "uuid" && $args->{format} ne "formula") {
+				$printId = $cpd->getAlias($args->{format});
+		    }elsif($args->{format} eq "formula"){
+				$printId = $cpd->formula();
+		    }
 		}
+	
+		my $comps = [sort(keys(%{$rgtHash->{$sortedCpd->[$i]}}))];
+		for (my $j=0; $j < @{$comps}; $j++) {
+		    if ($comps->[$j] =~ m/([a-z])(\d+)/) {
+				my $comp = $1;
+				my $index = $2;
+				my $compartment = $comp;
 		
-		if ($args->{indecies} == 0) {
-		    $compartment = "[".$compartment."]";
-		}else{
-		    $compartment = "[".$compartment.$index."]";
+				if($args->{generalized} && !exists($FoundComps{$comp})){
+				    $compartment = $CompCount;
+				    $FoundComps{$comp}=$CompCount;
+				    $CompCount++;
+				}elsif($args->{generalized} && exists($FoundComps{$comp})){
+				    $compartment = $FoundComps{$comp};
+				}
+				
+				if ($args->{indecies} == 0) {
+				    $compartment = "[".$compartment."]";
+				}else{
+				    $compartment = "[".$compartment.$index."]";
+				}
+		
+				$compartment= "" if !$args->{compts};
+		
+				if ($rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]} < 0) {
+				    my $coef = -1*$rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]};
+				    my $reactcode = "(".$coef.") ".$printId.$compartment;
+				    push(@reactcode,$reactcode);
+		
+				} elsif ($rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]} > 0) {
+				    my $coef = $rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]};
+				    
+				    my $productcode .= "(".$coef.") ".$printId.$compartment;
+				    push(@productcode, $productcode);
+				}
+		    }
 		}
-
-		$compartment= "" if !$args->{compts};
-
-		if ($rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]} < 0) {
-		    my $coef = -1*$rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]};
-		    my $reactcode = "(".$coef.") ".$printId.$compartment;
-		    push(@reactcode,$reactcode);
-
-		} elsif ($rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]} > 0) {
-		    my $coef = $rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]};
-		    
-		    my $productcode .= "(".$coef.") ".$printId.$compartment;
-		    push(@productcode, $productcode);
-		}
-	    }
-	}
     }
     
 
     my $reaction_string = join(" + ",@reactcode).$sign.join(" + ",@productcode);
 
-    if($args->{reverse}==1){
-	$reaction_string = join(" + ",@productcode).$sign.join(" + ",@reactcode);
+    if($args->{reverse}==1) {
+		$reaction_string = join(" + ",@productcode).$sign.join(" + ",@reactcode);
     }
 
     if ($args->{hashed} == 1) {
-	return Digest::MD5::md5_hex($reaction_string);
+		return Digest::MD5::md5_hex($reaction_string);
     }
     return $reaction_string;
 }
@@ -661,7 +674,6 @@ sub loadGPRFromString {
 		return;
 	}
 	my $gpr = Bio::KBase::ObjectAPI::utilities::translateGPRHash(Bio::KBase::ObjectAPI::utilities::parseGPR($gprstring));
-	my $missingGenes;
 	for (my $m=0; $m < @{$gpr}; $m++) {
 		my $protObj = $self->add("modelReactionProteins",{
 			complex_ref => "",
@@ -696,16 +708,16 @@ sub loadGPRFromString {
 							feature_refs => []
 						});
 						if (!defined($geneAliases->{$array->[$n]})) {
-							print "Missing feature:".$array->[$n]."\n\n";
-							$missingGenes->{$array->[$n]} = 1;
+							#print STDERR "Missing feature:".$array->[$n]."\n\n";
+							$self->parent()->{missinggenes}->{$array->[$n]} = 1;
 						} else {
 							$subObj->addLinkArrayItem("features",$geneAliases->{$array->[$n]});
 						}
 					}
 				} else {
 					if (!defined($geneAliases->{$ftrID})) {
-						print "Missing feature:".$ftrID."\n\n";
-						$missingGenes->{$ftrID} = 1;
+						#print STDERR "Missing feature:".$ftrID."\n\n";
+						$self->parent()->{missinggenes}->{$ftrID} = 1;
 					} else {
 						$subObj->addLinkArrayItem("features",$geneAliases->{$ftrID});
 					}
