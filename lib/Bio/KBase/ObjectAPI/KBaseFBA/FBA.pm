@@ -1678,12 +1678,8 @@ Description:
 sub process_expression_data {
 	my ($self) = @_;
 	my $booleanexp = $self->parameters()->{booleanexp};
-	my $threshold_type = $self->parameters()->{expression_threshold_type};
 	my $sample = $self->{_expsample};
 	my $exphash = $sample;
-	if (ref($sample) ne "HASH") {
-		$exphash = $sample->expression_levels();#This is what we must modify to connect to Mike's object
-	}
 	my $exp_scores = {};
 	my $max_exp_score = 0;
 	my $min_exp_score = -1;
