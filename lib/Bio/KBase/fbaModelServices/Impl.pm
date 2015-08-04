@@ -8989,7 +8989,7 @@ sub runfba
 	if ($input->{booleanexp}) {
 		if (defined($input->{expseries})) {
 		    if (! defined($input->{expsample})) {
-			$self->_error("Input must specify the expression sample to select from the expression series");
+			$self->_error("Input must specify the column to select from the expression matrix");
 		    }
 		    my $exphash = {};
 		    my $getparams = {
@@ -9017,7 +9017,7 @@ sub runfba
 		} elsif (keys(%{$input->{exp_raw_data}}) > 0) {
 			$input->{expsample} = $input->{exp_raw_data}
 		} else {
-			$self->_error("Cannot run expression-constrained FBA without providing specifying expression data series and sample.");	
+			$self->_error("Cannot run expression-constrained FBA without providing specifying expression matrix and column.");	
 		}
 		$fba->PrepareForGapfilling({
 			add_external_rxns => 0,
