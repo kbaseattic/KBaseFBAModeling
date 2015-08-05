@@ -150,6 +150,11 @@ module KBaseFBA {
     typedef string expression_series_ref;
     /*
 		Reference to expression data
+		@id ws KBaseExpression.ExpressionMatrix
+	*/
+    typedef string expression_matrix_ref;
+    /*
+		Reference to expression data
 		@id ws KBaseExpression.ExpressionSample
 	*/
     typedef string expression_sample_ref;
@@ -674,7 +679,7 @@ module KBaseFBA {
     /* 
     	FBA object holds the formulation and results of a flux balance analysis study
     	
-    	@optional jobnode gapfillingSolutions QuantitativeOptimizationSolutions quantitativeOptimization minimize_reactions minimize_reaction_costs FBATintleResults FBAMinimalReactionsResults PROMKappa phenotypesimulationset_ref objectiveValue phenotypeset_ref promconstraint_ref regulome_ref tintlesample_ref tintleW tintleKappa
+    	@optional ExpressionKappa ExpressionOmega ExpressionAlpha expression_matrix_ref expression_matrix_column jobnode gapfillingSolutions QuantitativeOptimizationSolutions quantitativeOptimization minimize_reactions minimize_reaction_costs FBATintleResults FBAMinimalReactionsResults PROMKappa phenotypesimulationset_ref objectiveValue phenotypeset_ref promconstraint_ref regulome_ref tintlesample_ref tintleW tintleKappa
     	@metadata ws maximizeObjective as Maximized
 		@metadata ws comboDeletions as Combination deletions
 		@metadata ws minimize_reactions as Minimize reactions
@@ -683,6 +688,8 @@ module KBaseFBA {
 		@metadata ws promconstraint_ref as PromConstraint
 		@metadata ws media_ref as Media
 		@metadata ws objectiveValue as Objective
+		@metadata ws expression_matrix_ref as ExpressionMatrix
+		@metadata ws expression_matrix_column as ExpressionMatrixColumn
 		@metadata ws length(biomassflux_objterms) as Number biomass objectives
 		@metadata ws length(geneKO_refs) as Number gene KO
 		@metadata ws length(reactionKO_refs) as Number reaction KO
@@ -721,6 +728,9 @@ module KBaseFBA {
 		float PROMKappa;
 		float tintleW;
 		float tintleKappa;
+		float ExpressionAlpha;
+		float ExpressionOmega;
+		float ExpressionKappa;
 		
 		bool decomposeReversibleFlux;
 		bool decomposeReversibleDrainFlux;
@@ -732,6 +742,8 @@ module KBaseFBA {
 		regulome_ref regulome_ref;
 		fbamodel_ref fbamodel_ref;
 		promconstraint_ref promconstraint_ref;
+		expression_matrix_ref expression_matrix_ref;
+		string expression_matrix_column;
 		expression_sample_ref tintlesample_ref;
 		media_ref media_ref;
 		phenotypeset_ref phenotypeset_ref;
@@ -1224,7 +1236,7 @@ module KBaseFBA {
 
 		@metadata ws id as ID
 		@metadata ws common_reactions as Common reactions
-		@metadata ws common_reactions as Common compounds
+		@metadata ws common_compounds as Common compounds
 		@metadata ws length(fbas) as Number FBAs
 		@metadata ws length(reactions) as Number reactions
 		@metadata ws length(compounds) as Number compounds
