@@ -8968,9 +8968,8 @@ sub runfba
 		fba => undef,
 		custom_bounds => undef,
 		biomass => undef,
-		expseries => undef,
-		expseriesws => $input->{workspace},
 		expsample => undef,
+		expsamplews => $input->{workspace},
 		activation_penalty => 0.1,
 		solver => undef
 	});
@@ -8987,37 +8986,12 @@ sub runfba
     $input->{formulation}->{omega} = $input->{omega};
 	my $fba = $self->_buildFBAObject($input->{formulation},$model,$input->{workspace},$input->{fba});
 	if ($input->{booleanexp}) {
-		if (defined($input->{expseries})) {
-		    if (! defined($input->{expsample})) {
-			$self->_error("Input must specify the column to select from the expression matrix");
-		    }
-		    my $exphash = {};
-		    my $getparams = {
-                        id => $input->{expseries},
-                        type => "KBaseFeatureValues.ExpressionMatrix",
-                        workspace => $input->{expseriesws},
-		    };
-		    my $exp_matrix = $self->_KBaseStore()->workspace()->get_object($getparams);
-		    my $float_matrix = $exp_matrix->{"data"}->{"data"};
-		    my $exp_sample_col = -1;
-
-		    for (my $i=0; $i < @{$float_matrix->{"col_ids"}}; $i++) {
-			if ($float_matrix->{"col_ids"}->[$i] eq $input->{expsample}) {
-			    $exp_sample_col = $i;
-			    last;
-			}
-		    }
-		    if ($exp_sample_col < 0) {
-			$self->_error("No column named ".$input->{expsample}." in expression matrix.");
-		    }
-		    for (my $i=0; $i < @{$float_matrix->{"row_ids"}}; $i++) {
-			$exphash->{$float_matrix->{"row_ids"}->[$i]} = $float_matrix->{"values"}->[$i]->[$exp_sample_col];
-		    }
-		    $input->{expsample} = $exphash;
+		if (defined($input->{expsample})) {
+			$input->{expsample} = $self->_get_msobject("ExpressionSample",$input->{expsamplews},$input->{expsample});
 		} elsif (keys(%{$input->{exp_raw_data}}) > 0) {
 			$input->{expsample} = $input->{exp_raw_data}
 		} else {
-			$self->_error("Cannot run expression-constrained FBA without providing specifying expression matrix and column.");	
+			$self->_error("Cannot run expression-constrained FBA without providing expression data!");	
 		}
 		$fba->PrepareForGapfilling({
 			add_external_rxns => 0,
@@ -18698,9 +18672,10 @@ sub compare_fbas
     }
     foreach my $rxn (keys(%{$rxnhash})) {
     	my $fbalist = [keys(%{$rxnhash->{$rxn}->reaction_fluxes()})];
+    	my $rxnfbacount = @{$fbalist};
     	foreach my $state (keys(%{$rxnhash->{$rxn}->state_conservation()})) {
     		$rxnhash->{$rxn}->state_conservation()->{$state}->[1] = $rxnhash->{$rxn}->state_conservation()->{$state}->[0]/$fbacount;
-			$rxnhash->{$rxn}->state_conservation()->{$state}->[2] = $rxnhash->{$rxn}->state_conservation()->{$state}->[2]/$fbacount;
+			$rxnhash->{$rxn}->state_conservation()->{$state}->[2] = $rxnhash->{$rxn}->state_conservation()->{$state}->[2]/$rxnhash->{$rxn}->state_conservation()->{$state}->[0];
     	}
     	for (my $i=0; $i < @{$fbalist}; $i++) {
     		my $item = $rxnhash->{$rxn}->reaction_fluxes()->{$fbalist->[$i]};
@@ -18721,7 +18696,7 @@ sub compare_fbas
     	my $bestcount = 0;
     	my $beststate;
     	foreach my $state (keys(%{$rxnhash->{$rxn}->state_conservation()})) {
-    		$rxnhash->{$rxn}->state_conservation()->{$state}->[3] = $rxnhash->{$rxn}->state_conservation()->{$state}->[3]/$fbacount;
+    		$rxnhash->{$rxn}->state_conservation()->{$state}->[3] = $rxnhash->{$rxn}->state_conservation()->{$state}->[3]/$rxnhash->{$rxn}->state_conservation()->{$state}->[0];
     		$rxnhash->{$rxn}->state_conservation()->{$state}->[3] = sqrt($rxnhash->{$rxn}->state_conservation()->{$state}->[3]);
     		if ($rxnhash->{$rxn}->state_conservation()->{$state}->[0] > $bestcount) {
     			$bestcount = $rxnhash->{$rxn}->state_conservation()->{$state}->[0];
@@ -18729,15 +18704,16 @@ sub compare_fbas
     		}
     	}
     	$rxnhash->{$rxn}->most_common_state($beststate);
-    	if (@{$fbalist} == $fbacount) {
+    	if ($rxnfbacount == $fbacount) {
     		$commonreactions++;
     	}
     }
     foreach my $cpd (keys(%{$cpdhash})) {
     	my $fbalist = [keys(%{$cpdhash->{$cpd}->exchanges()})];
+    	my $cpdfbacount = @{$fbalist};
     	foreach my $state (keys(%{$cpdhash->{$cpd}->state_conservation()})) {
     		$cpdhash->{$cpd}->state_conservation()->{$state}->[1] = $cpdhash->{$cpd}->state_conservation()->{$state}->[0]/$fbacount;
-			$cpdhash->{$cpd}->state_conservation()->{$state}->[2] = $cpdhash->{$cpd}->state_conservation()->{$state}->[2]/$fbacount;
+			$cpdhash->{$cpd}->state_conservation()->{$state}->[2] = $cpdhash->{$cpd}->state_conservation()->{$state}->[2]/$cpdhash->{$cpd}->state_conservation()->{$state}->[0];
     	}
     	for (my $i=0; $i < @{$fbalist}; $i++) {
     		my $item = $cpdhash->{$cpd}->exchanges()->{$fbalist->[$i]};
@@ -18758,7 +18734,7 @@ sub compare_fbas
     	my $bestcount = 0;
     	my $beststate;
     	foreach my $state (keys(%{$cpdhash->{$cpd}->state_conservation()})) {
-    		$cpdhash->{$cpd}->state_conservation()->{$state}->[3] = $cpdhash->{$cpd}->state_conservation()->{$state}->[3]/$fbacount;
+    		$cpdhash->{$cpd}->state_conservation()->{$state}->[3] = $cpdhash->{$cpd}->state_conservation()->{$state}->[3]/$cpdhash->{$cpd}->state_conservation()->{$state}->[0];
     		$cpdhash->{$cpd}->state_conservation()->{$state}->[3] = sqrt($cpdhash->{$cpd}->state_conservation()->{$state}->[3]);
     		if ($cpdhash->{$cpd}->state_conservation()->{$state}->[0] > $bestcount) {
     			$bestcount = $cpdhash->{$cpd}->state_conservation()->{$state}->[0];
@@ -18766,7 +18742,7 @@ sub compare_fbas
     		}
     	}
     	$cpdhash->{$cpd}->most_common_state($beststate);
-    	if (@{$fbalist} == $fbacount) {
+    	if ($cpdfbacount == $fbacount) {
     		$commoncompounds++;
     	}
     }
