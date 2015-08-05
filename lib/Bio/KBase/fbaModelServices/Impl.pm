@@ -8956,7 +8956,7 @@ sub runfba
 		scale_penalty_by_flux => 0,
 		exp_raw_data => {},
 		alpha => 0.5,
-		omega => 0.5,
+		omega => 0,
 		kappa => 0.1,
 		formulation => undef,
 		fva => 0,
@@ -8998,6 +8998,11 @@ sub runfba
                         workspace => $input->{expseriesws},
 		    };
 		    my $exp_matrix = $self->_KBaseStore()->workspace()->get_object($getparams);
+		    $fba->expression_matrix_ref($exp_matrix->_reference());
+		    $fba->expression_matrix_column($input->{expsample});
+		    $fba->ExpressionAlpha($input->{alpha});
+		    $fba->ExpressionOmega($input->{omega});
+		    $fba->ExpressionKappa($input->{kappa});
 		    my $float_matrix = $exp_matrix->{"data"}->{"data"};
 		    my $exp_sample_col = -1;
 

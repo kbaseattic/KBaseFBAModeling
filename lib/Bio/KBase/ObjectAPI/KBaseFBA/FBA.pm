@@ -466,7 +466,6 @@ sub PrepareForGapfilling {
 		fastgapfill => 1,
 		alpha => 0,
 		omega => 0,
-		scalefluxes => 0,
 		num_solutions => 1,
 		nomediahyp => 0,
 		nobiomasshyp => 0,#
@@ -490,7 +489,7 @@ sub PrepareForGapfilling {
 	}, $args);
 	push(@{$self->gauranteedrxns()},@{$args->{gauranteedrxns}});
 	push(@{$self->blacklistedrxns()},@{$args->{blacklistedrxns}});
-	$self->parameters()->{"scale penalty by flux"} = $args->{scalefluxes};
+	$self->parameters()->{"scale penalty by flux"} = $args->{scale_penalty_by_flux};
 	$self->parameters()->{add_external_rxns} = $args->{add_external_rxns};
 	$self->parameters()->{make_model_rxns_reversible} = $args->{make_model_rxns_reversible};
 	$self->parameters()->{omega} = $args->{omega};
