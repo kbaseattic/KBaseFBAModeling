@@ -515,6 +515,7 @@ sub PrepareForGapfilling {
 		$self->parameters()->{"scale penalty by flux"} = $args->{scale_penalty_by_flux};
 		if ($args->{scale_penalty_by_flux} == 0) {
 	    	$self->parameters()->{"Reactions use variables"} = 1;
+	    	$self->parameters()->{"transcriptome analysis"} = 1;
 	    }
     }
     $self->numberOfSolutions($args->{num_solutions});
