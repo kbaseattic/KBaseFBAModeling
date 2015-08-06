@@ -18601,7 +18601,7 @@ sub compare_fbas
 		my $cpdcount = @{$cpds};
 		my $rxncount = @{$rxns};
 		$fbahash->{$fbaids->[$i]} = $fbacomp->add("fbas",{
-			id => $params->{fbas}->[$i]->[1],
+			id => $fbaids->[$i],
 			fba_ref => $fba->_reference(),
 			fbamodel_ref => $fba->fbamodel_ref(),
 			fba_similarity => {},
@@ -18609,19 +18609,28 @@ sub compare_fbas
 			media_ref => $fba->media_ref(),
 			reactions => $rxncount,
 			compounds => $cpdcount,
-			active_reactions => 0,
+			forward_reactions => 0,
+			reverse_reactions => 0,
 			uptake_compounds => 0,
 			excretion_compounds => 0
 		});
-		my $activerxn = 0;
+		my $forwardrxn = 0;
+		my $reverserxn = 0;
 		my $uptakecpd = 0;
 		my $excretecpd = 0;
 		for (my $j=0; $j < @{$rxns}; $j++) {
-			my $id = $rxns->[$j]->modelreaction()->id();
+			my $id = $rxns->[$j]->modelreaction()->reaction()->id();
+			my $name = $rxns->[$j]->modelreaction()->reaction()->name();
+			if ($id eq "rxn00000") {
+				$id = $rxns->[$j]->modelreaction()->id();
+				$name = $rxns->[$j]->modelreaction()->id();
+			} elsif ($rxns->[$j]->modelreaction()->id() =~ m/_([a-z]+\d+)$/) {
+				$id .= "_".$1;
+			}
 			if (!defined($rxnhash->{$id})) {
 				$rxnhash->{$id} = $fbacomp->add("reactions",{
 					id => $id,
-					name => $rxns->[$j]->modelreaction()->name(),
+					name => $name,
 					stoichiometry => $rxns->[$j]->modelreaction()->stoichiometry(),
 					direction => $rxns->[$j]->modelreaction()->direction(),
 					state_conservation => {},
@@ -18632,17 +18641,17 @@ sub compare_fbas
 			my $state = "IA";
 			if ($rxns->[$j]->value() > 0.000000001) {
 				$state = "FOR";
-				$activerxn++;
+				$forwardrxn++;
 			} elsif ($rxns->[$j]->value() < -0.000000001) {
 				$state = "REV";
-				$activerxn++;
+				$reverserxn++;
 			}
 			if (!defined($rxnhash->{$id}->state_conservation()->{$state})) {
 				$rxnhash->{$id}->state_conservation()->{$state} = [0,0,0,0];
 			}
 			$rxnhash->{$id}->state_conservation()->{$state}->[0]++;
 			$rxnhash->{$id}->state_conservation()->{$state}->[2] += $rxns->[$j]->value();
-			$rxnhash->{$id}->reaction_fluxes()->{$fbaids->[$i]} = [$state,$rxns->[$j]->upperBound(),$rxns->[$j]->lowerBound(),$rxns->[$j]->max(),$rxns->[$j]->min(),$rxns->[$j]->value(),$rxns->[$j]->scaled_exp(),$rxns->[$j]->exp_state(),$rxns->[$j]->class()];
+			$rxnhash->{$id}->reaction_fluxes()->{$fbaids->[$i]} = [$state,$rxns->[$j]->upperBound(),$rxns->[$j]->lowerBound(),$rxns->[$j]->max(),$rxns->[$j]->min(),$rxns->[$j]->value(),$rxns->[$j]->scaled_exp(),$rxns->[$j]->exp_state(),$rxns->[$j]->modelreaction()->id()];
 			$fbarxns->{$fbaids->[$i]}->{$id} = $state;
 		}
 		for (my $j=0; $j < @{$cpds}; $j++) {
@@ -18690,7 +18699,8 @@ sub compare_fbas
 				$cpdhash->{$compcpd}->state_conservation()->{NA}->[0]++;
 			}
 		}
-		$fbahash->{$fbaids->[$i]}->active_reactions($activerxn);
+		$fbahash->{$fbaids->[$i]}->forward_reactions($forwardrxn);
+		$fbahash->{$fbaids->[$i]}->reverse_reactions($reverserxn);
 		$fbahash->{$fbaids->[$i]}->uptake_compounds($uptakecpd);
 		$fbahash->{$fbaids->[$i]}->excretion_compounds($excretecpd);
     }
@@ -18715,11 +18725,14 @@ sub compare_fbas
     		for (my $j=0; $j < @{$fbalist}; $j++) {
     			if ($j != $i) {
     				$fbahash->{$fbalist->[$i]}->fba_similarity()->{$fbalist->[$j]}->[0]++;
-    				if ($rxnhash->{$rxn}->reaction_fluxes()->{$fbalist->[$i]}->[0] eq $rxnhash->{$rxn}->reaction_fluxes()->{$fbalist->[$j]}->[0]) {
+    				if ($rxnhash->{$rxn}->reaction_fluxes()->{$fbalist->[$i]}->[5] < -0.00000001 && $rxnhash->{$rxn}->reaction_fluxes()->{$fbalist->[$j]}->[5] < -0.00000001) {
     					$fbahash->{$fbalist->[$i]}->fba_similarity()->{$fbalist->[$j]}->[2]++;
     				}
-    				if (abs($rxnhash->{$rxn}->reaction_fluxes()->{$fbalist->[$i]}->[5]) > 0.00000001 && abs($rxnhash->{$rxn}->reaction_fluxes()->{$fbalist->[$j]}->[5]) > 0.00000001) {
+    				if ($rxnhash->{$rxn}->reaction_fluxes()->{$fbalist->[$i]}->[5] > 0.00000001 && $rxnhash->{$rxn}->reaction_fluxes()->{$fbalist->[$j]}->[5] > 0.00000001) {
     					$fbahash->{$fbalist->[$i]}->fba_similarity()->{$fbalist->[$j]}->[1]++;
+    				}
+    				if ($rxnhash->{$rxn}->reaction_fluxes()->{$fbalist->[$i]}->[5] == 0 && $rxnhash->{$rxn}->reaction_fluxes()->{$fbalist->[$j]}->[5] == 0) {
+    					$fbahash->{$fbalist->[$i]}->fba_similarity()->{$fbalist->[$j]}->[3]++;
     				}
     			}	
     		}
@@ -18752,12 +18765,15 @@ sub compare_fbas
     		$cpdhash->{$cpd}->state_conservation()->{$item->[0]}->[3] += ($diff*$diff);
     		for (my $j=0; $j < @{$fbalist}; $j++) {
     			if ($j != $i) {
-    				$fbahash->{$fbalist->[$i]}->fba_similarity()->{$fbalist->[$j]}->[3]++;
-    				if ($cpdhash->{$cpd}->exchanges()->{$fbalist->[$i]}->[0] eq $cpdhash->{$cpd}->exchanges()->{$fbalist->[$j]}->[0]) {
+    				$fbahash->{$fbalist->[$i]}->fba_similarity()->{$fbalist->[$j]}->[4]++;
+    				if ($cpdhash->{$cpd}->exchanges()->{$fbalist->[$i]}->[5] < -0.00000001 && $cpdhash->{$cpd}->exchanges()->{$fbalist->[$j]}->[5] < -0.00000001) {
+    					$fbahash->{$fbalist->[$i]}->fba_similarity()->{$fbalist->[$j]}->[6]++;
+    				}
+    				if ($cpdhash->{$cpd}->exchanges()->{$fbalist->[$i]}->[5] > 0.00000001 && $cpdhash->{$cpd}->exchanges()->{$fbalist->[$j]}->[5] > 0.00000001) {
     					$fbahash->{$fbalist->[$i]}->fba_similarity()->{$fbalist->[$j]}->[5]++;
     				}
-    				if (abs($cpdhash->{$cpd}->exchanges()->{$fbalist->[$i]}->[5]) > 0.00000001 && abs($cpdhash->{$cpd}->exchanges()->{$fbalist->[$j]}->[5]) > 0.00000001) {
-    					$fbahash->{$fbalist->[$i]}->fba_similarity()->{$fbalist->[$j]}->[4]++;
+    				if ($cpdhash->{$cpd}->exchanges()->{$fbalist->[$i]}->[5] == 0 && $cpdhash->{$cpd}->exchanges()->{$fbalist->[$j]}->[5] == 0) {
+    					$fbahash->{$fbalist->[$i]}->fba_similarity()->{$fbalist->[$j]}->[7]++;
     				}
     			}	
     		}

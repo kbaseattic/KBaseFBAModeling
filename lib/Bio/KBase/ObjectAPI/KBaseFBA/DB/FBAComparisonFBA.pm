@@ -19,7 +19,8 @@ has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metacl
 has uptake_compounds => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has media_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has excretion_compounds => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has active_reactions => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has forward_reactions => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has reverse_reactions => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has compounds => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has objective => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has reactions => (is => 'rw', isa => 'Int', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
@@ -83,7 +84,7 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'active_reactions',
+            'name' => 'forward_reactions',
             'type' => 'Int',
             'perm' => 'rw'
           },
@@ -136,10 +137,17 @@ my $attributes = [
             'default' => 'sub {return {};}',
             'type' => 'HashRef',
             'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'reverse_reactions',
+            'type' => 'Int',
+            'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {uptake_compounds => 0, media_ref => 1, excretion_compounds => 2, active_reactions => 3, compounds => 4, objective => 5, reactions => 6, fbamodel_ref => 7, id => 8, fba_ref => 9};
+my $attribute_map = {uptake_compounds => 0, media_ref => 1, excretion_compounds => 2, forward_reactions => 3, compounds => 4, objective => 5, reactions => 6, fbamodel_ref => 7, id => 8, fba_ref => 9, reverse_reactions => 10};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {

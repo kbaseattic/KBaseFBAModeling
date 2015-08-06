@@ -1194,13 +1194,13 @@ module KBaseFBA {
 		string id;
 		fba_ref fba_ref;
 		fbamodel_ref fbamodel_ref;
-		mapping<string fba_id,tuple<int common_reactions,int common_active_reactions,int common_reaction_states,int common_exchange_compounds,int common_active_exchanges,int common_exchange_states> > fba_similarity;
-
+		mapping<string fba_id,tuple<int common_reactions,int common_forward,int common_reverse,int common_inactive,int common_exchange_compounds,int common_uptake,int common_excretion,int common_inactive> > fba_similarity;
 		float objective;
 		media_ref media_ref;
 		int reactions;
 		int compounds;
-		int active_reactions;
+		int forward_reactions;
+		int reverse_reactions;
 		int uptake_compounds;
 		int excretion_compounds;
 	} FBAComparisonFBA;
@@ -1215,7 +1215,7 @@ module KBaseFBA {
 		string direction;
 		mapping<Conserved_state,tuple<int count,float fraction,float flux_mean, float flux_stddev>> state_conservation;
 		Conserved_state most_common_state;
-		mapping<string fba_id,tuple<Conserved_state,float UpperBound,float LowerBound,float Max,float Min,float flux,float expression_score,string expression_class,string fva_class>> reaction_fluxes;
+		mapping<string fba_id,tuple<Conserved_state,float UpperBound,float LowerBound,float Max,float Min,float flux,float expression_score,string expression_class,string ModelReactionID>> reaction_fluxes;
 	} FBAComparisonReaction;
 
 	/*

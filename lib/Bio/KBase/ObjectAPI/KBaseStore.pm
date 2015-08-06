@@ -226,7 +226,6 @@ sub ref_to_identify {
 sub write_object_to_file_cache {
 	my ($self,$info,$data) = @_;
 	if (length($self->file_cache()) > 0 && defined($self->cache_targets()->{$info->[6]."/".$info->[0]."/".$info->[4]}) && !-e $self->file_cache()."/KBCache/".$info->[6]."/".$info->[0]."/".$info->[4]."/meta") {
-		print "Saving to cache!\n";
 		File::Path::mkpath $self->file_cache()."/KBCache/".$info->[6]."/".$info->[0]."/".$info->[4];
 		Bio::KBase::ObjectAPI::utilities::PRINTFILE($self->file_cache()."/KBCache/".$info->[6]."/".$info->[0]."/".$info->[4]."/meta",[Bio::KBase::ObjectAPI::utilities::TOJSON($info)]);
 		Bio::KBase::ObjectAPI::utilities::PRINTFILE($self->file_cache()."/KBCache/".$info->[6]."/".$info->[0]."/".$info->[4]."/data",[Bio::KBase::ObjectAPI::utilities::TOJSON($data)]);
@@ -237,7 +236,6 @@ sub write_object_to_file_cache {
 sub read_object_from_file_cache {
 	my ($self,$ref) = @_;
 	if (defined($self->cache_targets()->{$ref})) {
-		print "Checking cache!\n";
 		#Get WS metadata
 		my $infos = $self->workspace()->get_object_info([$self->ref_to_identify($ref)],0);
 		my $info = $infos->[0];
@@ -255,9 +253,7 @@ sub read_object_from_file_cache {
 
 sub get_object {
     my ($self,$ref,$options) = @_;
-    print "Getting ".$ref."\n";
     return $self->get_objects([$ref])->[0];
-    print "Done getting ".$ref."\n";
 }
 
 sub get_object_by_handle {
