@@ -150,7 +150,7 @@ module KBaseFBA {
     typedef string expression_series_ref;
     /*
 		Reference to expression data
-		@id ws KBaseExpression.ExpressionMatrix
+		@id ws KBaseFeatureValues.ExpressionMatrix
 	*/
     typedef string expression_matrix_ref;
     /*

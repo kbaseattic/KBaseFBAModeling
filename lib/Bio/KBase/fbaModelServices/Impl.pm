@@ -8995,7 +8995,7 @@ sub runfba
 		    my $wsoutput = $self->_KBaseStore()->workspace()->get_objects([
 		    	{workspace => $input->{expseriesws},name => $input->{expseries}}
 		    ]);
-		    $exp_matrix = $wsoutput->[0]->{data};
+		    my $exp_matrix = $wsoutput->[0]->{data};
 		    my $info = $wsoutput->[0]->{info};
 		    $fba->expression_matrix_ref($info->[6]."/".$info->[0]."/".$info->[4]);
 		    $fba->expression_matrix_column($input->{expsample});
