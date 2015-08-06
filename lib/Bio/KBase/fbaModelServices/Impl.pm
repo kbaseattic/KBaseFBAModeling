@@ -8992,18 +8992,17 @@ sub runfba
 			$self->_error("Input must specify the column to select from the expression matrix");
 		    }
 		    my $exphash = {};
-		    my $getparams = {
-                        id => $input->{expseries},
-                        type => "KBaseFeatureValues.ExpressionMatrix",
-                        workspace => $input->{expseriesws},
-		    };
-		    my $exp_matrix = $self->_KBaseStore()->workspace()->get_object($getparams);
-		    $fba->expression_matrix_ref($exp_matrix->_reference());
+		    my $wsoutput = $self->_KBaseStore()->workspace()->get_objects([
+		    	{workspace => $input->{expseriesws},name => $input->{expseries}}
+		    ]);
+		    $exp_matrix = $wsoutput->[0]->{data};
+		    my $info = $wsoutput->[0]->{info};
+		    $fba->expression_matrix_ref($info->[6]."/".$info->[0]."/".$info->[4]);
 		    $fba->expression_matrix_column($input->{expsample});
 		    $fba->ExpressionAlpha($input->{alpha});
 		    $fba->ExpressionOmega($input->{omega});
 		    $fba->ExpressionKappa($input->{kappa});
-		    my $float_matrix = $exp_matrix->{"data"}->{"data"};
+		    my $float_matrix = $exp_matrix->{"data"};
 		    my $exp_sample_col = -1;
 
 		    for (my $i=0; $i < @{$float_matrix->{"col_ids"}}; $i++) {
