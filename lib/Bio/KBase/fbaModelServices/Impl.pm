@@ -3362,6 +3362,9 @@ sub new
     $self->{"_probanno-url"} = "http://localhost:7073";
     $self->{"_workspace-url"} = "http://kbase.us/services/ws";
     $self->{"_classifier_file"} = "/kb/deployment/etc/classifier.txt";
+    if (defined($ENV{TARGET})) {
+    	$self->{"_classifier_file"} = $ENV{TARGET}."/etc/classifier.txt";
+    }
     my $paramlist = [qw(file_cache cache_targets classifier_file classifierpath fbajobcache awe-url shock-url jobqueue gaserver-url jobserver-url fbajobdir mfatoolkitbin fba-url probanno-url mssserver-url accounttype workspace-url defaultJobState idserver-url)];
 
     # so it looks like params is created by looping over the config object
