@@ -93,6 +93,8 @@ deploy-dir:
 
 deploy-libs: configure-scripts
 	rsync -arv lib/. $(TARGET)/lib/.
+	if [ ! -d $(TARGET)/etc/ ] ; then mkdir $(TARGET)/etc ; fi
+	cp classifier/classifier.txt $(TARGET)/etc/classifier.txt
 
 deploy-kbscripts:
 	cp $(TARGET)/bin/fba-addmedia $(TARGET)/bin/kbfba-addmedia
