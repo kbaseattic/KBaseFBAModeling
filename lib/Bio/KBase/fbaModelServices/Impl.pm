@@ -63,10 +63,7 @@ uniquely identifies a workspace among all workspaces.
 use URI;
 use ModelSEED::Client::SAP;
 use Bio::KBase::IDServer::Client;
-use Bio::KBase::CDMI::CDMIClient;
 use Bio::KBase::AuthToken;
-use Bio::KBase::probabilistic_annotation::Client;
-use Bio::KBase::GenomeAnnotation::Client;
 use Bio::KBase::ObjectAPI::KBaseStore;
 use Data::UUID;
 use Bio::KBase::ObjectAPI::KBaseFBA::Classifier;
@@ -405,6 +402,7 @@ sub _modify_annotation_from_probanno {
 sub _cdmi {
 	my $self = shift;
 	if (!defined($self->{_cdmi})) {
+		require "Bio/KBase/CDMI/CDMIClient.pm";
 		$self->{_cdmi} = Bio::KBase::CDMI::CDMIClient->new_for_script();
 	}
     return $self->{_cdmi};
@@ -431,6 +429,7 @@ sub _gaserv {
 			require "Bio/KBase/GenomeAnnotation/GenomeAnnotationImpl.pm";
 			$self->{_gaserver} = Bio::KBase::GenomeAnnotation::GenomeAnnotationImpl->new();
 		} else {
+			require "Bio/KBase/GenomeAnnotation/Client.pm";
 			$self->{_gaserver} = Bio::KBase::GenomeAnnotation::Client->new($self->{'_gaserver-url'});
 		}
     }
@@ -496,6 +495,7 @@ sub _probanno {
 		$url = $self->_getContext()->{_override}->{_probanno_url};
 	}
 	if (!defined($self->{_probannoServices}->{$url})) {
+		require "Bio/KBase/probabilistic_annotation/Client.pm";
 		$self->{_probannoServices}->{$url} = Bio::KBase::probabilistic_annotation::Client->new($url);
 	}
 	return $self->{_probannoServices}->{$url};
@@ -8591,7 +8591,7 @@ sub addmedia
     #Creating the media object from the specifications
     my $bio = $self->_get_msobject("Biochemistry",$input->{biochemistry_workspace},$input->{biochemistry});
     my $media = Bio::KBase::ObjectAPI::KBaseBiochem::Media->new({
-    	id => "kb|media.".$self->_idServer()->allocate_id_range("kb|media",1),
+    	id => $input->{media},
     	name => $input->{name},
     	isDefined => $input->{isDefined},
     	isMinimal => $input->{isMinimal},

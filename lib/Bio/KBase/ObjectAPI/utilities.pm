@@ -7,7 +7,6 @@ use File::Temp qw(tempfile);
 use File::Path;
 use File::Copy::Recursive;
 use JSON::XS;
-use Bio::KBase::IDServer::Client;
 
 our $VERBOSE = undef; # A GLOBAL Reference to print verbose() calls to, or undef.
 our $CONFIG = undef;
@@ -114,6 +113,7 @@ sub idServer {
 			require "Bio/KBase/IDServer/Impl.pm";
 			$idserver = Bio::KBase::IDServer::Impl->new();
 		} else {
+			require "Bio/KBase/IDServer/Client.pm";
 			$idserver = Bio::KBase::IDServer::Client->new(Bio::KBase::ObjectAPI::utilities::ID_SERVER_URL());
 		}
 	}
