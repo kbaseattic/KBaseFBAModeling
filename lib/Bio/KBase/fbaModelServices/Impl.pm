@@ -2664,6 +2664,9 @@ Description:
 sub _classify_genome {
 	my($self,$genome) = @_;
 	if (!defined($self->{_classifierdata})) {
+		if (!-e $self->{"_classifier_file"}) {
+			system("curl https://raw.githubusercontent.com/kbase/KBaseFBAModeling/dev/classifier > ".$self->{"_classifier_file"});
+		}
 		my $data = Bio::KBase::ObjectAPI::utilities::LOADFILE($self->{"_classifier_file"});
 		my $headings = [split(/\t/,$data->[0])];
 		my $popprob = [split(/\t/,$data->[1])];
@@ -3361,10 +3364,6 @@ sub new
     $self->{'_mssserver-url'} = "http://bio-data-1.mcs.anl.gov/services/ms_fba";
     $self->{"_probanno-url"} = "http://localhost:7073";
     $self->{"_workspace-url"} = "http://kbase.us/services/ws";
-    $self->{"_classifier_file"} = "/kb/deployment/etc/classifier.txt";
-    if (defined($ENV{TARGET})) {
-    	$self->{"_classifier_file"} = $ENV{TARGET}."/etc/classifier.txt";
-    }
     my $paramlist = [qw(file_cache cache_targets classifier_file classifierpath fbajobcache awe-url shock-url jobqueue gaserver-url jobserver-url fbajobdir mfatoolkitbin fba-url probanno-url mssserver-url accounttype workspace-url defaultJobState idserver-url)];
 
     # so it looks like params is created by looping over the config object
@@ -3465,9 +3464,7 @@ sub new
     if (defined $params->{'awe-url'}) {
     		$self->{'_awe-url'} = $params->{'awe-url'};
     }
-    if (defined $params->{'classifier_file'}) {
-    		$self->{'_classifier_file'} = $params->{'classifier_file'};
-    }
+    $self->{"_classifier_file"} = Bio::KBase::ObjectAPI::utilities::MFATOOLKIT_JOB_DIRECTORY()."/classifier.txt";
     #This final condition allows one to specify a fully implemented workspace IMPL or CLIENT for use
 
     if (defined($options->{workspace})) {
