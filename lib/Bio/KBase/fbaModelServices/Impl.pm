@@ -8986,6 +8986,13 @@ sub runfba
     $input->{formulation}->{kappa} = $input->{kappa};
     $input->{formulation}->{omega} = $input->{omega};
 	my $fba = $self->_buildFBAObject($input->{formulation},$model,$input->{workspace},$input->{fba});
+	$fba->fva($input->{fva});
+	$fba->comboDeletions($input->{simulateko});
+	$fba->fluxMinimization($input->{minimizeflux});
+	$fba->findMinimalMedia($input->{findminmedia});
+	if (defined($input->{solver})) {
+	   	$fba->parameters()->{MFASolver} = uc($input->{solver});
+	}
 	if (defined($input->{expseries}) || defined($input->{exp_raw_data})) {
 		$fba->ExpressionAlpha($input->{alpha});
 		$fba->ExpressionOmega($input->{omega});
@@ -9035,13 +9042,6 @@ sub runfba
 			omega => $input->{omega},
 			kappa => $input->{kappa},
 		});
-	}
-	$fba->fva($input->{fva});
-	$fba->comboDeletions($input->{simulateko});
-	$fba->fluxMinimization($input->{minimizeflux});
-	$fba->findMinimalMedia($input->{findminmedia});
-	if (defined($input->{solver})) {
-	   	$fba->parameters()->{MFASolver} = uc($input->{solver});
 	}
 	if (defined($input->{biomass}) && defined($fba->biomassflux_objterms()->{bio1})) {
 		my $bio = $model->searchForBiomass($input->{biomass});

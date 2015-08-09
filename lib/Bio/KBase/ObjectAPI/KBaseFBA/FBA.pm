@@ -509,12 +509,16 @@ sub PrepareForGapfilling {
 		$self->{_expsample} = $args->{expsample};
 	}
     if (defined($self->{_expsample})) {
+		$self->comboDeletions(0);
+		$self->fluxMinimization(1);
+		$self->findMinimalMedia(0);
 		$self->parameters()->{expression_threshold_percentile} = $args->{expression_threshold_percentile};
 		$self->parameters()->{kappa} = $args->{kappa};	
 		$self->parameters()->{booleanexp} = $args->{booleanexp};	
 	    $self->parameters()->{"Reactions use variables"} = $args->{use_discrete_variables};
 	    if ($args->{use_discrete_variables} == 1 && $args->{solver} eq "GLPK") {
 	    	$args->{solver} = "SCIP";
+	    	$self->fva(0);
 	    }
 	    $self->parameters()->{"transcriptome analysis"} = 1;
     }
