@@ -34,7 +34,7 @@ my $translation = {
 	solver => "solver",
 	biomass => "biomass",
 	expthreshold => "expression_threshold_percentile", 
-	scalebyflux => "scale_penalty_by_flux"
+	discretevar => "use_discrete_variables"
 };
 my $fbaTranslation = {
 	media => "media",
@@ -78,7 +78,7 @@ my $specs = [
     [ 'constraints:s@', 'Custom constraints' ],
     [ 'booleanexp:s', 'Constrain modeling with on/off expression data of specified type. Either "absolute" or "probability"'],
     [ 'expthreshold:s', 'Set threshold percentile for considering genes on or off from expression' ],
-    [ 'scalebyflux', 'Scale expression penalties by flux' ],
+    [ 'discretevar', 'Use discrete variables for reaction constraints' ],
     [ 'expseries:s', 'ID of expression series' ],
     [ 'expseriesws:s', 'Workspace with expression series' ],
     [ 'expsample:s', 'ID of expression sample in series' ],

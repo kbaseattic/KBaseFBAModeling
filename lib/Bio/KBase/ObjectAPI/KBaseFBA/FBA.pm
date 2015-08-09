@@ -462,7 +462,7 @@ sub PrepareForGapfilling {
 		totalTimeLimit => 45000,
 		target_reactions => [],		
 		completeGapfill => 0,
-		solver => undef,
+		solver => "GLPK",
 		fastgapfill => 1,
 		alpha => 0,
 		omega => 0,
@@ -485,11 +485,11 @@ sub PrepareForGapfilling {
 		add_external_rxns => 1,
 		make_model_rxns_reversible => 1,
 		activate_all_model_reactions => 1,
-		scale_penalty_by_flux => 0
+		use_discrete_variables => 0
 	}, $args);
 	push(@{$self->gauranteedrxns()},@{$args->{gauranteedrxns}});
 	push(@{$self->blacklistedrxns()},@{$args->{blacklistedrxns}});
-	$self->parameters()->{"scale penalty by flux"} = $args->{scale_penalty_by_flux};
+	$self->parameters()->{"scale penalty by flux"} = 0;#I think this may be sufficiently flawed we might consider removing altogether
 	$self->parameters()->{add_external_rxns} = $args->{add_external_rxns};
 	$self->parameters()->{make_model_rxns_reversible} = $args->{make_model_rxns_reversible};
 	$self->parameters()->{omega} = $args->{omega};
@@ -512,11 +512,11 @@ sub PrepareForGapfilling {
 		$self->parameters()->{expression_threshold_percentile} = $args->{expression_threshold_percentile};
 		$self->parameters()->{kappa} = $args->{kappa};	
 		$self->parameters()->{booleanexp} = $args->{booleanexp};	
-		$self->parameters()->{"scale penalty by flux"} = $args->{scale_penalty_by_flux};
-		if ($args->{scale_penalty_by_flux} == 0) {
-	    	$self->parameters()->{"Reactions use variables"} = 1;
-	    	$self->parameters()->{"transcriptome analysis"} = 1;
+	    $self->parameters()->{"Reactions use variables"} = $args->{use_discrete_variables};
+	    if ($args->{use_discrete_variables} == 1 && $args->{solver} eq "GLPK") {
+	    	$args->{solver} = "SCIP";
 	    }
+	    $self->parameters()->{"transcriptome analysis"} = 1;
     }
     $self->numberOfSolutions($args->{num_solutions});
     if ($args->{completeGapfill} == 1 && @{$args->{target_reactions}} == 0) {

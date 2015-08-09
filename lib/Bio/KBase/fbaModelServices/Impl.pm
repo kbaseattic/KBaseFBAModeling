@@ -8951,9 +8951,9 @@ sub runfba
     #BEGIN runfba
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["model","workspace"],{
+		use_discrete_variables => 1,
 		booleanexp => undef,
 		expression_threshold_percentile => 0.5,
-		scale_penalty_by_flux => 0,
 		exp_raw_data => {},
 		alpha => 0.5,
 		omega => 0,
@@ -9024,6 +9024,7 @@ sub runfba
 			$self->_error("Cannot run expression-constrained FBA without providing specifying expression matrix and column.");	
 		}
 		$fba->PrepareForGapfilling({
+			use_discrete_variables => 1,
 			add_external_rxns => 0,
 			activate_all_model_reactions => 0,
 			make_model_rxns_reversible => 0,
@@ -9033,7 +9034,6 @@ sub runfba
 			alpha => $input->{alpha},
 			omega => $input->{omega},
 			kappa => $input->{kappa},
-			scale_penalty_by_flux => $input->{scale_penalty_by_flux},
 		});
 	}
 	$fba->fva($input->{fva});
