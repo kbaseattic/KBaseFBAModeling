@@ -499,15 +499,17 @@ sub PrepareForGapfilling {
 	if (defined($args->{solver})) {
     	$self->parameters()->{MFASolver} = uc($args->{solver});
     }
-	if ($args->{fastgapfill} == 0) {
-		$self->parameters()->{"Reactions use variables"} = 1;
-	}
 	if (defined($args->{source_model})) {
 		$self->{_source_model} = $args->{source_model};
 	}
 	if (defined($args->{expsample})) {
 		$self->{_expsample} = $args->{expsample};
 	}
+	if ($args->{use_discrete_variables} == 1 && $args->{solver} eq "GLPK") {
+	   	$args->{solver} = "SCIP";
+	   	$self->fva(0);
+	}
+	$self->parameters()->{"Reactions use variables"} = $args->{use_discrete_variables};
     if (defined($self->{_expsample})) {
 		$self->comboDeletions(0);
 		$self->fluxMinimization(1);
@@ -515,11 +517,6 @@ sub PrepareForGapfilling {
 		$self->parameters()->{expression_threshold_percentile} = $args->{expression_threshold_percentile};
 		$self->parameters()->{kappa} = $args->{kappa};	
 		$self->parameters()->{booleanexp} = $args->{booleanexp};	
-	    $self->parameters()->{"Reactions use variables"} = $args->{use_discrete_variables};
-	    if ($args->{use_discrete_variables} == 1 && $args->{solver} eq "GLPK") {
-	    	$args->{solver} = "SCIP";
-	    	$self->fva(0);
-	    }
 	    $self->parameters()->{"transcriptome analysis"} = 1;
     }
     $self->numberOfSolutions($args->{num_solutions});
