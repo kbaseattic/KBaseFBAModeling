@@ -17,27 +17,24 @@ my $translation = {
 	modelws => "model_workspace",
 	modelout => "out_model",
 	outputid => "out_model",
-	gapfillid => "gapFill",
-	gapfillws => "gapFill_workspace",
 	workspace => "workspace",
 	intsol => "integrate_solution",
 	timepersol => "timePerSolution",
 	timelimit => "totalTimeLimit",
 	iterativegf => "completeGapfill",
 	solver => "solver",
-	fastgapfill => "fastgapfill",
 	sourcemdl => "source_model",
 	sourcemdlws => "source_model_ws",
+	booleanexp => "booleanexp",
+	exp_raw_data => "exp_raw_data",
+	expseries => "expseries",
+	expseriesws => "expseriesws",
+	expsample => "expsample",
+	expthreshold => "expression_threshold_percentile", 
+	discretevar => "use_discrete_variables",
 	alpha => "alpha",
 	omega => "omega",
 	kappa => "kappa",
-	scalefluxes => "scale_penalty_by_flux",
-	booleanexp => "booleanexp",
-	expthreshold => "expression_threshold_percentile", 
-	scalebyflux => "scale_penalty_by_flux",
-	exp_raw_data => "exp_raw_data",
-	expsample => "expsample",
-	expsamplews => "expsamplews",
 	rxnsensitivity => "sensitivity_analysis",
 	numsol => "num_solutions",
 	nomediahyp => "nomediahyp",
@@ -81,14 +78,14 @@ my $specs = [
     [ 'sourcemdlws=s', 'Workspace of source model to gapfill from', { "default" => fbaws() }  ],
     [ 'intsol', 'Automatically integrate solution', { "default" => 0 } ],
     [ 'booleanexp:s', 'Constrain modeling with on/off expression data of specified type. Either "absolute" or "probability"'],
-    [ 'expthreshold:s', 'Set threshold percentile for considering genes on or off from expression' ],
-    [ 'expsample:s', 'ID of expression sample to fit gapfilling' ],
-    [ 'expsamplews:s', 'Workspace with expression sample', { "default" => fbaws() } ],
+	[ 'expseries:s', 'Expression matrix object to use in transcriptomic gapfilling'],
+    [ 'expseriesws:s', 'Workspace with expression matrix', { "default" => fbaws() } ],
+    [ 'expsample:s', 'ID of expression condition to fit gapfilling or file with expression data' ],
     [ 'alpha:s', 'Constant denoting fraction of objective to use for activation', { "default" => 0 } ],
     [ 'omega:s', 'Constant denoting fraction of objective to use for max objective', { "default" => 0 } ],
     [ 'kappa:s', 'Tolerance to classify genes as unknown, not on or off. In [0,0.5]', {"default" => 0.1}],
-    [ 'scalefluxes', 'Scale expression penalties by flux' ],
-    [ 'longgapfill', 'Run a longer gapfilling but with a potentially better solution' ],
+    [ 'expthreshold:s', 'Set threshold percentile for considering genes on or off from expression' ],
+    [ 'discretevar', 'Set this flag to use discrete variables in gapfilling' ],
     [ 'iterativegf|t', 'Gapfill all inactive reactions', { "default" => 0 } ],
     [ 'targrxn|x:s@', 'Gapfill to activate these reactions only (; delimiter)'],
     [ 'rxnsensitivity|y', 'Flag indicates if sensitivity analysis of gapfill solutions should run'],
@@ -132,7 +129,7 @@ my $specs = [
     [ 'thermoconst', 'Use full thermodynamic constraints' ],
     [ 'nothermoerror', 'No uncertainty in thermodynamic constraints' ],
     [ 'minthermoerror', 'Minimize uncertainty in thermodynamic constraints' ],
-    [ 'objfraction:s', 'Fraction of objective for follow on analysis', { "default" => 0.1 }],
+    [ 'objfraction:s', 'Fraction of objective for follow on analysis', { "default" => 0.001 }],
     [ 'notes:s', 'Notes for flux balance analysis' ],
     [ 'solver:s', 'Solver to use for gapfilling' ],
     [ 'workspace|w:s', 'Workspace to save FBA results', { "default" => fbaws() } ],
@@ -150,14 +147,13 @@ if (defined($opt->{targrxn})) {
 		push(@{$params->{target_reactions}},@{$array});
 	}
 }
-if (-e $params->{expsample}) {
+if (defined($params->{expsample}) && -e $params->{expsample}) {
 	my $data = load_table($params->{expsample},"\t",0);
 	foreach my $row (@{$data->{"data"}}) {
 		$params->{exp_raw_data}->{$row->[0]} = $row->[1];
 	}
 	delete $params->{expsample};
 }
-
 $params->{blacklistedrxns} = [];
 $params->{gauranteedrxns} = [];
 if (defined($opt->{blacklist})) {
@@ -251,23 +247,11 @@ if (defined($opt->{uptakelim})) {
 	}
 }
 $params->{formulation}->{nobiomasshyp} = 1;
-#Calling the server
-if ($opt->{longgapfill}) {
-	my $output = runFBACommand($params,"queue_gapfill_model",$opt);
-	if (!defined($output)) {
-		print "Gapfilling queue failed!\n";
-	} else {
-		print "Gapfilling job queued:\n";
-		printJobData($output);
-	}
+my $output = runFBACommand($params,"gapfill_model",$opt);
+if (!defined($output)) {
+	print "Gapfilling failed!\n";
 } else {
-	$params->{fastgapfill} = 1;
-	my $output = runFBACommand($params,"gapfill_model",$opt);
-	if (!defined($output)) {
-		print "Gapfilling failed!\n";
-	} else {
-		print "Gapfilling successful!\n";
-		printObjectInfo($output);
-		print "Run fba-getgapfills or fba-integratesolution to print solution!\n";
-	}
+	print "Gapfilling successful!\n";
+	printObjectInfo($output);
+	print "Run fba-getgapfills or fba-integratesolution to print solution!\n";
 }

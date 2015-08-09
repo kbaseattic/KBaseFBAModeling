@@ -2527,7 +2527,8 @@ sub parseFluxFiles {
 										class => "unknown"
 									});
 								} elsif (abs($value) > 0.000000001) {
-									my $tmprxn = $self->fbamodel()->template()->getObject("templateReactions",$row->[$reactionColumn]);
+									my $queryid = substr($row->[$reactionColumn],0,length($row->[$reactionColumn])-1);
+									my $tmprxn = $self->fbamodel()->template()->queryObject("templateReactions",{reactionID => $queryid});
 									if (defined($tmprxn)) {
 										my $lower = -1*$self->defaultMaxFlux();
 										my $upper = $self->defaultMaxFlux();

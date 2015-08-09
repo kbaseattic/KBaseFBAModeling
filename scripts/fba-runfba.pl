@@ -117,7 +117,7 @@ if (!defined($opt->{mediaws}) && defined($opt->{media})) {
 	$opt->{mediaws} = $opt->{workspace};
 }
 
-if (-e $params->{expsample}) {
+if (defined($params->{expsample}) && -e $params->{expsample}) {
 	my $data = load_table($params->{expsample},"\t",0);
 	foreach my $row (@{$data->{"data"}}) {
 		$params->{exp_raw_data}->{$row->[0]} = $row->[1];

@@ -8952,9 +8952,9 @@ sub runfba
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["model","workspace"],{
 		use_discrete_variables => 1,
-		booleanexp => undef,
+		booleanexp => "absolute",
 		expression_threshold_percentile => 0.5,
-		exp_raw_data => {},
+		exp_raw_data => undef,
 		alpha => 0.5,
 		omega => 0,
 		kappa => 0.1,
@@ -8986,7 +8986,10 @@ sub runfba
     $input->{formulation}->{kappa} = $input->{kappa};
     $input->{formulation}->{omega} = $input->{omega};
 	my $fba = $self->_buildFBAObject($input->{formulation},$model,$input->{workspace},$input->{fba});
-	if ($input->{booleanexp}) {
+	if (defined($input->{expseries}) || defined($input->{exp_raw_data})) {
+		$fba->ExpressionAlpha($input->{alpha});
+		$fba->ExpressionOmega($input->{omega});
+		$fba->ExpressionKappa($input->{kappa});
 		if (defined($input->{expseries})) {
 		    if (! defined($input->{expsample})) {
 			$self->_error("Input must specify the column to select from the expression matrix");
@@ -8999,9 +9002,6 @@ sub runfba
 		    my $info = $wsoutput->[0]->{info};
 		    $fba->expression_matrix_ref($info->[6]."/".$info->[0]."/".$info->[4]);
 		    $fba->expression_matrix_column($input->{expsample});
-		    $fba->ExpressionAlpha($input->{alpha});
-		    $fba->ExpressionOmega($input->{omega});
-		    $fba->ExpressionKappa($input->{kappa});
 		    my $float_matrix = $exp_matrix->{"data"};
 		    my $exp_sample_col = -1;
 
@@ -9012,10 +9012,10 @@ sub runfba
 			}
 		    }
 		    if ($exp_sample_col < 0) {
-			$self->_error("No column named ".$input->{expsample}." in expression matrix.");
+				$self->_error("No column named ".$input->{expsample}." in expression matrix.");
 		    }
 		    for (my $i=0; $i < @{$float_matrix->{"row_ids"}}; $i++) {
-			$exphash->{$float_matrix->{"row_ids"}->[$i]} = $float_matrix->{"values"}->[$i]->[$exp_sample_col];
+				$exphash->{$float_matrix->{"row_ids"}->[$i]} = $float_matrix->{"values"}->[$i]->[$exp_sample_col];
 		    }
 		    $input->{expsample} = $exphash;
 		} elsif (keys(%{$input->{exp_raw_data}}) > 0) {
@@ -11653,21 +11653,23 @@ sub gapfill_model
     my($modelMeta);
     #BEGIN gapfill_model
     $self->_setContext($ctx,$input);
-	$input = $self->_validateargs($input,["model","workspace"],{		
-		booleanexp => undef,
+	$input = $self->_validateargs($input,["model","workspace"],{
+		custom_bounds => undef,
+		use_discrete_variables => 0,
+		booleanexp => "absolute",
 		expression_threshold_percentile => 0.5,
-		scale_penalty_by_flux => 0,
 		exp_raw_data => {},
-		target_reactions => [],
+		alpha => 0,
+		omega => 0,
+		kappa => 0.1,
+		expseries => undef,
+		expseriesws => $input->{workspace},
+		expsample => undef,
+		target_reactions => ["bio1"],
 		completeGapfill => 0,
 		timePerSolution => 43200,
 		totalTimeLimit => 45000,
-		solver => undef,
-		fastgapfill => 0,
-		alpha => 0,
-		omega => 0,
-		kappa => 0,
-		scalefluxes => 0,
+		solver => "GLPK",
 		nomediahyp => 0,
 		nobiomasshyp => 0,#
 		nogprhyp => 0,#
@@ -11683,10 +11685,6 @@ sub gapfill_model
 		transpen => 1,
 		blacklistedrxns => [],
 		gauranteedrxns => [],
-		gapFill => undef,
-		gapFill_workspace => $input->{workspace},
-		expsample => undef,
-		expsamplews => $input->{workspace},
 		source_model => undef,
 		source_model_ws => $input->{workspace},
 		out_model => undef,
@@ -11694,29 +11692,71 @@ sub gapfill_model
 		integrate_solution => 0,
 		formulation => undef,
 	});
+	#Dealing with model and source model
 	my $start = time();
 	my $model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model});
 	if (defined($input->{source_model})) {
 		$input->{source_model} = $self->_get_msobject("FBAModel",$input->{source_model_ws},$input->{source_model});
 	}
-	if (defined($input->{expsample})) {
-		$input->{expsample} = $self->_get_msobject("ExpressionSample",$input->{expsamplews},$input->{expsample});
-	} elsif (keys(%{$input->{exp_raw_data}}) > 0) {
-		$input->{expsample} = $input->{exp_raw_data}
+	if (!defined($input->{out_model})) {
+		$input->{out_model} = $input->{model};
 	}
-	if (defined($input->{booleanexp}) && $input->{booleanexp} eq "") {
-    	$input->{booleanexp} = "absolute";
-    }
+	#Gathering parameters into FBA formulation and building FBA object
 	my $gfform = $input->{formulation};
 	foreach my $key (keys(%{$gfform})) {
 		$input->{$key} = $gfform->{$key};
 	}
-	if (!defined($input->{out_model})) {
-		$input->{out_model} = $input->{model};
-	}
 	delete $input->{formulation}->{objectiveTerms};
 	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
 	my $fba = $self->_buildFBAObject($input->{formulation},$model,$input->{workspace},$input->{out_model}.".gf");
+	#Dealing with expression data
+	if (defined($input->{expseries}) || defined($input->{exp_raw_data})) {
+		$fba->ExpressionAlpha($input->{alpha});
+		$fba->ExpressionOmega($input->{omega});
+		$fba->ExpressionKappa($input->{kappa});
+		if (defined($input->{expseries})) {
+		    if (! defined($input->{expsample})) {
+				$self->_error("Input must specify the column to select from the expression matrix");
+		    }
+		    my $exphash = {};
+		    my $wsoutput = $self->_KBaseStore()->workspace()->get_objects([
+		    	{workspace => $input->{expseriesws},name => $input->{expseries}}
+		    ]);
+		    my $exp_matrix = $wsoutput->[0]->{data};
+		    my $info = $wsoutput->[0]->{info};
+		    $fba->expression_matrix_ref($info->[6]."/".$info->[0]."/".$info->[4]);
+		    $fba->expression_matrix_column($input->{expsample});
+		    my $float_matrix = $exp_matrix->{"data"};
+		    my $exp_sample_col = -1;
+		    for (my $i=0; $i < @{$float_matrix->{"col_ids"}}; $i++) {
+				if ($float_matrix->{"col_ids"}->[$i] eq $input->{expsample}) {
+				    $exp_sample_col = $i;
+				    last;
+				}
+		    }
+		    if ($exp_sample_col < 0) {
+				$self->_error("No column named ".$input->{expsample}." in expression matrix.");
+		    }
+		    for (my $i=0; $i < @{$float_matrix->{"row_ids"}}; $i++) {
+				$exphash->{$float_matrix->{"row_ids"}->[$i]} = $float_matrix->{"values"}->[$i]->[$exp_sample_col];
+		    }
+		    $input->{expsample} = $exphash;
+		} elsif (keys(%{$input->{exp_raw_data}}) > 0) {
+			$input->{expsample} = $input->{exp_raw_data}
+		} else {
+			$self->_error("Cannot run expression-constrained FBA without providing specifying expression matrix and column.");	
+		}
+	}
+	#Prepping FBA for gapfilling
+	$fba->fva(0);
+	$fba->comboDeletions(0);
+	$fba->fluxMinimization(1);
+	$fba->findMinimalMedia(0);
+	if (defined($input->{solver})) {
+	   	$fba->parameters()->{MFASolver} = uc($input->{solver});
+	}
+	$input->{add_external_rxns} = 1;
+	$input->{make_model_rxns_reversible} = 1;
 	$fba->PrepareForGapfilling($input);
 	$fba->runFBA();
 	#Error checking the FBA and gapfilling solution
@@ -11724,7 +11764,7 @@ sub gapfill_model
 	if (!defined($fba->gapfillingSolutions()->[0])) {
 		$self->_error("Analysis completed, but no valid solutions found!");
 	}
-	my $meta = $self->_save_msobject($fba,"FBA",$input->{workspace},$input->{out_model}.".gf");
+	my $meta = $self->_save_msobject($fba,"FBA",$input->{workspace},$input->{out_model}.".gffba");
 	#Since gapfilling can take hours, we retrieve the model again in case it changed since accessed previously
 	if ((time()-$start) > 3600 && $input->{out_model} eq $input->{model}) {
 		$model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model},{refreshcache => 1});
