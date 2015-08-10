@@ -496,9 +496,6 @@ sub PrepareForGapfilling {
 	$self->parameters()->{alpha} = $args->{alpha};
 	$self->parameters()->{"CPLEX solver time limit"} = $args->{timePerSolution};
 	$self->parameters()->{"Recursive MILP timeout"} = $args->{totalTimeLimit};
-	if (! defined $self->parameters()->{MFASolver} && defined($args->{solver})) {
-    	$self->parameters()->{MFASolver} = uc($args->{solver});
-    }
 	if (defined($args->{source_model})) {
 		$self->{_source_model} = $args->{source_model};
 	}
@@ -509,6 +506,9 @@ sub PrepareForGapfilling {
 	   	$args->{solver} = "SCIP";
 	   	$self->fva(0);
 	}
+	if (defined($args->{solver})) {
+    	$self->parameters()->{MFASolver} = uc($args->{solver});
+    }
 	$self->parameters()->{"Reactions use variables"} = $args->{use_discrete_variables};
     if (defined($self->{_expsample})) {
 		$self->comboDeletions(0);

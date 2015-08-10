@@ -8955,7 +8955,7 @@ sub runfba
 		booleanexp => "absolute",
 		expression_threshold_percentile => 0.5,
 		exp_raw_data => undef,
-		alpha => 0.000075,
+		alpha => 0.5,
 		omega => 0,
 		kappa => 0.1,
 		formulation => undef,
@@ -9031,6 +9031,7 @@ sub runfba
 			$self->_error("Cannot run expression-constrained FBA without providing specifying expression matrix and column.");	
 		}
 		$fba->PrepareForGapfilling({
+			solver => $input->{solver},
 			use_discrete_variables => $input->{use_discrete_variables},
 			add_external_rxns => 0,
 			activate_all_model_reactions => 0,
