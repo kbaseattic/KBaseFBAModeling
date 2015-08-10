@@ -11658,7 +11658,7 @@ sub gapfill_model
 		use_discrete_variables => 0,
 		booleanexp => "absolute",
 		expression_threshold_percentile => 0.5,
-		exp_raw_data => {},
+		exp_raw_data => undef,
 		alpha => 0,
 		omega => 0,
 		kappa => 0.1,
