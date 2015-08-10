@@ -496,7 +496,7 @@ sub PrepareForGapfilling {
 	$self->parameters()->{alpha} = $args->{alpha};
 	$self->parameters()->{"CPLEX solver time limit"} = $args->{timePerSolution};
 	$self->parameters()->{"Recursive MILP timeout"} = $args->{totalTimeLimit};
-	if (defined($args->{solver})) {
+	if (! defined $self->parameters()->{MFASolver} && defined($args->{solver})) {
     	$self->parameters()->{MFASolver} = uc($args->{solver});
     }
 	if (defined($args->{source_model})) {
