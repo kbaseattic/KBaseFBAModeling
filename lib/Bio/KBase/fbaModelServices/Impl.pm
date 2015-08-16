@@ -3464,7 +3464,9 @@ sub new
     if (defined $params->{'awe-url'}) {
     		$self->{'_awe-url'} = $params->{'awe-url'};
     }
-    $self->{"_classifier_file"} = Bio::KBase::ObjectAPI::utilities::MFATOOLKIT_JOB_DIRECTORY()."/classifier.txt";
+  	if (defined($params->{'classifier_file'})) {
+    		$self->{'_classifier_file'} = $params->{'classifier_file'};
+    } 
     #This final condition allows one to specify a fully implemented workspace IMPL or CLIENT for use
 
     if (defined($options->{workspace})) {
