@@ -2665,7 +2665,7 @@ sub _classify_genome {
 	my($self,$genome) = @_;
 	if (!defined($self->{_classifierdata})) {
 		if (!-e $self->{"_classifier_file"}) {
-			system("curl https://raw.githubusercontent.com/kbase/KBaseFBAModeling/dev/classifier > ".$self->{"_classifier_file"});
+			system("curl https://raw.githubusercontent.com/kbase/KBaseFBAModeling/dev/classifier/classifier.txt > ".$self->{"_classifier_file"});
 		}
 		my $data = Bio::KBase::ObjectAPI::utilities::LOADFILE($self->{"_classifier_file"});
 		my $headings = [split(/\t/,$data->[0])];
