@@ -19686,6 +19686,9 @@ sub models_to_community_model
 		push(@{$genomeObj->{contig_ids}},@{$mdlgenome->{contig_ids}});	
 		print "Loading features\n";
 		for (my $j=0; $j < @{$mdlgenome->features()}; $j++) {
+			if (!defined($mdlgenome->features()->[$j]->quality())) {
+				$mdlgenome->features()->[$j]->quality({});
+			}
 			$genomeObj->add("features",$mdlgenome->features()->[$j]);
 		}
 		#Adding compartments to community model
