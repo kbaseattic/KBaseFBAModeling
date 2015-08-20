@@ -1,9 +1,18 @@
 package Bio::KBase::fbaModelServices::Server;
 
+
 use Data::Dumper;
 use Moose;
+use POSIX;
 use JSON;
 use Bio::KBase::Log;
+use Config::Simple;
+my $get_time = sub { time, 0 };
+eval {
+    require Time::HiRes;
+    $get_time = sub { Time::HiRes::gettimeofday };
+};
+
 use Bio::KBase::AuthToken;
 
 extends 'RPC::Any::Server::JSONRPC::PSGI';
@@ -13,6 +22,7 @@ has 'user_auth' => (is => 'ro', isa => 'UserAuth');
 has 'valid_methods' => (is => 'ro', isa => 'HashRef', lazy => 1,
 			builder => '_build_valid_methods');
 has 'loggers' => (is => 'ro', required => 1, builder => '_build_loggers');
+has 'config' => (is => 'ro', required => 1, builder => '_build_config');
 
 our $CallContext;
 
@@ -92,6 +102,7 @@ our %return_counts = (
         'add_stimuli' => 1,
         'import_regulatory_model' => 1,
         'compare_models' => 1,
+        'compare_fbas' => 1,
         'compare_genomes' => 1,
         'import_metagenome_annotation' => 1,
         'models_to_community_model' => 1,
@@ -191,6 +202,7 @@ our %method_authentication = (
         'add_stimuli' => 'required',
         'import_regulatory_model' => 'required',
         'compare_models' => 'optional',
+        'compare_fbas' => 'optional',
         'compare_genomes' => 'optional',
         'import_metagenome_annotation' => 'required',
         'models_to_community_model' => 'required',
@@ -293,6 +305,7 @@ sub _build_valid_methods
         'add_stimuli' => 1,
         'import_regulatory_model' => 1,
         'compare_models' => 1,
+        'compare_fbas' => 1,
         'compare_genomes' => 1,
         'import_metagenome_annotation' => 1,
         'models_to_community_model' => 1,
@@ -334,9 +347,25 @@ sub get_service_name
 {
     my ($self) = @_;
     if(!defined $ENV{$SERVICE}) {
-        return undef;
+        return 'fbaModelServices';
     }
     return $ENV{$SERVICE};
+}
+
+sub _build_config
+{
+    my ($self) = @_;
+    my $sn = $self->get_service_name();
+    my $cf = $self->get_config_file();
+    if (!($cf)) {
+        return {};
+    }
+    my $cfg = new Config::Simple($cf);
+    my $cfgdict = $cfg->get_block($sn);
+    if (!($cfgdict)) {
+        return {};
+    }
+    return $cfgdict;
 }
 
 sub logcallback
@@ -348,26 +377,28 @@ sub logcallback
 
 sub log
 {
-    my ($self, $level, $context, $message) = @_;
+    my ($self, $level, $context, $message, $tag) = @_;
     my $user = defined($context->user_id()) ? $context->user_id(): undef; 
     $self->loggers()->{serverlog}->log_message($level, $message, $user, 
         $context->module(), $context->method(), $context->call_id(),
-        $context->client_ip());
+        $context->client_ip(), $tag);
 }
 
 sub _build_loggers
 {
     my ($self) = @_;
-    my $submod = $self->get_service_name() || 'fbaModelServices';
+    my $submod = $self->get_service_name();
     my $loggers = {};
     my $callback = sub {$self->logcallback();};
     $loggers->{userlog} = Bio::KBase::Log->new(
             $submod, {}, {ip_address => 1, authuser => 1, module => 1,
             method => 1, call_id => 1, changecallback => $callback,
+	    tag => 1,
             config => $self->get_config_file()});
     $loggers->{serverlog} = Bio::KBase::Log->new(
             $submod, {}, {ip_address => 1, authuser => 1, module => 1,
             method => 1, call_id => 1,
+	    tag => 1,
             logfile => $loggers->{userlog}->get_log_file()});
     $loggers->{serverlog}->set_log_level(6);
     return $loggers;
@@ -424,13 +455,41 @@ sub encode_output_from_exception {
     return $self->encode_output_from_object($json_error);
 }
 
+sub trim {
+    my ($str) = @_;
+    if (!(defined $str)) {
+        return $str;
+    }
+    $str =~ s/^\s+|\s+$//g;
+    return $str;
+}
+
+sub getIPAddress {
+    my ($self) = @_;
+    my $xFF = trim($self->_plack_req->header("X-Forwarded-For"));
+    my $realIP = trim($self->_plack_req->header("X-Real-IP"));
+    my $nh = $self->config->{"dont_trust_x_ip_headers"};
+    my $trustXHeaders = !(defined $nh) || $nh ne "true";
+
+    if ($trustXHeaders) {
+        if ($xFF) {
+            my @tmp = split(",", $xFF);
+            return trim($tmp[0]);
+        }
+        if ($realIP) {
+            return $realIP;
+        }
+    }
+    return $self->_plack_req->address;
+}
+
 sub call_method {
     my ($self, $data, $method_info) = @_;
 
     my ($module, $method, $modname) = @$method_info{qw(module method modname)};
     
     my $ctx = Bio::KBase::fbaModelServices::ServerContext->new($self->{loggers}->{userlog},
-                           client_ip => $self->_plack_req->address);
+                           client_ip => $self->getIPAddress());
     $ctx->module($modname);
     $ctx->method($method);
     $ctx->call_id($self->{_last_call}->{id});
@@ -474,15 +533,52 @@ sub call_method {
     local $CallContext = $ctx;
     my @result;
     {
+	# 
+	# Process tag and metadata information if present.
+	#
+	my $tag = $self->_plack_req->header("Kbrpc-Tag");
+	if (!$tag)
+	{
+	    my ($t, $us) = &$get_time();
+	    $us = sprintf("%06d", $us);
+	    my $ts = strftime("%Y-%m-%dT%H:%M:%S.${us}Z", gmtime $t);
+	    $tag = "S:$self->{hostname}:$$:$ts";
+	}
+	local $ENV{KBRPC_TAG} = $tag;
+	my $kb_metadata = $self->_plack_req->header("Kbrpc-Metadata");
+	my $kb_errordest = $self->_plack_req->header("Kbrpc-Errordest");
+	local $ENV{KBRPC_METADATA} = $kb_metadata if $kb_metadata;
+	local $ENV{KBRPC_ERROR_DEST} = $kb_errordest if $kb_errordest;
+
+	my $stderr = Bio::KBase::fbaModelServices::ServerStderrWrapper->new($ctx, $get_time);
+	$ctx->stderr($stderr);
+
+        my $xFF = $self->_plack_req->header("X-Forwarded-For");
+        if ($xFF) {
+            $self->log($Bio::KBase::Log::INFO, $ctx,
+                "X-Forwarded-For: " . $xFF, $tag);
+        }
+	
         my $err;
         eval {
-            $self->log($Bio::KBase::Log::INFO, $ctx, "start method");
+            $self->log($Bio::KBase::Log::INFO, $ctx, "start method", $tag);
+	    local $SIG{__WARN__} = sub {
+		my($msg) = @_;
+		$stderr->log($msg);
+		print STDERR $msg;
+	    };
+
             @result = $module->$method(@{ $data->{arguments} });
-            $self->log($Bio::KBase::Log::INFO, $ctx, "end method");
+            $self->log($Bio::KBase::Log::INFO, $ctx, "end method", $tag);
         };
+	
         if ($@)
         {
             my $err = $@;
+	    $stderr->log($err);
+	    $ctx->stderr(undef);
+	    undef $stderr;
+            $self->log($Bio::KBase::Log::INFO, $ctx, "fail method", $tag);
             my $nicerr;
             if(ref($err) eq "Bio::KBase::Exceptions::KBaseException") {
                 $nicerr = {code => -32603, # perl error from RPC::Any::Exception
@@ -503,6 +599,8 @@ sub call_method {
             }
             die $nicerr;
         }
+	$ctx->stderr(undef);
+	undef $stderr;
     }
     my $result;
     if ($return_counts{$method} == 1)
@@ -585,7 +683,7 @@ is available via $context->client_ip.
 use base 'Class::Accessor';
 
 __PACKAGE__->mk_accessors(qw(user_id client_ip authenticated token
-                             module method call_id));
+                             module method call_id hostname stderr));
 
 sub new
 {
@@ -594,6 +692,8 @@ sub new
     my $self = {
         %opts,
     };
+    chomp($self->{hostname} = `hostname`);
+    $self->{hostname} ||= 'unknown-host';
     $self->{_logger} = $logger;
     $self->{_debug_levels} = {7 => 1, 8 => 1, 9 => 1,
                               'DEBUG' => 1, 'DEBUG2' => 1, 'DEBUG3' => 1};
@@ -659,5 +759,168 @@ sub clear_log_level
     my ($self) = @_;
     $self->{_logger}->clear_user_log_level();
 }
+
+package Bio::KBase::fbaModelServices::ServerStderrWrapper;
+
+use strict;
+use POSIX;
+use Time::HiRes 'gettimeofday';
+
+sub new
+{
+    my($class, $ctx, $get_time) = @_;
+    my $self = {
+	get_time => $get_time,
+    };
+    my $dest = $ENV{KBRPC_ERROR_DEST} if exists $ENV{KBRPC_ERROR_DEST};
+    my $tag = $ENV{KBRPC_TAG} if exists $ENV{KBRPC_TAG};
+    my ($t, $us) = gettimeofday();
+    $us = sprintf("%06d", $us);
+    my $ts = strftime("%Y-%m-%dT%H:%M:%S.${us}Z", gmtime $t);
+
+    my $name = join(".", $ctx->module, $ctx->method, $ctx->hostname, $ts);
+
+    if ($dest && $dest =~ m,^/,)
+    {
+	#
+	# File destination
+	#
+	my $fh;
+
+	if ($tag)
+	{
+	    $tag =~ s,/,_,g;
+	    $dest = "$dest/$tag";
+	    if (! -d $dest)
+	    {
+		mkdir($dest);
+	    }
+	}
+	if (open($fh, ">", "$dest/$name"))
+	{
+	    $self->{file} = "$dest/$name";
+	    $self->{dest} = $fh;
+	}
+	else
+	{
+	    warn "Cannot open log file $dest/$name: $!";
+	}
+    }
+    else
+    {
+	#
+	# Log to string.
+	#
+	my $stderr;
+	$self->{dest} = \$stderr;
+    }
+    
+    bless $self, $class;
+
+    for my $e (sort { $a cmp $b } keys %ENV)
+    {
+	$self->log_cmd($e, $ENV{$e});
+    }
+    return $self;
+}
+
+sub redirect
+{
+    my($self) = @_;
+    if ($self->{dest})
+    {
+	return("2>", $self->{dest});
+    }
+    else
+    {
+	return ();
+    }
+}
+
+sub redirect_both
+{
+    my($self) = @_;
+    if ($self->{dest})
+    {
+	return(">&", $self->{dest});
+    }
+    else
+    {
+	return ();
+    }
+}
+
+sub timestamp
+{
+    my($self) = @_;
+    my ($t, $us) = $self->{get_time}->();
+    $us = sprintf("%06d", $us);
+    my $ts = strftime("%Y-%m-%dT%H:%M:%S.${us}Z", gmtime $t);
+    return $ts;
+}
+
+sub log
+{
+    my($self, $str) = @_;
+    my $d = $self->{dest};
+    my $ts = $self->timestamp();
+    if (ref($d) eq 'SCALAR')
+    {
+	$$d .= "[$ts] " . $str . "\n";
+	return 1;
+    }
+    elsif ($d)
+    {
+	print $d "[$ts] " . $str . "\n";
+	return 1;
+    }
+    return 0;
+}
+
+sub log_cmd
+{
+    my($self, @cmd) = @_;
+    my $d = $self->{dest};
+    my $str;
+    my $ts = $self->timestamp();
+    if (ref($cmd[0]))
+    {
+	$str = join(" ", @{$cmd[0]});
+    }
+    else
+    {
+	$str = join(" ", @cmd);
+    }
+    if (ref($d) eq 'SCALAR')
+    {
+	$$d .= "[$ts] " . $str . "\n";
+    }
+    elsif ($d)
+    {
+	print $d "[$ts] " . $str . "\n";
+    }
+	 
+}
+
+sub dest
+{
+    my($self) = @_;
+    return $self->{dest};
+}
+
+sub text_value
+{
+    my($self) = @_;
+    if (ref($self->{dest}) eq 'SCALAR')
+    {
+	my $r = $self->{dest};
+	return $$r;
+    }
+    else
+    {
+	return $self->{file};
+    }
+}
+
 
 1;

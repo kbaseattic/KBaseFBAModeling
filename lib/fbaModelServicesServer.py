@@ -6,7 +6,7 @@ import traceback
 from multiprocessing import Process
 from getopt import getopt, GetoptError
 from jsonrpcbase import JSONRPCService, InvalidParamsError, KeywordError,\
-  JSONRPCError, ServerError, ParseError, InvalidRequestError
+    JSONRPCError, ServerError, InvalidRequestError
 from os import environ
 from ConfigParser import ConfigParser
 from biokbase import log
@@ -56,7 +56,7 @@ class JSONObjectEncoder(json.JSONEncoder):
 
 class JSONRPCServiceCustom(JSONRPCService):
 
-    def call(self, jsondata):
+    def call(self, ctx, jsondata):
         """
         Calls jsonrpc service's method and returns its return value in a JSON
         string or None if there is none.
@@ -64,13 +64,13 @@ class JSONRPCServiceCustom(JSONRPCService):
         Arguments:
         jsondata -- remote method call in jsonrpc format
         """
-        result = self.call_py(jsondata)
-        if result != None:
+        result = self.call_py(ctx, jsondata)
+        if result is not None:
             return json.dumps(result, cls=JSONObjectEncoder)
 
         return None
 
-    def _call_method(self, request):
+    def _call_method(self, ctx, request):
         """Calls given method with given params and returns it value."""
         method = self.method_data[request['method']]['method']
         params = request['params']
@@ -78,27 +78,27 @@ class JSONRPCServiceCustom(JSONRPCService):
         try:
             if isinstance(params, list):
                 # Does it have enough arguments?
-                if len(params) < self._man_args(method):
+                if len(params) < self._man_args(method) - 1:
                     raise InvalidParamsError('not enough arguments')
                 # Does it have too many arguments?
                 if(not self._vargs(method) and len(params) >
-                    self._max_args(method)):
+                        self._max_args(method) - 1):
                     raise InvalidParamsError('too many arguments')
 
-                result = method(*params)
+                result = method(ctx, *params)
             elif isinstance(params, dict):
                 # Do not accept keyword arguments if the jsonrpc version is
                 # not >=1.1.
                 if request['jsonrpc'] < 11:
                     raise KeywordError
 
-                result = method(**params)
+                result = method(ctx, **params)
             else:  # No params
-                result = method()
+                result = method(ctx)
         except JSONRPCError:
             raise
         except Exception as e:
-#            log.exception('method %s threw an exception' % request['method'])
+            # log.exception('method %s threw an exception' % request['method'])
             # Exception was raised inside the method.
             newerr = ServerError()
             newerr.trace = traceback.format_exc()
@@ -106,7 +106,7 @@ class JSONRPCServiceCustom(JSONRPCService):
             raise newerr
         return result
 
-    def call_py(self, jsondata):
+    def call_py(self, ctx, jsondata):
         """
         Calls jsonrpc service's method and returns its return value in python
         object format or None if there is none.
@@ -115,10 +115,13 @@ class JSONRPCServiceCustom(JSONRPCService):
         object instead of JSON string. This method is mainly only useful for
         debugging purposes.
         """
-        try:
-            rdata = json.loads(jsondata)
-        except ValueError:
-            raise ParseError
+        rdata = jsondata
+        # we already deserialize the json string earlier in the server code, no
+        # need to do it again
+#        try:
+#            rdata = json.loads(jsondata)
+#        except ValueError:
+#            raise ParseError
 
         # set some default values for error handling
         request = self._get_default_vals()
@@ -126,7 +129,7 @@ class JSONRPCServiceCustom(JSONRPCService):
         if isinstance(rdata, dict) and rdata:
             # It's a single request.
             self._fill_request(request, rdata)
-            respond = self._handle_request(request)
+            respond = self._handle_request(ctx, request)
 
             # Don't respond to notifications
             if respond is None:
@@ -145,7 +148,7 @@ class JSONRPCServiceCustom(JSONRPCService):
                 requests.append(request_)
 
             for request_ in requests:
-                respond = self._handle_request(request_)
+                respond = self._handle_request(ctx, request_)
                 # Don't respond to notifications
                 if respond is not None:
                     responds.append(respond)
@@ -158,6 +161,24 @@ class JSONRPCServiceCustom(JSONRPCService):
         else:
             # empty dict, list or wrong type
             raise InvalidRequestError
+
+    def _handle_request(self, ctx, request):
+        """Handles given request and returns its response."""
+        if self.method_data[request['method']].has_key('types'): # @IgnorePep8
+            self._validate_params_types(request['method'], request['params'])
+
+        result = self._call_method(ctx, request)
+
+        # Do not respond to notifications.
+        if request['id'] is None:
+            return None
+
+        respond = {}
+        self._fill_ver(request['jsonrpc'], respond)
+        respond['result'] = result
+        respond['id'] = request['id']
+
+        return respond
 
 
 class MethodContext(dict):
@@ -204,6 +225,20 @@ class MethodContext(dict):
                                  self['method'], self['call_id'])
 
 
+def getIPAddress(environ):
+    xFF = environ.get('HTTP_X_FORWARDED_FOR')
+    realIP = environ.get('HTTP_X_REAL_IP')
+    trustXHeaders = config is None or \
+        config.get('dont_trust_x_ip_headers') != 'true'
+
+    if (trustXHeaders):
+        if (xFF):
+            return xFF.split(',')[0].strip()
+        if (realIP):
+            return realIP.strip()
+    return environ.get('REMOTE_ADDR')
+
+
 class Application(object):
     # Wrap the wsgi handler in a class definition so that we can
     # do some initialization and avoid regenerating stuff over
@@ -214,8 +249,8 @@ class Application(object):
 
     def log(self, level, context, message):
         self.serverlog.log_message(level, message, context['client_ip'],
-                             context['user_id'], context['module'],
-                             context['method'], context['call_id'])
+                                   context['user_id'], context['module'],
+                                   context['method'], context['call_id'])
 
     def __init__(self):
         submod = get_service_name() or 'fbaModelServices'
@@ -529,6 +564,10 @@ class Application(object):
                              name='fbaModelServices.compare_models',
                              types=[dict])
         self.method_authentication['fbaModelServices.compare_models'] = 'optional'
+        self.rpc_service.add(impl_fbaModelServices.compare_fbas,
+                             name='fbaModelServices.compare_fbas',
+                             types=[dict])
+        self.method_authentication['fbaModelServices.compare_fbas'] = 'optional'
         self.rpc_service.add(impl_fbaModelServices.compare_genomes,
                              name='fbaModelServices.compare_genomes',
                              types=[dict])
@@ -611,15 +650,14 @@ class Application(object):
         self.method_authentication['fbaModelServices.build_tissue_model'] = 'required'
         self.auth_client = biokbase.nexus.Client(
             config={'server': 'nexus.api.globusonline.org',
-                    'verify_ssl': False,
+                    'verify_ssl': True,
                     'client': None,
                     'client_secret': None})
 
     def __call__(self, environ, start_response):
         # Context object, equivalent to the perl impl CallContext
         ctx = MethodContext(self.userlog)
-        ctx['client_ip'] = environ.get('REMOTE_ADDR')
-
+        ctx['client_ip'] = getIPAddress(environ)
         status = '500 Internal Server Error'
 
         try:
@@ -671,11 +709,11 @@ class Application(object):
                                     err.data = \
                                         "Token validation failed: %s" % e
                                     raise err
-                    # push the context object into the implementation
-                    # instance's namespace
-                    impl_fbaModelServices.ctx = ctx
+                    if (environ.get('HTTP_X_FORWARDED_FOR')):
+                        self.log(log.INFO, ctx, 'X-Forwarded-For: ' +
+                                 environ.get('HTTP_X_FORWARDED_FOR'))
                     self.log(log.INFO, ctx, 'start method')
-                    rpc_result = self.rpc_service.call(request_body)
+                    rpc_result = self.rpc_service.call(ctx, req)
                     self.log(log.INFO, ctx, 'end method')
                 except JSONRPCError as jre:
                     err = {'error': {'code': jre.code,
@@ -689,7 +727,7 @@ class Application(object):
                     err = {'error': {'code': 0,
                                      'name': 'Unexpected Server Error',
                                      'message': 'An unexpected server error ' +
-                                        'occurred',
+                                                'occurred',
                                      }
                            }
                     rpc_result = self.process_error(err, ctx, req,
@@ -697,10 +735,10 @@ class Application(object):
                 else:
                     status = '200 OK'
 
-        #print 'The request method was %s\n' % environ['REQUEST_METHOD']
-        #print 'The environment dictionary is:\n%s\n' % pprint.pformat(environ)
-        #print 'The request body was: %s' % request_body
-        #print 'The result from the method call is:\n%s\n' % \
+        # print 'The request method was %s\n' % environ['REQUEST_METHOD']
+        # print 'The environment dictionary is:\n%s\n' % pprint.pformat(environ) @IgnorePep8
+        # print 'The request body was: %s' % request_body
+        # print 'The result from the method call is:\n%s\n' % \
         #    pprint.pformat(rpc_result)
 
         if rpc_result:
@@ -711,7 +749,7 @@ class Application(object):
         response_headers = [
             ('Access-Control-Allow-Origin', '*'),
             ('Access-Control-Allow-Headers', environ.get(
-                 'HTTP_ACCESS_CONTROL_REQUEST_HEADERS', 'authorization')),
+                'HTTP_ACCESS_CONTROL_REQUEST_HEADERS', 'authorization')),
             ('content-type', 'application/json'),
             ('content-length', str(len(response_body)))]
         start_response(status, response_headers)

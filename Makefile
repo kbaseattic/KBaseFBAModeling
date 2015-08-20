@@ -84,12 +84,16 @@ test-client:
 deploy: deploy-client deploy-service
 deploy-all: deploy-client deploy-service
 
-deploy-service: deploy-dir deploy-libs deploy-scripts deploy-services deploy-cfg deploy-kbscripts
-deploy-client: deploy-dir deploy-libs deploy-scripts deploy-docs deploy-kbscripts
+deploy-service: deploy-dir deploy-libs deploy-scripts deploy-services deploy-cfg deploy-kbscripts deploy-classifier
+deploy-client: deploy-dir deploy-libs deploy-scripts deploy-docs deploy-kbscripts deploy-classifier
 
 deploy-dir:
 	if [ ! -d $(SERV_SERVICE_DIR) ] ; then mkdir $(SERV_SERVICE_DIR) ; fi
 	if [ ! -d $(SERV_SERVICE_DIR)/webroot ] ; then mkdir $(SERV_SERVICE_DIR)/webroot ; fi
+
+deploy-classifier:
+	if [ ! -d $(TARGET)/etc/ ] ; then mkdir $(TARGET)/etc ; fi
+	cp classifier/classifier.txt $(TARGET)/etc/classifier.txt
 
 deploy-libs: configure-scripts
 	rsync -arv lib/. $(TARGET)/lib/.

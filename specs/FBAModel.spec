@@ -150,6 +150,11 @@ module KBaseFBA {
     typedef string expression_series_ref;
     /*
 		Reference to expression data
+		@id ws KBaseFeatureValues.ExpressionMatrix
+	*/
+    typedef string expression_matrix_ref;
+    /*
+		Reference to expression data
 		@id ws KBaseExpression.ExpressionSample
 	*/
     typedef string expression_sample_ref;
@@ -493,6 +498,9 @@ module KBaseFBA {
 	
 	/* 
     	FBAReactionVariable object
+    	
+    	@optional exp_state expression scaled_exp
+    	
     */
 	typedef structure {
     	modelreaction_ref modelreaction_ref;
@@ -503,6 +511,9 @@ module KBaseFBA {
     	float min;
     	float max;
     	float value;
+		string exp_state;
+		float expression;
+		float scaled_exp;
 	} FBAReactionVariable;
 	
 	/* 
@@ -668,7 +679,7 @@ module KBaseFBA {
     /* 
     	FBA object holds the formulation and results of a flux balance analysis study
     	
-    	@optional jobnode gapfillingSolutions QuantitativeOptimizationSolutions quantitativeOptimization minimize_reactions minimize_reaction_costs FBATintleResults FBAMinimalReactionsResults PROMKappa phenotypesimulationset_ref objectiveValue phenotypeset_ref promconstraint_ref regulome_ref tintlesample_ref tintleW tintleKappa
+    	@optional ExpressionKappa ExpressionOmega ExpressionAlpha expression_matrix_ref expression_matrix_column jobnode gapfillingSolutions QuantitativeOptimizationSolutions quantitativeOptimization minimize_reactions minimize_reaction_costs FBATintleResults FBAMinimalReactionsResults PROMKappa phenotypesimulationset_ref objectiveValue phenotypeset_ref promconstraint_ref regulome_ref tintlesample_ref tintleW tintleKappa
     	@metadata ws maximizeObjective as Maximized
 		@metadata ws comboDeletions as Combination deletions
 		@metadata ws minimize_reactions as Minimize reactions
@@ -677,6 +688,8 @@ module KBaseFBA {
 		@metadata ws promconstraint_ref as PromConstraint
 		@metadata ws media_ref as Media
 		@metadata ws objectiveValue as Objective
+		@metadata ws expression_matrix_ref as ExpressionMatrix
+		@metadata ws expression_matrix_column as ExpressionMatrixColumn
 		@metadata ws length(biomassflux_objterms) as Number biomass objectives
 		@metadata ws length(geneKO_refs) as Number gene KO
 		@metadata ws length(reactionKO_refs) as Number reaction KO
@@ -715,6 +728,9 @@ module KBaseFBA {
 		float PROMKappa;
 		float tintleW;
 		float tintleKappa;
+		float ExpressionAlpha;
+		float ExpressionOmega;
+		float ExpressionKappa;
 		
 		bool decomposeReversibleFlux;
 		bool decomposeReversibleDrainFlux;
@@ -726,6 +742,8 @@ module KBaseFBA {
 		regulome_ref regulome_ref;
 		fbamodel_ref fbamodel_ref;
 		promconstraint_ref promconstraint_ref;
+		expression_matrix_ref expression_matrix_ref;
+		string expression_matrix_column;
 		expression_sample_ref tintlesample_ref;
 		media_ref media_ref;
 		phenotypeset_ref phenotypeset_ref;
@@ -1155,8 +1173,8 @@ module KBaseFBA {
 	} FBAModelSetElement;
 
 	/*
-	A type describing a set of FBAModels, where each element of the set 
-	is an FBAModel object reference.
+		A type describing a set of FBAModels, where each element of the set 
+		is an FBAModel object reference.
 	*/
 	typedef structure {
 	  string description;
@@ -1164,158 +1182,71 @@ module KBaseFBA {
 	} FBAModelSet;
 	
 	/*
-    	ModelComparisonModel object: this object holds information about a model in a model comparison
-    */
-    typedef structure {
-		string id;
-		Model_ref model_ref;
-		Genome_ref genome_ref;
-		mapping<string model_id,tuple<int common_reactions,int common_compounds,int common_biomasscpds,int common_families,int common_gpr> > model_similarity; 
-		string name;
-		string taxonomy;
-		int reactions;
-		int families;
-		int compounds;
-		int biomasscpds;
-		int biomasses;
-    } ModelComparisonModel;
-    
-    /*
-    	ModelComparisonReaction object: this object holds information about a reaction across all compared models
-    */
-    typedef structure {
-		string id;
-		Reaction_ref reaction_ref;
-		string name;
-		string equation;
-		int number_models;
-		float fraction_models;
-		bool core;
-		mapping<string model_id,tuple<bool present,string direction,list<tuple<Feature_id,Family_id,float conservation,bool missing>>,string gpr>> reaction_model_data
-    } ModelComparisonReaction;
-    
-    /*
-    	ModelComparisonCompound object: this object holds information about a compound across a set of models
-    */
-    typedef structure {
-		string id;
-		Compound_ref compound_ref;
-		string name;
-		int number_models;
-		float fraction_models;
-		bool core;
-		mapping<string model_id,list<compartment_ref,float charge>> model_compound_compartments;
-    } ModelComparisonCompound;
-    
-    /*
-    	ModelComparisonBiomassCompound object: this object holds information about a biomass compound across a set of models
-    */
-    typedef structure {
-		string id;
-		Compound_ref compound_ref;
-		string name;
-		int number_models;
-		float fraction_models;
-		bool core;
-		mapping<string model_id,list<compartment_ref,float coefficient>> model_biomass_compounds;
-    } ModelComparisonBiomassCompound;
-    
-	/*
-    	ModelComparisonData object: this object holds information about a comparison of multiple models
-    	
-    	@optional protcomp_ref pangenome_ref
-    	@metadata ws core_reactions as Core reactions
-		@metadata ws core_compounds as Core compounds
-		@metadata ws core_families as Core families
-		@metadata ws core_biomass_compounds as Core biomass compounds
-		@metadata ws name as Name
-		@metadata ws id as ID
-		@metadata ws length(models) as Number models
-		@metadata ws length(reactions) as Number reactions
-		@metadata ws length(compounds) as Number compounds
-		@metadata ws length(families) as Number families
-		@metadata ws length(biomasscpds) as Number biomass compounds
-    */
-    typedef structure {
-		string id;
-		string name;
-		int core_reactions;
-		int core_compounds;
-		int core_families;
-		int core_biomass_compounds;
-		Protcomp_ref protcomp_ref;
-		Pangenome_ref pangenome_ref;
-				
-		list<ModelComparisonModel> models;
-		list<ModelComparisonReaction> reactions;
-		list<ModelComparisonCompound> compounds;
-		list<ModelComparisonFamilies> families;
-		list<ModelComparisonBiomassCompound> biomasscpds;
-    } ModelComparison;
+		Conserved state - indicates a possible state of reaction/compound in FBA with values:
+			<NOT_IN_MODEL,INACTIVE,FORWARD,REVERSE,UPTAKE,EXCRETION>
+	*/
+    typedef string Conserved_state; 
 	
 	/*
-    	FBAComparisonFBA object: this object holds information about an FBA in a FBA comparison
-    */
-    typedef structure {
+		FBAComparisonFBA object: this object holds information about an FBA in a FBA comparison
+	*/
+	typedef structure {
 		string id;
-		string name;
-		string taxonomy;
-		FBA_ref fba_ref;
-		Model_ref model_ref;
-		Genome_ref genome_ref;
-		mapping<string fba_id,tuple<int common_reactions,int common_active_reactions,int common_reaction_states,int common_exchange_compounds,int common_active_exchanges,int common_exchange_states> > fba_similarity; 
-		
+		fba_ref fba_ref;
+		fbamodel_ref fbamodel_ref;
+		mapping<string fba_id,tuple<int common_reactions,int common_forward,int common_reverse,int common_inactive,int common_exchange_compounds,int common_uptake,int common_excretion,int common_inactive> > fba_similarity;
 		float objective;
-		Media_ref media;
+		media_ref media_ref;
 		int reactions;
 		int compounds;
-		int active_reactions;
-		int update_compounds;
+		int forward_reactions;
+		int reverse_reactions;
+		int uptake_compounds;
 		int excretion_compounds;
-    } FBAComparisonFBA;
-    
-    /*
-    	ModelComparisonReaction object: this object holds information about a reaction across all compared models
-    */FBAComparisonFBA
-    typedef structure {
+	} FBAComparisonFBA;
+
+	/*
+		FBAComparisonReaction object: this object holds information about a reaction across all compared models
+	*/
+	typedef structure {
 		string id;
 		string name;
-		string equation;
-		mapping<Conserved_state,tuple<int count,float fraction,float stddev>> state_conservation;
+		list<tuple<float coefficient,string name,string compound>> stoichiometry;
+		string direction;
+		mapping<Conserved_state,tuple<int count,float fraction,float flux_mean, float flux_stddev>> state_conservation;
 		Conserved_state most_common_state;
-		mapping<string model_id,tuple<Conserved_state,float UpperBound,float LowerBound,float Max,float Min,float flux,float expression_score,string expression_class,string class>> reaction_fluxes;
-    } FBAComparisonReaction;
-    
-    /*
-    	FBAComparisonCompound object: this object holds information about a compound across a set of FBA simulations
-    */
-    typedef structure {
+		mapping<string fba_id,tuple<Conserved_state,float UpperBound,float LowerBound,float Max,float Min,float flux,float expression_score,string expression_class,string ModelReactionID>> reaction_fluxes;
+	} FBAComparisonReaction;
+
+	/*
+		FBAComparisonCompound object: this object holds information about a compound across a set of FBA simulations
+	*/
+	typedef structure {
 		string id;
 		string name;
 		float charge;
 		string formula;
-		mapping<Conserved_state,tuple<int count,float fraction,float stddev>> state_conservation;
+		mapping<Conserved_state,tuple<int count,float fraction,float flux_mean,float stddev>> state_conservation;
 		Conserved_state most_common_state;
-		mapping<string model_id,list<tuple<compartment_ref,Conserved_state,float LowerBound,float UpperBound,float Max,float Min,float Flux>>> model_drains;
-    } FBAComparisonCompound;
-    
+		mapping<string fba_id,tuple<Conserved_state,float UpperBound,float LowerBound,float Max,float Min,float Flux,string class>> exchanges;
+	} FBAComparisonCompound;
+
 	/*
-    	FBAComparison object: this object holds information about a comparison of multiple FBA simulations
-    	
-		@metadata ws name as Name
+		FBAComparison object: this object holds information about a comparison of multiple FBA simulations
+
 		@metadata ws id as ID
+		@metadata ws common_reactions as Common reactions
+		@metadata ws common_compounds as Common compounds
 		@metadata ws length(fbas) as Number FBAs
 		@metadata ws length(reactions) as Number reactions
 		@metadata ws length(compounds) as Number compounds
-    */
-    typedef structure {
+	*/
+	typedef structure {
 		string id;
-		string name;
-				
+		int common_reactions;
+		int common_compounds;
 		list<FBAComparisonFBA> fbas;
 		list<FBAComparisonReaction> reactions;
 		list<FBAComparisonCompound> compounds;
-    } FBAComparison;
-    
+	} FBAComparison;
 };
-

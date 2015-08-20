@@ -1,10 +1,17 @@
 package Bio::KBase::fbaModelServices::Client;
 
 use JSON::RPC::Client;
+use POSIX;
 use strict;
 use Data::Dumper;
 use URI;
 use Bio::KBase::Exceptions;
+my $get_time = sub { time, 0 };
+eval {
+    require Time::HiRes;
+    $get_time = sub { Time::HiRes::gettimeofday() };
+};
+
 use Bio::KBase::AuthToken;
 
 # Client version should match Impl version
@@ -76,7 +83,41 @@ sub new
     my $self = {
 	client => Bio::KBase::fbaModelServices::Client::RpcClient->new,
 	url => $url,
+	headers => [],
     };
+
+    chomp($self->{hostname} = `hostname`);
+    $self->{hostname} ||= 'unknown-host';
+
+    #
+    # Set up for propagating KBRPC_TAG and KBRPC_METADATA environment variables through
+    # to invoked services. If these values are not set, we create a new tag
+    # and a metadata field with basic information about the invoking script.
+    #
+    if ($ENV{KBRPC_TAG})
+    {
+	$self->{kbrpc_tag} = $ENV{KBRPC_TAG};
+    }
+    else
+    {
+	my ($t, $us) = &$get_time();
+	$us = sprintf("%06d", $us);
+	my $ts = strftime("%Y-%m-%dT%H:%M:%S.${us}Z", gmtime $t);
+	$self->{kbrpc_tag} = "C:$0:$self->{hostname}:$$:$ts";
+    }
+    push(@{$self->{headers}}, 'Kbrpc-Tag', $self->{kbrpc_tag});
+
+    if ($ENV{KBRPC_METADATA})
+    {
+	$self->{kbrpc_metadata} = $ENV{KBRPC_METADATA};
+	push(@{$self->{headers}}, 'Kbrpc-Metadata', $self->{kbrpc_metadata});
+    }
+
+    if ($ENV{KBRPC_ERROR_DEST})
+    {
+	$self->{kbrpc_error_dest} = $ENV{KBRPC_ERROR_DEST};
+	push(@{$self->{headers}}, 'Kbrpc-Errordest', $self->{kbrpc_error_dest});
+    }
 
     #
     # This module requires authentication.
@@ -349,7 +390,7 @@ sub get_models
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.get_models",
 	params => \@args,
     });
@@ -630,7 +671,7 @@ sub get_fbas
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.get_fbas",
 	params => \@args,
     });
@@ -925,7 +966,7 @@ sub get_gapfills
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.get_gapfills",
 	params => \@args,
     });
@@ -1188,7 +1229,7 @@ sub get_gapgens
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.get_gapgens",
 	params => \@args,
     });
@@ -1301,7 +1342,7 @@ sub get_reactions
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.get_reactions",
 	params => \@args,
     });
@@ -1410,7 +1451,7 @@ sub get_compounds
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.get_compounds",
 	params => \@args,
     });
@@ -1509,7 +1550,7 @@ sub get_alias
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.get_alias",
 	params => \@args,
     });
@@ -1596,7 +1637,7 @@ sub get_aliassets
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.get_aliassets",
 	params => \@args,
     });
@@ -1715,7 +1756,7 @@ sub get_media
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.get_media",
 	params => \@args,
     });
@@ -1828,7 +1869,7 @@ sub get_biochemistry
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.get_biochemistry",
 	params => \@args,
     });
@@ -1979,7 +2020,7 @@ sub import_probanno
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.import_probanno",
 	params => \@args,
     });
@@ -2194,7 +2235,7 @@ sub genome_object_to_workspace
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.genome_object_to_workspace",
 	params => \@args,
     });
@@ -2239,9 +2280,11 @@ genome_to_workspace_params is a reference to a hash where the following keys are
 	source has a value which is a string
 	auth has a value which is a string
 	overwrite has a value which is a bool
+	uid has a value which is a Genome_uid
 genome_id is a string
 workspace_id is a string
 bool is an int
+Genome_uid is a string
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -2276,9 +2319,11 @@ genome_to_workspace_params is a reference to a hash where the following keys are
 	source has a value which is a string
 	auth has a value which is a string
 	overwrite has a value which is a bool
+	uid has a value which is a Genome_uid
 genome_id is a string
 workspace_id is a string
 bool is an int
+Genome_uid is a string
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -2331,7 +2376,7 @@ sub genome_to_workspace
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.genome_to_workspace",
 	params => \@args,
     });
@@ -2460,7 +2505,7 @@ sub domains_to_workspace
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.domains_to_workspace",
 	params => \@args,
     });
@@ -2593,7 +2638,7 @@ sub compute_domains
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.compute_domains",
 	params => \@args,
     });
@@ -2736,7 +2781,7 @@ sub add_feature_translation
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.add_feature_translation",
 	params => \@args,
     });
@@ -2881,7 +2926,7 @@ sub genome_to_fbamodel
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.genome_to_fbamodel",
 	params => \@args,
     });
@@ -3010,7 +3055,7 @@ sub translate_fbamodel
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.translate_fbamodel",
 	params => \@args,
     });
@@ -3135,7 +3180,7 @@ sub build_pangenome
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.build_pangenome",
 	params => \@args,
     });
@@ -3234,7 +3279,7 @@ sub genome_heatmap_from_pangenome
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.genome_heatmap_from_pangenome",
 	params => \@args,
     });
@@ -3353,7 +3398,7 @@ sub ortholog_family_from_pangenome
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.ortholog_family_from_pangenome",
 	params => \@args,
     });
@@ -3480,7 +3525,7 @@ sub pangenome_to_proteome_comparison
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.pangenome_to_proteome_comparison",
 	params => \@args,
     });
@@ -3633,7 +3678,7 @@ sub import_fbamodel
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.import_fbamodel",
 	params => \@args,
     });
@@ -3732,7 +3777,7 @@ sub export_fbamodel
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.export_fbamodel",
 	params => \@args,
     });
@@ -3825,7 +3870,7 @@ sub export_object
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.export_object",
 	params => \@args,
     });
@@ -3920,7 +3965,7 @@ sub export_genome
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.export_genome",
 	params => \@args,
     });
@@ -4069,7 +4114,7 @@ sub adjust_model_reaction
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.adjust_model_reaction",
 	params => \@args,
     });
@@ -4212,7 +4257,7 @@ sub adjust_biomass_reaction
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.adjust_biomass_reaction",
 	params => \@args,
     });
@@ -4359,7 +4404,7 @@ sub addmedia
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.addmedia",
 	params => \@args,
     });
@@ -4454,7 +4499,7 @@ sub export_media
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.export_media",
 	params => \@args,
     });
@@ -4697,7 +4742,7 @@ sub runfba
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.runfba",
 	params => \@args,
     });
@@ -4924,7 +4969,7 @@ sub quantitative_optimization
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.quantitative_optimization",
 	params => \@args,
     });
@@ -5095,7 +5140,7 @@ sub generate_model_stats
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.generate_model_stats",
 	params => \@args,
     });
@@ -5328,7 +5373,7 @@ sub minimize_reactions
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.minimize_reactions",
 	params => \@args,
     });
@@ -5423,7 +5468,7 @@ sub export_fba
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.export_fba",
 	params => \@args,
     });
@@ -5586,7 +5631,7 @@ sub import_phenotypes
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.import_phenotypes",
 	params => \@args,
     });
@@ -5829,7 +5874,7 @@ sub simulate_phenotypes
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.simulate_phenotypes",
 	params => \@args,
     });
@@ -5974,7 +6019,7 @@ sub add_media_transporters
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.add_media_transporters",
 	params => \@args,
     });
@@ -6069,7 +6114,7 @@ sub export_phenotypeSimulationSet
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.export_phenotypeSimulationSet",
 	params => \@args,
     });
@@ -6212,7 +6257,7 @@ sub integrate_reconciliation_solutions
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.integrate_reconciliation_solutions",
 	params => \@args,
     });
@@ -6445,7 +6490,7 @@ sub queue_runfba
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.queue_runfba",
 	params => \@args,
     });
@@ -6732,7 +6777,7 @@ sub queue_gapfill_model
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.queue_gapfill_model",
 	params => \@args,
     });
@@ -7029,7 +7074,7 @@ sub gapfill_model
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.gapfill_model",
 	params => \@args,
     });
@@ -7282,7 +7327,7 @@ sub queue_gapgen_model
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.queue_gapgen_model",
 	params => \@args,
     });
@@ -7545,7 +7590,7 @@ sub gapgen_model
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.gapgen_model",
 	params => \@args,
     });
@@ -7852,7 +7897,7 @@ sub queue_wildtype_phenotype_reconciliation
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.queue_wildtype_phenotype_reconciliation",
 	params => \@args,
     });
@@ -8159,7 +8204,7 @@ sub queue_reconciliation_sensitivity_analysis
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.queue_reconciliation_sensitivity_analysis",
 	params => \@args,
     });
@@ -8462,7 +8507,7 @@ sub queue_combine_wildtype_phenotype_reconciliation
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.queue_combine_wildtype_phenotype_reconciliation",
 	params => \@args,
     });
@@ -8573,7 +8618,7 @@ sub run_job
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.run_job",
 	params => \@args,
     });
@@ -8684,7 +8729,7 @@ sub queue_job
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.queue_job",
 	params => \@args,
     });
@@ -8821,7 +8866,7 @@ sub set_cofactors
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.set_cofactors",
 	params => \@args,
     });
@@ -8958,7 +9003,7 @@ sub find_reaction_synonyms
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.find_reaction_synonyms",
 	params => \@args,
     });
@@ -9085,7 +9130,7 @@ sub role_to_reactions
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.role_to_reactions",
 	params => \@args,
     });
@@ -9236,7 +9281,7 @@ sub reaction_sensitivity_analysis
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.reaction_sensitivity_analysis",
 	params => \@args,
     });
@@ -9373,7 +9418,7 @@ sub filter_iterative_solutions
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.filter_iterative_solutions",
 	params => \@args,
     });
@@ -9506,7 +9551,7 @@ sub delete_noncontributing_reactions
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.delete_noncontributing_reactions",
 	params => \@args,
     });
@@ -9645,7 +9690,7 @@ sub annotate_workspace_Genome
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.annotate_workspace_Genome",
 	params => \@args,
     });
@@ -9786,7 +9831,7 @@ sub gtf_to_genome
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.gtf_to_genome",
 	params => \@args,
     });
@@ -9921,7 +9966,7 @@ sub fasta_to_ProteinSet
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.fasta_to_ProteinSet",
 	params => \@args,
     });
@@ -10064,7 +10109,7 @@ sub ProteinSet_to_Genome
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.ProteinSet_to_Genome",
 	params => \@args,
     });
@@ -10199,7 +10244,7 @@ sub fasta_to_ContigSet
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.fasta_to_ContigSet",
 	params => \@args,
     });
@@ -10344,7 +10389,7 @@ sub ContigSet_to_Genome
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.ContigSet_to_Genome",
 	params => \@args,
     });
@@ -10479,7 +10524,7 @@ sub probanno_to_genome
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.probanno_to_genome",
 	params => \@args,
     });
@@ -10640,7 +10685,7 @@ sub get_mapping
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.get_mapping",
 	params => \@args,
     });
@@ -10737,7 +10782,7 @@ sub subsystem_of_roles
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.subsystem_of_roles",
 	params => \@args,
     });
@@ -10862,7 +10907,7 @@ sub adjust_mapping_role
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.adjust_mapping_role",
 	params => \@args,
     });
@@ -10993,7 +11038,7 @@ sub adjust_mapping_complex
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.adjust_mapping_complex",
 	params => \@args,
     });
@@ -11126,7 +11171,7 @@ sub adjust_mapping_subsystem
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.adjust_mapping_subsystem",
 	params => \@args,
     });
@@ -11176,6 +11221,8 @@ TemplateModel is a reference to a hash where the following keys are defined:
 	domain has a value which is a string
 	map has a value which is a mapping_id
 	mappingws has a value which is a workspace_id
+	mapping_ref has a value which is a string
+	biochemistry_ref has a value which is a string
 	reactions has a value which is a reference to a list where each element is a TemplateReaction
 	biomasses has a value which is a reference to a list where each element is a TemplateBiomass
 mapping_id is a string
@@ -11238,6 +11285,8 @@ TemplateModel is a reference to a hash where the following keys are defined:
 	domain has a value which is a string
 	map has a value which is a mapping_id
 	mappingws has a value which is a workspace_id
+	mapping_ref has a value which is a string
+	biochemistry_ref has a value which is a string
 	reactions has a value which is a reference to a list where each element is a TemplateReaction
 	biomasses has a value which is a reference to a list where each element is a TemplateBiomass
 mapping_id is a string
@@ -11313,7 +11362,7 @@ sub get_template_model
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.get_template_model",
 	params => \@args,
     });
@@ -11510,7 +11559,7 @@ sub import_template_fbamodel
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.import_template_fbamodel",
 	params => \@args,
     });
@@ -11661,7 +11710,7 @@ sub adjust_template_reaction
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.adjust_template_reaction",
 	params => \@args,
     });
@@ -11854,7 +11903,7 @@ sub adjust_template_biomass
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.adjust_template_biomass",
 	params => \@args,
     });
@@ -11993,7 +12042,7 @@ sub add_stimuli
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.add_stimuli",
 	params => \@args,
     });
@@ -12154,7 +12203,7 @@ sub import_regulatory_model
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.import_regulatory_model",
 	params => \@args,
     });
@@ -12305,7 +12354,7 @@ sub compare_models
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.compare_models",
 	params => \@args,
     });
@@ -12323,6 +12372,139 @@ sub compare_models
         Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method compare_models",
 					    status_line => $self->{client}->status_line,
 					    method_name => 'compare_models',
+				       );
+    }
+}
+
+
+
+=head2 compare_fbas
+
+  $output = $obj->compare_fbas($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is a compare_fbas_params
+$output is an object_metadata
+compare_fbas_params is a reference to a hash where the following keys are defined:
+	output_id has a value which is a string
+	fbas has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+	0: a workspace_id
+	1: a fba_id
+
+	workspace has a value which is a workspace_id
+workspace_id is a string
+fba_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is a compare_fbas_params
+$output is an object_metadata
+compare_fbas_params is a reference to a hash where the following keys are defined:
+	output_id has a value which is a string
+	fbas has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+	0: a workspace_id
+	1: a fba_id
+
+	workspace has a value which is a workspace_id
+workspace_id is a string
+fba_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+=item Description
+
+Compares the specified flux balance analyses and saves comparison results to workspace
+
+=back
+
+=cut
+
+sub compare_fbas
+{
+    my($self, @args) = @_;
+
+# Authentication: optional
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function compare_fbas (received $n, expecting 1)");
+    }
+    {
+	my($params) = @args;
+
+	my @_bad_arguments;
+        (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to compare_fbas:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'compare_fbas');
+	}
+    }
+
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
+	method => "fbaModelServices.compare_fbas",
+	params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{error}->{code},
+					       method_name => 'compare_fbas',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method compare_fbas",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'compare_fbas',
 				       );
     }
 }
@@ -12436,7 +12618,7 @@ sub compare_genomes
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.compare_genomes",
 	params => \@args,
     });
@@ -12585,7 +12767,7 @@ sub import_metagenome_annotation
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.import_metagenome_annotation",
 	params => \@args,
     });
@@ -12734,7 +12916,7 @@ sub models_to_community_model
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.models_to_community_model",
 	params => \@args,
     });
@@ -12881,7 +13063,7 @@ sub metagenome_to_fbamodels
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.metagenome_to_fbamodels",
 	params => \@args,
     });
@@ -13034,7 +13216,7 @@ sub import_expression
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.import_expression",
 	params => \@args,
     });
@@ -13187,7 +13369,7 @@ sub import_regulome
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.import_regulome",
 	params => \@args,
     });
@@ -13326,7 +13508,7 @@ sub create_promconstraint
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.create_promconstraint",
 	params => \@args,
     });
@@ -13477,7 +13659,7 @@ sub add_biochemistry_compounds
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.add_biochemistry_compounds",
 	params => \@args,
     });
@@ -13624,7 +13806,7 @@ sub update_object_references
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.update_object_references",
 	params => \@args,
     });
@@ -13773,7 +13955,7 @@ sub add_reactions
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.add_reactions",
 	params => \@args,
     });
@@ -13902,7 +14084,7 @@ sub remove_reactions
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.remove_reactions",
 	params => \@args,
     });
@@ -14047,7 +14229,7 @@ sub modify_reactions
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.modify_reactions",
 	params => \@args,
     });
@@ -14208,7 +14390,7 @@ sub add_features
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.add_features",
 	params => \@args,
     });
@@ -14337,7 +14519,7 @@ sub remove_features
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.remove_features",
 	params => \@args,
     });
@@ -14498,7 +14680,7 @@ sub modify_features
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.modify_features",
 	params => \@args,
     });
@@ -14659,7 +14841,7 @@ sub import_trainingset
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.import_trainingset",
 	params => \@args,
     });
@@ -14788,7 +14970,7 @@ sub preload_trainingset
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.preload_trainingset",
 	params => \@args,
     });
@@ -14919,7 +15101,7 @@ sub build_classifier
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.build_classifier",
 	params => \@args,
     });
@@ -15062,7 +15244,7 @@ sub classify_genomes
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.classify_genomes",
 	params => \@args,
     });
@@ -15193,7 +15375,7 @@ sub build_tissue_model
 	}
     }
 
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
 	method => "fbaModelServices.build_tissue_model",
 	params => \@args,
     });
@@ -15219,7 +15401,7 @@ sub build_tissue_model
 
 sub version {
     my ($self) = @_;
-    my $result = $self->{client}->call($self->{url}, {
+    my $result = $self->{client}->call($self->{url}, $self->{headers}, {
         method => "fbaModelServices.version",
         params => [],
     });
@@ -20618,6 +20800,7 @@ Input parameters for the "genome_to_workspace" function.
         string source - Source database for genome (i.e. seed, rast, kbase)
         workspace_id workspace - ID of the workspace into which the genome typed object is to be loaded (a required argument)
         string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+        Genome_uid uid - ID to use when saving genome to workspace
 
 
 =item Definition
@@ -20633,6 +20816,7 @@ sourcePassword has a value which is a string
 source has a value which is a string
 auth has a value which is a string
 overwrite has a value which is a bool
+uid has a value which is a Genome_uid
 
 </pre>
 
@@ -20648,6 +20832,7 @@ sourcePassword has a value which is a string
 source has a value which is a string
 auth has a value which is a string
 overwrite has a value which is a bool
+uid has a value which is a Genome_uid
 
 
 =end text
@@ -24657,6 +24842,8 @@ type has a value which is a string
 domain has a value which is a string
 map has a value which is a mapping_id
 mappingws has a value which is a workspace_id
+mapping_ref has a value which is a string
+biochemistry_ref has a value which is a string
 reactions has a value which is a reference to a list where each element is a TemplateReaction
 biomasses has a value which is a reference to a list where each element is a TemplateBiomass
 
@@ -24673,6 +24860,8 @@ type has a value which is a string
 domain has a value which is a string
 map has a value which is a mapping_id
 mappingws has a value which is a workspace_id
+mapping_ref has a value which is a string
+biochemistry_ref has a value which is a string
 reactions has a value which is a reference to a list where each element is a TemplateReaction
 biomasses has a value which is a reference to a list where each element is a TemplateBiomass
 
@@ -25456,6 +25645,53 @@ a reference to a hash where the following keys are defined:
 model_comparisons has a value which is a reference to a list where each element is a ModelComparisonModel
 reaction_comparisons has a value which is a reference to a list where each element is a ModelCompareReaction
 auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 compare_fbas_params
+
+=over 4
+
+
+
+=item Description
+
+********************************************************************************
+    Functions relating to comparison of FBAs
+   	********************************************************************************
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+output_id has a value which is a string
+fbas has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+0: a workspace_id
+1: a fba_id
+
+workspace has a value which is a workspace_id
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+output_id has a value which is a string
+fbas has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+0: a workspace_id
+1: a fba_id
+
+workspace has a value which is a workspace_id
 
 
 =end text
@@ -27007,21 +27243,27 @@ output_id has a value which is a string
 
 package Bio::KBase::fbaModelServices::Client::RpcClient;
 use base 'JSON::RPC::Client';
+use POSIX;
+use strict;
 
 #
 # Override JSON::RPC::Client::call because it doesn't handle error returns properly.
 #
 
 sub call {
-    my ($self, $uri, $obj) = @_;
+    my ($self, $uri, $headers, $obj) = @_;
     my $result;
 
-    if ($uri =~ /\?/) {
-       $result = $self->_get($uri);
-    }
-    else {
-        Carp::croak "not hashref." unless (ref $obj eq 'HASH');
-        $result = $self->_post($uri, $obj);
+
+    {
+	if ($uri =~ /\?/) {
+	    $result = $self->_get($uri);
+	}
+	else {
+	    Carp::croak "not hashref." unless (ref $obj eq 'HASH');
+	    $result = $self->_post($uri, $headers, $obj);
+	}
+
     }
 
     my $service = $obj->{method} =~ /^system\./ if ( $obj );
@@ -27049,7 +27291,7 @@ sub call {
 
 
 sub _post {
-    my ($self, $uri, $obj) = @_;
+    my ($self, $uri, $headers, $obj) = @_;
     my $json = $self->json;
 
     $obj->{version} ||= $self->{version} || '1.1';
@@ -27076,6 +27318,7 @@ sub _post {
         Content_Type   => $self->{content_type},
         Content        => $content,
         Accept         => 'application/json',
+	@$headers,
 	($self->{token} ? (Authorization => $self->{token}) : ()),
     );
 }

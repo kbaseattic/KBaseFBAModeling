@@ -3130,6 +3130,8 @@ module fbaModelServices {
 		string domain;
 		mapping_id map;
 		workspace_id mappingws;
+		string mapping_ref;
+		string biochemistry_ref;
 		list<TemplateReaction> reactions;
 		list<TemplateBiomass> biomasses;
     } TemplateModel;
@@ -3394,6 +3396,28 @@ module fbaModelServices {
     */
     authentication optional;
     funcdef compare_models(compare_models_params params) returns (ModelComparisonData output);
+   	
+   	/*********************************************************************************
+    Functions relating to comparison of FBAs
+   	*********************************************************************************/
+   	/* Input parameters for the "compare_models" function.
+	
+		string output_id - name to use for object when saving to workspace
+		list<tuple<workspace_id,fba_id>> fbas - list of IDs for FBAs to be compared
+		workspace_id workspace - name of workspace where comparison will be saved
+			
+	*/
+	typedef structure {
+		string output_id;
+		list<tuple<workspace_id,fba_id>> fbas;
+		workspace_id workspace;
+    } compare_fbas_params;
+    
+    /*
+		Compares the specified flux balance analyses and saves comparison results to workspace
+    */
+    authentication optional;
+    funcdef compare_fbas(compare_fbas_params params) returns (object_metadata output);
    	
    	/*********************************************************************************
     Functions relating to comparison of genomes

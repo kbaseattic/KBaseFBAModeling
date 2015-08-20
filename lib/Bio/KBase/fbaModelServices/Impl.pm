@@ -63,10 +63,7 @@ uniquely identifies a workspace among all workspaces.
 use URI;
 use ModelSEED::Client::SAP;
 use Bio::KBase::IDServer::Client;
-use Bio::KBase::CDMI::CDMIClient;
 use Bio::KBase::AuthToken;
-use Bio::KBase::probabilistic_annotation::Client;
-use Bio::KBase::GenomeAnnotation::Client;
 use Bio::KBase::ObjectAPI::KBaseStore;
 use Data::UUID;
 use Bio::KBase::ObjectAPI::KBaseFBA::Classifier;
@@ -100,6 +97,7 @@ use Bio::KBase::ObjectAPI::KBaseFBA::ReactionSensitivityAnalysis;
 use Bio::KBase::workspace::Client;
 use Bio::KBase::ObjectAPI::KBaseGenomes::MetagenomeAnnotation;
 use Bio::KBase::ObjectAPI::GenomeComparison::ProteomeComparison;
+use Bio::KBase::ObjectAPI::KBaseFBA::FBAComparison;
 use Bio::KBase::ObjectAPI::utilities qw( args verbose set_verbose translateArrayOptions);
 use POSIX;
 use File::Basename;
@@ -157,7 +155,7 @@ sub _resetKBaseStore {
 	$temp = pop(@{$temp});
 	my $newparams = {};
 	foreach my $param (keys(%{$params})) {
-		if ($param ne "reactions" && $param ne "compounds" && $param ne "fasta" && $param ne "annotations" && $param ne "genomeobj" && $param ne "gtf_file" && $param ne "sbml") {
+		if ($param ne "fasta" && $param ne "annotations" && $param ne "genomeobj" && $param ne "gtf_file" && $param ne "sbml" && $param ne "templateReactions") {
 			$newparams->{$param} = $params->{$param};
 		}
 	}
@@ -174,7 +172,9 @@ sub _resetKBaseStore {
 				intermediate_incoming => [],
 				intermediate_outgoing => []
 			}],
-			workspace => $self->_workspaceServices()
+			workspace => $self->_workspaceServices(),
+			file_cache => $self->_file_cache(),
+			cache_targets => $self->_cache_targets(),
 		});
 	} else {
 		$self->{_kbasestore} = Bio::KBase::ObjectAPI::KBaseStore->new({
@@ -196,6 +196,16 @@ sub _resetKBaseStore {
 		$self->{_kbasestore}->cache()->{"kbase/default"} = $self->_cachedBiochemistry();
 		$self->{_kbasestore}->cache()->{"489/6"} = $self->_cachedBiochemistry();
 	}
+}
+
+sub _file_cache {
+	my ($self) = @_;
+	return $self->{_file_cache};
+}
+
+sub _cache_targets {
+	my ($self) = @_;
+	return $self->{_cache_targets};
 }
 
 sub _KBaseStore {
@@ -392,6 +402,7 @@ sub _modify_annotation_from_probanno {
 sub _cdmi {
 	my $self = shift;
 	if (!defined($self->{_cdmi})) {
+		require "Bio/KBase/CDMI/CDMIClient.pm";
 		$self->{_cdmi} = Bio::KBase::CDMI::CDMIClient->new_for_script();
 	}
     return $self->{_cdmi};
@@ -418,6 +429,7 @@ sub _gaserv {
 			require "Bio/KBase/GenomeAnnotation/GenomeAnnotationImpl.pm";
 			$self->{_gaserver} = Bio::KBase::GenomeAnnotation::GenomeAnnotationImpl->new();
 		} else {
+			require "Bio/KBase/GenomeAnnotation/Client.pm";
 			$self->{_gaserver} = Bio::KBase::GenomeAnnotation::Client->new($self->{'_gaserver-url'});
 		}
     }
@@ -483,6 +495,7 @@ sub _probanno {
 		$url = $self->_getContext()->{_override}->{_probanno_url};
 	}
 	if (!defined($self->{_probannoServices}->{$url})) {
+		require "Bio/KBase/probabilistic_annotation/Client.pm";
 		$self->{_probannoServices}->{$url} = Bio::KBase::probabilistic_annotation::Client->new($url);
 	}
 	return $self->{_probannoServices}->{$url};
@@ -2651,6 +2664,9 @@ Description:
 sub _classify_genome {
 	my($self,$genome) = @_;
 	if (!defined($self->{_classifierdata})) {
+		if (!-e $self->{"_classifier_file"}) {
+			system("curl https://raw.githubusercontent.com/kbase/KBaseFBAModeling/dev/classifier > ".$self->{"_classifier_file"});
+		}
 		my $data = Bio::KBase::ObjectAPI::utilities::LOADFILE($self->{"_classifier_file"});
 		my $headings = [split(/\t/,$data->[0])];
 		my $popprob = [split(/\t/,$data->[1])];
@@ -3341,13 +3357,14 @@ sub new
     $self->{'_shockurl'} = "http://140.221.85.54:7445";
     $self->{_jobqueue} = "workspace";
     $self->{'_fba-url'} = "";
+    $self->{'_file_cache'} = "";
+    $self->{'_cache_targets'} = {};
     Bio::KBase::ObjectAPI::utilities::ID_SERVER_URL("http://kbase.us/services/idserver");
     $self->{'_gaserver-url'} = "http://kbase.us/services/genome_annotation";
     $self->{'_mssserver-url'} = "http://bio-data-1.mcs.anl.gov/services/ms_fba";
     $self->{"_probanno-url"} = "http://localhost:7073";
     $self->{"_workspace-url"} = "http://kbase.us/services/ws";
-    $self->{"_classifier_file"} = "/kb/deployment/etc/classifier.txt";
-    my $paramlist = [qw(classifier_file classifierpath fbajobcache awe-url shock-url jobqueue gaserver-url jobserver-url fbajobdir mfatoolkitbin fba-url probanno-url mssserver-url accounttype workspace-url defaultJobState idserver-url)];
+    my $paramlist = [qw(file_cache cache_targets classifier_file classifierpath fbajobcache awe-url shock-url jobqueue gaserver-url jobserver-url fbajobdir mfatoolkitbin fba-url probanno-url mssserver-url accounttype workspace-url defaultJobState idserver-url)];
 
     # so it looks like params is created by looping over the config object
     # if deployment.cfg exists
@@ -3411,6 +3428,15 @@ sub new
     if (defined $params->{defaultJobState}) {
 		$self->{_defaultJobState} = $params->{defaultJobState};
     }
+    if (defined $params->{file_cache}) {
+		$self->{_file_cache} = $params->{file_cache};
+    }
+    if (defined $params->{cache_targets}) {
+    	my $array = [split(/;/,$params->{cache_targets})];
+    	for (my $i=0; $i < @{$array}; $i++) {
+    		$self->{_cache_targets}->{$array->[$i]} = 1;
+    	}
+    }
     if (defined $params->{'gaserver-url'}) {
     		$self->{'_gaserver-url'} = $params->{'gaserver-url'};
     }
@@ -3438,9 +3464,9 @@ sub new
     if (defined $params->{'awe-url'}) {
     		$self->{'_awe-url'} = $params->{'awe-url'};
     }
-    if (defined $params->{'classifier_file'}) {
+  	if (defined($params->{'classifier_file'})) {
     		$self->{'_classifier_file'} = $params->{'classifier_file'};
-    }
+    } 
     #This final condition allows one to specify a fully implemented workspace IMPL or CLIENT for use
 
     if (defined($options->{workspace})) {
@@ -3449,7 +3475,7 @@ sub new
     if (defined($options->{verbose})) {
     	set_verbose(1);
     }
-	#END_CONSTRUCTOR
+    #END_CONSTRUCTOR
 
     if ($self->can('_init_instance'))
     {
@@ -5899,9 +5925,11 @@ genome_to_workspace_params is a reference to a hash where the following keys are
 	source has a value which is a string
 	auth has a value which is a string
 	overwrite has a value which is a bool
+	uid has a value which is a Genome_uid
 genome_id is a string
 workspace_id is a string
 bool is an int
+Genome_uid is a string
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -5936,9 +5964,11 @@ genome_to_workspace_params is a reference to a hash where the following keys are
 	source has a value which is a string
 	auth has a value which is a string
 	overwrite has a value which is a bool
+	uid has a value which is a Genome_uid
 genome_id is a string
 workspace_id is a string
 bool is an int
+Genome_uid is a string
 object_metadata is a reference to a list containing 11 items:
 	0: (id) an object_id
 	1: (type) an object_type
@@ -7730,6 +7760,9 @@ sub import_fbamodel
 		});
 	}
 	my $msg = "";
+	if (defined($model->{missinggenes})) {
+		print STDERR "Missing genes:\n".join("\n",keys(%{$model->{missinggenes}}))."\n";
+	}
 	#if (keys(%{$missingReactions}) > 0) {
 	#	$msg .= "Missing reactions:".join(";",keys(%{$missingReactions}))."\n";
 	#}
@@ -8557,7 +8590,7 @@ sub addmedia
     #Creating the media object from the specifications
     my $bio = $self->_get_msobject("Biochemistry",$input->{biochemistry_workspace},$input->{biochemistry});
     my $media = Bio::KBase::ObjectAPI::KBaseBiochem::Media->new({
-    	id => "kb|media.".$self->_idServer()->allocate_id_range("kb|media",1),
+    	id => $input->{media},
     	name => $input->{name},
     	isDefined => $input->{isDefined},
     	isMinimal => $input->{isMinimal},
@@ -8920,12 +8953,12 @@ sub runfba
     #BEGIN runfba
     $self->_setContext($ctx,$input);
     $input = $self->_validateargs($input,["model","workspace"],{
-		booleanexp => undef,
+		use_discrete_variables => 1,
+		booleanexp => "absolute",
 		expression_threshold_percentile => 0.5,
-		scale_penalty_by_flux => 0,
-		exp_raw_data => {},
+		exp_raw_data => undef,
 		alpha => 0.5,
-		omega => 0.5,
+		omega => 0,
 		kappa => 0.1,
 		formulation => undef,
 		fva => 0,
@@ -8937,8 +8970,9 @@ sub runfba
 		fba => undef,
 		custom_bounds => undef,
 		biomass => undef,
+		expseries => undef,
+		expseriesws => $input->{workspace},
 		expsample => undef,
-		expsamplews => $input->{workspace},
 		activation_penalty => 0.1,
 		solver => undef
 	});
@@ -8954,15 +8988,53 @@ sub runfba
     $input->{formulation}->{kappa} = $input->{kappa};
     $input->{formulation}->{omega} = $input->{omega};
 	my $fba = $self->_buildFBAObject($input->{formulation},$model,$input->{workspace},$input->{fba});
-	if ($input->{booleanexp}) {
-		if (defined($input->{expsample})) {
-			$input->{expsample} = $self->_get_msobject("ExpressionSample",$input->{expsamplews},$input->{expsample});
+	$fba->fva($input->{fva});
+	$fba->comboDeletions($input->{simulateko});
+	$fba->fluxMinimization($input->{minimizeflux});
+	$fba->findMinimalMedia($input->{findminmedia});
+	if (defined($input->{solver})) {
+	   	$fba->parameters()->{MFASolver} = uc($input->{solver});
+	}
+	if (defined($input->{expseries}) || defined($input->{exp_raw_data})) {
+		$fba->ExpressionAlpha($input->{alpha});
+		$fba->ExpressionOmega($input->{omega});
+		$fba->ExpressionKappa($input->{kappa});
+		if (defined($input->{expseries})) {
+		    if (! defined($input->{expsample})) {
+			$self->_error("Input must specify the column to select from the expression matrix");
+		    }
+		    my $exphash = {};
+		    my $wsoutput = $self->_KBaseStore()->workspace()->get_objects([
+		    	{workspace => $input->{expseriesws},name => $input->{expseries}}
+		    ]);
+		    my $exp_matrix = $wsoutput->[0]->{data};
+		    my $info = $wsoutput->[0]->{info};
+		    $fba->expression_matrix_ref($info->[6]."/".$info->[0]."/".$info->[4]);
+		    $fba->expression_matrix_column($input->{expsample});
+		    my $float_matrix = $exp_matrix->{"data"};
+		    my $exp_sample_col = -1;
+
+		    for (my $i=0; $i < @{$float_matrix->{"col_ids"}}; $i++) {
+			if ($float_matrix->{"col_ids"}->[$i] eq $input->{expsample}) {
+			    $exp_sample_col = $i;
+			    last;
+			}
+		    }
+		    if ($exp_sample_col < 0) {
+				$self->_error("No column named ".$input->{expsample}." in expression matrix.");
+		    }
+		    for (my $i=0; $i < @{$float_matrix->{"row_ids"}}; $i++) {
+				$exphash->{$float_matrix->{"row_ids"}->[$i]} = $float_matrix->{"values"}->[$i]->[$exp_sample_col];
+		    }
+		    $input->{expsample} = $exphash;
 		} elsif (keys(%{$input->{exp_raw_data}}) > 0) {
 			$input->{expsample} = $input->{exp_raw_data}
 		} else {
-			$self->_error("Cannot run expression-constrained FBA without providing expression data!");	
+			$self->_error("Cannot run expression-constrained FBA without providing specifying expression matrix and column.");	
 		}
 		$fba->PrepareForGapfilling({
+			solver => $input->{solver},
+			use_discrete_variables => $input->{use_discrete_variables},
 			add_external_rxns => 0,
 			activate_all_model_reactions => 0,
 			make_model_rxns_reversible => 0,
@@ -8972,15 +9044,7 @@ sub runfba
 			alpha => $input->{alpha},
 			omega => $input->{omega},
 			kappa => $input->{kappa},
-			scale_penalty_by_flux => $input->{scale_penalty_by_flux},
 		});
-	}
-	$fba->fva($input->{fva});
-	$fba->comboDeletions($input->{simulateko});
-	$fba->fluxMinimization($input->{minimizeflux});
-	$fba->findMinimalMedia($input->{findminmedia});
-	if (defined($input->{solver})) {
-	   	$fba->parameters()->{MFASolver} = uc($input->{solver});
 	}
 	if (defined($input->{biomass}) && defined($fba->biomassflux_objterms()->{bio1})) {
 		my $bio = $model->searchForBiomass($input->{biomass});
@@ -11592,22 +11656,23 @@ sub gapfill_model
     my($modelMeta);
     #BEGIN gapfill_model
     $self->_setContext($ctx,$input);
-	$input = $self->_validateargs($input,["model","workspace"],{		
-		expression_threshold_type => "AbsoluteThreshold",
-		low_expression_threshold => 0.5,
-		low_expression_penalty_factor => 1,
-		high_expression_threshold => 0.5,
-		high_expression_penalty_factor => 1,
-		target_reactions => [],
+	$input = $self->_validateargs($input,["model","workspace"],{
+		custom_bounds => undef,
+		use_discrete_variables => 0,
+		booleanexp => "absolute",
+		expression_threshold_percentile => 0.5,
+		exp_raw_data => undef,
+		alpha => 0,
+		omega => 0,
+		kappa => 0.1,
+		expseries => undef,
+		expseriesws => $input->{workspace},
+		expsample => undef,
+		target_reactions => ["bio1"],
 		completeGapfill => 0,
 		timePerSolution => 43200,
 		totalTimeLimit => 45000,
-		solver => undef,
-		fastgapfill => 0,
-		alpha => 0,
-		omega => 0,
-		kappa => 0,
-		scalefluxes => 0,
+		solver => "GLPK",
 		nomediahyp => 0,
 		nobiomasshyp => 0,#
 		nogprhyp => 0,#
@@ -11623,11 +11688,6 @@ sub gapfill_model
 		transpen => 1,
 		blacklistedrxns => [],
 		gauranteedrxns => [],
-		gapFill => undef,
-		gapFill_workspace => $input->{workspace},
-		exp_raw_data => {},
-		expsample => undef,
-		expsamplews => $input->{workspace},
 		source_model => undef,
 		source_model_ws => $input->{workspace},
 		out_model => undef,
@@ -11635,26 +11695,71 @@ sub gapfill_model
 		integrate_solution => 0,
 		formulation => undef,
 	});
+	#Dealing with model and source model
 	my $start = time();
 	my $model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model});
 	if (defined($input->{source_model})) {
 		$input->{source_model} = $self->_get_msobject("FBAModel",$input->{source_model_ws},$input->{source_model});
 	}
-	if (defined($input->{expsample})) {
-		$input->{expsample} = $self->_get_msobject("ExpressionSample",$input->{expsamplews},$input->{expsample});
-	} elsif (keys(%{$input->{exp_raw_data}}) > 0) {
-		$input->{expsample} = $input->{exp_raw_data}
+	if (!defined($input->{out_model})) {
+		$input->{out_model} = $input->{model};
 	}
+	#Gathering parameters into FBA formulation and building FBA object
 	my $gfform = $input->{formulation};
 	foreach my $key (keys(%{$gfform})) {
 		$input->{$key} = $gfform->{$key};
 	}
-	if (!defined($input->{out_model})) {
-		$input->{out_model} = $input->{model};
-	}
 	delete $input->{formulation}->{objectiveTerms};
 	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
 	my $fba = $self->_buildFBAObject($input->{formulation},$model,$input->{workspace},$input->{out_model}.".gf");
+	#Dealing with expression data
+	if (defined($input->{expseries}) || defined($input->{exp_raw_data})) {
+		$fba->ExpressionAlpha($input->{alpha});
+		$fba->ExpressionOmega($input->{omega});
+		$fba->ExpressionKappa($input->{kappa});
+		if (defined($input->{expseries})) {
+		    if (! defined($input->{expsample})) {
+				$self->_error("Input must specify the column to select from the expression matrix");
+		    }
+		    my $exphash = {};
+		    my $wsoutput = $self->_KBaseStore()->workspace()->get_objects([
+		    	{workspace => $input->{expseriesws},name => $input->{expseries}}
+		    ]);
+		    my $exp_matrix = $wsoutput->[0]->{data};
+		    my $info = $wsoutput->[0]->{info};
+		    $fba->expression_matrix_ref($info->[6]."/".$info->[0]."/".$info->[4]);
+		    $fba->expression_matrix_column($input->{expsample});
+		    my $float_matrix = $exp_matrix->{"data"};
+		    my $exp_sample_col = -1;
+		    for (my $i=0; $i < @{$float_matrix->{"col_ids"}}; $i++) {
+				if ($float_matrix->{"col_ids"}->[$i] eq $input->{expsample}) {
+				    $exp_sample_col = $i;
+				    last;
+				}
+		    }
+		    if ($exp_sample_col < 0) {
+				$self->_error("No column named ".$input->{expsample}." in expression matrix.");
+		    }
+		    for (my $i=0; $i < @{$float_matrix->{"row_ids"}}; $i++) {
+				$exphash->{$float_matrix->{"row_ids"}->[$i]} = $float_matrix->{"values"}->[$i]->[$exp_sample_col];
+		    }
+		    $input->{expsample} = $exphash;
+		} elsif (keys(%{$input->{exp_raw_data}}) > 0) {
+			$input->{expsample} = $input->{exp_raw_data}
+		} else {
+			$self->_error("Cannot run expression-constrained FBA without providing specifying expression matrix and column.");	
+		}
+	}
+	#Prepping FBA for gapfilling
+	$fba->fva(0);
+	$fba->comboDeletions(0);
+	$fba->fluxMinimization(1);
+	$fba->findMinimalMedia(0);
+	if (defined($input->{solver})) {
+	   	$fba->parameters()->{MFASolver} = uc($input->{solver});
+	}
+	$input->{add_external_rxns} = 1;
+	$input->{make_model_rxns_reversible} = 1;
 	$fba->PrepareForGapfilling($input);
 	$fba->runFBA();
 	#Error checking the FBA and gapfilling solution
@@ -11662,7 +11767,7 @@ sub gapfill_model
 	if (!defined($fba->gapfillingSolutions()->[0])) {
 		$self->_error("Analysis completed, but no valid solutions found!");
 	}
-	my $meta = $self->_save_msobject($fba,"FBA",$input->{workspace},$input->{out_model}.".gf");
+	my $meta = $self->_save_msobject($fba,"FBA",$input->{workspace},$input->{out_model}.".gffba");
 	#Since gapfilling can take hours, we retrieve the model again in case it changed since accessed previously
 	if ((time()-$start) > 3600 && $input->{out_model} eq $input->{model}) {
 		$model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model},{refreshcache => 1});
@@ -16874,6 +16979,8 @@ TemplateModel is a reference to a hash where the following keys are defined:
 	domain has a value which is a string
 	map has a value which is a mapping_id
 	mappingws has a value which is a workspace_id
+	mapping_ref has a value which is a string
+	biochemistry_ref has a value which is a string
 	reactions has a value which is a reference to a list where each element is a TemplateReaction
 	biomasses has a value which is a reference to a list where each element is a TemplateBiomass
 mapping_id is a string
@@ -16936,6 +17043,8 @@ TemplateModel is a reference to a hash where the following keys are defined:
 	domain has a value which is a string
 	map has a value which is a mapping_id
 	mappingws has a value which is a workspace_id
+	mapping_ref has a value which is a string
+	biochemistry_ref has a value which is a string
 	reactions has a value which is a reference to a list where each element is a TemplateReaction
 	biomasses has a value which is a reference to a list where each element is a TemplateBiomass
 mapping_id is a string
@@ -17016,6 +17125,8 @@ sub get_template_model
     	domain => $template->domain(),
     	"map" => $template->{_kbaseWSMeta}->{wsid},
     	mappingws => $template->{_kbaseWSMeta}->{ws},
+    	mapping_ref => $template->mapping_ref(),
++    	biochemistry_ref => $template->biochemistry_ref(),
     	reactions => [],
     	biomasses => []
     };
@@ -18393,6 +18504,348 @@ sub compare_models
 	my $msg = "Invalid returns passed to compare_models:\n" . join("", map { "\t$_\n" } @_bad_returns);
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
 							       method_name => 'compare_models');
+    }
+    return($output);
+}
+
+
+
+
+=head2 compare_fbas
+
+  $output = $obj->compare_fbas($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is a compare_fbas_params
+$output is an object_metadata
+compare_fbas_params is a reference to a hash where the following keys are defined:
+	output_id has a value which is a string
+	fbas has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+	0: a workspace_id
+	1: a fba_id
+
+	workspace has a value which is a workspace_id
+workspace_id is a string
+fba_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is a compare_fbas_params
+$output is an object_metadata
+compare_fbas_params is a reference to a hash where the following keys are defined:
+	output_id has a value which is a string
+	fbas has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+	0: a workspace_id
+	1: a fba_id
+
+	workspace has a value which is a workspace_id
+workspace_id is a string
+fba_id is a string
+object_metadata is a reference to a list containing 11 items:
+	0: (id) an object_id
+	1: (type) an object_type
+	2: (moddate) a timestamp
+	3: (instance) an int
+	4: (command) a string
+	5: (lastmodifier) a username
+	6: (owner) a username
+	7: (workspace) a workspace_id
+	8: (ref) a workspace_ref
+	9: (chsum) a string
+	10: (metadata) a reference to a hash where the key is a string and the value is a string
+object_id is a string
+object_type is a string
+timestamp is a string
+username is a string
+workspace_ref is a string
+
+
+=end text
+
+
+
+=item Description
+
+Compares the specified flux balance analyses and saves comparison results to workspace
+
+=back
+
+=cut
+
+sub compare_fbas
+{
+    my $self = shift;
+    my($params) = @_;
+
+    my @_bad_arguments;
+    (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"params\" (value was \"$params\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to compare_fbas:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'compare_fbas');
+    }
+
+    my $ctx = $Bio::KBase::fbaModelServices::Server::CallContext;
+    my($output);
+    #BEGIN compare_fbas
+    $self->_setContext($ctx,$params);
+	$params = $self->_validateargs($params,["fbas","workspace","output_id"],{});
+    my $fbacomp = Bio::KBase::ObjectAPI::KBaseFBA::FBAComparison->new({
+    	id => $params->{output_id},
+    	common_reactions => 0,
+    	common_compounds => 0,
+    	fbas => [],
+    	reactions => [],
+    	compounds => []
+    });
+    $fbacomp->parent($self->_KBaseStore());
+    my $commoncompounds = 0;
+    my $commonreactions = 0;
+    my $fbahash = {};
+    my $fbaids = [];
+    my $fbarxns = {};
+    my $rxnhash = {};
+    my $cpdhash = {};
+    my $fbacpds = {};
+    my $fbacount = @{$params->{fbas}};
+    for (my $i=0; $i < @{$params->{fbas}}; $i++) {
+    	$fbaids->[$i] = $params->{fbas}->[$i]->[0]."/".$params->{fbas}->[$i]->[1];
+    	my $fba = $self->_get_msobject("FBA",$params->{fbas}->[$i]->[0],$params->{fbas}->[$i]->[1]);
+		my $rxns = $fba->FBAReactionVariables();
+		my $cpds = $fba->FBACompoundVariables();
+		my $cpdcount = @{$cpds};
+		my $rxncount = @{$rxns};
+		$fbahash->{$fbaids->[$i]} = $fbacomp->add("fbas",{
+			id => $fbaids->[$i],
+			fba_ref => $fba->_reference(),
+			fbamodel_ref => $fba->fbamodel_ref(),
+			fba_similarity => {},
+			objective => $fba->objectiveValue(),
+			media_ref => $fba->media_ref(),
+			reactions => $rxncount,
+			compounds => $cpdcount,
+			forward_reactions => 0,
+			reverse_reactions => 0,
+			uptake_compounds => 0,
+			excretion_compounds => 0
+		});
+		my $forwardrxn = 0;
+		my $reverserxn = 0;
+		my $uptakecpd = 0;
+		my $excretecpd = 0;
+		for (my $j=0; $j < @{$rxns}; $j++) {
+			my $id = $rxns->[$j]->modelreaction()->reaction()->id();
+			my $name = $rxns->[$j]->modelreaction()->reaction()->name();
+			if ($id eq "rxn00000") {
+				$id = $rxns->[$j]->modelreaction()->id();
+				$name = $rxns->[$j]->modelreaction()->id();
+			} elsif ($rxns->[$j]->modelreaction()->id() =~ m/_([a-z]+\d+)$/) {
+				$id .= "_".$1;
+			}
+			if (!defined($rxnhash->{$id})) {
+				$rxnhash->{$id} = $fbacomp->add("reactions",{
+					id => $id,
+					name => $name,
+					stoichiometry => $rxns->[$j]->modelreaction()->stoichiometry(),
+					direction => $rxns->[$j]->modelreaction()->direction(),
+					state_conservation => {},
+					most_common_state => "unknown",
+					reaction_fluxes => {}
+				});
+			}
+			my $state = "IA";
+			if ($rxns->[$j]->value() > 0.000000001) {
+				$state = "FOR";
+				$forwardrxn++;
+			} elsif ($rxns->[$j]->value() < -0.000000001) {
+				$state = "REV";
+				$reverserxn++;
+			}
+			if (!defined($rxnhash->{$id}->state_conservation()->{$state})) {
+				$rxnhash->{$id}->state_conservation()->{$state} = [0,0,0,0];
+			}
+			$rxnhash->{$id}->state_conservation()->{$state}->[0]++;
+			$rxnhash->{$id}->state_conservation()->{$state}->[2] += $rxns->[$j]->value();
+			$rxnhash->{$id}->reaction_fluxes()->{$fbaids->[$i]} = [$state,$rxns->[$j]->upperBound(),$rxns->[$j]->lowerBound(),$rxns->[$j]->max(),$rxns->[$j]->min(),$rxns->[$j]->value(),$rxns->[$j]->scaled_exp(),$rxns->[$j]->exp_state(),$rxns->[$j]->modelreaction()->id()];
+			$fbarxns->{$fbaids->[$i]}->{$id} = $state;
+		}
+		for (my $j=0; $j < @{$cpds}; $j++) {
+			my $id = $cpds->[$j]->modelcompound()->id();
+			if (!defined($cpdhash->{$id})) {
+				$cpdhash->{$id} = $fbacomp->add("compounds",{
+					id => $id,
+					name => $cpds->[$j]->modelcompound()->name(),
+					charge => $cpds->[$j]->modelcompound()->charge(),
+					formula => $cpds->[$j]->modelcompound()->formula(),
+					state_conservation => {},
+					most_common_state => "unknown",
+					exchanges => {}
+				});
+			}
+			my $state = "IA";
+			if ($cpds->[$j]->value() > 0.000000001) {
+				$state = "UP";
+				$uptakecpd++;
+			} elsif ($cpds->[$j]->value() < -0.000000001) {
+				$state = "EX";
+				$excretecpd++;
+			}
+			if (!defined($cpdhash->{$id}->state_conservation()->{$state})) {
+				$cpdhash->{$id}->state_conservation()->{$state} = [0,0,0,0];
+			}
+			$cpdhash->{$id}->state_conservation()->{$state}->[0]++;
+			$cpdhash->{$id}->state_conservation()->{$state}->[2] += $cpds->[$j]->value();
+			$cpdhash->{$id}->exchanges()->{$fbaids->[$i]} = [$state,$cpds->[$j]->upperBound(),$cpds->[$j]->lowerBound(),$cpds->[$j]->max(),$cpds->[$j]->min(),$cpds->[$j]->value(),$cpds->[$j]->class()];
+			$fbacpds->{$fbaids->[$i]}->{$id} = $state;
+		}
+		foreach my $comprxn (keys(%{$rxnhash})) {
+			if (!defined($rxnhash->{$comprxn}->reaction_fluxes()->{$fbaids->[$i]})) {
+				if (!defined($rxnhash->{$comprxn}->state_conservation()->{NA})) {
+					$rxnhash->{$comprxn}->state_conservation()->{NA} = [0,0,0,0];
+				}
+				$rxnhash->{$comprxn}->state_conservation()->{NA}->[0]++;
+			}
+		}
+		foreach my $compcpd (keys(%{$cpdhash})) {
+			if (!defined($cpdhash->{$compcpd}->exchanges()->{$fbaids->[$i]})) {
+				if (!defined($cpdhash->{$compcpd}->state_conservation()->{NA})) {
+					$cpdhash->{$compcpd}->state_conservation()->{NA} = [0,0,0,0];
+				}
+				$cpdhash->{$compcpd}->state_conservation()->{NA}->[0]++;
+			}
+		}
+		$fbahash->{$fbaids->[$i]}->forward_reactions($forwardrxn);
+		$fbahash->{$fbaids->[$i]}->reverse_reactions($reverserxn);
+		$fbahash->{$fbaids->[$i]}->uptake_compounds($uptakecpd);
+		$fbahash->{$fbaids->[$i]}->excretion_compounds($excretecpd);
+    }
+    for (my $i=0; $i < @{$fbaids}; $i++) {
+    	for (my $j=0; $j < @{$fbaids}; $j++) {
+    		if ($j != $i) {
+    			$fbahash->{$fbaids->[$i]}->fba_similarity()->{$fbaids->[$j]} = [0,0,0,0,0,0];
+    		}
+    	}
+    }
+    foreach my $rxn (keys(%{$rxnhash})) {
+    	my $fbalist = [keys(%{$rxnhash->{$rxn}->reaction_fluxes()})];
+    	my $rxnfbacount = @{$fbalist};
+    	foreach my $state (keys(%{$rxnhash->{$rxn}->state_conservation()})) {
+    		$rxnhash->{$rxn}->state_conservation()->{$state}->[1] = $rxnhash->{$rxn}->state_conservation()->{$state}->[0]/$fbacount;
+			$rxnhash->{$rxn}->state_conservation()->{$state}->[2] = $rxnhash->{$rxn}->state_conservation()->{$state}->[2]/$rxnhash->{$rxn}->state_conservation()->{$state}->[0];
+    	}
+    	for (my $i=0; $i < @{$fbalist}; $i++) {
+    		my $item = $rxnhash->{$rxn}->reaction_fluxes()->{$fbalist->[$i]};
+    		my $diff = $item->[5]-$rxnhash->{$rxn}->state_conservation()->{$item->[0]}->[2];
+    		$rxnhash->{$rxn}->state_conservation()->{$item->[0]}->[3] += ($diff*$diff);
+    		for (my $j=0; $j < @{$fbalist}; $j++) {
+    			if ($j != $i) {
+    				$fbahash->{$fbalist->[$i]}->fba_similarity()->{$fbalist->[$j]}->[0]++;
+    				if ($rxnhash->{$rxn}->reaction_fluxes()->{$fbalist->[$i]}->[5] < -0.00000001 && $rxnhash->{$rxn}->reaction_fluxes()->{$fbalist->[$j]}->[5] < -0.00000001) {
+    					$fbahash->{$fbalist->[$i]}->fba_similarity()->{$fbalist->[$j]}->[2]++;
+    				}
+    				if ($rxnhash->{$rxn}->reaction_fluxes()->{$fbalist->[$i]}->[5] > 0.00000001 && $rxnhash->{$rxn}->reaction_fluxes()->{$fbalist->[$j]}->[5] > 0.00000001) {
+    					$fbahash->{$fbalist->[$i]}->fba_similarity()->{$fbalist->[$j]}->[1]++;
+    				}
+    				if ($rxnhash->{$rxn}->reaction_fluxes()->{$fbalist->[$i]}->[5] == 0 && $rxnhash->{$rxn}->reaction_fluxes()->{$fbalist->[$j]}->[5] == 0) {
+    					$fbahash->{$fbalist->[$i]}->fba_similarity()->{$fbalist->[$j]}->[3]++;
+    				}
+    			}	
+    		}
+    	}
+    	my $bestcount = 0;
+    	my $beststate;
+    	foreach my $state (keys(%{$rxnhash->{$rxn}->state_conservation()})) {
+    		$rxnhash->{$rxn}->state_conservation()->{$state}->[3] = $rxnhash->{$rxn}->state_conservation()->{$state}->[3]/$rxnhash->{$rxn}->state_conservation()->{$state}->[0];
+    		$rxnhash->{$rxn}->state_conservation()->{$state}->[3] = sqrt($rxnhash->{$rxn}->state_conservation()->{$state}->[3]);
+    		if ($rxnhash->{$rxn}->state_conservation()->{$state}->[0] > $bestcount) {
+    			$bestcount = $rxnhash->{$rxn}->state_conservation()->{$state}->[0];
+    			$beststate = $state;
+    		}
+    	}
+    	$rxnhash->{$rxn}->most_common_state($beststate);
+    	if ($rxnfbacount == $fbacount) {
+    		$commonreactions++;
+    	}
+    }
+    foreach my $cpd (keys(%{$cpdhash})) {
+    	my $fbalist = [keys(%{$cpdhash->{$cpd}->exchanges()})];
+    	my $cpdfbacount = @{$fbalist};
+    	foreach my $state (keys(%{$cpdhash->{$cpd}->state_conservation()})) {
+    		$cpdhash->{$cpd}->state_conservation()->{$state}->[1] = $cpdhash->{$cpd}->state_conservation()->{$state}->[0]/$fbacount;
+			$cpdhash->{$cpd}->state_conservation()->{$state}->[2] = $cpdhash->{$cpd}->state_conservation()->{$state}->[2]/$cpdhash->{$cpd}->state_conservation()->{$state}->[0];
+    	}
+    	for (my $i=0; $i < @{$fbalist}; $i++) {
+    		my $item = $cpdhash->{$cpd}->exchanges()->{$fbalist->[$i]};
+    		my $diff = $item->[5]-$cpdhash->{$cpd}->state_conservation()->{$item->[0]}->[2];
+    		$cpdhash->{$cpd}->state_conservation()->{$item->[0]}->[3] += ($diff*$diff);
+    		for (my $j=0; $j < @{$fbalist}; $j++) {
+    			if ($j != $i) {
+    				$fbahash->{$fbalist->[$i]}->fba_similarity()->{$fbalist->[$j]}->[4]++;
+    				if ($cpdhash->{$cpd}->exchanges()->{$fbalist->[$i]}->[5] < -0.00000001 && $cpdhash->{$cpd}->exchanges()->{$fbalist->[$j]}->[5] < -0.00000001) {
+    					$fbahash->{$fbalist->[$i]}->fba_similarity()->{$fbalist->[$j]}->[6]++;
+    				}
+    				if ($cpdhash->{$cpd}->exchanges()->{$fbalist->[$i]}->[5] > 0.00000001 && $cpdhash->{$cpd}->exchanges()->{$fbalist->[$j]}->[5] > 0.00000001) {
+    					$fbahash->{$fbalist->[$i]}->fba_similarity()->{$fbalist->[$j]}->[5]++;
+    				}
+    				if ($cpdhash->{$cpd}->exchanges()->{$fbalist->[$i]}->[5] == 0 && $cpdhash->{$cpd}->exchanges()->{$fbalist->[$j]}->[5] == 0) {
+    					$fbahash->{$fbalist->[$i]}->fba_similarity()->{$fbalist->[$j]}->[7]++;
+    				}
+    			}	
+    		}
+    	}
+    	my $bestcount = 0;
+    	my $beststate;
+    	foreach my $state (keys(%{$cpdhash->{$cpd}->state_conservation()})) {
+    		$cpdhash->{$cpd}->state_conservation()->{$state}->[3] = $cpdhash->{$cpd}->state_conservation()->{$state}->[3]/$cpdhash->{$cpd}->state_conservation()->{$state}->[0];
+    		$cpdhash->{$cpd}->state_conservation()->{$state}->[3] = sqrt($cpdhash->{$cpd}->state_conservation()->{$state}->[3]);
+    		if ($cpdhash->{$cpd}->state_conservation()->{$state}->[0] > $bestcount) {
+    			$bestcount = $cpdhash->{$cpd}->state_conservation()->{$state}->[0];
+    			$beststate = $state;
+    		}
+    	}
+    	$cpdhash->{$cpd}->most_common_state($beststate);
+    	if ($cpdfbacount == $fbacount) {
+    		$commoncompounds++;
+    	}
+    }
+    $fbacomp->common_compounds($commoncompounds);
+    $fbacomp->common_reactions($commonreactions);
+    $output = $self->_save_msobject($fbacomp,"FBAComparison",$params->{workspace},$params->{output_id});
+    $self->_clearContext();
+    #END compare_fbas
+    my @_bad_returns;
+    (ref($output) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"output\" (value was \"$output\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to compare_fbas:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'compare_fbas');
     }
     return($output);
 }
@@ -27623,6 +28076,7 @@ Input parameters for the "genome_to_workspace" function.
         string source - Source database for genome (i.e. seed, rast, kbase)
         workspace_id workspace - ID of the workspace into which the genome typed object is to be loaded (a required argument)
         string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
+        Genome_uid uid - ID to use when saving genome to workspace
 
 
 =item Definition
@@ -27638,6 +28092,7 @@ sourcePassword has a value which is a string
 source has a value which is a string
 auth has a value which is a string
 overwrite has a value which is a bool
+uid has a value which is a Genome_uid
 
 </pre>
 
@@ -27653,6 +28108,7 @@ sourcePassword has a value which is a string
 source has a value which is a string
 auth has a value which is a string
 overwrite has a value which is a bool
+uid has a value which is a Genome_uid
 
 
 =end text
@@ -31662,6 +32118,8 @@ type has a value which is a string
 domain has a value which is a string
 map has a value which is a mapping_id
 mappingws has a value which is a workspace_id
+mapping_ref has a value which is a string
+biochemistry_ref has a value which is a string
 reactions has a value which is a reference to a list where each element is a TemplateReaction
 biomasses has a value which is a reference to a list where each element is a TemplateBiomass
 
@@ -31678,6 +32136,8 @@ type has a value which is a string
 domain has a value which is a string
 map has a value which is a mapping_id
 mappingws has a value which is a workspace_id
+mapping_ref has a value which is a string
+biochemistry_ref has a value which is a string
 reactions has a value which is a reference to a list where each element is a TemplateReaction
 biomasses has a value which is a reference to a list where each element is a TemplateBiomass
 
@@ -32461,6 +32921,53 @@ a reference to a hash where the following keys are defined:
 model_comparisons has a value which is a reference to a list where each element is a ModelComparisonModel
 reaction_comparisons has a value which is a reference to a list where each element is a ModelCompareReaction
 auth has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 compare_fbas_params
+
+=over 4
+
+
+
+=item Description
+
+********************************************************************************
+    Functions relating to comparison of FBAs
+   	********************************************************************************
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+output_id has a value which is a string
+fbas has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+0: a workspace_id
+1: a fba_id
+
+workspace has a value which is a workspace_id
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+output_id has a value which is a string
+fbas has a value which is a reference to a list where each element is a reference to a list containing 2 items:
+0: a workspace_id
+1: a fba_id
+
+workspace has a value which is a workspace_id
 
 
 =end text

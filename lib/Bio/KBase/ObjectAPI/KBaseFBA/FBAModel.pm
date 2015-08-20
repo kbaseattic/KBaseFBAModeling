@@ -828,7 +828,18 @@ sub LoadExternalReactionEquation {
 	    				foreach my $alias (@{$aliases}) {
 	    					if ($alias =~ m/^mdlid:(.+)/) {
 	    						if ($1 ne $cpd) {
-	    							print STDERR "Possibly erroneously consolidating ".$cpd." with ".$1."\n";
+	    							#This compound is already matched to something else, and we should not match it twice - doing so alters the model
+	    							print STDERR "Double match of ".$cpd." and ".$1." to ".$cpdobj->name()." (".$cpdobj->id()."). Retaining ".$1." match only!\n";
+	    							print STDERR $args->{reaction}."\t".$args->{equation}."\n";
+	    							$mdlcpd = $self->add("modelcompounds",{
+				    					id => $cpd."_".$compartment.$index,
+										compound_ref => $bio->_reference()."/compounds/id/cpd00000",
+										name => $cpd."_".$compartment.$index,
+										charge => 0,
+										formula => "",
+										modelcompartment_ref => "~/modelcompartments/id/".$mdlcmp->id(),
+				    					aliases => ["mdlid:".$cpd]
+				    				});
 	    						}
 	    					}
 	    				}
@@ -858,7 +869,7 @@ sub LoadExternalReactionEquation {
 		    				foreach my $alias (@{$aliases}) {
 		    					if ($alias =~ m/^mdlid:(.+)/) {
 		    						if ($1 ne $cpd) {
-		    							print STDERR "Possibly erroneously consolidating ".$cpd." with ".$1."\n";
+		    							print STDERR "Second way of possibly erroneously consolidating ".$cpd." with ".$1."\n";
 		    						}
 		    					}
 		    				}
