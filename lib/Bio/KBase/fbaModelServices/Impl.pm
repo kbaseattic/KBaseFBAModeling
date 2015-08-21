@@ -2665,7 +2665,7 @@ sub _classify_genome {
 	my($self,$genome) = @_;
 	if (!defined($self->{_classifierdata})) {
 		if (!-e $self->{"_classifier_file"}) {
-			system("curl https://raw.githubusercontent.com/kbase/KBaseFBAModeling/dev/classifier > ".$self->{"_classifier_file"});
+			system("curl https://raw.githubusercontent.com/kbase/KBaseFBAModeling/dev/classifier/classifier.txt > ".$self->{"_classifier_file"});
 		}
 		my $data = Bio::KBase::ObjectAPI::utilities::LOADFILE($self->{"_classifier_file"});
 		my $headings = [split(/\t/,$data->[0])];
@@ -19686,6 +19686,9 @@ sub models_to_community_model
 		push(@{$genomeObj->{contig_ids}},@{$mdlgenome->{contig_ids}});	
 		print "Loading features\n";
 		for (my $j=0; $j < @{$mdlgenome->features()}; $j++) {
+			if (!defined($mdlgenome->features()->[$j]->quality())) {
+				$mdlgenome->features()->[$j]->quality({});
+			}
 			$genomeObj->add("features",$mdlgenome->features()->[$j]);
 		}
 		#Adding compartments to community model

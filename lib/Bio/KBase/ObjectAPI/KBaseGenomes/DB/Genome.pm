@@ -37,11 +37,10 @@ has scientific_name => (is => 'rw', isa => 'Str', printOrder => '3', type => 'at
 has genetic_code => (is => 'rw', isa => 'Int', printOrder => '5', type => 'attribute', metaclass => 'Typed');
 has md5 => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has complete => (is => 'rw', isa => 'Int', printOrder => '10', type => 'attribute', metaclass => 'Typed');
-
+has quality => (is => 'rw', isa => 'HashRef', default => sub { return {}; }, type => 'attribute', metaclass => 'Typed', printOrder => '-1');
 
 # SUBOBJECTS:
 has close_genomes => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(Close_genome)', metaclass => 'Typed', reader => '_close_genomes', printOrder => '-1');
-has quality => (is => 'rw', singleton => 1, isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(Genome_quality_measure)', metaclass => 'Typed', reader => '_quality', printOrder => '-1');
 has features => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(Feature)', metaclass => 'Typed', reader => '_features', printOrder => '0');
 has contigs => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(Contig)', metaclass => 'Typed', reader => '_contigs', printOrder => '-1');
 
@@ -187,10 +186,17 @@ my $attributes = [
             'name' => 'complete',
             'type' => 'Int',
             'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'quality',
+            'type' => 'HashRef',
+            'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {source => 0, contigset_ref => 1, dna_size => 2, domain => 3, contig_lengths => 4, contig_ids => 5, publications => 6, id => 7, num_contigs => 8, source_id => 9, gc_content => 10, taxonomy => 11, scientific_name => 12, genetic_code => 13, md5 => 14, complete => 15};
+my $attribute_map = {source => 0, contigset_ref => 1, dna_size => 2, domain => 3, contig_lengths => 4, contig_ids => 5, publications => 6, id => 7, num_contigs => 8, source_id => 9, gc_content => 10, taxonomy => 11, scientific_name => 12, genetic_code => 13, md5 => 14, complete => 15, quality => 16};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -241,14 +247,6 @@ my $subobjects = [
             'module' => 'KBaseGenomes'
           },
           {
-            'printOrder' => -1,
-            'name' => 'quality',
-            'type' => 'child',
-            'class' => 'Genome_quality_measure',
-            'singleton' => 1,
-            'module' => 'KBaseGenomes'
-          },
-          {
             'printOrder' => 0,
             'name' => 'features',
             'type' => 'child',
@@ -264,7 +262,7 @@ my $subobjects = [
           }
         ];
 
-my $subobject_map = {close_genomes => 0, quality => 1, features => 2, contigs => 3};
+my $subobject_map = {close_genomes => 0, features => 1, contigs => 2};
 sub _subobjects {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -282,10 +280,6 @@ sub _subobjects {
 around 'close_genomes' => sub {
 	 my ($orig, $self) = @_;
 	 return $self->_build_all_objects('close_genomes');
-};
-around 'quality' => sub {
-	 my ($orig, $self) = @_;
-	 return $self->_build_all_objects('quality');
 };
 around 'features' => sub {
 	 my ($orig, $self) = @_;
