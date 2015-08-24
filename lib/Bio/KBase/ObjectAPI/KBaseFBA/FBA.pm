@@ -3281,7 +3281,11 @@ sub parseGapfillingOutput {
 		print "High expression reactions that were not activated [do not carry flux] (lower better): ".$temparray->[1]."\n";
 		for my $rxn (split ";", $tbl->{data}->[0]->[9]) {
 		    if (defined($rxnhash->{$rxn})) {
-		    	print "\t", $rxn, "\t", $rxnhash->{$rxn}->name(), "\t", addExpressionLeveltoGPR($rxnhash->{$rxn}->gprString(), $self->{_expsample}), "\n";
+		    	if (defined($self->{_expsample})) {
+		    		print "\t", $rxn, "\t", $rxnhash->{$rxn}->name(), "\t", addExpressionLeveltoGPR($rxnhash->{$rxn}->gprString(), $self->{_expsample}), "\n";
+		    	} else {
+		    		print "\t", $rxn, "\t", $rxnhash->{$rxn}->name(), "\t", $rxnhash->{$rxn}->gprString(), "\n";
+		    	}
 		    }
 		}
 		my $currrxns = [split(/;/,$tbl->{data}->[0]->[7])];
