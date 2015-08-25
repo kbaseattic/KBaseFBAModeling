@@ -1141,6 +1141,8 @@ sub checkReactionMassChargeBalance {
 	$atomHash->{H} = 0;
 	delete($imbalancedAtoms->{H});
 	push(@status,"HB");
+    }elsif($self->status() =~ /HB/){
+	push(@status,"HB");
     }
 
     #fix tiny number
