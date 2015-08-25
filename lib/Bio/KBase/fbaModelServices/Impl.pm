@@ -1885,15 +1885,13 @@ sub _sort_gapfill_solution_reactions {
 
 sub _generate_gapmeta {
 	my ($self,$obj) = @_;
-	my $idarray = [split(/\//,$obj->uuid())];
-	my $done = 0;
-	if ($obj->_type() eq "Gapfilling" && defined($obj->gapfillingSolutions())) {
-		$done = 1;
-	} elsif ($obj->_type() eq "Gapgeneration" && defined($obj->gapgenSolutions())) {
-		$done = 1;
+	my $fba = $obj;
+	if (ref($obj) eq "Bio::KBase::ObjectAPI::KBaseFBA::Gapfilling" || ref($obj) eq "Bio::KBase::ObjectAPI::KBaseFBA::Gapgeneration") {
+		$fba = $obj->fba();
 	}
+	my $idarray = [split(/\//,$obj->uuid())];
 	my $kos = [];
-	foreach my $gene ($obj->fba()->geneKOs()) {
+	foreach my $gene ($fba->geneKOs()) {
 		if (defined($gene) && ref($gene) eq "Bio::KBase::ObjectAPI::KBaseGenomes::Feature") {
 			push(@{$kos},$gene->id());
 		}
@@ -1901,9 +1899,9 @@ sub _generate_gapmeta {
 	return [
 		$obj->id(),
 		$obj->_reference(),
-		$obj->fba()->media()->name(),
-		$obj->fba()->media_ref(),
-		$done,
+		$fba->media()->name(),
+		$fba->media_ref(),
+		1,
 		$kos
 	];
 }
@@ -3466,7 +3464,10 @@ sub new
     }
   	if (defined($params->{'classifier_file'})) {
     		$self->{'_classifier_file'} = $params->{'classifier_file'};
-    } 
+    }
+    if (!defined($self->{'_classifier_file'})) {
+    	$self->{'_classifier_file'} = Bio::KBase::ObjectAPI::utilities::MFATOOLKIT_JOB_DIRECTORY()."classifier.txt";
+    }
     #This final condition allows one to specify a fully implemented workspace IMPL or CLIENT for use
 
     if (defined($options->{workspace})) {
@@ -3799,9 +3800,17 @@ sub get_models
     	#Creating fbas, gapfills, and gapgens
     	foreach my $obj (@{$model->gapfillings()}) {
     		if ($obj->integrated() == 1) {
-    			push(@{$mdldata->{integrated_gapfillings}},$self->_generate_gapmeta($obj->gapfill()));
+    			if (defined($obj->gapfill_ref())) {
+    				push(@{$mdldata->{integrated_gapfillings}},$self->_generate_gapmeta($obj->gapfill()));
+    			} else {
+    				push(@{$mdldata->{integrated_gapfillings}},$self->_generate_gapmeta($obj->fba()));
+    			}
     		} else {
-    			push(@{$mdldata->{unintegrated_gapfillings}},$self->_generate_gapmeta($obj->gapfill()));
+    			if (defined($obj->gapfill_ref())) {
+    				push(@{$mdldata->{unintegrated_gapfillings}},$self->_generate_gapmeta($obj->gapfill()));
+    			} else {
+    				push(@{$mdldata->{unintegrated_gapfillings}},$self->_generate_gapmeta($obj->fba()));
+    			}
     		}
     	}
     	foreach my $obj (@{$model->gapgens()}) {
@@ -10367,7 +10376,7 @@ sub simulate_phenotypes
 	} elsif ( $input->{positive_transporters} ) {
 		$model->addPhenotypeTransporters({phenotypes => $pheno,positiveonly => 1});
 	}
-	$input->{formulation}->{media} = "Carbon-D-Glucose";
+	$input->{formulation}->{media} = "Complete";
 	$input->{formulation}->{media_workspace} = "KBaseMedia";
 	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
 	my $fba = $self->_buildFBAObject($input->{formulation},$model,$input->{workspace},$self->_get_new_id($input->{model}.".gffba."));
@@ -11672,7 +11681,7 @@ sub gapfill_model
 		completeGapfill => 0,
 		timePerSolution => 43200,
 		totalTimeLimit => 45000,
-		solver => "GLPK",
+		solver => "SCIP",
 		nomediahyp => 0,
 		nobiomasshyp => 0,#
 		nogprhyp => 0,#
@@ -11710,6 +11719,9 @@ sub gapfill_model
 		$input->{$key} = $gfform->{$key};
 	}
 	delete $input->{formulation}->{objectiveTerms};
+	if (defined($input->{formulation}->{media}) && $input->{formulation}->{media} eq "Complete") {
+		$input->{formulation}->{media_workspace} = "KBaseMedia";
+	}
 	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
 	my $fba = $self->_buildFBAObject($input->{formulation},$model,$input->{workspace},$input->{out_model}.".gf");
 	#Dealing with expression data
