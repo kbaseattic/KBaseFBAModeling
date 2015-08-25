@@ -933,8 +933,6 @@ sub checkReactionMassChargeBalance {
 	#here we are balancing out reagents from the same compartment
 	foreach my $cpd_cmpt ( grep { $Rgts_Hash{$_} > 1 } keys %Rgts_Hash){
 
-	    print $cpd_cmpt,"\n";
-
 	    my ($cpd,$cmpt)=split(/_/,$cpd_cmpt);
 	    my $coefficient=0;
 	    my $found_rgt="";
@@ -991,8 +989,6 @@ sub checkReactionMassChargeBalance {
 	#balance out reagents regardless of compartment
 	$Cpds_Hash{$rgt->compound()->id()}+=$rgt->coefficient();
     }
-
-    print join("\n", map { $_.":".$Cpds_Hash{$_} } keys %Cpds_Hash),"\n";
 
     foreach my $cpd_id ( grep { $Cpds_Hash{$_} !=0 } keys %Cpds_Hash){
 	my $rgt = ( grep { $_->compound()->id() eq $cpd_id } @$rgts )[0];
