@@ -1129,10 +1129,23 @@ sub checkReactionMassChargeBalance {
 	push(@status,"HB");
     }
 
+    #fix tiny number
+    foreach my $atom (keys %{$imbalancedAtoms}){
+	if($atomHash->{$atom} > -0.00000001 && $atomHash->{$atom} < 0.00000001) {
+	    $atomHash->{$atom}=0;
+	    delete($imbalancedAtoms->{$atom});
+	}
+    }
+
     if(scalar(keys %{$imbalancedAtoms})>0){
 	$results->{balanced} = 0;
 	$status[0] = "MI:".join("/", map { $_.":".$atomHash->{$_} } sort keys %{$imbalancedAtoms});	
 	$results->{imbalancedAtoms} = { map { $_ => $atomHash->{$_} } keys %{$imbalancedAtoms} };
+    }
+
+    #fix tiny number
+    if($netCharge > -0.00000001 && $netCharge < 0.00000001) {
+	$netCharge=0;
     }
     
     if ($netCharge != 0) {
