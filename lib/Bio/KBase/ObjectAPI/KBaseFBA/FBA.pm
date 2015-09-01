@@ -951,10 +951,16 @@ sub createJobDirectory {
 		my $gfcpdhash;
 		foreach my $compindex (keys(%{$compindecies})) {
 			my $tmp = $model->template();
-			if (defined($self->templates()->{$compindex})) {
-				$tmp = $self->templates()->{$compindex};
-			} elsif (defined($model->templates()->[$compindex])) {
-				$tmp = $model->templates()->[$compindex];
+			if (defined($compindecies->{1})) {
+				if ($compindex == 0) {
+					next;
+				} else {
+					if (defined($self->templates()->{$compindex})) {
+						$tmp = $self->templates()->{$compindex};
+					} elsif (defined($model->templates()->[$compindex])) {
+						$tmp = $model->templates()->[$compindex];
+					}
+				}
 			}
 			my $tmprxns = $tmp->templateReactions();
 			for (my $i=0; $i < @{$tmprxns}; $i++) {
@@ -2647,7 +2653,7 @@ sub parseFBAPhenotypeOutput {
 					phenoclass => "UN",
 					phenotype_ref => $self->phenotypeset()->_reference()."/phenotypes/id/".$row->[0]
 				};
-				if ($self->parameters()->{"Perform gap filling"} == 1) {
+				if (defined($self->parameters()->{"Perform gap filling"}) && $self->parameters()->{"Perform gap filling"} == 1) {
 					if ($row->[6] =~ m/rxn\d\d\d\d\d/) {
 						$phenoOutputHash->{$row->[0]}->{gapfilledReactions} = [split(/;/,$row->[6])];
 						$phenoOutputHash->{$row->[0]}->{numGapfilledReactions} = @{$phenoOutputHash->{$row->[0]}->{gapfilledReactions}};
@@ -3352,7 +3358,13 @@ sub parseGapfillingOutput {
 					}
 					my $cmp = $self->biochemistry()->searchForCompartment($3);
 					my $rxn = $self->biochemistry()->searchForReaction($2);
-					next if ! defined $rxn;
+					if (!defined($rxn)) {
+					    $rxn = $self->{_source_model}->searchForReaction($2."_".$3.$4);
+					    if (!defined $rxn) {
+					    	print "Skipping gapfilling ".$array->[$i]."\n";
+					    	next;	
+					    }
+					}
 					push(@{$solution->{gapfillingSolutionReactions}},{
 						round => $round+0,
 						reaction_ref => $rxn->_reference(),
@@ -3396,7 +3408,11 @@ sub parseGapfillingOutput {
 					my $cmp = $self->biochemistry()->searchForCompartment($3);
 					my $rxn = $self->biochemistry()->searchForReaction($2);
 					if (!defined $rxn) {
-					    next;
+					    $rxn = $self->fbamodel()->searchForReaction($2."_".$3.$4);
+					    if (!defined $rxn) {
+					    	#print "Skipping candidate ".$array->[$i]."\n";
+					    	next;	
+					    }
 					}
 					push(@{$solution->{rejectedCandidates}},{
 						round => $round+0,

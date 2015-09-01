@@ -3304,7 +3304,11 @@ sub _export_object {
 		my $JSON = JSON::XS->new->utf8(1);
     	$output = $JSON->encode($obj);
 	} elsif (ref($obj) =~ m/Bio::KBase::ObjectAPI/) {
-		$output = $obj->export({format => $input->{format}});;
+		if (ref($obj) eq "Bio::KBase::ObjectAPI::KBasePhenotypes::PhenotypeSimulationSet" && $input->{format} eq "text") {
+			$output = $obj->export_text();
+		} else {
+			$output = $obj->export({format => $input->{format}});
+		}
 	} else {
 		$output = $obj;
 	} 
@@ -19633,6 +19637,7 @@ sub models_to_community_model
 		type => "CommunityModel",
 		name => $params->{name},
 		template_ref => $model->template_ref(),
+		template_refs => [$model->template_ref()],
 		modelreactions => [],
 		modelcompounds => [],
 		modelcompartments => [],
@@ -19703,6 +19708,7 @@ sub models_to_community_model
 			}
 			$genomeObj->add("features",$mdlgenome->features()->[$j]);
 		}
+		$commdl->template_refs()->[$i+1] = $model->template_ref();
 		#Adding compartments to community model
 		my $cmps = $model->modelcompartments();
 		print "Loading compartments\n";
