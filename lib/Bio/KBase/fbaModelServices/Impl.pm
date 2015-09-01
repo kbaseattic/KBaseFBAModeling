@@ -19753,13 +19753,17 @@ sub models_to_community_model
 			if ($rxn->id() =~ m/(.+)_([a-zA-Z]\d+)/) {
 				$rootid = $1;
 			}
-			if (!defined($commdl->getObject("modelreactions",$rootid."_".$cmpsHash->{$rxn->modelcompartment()->compartment()->id()}->id()))) {
+			my $originalcmpid = $rxn->modelcompartment()->compartment()->id();
+			if ($originalcmpid eq "e0") {
+				$originalcmpid = "c0";
+			}
+			if (!defined($commdl->getObject("modelreactions",$rootid."_".$cmpsHash->{$originalcmpid}->id()))) {
 				my $comrxn = $commdl->add("modelreactions",{
-					id => $rootid."_".$cmpsHash->{$rxn->modelcompartment()->compartment()->id()}->id(),
+					id => $rootid."_".$cmpsHash->{$originalcmpid}->id(),
 					reaction_ref => $rxn->reaction_ref(),
 					direction => $rxn->direction(),
 					protons => $rxn->protons(),
-					modelcompartment_ref => "~/modelcompartments/id/".$cmpsHash->{$rxn->modelcompartment()->compartment()->id()}->id(),
+					modelcompartment_ref => "~/modelcompartments/id/".$cmpsHash->{$originalcmpid}->id(),
 					probability => $rxn->probability()
 				});
 				for (my $k=0; $k < @{$rxn->modelReactionProteins()}; $k++) {
