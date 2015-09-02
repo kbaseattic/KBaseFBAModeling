@@ -965,7 +965,11 @@ sub createJobDirectory {
 			my $tmprxns = $tmp->templateReactions();
 			for (my $i=0; $i < @{$tmprxns}; $i++) {
 				my $tmprxn = $tmprxns->[$i];
-				my $tmpid = $tmprxn->reaction()->id()."_".$tmprxn->compartment()->id().$compindex;
+				my $cmpid = $tmprxn->compartment()->id();
+				if ($cmpid eq "e") {
+					$cmpid = "c";
+				}
+				my $tmpid = $tmprxn->reaction()->id()."_".$cmpid.$compindex;
 				my $rxndir = "<=>";
 				if ($tmprxn->direction() eq ">") {
 					$rxndir = "=>";
