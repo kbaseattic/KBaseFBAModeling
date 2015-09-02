@@ -3304,7 +3304,11 @@ sub _export_object {
 		my $JSON = JSON::XS->new->utf8(1);
     	$output = $JSON->encode($obj);
 	} elsif (ref($obj) =~ m/Bio::KBase::ObjectAPI/) {
-		$output = $obj->export({format => $input->{format}});;
+		if (ref($obj) eq "Bio::KBase::ObjectAPI::KBasePhenotypes::PhenotypeSimulationSet" && $input->{format} eq "text") {
+			$output = $obj->export_text();
+		} else {
+			$output = $obj->export({format => $input->{format}});
+		}
 	} else {
 		$output = $obj;
 	} 
@@ -19633,6 +19637,7 @@ sub models_to_community_model
 		type => "CommunityModel",
 		name => $params->{name},
 		template_ref => $model->template_ref(),
+		template_refs => [$model->template_ref()],
 		modelreactions => [],
 		modelcompounds => [],
 		modelcompartments => [],
@@ -19703,6 +19708,7 @@ sub models_to_community_model
 			}
 			$genomeObj->add("features",$mdlgenome->features()->[$j]);
 		}
+		$commdl->template_refs()->[$i+1] = $model->template_ref();
 		#Adding compartments to community model
 		my $cmps = $model->modelcompartments();
 		print "Loading compartments\n";
@@ -19747,13 +19753,17 @@ sub models_to_community_model
 			if ($rxn->id() =~ m/(.+)_([a-zA-Z]\d+)/) {
 				$rootid = $1;
 			}
-			if (!defined($commdl->getObject("modelreactions",$rootid."_".$cmpsHash->{$rxn->modelcompartment()->compartment()->id()}->id()))) {
+			my $originalcmpid = $rxn->modelcompartment()->compartment()->id();
+			if ($originalcmpid eq "e0") {
+				$originalcmpid = "c0";
+			}
+			if (!defined($commdl->getObject("modelreactions",$rootid."_".$cmpsHash->{$originalcmpid}->id()))) {
 				my $comrxn = $commdl->add("modelreactions",{
-					id => $rootid."_".$cmpsHash->{$rxn->modelcompartment()->compartment()->id()}->id(),
+					id => $rootid."_".$cmpsHash->{$originalcmpid}->id(),
 					reaction_ref => $rxn->reaction_ref(),
 					direction => $rxn->direction(),
 					protons => $rxn->protons(),
-					modelcompartment_ref => "~/modelcompartments/id/".$cmpsHash->{$rxn->modelcompartment()->compartment()->id()}->id(),
+					modelcompartment_ref => "~/modelcompartments/id/".$cmpsHash->{$originalcmpid}->id(),
 					probability => $rxn->probability()
 				});
 				for (my $k=0; $k < @{$rxn->modelReactionProteins()}; $k++) {
