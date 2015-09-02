@@ -456,7 +456,7 @@ sub PrepareForGapfilling {
 	    booleanexp => "absolute",
 		expsample => undef,
 		expression_threshold_percentile => 0.5,
-		kappa => .1,
+		kappa => 0.1,
 		source_model => undef,
 		timePerSolution => 43200,
 		totalTimeLimit => 45000,
@@ -467,9 +467,9 @@ sub PrepareForGapfilling {
 		alpha => 0,
 		omega => 0,
 		num_solutions => 1,
-		nomediahyp => 0,
-		nobiomasshyp => 0,#
-		nogprhyp => 0,#
+		nomediahyp => 1,
+		nobiomasshyp => 1,#
+		nogprhyp => 1,#
 		nopathwayhyp => 0,#
 		allowunbalanced => 0,
 		drainpen => 10,

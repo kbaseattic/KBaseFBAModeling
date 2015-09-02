@@ -11686,9 +11686,9 @@ sub gapfill_model
 		timePerSolution => 43200,
 		totalTimeLimit => 45000,
 		solver => "SCIP",
-		nomediahyp => 0,
-		nobiomasshyp => 0,#
-		nogprhyp => 0,#
+		nomediahyp => 1,
+		nobiomasshyp => 1,#
+		nogprhyp => 1,#
 		nopathwayhyp => 0,#
 		allowunbalanced => 0,
 		drainpen => 10,
@@ -11707,7 +11707,15 @@ sub gapfill_model
 		model_workspace => $input->{workspace},
 		integrate_solution => 0,
 		formulation => undef,
+		simultaneous => 0
 	});
+	if ($input->{simultaneous} == 1 && $input->{alpha} == 0) {
+		if ($input->{use_discrete_variables} == 1) {
+			$input->{alpha} = 0.5;
+		} else {
+			$input->{alpha} = 0.00015;
+		}
+	}
 	#Dealing with model and source model
 	my $start = time();
 	my $model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model});
@@ -11765,6 +11773,8 @@ sub gapfill_model
 		} else {
 			$self->_error("Cannot run expression-constrained FBA without providing specifying expression matrix and column.");	
 		}
+	} elsif ($input->{simultaneous} == 0) {
+		$input->{alpha} = 0;
 	}
 	#Prepping FBA for gapfilling
 	$fba->fva(0);
