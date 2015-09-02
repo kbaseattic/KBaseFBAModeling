@@ -218,11 +218,13 @@ sub addReactionToModel {
 	    $mdlcmp = $self->addCompartmentToModel({compartment => $rxn->compartment(),pH => 7,potential => 0,compartmentIndex => 0});
 	}
     if ($rxn->isTransport()) {
-	#compartment must always be non-cytosolic
+	#compartment must always be non-cytosolic except for when they are extracellular
 	my %Cmpts= map { $_->compartment()->id() => 1 } @{$rxn->reagents()};
-	my $Cmpt = $self->template()->biochemistry()->getObject("compartments",(grep { $_ ne "c" } sort keys %Cmpts)[0]);
-	
-	$mdlcmp = $self->addCompartmentToModel({compartment => $Cmpt,pH => 7,potential => 0,compartmentIndex => $mdlcmp->compartmentIndex()});
+	my $Non_Cyto_Cmpt = ( grep { $_ ne "c" } sort keys %Cmpts)[0];
+	if($Non_Cyto_Cmpt ne "e"){
+	    my $Cmpt = $self->template()->biochemistry()->getObject("compartments",$Non_Cyto_Cmpt);
+	    $mdlcmp = $self->addCompartmentToModel({compartment => $Cmpt,pH => 7,potential => 0,compartmentIndex => $mdlcmp->compartmentIndex()});
+	}
     }
 	my $mdlrxn = $self->queryObject("modelreactions",{
 		reaction_ref => $rxn->_reference(),
