@@ -3359,19 +3359,8 @@ sub new
     $self->{'_shockurl'} = "http://140.221.85.54:7445";
     $self->{_jobqueue} = "workspace";
     $self->{'_fba-url'} = "";
-    $self->{'_file_cache'} = "/Users/dejongh/Desktop/ModelSEED/KBaseFBAModeling/cache";
+    $self->{'_file_cache'} = "";
     $self->{'_cache_targets'} = {};
-    $self->{'_cache_targets'}->{"kbase/default"}=1;
-    $self->{'_cache_targets'}->{"489/6/5"}=1;
-    $self->{'_cache_targets'}->{"6/4/1"}=1;
-    $self->{'_cache_targets'}->{"6/5/1"}=1;
-    $self->{'_cache_targets'}->{"7/175/9"}=1;
-    $self->{'_cache_targets'}->{"875/4/1"}=1;
-    $self->{'_cache_targets'}->{"875/7/1"}=1;
-    $self->{'_cache_targets'}->{"875/6/1"}=1;
-    $self->{'_cache_targets'}->{"9/3"}=1;
-    $self->{'_cache_targets'}->{"jplfaria:1438014076525/iMR1_799"}=1;
-    $self->{'_cache_targets'}->{"6/5/1"}=1;
     Bio::KBase::ObjectAPI::utilities::ID_SERVER_URL("http://kbase.us/services/idserver");
     $self->{'_gaserver-url'} = "http://kbase.us/services/genome_annotation";
     $self->{'_mssserver-url'} = "http://bio-data-1.mcs.anl.gov/services/ms_fba";
@@ -4911,7 +4900,7 @@ sub get_compounds
 		my $cpd = $input->{compounds}->[$i];
 		my $objs;
 		if ($cpd =~ m/(cpd\d+)$/) {
-			$objs = $biochem->getObjects("compounds",[$1]);
+			$objs = $biochem->getObjects("compounds",[$cpd]);
 		} else {
 			$objs = $biochem->searchForAllCompounds($cpd);
 		}
@@ -7581,7 +7570,7 @@ sub import_fbamodel
     if (defined($input->{template})) {
     	$template = $self->_get_msobject("ModelTemplate",$input->{template_workspace},$input->{template});
     } else {
-    	my $class = "Gram negative"; #$self->_classify_genome($genome);
+    	my $class = $self->_classify_genome($genome);
 		if ($class eq "Gram positive") {
     		$template = $self->_get_msobject("ModelTemplate","KBaseTemplateModels","GramPosModelTemplate");
     	} elsif ($class eq "Gram negative") {
