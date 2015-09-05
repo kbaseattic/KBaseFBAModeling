@@ -4900,7 +4900,7 @@ sub get_compounds
 		my $cpd = $input->{compounds}->[$i];
 		my $objs;
 		if ($cpd =~ m/(cpd\d+)$/) {
-			$objs = $biochem->getObjects("compounds",[$cpd]);
+			$objs = $biochem->getObjects("compounds",[$1]);
 		} else {
 			$objs = $biochem->searchForAllCompounds($cpd);
 		}
