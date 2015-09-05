@@ -3366,7 +3366,9 @@ sub parseGapfillingOutput {
 					my $cmp = $self->biochemistry()->searchForCompartment($3);
 					my $rxn = $self->biochemistry()->searchForReaction($2);
 					if (!defined($rxn)) {
-					    $rxn = $self->{_source_model}->searchForReaction($2."_".$3.$4);
+						if (defined($self->{_source_model})) {
+					    	$rxn = $self->{_source_model}->searchForReaction($2."_".$3.$4);
+						}
 					    if (!defined $rxn) {
 					    	print "Skipping gapfilling ".$array->[$i]."\n";
 					    	next;	
