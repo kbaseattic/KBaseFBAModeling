@@ -155,7 +155,7 @@ sub _resetKBaseStore {
 	$temp = pop(@{$temp});
 	my $newparams = {};
 	foreach my $param (keys(%{$params})) {
-		if ($param ne "fasta" && $param ne "annotations" && $param ne "genomeobj" && $param ne "gtf_file" && $param ne "sbml" && $param ne "templateReactions") {
+		if ($param ne "exp_raw_data" && $param ne "fasta" && $param ne "annotations" && $param ne "genomeobj" && $param ne "gtf_file" && $param ne "sbml" && $param ne "templateReactions") {
 			$newparams->{$param} = $params->{$param};
 		}
 	}
