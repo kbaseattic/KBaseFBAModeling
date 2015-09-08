@@ -2627,6 +2627,39 @@ sub searchForReaction {
     return $mdlrxn;
 }
 
+=head3 searchForCompartment
+
+Definition:
+	Bio::KBase::ObjectAPI::KBaseFBA::Biomass Bio::KBase::ObjectAPI::KBaseFBA::Biomass->searchForCompartment(string:id);
+Description:
+	Search for compartment in model
+	
+=cut
+
+sub searchForCompartment {
+    my $self = shift;
+    my $id = shift;
+    my $index = shift;
+    if ($id =~ m/^([a-z]+)(\d*)$/) {
+    	$id = $1;
+    	$index = $2;
+    } elsif ($id =~ m/^([a-z]+)(\d+)$/) {
+    	$id = $1;
+    	$index = $2;
+    }
+    if (!defined($index)) {
+    	$index = 0;
+    }
+    my $mdlcmp = $self->getObject("modelcompartments",$id.$index);
+    if (!defined($mdlcmp)) {
+    	my $cmp = $self->biochemistry()->searchForCompartment($id);
+	    if (!defined($cmp)) {
+	    	return undef;
+	    }
+	    $mdlcmp = $self->getObject("modelcompartments",$cmp->id().$index);
+    }
+    return $mdlcmp;
+}
 
 =head3 addPhenotypeTransporters
 

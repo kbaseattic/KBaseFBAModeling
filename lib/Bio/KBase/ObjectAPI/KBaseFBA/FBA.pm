@@ -3374,6 +3374,14 @@ sub parseGapfillingOutput {
 					    	next;	
 					    }
 					}
+					if(!defined $cmp){
+					    $cmp = $self->fbamodel()->searchForCompartment($3.$4);
+					    if(!defined($cmp)){
+					    	print "Skipping gapfilling ".$array->[$i]."\n";
+						next;
+					    }
+					}
+
 					push(@{$solution->{gapfillingSolutionReactions}},{
 						round => $round+0,
 						reaction_ref => $rxn->_reference(),
@@ -3419,16 +3427,23 @@ sub parseGapfillingOutput {
 					if (!defined $rxn) {
 					    $rxn = $self->fbamodel()->searchForReaction($2."_".$3.$4);
 					    if (!defined $rxn) {
-					    	#print "Skipping candidate ".$array->[$i]."\n";
+					    	print "Skipping candidate ".$array->[$i]."\n";
 					    	next;	
+					    }
+					}
+					if(!defined $cmp){
+					    $cmp = $self->fbamodel()->searchForCompartment($3.$4);
+					    if(!defined($cmp)){
+						print "Skipping candidate ".$array->[$i]."\n";
+						next;
 					    }
 					}
 					push(@{$solution->{rejectedCandidates}},{
 						round => $round+0,
 						reaction_ref => $rxn->_reference(),
 						compartment_ref => $cmp->_reference(),
-    					direction => $dir,
-    					compartmentIndex => $ind+0,
+						direction => $dir,
+						compartmentIndex => $ind+0,
 						candidateFeature_refs => []
 					});
 				}
