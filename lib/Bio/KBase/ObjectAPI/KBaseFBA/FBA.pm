@@ -912,7 +912,7 @@ sub createJobDirectory {
 			$biomasscomps .= ";".$component."Biomass:".$comprxn->{$component}->{totalmass};
 			my $reactant = "";
 			my $product = "";
-			foreach my $cpd (keys($comprxn->{$component}->{compounds})) {
+			foreach my $cpd (keys(%{$comprxn->{$component}->{compounds}})) {
 				#Rescaling the coefficient for a one gram basis
 				$comprxn->{$component}->{compounds}->{$cpd} = $comprxn->{$component}->{compounds}->{$cpd}/$comprxn->{$component}->{totalmass};
 				if ($comprxn->{$component}->{compounds}->{$cpd} < 0) {
