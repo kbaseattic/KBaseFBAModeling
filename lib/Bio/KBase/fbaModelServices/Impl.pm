@@ -3161,8 +3161,8 @@ sub _compute_eflux_scores {
 			# Take max expression score across all samples for this reaction
 			$max_score = undef;
 			foreach my $currkey (keys(%{$scores_collection->{$rxn_id}})) {
-				if (!defined($maxscore) || $maxscore < $scores_collection->{$rxn_id}->{$currkey}) {
-					$maxscore = $currscore;
+				if (!defined($max_score) || $max_score < $scores_collection->{$rxn_id}->{$currkey}) {
+					$max_score = $scores_collection->{$rxn_id}->{$currkey};
 				}
 			}
 		}
