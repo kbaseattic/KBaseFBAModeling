@@ -3159,7 +3159,12 @@ sub _compute_eflux_scores {
 	} else {
 		if (defined $series_id) {
 			# Take max expression score across all samples for this reaction
-			$max_score = (sort {$b <=> $a } map {$scores_collection->{$rxn_id}->{$_}} keys $scores_collection->{$rxn_id})[0];
+			$max_score = undef;
+			foreach my $currkey (keys(%{$scores_collection->{$rxn_id}})) {
+				if (!defined($maxscore) || $maxscore < $scores_collection->{$rxn_id}->{$currkey}) {
+					$maxscore = $currscore;
+				}
+			}
 		}
 	    # Then normalize the picked sample's expression score by the max
 	    $scores_for_picked_sample->{$rxn_id} = $scores_collection->{$rxn_id}->{$picked_sample_id} / $max_score;
@@ -20174,20 +20179,23 @@ sub import_expression
     my($expression_meta);
     #BEGIN import_expression
     $self->_setContext($ctx,$input);    
-    $input = $self->_validateargs($input,["expression_data_sample_series","series","workspace","source_date"],
-				  {source_id => $input->{"series"},
-				   numerical_interpretation => "Log2 level intensities",});
+    $input = $self->_validateargs($input,["expression_data_sample_series","series","workspace","source_date"],{
+    	source_id => $input->{"series"},
+		numerical_interpretation => "Log2 level intensities"
+    });
 
     my $genome_id;
     if (exists $input->{"genome_id"}) {
-	$genome_id = $input->{"genome_id"};
+		$genome_id = $input->{"genome_id"};
     } else {
-	my $feature_id = (keys $input->{"expression_data_sample_series"}->{(keys $input->{"expression_data_sample_series"})[0]}->{"data_expression_levels_for_sample"})[0];
-	if ( $feature_id =~ /(.+)\.[a-zA-Z]+\.\d+$/) {
-	    $genome_id = $1;
-	} else {
-	    die("Can't determine genome id from feature id: $feature_id\n");
-	}
+    	my $keys = [keys(%{$input->{expression_data_sample_series}})];
+    	my $expkeys = [keys(%{$input->{expression_data_sample_series}->{$keys->[0]}->{data_expression_levels_for_sample}})];
+		my $feature_id = $expkeys->[0];
+		if ( $feature_id =~ /(.+)\.[a-zA-Z]+\.\d+$/) {
+		    $genome_id = $1;
+		} else {
+		    die("Can't determine genome id from feature id: ".$feature_id."\n");
+		}
     }
 
 
