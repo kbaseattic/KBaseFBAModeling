@@ -3311,6 +3311,8 @@ sub _export_object {
 	} elsif (ref($obj) =~ m/Bio::KBase::ObjectAPI/) {
 		if (ref($obj) eq "Bio::KBase::ObjectAPI::KBasePhenotypes::PhenotypeSimulationSet" && $input->{format} eq "text") {
 			$output = $obj->export_text();
+                } elsif (defined $input->{fbas}) {
+			$output = $obj->export({format => $input->{format}, fbas => $input->{fbas}});
 		} else {
 			$output = $obj->export({format => $input->{format}});
 		}
@@ -7885,11 +7887,16 @@ sub export_fbamodel
     $input = $self->_validateargs($input,["model","workspace","format"],{
     	toshock => 0
     });
+    my $fbas = [];
+    foreach my $fba (@{$input->{fbas}}) {
+	push @$fbas, $self->_get_msobject("FBA",$input->{workspace},$fba);
+    }
     $output = $self->_export_object({
     	reference => $input->{workspace}."/".$input->{model},
     	type => "FBAModel",
     	format => $input->{format},
-    	toshock => $input->{toshock}
+    	toshock => $input->{toshock},
+        fbas => $fbas
     });
     $self->_clearContext();
     #END export_fbamodel

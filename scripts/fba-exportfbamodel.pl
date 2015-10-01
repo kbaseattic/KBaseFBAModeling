@@ -30,11 +30,18 @@ my $toshock = 0;
 if (defined($params->{toshock})) {
 	$toshock = $params->{toshock};
 }
-if (defined($opt->{fbas})) {
-	foreach my $fba (@{$opt->{fbas}}) {
-		push(@{$params->{fbas}},split(/;/,$fba));
+my $fbas = [];
+if (defined($params->{fbas})) {
+	foreach my $fba (@{$params->{fbas}}) {
+		push(@{$fbas},split(/;/,$fba));
 	}
 }
+if (defined($opt->{fbas})) {
+	foreach my $fba (@{$opt->{fbas}}) {
+		push(@{$fbas},split(/;/,$fba));
+	}
+}
+$params->{fbas} = $fbas;
 #Calling the server
 my $output = runFBACommand($params,$servercommand,$opt);
 #Checking output and report results
