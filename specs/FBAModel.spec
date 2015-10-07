@@ -1249,4 +1249,24 @@ module KBaseFBA {
 		list<FBAComparisonReaction> reactions;
 		list<FBAComparisonCompound> compounds;
 	} FBAComparison;
+
+	/*
+		SubsystemReaction object: this object holds information about individual reactions in a subsystems
+	*/
+	typedef structure {
+		string id;
+		string reaction_ref;
+		list <string> roles;
+		string tooltip;
+	} SubsystemReaction;
+
+	/*
+		SubsystemAnnotation object: this object holds all reactions in subsystems
+	*/
+	typedef structure {
+		string id;
+		biochemistry_ref biochemistry_ref;
+		mapping_ref mapping_ref;
+		mapping < subsystem_id, tuple < string reaction_id, SubsystemReaction reaction_info > > subsystems;
+	} SubsystemAnnotation;
 };
