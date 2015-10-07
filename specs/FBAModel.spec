@@ -1257,7 +1257,6 @@ module KBaseFBA {
 		string id;
 		string reaction_ref;
 		list <string> roles;
-		list <string> features;
 		string tooltip;
 	} SubsystemReaction;
 
