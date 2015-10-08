@@ -1267,6 +1267,6 @@ module KBaseFBA {
 		string id;
 		biochemistry_ref biochemistry_ref;
 		mapping_ref mapping_ref;
-		mapping < subsystem_id, tuple < string reaction_id, SubsystemReaction reaction_info > > subsystems;
+		mapping < subsystem_id, list < tuple < string reaction_id, SubsystemReaction reaction_info > > > subsystems;
 	} SubsystemAnnotation;
 };
