@@ -545,7 +545,15 @@ Description:
 
 sub calculateEnergyofReaction{
     my $self=shift;
-    my %Cues=%{$self->cues()};
+
+    #transform to remove reference string
+    my %Cues=();
+    foreach my $cue (keys %{$self->cues()}){
+	my $old_cue = $cue;
+	my @temp = split(/\//,$cue);
+	$cue = $temp[$#temp];
+	$Cues{$cue}=$self->cues()->{$old_cue};
+    }
 
     if($self->status() eq "EMPTY" || $self->status() eq "CPDFORMERROR"){
 	$self->deltaG("10000000");
@@ -602,6 +610,7 @@ sub estimateThermoReversibility{
 
     if($self->deltaG() eq "10000000"){
 	$self->thermoReversibility("?");
+	$self->direction("=") if $args->{direction};
 	return "No deltaG";
     }
 
@@ -722,43 +731,15 @@ sub estimateThermoReversibility{
     #Do heuristics
     #1: ATP hydrolysis transport
     #1a: Find Phosphate stuff
-    my %PhoIDs=("ATP" => { "ModelSEED" => "cpd00002", "KEGG" => "C00002", "MetaCyc" => "ATP", "UUID" =>"" },
-		"ADP" => { "ModelSEED" => "cpd00008", "KEGG" => "C00008", "MetaCyc" => "ADP", "UUID" =>"" },
-		"AMP" => { "ModelSEED" => "cpd00018", "KEGG" => "C00020", "MetaCyc" => "AMP", "UUID" =>"" },
-		"Pi"  => { "ModelSEED" => "cpd00009", "KEGG" => "C00009", "MetaCyc" => "Pi",  "UUID" =>"" },
-		"Ppi" => { "ModelSEED" => "cpd00012", "KEGG" => "C00013", "MetaCyc" => "PPI", "UUID" =>"" });
-
-    my $Source="None";
-    foreach my $src ("KEGG","MetaCyc","ModelSEED"){
-	    my $cpdObj = $biochem->getObjectByAlias("compounds",$PhoIDs{"Pi"}{$src},$src);
-	    if($cpdObj){
-			$Source=$src;
-			last;
-		}
-    }
-    if($Source eq "None"){
-	Bio::KBase::ObjectAPI::utilities::verbose("Cannot use heuristics with atypical biochemistry aliases");
-	return "Error";
-    }
-
-    foreach my $cpd (keys %PhoIDs){
-	my $cpdObj = $biochem->getObjectByAlias("compounds",$PhoIDs{$cpd}{$Source},$Source);
-	if($cpdObj){
-	    $PhoIDs{$cpd}{"UUID"}=$cpdObj->uuid();
-	}else{
-	    Bio::KBase::ObjectAPI::utilities::verbose("Unable to find phopsphate compound in biochemistry: $cpd");
-	    return "Error";
-	}
-    }
-
+    my %PhoIDs=("ATP" => "cpd00002", "ADP" => "cpd00008", "AMP" => "cpd00018", "Pi"  => "cpd00009", "Ppi" => "cpd00012");
     my %PhoHash=();
     my %Comps=();
     my $Contains_Protons=0;
     foreach my $rgt (@{$self->reagents()}){
         $Comps{$rgt->compartment()->id()}=1;
-        $Contains_Protons=1 if $rgt->compartment()->id() ne "c" && $rgt->compound_ref() eq $biochem->checkForProton()->uuid();
+        $Contains_Protons=1 if $rgt->compartment()->id() ne "c" && $rgt->compound->id() eq "cpd00067";
 	foreach my $cpd (keys %PhoIDs){
-	    $PhoHash{$cpd} += $rgt->coefficient() if $PhoIDs{$cpd}{"UUID"} eq $rgt->compound_ref();
+	    $PhoHash{$cpd} += $rgt->coefficient() if $PhoIDs{$cpd} eq $rgt->compound->id();
 	}
     }
 
@@ -783,29 +764,17 @@ sub estimateThermoReversibility{
     }
 
     #2: Calculate mMdeltaG
-    my %GasIDs=("CO2"=> { "ModelSEED" => "cpd00011", "KEGG" => "C00011", "MetaCyc" => "CARBON-DIOXIDE", "UUID" =>"" },
-		"O2" => { "ModelSEED" => "cpd00007", "KEGG" => "C00007", "MetaCyc" => "OXYGEN-MOLECULE", "UUID" =>"" },
-		"H2" => { "ModelSEED" => "cpd11640", "KEGG" => "C00282", "MetaCyc" => "HYDROGEN-MOLECULE", "UUID" =>"" });
-
-    foreach my $cpd (keys %GasIDs){
-	my $cpdObj = $biochem->getObjectByAlias("compounds",$GasIDs{$cpd}{$Source},$Source);
-	if($cpdObj){
-	    $GasIDs{$cpd}{"UUID"}=$cpdObj->uuid();
-	}else{
-	    Bio::KBase::ObjectAPI::utilities::verbose("Unable to find gas compound in biochemistry: $cpd");
-	    return "Error";
-	}
-    }
+    my %GasIDs=("CO2"=> "cpd00011", "O2" => "cpd00007", "H2" => "cpd11640");
 
     my $conc=0.001;
     my $rgt_total=0.0;
     foreach my $rgt (@{$self->reagents()}){
-	next if $rgt->compound_ref() eq $biochem->checkForProton()->uuid() || $rgt->compound_ref() eq $biochem->checkForWater()->uuid();
+	next if $rgt->compound->id() eq "cpd00067" || $rgt->compound->id() eq "cpd00001";
         my $tconc=$conc;
-        if($rgt->compound_ref() eq $GasIDs{"CO2"}{"UUID"}){
+        if($rgt->compound()->id() eq $GasIDs{"CO2"}){
             $tconc=0.0001;
         }
-        if($rgt->compound_ref() eq $GasIDs{"O2"}{"UUID"} || $rgt->compound_ref() eq $GasIDs{"H2"}{"UUID"}){
+        if($rgt->compound->id() eq $GasIDs{"O2"} || $rgt->compound->id() eq $GasIDs{"H2"}){
             $tconc=0.000001;
         }
         $rgt_total+=($rgt->coefficient()*log($tconc));
@@ -842,31 +811,16 @@ sub estimateThermoReversibility{
 
     #3b:Find other low energy compounds
     #taken from software/mfatoolkit/Parameters/Defaults.txt
-    my %LowEIDs=("CO2" => { "ModelSEED" => "cpd00011", "KEGG" => "C00011", "MetaCyc" => "CARBON-DIOXIDE", "UUID" =>"" },
-		 "NH3" => { "ModelSEED" => "cpd00013", "KEGG" => "C00014", "MetaCyc" => "AMMONIA", "UUID" =>"" },
-		 "ACP" => { "ModelSEED" => "cpd11493", "KEGG" => "C00229", "MetaCyc" => "ACP", "UUID" =>"" },
-		 "Pi"  => { "ModelSEED" => "cpd00009", "KEGG" => "C00009", "MetaCyc" => "Pi",  "UUID" =>"" },
-		 "Ppi" => { "ModelSEED" => "cpd00012", "KEGG" => "C00013", "MetaCyc" => "PPI", "UUID" =>"" },
-		 "CoA" => { "ModelSEED" => "cpd00010", "KEGG" => "C00010", "MetaCyc" => "CO-A", "UUID" =>"" },
-		 "DHL" => { "ModelSEED" => "cpd00449", "KEGG" => "C00579", "MetaCyc" => "DIHYDROLIPOAMIDE", "UUID" =>"" },
-		 "CO3" => { "ModelSEED" => "cpd00242", "KEGG" => "C00288", "MetaCyc" => "HCO3", "UUID" =>"" });
-
-    my %LowEUUIDs=();
-    foreach my $cpd (keys %LowEIDs){
-	my $cpdObj = $biochem->getObjectByAlias("compounds",$LowEIDs{$cpd}{$Source},$Source);
-	if($cpdObj){
-	    $LowEIDs{$cpd}{"UUID"}=$cpdObj->uuid();
-	    $LowEUUIDs{$cpdObj->uuid()}=1;
-	}else{
-	    Bio::KBase::ObjectAPI::utilities::verbose("Unable to find low energy compound in biochemistry: $cpd");
-	    return "Error";
-	}
-    }
+    my %LowEIDs=("CO2" => "cpd00011", "NH3" => "cpd00013", "ACP" => "cpd11493", 
+		 "Pi"  => "cpd00009", "Ppi" => "cpd00012", 
+		 "CoA" => "cpd00010", "DHL" => "cpd00449", "CO3" => "cpd00242");
 
     my $LowE_total=0;
     foreach my $rgt (@{$self->reagents()}){
-	if(exists($LowEUUIDs{$rgt->compound_ref()})){
-	    $LowE_total += $rgt->coefficient();
+	foreach my $cpd (keys %LowEIDs){
+	    if($rgt->compound()->id() eq $LowEIDs{$cpd}){
+		$LowE_total += $rgt->coefficient();
+	    }
 	}
     }
 
@@ -883,6 +837,8 @@ sub estimateThermoReversibility{
         return "Low Energy Points:$LowEnergyPoints\tmMdeltaG: $mMdeltaG";
     }
 
+    $self->thermoReversibility("?");
+    $self->direction("=");
     return "Default";
 }
 
