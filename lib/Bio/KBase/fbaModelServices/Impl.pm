@@ -2834,6 +2834,25 @@ sub _parse_SBML {
     			$boundary = 1;
     		}
     	}
+	# COBRA-compliant SBML file structure has formula and charge in notes section
+        foreach my $node ($cpd->getElementsByTagName("*",0)) {
+	    foreach my $html ($node->getElementsByTagName("*",0)){
+		my $nodes = $html->getChildNodes();
+		foreach my $node (@{$nodes}) {
+		    my $text = $node->toString();
+		    if ($text =~ m/FORMULA:\s*([^<]+)/) {
+			if (length($1) > 0) {
+			    $formula = $1;
+			}
+		    }
+		    elsif ($text =~ m/CHARGE:\s*([^<]+)/) {
+			if (length($1) > 0) {
+			    $charge = $1;
+			}
+		    }
+		}
+	    }
+	}
     	if (!defined($name)) {
     		$name = $id;
     	}

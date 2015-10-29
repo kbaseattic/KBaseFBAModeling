@@ -660,7 +660,7 @@ sub addModelReaction {
 		my $rxnobj = $bio->searchForReaction($rootid);
 		if (!defined($rxnobj) && !defined($eq)) {
 			Bio::KBase::ObjectAPI::utilities::error("Specified reaction ".$rootid." not found and no equation provided!");
-		} else {
+		} elsif (defined($rxnobj)) {
 			$reference = $rxnobj->_reference();
 			my $rgts = $rxnobj->reagents();
 			my $cmpchange = 0;
@@ -861,8 +861,8 @@ sub LoadExternalReactionEquation {
 		    					id => $cpd."_".$compartment.$index,
 								compound_ref => $bio->_reference()."/compounds/id/cpd00000",
 								name => $cpd."_".$compartment.$index,
-								charge => 0,
-								formula => "",
+								charge => defined $args->{compounds}->{$cpd}->[1] ?  $args->{compounds}->{$cpd}->[1] : 0,
+								formula => defined $args->{compounds}->{$cpd}->[2] ? $args->{compounds}->{$cpd}->[2] : "",
 								modelcompartment_ref => "~/modelcompartments/id/".$mdlcmp->id(),
 		    					aliases => ["mdlid:".$cpd]
 		    				});
