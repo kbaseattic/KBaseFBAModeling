@@ -1173,6 +1173,7 @@ sub _buildFBAObject {
 		FBADeletionResults => [],
 		FBAMinimalMediaResults => [],
 		FBAMetaboliteProductionResults => [],
+		massbalance => $fbaFormulation->{massbalance}
 	});
 	$fbaobj->parent($self->_KBaseStore());
 	if (defined($fbaFormulation->{promconstraint})) {
@@ -9018,7 +9019,8 @@ sub runfba
 		expseriesws => $input->{workspace},
 		expsample => undef,
 		activation_penalty => 0.1,
-		solver => undef
+		solver => undef,
+		massbalance => ""
 	});
     if (defined($input->{booleanexp}) && $input->{booleanexp} eq "") {
     	$input->{booleanexp} = "absolute";
@@ -9031,6 +9033,7 @@ sub runfba
 	#Creating FBAFormulation Object
     $input->{formulation}->{kappa} = $input->{kappa};
     $input->{formulation}->{omega} = $input->{omega};
+    $input->{formulation}->{massbalance} = $input->{massbalance};
 	my $fba = $self->_buildFBAObject($input->{formulation},$model,$input->{workspace},$input->{fba});
 	$fba->fva($input->{fva});
 	$fba->comboDeletions($input->{simulateko});

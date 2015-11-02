@@ -1405,6 +1405,9 @@ sub createJobDirectory {
 		"Min flux multiplier" => 1,
 		"Max deltaG" => 10000
 	};
+	if (defined($self->massbalance()) && length($self->massbalance()) > 0) {
+	    $parameters->{"Mass balance atoms"} = $self->massbalance();
+	}
 	if ($self->comboDeletions() == 1) {
 		$parameters->{"perform single KO experiments"} = 1;
 	}
