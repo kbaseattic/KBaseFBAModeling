@@ -2384,7 +2384,32 @@ sub loadMFAToolkitResults {
 	$self->parseOutputFiles();
 	$self->parseReactionMinimization();
 	$self->parseGapfillingOutput();
+	$self->parseMFALog();
 }
+
+
+
+=head3 parseMFALog
+Definition:
+	void ModelSEED::MS::Model->parseMFALog();
+Description:
+	Parses MFA Log
+
+=cut
+
+sub parseMFALog {
+	my ($self) = @_;
+	my $directory = $self->jobDirectory();
+	if (-e $directory."/MFALog.txt") {
+	    open (MFALOG, $directory."/MFALog.txt");
+	    my $loglines = join "", <MFALOG>;
+	    $self->MFALog($loglines);
+	}
+	else {
+	    $self->MFALog("Couldn't open MFALog.txt\n");	    
+	}
+}
+
 
 =head3 parseFluxFiles
 Definition:

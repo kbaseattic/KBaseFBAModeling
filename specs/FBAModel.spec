@@ -763,6 +763,7 @@ module KBaseFBA {
 			
 		float objectiveValue;
 		mapping<string,list<string>> outputfiles;
+		string MFALog;
 		phenotypesimulationset_ref phenotypesimulationset_ref;
 
 		list<FBACompoundVariable> FBACompoundVariables;
