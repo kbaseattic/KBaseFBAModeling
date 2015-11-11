@@ -929,6 +929,17 @@ Description:
 
 sub printSBML {
     my $self = shift;
+    my $media = shift;
+
+    # read lb and ub for media compounds
+    my $mediacpds = {};
+
+    if (defined $media) {
+	foreach my $mediacpd (@{$media->mediacompounds}) {
+	    $mediacpds->{$mediacpd->compound()->id()} = [$mediacpd->minFlux(),$mediacpd->maxFlux()];
+	}
+    }
+
 	# convert ids to SIds
     my $idToSId = sub {
         my $id = shift @_;
@@ -1113,6 +1124,10 @@ sub printSBML {
 		my $lb = -1000;
 		my $ub = 1000;
 		if ($cpd->modelCompartmentLabel() =~ m/^e/ || $cpd->compound()->id() eq "cpd08636" || $cpd->compound()->id() eq "cpd11416" || $cpd->compound()->id() eq "cpd15302" || $cpd->compound()->id() eq "cpd02701" ) {
+		    if ($cpd->modelCompartmentLabel() =~ m/^e/ && defined $media) {
+			$lb = (exists $mediacpds->{$cpd->compound()->id()}) ? $mediacpds->{$cpd->compound()->id()}->[0] : 0;
+			$ub = (exists $mediacpds->{$cpd->compound()->id()}) ? $mediacpds->{$cpd->compound()->id()}->[1] : 1000;
+		    }
 			push(@{$output},'<reaction '.$self->CleanNames("id",'R_EX_'.$cpd->id()).' '.$self->CleanNames("name",'EX_'.$cpd->name()).' reversible="true">');
 			push(@{$output},"\t<notes>\n\t<body xmlns=\"http://www.w3.org/1999/xhtml\">");
 			push(@{$output},"\t\t".'<p>GENE_ASSOCIATION: </p>');
@@ -1422,7 +1437,7 @@ sub export {
     my $self = shift;
 	my $args = Bio::KBase::ObjectAPI::utilities::args(["format"], {}, @_);
 	if (lc($args->{format}) eq "sbml") {
-		return $self->printSBML();
+		return $self->printSBML($args->{media});
 	} elsif (lc($args->{format}) eq "exchange") {
 		return $self->printExchange();
 	} elsif (lc($args->{format}) eq "genes") {
