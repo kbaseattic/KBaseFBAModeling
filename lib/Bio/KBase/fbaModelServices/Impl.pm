@@ -1284,7 +1284,7 @@ sub _buildFBAObject {
 		}
 	}
 	#Parsing gene KO
-	if (defined($model->genome_ref())) {
+	if (defined($model->genome_ref()) && defined($fbaFormulation->{geneko}) && @{$fbaFormulation->{geneko}} > 0) {
 		my $genome = $model->genome();
 		foreach my $gene (@{$fbaFormulation->{geneko}}) {
 			my $geneObj = $genome->searchForFeature($gene);
