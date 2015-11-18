@@ -7618,7 +7618,7 @@ sub import_fbamodel
     	$input->{biomass} = [split(/;/,$input->{biomass})];
     }
     my $model = Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->new({
-		id => $kbid,
+	id => $input->{model},
 		source => $input->{source},
 		source_id => $input->{model},
 		name => $genome->scientific_name(),
