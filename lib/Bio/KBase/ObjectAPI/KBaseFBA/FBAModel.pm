@@ -373,7 +373,8 @@ sub addCompartmentToModel {
 		potential => 0,
 		compartmentIndex => 0
 	}, @_);
-	my $mdlcmp = $self->queryObject("modelcompartments",{compartment_ref => $args->{compartment}->_reference(),compartmentIndex => $args->{compartmentIndex}});
+    # search by id.index rather than reference, in case the biochemistry has been versioned
+	my $mdlcmp = $self->queryObject("modelcompartments",{id => $args->{compartment}->id().$args->{compartmentIndex},compartmentIndex => $args->{compartmentIndex}});
 	if (!defined($mdlcmp)) {
 		$mdlcmp = $self->add("modelcompartments",{
 			id => $args->{compartment}->id().$args->{compartmentIndex},
