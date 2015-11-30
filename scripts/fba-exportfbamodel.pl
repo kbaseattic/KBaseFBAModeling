@@ -16,6 +16,7 @@ my $translation = {
 	"Format (html,sbml,json,cytoseed,readable,excel)" => "format",
 	"FBAModel ID" => "model",
 	"fba" => "fbas",
+	"media" => "media",
 	toshock => "toshock",
 	workspace => "workspace",
 };
@@ -23,7 +24,8 @@ my $translation = {
 my $specs = [
 	[ 'toshock', 'Load data to shock and return node IDs' ],
     [ 'workspace|w:s', 'Workspace with model', { "default" => fbaws() } ],
-    [ 'fba|f:s@', 'FBA associated with model (; delimiter)', { "default" => []} ]
+    [ 'fba|f:s@', 'FBA associated with model (; delimiter)', { "default" => []} ],
+    [ 'media|m:s', 'Media for setting exchange bounds' ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
 my $toshock = 0;

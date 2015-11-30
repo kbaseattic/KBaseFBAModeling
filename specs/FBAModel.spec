@@ -679,7 +679,7 @@ module KBaseFBA {
     /* 
     	FBA object holds the formulation and results of a flux balance analysis study
     	
-    	@optional ExpressionKappa ExpressionOmega ExpressionAlpha expression_matrix_ref expression_matrix_column jobnode gapfillingSolutions QuantitativeOptimizationSolutions quantitativeOptimization minimize_reactions minimize_reaction_costs FBATintleResults FBAMinimalReactionsResults PROMKappa phenotypesimulationset_ref objectiveValue phenotypeset_ref promconstraint_ref regulome_ref tintlesample_ref tintleW tintleKappa
+    	@optional ExpressionKappa ExpressionOmega ExpressionAlpha expression_matrix_ref expression_matrix_column jobnode gapfillingSolutions QuantitativeOptimizationSolutions quantitativeOptimization minimize_reactions minimize_reaction_costs FBATintleResults FBAMinimalReactionsResults PROMKappa phenotypesimulationset_ref objectiveValue phenotypeset_ref promconstraint_ref regulome_ref tintlesample_ref tintleW tintleKappa massbalance
     	@metadata ws maximizeObjective as Maximized
 		@metadata ws comboDeletions as Combination deletions
 		@metadata ws minimize_reactions as Minimize reactions
@@ -752,6 +752,7 @@ module KBaseFBA {
 		list<modelcompound_ref> additionalCpd_refs;
 		mapping<string,float> uptakeLimits;
 		mapping<modelreaction_id,float> minimize_reaction_costs;
+		string massbalance;
 		
 		mapping<string,string> parameters;
 		mapping<string,list<string>> inputfiles;
@@ -762,6 +763,7 @@ module KBaseFBA {
 			
 		float objectiveValue;
 		mapping<string,list<string>> outputfiles;
+		string MFALog;
 		phenotypesimulationset_ref phenotypesimulationset_ref;
 
 		list<FBACompoundVariable> FBACompoundVariables;

@@ -1173,6 +1173,7 @@ sub _buildFBAObject {
 		FBADeletionResults => [],
 		FBAMinimalMediaResults => [],
 		FBAMetaboliteProductionResults => [],
+		massbalance => $fbaFormulation->{massbalance}
 	});
 	$fbaobj->parent($self->_KBaseStore());
 	if (defined($fbaFormulation->{promconstraint})) {
@@ -1283,7 +1284,7 @@ sub _buildFBAObject {
 		}
 	}
 	#Parsing gene KO
-	if (defined($model->genome_ref())) {
+	if (defined($model->genome_ref()) && defined($fbaFormulation->{geneko}) && @{$fbaFormulation->{geneko}} > 0) {
 		my $genome = $model->genome();
 		foreach my $gene (@{$fbaFormulation->{geneko}}) {
 			my $geneObj = $genome->searchForFeature($gene);
@@ -3330,6 +3331,8 @@ sub _export_object {
 	} elsif (ref($obj) =~ m/Bio::KBase::ObjectAPI/) {
 		if (ref($obj) eq "Bio::KBase::ObjectAPI::KBasePhenotypes::PhenotypeSimulationSet" && $input->{format} eq "text") {
 			$output = $obj->export_text();
+                } elsif (defined $input->{media}) {
+			$output = $obj->export({format => $input->{format}, media => $input->{media}});
                 } elsif (defined $input->{fbas}) {
 			$output = $obj->export({format => $input->{format}, fbas => $input->{fbas}});
 		} else {
@@ -7910,12 +7913,17 @@ sub export_fbamodel
     foreach my $fba (@{$input->{fbas}}) {
 	push @$fbas, $self->_get_msobject("FBA",$input->{workspace},$fba);
     }
+    my $media;
+    if (defined $input->{media}) {
+	$media = $self->_get_msobject("Media",$input->{workspace},$input->{media});
+    }
     $output = $self->_export_object({
     	reference => $input->{workspace}."/".$input->{model},
     	type => "FBAModel",
     	format => $input->{format},
     	toshock => $input->{toshock},
-        fbas => $fbas
+        fbas => $fbas,
+        media => $media
     });
     $self->_clearContext();
     #END export_fbamodel
@@ -9018,7 +9026,8 @@ sub runfba
 		expseriesws => $input->{workspace},
 		expsample => undef,
 		activation_penalty => 0.1,
-		solver => undef
+		solver => undef,
+		massbalance => ""
 	});
     if (defined($input->{booleanexp}) && $input->{booleanexp} eq "") {
     	$input->{booleanexp} = "absolute";
@@ -9031,6 +9040,7 @@ sub runfba
 	#Creating FBAFormulation Object
     $input->{formulation}->{kappa} = $input->{kappa};
     $input->{formulation}->{omega} = $input->{omega};
+    $input->{formulation}->{massbalance} = $input->{massbalance};
 	my $fba = $self->_buildFBAObject($input->{formulation},$model,$input->{workspace},$input->{fba});
 	$fba->fva($input->{fva});
 	$fba->comboDeletions($input->{simulateko});
