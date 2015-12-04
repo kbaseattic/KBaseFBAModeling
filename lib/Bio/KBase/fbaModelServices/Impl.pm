@@ -7739,11 +7739,18 @@ sub import_fbamodel
 	}
 	for (my  $i=0; $i < @{$input->{reactions}}; $i++) {
 		my $rxnrow = $input->{reactions}->[$i];
+		my $compartment = $rxnrow->[2];
+		my $compartmentIndex = 0;
+		# check to see if the compartment already specifies an index
+		if ($compartment =~/^(\w)(\d+)$/) {
+		    $compartment = $1;
+		    $compartmentIndex = $2;
+		}		
 		my $input = {
 		    reaction => $rxnrow->[0],
 		    direction => $rxnrow->[1],
-		    compartment => $rxnrow->[2],
-		    compartmentIndex => 0,
+		    compartment => $compartment,
+		    compartmentIndex => $compartmentIndex,
 		    gpr => $rxnrow->[3],
 		    removeReaction => 0,
 		    addReaction => 1,
