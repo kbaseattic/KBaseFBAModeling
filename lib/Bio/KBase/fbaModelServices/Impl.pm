@@ -1173,7 +1173,7 @@ sub _buildFBAObject {
 		FBADeletionResults => [],
 		FBAMinimalMediaResults => [],
 		FBAMetaboliteProductionResults => [],
-		massbalance => $fbaFormulation->{massbalance}
+		massbalance => defined $fbaFormulation->{massbalance} ? $fbaFormulation->{massbalance} : ""
 	});
 	$fbaobj->parent($self->_KBaseStore());
 	if (defined($fbaFormulation->{promconstraint})) {
@@ -11755,7 +11755,8 @@ sub gapfill_model
 		model_workspace => $input->{workspace},
 		integrate_solution => 0,
 		formulation => undef,
-		simultaneous => 0
+		simultaneous => 0,
+		massbalance => ""
 	});
 	if ($input->{simultaneous} == 1 && $input->{alpha} == 0) {
 		if ($input->{use_discrete_variables} == 1) {
