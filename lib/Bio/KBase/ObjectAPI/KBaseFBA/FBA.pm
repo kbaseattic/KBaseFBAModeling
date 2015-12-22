@@ -987,12 +987,16 @@ sub createJobDirectory {
 			}
 			if (!defined($rxnhash->{$tmpid})) {
 			    if (defined($gauranteed->{$tmprxn->reaction()->id()}) || !defined($blacklist->{$tmprxn->reaction()->id()})) {
-				push(@{$additionalrxn},$tmpid."\t".$tmprxn->GapfillDirection()."\tGFDB");
+				if (defined $tmprxn->GapfillDirection()) {
+				    push(@{$additionalrxn},$tmpid."\t".$tmprxn->GapfillDirection()."\tGFDB");
+				} else {
+				    push(@{$additionalrxn},$tmpid."\t"."\tGFDB");
+				}
 				$gfcoef->{$tmpid} = {tag => "GFDB"};
-				if ($tmprxn->GapfillDirection() eq ">" || $tmprxn->GapfillDirection() eq "=") {
+				if (defined $tmprxn->GapfillDirection() && ($tmprxn->GapfillDirection() eq ">" || $tmprxn->GapfillDirection() eq "=")) {
 				    $gfcoef->{$tmpid}->{forward} = 1;#$tmprxn->forward_penalty();
 				}
-				if ($tmprxn->GapfillDirection() eq "<" || $tmprxn->GapfillDirection() eq "=") {
+				if (defined $tmprxn->GapfillDirection() && ($tmprxn->GapfillDirection() eq "<" || $tmprxn->GapfillDirection() eq "=")) {
 				    $gfcoef->{$tmpid}->{"reverse"} = 1;#$tmprxn->reverse_penalty();
 				}
 			    }
