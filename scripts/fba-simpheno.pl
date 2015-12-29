@@ -29,7 +29,8 @@ my $translation = {
 	alltransporters => "all_transporters",
 	positivetransporters => "positive_transporters",
 	gapfillphenosim => "gapfill_phenosim",
-	solver => "solver"
+	solver => "solver",
+	biomass => "biomass"
 };
 my $fbaTranslation = {
 	objfraction => "objfraction",
@@ -44,6 +45,7 @@ my $fbaTranslation = {
 	minthermoerror => "minthermoerror",
 	prommodel => "prommodel",
 	prommodelws => "prommodel_workspace",
+	biomass => "biomass"
 };
 #Defining usage and options
 my $specs = [
@@ -75,6 +77,7 @@ my $specs = [
     [ 'alltransporters', 'Add transporters for everything in EVERY media in the phenotype set before doing the simulation' ],
     [ 'positivetransporters', 'Add transporters ONLY for media that the organism grows on in the phenotype set before doing the simulation' ],
     [ 'solver:s', 'Solver' ],
+    [ 'biomass|b:s', 'Target biomass (bio1 is default)' ],
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
 $params->{formulation} = {

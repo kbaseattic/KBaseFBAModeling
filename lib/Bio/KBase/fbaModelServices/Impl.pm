@@ -10419,7 +10419,8 @@ sub simulate_phenotypes
 		gapfill_phenosim => 0,
 		solver => undef,
 		source_model => undef,
-		source_model_ws => $input->{workspace}
+		source_model_ws => $input->{workspace},
+		biomass => undef
 	});
 	my $pheno = $self->_get_msobject("PhenotypeSet",$input->{phenotypeSet_workspace},$input->{phenotypeSet});
 	my $model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model});
@@ -10432,6 +10433,13 @@ sub simulate_phenotypes
 	$input->{formulation}->{media_workspace} = "KBaseMedia";
 	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
 	my $fba = $self->_buildFBAObject($input->{formulation},$model,$input->{workspace},$self->_get_new_id($input->{model}.".gffba."));
+	if (defined($input->{biomass}) && defined($fba->biomassflux_objterms()->{bio1})) {
+		my $bio = $model->searchForBiomass($input->{biomass});
+		if (defined($bio)) {
+			delete $fba->biomassflux_objterms()->{bio1};
+			$fba->biomassflux_objterms()->{$bio->id()} = 1;
+		}			
+	}
 	if ($input->{gapfill_phenosim} == 1) {
 		if (defined($input->{source_model})) {
 			$input->{source_model} = $self->_get_msobject("FBAModel",$input->{source_model_ws},$input->{source_model});
