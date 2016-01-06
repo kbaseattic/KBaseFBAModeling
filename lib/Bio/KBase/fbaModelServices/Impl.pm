@@ -14288,7 +14288,7 @@ sub find_reaction_synonyms
 		my $rxnsyn = { primary => $rxn->id(), synonyms => [] };	
 		foreach my $key (keys %$netReactions) {
 			my $cpds = $netReactions->{$key}->{compounds};
-			if (@$cpds ~~ @$found) {
+			if (@$cpds == @$found) {
 				my $synrxn = $netReactions->{$key}->{reaction};
 				my $rxndef = { id => $synrxn->id(), name => $synrxn->name, definition => $synrxn->createEquation( { format => "formula" } ) };
 				push(@{$rxnsyn->{synonyms}}, $rxndef);
