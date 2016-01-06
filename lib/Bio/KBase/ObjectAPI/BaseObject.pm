@@ -659,6 +659,9 @@ sub remove {
 
 sub getLinkedObject {
     my ($self, $ref) = @_;
+    if (! defined $ref) {
+	Bio::KBase::ObjectAPI::utilities::error("Undefined reference in BaseObject::getLinkedObject");
+    }
 	if ($ref =~ m/^~$/) {
 		return $self->topparent();
 	} elsif ($ref =~ m/^~\/(\w+)\/(\w+)\/([\w\.\|\-:]+)$/) {

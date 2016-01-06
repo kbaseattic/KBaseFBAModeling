@@ -757,45 +757,51 @@ sub createJobDirectory {
 	for (my $i=0; $i < @{$comps}; $i++) {
 		$compindecies->{$comps->[$i]->compartmentIndex()}->{$comps->[$i]->compartment()->id()} = 1;
 	}
-	#We add all gapfill candidates to an input file
-	$self->fbamodel()->template()->calculatePenalties();
-	my $actcoef = {};
-	my $gfcoef = {};
+
+	my $actcoeffile = ["Reaction\tPenalty"];
 	my $additionalrxn = [];
-	#Building the model data file for MFAToolkit
-	for (my $i=0; $i < @{$mdlrxn}; $i++) {
+	my $gfcoefficients = ["Reaction\tDirection\tCoefficient\tTag"];
+
+	if ((defined($self->parameters()->{"Perform gap filling"}) && $self->parameters()->{"Perform gap filling"} == 1) || defined($self->{_expsample}) || $self->minimize_reactions() == 1) {
+	    print STDERR "in gapfilling\n";
+	    #We add all gapfill candidates to an input file
+	    $self->fbamodel()->template()->calculatePenalties();
+	    my $actcoef = {};
+	    my $gfcoef = {};
+	    #Building the model data file for MFAToolkit
+	    for (my $i=0; $i < @{$mdlrxn}; $i++) {
 		my $rxn = $mdlrxn->[$i];
 		my $direction = $rxn->direction();
 		my $rxndir = "<=>";
 		if (defined($self->parameters()->{activate_all_model_reactions}) && $self->parameters()->{activate_all_model_reactions} == 1) {
-			$actcoef->{$rxn->id()} = 1;
+		    $actcoef->{$rxn->id()} = 1;
 		}
 		if ($direction eq ">") {
-			$rxndir = "=>";
-			if (defined($self->parameters()->{make_model_rxns_reversible}) && $self->parameters()->{make_model_rxns_reversible} == 1) {
-				my $tmprxn = $self->fbamodel()->template()->searchForReaction($rxn->id());
-				if (!defined($tmprxn) || $tmprxn->GapfillDirection() eq "<" || $tmprxn->GapfillDirection() eq "=") {
-					$rxndir = "<=>";
-					if (defined($tmprxn)) {
-						$gfcoef->{$rxn->id()} = {"reverse" => 1,tag => "MDLRXN"};
-					} else {
-						$gfcoef->{$rxn->id()} = {"reverse" => 1,tag => "MDLRXN"};
-					}
-				}
+		    $rxndir = "=>";
+		    if (defined($self->parameters()->{make_model_rxns_reversible}) && $self->parameters()->{make_model_rxns_reversible} == 1) {
+			my $tmprxn = $self->fbamodel()->template()->searchForReaction($rxn->id());
+			if (!defined($tmprxn) || $tmprxn->GapfillDirection() eq "<" || $tmprxn->GapfillDirection() eq "=") {
+			    $rxndir = "<=>";
+			    if (defined($tmprxn)) {
+				$gfcoef->{$rxn->id()} = {"reverse" => 1,tag => "MDLRXN"};
+			    } else {
+				$gfcoef->{$rxn->id()} = {"reverse" => 1,tag => "MDLRXN"};
+			    }
 			}
+		    }
 		} elsif ($direction eq "<") {
-			$rxndir = "<=";
-			if (defined($self->parameters()->{make_model_rxns_reversible}) && $self->parameters()->{make_model_rxns_reversible} == 1) {
-				my $tmprxn = $self->fbamodel()->template()->searchForReaction($rxn->id());
-				if (!defined($tmprxn) || $tmprxn->GapfillDirection() eq ">" || $tmprxn->GapfillDirection() eq "=") {
-					$rxndir = "<=>";
-					if (defined($tmprxn)) {
-						$gfcoef->{$rxn->id()} = {forward => 1,tag => "MDLRXN"};
-					} else {
-						$gfcoef->{$rxn->id()} = {forward => 1,tag => "MDLRXN"};
-					}
-				}
+		    $rxndir = "<=";
+		    if (defined($self->parameters()->{make_model_rxns_reversible}) && $self->parameters()->{make_model_rxns_reversible} == 1) {
+			my $tmprxn = $self->fbamodel()->template()->searchForReaction($rxn->id());
+			if (!defined($tmprxn) || $tmprxn->GapfillDirection() eq ">" || $tmprxn->GapfillDirection() eq "=") {
+			    $rxndir = "<=>";
+			    if (defined($tmprxn)) {
+				$gfcoef->{$rxn->id()} = {forward => 1,tag => "MDLRXN"};
+			    } else {
+				$gfcoef->{$rxn->id()} = {forward => 1,tag => "MDLRXN"};
+			    }
 			}
+		    }
 		}
 		my $id = $rxn->id();
 		my $name = $rxn->name();
@@ -803,50 +809,48 @@ sub createJobDirectory {
 		$line =~ s/\|/___/g;
 		push(@{$mdlData},$line);
 		if (!defined($rxnhash->{$id})) {
-			$rxnhash->{$id} = $rxn;
-			my $reactants = "";
-			my $products = "";
-			my $rgts = $rxn->modelReactionReagents();
-			for (my $j=0;$j < @{$rgts}; $j++) {
-				my $rgt = $rgts->[$j];
-				my $suffix = "";
-				if ($rgt->modelcompound()->modelcompartment()->compartment()->id() eq "e") {
-					$suffix = "[e]";
-				}
-				if ($rgt->coefficient() < 0) {
-					if (length($reactants) > 0) {
-						$reactants .= " + ";
-					}
-					$reactants .= "(".abs($rgt->coefficient()).") ".$rgt->modelcompound()->id().$suffix;
-				} elsif ($rgt->coefficient() > 0) {
-					if (length($products) > 0) {
-						$products .= " + ";
-					}
-					$products .= "(".$rgt->coefficient().") ".$rgt->modelcompound()->id().$suffix;
-				}
+		    $rxnhash->{$id} = $rxn;
+		    my $reactants = "";
+		    my $products = "";
+		    my $rgts = $rxn->modelReactionReagents();
+		    for (my $j=0;$j < @{$rgts}; $j++) {
+			my $rgt = $rgts->[$j];
+			my $suffix = "";
+			if ($rgt->modelcompound()->modelcompartment()->compartment()->id() eq "e") {
+			    $suffix = "[e]";
 			}
-			my $equation = $reactants." ".$rxndir." ".$products;
-			(my $dg, my $dge, my $st) = (0,0,"OK");
-			if (defined($rxn->reaction()->deltaG())) {
-				$dg = $rxn->reaction()->deltaG();
+			if ($rgt->coefficient() < 0) {
+			    if (length($reactants) > 0) {
+				$reactants .= " + ";
+			    }
+			    $reactants .= "(".abs($rgt->coefficient()).") ".$rgt->modelcompound()->id().$suffix;
+			} elsif ($rgt->coefficient() > 0) {
+			    if (length($products) > 0) {
+				$products .= " + ";
+			    }
+			    $products .= "(".$rgt->coefficient().") ".$rgt->modelcompound()->id().$suffix;
 			}
-			if (defined($rxn->reaction()->deltaGErr())) {
-				$dge = $rxn->reaction()->deltaGErr();
-			}
-			if (defined($rxn->reaction()->status())) {
-				$st = $rxn->reaction()->status();
-			}
-			if ($self->quantitativeOptimization() == 1 && $id eq "rxn10042_c0") {
-				$equation =~ s/\(4\)\scpd00067_e0/(7) cpd00067_e0/g;
-				$equation =~ s/\(3\)\scpd00067_c0/(6) cpd00067_c0/g;
-			}
-			push(@{$BioRxn},$id."\t".$id."\t".$dg."\t".$dge."\t".$equation."\t".$id."\t".$rxndir."\t".$st."\t".$rxndir);
+		    }
+		    my $equation = $reactants." ".$rxndir." ".$products;
+		    (my $dg, my $dge, my $st) = (0,0,"OK");
+		    if (defined($rxn->reaction()->deltaG())) {
+			$dg = $rxn->reaction()->deltaG();
+		    }
+		    if (defined($rxn->reaction()->deltaGErr())) {
+			$dge = $rxn->reaction()->deltaGErr();
+		    }
+		    if (defined($rxn->reaction()->status())) {
+			$st = $rxn->reaction()->status();
+		    }
+		    if ($self->quantitativeOptimization() == 1 && $id eq "rxn10042_c0") {
+			$equation =~ s/\(4\)\scpd00067_e0/(7) cpd00067_e0/g;
+			$equation =~ s/\(3\)\scpd00067_c0/(6) cpd00067_c0/g;
+		    }
+		    push(@{$BioRxn},$id."\t".$id."\t".$dg."\t".$dge."\t".$equation."\t".$id."\t".$rxndir."\t".$st."\t".$rxndir);
 		}
-	}
-	my $final_gauranteed = [];
-	my $final_ko = [];
-	#Adding biomass component reactions to database for quantitative optimization
-	if ($self->quantitativeOptimization() == 1) {
+	    }
+	    #Adding biomass component reactions to database for quantitative optimization
+	    if ($self->quantitativeOptimization() == 1) {
 		my $bio = $self->fbamodel()->biomasses()->[0];
 		my $biocpds = $bio->biomasscompounds();
 		my $energycoef;
@@ -861,327 +865,397 @@ sub createJobDirectory {
 		push(@{$BioRxn},"EnergyBiomass\tEnergyBiomass\t0\t0\tcpd00002_c0[b] + cpd00001_c0[b] <=> cpd00008_c0[b] + cpd00009_c0[b] + cpd00067_c0[b]\tEnergyBiomass\t<=>\tOK\t<=>");
 		my $comprxn = {};
 		foreach my $cpd (@{$biocpds}) {
-			if ($cpd->coefficient() > 0) {
-				if ($cpd->modelcompound()->compound()->id() eq "cpd00008") {
-					$energycoef = $cpd->coefficient();
-				}
-			} else {
-				my $component = "other";
-				if ($cpd->modelcompound()->compound()->class() eq "amino_acid") {
-					$component = "protein";
-				} elsif ($cpd->modelcompound()->compound()->class() eq "deoxynucleotide") {
-					$component = "dna";
-				} elsif ($cpd->modelcompound()->compound()->class() eq "nucleotide") {
-					$component = "rna";
-				} elsif ($cpd->modelcompound()->compound()->class() eq "cellwall") {
-					$component = "cellwall";
-				} elsif ($cpd->modelcompound()->compound()->class() eq "lipid") {
-					$component = "lipid";
-				}
-				if ($component eq "other") {
-					$comprxn->{$cpd->modelcompound()->compound()->id()}->{compounds}->{$cpd->modelcompound()->compound()->id()} = 1;
-					$comprxn->{$cpd->modelcompound()->compound()->id()}->{totalmass} = 0.001*$cpd->modelcompound()->compound()->mass();
-					my $coprods = $cpd->modelcompound()->compound()->biomass_coproducts();
-					foreach my $cocpd (@{$coprods}) {
-						my $cpdobj = $self->biochemistry()->searchForCompound($cocpd->[0]);
-						$comprxn->{$cpd->modelcompound()->compound()->id()}->{compounds}->{$cpdobj->id()} = $cocpd->[1];
-						$comprxn->{$cpd->modelcompound()->compound()->id()}->{totalmass} += 0.001*$cpdobj->mass()*$cocpd->[1];
-					}
-				} elsif ($component ne "dependent") {
-					my $massadaptor = 0;
-					$comprxn->{$component}->{compounds}->{$cpd->modelcompound()->compound()->id()} = $cpd->coefficient();
-					if (!defined($comprxn->{$component}->{totalmass})) {
-						$comprxn->{$component}->{totalmass} = 0;
-					}
-					$comprxn->{$component}->{totalmass} += $cpd->coefficient()*0.001*$cpd->modelcompound()->compound()->mass();
-					my $coprods = $cpd->modelcompound()->compound()->biomass_coproducts();
-					foreach my $cocpd (@{$coprods}) {
-						my $cpdobj = $self->biochemistry()->searchForCompound($cocpd->[0]);
-						$comprxn->{$component}->{compounds}->{$cpdobj->id()} = $cpd->coefficient()*$cocpd->[1];
-						$comprxn->{$component}->{totalmass} += 0.001*$cpd->coefficient()*$cpdobj->mass()*$cocpd->[1];
-					}
-				}
+		    if ($cpd->coefficient() > 0) {
+			if ($cpd->modelcompound()->compound()->id() eq "cpd00008") {
+			    $energycoef = $cpd->coefficient();
 			}
+		    } else {
+			my $component = "other";
+			if ($cpd->modelcompound()->compound()->class() eq "amino_acid") {
+			    $component = "protein";
+			} elsif ($cpd->modelcompound()->compound()->class() eq "deoxynucleotide") {
+			    $component = "dna";
+			} elsif ($cpd->modelcompound()->compound()->class() eq "nucleotide") {
+			    $component = "rna";
+			} elsif ($cpd->modelcompound()->compound()->class() eq "cellwall") {
+			    $component = "cellwall";
+			} elsif ($cpd->modelcompound()->compound()->class() eq "lipid") {
+			    $component = "lipid";
+			}
+			if ($component eq "other") {
+			    $comprxn->{$cpd->modelcompound()->compound()->id()}->{compounds}->{$cpd->modelcompound()->compound()->id()} = 1;
+			    $comprxn->{$cpd->modelcompound()->compound()->id()}->{totalmass} = 0.001*$cpd->modelcompound()->compound()->mass();
+			    my $coprods = $cpd->modelcompound()->compound()->biomass_coproducts();
+			    foreach my $cocpd (@{$coprods}) {
+				my $cpdobj = $self->biochemistry()->searchForCompound($cocpd->[0]);
+				$comprxn->{$cpd->modelcompound()->compound()->id()}->{compounds}->{$cpdobj->id()} = $cocpd->[1];
+				$comprxn->{$cpd->modelcompound()->compound()->id()}->{totalmass} += 0.001*$cpdobj->mass()*$cocpd->[1];
+			    }
+			} elsif ($component ne "dependent") {
+			    my $massadaptor = 0;
+			    $comprxn->{$component}->{compounds}->{$cpd->modelcompound()->compound()->id()} = $cpd->coefficient();
+			    if (!defined($comprxn->{$component}->{totalmass})) {
+				$comprxn->{$component}->{totalmass} = 0;
+			    }
+			    $comprxn->{$component}->{totalmass} += $cpd->coefficient()*0.001*$cpd->modelcompound()->compound()->mass();
+			    my $coprods = $cpd->modelcompound()->compound()->biomass_coproducts();
+			    foreach my $cocpd (@{$coprods}) {
+				my $cpdobj = $self->biochemistry()->searchForCompound($cocpd->[0]);
+				$comprxn->{$component}->{compounds}->{$cpdobj->id()} = $cpd->coefficient()*$cocpd->[1];
+				$comprxn->{$component}->{totalmass} += 0.001*$cpd->coefficient()*$cpdobj->mass()*$cocpd->[1];
+			    }
+			}
+		    }
 		}
 		my $biomasscomps = "EnergyBiomass:".$energycoef;
 		foreach my $component (keys(%{$comprxn})) {
-			if ($comprxn->{$component}->{totalmass} == 0) {
-				$comprxn->{$component}->{totalmass} = 1;
-				print "Zero mass ".$component."\n";
+		    if ($comprxn->{$component}->{totalmass} == 0) {
+			$comprxn->{$component}->{totalmass} = 1;
+			print "Zero mass ".$component."\n";
+		    }
+		    $biomasscomps .= ";".$component."Biomass:".$comprxn->{$component}->{totalmass};
+		    my $reactant = "";
+		    my $product = "";
+		    foreach my $cpd (keys(%{$comprxn->{$component}->{compounds}})) {
+			#Rescaling the coefficient for a one gram basis
+			$comprxn->{$component}->{compounds}->{$cpd} = $comprxn->{$component}->{compounds}->{$cpd}/$comprxn->{$component}->{totalmass};
+			if ($comprxn->{$component}->{compounds}->{$cpd} < 0) {
+			    if (length($reactant) > 0) {
+				$reactant .= " + ";
+			    }
+			    my $coef = -1*$comprxn->{$component}->{compounds}->{$cpd};
+			    $reactant .= "(".$coef.") ".$cpd."_c0[b]";
+			} else {
+			    if (length($product) > 0) {
+				$product .= " + ";
+			    }
+			    my $coef = $comprxn->{$component}->{compounds}->{$cpd};
+			    $product .= "(".$coef.") ".$cpd."_c0[b]";
 			}
-			$biomasscomps .= ";".$component."Biomass:".$comprxn->{$component}->{totalmass};
-			my $reactant = "";
-			my $product = "";
-			foreach my $cpd (keys(%{$comprxn->{$component}->{compounds}})) {
-				#Rescaling the coefficient for a one gram basis
-				$comprxn->{$component}->{compounds}->{$cpd} = $comprxn->{$component}->{compounds}->{$cpd}/$comprxn->{$component}->{totalmass};
-				if ($comprxn->{$component}->{compounds}->{$cpd} < 0) {
-					if (length($reactant) > 0) {
-						$reactant .= " + ";
-					}
-					my $coef = -1*$comprxn->{$component}->{compounds}->{$cpd};
-					$reactant .= "(".$coef.") ".$cpd."_c0[b]";
-				} else {
-					if (length($product) > 0) {
-						$product .= " + ";
-					}
-					my $coef = $comprxn->{$component}->{compounds}->{$cpd};
-					$product .= "(".$coef.") ".$cpd."_c0[b]";
-				}
-			}
-			push(@{$additionalrxn},$component."Biomass\t=\tBiomassComp");
-			$gfcoef->{$component."Biomass"} = {"reverse" => 10,forward => 10,tag => "BiomassComp"};
-			push(@{$BioRxn},$component."Biomass\t".$component."Biomass\t0\t0\t".$reactant." <=> ".$product."\t".$component."Biomass\t<=>\tOK\t<=>");
+		    }
+		    push(@{$additionalrxn},$component."Biomass\t=\tBiomassComp");
+		    $gfcoef->{$component."Biomass"} = {"reverse" => 10,forward => 10,tag => "BiomassComp"};
+		    push(@{$BioRxn},$component."Biomass\t".$component."Biomass\t0\t0\t".$reactant." <=> ".$product."\t".$component."Biomass\t<=>\tOK\t<=>");
 		}
 		$self->parameters()->{"Biomass component coefficients"} = $biomasscomps;
 		$self->parameters()->{"quantitative optimization"} = 1;
-	}
-	#Adding gapfilling candidates from template
-	if (defined($self->parameters()->{add_external_rxns}) && $self->parameters()->{add_external_rxns} == 1 && defined($self->parameters()->{"Perform gap filling"}) && $self->parameters()->{"Perform gap filling"} == 1) {	
+	    }
+	    #Adding gapfilling candidates from template
+	    if (defined($self->parameters()->{add_external_rxns}) && $self->parameters()->{add_external_rxns} == 1 && defined($self->parameters()->{"Perform gap filling"}) && $self->parameters()->{"Perform gap filling"} == 1) {	
 		my $gauranteed = {};
 		my $rxnlist = $self->gauranteedrxns();
 		foreach my $rxn (@{$rxnlist}) {
-			$gauranteed->{$rxn} = 1;
+		    $gauranteed->{$rxn} = 1;
 		}
 		my $blacklist = {};
 		$rxnlist = $self->blacklistedrxns();
 		foreach my $rxn (@{$rxnlist}) {
-			$blacklist->{$rxn} = 1;
+		    $blacklist->{$rxn} = 1;
 		}
 		my $gfcpdhash;
 		foreach my $compindex (keys(%{$compindecies})) {
-			my $tmp = $model->template();
-			if (defined($compindecies->{1})) {
-				if ($compindex == 0) {
-					next;
+		    my $tmp = $model->template();
+		    if (defined($compindecies->{1})) {
+			if ($compindex == 0) {
+			    next;
+			} else {
+			    if (defined($self->templates()->{$compindex})) {
+				$tmp = $self->templates()->{$compindex};
+			    } elsif (defined($model->templates()->[$compindex])) {
+				$tmp = $model->templates()->[$compindex];
+			    }
+			}
+		    }
+		    my $tmprxns = $tmp->templateReactions();
+		    for (my $i=0; $i < @{$tmprxns}; $i++) {
+			my $tmprxn = $tmprxns->[$i];
+			my $cmpid = $tmprxn->compartment()->id();
+			if ($cmpid eq "e") {
+			    $cmpid = "c";
+			}
+			my $tmpid = $tmprxn->reaction()->id()."_".$cmpid.$compindex;
+			my $rxndir = "<=>";
+			if ($tmprxn->direction() eq ">") {
+			    $rxndir = "=>";
+			} elsif ($tmprxn->direction() eq "<") {
+			    $rxndir = "<=";
+			}
+			if ($tmprxn->reaction()->thermoReversibility() eq ">") {
+			    $rxndir = "=>";
+			} elsif ($tmprxn->reaction()->thermoReversibility() eq "<") {
+			    $rxndir = "<=";
+			}
+			if (!defined($rxnhash->{$tmpid})) {
+			    if (defined($gauranteed->{$tmprxn->reaction()->id()}) || !defined($blacklist->{$tmprxn->reaction()->id()})) {
+				if (defined $tmprxn->GapfillDirection()) {
+				    push(@{$additionalrxn},$tmpid."\t".$tmprxn->GapfillDirection()."\tGFDB");
 				} else {
-					if (defined($self->templates()->{$compindex})) {
-						$tmp = $self->templates()->{$compindex};
-					} elsif (defined($model->templates()->[$compindex])) {
-						$tmp = $model->templates()->[$compindex];
-					}
+				    push(@{$additionalrxn},$tmpid."\t"."\tGFDB");
 				}
+				$gfcoef->{$tmpid} = {tag => "GFDB"};
+				if (defined $tmprxn->GapfillDirection() && ($tmprxn->GapfillDirection() eq ">" || $tmprxn->GapfillDirection() eq "=")) {
+				    $gfcoef->{$tmpid}->{forward} = 1;#$tmprxn->forward_penalty();
+				}
+				if (defined $tmprxn->GapfillDirection() && ($tmprxn->GapfillDirection() eq "<" || $tmprxn->GapfillDirection() eq "=")) {
+				    $gfcoef->{$tmpid}->{"reverse"} = 1;#$tmprxn->reverse_penalty();
+				}
+			    }
+			    my $rxn = $tmprxn->reaction();
+			    $rxnhash->{$tmpid} = 1;
+			    my $reactants = "";
+			    my $products = "";
+			    my $rgts = $rxn->reagents();
+			    my $multcomp = 0;
+			    for (my $j=1;$j < @{$rgts}; $j++) {
+				if ($rgts->[0]->compartment()->id() ne $rgts->[$j]->compartment()->id()) {
+				    $multcomp = 1;
+				}
+			    }
+			    for (my $j=0;$j < @{$rgts}; $j++) {
+				my $rgt = $rgts->[$j];
+				my $comp = $rgt->compartment()->id();
+				if ($multcomp == 0) {
+				    $comp = $tmprxn->compartment()->id()
+				}
+				my $suffix = "_".$comp.$compindex;
+				if ($comp eq "e") {
+				    $suffix = "_".$comp."0";
+				}
+				$gfcpdhash->{$rgt->compound()->id().$suffix} = $rgt->compound();
+				if ($rgt->compartment()->id() eq "e") {
+				    $suffix .= "[e]";
+				}
+				if ($rgt->coefficient() < 0) {
+				    if (length($reactants) > 0) {
+					$reactants .= " + ";
+				    }
+				    $reactants .= "(".abs($rgt->coefficient()).") ".$rgt->compound()->id().$suffix;
+				} elsif ($rgt->coefficient() > 0) {
+				    if (length($products) > 0) {
+					$products .= " + ";
+				    }
+				    $products .= "(".$rgt->coefficient().") ".$rgt->compound()->id().$suffix;
+				}
+			    }
+			    my $equation = $reactants." ".$rxndir." ".$products;
+			    (my $dg, my $dge, my $st) = (0,0,"OK");
+			    if (defined($rxn->deltaG())) {
+				$dg = $rxn->deltaG();
+			    }
+			    if (defined($rxn->deltaGErr())) {
+				$dge = $rxn->deltaGErr();
+			    }
+			    if (defined($rxn->status())) {
+				$st = $rxn->status();
+			    }		
+			    push(@{$BioRxn},$tmpid."\t".$tmpid."\t".$dg."\t".$dge."\t".$equation."\t".$tmpid."\t".$rxndir."\t".$st."\t".$rxndir);
 			}
-			my $tmprxns = $tmp->templateReactions();
-			for (my $i=0; $i < @{$tmprxns}; $i++) {
-				my $tmprxn = $tmprxns->[$i];
-				my $cmpid = $tmprxn->compartment()->id();
-				if ($cmpid eq "e") {
-					$cmpid = "c";
-				}
-				my $tmpid = $tmprxn->reaction()->id()."_".$cmpid.$compindex;
-				my $rxndir = "<=>";
-				if ($tmprxn->direction() eq ">") {
-					$rxndir = "=>";
-				} elsif ($tmprxn->direction() eq "<") {
-					$rxndir = "<=";
-				}
-				if ($tmprxn->reaction()->thermoReversibility() eq ">") {
-					$rxndir = "=>";
-				} elsif ($tmprxn->reaction()->thermoReversibility() eq "<") {
-					$rxndir = "<=";
-				}
-				if (!defined($rxnhash->{$tmpid})) {
-					if (defined($gauranteed->{$tmprxn->reaction()->id()}) || !defined($blacklist->{$tmprxn->reaction()->id()})) {
-						push(@{$additionalrxn},$tmpid."\t".$tmprxn->GapfillDirection()."\tGFDB");
-						$gfcoef->{$tmpid} = {tag => "GFDB"};
-						if ($tmprxn->GapfillDirection() eq ">" || $tmprxn->GapfillDirection() eq "=") {
-							$gfcoef->{$tmpid}->{forward} = 1;#$tmprxn->forward_penalty();
-						}
-						if ($tmprxn->GapfillDirection() eq "<" || $tmprxn->GapfillDirection() eq "=") {
-							$gfcoef->{$tmpid}->{"reverse"} = 1;#$tmprxn->reverse_penalty();
-						}
-					}
-					my $rxn = $tmprxn->reaction();
-					$rxnhash->{$tmpid} = 1;
-					my $reactants = "";
-					my $products = "";
-					my $rgts = $rxn->reagents();
-					my $multcomp = 0;
-					for (my $j=1;$j < @{$rgts}; $j++) {
-						if ($rgts->[0]->compartment()->id() ne $rgts->[$j]->compartment()->id()) {
-							$multcomp = 1;
-						}
-					}
-					for (my $j=0;$j < @{$rgts}; $j++) {
-						my $rgt = $rgts->[$j];
-						my $comp = $rgt->compartment()->id();
-						if ($multcomp == 0) {
-							$comp = $tmprxn->compartment()->id()
-						}
-						my $suffix = "_".$comp.$compindex;
-						if ($comp eq "e") {
-							$suffix = "_".$comp."0";
-						}
-						$gfcpdhash->{$rgt->compound()->id().$suffix} = $rgt->compound();
-						if ($rgt->compartment()->id() eq "e") {
-							$suffix .= "[e]";
-						}
-						if ($rgt->coefficient() < 0) {
-							if (length($reactants) > 0) {
-								$reactants .= " + ";
-							}
-							$reactants .= "(".abs($rgt->coefficient()).") ".$rgt->compound()->id().$suffix;
-						} elsif ($rgt->coefficient() > 0) {
-							if (length($products) > 0) {
-								$products .= " + ";
-							}
-							$products .= "(".$rgt->coefficient().") ".$rgt->compound()->id().$suffix;
-						}
-					}
-					my $equation = $reactants." ".$rxndir." ".$products;
-					(my $dg, my $dge, my $st) = (0,0,"OK");
-					if (defined($rxn->deltaG())) {
-						$dg = $rxn->deltaG();
-					}
-					if (defined($rxn->deltaGErr())) {
-						$dge = $rxn->deltaGErr();
-					}
-					if (defined($rxn->status())) {
-						$st = $rxn->status();
-					}		
-					push(@{$BioRxn},$tmpid."\t".$tmpid."\t".$dg."\t".$dge."\t".$equation."\t".$tmpid."\t".$rxndir."\t".$st."\t".$rxndir);
-				}
-			}
+		    }
 		}
 		foreach my $cpdid (keys(%{$gfcpdhash})) {
-			if (!defined($cpdhash->{$cpdid})) {
-				my $cpd = $gfcpdhash->{$cpdid};
-				my $comp;
-				if ($cpdid =~ m/_(\w)(\d+)$/) {
-					$comp = $1;
-					if (defined($genex->{$cpd->id()})) {
-						if (defined($genex->{$cpd->id()}->{$comp})) {
-							if ($comp eq "e") {
-								$exchangehash->{$cpdid}->{e} = $genex->{$cpd->id()}->{$comp};
-							} else {
-								$exchangehash->{$cpdid}->{c} = $genex->{$cpd->id()}->{$comp};
-							}				
-						}
-					}
+		    if (!defined($cpdhash->{$cpdid})) {
+			my $cpd = $gfcpdhash->{$cpdid};
+			my $comp;
+			if ($cpdid =~ m/_(\w)(\d+)$/) {
+			    $comp = $1;
+			    if (defined($genex->{$cpd->id()})) {
+				if (defined($genex->{$cpd->id()}->{$comp})) {
+				    if ($comp eq "e") {
+					$exchangehash->{$cpdid}->{e} = $genex->{$cpd->id()}->{$comp};
+				    } else {
+					$exchangehash->{$cpdid}->{c} = $genex->{$cpd->id()}->{$comp};
+				    }				
 				}
-				push(@{$BioCpd},$cpdid."\t".$cpdid."\t".$cpd->defaultCharge()."\t".$cpd->formula()."\t0\t".$cpdid);
+			    }
 			}
+			push(@{$BioCpd},$cpdid."\t".$cpdid."\t".$cpd->defaultCharge()."\t".$cpd->formula()."\t0\t".$cpdid);
+		    }
 		}
-	}
-	if (defined($self->parameters()->{add_external_rxns}) && $self->parameters()->{add_external_rxns} == 1 && defined($self->{_source_model})) {
+	    }
+	    if (defined($self->parameters()->{add_external_rxns}) && $self->parameters()->{add_external_rxns} == 1 && defined($self->{_source_model})) {
 		my $gfm = $self->{_source_model};
 		if (defined($gfm)) {
-			$mdlcpd = $gfm->modelcompounds();
-			for (my $i=0; $i < @{$mdlcpd}; $i++) {
-				my $cpd = $mdlcpd->[$i];
-				my $id = $cpd->id();
-				if (defined($genex->{$cpd->compound()->id()})) {
-					if (defined($genex->{$cpd->compound()->id()}->{$cpd->modelcompartment()->compartment()->id()})) {
-						if ($cpd->modelcompartment()->compartment()->id() eq "e") {
-							$exchangehash->{$cpd->id()}->{e} = $genex->{$cpd->compound()->id()}->{$cpd->modelcompartment()->compartment()->id()};
-						} else {
-							$exchangehash->{$cpd->id()}->{c} = $genex->{$cpd->compound()->id()}->{$cpd->modelcompartment()->compartment()->id()};
-						}				
-					}
-				}
-				my $name = $cpd->name();
-				my $abbrev = $cpd->id();
-				if (!defined($cpdhash->{$id})) {
-					push(@{$BioCpd},$id."\t".$abbrev."\t".$cpd->charge()."\t".$cpd->formula()."\t0\t".$name);
-					$cpdhash->{$id} = $cpd;
-				}
+		    $mdlcpd = $gfm->modelcompounds();
+		    for (my $i=0; $i < @{$mdlcpd}; $i++) {
+			my $cpd = $mdlcpd->[$i];
+			my $id = $cpd->id();
+			if (defined($genex->{$cpd->compound()->id()})) {
+			    if (defined($genex->{$cpd->compound()->id()}->{$cpd->modelcompartment()->compartment()->id()})) {
+				if ($cpd->modelcompartment()->compartment()->id() eq "e") {
+				    $exchangehash->{$cpd->id()}->{e} = $genex->{$cpd->compound()->id()}->{$cpd->modelcompartment()->compartment()->id()};
+				} else {
+				    $exchangehash->{$cpd->id()}->{c} = $genex->{$cpd->compound()->id()}->{$cpd->modelcompartment()->compartment()->id()};
+				}				
+			    }
 			}
-			$mdlrxn = $gfm->modelreactions();
-			my $compindecies = {};
-			my $comps = $gfm->modelcompartments();
-			for (my $i=0; $i < @{$comps}; $i++) {
-				$compindecies->{$comps->[$i]->compartmentIndex()}->{$comps->[$i]->compartment()->id()} = 1;
+			my $name = $cpd->name();
+			my $abbrev = $cpd->id();
+			if (!defined($cpdhash->{$id})) {
+			    push(@{$BioCpd},$id."\t".$abbrev."\t".$cpd->charge()."\t".$cpd->formula()."\t0\t".$name);
+			    $cpdhash->{$id} = $cpd;
 			}
-			for (my $i=0; $i < @{$mdlrxn}; $i++) {
-				my $rxn = $mdlrxn->[$i];
-				my $direction = $rxn->direction();
-				my $rxndir = "<=>";
-				if ($direction eq ">") {
-					$rxndir = "=>";
-				} elsif ($direction eq "<") {
-					$rxndir = "<=";
-				}
-				my $id = $rxn->id();
-				my $name = $rxn->name();
-				if (!defined($rxnhash->{$id})) {
-					push(@{$additionalrxn},$id."\t".$direction."\tSRCMDL");
-					$gfcoef->{$id} = {tag => "SRCMDL"};
-					if ($direction eq ">" || $direction eq "=") {
-						$gfcoef->{$id}->{forward} = "10";
-					}
-					if ($direction eq "<" || $direction eq "=") {
-						$gfcoef->{$id}->{"reverse"} = "10";
-					}
-					$rxnhash->{$id} = $rxn;
-					my $reactants = "";
-					my $products = "";
-					my $rgts = $rxn->modelReactionReagents();
-					for (my $j=0;$j < @{$rgts}; $j++) {
-						my $rgt = $rgts->[$j];
-						my $suffix = "";
-						if ($rgt->modelcompound()->modelcompartment()->compartment()->id() eq "e") {
-							$suffix = "[e]";
-						}
-						if ($rgt->coefficient() < 0) {
-							if (length($reactants) > 0) {
-								$reactants .= " + ";
-							}
-							$reactants .= "(".abs($rgt->coefficient()).") ".$rgt->modelcompound()->id().$suffix;
-						} elsif ($rgt->coefficient() > 0) {
-							if (length($products) > 0) {
-								$products .= " + ";
-							}
-							$products .= "(".$rgt->coefficient().") ".$rgt->modelcompound()->id().$suffix;
-						}
-					}
-					my $equation = $reactants." ".$rxndir." ".$products;
-					(my $dg, my $dge, my $st) = (0,0,"OK");
-					if (defined($rxn->reaction()->deltaG())) {
-						$dg = $rxn->reaction()->deltaG();
-					}
-					if (defined($rxn->reaction()->deltaGErr())) {
-						$dge = $rxn->reaction()->deltaGErr();
-					}
-					if (defined($rxn->reaction()->status())) {
-						$st = $rxn->reaction()->status();
-					}
-					push(@{$BioRxn},$id."\t".$id."\t".$dg."\t".$dge."\t".$equation."\t".$id."\t".$rxndir."\t".$st."\t".$rxndir);
-				}
+		    }
+		    $mdlrxn = $gfm->modelreactions();
+		    my $compindecies = {};
+		    my $comps = $gfm->modelcompartments();
+		    for (my $i=0; $i < @{$comps}; $i++) {
+			$compindecies->{$comps->[$i]->compartmentIndex()}->{$comps->[$i]->compartment()->id()} = 1;
+		    }
+		    for (my $i=0; $i < @{$mdlrxn}; $i++) {
+			my $rxn = $mdlrxn->[$i];
+			my $direction = $rxn->direction();
+			my $rxndir = "<=>";
+			if ($direction eq ">") {
+			    $rxndir = "=>";
+			} elsif ($direction eq "<") {
+			    $rxndir = "<=";
 			}
+			my $id = $rxn->id();
+			my $name = $rxn->name();
+			if (!defined($rxnhash->{$id})) {
+			    push(@{$additionalrxn},$id."\t".$direction."\tSRCMDL");
+			    $gfcoef->{$id} = {tag => "SRCMDL"};
+			    if ($direction eq ">" || $direction eq "=") {
+				$gfcoef->{$id}->{forward} = "10";
+			    }
+			    if ($direction eq "<" || $direction eq "=") {
+				$gfcoef->{$id}->{"reverse"} = "10";
+			    }
+			    $rxnhash->{$id} = $rxn;
+			    my $reactants = "";
+			    my $products = "";
+			    my $rgts = $rxn->modelReactionReagents();
+			    for (my $j=0;$j < @{$rgts}; $j++) {
+				my $rgt = $rgts->[$j];
+				my $suffix = "";
+				if ($rgt->modelcompound()->modelcompartment()->compartment()->id() eq "e") {
+				    $suffix = "[e]";
+				}
+				if ($rgt->coefficient() < 0) {
+				    if (length($reactants) > 0) {
+					$reactants .= " + ";
+				    }
+				    $reactants .= "(".abs($rgt->coefficient()).") ".$rgt->modelcompound()->id().$suffix;
+				} elsif ($rgt->coefficient() > 0) {
+				    if (length($products) > 0) {
+					$products .= " + ";
+				    }
+				    $products .= "(".$rgt->coefficient().") ".$rgt->modelcompound()->id().$suffix;
+				}
+			    }
+			    my $equation = $reactants." ".$rxndir." ".$products;
+			    (my $dg, my $dge, my $st) = (0,0,"OK");
+			    if (defined($rxn->reaction()->deltaG())) {
+				$dg = $rxn->reaction()->deltaG();
+			    }
+			    if (defined($rxn->reaction()->deltaGErr())) {
+				$dge = $rxn->reaction()->deltaGErr();
+			    }
+			    if (defined($rxn->reaction()->status())) {
+				$st = $rxn->reaction()->status();
+			    }
+			    push(@{$BioRxn},$id."\t".$id."\t".$dg."\t".$dge."\t".$equation."\t".$id."\t".$rxndir."\t".$st."\t".$rxndir);
+			}
+		    }
 		}
-	}
-	if ($self->minimize_reactions() == 1) {
+	    }
+	    if ($self->minimize_reactions() == 1) {
 		my $hash = $self->minimize_reaction_costs();
 		foreach my $key (keys(%{$hash})) {
-			my $mdlrxn = $model->getObject("modelreactions",$key);
-			if (defined($key)) {
-				$gfcoef->{$mdlrxn->id()} = {tag => "MDLRXN"};
-				if ($mdlrxn->direction() eq ">" || $mdlrxn->direction() eq "=") {
-					$gfcoef->{$mdlrxn->id()}->{forward} = $hash->{$key};
-				}
-				if ($mdlrxn->direction() eq "<" || $mdlrxn->direction() eq "=") {
-					$gfcoef->{$mdlrxn->id()}->{"reverse"} = $hash->{$key};
-				}
+		    my $mdlrxn = $model->getObject("modelreactions",$key);
+		    if (defined($key)) {
+			$gfcoef->{$mdlrxn->id()} = {tag => "MDLRXN"};
+			if ($mdlrxn->direction() eq ">" || $mdlrxn->direction() eq "=") {
+			    $gfcoef->{$mdlrxn->id()}->{forward} = $hash->{$key};
 			}
+			if ($mdlrxn->direction() eq "<" || $mdlrxn->direction() eq "=") {
+			    $gfcoef->{$mdlrxn->id()}->{"reverse"} = $hash->{$key};
+			}
+		    }
 		}
-	}
-	if (defined($self->{_expsample})) {
+	    }
+	    if (defined($self->{_expsample})) {
 		my $coef = $self->process_expression_data();
 		foreach my $key (keys(%{$coef->{lowexp}})) {
-			delete $actcoef->{$key};
-			if (defined($coef->{lowexp}->{$key}->{forward})) {
-				$gfcoef->{$key}->{forward} = $coef->{lowexp}->{$key}->{forward};
-			}
-			if (defined($coef->{lowexp}->{$key}->{"reverse"})) {
-				$gfcoef->{$key}->{"reverse"} = $coef->{lowexp}->{$key}->{"reverse"};
-			}
-			$gfcoef->{$key}->{tag} = "MDLRXN";
+		    delete $actcoef->{$key};
+		    if (defined($coef->{lowexp}->{$key}->{forward})) {
+			$gfcoef->{$key}->{forward} = $coef->{lowexp}->{$key}->{forward};
+		    }
+		    if (defined($coef->{lowexp}->{$key}->{"reverse"})) {
+			$gfcoef->{$key}->{"reverse"} = $coef->{lowexp}->{$key}->{"reverse"};
+		    }
+		    $gfcoef->{$key}->{tag} = "MDLRXN";
 		}
 		foreach my $key (keys(%{$coef->{highexp}})) {
-			$actcoef->{$key} = $coef->{highexp}->{$key};
+		    $actcoef->{$key} = $coef->{highexp}->{$key};
 		}
+	    }
+	    foreach my $key (keys(%{$gfcoef})) {
+		if (defined($gfcoef->{$key}->{forward})) {
+		    push(@{$gfcoefficients},$key."\tforward\t".$gfcoef->{$key}->{forward}."\t".$gfcoef->{$key}->{tag});
+		}
+		if (defined($gfcoef->{$key}->{"reverse"})) {
+		    push(@{$gfcoefficients},$key."\treverse\t".$gfcoef->{$key}->{"reverse"}."\t".$gfcoef->{$key}->{tag});
+		}
+	    }
+	    foreach my $key (keys(%{$actcoef})) {
+		push(@{$actcoeffile},$key."\t".$actcoef->{$key});
+	    }
+        }
+	else {
+	    for (my $i=0; $i < @{$mdlrxn}; $i++) {
+		my $rxn = $mdlrxn->[$i];
+		my $direction = $rxn->direction();
+		my $rxndir = "<=>";
+		if ($direction eq ">") {
+		    $rxndir = "=>";
+		} elsif ($direction eq "<") {
+		    $rxndir = "<=";
+		}
+		my $id = $rxn->id();
+		my $name = $rxn->name();
+		my $line = $id.";".$rxndir.";c;".$rxn->gprString().";".$rxn->complexString();
+		$line =~ s/\|/___/g;
+		push(@{$mdlData},$line);
+		if (!defined($rxnhash->{$id})) {
+		    $rxnhash->{$id} = $rxn;
+		    my $reactants = "";
+		    my $products = "";
+		    my $rgts = $rxn->modelReactionReagents();
+		    for (my $j=0;$j < @{$rgts}; $j++) {
+			my $rgt = $rgts->[$j];
+			my $suffix = "";
+			if ($rgt->modelcompound()->modelcompartment()->compartment()->id() eq "e") {
+			    $suffix = "[e]";
+			}
+			if ($rgt->coefficient() < 0) {
+			    if (length($reactants) > 0) {
+				$reactants .= " + ";
+			    }
+			    $reactants .= "(".abs($rgt->coefficient()).") ".$rgt->modelcompound()->id().$suffix;
+			} elsif ($rgt->coefficient() > 0) {
+			    if (length($products) > 0) {
+				$products .= " + ";
+			    }
+			    $products .= "(".$rgt->coefficient().") ".$rgt->modelcompound()->id().$suffix;
+			}
+		    }
+		    my $equation = $reactants." ".$rxndir." ".$products;
+		    (my $dg, my $dge, my $st) = (0,0,"OK");
+		    if (defined($rxn->reaction()->deltaG())) {
+			$dg = $rxn->reaction()->deltaG();
+		    }
+		    if (defined($rxn->reaction()->deltaGErr())) {
+			$dge = $rxn->reaction()->deltaGErr();
+		    }
+		    if (defined($rxn->reaction()->status())) {
+			$st = $rxn->reaction()->status();
+		    }
+		    push(@{$BioRxn},$id."\t".$id."\t".$dg."\t".$dge."\t".$equation."\t".$id."\t".$rxndir."\t".$st."\t".$rxndir);
+		}
+	    }
 	}
+
 	my $biomasses = $model->biomasses();
 	for (my $i=0; $i < @{$biomasses}; $i++) {
 		my $bio = $biomasses->[$i];
@@ -1219,25 +1293,16 @@ sub createJobDirectory {
 		my $rxnline = $bio->id()."\t".$bio->id()."\t0\t0\t".$equation."\t".$bio->id()."\t=>\tOK\t=>";
 		push(@{$BioRxn},$rxnline);
 	}
-	my $gfcoefficients = ["Reaction\tDirection\tCoefficient\tTag"];
-	foreach my $key (keys(%{$gfcoef})) {
-		if (defined($gfcoef->{$key}->{forward})) {
-			push(@{$gfcoefficients},$key."\tforward\t".$gfcoef->{$key}->{forward}."\t".$gfcoef->{$key}->{tag});
-		}
-		if (defined($gfcoef->{$key}->{"reverse"})) {
-			push(@{$gfcoefficients},$key."\treverse\t".$gfcoef->{$key}->{"reverse"}."\t".$gfcoef->{$key}->{tag});
-		}
-	}
-	my $actcoeffile = ["Reaction\tPenalty"];
-	foreach my $key (keys(%{$actcoef})) {
-		push(@{$actcoeffile},$key."\t".$actcoef->{$key});
-	}
-	Bio::KBase::ObjectAPI::utilities::PRINTFILE($directory."Compounds.tbl",$BioCpd);
-	Bio::KBase::ObjectAPI::utilities::PRINTFILE($directory."Reactions.tbl",$BioRxn);
-	Bio::KBase::ObjectAPI::utilities::PRINTFILE($directory."Model.tbl",$mdlData);
+
+	# print these because MFAtoolkit requires them
 	Bio::KBase::ObjectAPI::utilities::PRINTFILE($directory."ActivationCoefficients.txt",$actcoeffile);
 	Bio::KBase::ObjectAPI::utilities::PRINTFILE($directory."AdditionalReactions.txt",$additionalrxn);
 	Bio::KBase::ObjectAPI::utilities::PRINTFILE($directory."GapfillingCoefficients.txt",$gfcoefficients);
+
+	Bio::KBase::ObjectAPI::utilities::PRINTFILE($directory."Compounds.tbl",$BioCpd);
+	Bio::KBase::ObjectAPI::utilities::PRINTFILE($directory."Reactions.tbl",$BioRxn);
+	Bio::KBase::ObjectAPI::utilities::PRINTFILE($directory."Model.tbl",$mdlData);
+
 	#Printing additional input files specified in formulation
 	my $inputfileHash = $self->inputfiles();
 	foreach my $filename (keys(%{$inputfileHash})) {
@@ -1296,6 +1361,8 @@ sub createJobDirectory {
 			$rxnKO .= ";".$rxn->id();
 		}
 	}
+	my $final_gauranteed = [];
+	my $final_ko = [];
 	if (@{$final_ko} > 0) {
 		if ($rxnKO eq "none") {
 			$rxnKO = join(";",@{$final_ko});
@@ -1405,6 +1472,9 @@ sub createJobDirectory {
 		"Min flux multiplier" => 1,
 		"Max deltaG" => 10000
 	};
+	if (defined($self->massbalance()) && length($self->massbalance()) > 0) {
+	    $parameters->{"Mass balance atoms"} = $self->massbalance();
+	}
 	if ($self->comboDeletions() == 1) {
 		$parameters->{"perform single KO experiments"} = 1;
 	}
@@ -2381,7 +2451,32 @@ sub loadMFAToolkitResults {
 	$self->parseOutputFiles();
 	$self->parseReactionMinimization();
 	$self->parseGapfillingOutput();
+	$self->parseMFALog();
 }
+
+
+
+=head3 parseMFALog
+Definition:
+	void ModelSEED::MS::Model->parseMFALog();
+Description:
+	Parses MFA Log
+
+=cut
+
+sub parseMFALog {
+	my ($self) = @_;
+	my $directory = $self->jobDirectory();
+	if (-e $directory."/MFALog.txt") {
+	    open (MFALOG, $directory."/MFALog.txt");
+	    my $loglines = join "", <MFALOG>;
+	    $self->MFALog($loglines);
+	}
+	else {
+	    $self->MFALog("Couldn't open MFALog.txt\n");	    
+	}
+}
+
 
 =head3 parseFluxFiles
 Definition:
