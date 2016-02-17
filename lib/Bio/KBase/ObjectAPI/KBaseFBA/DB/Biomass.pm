@@ -16,7 +16,7 @@ extends 'Bio::KBase::ObjectAPI::BaseObject';
 has parent => (is => 'rw', isa => 'Ref', weak_ref => 1, type => 'parent', metaclass => 'Typed');
 # ATTRIBUTES:
 has uuid => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_uuid');
-has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_reference');
+#has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_reference');
 has energy => (is => 'rw', isa => 'Num', printOrder => '9', default => '40', type => 'attribute', metaclass => 'Typed');
 has cofactor => (is => 'rw', isa => 'Num', printOrder => '8', default => '0.15', type => 'attribute', metaclass => 'Typed');
 has rna => (is => 'rw', isa => 'Num', printOrder => '4', default => '0.1', type => 'attribute', metaclass => 'Typed');
@@ -31,13 +31,13 @@ has id => (is => 'rw', isa => 'Str', printOrder => '0', default => '', type => '
 
 # SUBOBJECTS:
 has biomasscompounds => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(BiomassCompound)', metaclass => 'Typed', reader => '_biomasscompounds', printOrder => '-1');
-
+has removedcompounds => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(BiomassCompound)', metaclass => 'Typed', reader => '_removedcompounds', printOrder => '-1');
 
 # LINKS:
 
 
 # BUILDERS:
-sub _build_reference { my ($self) = @_;return $self->parent()->_reference().'/biomasses/id/'.$self->id(); }
+sub _reference { my ($self) = @_;return $self->parent()->_reference().'/biomasses/id/'.$self->id(); }
 sub _build_uuid { my ($self) = @_;return $self->_reference(); }
 
 
@@ -182,10 +182,20 @@ my $subobjects = [
             'class' => 'BiomassCompound',
             'type' => 'child',
             'module' => 'KBaseFBA'
+          },
+          {
+            'req' => undef,
+            'printOrder' => -1,
+            'name' => 'removedcompounds',
+            'default' => undef,
+            'description' => undef,
+            'class' => 'BiomassCompound',
+            'type' => 'child',
+            'module' => 'KBaseFBA'
           }
         ];
 
-my $subobject_map = {biomasscompounds => 0};
+my $subobject_map = {biomasscompounds => 0,removedcompounds => 1};
 sub _subobjects {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -203,6 +213,11 @@ sub _subobjects {
 around 'biomasscompounds' => sub {
 	 my ($orig, $self) = @_;
 	 return $self->_build_all_objects('biomasscompounds');
+};
+
+around 'removedcompounds' => sub {
+	 my ($orig, $self) = @_;
+	 return $self->_build_all_objects('removedcompounds');
 };
 
 

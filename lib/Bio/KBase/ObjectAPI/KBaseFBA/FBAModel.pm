@@ -24,10 +24,23 @@ extends 'Bio::KBase::ObjectAPI::KBaseFBA::DB::FBAModel';
 has features => ( is => 'rw', isa => 'ArrayRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildfeatures' );
 has featureHash => ( is => 'rw', isa => 'HashRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildfeatureHash' );
 has compound_reaction_hash => ( is => 'rw', isa => 'HashRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcompound_reaction_hash' );
+has template => ( is => 'rw', isa => 'Ref',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildtemplate' );
 
 #***********************************************************************************************************
 # BUILDERS:
 #***********************************************************************************************************
+sub _buildtemplate {
+	my ($self) = @_;
+	my $output = $self->parent()->workspace()->get_object_info([{
+		"ref" => $self->template_ref()
+	}],0);
+	my $templateref = $self->template_ref();
+	if ($output->[0]->[7] eq "NewKBaseModelTemplates") {
+		$templateref = "KBaseTemplateModels/".$output->[0]->[1];
+	}
+	return $self->getLinkedObject($templateref);
+}
+
 sub _buildcompound_reaction_hash {
 	my ($self) = @_;
 	my $hash = {};
@@ -751,7 +764,8 @@ sub LoadExternalReactionEquation {
 	    		my $coef = 1;
 	    		my $compartment = "c";
 	    		if (defined($args->{reaction})) {
-	    			$compartment = $args->{reaction}->modelcompartment()->compartment()->id();
+	    			$compartment = $args->{reaction}->modelcompartment()->id();
+	    			$compartment =~ s/\d+//g;
 	    		}
 	    		my $index = 0;
 	    		if ($cpd =~ m/^\(*(\d+\.*\d*[eE]*-*\d*)\)*\s+(.+)/) {
@@ -2579,10 +2593,16 @@ sub searchForCompound {
 	    if (!defined($mdlcmp)) {
 	    	return undef;
 	    }
-	    return $self->queryObject("modelcompounds",{
+	    $mdlcpd = $self->queryObject("modelcompounds",{
 	    	modelcompartment_ref => $mdlcmp->_reference(),
 	    	compound_ref => $self->biochemistry()->_reference()."/compounds/id/".$cpd->id()
 	    });
+	    if (!defined($mdlcpd)) {
+	    	$mdlcpd = $self->queryObject("modelcompounds",{
+		    	modelcompartment_ref => $mdlcmp->_reference(),
+		    	compound_ref => "~/template/compounds/id/".$cpd->id()
+		    });
+	    }
     }
     return $mdlcpd;
 }

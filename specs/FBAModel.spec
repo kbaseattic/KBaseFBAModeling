@@ -59,8 +59,17 @@ module KBaseFBA {
 	*/
     typedef string genome_ref;
     /*
+		Reference to a Pangenome object in the workspace
+		@id ws KBaseGenomes.Pangenome
+    */
+    typedef string pangenome_ref;
+    /*
+    	Reference to a Proteome Comparison object in the workspace
+    	@id ws GenomeComparison.ProteomeComparison
+    */
+    typedef string protcomp_ref;
+    /*
 		Reference to a model template
-		@id ws KBaseFBA.ModelTemplate
 	*/
     typedef string template_ref;
     /*
@@ -214,10 +223,20 @@ module KBaseFBA {
 	*/
     typedef string modelreaction_id;
     /*
+    	Reaction ID
+    	@id external
+    */
+    typedef string reaction_id;
+    /*
 		Genome feature ID
 		@id external
 	*/
     typedef string feature_id;
+    /*
+    	Feature family ID
+    	@id external
+    */
+    typedef string family_id;
     /*
 		Source ID
 		@id external
@@ -247,14 +266,18 @@ module KBaseFBA {
     	BiomassCompound object
     	
 		@searchable ws_subset modelcompound_ref coefficient
+		@optional gapfill_data
     */
     typedef structure {
 		modelcompound_ref modelcompound_ref;
 		float coefficient;
+		mapping<gapfill_id,bool integrated> gapfill_data;
     } BiomassCompound;
     
     /* 
     	Biomass object
+    	
+    	@optional removedcompounds
     */
     typedef structure {
 		biomass_id id;
@@ -268,6 +291,7 @@ module KBaseFBA {
 		float cofactor;
 		float energy;
 		list<BiomassCompound> biomasscompounds;
+		list<BiomassCompound> removedcompounds;
     } Biomass;
 
     /* 
@@ -323,17 +347,20 @@ module KBaseFBA {
     
     /* 
     	ModelReactionProtein object
+    	
+    	@optional source complex_ref
     */
     typedef structure {
 		complex_ref complex_ref;
 		string note;
 		list<ModelReactionProteinSubunit> modelReactionProteinSubunits;
+		string source;
     } ModelReactionProtein;
     
     /* 
     	ModelReaction object
     	
-    	@optional name pathway reference aliases maxforflux maxrevflux
+    	@optional gapfill_data name pathway reference aliases maxforflux maxrevflux 
     */
     typedef structure {
 		modelreaction_id id;
@@ -350,6 +377,7 @@ module KBaseFBA {
 		float probability;
 		list<ModelReactionReagent> modelReactionReagents;
 		list<ModelReactionProtein> modelReactionProteins;
+		mapping<string gapfill_id,mapping<int solution,tuple<string direction,bool integrated,list<ModelReactionProtein> candidateProteins>>> gapfill_data;
     } ModelReaction;
 
     /* 
@@ -413,7 +441,7 @@ module KBaseFBA {
     /* 
     	FBAModel object
     	
-    	@optional metagenome_otu_ref metagenome_ref genome_ref template_refs ATPSynthaseStoichiometry ATPMaintenance quantopts
+    	@optional gapfilledcandidates metagenome_otu_ref metagenome_ref genome_ref template_refs ATPSynthaseStoichiometry ATPMaintenance quantopts
 		@metadata ws source_id as Source ID
 		@metadata ws source as Source
 		@metadata ws name as Name
@@ -448,6 +476,7 @@ module KBaseFBA {
 		list<ModelCompartment> modelcompartments;
 		list<ModelCompound> modelcompounds;
 		list<ModelReaction> modelreactions;
+		list<ModelReaction> gapfilledcandidates;
     } FBAModel;
     
     /* 
@@ -499,7 +528,7 @@ module KBaseFBA {
 	/* 
     	FBAReactionVariable object
     	
-    	@optional exp_state expression scaled_exp
+    	@optional biomass_dependencies coupled_reactions exp_state expression scaled_exp
     	
     */
 	typedef structure {
@@ -514,6 +543,8 @@ module KBaseFBA {
 		string exp_state;
 		float expression;
 		float scaled_exp;
+		list<tuple<string biomass_id,string compound_id>> biomass_dependencies;
+		list<string> coupled_reactions;
 	} FBAReactionVariable;
 	
 	/* 
@@ -679,7 +710,7 @@ module KBaseFBA {
     /* 
     	FBA object holds the formulation and results of a flux balance analysis study
     	
-    	@optional ExpressionKappa ExpressionOmega ExpressionAlpha expression_matrix_ref expression_matrix_column jobnode gapfillingSolutions QuantitativeOptimizationSolutions quantitativeOptimization minimize_reactions minimize_reaction_costs FBATintleResults FBAMinimalReactionsResults PROMKappa phenotypesimulationset_ref objectiveValue phenotypeset_ref promconstraint_ref regulome_ref tintlesample_ref tintleW tintleKappa massbalance
+    	@optional MFALog maximizeActiveReactions calculateReactionKnockoutSensitivity biomassRemovals ExpressionKappa ExpressionOmega ExpressionAlpha expression_matrix_ref expression_matrix_column jobnode gapfillingSolutions QuantitativeOptimizationSolutions quantitativeOptimization minimize_reactions minimize_reaction_costs FBATintleResults FBAMinimalReactionsResults PROMKappa phenotypesimulationset_ref objectiveValue phenotypeset_ref promconstraint_ref regulome_ref tintleW tintleKappa massbalance
     	@metadata ws maximizeObjective as Maximized
 		@metadata ws comboDeletions as Combination deletions
 		@metadata ws minimize_reactions as Minimize reactions
@@ -737,6 +768,8 @@ module KBaseFBA {
 		bool fluxUseVariables;
 		bool drainfluxUseVariables;
 		bool minimize_reactions;
+		bool calculateReactionKnockoutSensitivity;
+		bool maximizeActiveReactions;
 		
 		string jobnode;
 		regulome_ref regulome_ref;
@@ -744,7 +777,6 @@ module KBaseFBA {
 		promconstraint_ref promconstraint_ref;
 		expression_matrix_ref expression_matrix_ref;
 		string expression_matrix_column;
-		expression_sample_ref tintlesample_ref;
 		media_ref media_ref;
 		phenotypeset_ref phenotypeset_ref;
 		list<feature_ref> geneKO_refs;
@@ -765,6 +797,8 @@ module KBaseFBA {
 		mapping<string,list<string>> outputfiles;
 		string MFALog;
 		phenotypesimulationset_ref phenotypesimulationset_ref;
+
+		mapping<string,list<string>> biomassRemovals;
 
 		list<FBACompoundVariable> FBACompoundVariables;
 		list<FBAReactionVariable> FBAReactionVariables;
@@ -1271,4 +1305,451 @@ module KBaseFBA {
 		mapping_ref mapping_ref;
 		mapping < string subsystem_id, list < tuple < string reaction_id, SubsystemReaction reaction_info > > > subsystems;
 	} SubsystemAnnotation;
+
+    /*
+    ModelComparisonModel object: this object holds information about a model in a model comparison
+    */
+    typedef structure {
+		string id;
+		fbamodel_ref model_ref;
+		genome_ref genome_ref;
+		mapping<string model_id,tuple<int common_reactions,int common_compounds,int common_biomasscpds,int common_families,int common_gpr> > model_similarity; 
+		string name;
+		string taxonomy;
+		int reactions;
+		int families;
+		int compounds;
+		int biomasscpds;
+		int biomasses;
+    } ModelComparisonModel;
+    
+    /*
+    ModelComparisonFamily object: this object holds information about a protein family across a set of models
+    */
+    typedef structure {
+		string id;
+		family_id family_id;
+		string function;
+		int number_models;
+		float fraction_models;
+		bool core;
+		mapping<string model_id,tuple<bool present,list<reaction_id>>> family_model_data;
+    } ModelComparisonFamily;
+
+    /*
+    ModelComparisonReaction object: this object holds information about a reaction across all compared models
+    */
+    typedef structure {
+		string id;
+		reaction_ref reaction_ref;
+		string name;
+		string equation;
+		int number_models;
+		float fraction_models;
+		bool core;
+		mapping<string model_id,tuple<bool present,string direction,list<tuple<feature_id,family_id,float conservation,bool missing>>,string gpr>> reaction_model_data;
+    } ModelComparisonReaction;
+    
+    /*
+    ModelComparisonCompound object: this object holds information about a compound across a set of models
+    */
+    typedef structure {
+		string id;
+		compound_ref compound_ref;
+		string name;
+		int number_models;
+		float fraction_models;
+		bool core;
+		mapping<string model_id,list<tuple<compartment_ref,float charge>>> model_compound_compartments;
+    } ModelComparisonCompound;
+    
+    /*
+    ModelComparisonBiomassCompound object: this object holds information about a biomass compound across a set of models
+    */
+    typedef structure {
+		string id;
+		compound_ref compound_ref;
+		string name;
+		int number_models;
+		float fraction_models;
+		bool core;
+		mapping<string model_id,list<tuple<compartment_ref,float coefficient>>> model_biomass_compounds;
+    } ModelComparisonBiomassCompound;
+
+    /*
+    ModelComparisonResult object: this object holds information about a comparison of multiple models
+
+    @optional protcomp_ref pangenome_ref
+    @metadata ws core_reactions as Core reactions
+    @metadata ws core_compounds as Core compounds
+    @metadata ws core_families as Core families
+    @metadata ws core_biomass_compounds as Core biomass compounds
+    @metadata ws name as Name
+    @metadata ws id as ID
+    @metadata ws length(models) as Number models
+    @metadata ws length(reactions) as Number reactions
+    @metadata ws length(compounds) as Number compounds
+    @metadata ws length(families) as Number families
+    @metadata ws length(biomasscpds) as Number biomass compounds
+    */
+    typedef structure {
+		string id;
+		string name;
+		int core_reactions;
+		int core_compounds;
+		int core_families;
+		int core_biomass_compounds;
+		protcomp_ref protcomp_ref;
+		pangenome_ref pangenome_ref;
+
+		list<ModelComparisonModel> models;
+		list<ModelComparisonReaction> reactions;
+		list<ModelComparisonCompound> compounds;
+		list<ModelComparisonFamily> families;
+		list<ModelComparisonBiomassCompound> biomasscpds;
+    } ModelComparison;
+    
+    /*
+		FBAPathwayAnalysis object: this object holds the analysis of FBA, expression and gapfilling data
+	*/
+	typedef structure {
+	    string pegId;
+	    float expression;
+	} FBAPathwayAnalysisFeature;
+
+	typedef structure {
+	    string id;
+	    string name;
+	    float flux;
+	    int gapfill;
+	    int expressed;
+	    list<FBAPathwayAnalysisFeature> pegs;
+	} FBAPathwayAnalysisReaction;
+
+	typedef structure {
+        string pathwayName;
+        string pathwayId;
+	    int totalModelReactions;
+	    int totalKEGGRxns;
+	    int totalRxnFlux;
+	    int gsrFluxPExpP;
+	    int gsrFluxPExpN;
+	    int gsrFluxMExpP;
+	    int gsrFluxMExpM;
+	    int gpRxnsFluxP;
+        list<FBAPathwayAnalysisReaction> reaction_list;
+    } FBAPathwayAnalysisPathway;
+
+	typedef structure {
+	string pathwayType;
+	   expression_matrix_ref expression_matrix_ref;
+	   string expression_condition;
+	   fbamodel_ref fbamodel_ref;
+	   fba_ref fba_ref;
+	   list<FBAPathwayAnalysisPathway> pathways;
+	} FBAPathwayAnalysis;
+	
+	typedef structure {
+	    string pathwayName;
+        string pathwayId;
+	    int totalModelReactions;
+	    int totalabsentRxns;
+	    int totalKEGGRxns;
+	    int totalRxnFlux;
+	    int gsrFluxPExpP;
+	    int gsrFluxPExpN;
+	    int gsrFluxMExpP;
+	    int gsrFluxMExpM;
+	    int gpRxnsFluxP;
+	} FBAPathwayAnalysisCounts;
+	
+	typedef structure {
+	    expression_matrix_ref expression_matrix_ref;
+		string expression_condition;
+		fbamodel_ref fbamodel_ref;
+		fba_ref fba_ref;
+		list<FBAPathwayAnalysisCounts> count_list;
+    } FBAPathwayAnalysisPathwayMultiple;
+	
+	typedef structure {
+	    string pathwayType;
+        list<FBAPathwayAnalysisPathwayMultiple> fbaexpression;
+    } FBAPathwayAnalysisMultiple;
+	
+	/*
+        A string representing a ContigSet id.
+    */
+    typedef string contigset_id;
+    typedef string genome_name;
+    /*
+        A string representing a workspace name.
+    */
+    typedef string workspace_name;
+    /* description of a role missing in the contigs */
+    typedef structure {
+        string reaction_id;
+        string reaction_name;
+    } ReactionItem;
+    typedef structure {
+        string role_id;
+        string role_description;
+        string genome_hits;
+        string blast_score;
+        float perc_identity;
+        string hit_location;
+        string protein_sequence;
+        list<ReactionItem> reactions;
+    } MissingRoleItem;
+    /* description of a role found in the contigs */
+    typedef structure {
+        string role_id;
+        string role_description;
+    } FoundRoleItem;
+    /* description of a close genome */
+    typedef structure {
+        genome_id id;
+        int hit_count;
+        genome_name name;
+    } CloseGenomeItem;
+    typedef structure {
+        contigset_id contigset_id;
+        list<MissingRoleItem> missing_roles;
+        list<CloseGenomeItem> close_genomes;
+        list<FoundRoleItem> found_roles;
+    } MissingRoleData;
+    
+    /*
+		Template complex ID
+		@id external
+	*/
+    typedef string templatecomplex_id;
+    /*
+		Template role ID
+		@id external
+	*/
+    typedef string templaterole_id;
+    /*
+		Template compartment compound ID
+		@id external
+	*/
+    typedef string templatecompcompound_id;
+    /*
+		Template compartment ID
+		@id external
+	*/
+    typedef string templatecompartment_id;
+    /*
+		Template compound ID
+		@id external
+	*/
+    typedef string templatecompound_id;
+    /*
+		Template pathway ID
+		@id external
+	*/
+    typedef string templatepathway_id;
+    /*
+		Reference to compartment in Template Model
+		@id subws KBaseFBA.TemplateModel.compartments.[*].id
+	*/
+    typedef string templatecompartment_ref;
+    /*
+		Reference to compound in Template Model
+		@id subws KBaseFBA.TemplateModel.compounds.[*].id
+	*/
+    typedef string templatecompound_ref;
+    /*
+		Reference to compartment compound in Template Model
+		@id subws KBaseFBA.TemplateModel.compcompounds.[*].id
+	*/
+    typedef string templatecompcompound_ref;
+    /*
+		Reference to reaction in Template Model
+		@id subws KBaseFBA.TemplateModel.reactions.[*].id
+	*/
+    typedef string templatereaction_ref;
+    /*
+		Reference to role in Template Model
+		@id subws KBaseFBA.TemplateModel.roles.[*].id
+	*/
+    typedef string templaterole_ref;
+    /*
+		Reference to complex in Template Model
+		@id subws KBaseFBA.TemplateModel.complexes.[*].id
+	*/
+    typedef string templatecomplex_ref;
+    
+    /* 
+    	TemplateCompartment parallel to compartment object in biochemistry
+    */
+    typedef structure {
+    	templatecompartment_id id;
+    	string name;
+    	list<string> aliases;
+    	int hierarchy;
+    	float pH;
+    } TemplateCompartment;
+    
+    /* 
+    	TemplateCompound parallel to compound object in biochemistry compound_ref
+    	
+    	@optional compound_ref md5
+    	Z25 4437
+    */
+	typedef structure {
+		templatecompound_id id;
+		compound_ref compound_ref;
+		string name;
+		string abbreviation;
+		string md5;
+		bool isCofactor;
+		list<string> aliases;
+		float defaultCharge;
+		float mass;
+    	float deltaG;
+    	float deltaGErr;
+		string formula;
+    } TemplateCompound;
+    
+    /* 
+    	TemplateCompCompound object parallel to compound in model
+    	
+    	@optional formula
+    */
+    typedef structure {
+		templatecompcompound_id id;
+		templatecompound_ref templatecompound_ref;
+		float charge;
+		float maxuptake;
+		string formula;
+		templatecompartment_ref templatecompartment_ref;
+    } TemplateCompCompound;
+    
+    /* 
+    	TemplateReactionReagent object
+    */
+    typedef structure {
+		templatecompcompound_ref templatecompcompound_ref;
+		float coefficient;
+    } TemplateReactionReagent;
+    
+    /* 
+    	TemplateRole object representing link to annotations or genes
+    */
+    typedef structure {
+    	templaterole_id id;
+    	string name;
+    	string source;
+    	list<string> aliases;
+    	list<feature_id> features;
+    } TemplateRole;
+    
+    /* 
+    	TemplateComplexRole object containing data relating to role in complex
+    */
+    typedef structure {
+    	templaterole_ref templaterole_ref;
+    	int optional_role;
+    	int triggering;
+    } TemplateComplexRole;
+    
+    /* 
+    	TemplateComplex object
+    */
+    typedef structure {
+		templatecomplex_id id;
+    	string name;
+    	string reference;
+    	string source;
+    	float confidence;
+    	list<TemplateComplexRole> complexroles;
+    } TemplateComplex;
+    
+    /* 
+    	TemplateReaction object holds data on reaction in template
+    	
+    	@optional reference base_cost forward_penalty reverse_penalty GapfillDirection reaction_ref
+    */
+	typedef structure {
+		templatereaction_id id;
+		reaction_ref reaction_ref;
+		string name;
+		string type;
+		string reference;
+		string direction;
+		string GapfillDirection;
+		float maxforflux;
+		float maxrevflux;
+		templatecompartment_ref templatecompartment_ref;
+		float base_cost;
+    	float forward_penalty;
+    	float reverse_penalty;
+		list<TemplateReactionReagent> templateReactionReagents;
+		list<templatecomplex_ref> templatecomplex_refs;
+    } NewTemplateReaction;
+    
+    /* 
+    	TemplateBiomassComponent object holds data on a compound of biomass in template
+    */
+	typedef structure {
+    	string class;
+    	templatecompcompound_ref templatecompcompound_ref;
+    	string coefficient_type;
+    	float coefficient;
+    	list<templatecompcompound_ref> linked_compound_refs;
+    	list<float> link_coefficients;
+    } NewTemplateBiomassComponent;
+    
+    /* 
+    	TemplateBiomass object holds data on biomass in template
+    */
+	typedef structure {
+    	templatebiomass_id id;
+    	string name;
+    	string type;
+    	float other;
+    	float dna;
+    	float rna;
+    	float protein;
+    	float lipid;
+    	float cellwall;
+    	float cofactor;
+    	float energy;
+    	list<NewTemplateBiomassComponent> templateBiomassComponents;
+    } NewTemplateBiomass;
+    
+    /* 
+    	TemplatePathway object
+    */
+	typedef structure {
+    	templatepathway_id id;
+    	string name;
+    	string source;
+    	string source_id;
+    	string broadClassification;
+    	string midClassification;
+    	list<templatereaction_ref> templatereaction_refs;
+    } TemplatePathway;
+    
+    /* 
+    	ModelTemplate object holds data on how a model is constructed from an annotation
+    	    	
+    	@optional name
+    */
+	typedef structure {
+    	modeltemplate_id id;
+    	string name;
+    	string type;
+    	string domain;
+    	Biochemistry_ref biochemistry_ref;
+    	
+    	list<TemplateRole> roles;
+    	list<TemplateComplex> complexes;
+    	list<TemplateCompound> compounds;
+    	list<TemplateCompCompound> compcompounds;
+    	list<TemplateCompartment> compartments;
+    	list<NewTemplateReaction> reactions;
+    	list<NewTemplateBiomass> biomasses;
+    	list<TemplatePathway> pathways;
+    } NewModelTemplate;
 };
