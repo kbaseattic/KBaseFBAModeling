@@ -2095,6 +2095,7 @@ module fbaModelServices {
 		string auth - the authentication token of the KBase account changing workspace permissions; must have 'admin' privelages to workspace (an optional argument; user is "public" if auth is not provided)
 		bool all_transporters - Set to TRUE if you want to add transporters for ALL media in the phenotypeset before simulating
 		bool positive_transporters - Set to TRUE if you want to add transporters for POSITIVE (non-zero growth) media only before simulating
+		string biomass - ID of biomass reaction as target for phenotypes simulation (an optional argument)
 	*/
     typedef structure {
 		fbamodel_id model;
@@ -2109,6 +2110,7 @@ module fbaModelServices {
 		string auth;
 		bool all_transporters;
 		bool positive_transporters;
+		string biomass;
     } simulate_phenotypes_params;
     /*
         Simulates the specified phenotype set

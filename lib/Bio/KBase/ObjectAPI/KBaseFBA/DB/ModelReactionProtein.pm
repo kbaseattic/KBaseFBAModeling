@@ -19,6 +19,7 @@ has uuid => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass =>
 has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_reference');
 has complex_ref => (is => 'rw', isa => 'Str', printOrder => '0', type => 'attribute', metaclass => 'Typed');
 has note => (is => 'rw', isa => 'Str', printOrder => '0', default => '', type => 'attribute', metaclass => 'Typed');
+has source => (is => 'rw', isa => 'Str', printOrder => '0', default => '', type => 'attribute', metaclass => 'Typed');
 
 
 # SUBOBJECTS:
@@ -60,10 +61,19 @@ my $attributes = [
             'type' => 'Str',
             'description' => undef,
             'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => 0,
+            'name' => 'source',
+            'default' => '',
+            'type' => 'Str',
+            'description' => undef,
+            'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {complex_ref => 0, note => 1};
+my $attribute_map = {complex_ref => 0, note => 1,source => 2};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {

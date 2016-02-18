@@ -36,6 +36,7 @@ has source_id => (is => 'rw', isa => 'Str', printOrder => '0', type => 'attribut
 has name => (is => 'rw', isa => 'Str', printOrder => '2', default => '', type => 'attribute', metaclass => 'Typed');
 has metagenome_otu_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has type => (is => 'rw', isa => 'Str', printOrder => '5', default => 'Singlegenome', type => 'attribute', metaclass => 'Typed');
+has rxnprobs_ref => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 
 
 # SUBOBJECTS:
@@ -46,6 +47,7 @@ has modelcompounds => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { 
 has modelreactions => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(ModelReaction)', metaclass => 'Typed', reader => '_modelreactions', printOrder => '3');
 has modelcompartments => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(ModelCompartment)', metaclass => 'Typed', reader => '_modelcompartments', printOrder => '1');
 has gapfillings => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(ModelGapfill)', metaclass => 'Typed', reader => '_gapfillings', printOrder => '-1');
+has gapfilledcandidates => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(ModelReaction)', metaclass => 'Typed', reader => '_gapfilledcandidates', printOrder => '3');
 
 
 # LINKS:
@@ -183,10 +185,17 @@ my $attributes = [
             'type' => 'Str',
             'description' => undef,
             'perm' => 'rw'
-          }
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'rxnprobs_ref',
+            'type' => 'Str',
+            'perm' => 'rw'
+          },
         ];
 
-my $attribute_map = {source => 0, template_refs => 1, ATPMaintenance => 2, ATPSynthaseStoichiometry => 3, id => 4, metagenome_ref => 5, genome_ref => 6, template_ref => 7, source_id => 8, name => 9, metagenome_otu_ref => 10, type => 11};
+my $attribute_map = {source => 0, template_refs => 1, ATPMaintenance => 2, ATPSynthaseStoichiometry => 3, id => 4, metagenome_ref => 5, genome_ref => 6, template_ref => 7, source_id => 8, name => 9, metagenome_otu_ref => 10, type => 11, rxnprobs_ref => 12};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -327,10 +336,20 @@ my $subobjects = [
             'type' => 'child',
             'class' => 'ModelGapfill',
             'module' => 'KBaseFBA'
+          },
+          {
+            'req' => undef,
+            'printOrder' => 3,
+            'name' => 'gapfilledcandidates',
+            'default' => undef,
+            'description' => undef,
+            'class' => 'ModelReaction',
+            'type' => 'child',
+            'module' => 'KBaseFBA'
           }
         ];
 
-my $subobject_map = {biomasses => 0, quantopts => 1, gapgens => 2, modelcompounds => 3, modelreactions => 4, modelcompartments => 5, gapfillings => 6};
+my $subobject_map = {biomasses => 0, quantopts => 1, gapgens => 2, modelcompounds => 3, modelreactions => 4, modelcompartments => 5, gapfillings => 6,gapfilledcandidates => 7};
 sub _subobjects {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {
@@ -372,6 +391,10 @@ around 'modelcompartments' => sub {
 around 'gapfillings' => sub {
 	 my ($orig, $self) = @_;
 	 return $self->_build_all_objects('gapfillings');
+};
+around 'gapfilledcandidates' => sub {
+	 my ($orig, $self) = @_;
+	 return $self->_build_all_objects('gapfilledcandidates');
 };
 
 

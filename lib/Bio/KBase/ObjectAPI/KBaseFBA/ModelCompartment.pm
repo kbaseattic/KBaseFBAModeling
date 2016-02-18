@@ -15,6 +15,7 @@ extends 'Bio::KBase::ObjectAPI::KBaseFBA::DB::ModelCompartment';
 # ADDITIONAL ATTRIBUTES:
 #***********************************************************************************************************
 has name  => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildname' );
+has compartment => (is => 'rw', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_build_compartment', isa => 'Ref', weak_ref => 1);
 
 #***********************************************************************************************************
 # BUILDERS:
@@ -22,6 +23,23 @@ has name  => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', me
 sub _buildname {
 	my ($self) = @_;
 	return $self->compartment()->name().$self->compartmentIndex();
+}
+sub _build_compartment {
+	 my ($self) = @_;
+	 my $array = [split(/\//,$self->compartment_ref())];
+	 my $compid = pop(@{$array});
+	 $self->compartment_ref("~/template/biochemistry/compartments/id/".$compid);
+	 my $obj = $self->getLinkedObject($self->compartment_ref());
+	 if (!defined($obj)) {
+	 	$obj = $self->parent()->template()->biochemistry()->add("compartments",{
+	 		id => $compid,
+    		name => $compid,
+    		aliases => [],
+    		hierarchy => 1,
+    		pH => 7
+	 	});
+	 }
+	 return $obj;
 }
 
 #***********************************************************************************************************

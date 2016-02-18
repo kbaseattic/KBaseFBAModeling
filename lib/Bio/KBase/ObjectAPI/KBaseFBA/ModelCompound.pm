@@ -21,10 +21,22 @@ has modelCompartmentLabel => ( is => 'rw', isa => 'Str',printOrder => '3', type 
 has isBiomassCompound  => ( is => 'rw', isa => 'Bool',printOrder => '3', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildisBiomassCompound' );
 has mapped_uuid  => ( is => 'rw', isa => 'ModelSEED::uuid',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildmapped_uuid' );
 has formula  => ( is => 'rw', isa => 'Str',printOrder => '2', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildformula' );
+has compound => (is => 'rw', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_build_compound', clearer => 'clear_compound', isa => 'Ref', weak_ref => 1);
 
 #***********************************************************************************************************
 # BUILDERS:
 #***********************************************************************************************************
+sub _build_compound {
+	 my ($self) = @_;
+	 my $compoundid = $self->compound_ref();
+	 $compoundid =~ s/.+\///g;
+	 $self->compound_ref("~/template/biochemistry/compounds/id/".$compoundid);
+	 my $obj = $self->getLinkedObject($self->compound_ref());
+	 if (!defined($obj)) {
+		$obj = $self->getLinkedObject("~/template/biochemistry/compounds/id/cpd00000");
+	 }
+	 return $obj;
+}
 sub _buildid {
 	my ($self) = @_;
 	return $self->compound()->id()."_".$self->modelCompartmentLabel();

@@ -282,6 +282,10 @@ sub serializeToDB {
 				foreach my $cue (keys(%{$data->{$name}})) {
 					$data->{$name}->{$cue} = $data->{$name}->{$cue}+0;
 				}
+			} elsif ($name eq "fba_ref" || $name eq "gapfill_ref") {
+				if (defined($self->$name()) && length($self->$name()) > 0) {
+					$data->{$name} = $self->$name();
+				}
 			} elsif ($name =~ m/_objterms$/) {
 				$data->{$name} = {};
 				foreach my $key (keys(%{$self->$name()})) {
@@ -659,8 +663,18 @@ sub remove {
 
 sub getLinkedObject {
     my ($self, $ref) = @_;
+    if (! defined $ref) {
+	Bio::KBase::ObjectAPI::utilities::error("Undefined reference in BaseObject::getLinkedObject");
+    }
 	if ($ref =~ m/^~$/) {
 		return $self->topparent();
+	} elsif ($ref =~ m/^~\/(\w+)\/(\w+)\/(\w+)\/(\w+)\/([\w\.\|\-:]+)$/) {
+		my $linkedobject = $1;
+		my $otherlinkedobject = $2;
+		return $self->topparent()->$linkedobject()->$otherlinkedobject()->queryObject($3,{$4 => $5});
+	} elsif ($ref =~ m/^~\/(\w+)\/(\w+)\/(\w+)\/([\w\.\|\-:]+)$/) {
+		my $linkedobject = $1;
+		return $self->topparent()->$linkedobject()->queryObject($2,{$3 => $4});
 	} elsif ($ref =~ m/^~\/(\w+)\/(\w+)\/([\w\.\|\-:]+)$/) {
 		return $self->topparent()->queryObject($1,{$2 => $3});
 	} elsif ($ref =~ m/^[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}$/) {

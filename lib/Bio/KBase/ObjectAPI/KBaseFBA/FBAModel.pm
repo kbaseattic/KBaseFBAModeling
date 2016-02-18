@@ -24,10 +24,23 @@ extends 'Bio::KBase::ObjectAPI::KBaseFBA::DB::FBAModel';
 has features => ( is => 'rw', isa => 'ArrayRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildfeatures' );
 has featureHash => ( is => 'rw', isa => 'HashRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildfeatureHash' );
 has compound_reaction_hash => ( is => 'rw', isa => 'HashRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcompound_reaction_hash' );
+has template => ( is => 'rw', isa => 'Ref',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildtemplate' );
 
 #***********************************************************************************************************
 # BUILDERS:
 #***********************************************************************************************************
+sub _buildtemplate {
+	my ($self) = @_;
+	my $output = $self->parent()->workspace()->get_object_info([{
+		"ref" => $self->template_ref()
+	}],0);
+	my $templateref = $self->template_ref();
+	if ($output->[0]->[7] eq "NewKBaseModelTemplates") {
+		$templateref = "KBaseTemplateModels/".$output->[0]->[1];
+	}
+	return $self->getLinkedObject($templateref);
+}
+
 sub _buildcompound_reaction_hash {
 	my ($self) = @_;
 	my $hash = {};
@@ -373,7 +386,8 @@ sub addCompartmentToModel {
 		potential => 0,
 		compartmentIndex => 0
 	}, @_);
-	my $mdlcmp = $self->queryObject("modelcompartments",{compartment_ref => $args->{compartment}->_reference(),compartmentIndex => $args->{compartmentIndex}});
+    # search by id.index rather than reference, in case the biochemistry has been versioned
+	my $mdlcmp = $self->queryObject("modelcompartments",{id => $args->{compartment}->id().$args->{compartmentIndex},compartmentIndex => $args->{compartmentIndex}});
 	if (!defined($mdlcmp)) {
 		$mdlcmp = $self->add("modelcompartments",{
 			id => $args->{compartment}->id().$args->{compartmentIndex},
@@ -660,7 +674,7 @@ sub addModelReaction {
 		my $rxnobj = $bio->searchForReaction($rootid);
 		if (!defined($rxnobj) && !defined($eq)) {
 			Bio::KBase::ObjectAPI::utilities::error("Specified reaction ".$rootid." not found and no equation provided!");
-		} else {
+		} elsif (defined($rxnobj)) {
 			$reference = $rxnobj->_reference();
 			my $rgts = $rxnobj->reagents();
 			my $cmpchange = 0;
@@ -750,7 +764,8 @@ sub LoadExternalReactionEquation {
 	    		my $coef = 1;
 	    		my $compartment = "c";
 	    		if (defined($args->{reaction})) {
-	    			$compartment = $args->{reaction}->modelcompartment()->compartment()->id();
+	    			$compartment = $args->{reaction}->modelcompartment()->id();
+	    			$compartment =~ s/\d+//g;
 	    		}
 	    		my $index = 0;
 	    		if ($cpd =~ m/^\(*(\d+\.*\d*[eE]*-*\d*)\)*\s+(.+)/) {
@@ -861,8 +876,8 @@ sub LoadExternalReactionEquation {
 		    					id => $cpd."_".$compartment.$index,
 								compound_ref => $bio->_reference()."/compounds/id/cpd00000",
 								name => $cpd."_".$compartment.$index,
-								charge => 0,
-								formula => "",
+								charge => defined $args->{compounds}->{$cpd}->[1] ?  $args->{compounds}->{$cpd}->[1] : 0,
+								formula => defined $args->{compounds}->{$cpd}->[2] ? $args->{compounds}->{$cpd}->[2] : "",
 								modelcompartment_ref => "~/modelcompartments/id/".$mdlcmp->id(),
 		    					aliases => ["mdlid:".$cpd]
 		    				});
@@ -929,6 +944,17 @@ Description:
 
 sub printSBML {
     my $self = shift;
+    my $media = shift;
+
+    # read lb and ub for media compounds
+    my $mediacpds = {};
+
+    if (defined $media) {
+	foreach my $mediacpd (@{$media->mediacompounds}) {
+	    $mediacpds->{$mediacpd->compound()->id()} = [$mediacpd->minFlux(),$mediacpd->maxFlux()];
+	}
+    }
+
 	# convert ids to SIds
     my $idToSId = sub {
         my $id = shift @_;
@@ -970,15 +996,15 @@ sub printSBML {
 	push(@{$output},'<listOfSpecies>');
 	for (my $i=0; $i < @{$self->modelcompounds()}; $i++) {
 		my $cpd = $self->modelcompounds()->[$i];
-		push(@{$output},'<species '.$self->CleanNames("id",$cpd->id()).' '.$self->CleanNames("name",$cpd->name()).' compartment="'.$cpd->modelCompartmentLabel().'" charge="'.$cpd->charge().'" boundaryCondition="false"/>');
+		push(@{$output},'<species '.$self->CleanNames("id","M_".$cpd->id()).' '.$self->CleanNames("name",$cpd->name()).' compartment="'.$cpd->modelCompartmentLabel().'" boundaryCondition="false">'."\n\t<notes>\n\t\t<body xmlns=\"http://www.w3.org/1999/xhtml\">\n\t\t\t<p>FORMULA: ".$cpd->formula()."</p>\n\t\t\t<p>CHARGE: ".$cpd->charge()."</p>\n\t\t</body>\n\t</notes>\n</species>\n");
 		if ($cpd->compound()->id() eq "cpd11416" || $cpd->compound()->id() eq "cpd15302" || $cpd->compound()->id() eq "cpd08636" || $cpd->compound()->id() eq "cpd02701") {
-			push(@{$output},'<species '.$self->CleanNames("id",$cpd->compound()->id()."_b").' '.$self->CleanNames("name",$cpd->compound()->name()."_b").' compartment="'.$cpd->modelCompartmentLabel().'" charge="'.$cpd->charge().'" boundaryCondition="true"/>');
+		    push(@{$output},'<species '.$self->CleanNames("id","M_".$cpd->compound()->id()."_b").' '.$self->CleanNames("name",$cpd->compound()->name()."_b").' compartment="'.$cpd->modelCompartmentLabel().'" boundaryCondition="true">'."\n\t<notes>\n\t\t<body xmlns=\"http://www.w3.org/1999/xhtml\">\n\t\t\t<p>FORMULA: ".$cpd->formula()."</p>\n\t\t\t<p>CHARGE: ".$cpd->charge()."</p>\n\t\t</body>\n\t</notes>\n</species>\n");
 		}
 	}
 	for (my $i=0; $i < @{$self->modelcompounds()}; $i++) {
 		my $cpd = $self->modelcompounds()->[$i];
 		if ($cpd->modelCompartmentLabel() =~ m/^e/) {
-			push(@{$output},'<species '.$self->CleanNames("id",$cpd->compound()->id()."_b").' '.$self->CleanNames("name",$cpd->compound()->name()."_b").' compartment="'.$cpd->modelCompartmentLabel().'" charge="'.$cpd->charge().'" boundaryCondition="true"/>');
+		    push(@{$output},'<species '.$self->CleanNames("id","M_".$cpd->compound()->id()."_b").' '.$self->CleanNames("name",$cpd->compound()->name()."_b").' compartment="'.$cpd->modelCompartmentLabel().'" boundaryCondition="true">'."\n\t<notes>\n\t\t<body xmlns=\"http://www.w3.org/1999/xhtml\">\n\t\t\t<p>FORMULA: ".$cpd->formula()."</p>\n\t\t\t<p>CHARGE: ".$cpd->charge()."</p>\n\t\t</body>\n\t</notes>\n</species>\n");
 		}
 	}
 	push(@{$output},'</listOfSpecies>');
@@ -992,21 +1018,22 @@ sub printSBML {
 			$lb = 0;
 			$reversibility = "false";
 		}
-		push(@{$output},'<reaction '.$self->CleanNames("id",$rxn->id()).' '.$self->CleanNames("name",$rxn->name()).' '.$self->CleanNames("reversible",$reversibility).'>');
-		push(@{$output},"<notes>");
+		push(@{$output},'<reaction '.$self->CleanNames("id","R_".$rxn->id()).' '.$self->CleanNames("name",$rxn->name()).' '.$self->CleanNames("reversible",$reversibility).'>');
+		push(@{$output},"\t<notes>\n\t<body xmlns=\"http://www.w3.org/1999/xhtml\">");
 		my $ec = $rxn->reaction->getAlias("Enzyme Class");
 		my $keggID = $rxn->reaction->getAlias("KEGG");
 		my $GeneAssociation = $rxn->gprString;
 		my $ProteinAssociation = $rxn->gprString;
-		push(@{$output},"<html:p>GENE_ASSOCIATION:".$GeneAssociation."</html:p>");
-		push(@{$output},"<html:p>PROTEIN_ASSOCIATION:".$ProteinAssociation."</html:p>");
+		push(@{$output},"\t\t<p>GENE_ASSOCIATION:".$GeneAssociation."</p>");
+		push(@{$output},"\t\t<p>PROTEIN_ASSOCIATION:".$ProteinAssociation."</p>");
 		if (defined($keggID)) {
-			push(@{$output},"<html:p>KEGG_RID:".$keggID."</html:p>");
+			push(@{$output},"\t\t<p>KEGG_RID:".$keggID."</p>");
 		}
 		if (defined($ec)) {
-			push(@{$output},"<html:p>PROTEIN_CLASS:".$ec."</html:p>");
+			push(@{$output},"\t\t<p>PROTEIN_CLASS:".$ec."</p>");
+			push(@{$output},"\t\t<p>EC Number:".$ec."</p>");
 		}
-		push(@{$output},"</notes>");
+		push(@{$output},"\t</body>\n\t</notes>");
 		my $firstreact = 1;
 		my $firstprod = 1;
 		my $prodoutput = [];
@@ -1020,35 +1047,35 @@ sub printSBML {
 			if ($sign*$rgt->coefficient() < 0) {
 				if ($firstreact == 1) {
 					$firstreact = 0;
-					push(@{$output},"<listOfReactants>");
+					push(@{$output},"\t<listOfReactants>");
 				}
-				push(@{$output},'<speciesReference '.$self->CleanNames("species",$rgt->modelcompound()->id()).' stoichiometry="'.-1*$sign*$rgt->coefficient().'"/>');	
+				push(@{$output},"\t\t".'<speciesReference '.$self->CleanNames("species","M_".$rgt->modelcompound()->id()).' stoichiometry="'.-1*$sign*$rgt->coefficient().'"/>');	
 			} else {
 				if ($firstprod == 1) {
 					$firstprod = 0;
-					push(@{$prodoutput},"<listOfProducts>");
+					push(@{$prodoutput},"\t<listOfProducts>");
 				}
-				push(@{$prodoutput},'<speciesReference '.$self->CleanNames("species",$rgt->modelcompound()->id()).' stoichiometry="'.$sign*$rgt->coefficient().'"/>');
+				push(@{$prodoutput},"\t\t".'<speciesReference '.$self->CleanNames("species","M_".$rgt->modelcompound()->id()).' stoichiometry="'.$sign*$rgt->coefficient().'"/>');
 			}
 		}
 		if ($firstreact != 1) {
-			push(@{$output},"</listOfReactants>");
+			push(@{$output},"\t</listOfReactants>");
 		}
 		if ($firstprod != 1) {
-			push(@{$prodoutput},"</listOfProducts>");
+			push(@{$prodoutput},"\t</listOfProducts>");
 		}
 		push(@{$output},@{$prodoutput});
-		push(@{$output},"<kineticLaw>");
-		push(@{$output},"\t<math xmlns=\"http://www.w3.org/1998/Math/MathML\">");
+		push(@{$output},"\t<kineticLaw>");
+		push(@{$output},"\t\t<math xmlns=\"http://www.w3.org/1998/Math/MathML\">");
 		push(@{$output},"\t\t\t<ci> FLUX_VALUE </ci>");
-		push(@{$output},"\t</math>");
-		push(@{$output},"\t<listOfParameters>");
-		push(@{$output},"\t\t<parameter id=\"LOWER_BOUND\" value=\"".$lb."\" name=\"mmol_per_gDW_per_hr\"/>");
-		push(@{$output},"\t\t<parameter id=\"UPPER_BOUND\" value=\"1000\" name=\"mmol_per_gDW_per_hr\"/>");
-		push(@{$output},"\t\t<parameter id=\"OBJECTIVE_COEFFICIENT\" value=\"0\"/>");
-		push(@{$output},"\t\t<parameter id=\"FLUX_VALUE\" value=\"0.0\" name=\"mmol_per_gDW_per_hr\"/>");
-		push(@{$output},"\t</listOfParameters>");
-		push(@{$output},"</kineticLaw>");
+		push(@{$output},"\t\t</math>");
+		push(@{$output},"\t\t<listOfParameters>");
+		push(@{$output},"\t\t\t<parameter id=\"LOWER_BOUND\" value=\"".$lb."\" units=\"mmol_per_gDW_per_hr\"/>");
+		push(@{$output},"\t\t\t<parameter id=\"UPPER_BOUND\" value=\"1000\" units=\"mmol_per_gDW_per_hr\"/>");
+		push(@{$output},"\t\t\t<parameter id=\"OBJECTIVE_COEFFICIENT\" value=\"0\" units=\"mmol_per_gDW_per_hr\"/>");
+		push(@{$output},"\t\t\t<parameter id=\"FLUX_VALUE\" value=\"0.0\" units=\"mmol_per_gDW_per_hr\"/>");
+		push(@{$output},"\t\t</listOfParameters>");
+		push(@{$output},"\t</kineticLaw>");
 		push(@{$output},'</reaction>');
 	}
 	my $bios = $self->biomasses();
@@ -1059,13 +1086,13 @@ sub printSBML {
 			$obj = 1;
 		}
 		my $reversibility = "false";
-		push(@{$output},'<reaction '.$self->CleanNames("id","biomass".$i).' '.$self->CleanNames("name",$rxn->name()).' '.$self->CleanNames("reversible",$reversibility).'>');
-		push(@{$output},"<notes>");
-		push(@{$output},"<html:p>GENE_ASSOCIATION: </html:p>");
-		push(@{$output},"<html:p>PROTEIN_ASSOCIATION: </html:p>");
-		push(@{$output},"<html:p>SUBSYSTEM: </html:p>");
-		push(@{$output},"<html:p>PROTEIN_CLASS: </html:p>");
-		push(@{$output},"</notes>");
+		push(@{$output},'<reaction '.$self->CleanNames("id","R_biomass".$i).' '.$self->CleanNames("name",$rxn->name()).' '.$self->CleanNames("reversible",$reversibility).'>');
+		push(@{$output},"\t<notes>\n\t<body xmlns=\"http://www.w3.org/1999/xhtml\">");
+		push(@{$output},"\t\t<p>GENE_ASSOCIATION: </p>");
+		push(@{$output},"\t\t<p>PROTEIN_ASSOCIATION: </p>");
+		push(@{$output},"\t\t<p>SUBSYSTEM: </p>");
+		push(@{$output},"<p>PROTEIN_CLASS: </p>");
+		push(@{$output},"\t</body>\n\t</notes>");
 		my $firstreact = 1;
 		my $firstprod = 1;
 		my $prodoutput = [];
@@ -1075,22 +1102,22 @@ sub printSBML {
 			if ($rgt->coefficient() < 0) {
 				if ($firstreact == 1) {
 					$firstreact = 0;
-					push(@{$output},"<listOfReactants>");
+					push(@{$output},"\t<listOfReactants>");
 				}
-				push(@{$output},'<speciesReference '.$self->CleanNames("species",$rgt->modelcompound()->id()).' stoichiometry="'.-1*$rgt->coefficient().'"/>');	
+				push(@{$output},"\t\t".'<speciesReference '.$self->CleanNames("species","M_".$rgt->modelcompound()->id()).' stoichiometry="'.-1*$rgt->coefficient().'"/>');	
 			} else {
 				if ($firstprod == 1) {
 					$firstprod = 0;
-					push(@{$prodoutput},"<listOfProducts>");
+					push(@{$prodoutput},"\t<listOfProducts>");
 				}
-				push(@{$prodoutput},'<speciesReference '.$self->CleanNames("species",$rgt->modelcompound()->id()).' stoichiometry="'.$rgt->coefficient().'"/>');
+				push(@{$prodoutput},"\t\t".'<speciesReference '.$self->CleanNames("species","M_".$rgt->modelcompound()->id()).' stoichiometry="'.$rgt->coefficient().'"/>');
 			}
 		}
 		if ($firstreact != 1) {
-			push(@{$output},"</listOfReactants>");
+			push(@{$output},"\t</listOfReactants>");
 		}
 		if ($firstprod != 1) {
-			push(@{$prodoutput},"</listOfProducts>");
+			push(@{$prodoutput},"\t</listOfProducts>");
 		}
 		push(@{$output},@{$prodoutput});
 		push(@{$output},"<kineticLaw>");
@@ -1098,10 +1125,10 @@ sub printSBML {
 		push(@{$output},"\t\t\t<ci> FLUX_VALUE </ci>");
 		push(@{$output},"\t</math>");
 		push(@{$output},"\t<listOfParameters>");
-		push(@{$output},"\t\t<parameter id=\"LOWER_BOUND\" value=\"0.0\" name=\"mmol_per_gDW_per_hr\"/>");
-		push(@{$output},"\t\t<parameter id=\"UPPER_BOUND\" value=\"1000\" name=\"mmol_per_gDW_per_hr\"/>");
-		push(@{$output},"\t\t<parameter id=\"OBJECTIVE_COEFFICIENT\" value=\"".$obj."\"/>");
-		push(@{$output},"\t\t<parameter id=\"FLUX_VALUE\" value=\"0.0\" name=\"mmol_per_gDW_per_hr\"/>");
+		push(@{$output},"\t\t<parameter id=\"LOWER_BOUND\" value=\"0.0\" units=\"mmol_per_gDW_per_hr\"/>");
+		push(@{$output},"\t\t<parameter id=\"UPPER_BOUND\" value=\"1000\" units=\"mmol_per_gDW_per_hr\"/>");
+		push(@{$output},"\t\t<parameter id=\"OBJECTIVE_COEFFICIENT\" value=\"".$obj."\" units=\"mmol_per_gDW_per_hr\"/>");
+		push(@{$output},"\t\t<parameter id=\"FLUX_VALUE\" value=\"0.0\" units=\"mmol_per_gDW_per_hr\"/>");
 		push(@{$output},"\t</listOfParameters>");
 		push(@{$output},"</kineticLaw>");
 		push(@{$output},'</reaction>');
@@ -1112,17 +1139,21 @@ sub printSBML {
 		my $lb = -1000;
 		my $ub = 1000;
 		if ($cpd->modelCompartmentLabel() =~ m/^e/ || $cpd->compound()->id() eq "cpd08636" || $cpd->compound()->id() eq "cpd11416" || $cpd->compound()->id() eq "cpd15302" || $cpd->compound()->id() eq "cpd02701" ) {
-			push(@{$output},'<reaction '.$self->CleanNames("id",'EX_'.$cpd->id()).' '.$self->CleanNames("name",'EX_'.$cpd->name()).' reversible="true">');
-			push(@{$output},"\t".'<notes>');
-			push(@{$output},"\t\t".'<html:p>GENE_ASSOCIATION: </html:p>');
-			push(@{$output},"\t\t".'<html:p>PROTEIN_ASSOCIATION: </html:p>');
-			push(@{$output},"\t\t".'<html:p>PROTEIN_CLASS: </html:p>');
-			push(@{$output},"\t".'</notes>');
+		    if ($cpd->modelCompartmentLabel() =~ m/^e/ && defined $media) {
+			$lb = (exists $mediacpds->{$cpd->compound()->id()}) ? $mediacpds->{$cpd->compound()->id()}->[0] : 0;
+			$ub = (exists $mediacpds->{$cpd->compound()->id()}) ? $mediacpds->{$cpd->compound()->id()}->[1] : 1000;
+		    }
+			push(@{$output},'<reaction '.$self->CleanNames("id",'R_EX_'.$cpd->id()).' '.$self->CleanNames("name",'EX_'.$cpd->name()).' reversible="true">');
+			push(@{$output},"\t<notes>\n\t<body xmlns=\"http://www.w3.org/1999/xhtml\">");
+			push(@{$output},"\t\t".'<p>GENE_ASSOCIATION: </p>');
+			push(@{$output},"\t\t".'<p>PROTEIN_ASSOCIATION: </p>');
+			push(@{$output},"\t\t".'<p>PROTEIN_CLASS: </p>');
+			push(@{$output},"\t</body>\n\t".'</notes>');
 			push(@{$output},"\t".'<listOfReactants>');
-			push(@{$output},"\t\t".'<speciesReference '.$self->CleanNames("species",$cpd->id()).' stoichiometry="1.000000"/>');
+			push(@{$output},"\t\t".'<speciesReference '.$self->CleanNames("species","M_".$cpd->id()).' stoichiometry="1.000000"/>');
 			push(@{$output},"\t".'</listOfReactants>');
 			push(@{$output},"\t".'<listOfProducts>');
-			push(@{$output},"\t\t".'<speciesReference '.$self->CleanNames("species",$cpd->compound()->id()."_b").' stoichiometry="1.000000"/>');
+			push(@{$output},"\t\t".'<speciesReference '.$self->CleanNames("species","M_".$cpd->compound()->id()."_b").' stoichiometry="1.000000"/>');
 			push(@{$output},"\t".'</listOfProducts>');
 			push(@{$output},"\t".'<kineticLaw>');
 			push(@{$output},"\t\t".'<math xmlns="http://www.w3.org/1998/Math/MathML">');
@@ -1131,7 +1162,7 @@ sub printSBML {
 			push(@{$output},"\t\t".'<listOfParameters>');
 			push(@{$output},"\t\t\t".'<parameter id="LOWER_BOUND" value="'.$lb.'" units="mmol_per_gDW_per_hr"/>');
 			push(@{$output},"\t\t\t".'<parameter id="UPPER_BOUND" value="'.$ub.'" units="mmol_per_gDW_per_hr"/>');
-			push(@{$output},"\t\t\t".'<parameter id="OBJECTIVE_COEFFICIENT" value="0"/>');
+			push(@{$output},"\t\t\t".'<parameter id="OBJECTIVE_COEFFICIENT" value="0" units="mmol_per_gDW_per_hr"/>');
 			push(@{$output},"\t\t\t".'<parameter id="FLUX_VALUE" value="0.000000" units="mmol_per_gDW_per_hr"/>');
 			push(@{$output},"\t\t".'</listOfParameters>');
 			push(@{$output},"\t".'</kineticLaw>');
@@ -1149,6 +1180,8 @@ sub CleanNames {
 		my ($self,$name,$value) = @_;
 		$value =~ s/[\s:,-]/_/g;
 		$value =~ s/\W//g;
+		$value =~ s/\(/LPAREN/g;
+		$value =~ s/\)/RPAREN/g;
 		return $name.'="'.$value.'"';
 }
 
@@ -1419,7 +1452,7 @@ sub export {
     my $self = shift;
 	my $args = Bio::KBase::ObjectAPI::utilities::args(["format"], {}, @_);
 	if (lc($args->{format}) eq "sbml") {
-		return $self->printSBML();
+		return $self->printSBML($args->{media});
 	} elsif (lc($args->{format}) eq "exchange") {
 		return $self->printExchange();
 	} elsif (lc($args->{format}) eq "genes") {
@@ -2560,10 +2593,16 @@ sub searchForCompound {
 	    if (!defined($mdlcmp)) {
 	    	return undef;
 	    }
-	    return $self->queryObject("modelcompounds",{
+	    $mdlcpd = $self->queryObject("modelcompounds",{
 	    	modelcompartment_ref => $mdlcmp->_reference(),
 	    	compound_ref => $self->biochemistry()->_reference()."/compounds/id/".$cpd->id()
 	    });
+	    if (!defined($mdlcpd)) {
+	    	$mdlcpd = $self->queryObject("modelcompounds",{
+		    	modelcompartment_ref => $mdlcmp->_reference(),
+		    	compound_ref => "~/template/compounds/id/".$cpd->id()
+		    });
+	    }
     }
     return $mdlcpd;
 }

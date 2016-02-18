@@ -17,7 +17,7 @@ extends 'Bio::KBase::ObjectAPI::BaseObject';
 has parent => (is => 'rw', isa => 'Ref', weak_ref => 1, type => 'parent', metaclass => 'Typed');
 # ATTRIBUTES:
 has uuid => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_uuid');
-has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_reference');
+#has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_reference');
 has protons => (is => 'rw', isa => 'Num', printOrder => '7', default => '0', type => 'attribute', metaclass => 'Typed');
 has reaction_ref => (is => 'rw', isa => 'Str', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
 has direction => (is => 'rw', isa => 'Str', printOrder => '5', default => '=', type => 'attribute', metaclass => 'Typed');
@@ -30,7 +30,7 @@ has name => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', 
 has probability => (is => 'rw', isa => 'Num', printOrder => '8', default => '1', type => 'attribute', metaclass => 'Typed');
 has pathway => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has aliases => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub {return [];}, type => 'attribute', metaclass => 'Typed');
-
+has gapfill_data => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub {return {};}, type => 'attribute', metaclass => 'Typed');
 
 # SUBOBJECTS:
 has modelReactionReagents => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(ModelReactionReagent)', metaclass => 'Typed', reader => '_modelReactionReagents', printOrder => '-1');
@@ -43,7 +43,7 @@ has modelcompartment => (is => 'rw', type => 'link(FBAModel,modelcompartments,mo
 
 
 # BUILDERS:
-sub _build_reference { my ($self) = @_;return $self->parent()->_reference().'/modelreactions/id/'.$self->id(); }
+sub _reference { my ($self) = @_;return $self->parent()->_reference().'/modelreactions/id/'.$self->id(); }
 sub _build_uuid { my ($self) = @_;return $self->_reference(); }
 sub _build_reaction {
 	 my ($self) = @_;
@@ -156,10 +156,19 @@ my $attributes = [
             'default' => 'sub {return [];}',
             'type' => 'ArrayRef',
             'perm' => 'rw'
-          }
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'gapfill_data',
+            'default' => 'sub {return {};}',
+            'type' => 'HashRef',
+            'perm' => 'rw'
+          },
+
         ];
 
-my $attribute_map = {protons => 0, reaction_ref => 1, direction => 2, modelcompartment_ref => 3, maxforflux => 4, reference => 5, id => 6, maxrevflux => 7, name => 8, probability => 9, pathway => 10, aliases => 11};
+my $attribute_map = {protons => 0, reaction_ref => 1, direction => 2, modelcompartment_ref => 3, maxforflux => 4, reference => 5, id => 6, maxrevflux => 7, name => 8, probability => 9, pathway => 10, aliases => 11,gapfill_data => 12};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {

@@ -34,7 +34,8 @@ my $translation = {
 	solver => "solver",
 	biomass => "biomass",
 	expthreshold => "expression_threshold_percentile", 
-	discretevar => "use_discrete_variables"
+	discretevar => "use_discrete_variables",
+	massbalance => "massbalance"
 };
 my $fbaTranslation = {
 	media => "media",
@@ -60,7 +61,8 @@ my $fbaTranslation = {
 	omega => "omega",
 	modelws => "model_workspace",
 	regulome => "regulome",
-	regulomews => "regulome_workspace"
+	regulomews => "regulome_workspace",
+	massbalance => "massbalance"
 };
 #Defining usage and options
 my $specs = [
@@ -91,7 +93,7 @@ my $specs = [
     [ 'efluxws:s', 'Workspace with ExpressionSample/Series' ],
     [ 'tintlesample:s', 'ID of ProbabilitySample for Tintle2014 analysis' ],
     [ 'tintlews:s', 'Workspace with ProbabilitySample/Series' ],
-    [ 'omega:s', 'Weights of biomass against gene penalty. In (0,1]', { "default" => 0.5}],
+    [ 'omega:s', 'Weights of biomass against gene penalty. In (0,1]', { "default" => 0 }],
     [ 'kappa:s', 'Tolerance to classify genes as unknown, not on or off. In [0,0.5]', {"default" => 0.1}],
     [ 'defaultmaxflux:s', 'Default maximum reaction flux' ],
     [ 'defaultminuptake:s', 'Default minimum nutrient uptake' ],
@@ -111,6 +113,7 @@ my $specs = [
     [ 'notes:s', 'Notes for flux balance analysis' ],
     [ 'solver:s', 'Solver to use for FBA' ],
     [ 'workspace|w:s', 'Workspace to save FBA results', { "default" => fbaws() } ],
+    [ 'massbalance:s', 'List of elements to apply mass balance constraint (; delimiter)' ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
 if (!defined($opt->{mediaws}) && defined($opt->{media})) {
