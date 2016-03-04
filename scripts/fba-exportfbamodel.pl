@@ -16,6 +16,7 @@ my $translation = {
 	"Format (html,sbml,json,cytoseed,readable,excel)" => "format",
 	"FBAModel ID" => "model",
 	"fba" => "fbas",
+	"media" => "media",
 	toshock => "toshock",
 	workspace => "workspace",
 };
@@ -23,18 +24,26 @@ my $translation = {
 my $specs = [
 	[ 'toshock', 'Load data to shock and return node IDs' ],
     [ 'workspace|w:s', 'Workspace with model', { "default" => fbaws() } ],
-    [ 'fba|f:s@', 'FBA associated with model (; delimiter)', { "default" => []} ]
+    [ 'fba|f:s@', 'FBA associated with model (; delimiter)', { "default" => []} ],
+    [ 'media|m:s', 'Media for setting exchange bounds' ]
 ];
 my ($opt,$params) = universalFBAScriptCode($specs,$script,$primaryArgs,$translation);
 my $toshock = 0;
 if (defined($params->{toshock})) {
 	$toshock = $params->{toshock};
 }
-if (defined($opt->{fbas})) {
-	foreach my $fba (@{$opt->{fbas}}) {
-		push(@{$params->{fbas}},split(/;/,$fba));
+my $fbas = [];
+if (defined($params->{fbas})) {
+	foreach my $fba (@{$params->{fbas}}) {
+		push(@{$fbas},split(/;/,$fba));
 	}
 }
+if (defined($opt->{fbas})) {
+	foreach my $fba (@{$opt->{fbas}}) {
+		push(@{$fbas},split(/;/,$fba));
+	}
+}
+$params->{fbas} = $fbas;
 #Calling the server
 my $output = runFBACommand($params,$servercommand,$opt);
 #Checking output and report results

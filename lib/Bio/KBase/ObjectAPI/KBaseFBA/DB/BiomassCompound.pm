@@ -18,6 +18,7 @@ has uuid => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass =>
 has _reference => (is => 'rw', lazy => 1, isa => 'Str', type => 'msdata', metaclass => 'Typed',builder => '_build_reference');
 has modelcompound_ref => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 has coefficient => (is => 'rw', isa => 'Num', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
+has gapfill_data => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub {return {};}, type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
@@ -55,10 +56,19 @@ my $attributes = [
             'type' => 'Num',
             'description' => undef,
             'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => 0,
+            'name' => 'gapfill_data',
+            'default' => 'sub{return {};}',
+            'type' => 'HashRef',
+            'description' => undef,
+            'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {modelcompound_ref => 0, coefficient => 1};
+my $attribute_map = {modelcompound_ref => 0, coefficient => 1, gapfill_data => 2};
 sub _attributes {
 	 my ($self, $key) = @_;
 	 if (defined($key)) {

@@ -39,10 +39,23 @@ has revGenEquationCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclas
 has equationFormula => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildequationformula' );
 has complexString => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcomplexString' );
 has stoichiometry => ( is => 'rw', isa => 'ArrayRef', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildstoichiometry' );
+has reaction => (is => 'rw', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_build_reaction', clearer => 'clear_reaction', isa => 'Ref', weak_ref => 1);
 
 #***********************************************************************************************************
 # BUILDERS:
 #***********************************************************************************************************
+sub _build_reaction {
+	 my ($self) = @_;
+	 if ($self->reaction_ref() =~ m/\/([^\/]+)_[a-z]/) {
+	 	$self->reaction_ref("~/template/biochemistry/reactions/id/".$1);
+	 }
+	 my $rxn = $self->getLinkedObject($self->reaction_ref());
+	 if (!defined($rxn)) {
+	 	$rxn = $self->getLinkedObject("~/template/biochemistry/reactions/id/rxn00000");
+	 }
+	 return $rxn;
+}
+
 sub _buildname {
 	my ($self) = @_;
 	return $self->reaction->name()."_".$self->modelCompartmentLabel();

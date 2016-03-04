@@ -155,7 +155,7 @@ sub _resetKBaseStore {
 	$temp = pop(@{$temp});
 	my $newparams = {};
 	foreach my $param (keys(%{$params})) {
-		if ($param ne "fasta" && $param ne "annotations" && $param ne "genomeobj" && $param ne "gtf_file" && $param ne "sbml" && $param ne "templateReactions") {
+		if ($param ne "exp_raw_data" && $param ne "fasta" && $param ne "annotations" && $param ne "genomeobj" && $param ne "gtf_file" && $param ne "sbml" && $param ne "templateReactions") {
 			$newparams->{$param} = $params->{$param};
 		}
 	}
@@ -1173,6 +1173,7 @@ sub _buildFBAObject {
 		FBADeletionResults => [],
 		FBAMinimalMediaResults => [],
 		FBAMetaboliteProductionResults => [],
+		massbalance => defined $fbaFormulation->{massbalance} ? $fbaFormulation->{massbalance} : ""
 	});
 	$fbaobj->parent($self->_KBaseStore());
 	if (defined($fbaFormulation->{promconstraint})) {
@@ -1283,7 +1284,7 @@ sub _buildFBAObject {
 		}
 	}
 	#Parsing gene KO
-	if (defined($model->genome_ref())) {
+	if (defined($model->genome_ref()) && defined($fbaFormulation->{geneko}) && @{$fbaFormulation->{geneko}} > 0) {
 		my $genome = $model->genome();
 		foreach my $gene (@{$fbaFormulation->{geneko}}) {
 			my $geneObj = $genome->searchForFeature($gene);
@@ -2834,6 +2835,25 @@ sub _parse_SBML {
     			$boundary = 1;
     		}
     	}
+	# COBRA-compliant SBML file structure has formula and charge in notes section
+        foreach my $node ($cpd->getElementsByTagName("*",0)) {
+	    foreach my $html ($node->getElementsByTagName("*",0)){
+		my $nodes = $html->getChildNodes();
+		foreach my $node (@{$nodes}) {
+		    my $text = $node->toString();
+		    if ($text =~ m/FORMULA:\s*([^<]+)/) {
+			if (length($1) > 0) {
+			    $formula = $1;
+			}
+		    }
+		    elsif ($text =~ m/CHARGE:\s*([^<]+)/) {
+			if (length($1) > 0) {
+			    $charge = $1;
+			}
+		    }
+		}
+	    }
+	}
     	if (!defined($name)) {
     		$name = $id;
     	}
@@ -3159,7 +3179,12 @@ sub _compute_eflux_scores {
 	} else {
 		if (defined $series_id) {
 			# Take max expression score across all samples for this reaction
-			$max_score = (sort {$b <=> $a } map {$scores_collection->{$rxn_id}->{$_}} keys $scores_collection->{$rxn_id})[0];
+			$max_score = undef;
+			foreach my $currkey (keys(%{$scores_collection->{$rxn_id}})) {
+				if (!defined($max_score) || $max_score < $scores_collection->{$rxn_id}->{$currkey}) {
+					$max_score = $scores_collection->{$rxn_id}->{$currkey};
+				}
+			}
 		}
 	    # Then normalize the picked sample's expression score by the max
 	    $scores_for_picked_sample->{$rxn_id} = $scores_collection->{$rxn_id}->{$picked_sample_id} / $max_score;
@@ -3306,6 +3331,10 @@ sub _export_object {
 	} elsif (ref($obj) =~ m/Bio::KBase::ObjectAPI/) {
 		if (ref($obj) eq "Bio::KBase::ObjectAPI::KBasePhenotypes::PhenotypeSimulationSet" && $input->{format} eq "text") {
 			$output = $obj->export_text();
+                } elsif (defined $input->{media}) {
+			$output = $obj->export({format => $input->{format}, media => $input->{media}});
+                } elsif (defined $input->{fbas}) {
+			$output = $obj->export({format => $input->{format}, fbas => $input->{fbas}});
 		} else {
 			$output = $obj->export({format => $input->{format}});
 		}
@@ -4900,7 +4929,7 @@ sub get_compounds
 		my $cpd = $input->{compounds}->[$i];
 		my $objs;
 		if ($cpd =~ m/(cpd\d+)$/) {
-			$objs = $biochem->getObjects("compounds",[$cpd]);
+			$objs = $biochem->getObjects("compounds",[$1]);
 		} else {
 			$objs = $biochem->searchForAllCompounds($cpd);
 		}
@@ -7592,7 +7621,7 @@ sub import_fbamodel
     	$input->{biomass} = [split(/;/,$input->{biomass})];
     }
     my $model = Bio::KBase::ObjectAPI::KBaseFBA::FBAModel->new({
-		id => $kbid,
+	id => $input->{model},
 		source => $input->{source},
 		source_id => $input->{model},
 		name => $genome->scientific_name(),
@@ -7710,11 +7739,18 @@ sub import_fbamodel
 	}
 	for (my  $i=0; $i < @{$input->{reactions}}; $i++) {
 		my $rxnrow = $input->{reactions}->[$i];
+		my $compartment = $rxnrow->[2];
+		my $compartmentIndex = 0;
+		# check to see if the compartment already specifies an index
+		if ($compartment =~/^(\w)(\d+)$/) {
+		    $compartment = $1;
+		    $compartmentIndex = $2;
+		}		
 		my $input = {
 		    reaction => $rxnrow->[0],
 		    direction => $rxnrow->[1],
-		    compartment => $rxnrow->[2],
-		    compartmentIndex => 0,
+		    compartment => $compartment,
+		    compartmentIndex => $compartmentIndex,
 		    gpr => $rxnrow->[3],
 		    removeReaction => 0,
 		    addReaction => 1,
@@ -7880,11 +7916,21 @@ sub export_fbamodel
     $input = $self->_validateargs($input,["model","workspace","format"],{
     	toshock => 0
     });
+    my $fbas = [];
+    foreach my $fba (@{$input->{fbas}}) {
+	push @$fbas, $self->_get_msobject("FBA",$input->{workspace},$fba);
+    }
+    my $media;
+    if (defined $input->{media}) {
+	$media = $self->_get_msobject("Media",$input->{workspace},$input->{media});
+    }
     $output = $self->_export_object({
     	reference => $input->{workspace}."/".$input->{model},
     	type => "FBAModel",
     	format => $input->{format},
-    	toshock => $input->{toshock}
+    	toshock => $input->{toshock},
+        fbas => $fbas,
+        media => $media
     });
     $self->_clearContext();
     #END export_fbamodel
@@ -8987,7 +9033,8 @@ sub runfba
 		expseriesws => $input->{workspace},
 		expsample => undef,
 		activation_penalty => 0.1,
-		solver => undef
+		solver => undef,
+		massbalance => ""
 	});
     if (defined($input->{booleanexp}) && $input->{booleanexp} eq "") {
     	$input->{booleanexp} = "absolute";
@@ -9000,6 +9047,7 @@ sub runfba
 	#Creating FBAFormulation Object
     $input->{formulation}->{kappa} = $input->{kappa};
     $input->{formulation}->{omega} = $input->{omega};
+    $input->{formulation}->{massbalance} = $input->{massbalance};
 	my $fba = $self->_buildFBAObject($input->{formulation},$model,$input->{workspace},$input->{fba});
 	$fba->fva($input->{fva});
 	$fba->comboDeletions($input->{simulateko});
@@ -10371,7 +10419,8 @@ sub simulate_phenotypes
 		gapfill_phenosim => 0,
 		solver => undef,
 		source_model => undef,
-		source_model_ws => $input->{workspace}
+		source_model_ws => $input->{workspace},
+		biomass => undef
 	});
 	my $pheno = $self->_get_msobject("PhenotypeSet",$input->{phenotypeSet_workspace},$input->{phenotypeSet});
 	my $model = $self->_get_msobject("FBAModel",$input->{model_workspace},$input->{model});
@@ -10384,6 +10433,13 @@ sub simulate_phenotypes
 	$input->{formulation}->{media_workspace} = "KBaseMedia";
 	$input->{formulation} = $self->_setDefaultFBAFormulation($input->{formulation});
 	my $fba = $self->_buildFBAObject($input->{formulation},$model,$input->{workspace},$self->_get_new_id($input->{model}.".gffba."));
+	if (defined($input->{biomass}) && defined($fba->biomassflux_objterms()->{bio1})) {
+		my $bio = $model->searchForBiomass($input->{biomass});
+		if (defined($bio)) {
+			delete $fba->biomassflux_objterms()->{bio1};
+			$fba->biomassflux_objterms()->{$bio->id()} = 1;
+		}			
+	}
 	if ($input->{gapfill_phenosim} == 1) {
 		if (defined($input->{source_model})) {
 			$input->{source_model} = $self->_get_msobject("FBAModel",$input->{source_model_ws},$input->{source_model});
@@ -11707,7 +11763,8 @@ sub gapfill_model
 		model_workspace => $input->{workspace},
 		integrate_solution => 0,
 		formulation => undef,
-		simultaneous => 0
+		simultaneous => 0,
+		massbalance => ""
 	});
 	if ($input->{simultaneous} == 1 && $input->{alpha} == 0) {
 		if ($input->{use_discrete_variables} == 1) {
@@ -14257,7 +14314,7 @@ sub find_reaction_synonyms
 		my $rxnsyn = { primary => $rxn->id(), synonyms => [] };	
 		foreach my $key (keys %$netReactions) {
 			my $cpds = $netReactions->{$key}->{compounds};
-			if (@$cpds ~~ @$found) {
+			if (@$cpds == @$found) {
 				my $synrxn = $netReactions->{$key}->{reaction};
 				my $rxndef = { id => $synrxn->id(), name => $synrxn->name, definition => $synrxn->createEquation( { format => "formula" } ) };
 				push(@{$rxnsyn->{synonyms}}, $rxndef);
@@ -20174,20 +20231,23 @@ sub import_expression
     my($expression_meta);
     #BEGIN import_expression
     $self->_setContext($ctx,$input);    
-    $input = $self->_validateargs($input,["expression_data_sample_series","series","workspace","source_date"],
-				  {source_id => $input->{"series"},
-				   numerical_interpretation => "Log2 level intensities",});
+    $input = $self->_validateargs($input,["expression_data_sample_series","series","workspace","source_date"],{
+    	source_id => $input->{"series"},
+		numerical_interpretation => "Log2 level intensities"
+    });
 
     my $genome_id;
     if (exists $input->{"genome_id"}) {
-	$genome_id = $input->{"genome_id"};
+		$genome_id = $input->{"genome_id"};
     } else {
-	my $feature_id = (keys $input->{"expression_data_sample_series"}->{(keys $input->{"expression_data_sample_series"})[0]}->{"data_expression_levels_for_sample"})[0];
-	if ( $feature_id =~ /(.+)\.[a-zA-Z]+\.\d+$/) {
-	    $genome_id = $1;
-	} else {
-	    die("Can't determine genome id from feature id: $feature_id\n");
-	}
+    	my $keys = [keys(%{$input->{expression_data_sample_series}})];
+    	my $expkeys = [keys(%{$input->{expression_data_sample_series}->{$keys->[0]}->{data_expression_levels_for_sample}})];
+		my $feature_id = $expkeys->[0];
+		if ( $feature_id =~ /(.+)\.[a-zA-Z]+\.\d+$/) {
+		    $genome_id = $1;
+		} else {
+		    die("Can't determine genome id from feature id: ".$feature_id."\n");
+		}
     }
 
 
