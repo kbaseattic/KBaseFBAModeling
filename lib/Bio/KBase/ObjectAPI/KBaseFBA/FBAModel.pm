@@ -653,7 +653,7 @@ sub addModelReaction {
     my $fullid = $rootid."_".$args->{compartment}.$args->{compartmentIndex};
     #Checking if a reaction with the same ID is already in the model
     if (defined($self->getObject("modelreactions",$fullid))) {
-    	Bio::KBase::ObjectAPI::utilities::error("Reaction with specified ID ".$rootid." already in model. Remove reaction before attempting to add again!");
+    	Bio::KBase::ObjectAPI::utilities::error("Reaction with specified ID ".$rootid." [full id: ".$fullid."] already in model. Remove reaction before attempting to add again!");
     }
     #Standardizing and fetching compartment
     if ($args->{compartment} =~ m/^([a-z]+)(\d+)$/) {

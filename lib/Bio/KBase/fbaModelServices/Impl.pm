@@ -2757,6 +2757,7 @@ sub _parse_SBML {
     foreach my $cmpt (@$cmpts){
     	my $cmp_SEED_id;
     	my $cmpid;
+	my $cmpnum;
     	my $cmpname;
     	foreach my $attr ($cmpt->getAttributes()->getValues()) {
     		my $name = $attr->getName();
@@ -2767,8 +2768,9 @@ sub _parse_SBML {
     			$cmpname = $value;
     		}
     	}
-    	if ($cmpid =~ m/([a-zA-Z]+)\d+/) {
+    	if ($cmpid =~ m/([a-zA-Z]+)(\d+)/) {
     		$cmpid = $1;
+		$cmpnum = $2;
     	}
     	my $cmp = $bio->searchForCompartment($cmpid);
     	if (defined($cmp)) {
@@ -2784,8 +2786,10 @@ sub _parse_SBML {
     	}
     	if (!defined($cmp_SEED_id)) {
     		Bio::KBase::ObjectAPI::utilities::ERROR("Unrecognized compartment '".$cmpid."' in SBML file!");
+    	} elsif (defined $cmpnum) {
+    		$cmptrans->{$cmpid.$cmpnum} = $cmp_SEED_id.$cmpnum;
     	} else {
-    		$cmptrans->{$cmpid} = $cmp_SEED_id;
+	    $cmptrans->{$cmpid} = $cmp_SEED_id;
     	}
     }
 	#Parsing compounds
@@ -2886,6 +2890,11 @@ sub _parse_SBML {
     				$value = $1;
     			}
     			$id = $value;
+			if ($id =~ /\w+_(\w\d+)$/) {
+			    if (defined($cmptrans->{$1})) {
+    				$compartment = $cmptrans->{$1};
+			    }
+			}
     		} elsif ($nm eq "name") {
     			if ($value =~ m/^R_(.+)/) {
     				$value = $1;
