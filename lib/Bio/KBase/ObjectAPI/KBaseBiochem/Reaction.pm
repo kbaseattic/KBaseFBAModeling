@@ -914,14 +914,6 @@ sub checkReactionMassChargeBalance {
     #Adding up atoms and charge from all reagents
     my $rgts = $self->reagents();
 
-    #Need to remember whether reaction has proton reagent in which compartment
-    my $waterCompHash=();
-    my $protonCompHash=();
-    my $compHash=();
-    my $cpdCmpCount=();
-    my $hcpd=$self->parent()->checkForProton();
-    my $wcpd=$self->parent()->checkForWater();
-
     #check for the one reaction which is truly empty
     if(scalar(@$rgts)==0){
 	$self->status("EMPTY");
@@ -931,29 +923,28 @@ sub checkReactionMassChargeBalance {
 	};
     }
 
-    #check for reactions with duplicate reagents (same compound in same compartment)
-    #this is rare but arises from use of consolidatebio which doesn't check reactions
-    #after merging compounds.  The duplicate reagents need to be removed before balancing
-    #reaction
+    #check for reactions with duplicate reagents in the same compartment
+    my %Rgts_Hash = ();
     foreach my $rgt (@$rgts){
-	$cpdCmpCount->{$rgt->compound_ref()."_".$rgt->compartment_ref()}++;
+	$Rgts_Hash{$rgt->compound()->id()."_".$rgt->compartment()->id()}++;
     }
 
-    if(scalar( grep { $cpdCmpCount->{$_} > 1 } keys %$cpdCmpCount)>0){
+    if(scalar( grep { $Rgts_Hash{$_} > 1 } keys %Rgts_Hash)>0){
+	#here we are balancing out reagents from the same compartment
+	foreach my $cpd_cmpt ( grep { $Rgts_Hash{$_} > 1 } keys %Rgts_Hash){
 
-	foreach my $cpdcmpt ( grep { $cpdCmpCount->{$_} > 1 } keys %$cpdCmpCount){
-
-	    my ($cpd,$cmpt)=split(/_/,$cpdcmpt);
+	    my ($cpd,$cmpt)=split(/_/,$cpd_cmpt);
 	    my $coefficient=0;
-	    my $rgtUUIDs="";
+	    my $found_rgt="";
 
 	    foreach my $rgt (@$rgts){
-		if($rgt->compartment_ref() eq $cmpt && $rgt->compound_ref() eq $cpd){
+		if($rgt->compound()->id()."_".$rgt->compartment()->id() eq $cpd_cmpt){
 		    $coefficient+=$rgt->coefficient();
 
-		    if(!$rgtUUIDs){
-			$rgtUUIDs=$cpdcmpt;
+		    if(!$found_rgt){
+			$found_rgt=$cpd_cmpt;
 		    }else{
+			#here, any duplicates are deleted
 			$self->remove("reagents",$rgt);
 		    }
 		}
@@ -962,59 +953,82 @@ sub checkReactionMassChargeBalance {
 	    $rgts = $self->reagents();
 
 	    foreach my $rgt (@$rgts){
-		if($rgt->compound_ref()."_".$rgt->compartment_ref() eq $rgtUUIDs){
-		    $rgt->coefficient($coefficient);
+		if($rgt->compound()->id()."_".$rgt->compartment()->id() eq $found_rgt){
+		    if($coefficient == 0){
+			#here, remove the final copy of the duplicate if its coefficient is zero
+			$self->remove("reagents",$rgt);
+		    }else{
+			$rgt->coefficient($coefficient);
+		    }
 		}
 	    }
 	}
     }
 
-	for (my $i=0; $i < @{$rgts};$i++) {
-		my $rgt = $rgts->[$i];
+    $rgts = $self->reagents();
 
-		#Check for protons/water
-		$protonCompHash->{$rgt->compartment_ref()}=$rgt->compartment() if $rgt->compound_ref() eq $hcpd->uuid();
-		$waterCompHash->{$rgt->compartment_ref()}=$rgt->compartment() if $args->{rebalanceWater} && $rgt->compound_ref() eq $wcpd->uuid();
-		$compHash->{$rgt->compartment_ref()}=$rgt->compartment();
+    #Need to remember whether reaction has proton reagent in which compartment
+    my $waterCompHash=();
+    my $protonCompHash=();
+    my $compHash=();
+    my $hcpd=$self->parent()->checkForProton();
+    my $wcpd=$self->parent()->checkForWater();
 
-		$cpdCmpCount->{$rgt->compound_ref()."_".$rgt->compartment_ref()}++;
+    #check for reactions with duplicate reagents in different compartments
+    #these are not removed, but they balance out regardless of formula
+    my %Cpds_Hash = ();
+    foreach my $rgt (@$rgts){
 
-		#Problems are: compounds with noformula, polymers (see next line), and reactions with duplicate compounds in the same compartment
-		#Latest KEGG formulas for polymers contain brackets and 'n', older ones contain '*'
-		my $cpdatoms = $rgt->compound()->calculateAtomsFromFormula();
+	#Check for protons/water
+	$protonCompHash->{$rgt->compartment_ref()}=$rgt->compartment() if $rgt->compound_ref() eq $hcpd->uuid();
+	$waterCompHash->{$rgt->compartment_ref()}=$rgt->compartment() if $args->{rebalanceWater} && $rgt->compound_ref() eq $wcpd->uuid();
 
-		if (defined($cpdatoms->{error})) {
-		        $self->status("CPDFORMERROR");
-			return {
-				balanced => 0,
-				error => $cpdatoms->{error}
-			};	
-		}
+	#Store compartments
+	$compHash->{$rgt->compartment_ref()}=$rgt->compartment();
 
-		$netCharge += $rgt->coefficient()*$rgt->compound()->defaultCharge();
+	#balance out reagents regardless of compartment
+	$Cpds_Hash{$rgt->compound()->id()}+=$rgt->coefficient();
+    }
 
-		foreach my $atom (keys(%{$cpdatoms})) {
-			if (!defined($atomHash->{$atom})) {
-				$atomHash->{$atom} = 0;
-			}
-			$atomHash->{$atom} += $rgt->coefficient()*$cpdatoms->{$atom};
-		}
+    foreach my $cpd_id ( grep { $Cpds_Hash{$_} !=0 } keys %Cpds_Hash){
+	my $rgt = ( grep { $_->compound()->id() eq $cpd_id } @$rgts )[0];
+
+	#Problems are: compounds with noformula/null and polymers
+	#Latest KEGG formulas for polymers contain brackets and 'n', older ones contain '*'
+	my $cpdatoms = $rgt->compound()->calculateAtomsFromFormula();
+	
+	if (defined($cpdatoms->{error})) {
+	    $self->status("CPDFORMERROR");
+	    return {
+		balanced => 0,
+		error => $cpdatoms->{error}
+	    };	
 	}
-
-	#Adding protons
-        #use of defaultProtons() discontinued for time being
-	#$netCharge += $self->defaultProtons()*1;
-
-	if (!defined($atomHash->{H})) {
-		$atomHash->{H} = 0;
+	
+	$netCharge += $Cpds_Hash{$rgt->compound()->id()}*$rgt->compound()->defaultCharge();
+	
+	foreach my $atom (keys(%{$cpdatoms})) {
+	    if (!defined($atomHash->{$atom})) {
+		$atomHash->{$atom} = 0;
+	    }
+	    $atomHash->{$atom} += $Cpds_Hash{$rgt->compound()->id()}*$cpdatoms->{$atom};
 	}
-
-	#$atomHash->{H} += $self->defaultProtons();
-
-	#Checking if charge or atoms are unbalanced
-	my $results = {
-		balanced => 1
-	};
+    }
+    
+    #Adding protons
+    #use of defaultProtons() discontinued for time being
+    #$netCharge += $self->defaultProtons()*1;
+    
+    if (!defined($atomHash->{H})) {
+	$atomHash->{H} = 0;
+    }
+    
+    #$atomHash->{H} += $self->defaultProtons();
+    
+    #Checking if charge or atoms are unbalanced
+    my $results = {
+	balanced => 1
+    };
 
     my $imbalancedAtoms = {};
     foreach my $atom (keys(%{$atomHash})) { 
@@ -1022,10 +1036,10 @@ sub checkReactionMassChargeBalance {
 	    $imbalancedAtoms->{$atom}=$atomHash->{$atom};
 	}
     }
-
+    
     if($args->{rebalanceWater} && join("",sort keys %$imbalancedAtoms) eq "HO" && ($imbalancedAtoms->{"H"}/$imbalancedAtoms->{"O"}) == 2){
 	Bio::KBase::ObjectAPI::utilities::verbose("Adjusting ".$self->id()." water by ".$imbalancedAtoms->{"O"});
-
+	
 	if(scalar(keys %$waterCompHash)==0){
 	    #must create water reagent
 	    #either reaction compartment or, if transporter, defaults to compartment with highest number in hierarchy
@@ -1128,7 +1142,7 @@ sub checkReactionMassChargeBalance {
 	delete($imbalancedAtoms->{H});
 	push(@status,"HB");
     }
-
+    
     if(scalar(keys %{$imbalancedAtoms})>0){
 	$results->{balanced} = 0;
 	$status[0] = "MI:".join("/", map { $_.":".$atomHash->{$_} } sort keys %{$imbalancedAtoms});	
@@ -1146,7 +1160,7 @@ sub checkReactionMassChargeBalance {
     if($args->{saveStatus} == 1){
 	$self->status(join("|",@status));
     }
-
+    
     return $results;
 }
 
