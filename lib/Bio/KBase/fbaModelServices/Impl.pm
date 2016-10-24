@@ -448,7 +448,6 @@ sub _workspaceServices {
 	}
 	if (!defined($self->{_workspaceServices}->{$self->_workspaceURL()})) {
 		my $url = $self->_workspaceURL();
-		$url =~ s/https/http/;
 		$self->{_workspaceServices}->{$self->_workspaceURL()} = Bio::KBase::workspace::Client->new($url);
 		$self->{_workspaceServices}->{$self->_workspaceURL()}->{token} = $self->_authentication();
 		$self->{_workspaceServices}->{$self->_workspaceURL()}->{client}->{token} = $self->_authentication();
